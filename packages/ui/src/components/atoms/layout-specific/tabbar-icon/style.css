@@ -1,0 +1,19 @@
+.mpms-tabbar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--mpms-tabbar-border-color, #4c4d4f);
+  border-radius: 4px;
+  background: var(--mpms-layout-bg, #0a0a0a);
+  color: var(--mpms-tabbar-text-secondary, rgba(255, 255, 255, 0.65));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mpms-tabbar-icon:hover {
+  color: var(--mpms-tabbar-text-primary, rgba(255, 255, 255, 0.85));
+  border-color: var(--mpms-tabbar-primary-color, #4165d7);
+  background: var(--mpms-tabbar-hover-bg, rgba(255, 255, 255, 0.06));
+}

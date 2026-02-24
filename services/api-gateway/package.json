@@ -1,0 +1,10 @@
+{
+  "name": "@epap/api-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "go run cmd/gateway/main.go",
+    "build": "go build -o bin/gateway ./cmd/gateway",
+    "test": "go test ./..."
+  }
+}

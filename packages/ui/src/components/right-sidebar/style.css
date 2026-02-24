@@ -1,0 +1,94 @@
+.mpms-right-sidebar {
+  width: var(--mpms-right-sidebar-width, 46px);
+  background: var(--mpms-sidebar-bg, #0a0a0a);
+  border-left: 1px solid var(--mpms-border-color);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mpms-right-sidebar.is-collapsed {
+  width: 0;
+  border-left: none;
+}
+
+.mpms-right-sidebar__icons {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 8px;
+  overflow-y: auto;
+  justify-content: flex-end;
+}
+
+.mpms-right-sidebar__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #4c4d4f;
+  border-radius: 8px;
+  background: var(--mpms-layout-bg, #0a0a0a);
+  color: var(--mpms-text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.mpms-right-sidebar__icon-btn:hover {
+  color: var(--mpms-text-primary);
+  border-color: var(--mpms-primary-color, #4165d7);
+  background: var(--mpms-layout-bg, #0a0a0a);
+}
+
+/* FAB — half-docked to right edge */
+.mpms-right-sidebar-fab {
+  position: fixed;
+  right: 0;
+  bottom: 9px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 42px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(25px);
+  transition: transform 0.25s ease-in-out, opacity 0.2s ease;
+}
+
+.mpms-right-sidebar-fab.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mpms-right-sidebar-fab.is-visible:hover {
+  transform: translateX(0);
+}
+
+.mpms-right-sidebar-fab__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: var(--mpms-primary-color, #4165d7);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.mpms-right-sidebar-fab__btn:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}

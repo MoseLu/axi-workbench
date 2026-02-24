@@ -1,0 +1,10 @@
+{
+  "name": "@epap/workflow-engine",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "uv run fastapi dev src/api/main.py",
+    "build": "uv build",
+    "test": "uv run pytest"
+  }
+}

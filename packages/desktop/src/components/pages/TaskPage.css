@@ -1,0 +1,41 @@
+.task-page {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.task-page__stats {
+  margin-bottom: 12px;
+}
+
+.task-page__stat-card {
+  margin-bottom: 10px;
+}
+
+.task-page__card {
+  margin-bottom: 12px;
+}
+
+.task-page__progress-card {
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.task-page__progress-card .ant-card-body {
+  padding: 12px;
+}
+
+.task-page__progress-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+.task-page__progress-card .ant-typography-secondary {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.task-page__progress-card .ant-progress-text {
+  color: rgba(255, 255, 255, 0.85) !important;
+}

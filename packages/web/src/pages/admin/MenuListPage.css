@@ -1,0 +1,36 @@
+.menu-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-list-page__card {
+  border-radius: 8px;
+}
+
+.menu-list-page__card .ant-card-body {
+  padding: 12px;
+}
+
+.menu-list-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.menu-list-page .ant-table {
+  font-size: 13px;
+}
+
+.menu-list-page .ant-table-thead > tr > th {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.menu-list-page .ant-table-tbody > tr > td {
+  padding: 8px 12px;
+}

@@ -1,0 +1,26 @@
+.mpms-tabbar-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--mpms-tabbar-text-secondary, rgba(255, 255, 255, 0.45));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mpms-tabbar-icon-wrapper:hover {
+  color: var(--mpms-tabbar-text-primary, rgba(255, 255, 255, 0.85));
+  background: var(--mpms-tabbar-hover-bg, rgba(255, 255, 255, 0.06));
+}
+
+.mpms-tabbar-icon {
+  mask-image: url('/src/assets/icons/actions/close.svg');
+  -webkit-mask-image: url('/src/assets/icons/actions/close.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+}

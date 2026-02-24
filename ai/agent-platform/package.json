@@ -1,0 +1,10 @@
+{
+  "name": "@epap/agent-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "uv run fastapi dev src/api/main.py",
+    "build": "uv build",
+    "test": "uv run pytest"
+  }
+}

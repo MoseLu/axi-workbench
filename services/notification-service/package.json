@@ -1,0 +1,10 @@
+{
+  "name": "@epap/notification-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "go run cmd/notifyserver/main.go",
+    "build": "go build -o bin/notifyserver ./cmd/notifyserver",
+    "test": "go test ./..."
+  }
+}

@@ -1,0 +1,33 @@
+.mpms-locale-switcher {
+  position: relative;
+}
+
+.mpms-locale-switcher__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 1000;
+  min-width: 120px;
+  background: var(--mpms-header-bg, #1d1d1d);
+  border: 1px solid var(--mpms-border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.mpms-locale-switcher__item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--mpms-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mpms-locale-switcher__item:hover {
+  color: var(--mpms-text-primary);
+  background: var(--mpms-hover-bg);
+}
+
+.mpms-locale-switcher__item.is-active {
+  color: var(--mpms-primary-color);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@epap/core-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "gradle bootRun",
+    "build": "gradle build",
+    "test": "gradle test"
+  }
+}

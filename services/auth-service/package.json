@@ -1,0 +1,10 @@
+{
+  "name": "@epap/auth-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "go run cmd/authserver/main.go",
+    "build": "go build -o bin/authserver ./cmd/authserver",
+    "test": "go test ./..."
+  }
+}
