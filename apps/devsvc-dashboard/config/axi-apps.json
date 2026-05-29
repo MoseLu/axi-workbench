@@ -1,0 +1,313 @@
+[
+  {
+    "appId": "axi-fleet-console",
+    "title": "Axi Fleet Console",
+    "icon": "database",
+    "cwd": "${workspaceRoot}/projects/axi-workbench/infra/fleet-console/dashboard",
+    "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm run dev -- --host 127.0.0.1 --port ${port} --strictPort",
+    "packageManager": "npm",
+    "defaultRoute": "/dashboard",
+    "healthPath": "/",
+    "routes": [
+      "/dashboard",
+      "/devices",
+      "/services",
+      "/projects",
+      "/credentials"
+    ],
+    "menuGroups": [
+      {
+        "key": "operations",
+        "label": "运维工作台",
+        "icon": "app",
+        "children": [
+          {
+            "key": "dashboard",
+            "label": "仪表盘",
+            "icon": "stats",
+            "route": "/dashboard"
+          },
+          {
+            "key": "devices",
+            "label": "服务器管理",
+            "icon": "device",
+            "route": "/devices"
+          },
+          {
+            "key": "services",
+            "label": "服务管理",
+            "icon": "component",
+            "route": "/services"
+          }
+        ]
+      },
+      {
+        "key": "governance",
+        "label": "资产治理",
+        "icon": "auth",
+        "children": [
+          {
+            "key": "projects",
+            "label": "项目管理",
+            "icon": "workbench",
+            "route": "/projects"
+          },
+          {
+            "key": "credentials",
+            "label": "凭证管理",
+            "icon": "auth",
+            "route": "/credentials"
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      "web",
+      "ops",
+      "dashboard"
+    ],
+    "hostedMode": true,
+    "nativeFallback": false
+  },
+  {
+    "appId": "axi-coder",
+    "title": "Axi 编码器",
+    "icon": "workbench",
+    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
+    "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
+    "packageManager": "pnpm",
+    "defaultRoute": "/overview",
+    "healthPath": "/",
+    "routes": [
+      "/overview",
+      "/terminal",
+      "/providers",
+      "/mobile",
+      "/agent",
+      "/logs"
+    ],
+    "menuGroups": [
+      {
+        "key": "workbench",
+        "label": "编码工作台",
+        "icon": "workbench",
+        "children": [
+          {
+            "key": "overview",
+            "label": "总览",
+            "icon": "stats",
+            "route": "/overview"
+          },
+          {
+            "key": "terminal",
+            "label": "终端",
+            "icon": "params",
+            "route": "/terminal"
+          },
+          {
+            "key": "agent",
+            "label": "任务执行",
+            "icon": "work",
+            "route": "/agent"
+          }
+        ]
+      },
+      {
+        "key": "contracts",
+        "label": "合同与伴随端",
+        "icon": "iot",
+        "children": [
+          {
+            "key": "providers",
+            "label": "模型供应商",
+            "icon": "database",
+            "route": "/providers"
+          },
+          {
+            "key": "mobile",
+            "label": "移动伴随端",
+            "icon": "phone",
+            "route": "/mobile"
+          }
+        ]
+      },
+      {
+        "key": "diagnostics",
+        "label": "诊断",
+        "icon": "log",
+        "children": [
+          {
+            "key": "logs",
+            "label": "日志",
+            "icon": "log",
+            "route": "/logs"
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      "web",
+      "workbench"
+    ],
+    "hostedMode": true,
+    "nativeFallback": false
+  },
+  {
+    "appId": "axi-verification-inbox",
+    "title": "Axi Verification Inbox",
+    "icon": "auth",
+    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/verification-inbox",
+    "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm run dev -- --host 127.0.0.1 --port ${port} --strictPort",
+    "packageManager": "npm",
+    "defaultRoute": "/",
+    "healthPath": "/",
+    "routes": [
+      "/"
+    ],
+    "menuGroups": [
+      {
+        "key": "accounts",
+        "label": "账号验证",
+        "icon": "auth",
+        "children": [
+          {
+            "key": "inbox",
+            "label": "验证收件箱",
+            "icon": "auth",
+            "route": "/"
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      "web",
+      "accounts",
+      "verification-inbox"
+    ],
+    "hostedMode": true,
+    "nativeFallback": false
+  },
+  {
+    "appId": "axi-docs",
+    "title": "Axi Docs",
+    "icon": "search",
+    "cwd": "${workspaceRoot}/projects/axi-docs/app",
+    "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
+    "packageManager": "pnpm",
+    "defaultRoute": "/",
+    "healthPath": "/",
+    "routes": [
+      "/"
+    ],
+    "menuGroups": [
+      {
+        "key": "knowledge",
+        "label": "知识库",
+        "icon": "search",
+        "children": [
+          {
+            "key": "home",
+            "label": "文档首页",
+            "icon": "search",
+            "route": "/"
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      "web",
+      "docs",
+      "knowledge",
+      "search"
+    ],
+    "hostedMode": true,
+    "nativeFallback": false
+  },
+  {
+    "appId": "axi-image-preview",
+    "title": "Axi Image Preview",
+    "icon": "app",
+    "cwd": "${workspaceRoot}/projects/axi-image-preview",
+    "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm exec vite -- --host 127.0.0.1 --port ${port} --strictPort",
+    "packageManager": "npm",
+    "defaultRoute": "/",
+    "healthPath": "/",
+    "routes": [
+      "/",
+      "/homeViewLook/:wallpaperId"
+    ],
+    "menuGroups": [
+      {
+        "key": "gallery",
+        "label": "视觉预览",
+        "icon": "app",
+        "children": [
+          {
+            "key": "gallery",
+            "label": "壁纸预览",
+            "icon": "app",
+            "route": "/"
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      "web",
+      "image",
+      "gallery",
+      "preview"
+    ],
+    "hostedMode": true,
+    "nativeFallback": false
+  },
+  {
+    "appId": "axi-agent-platform",
+    "title": "Axi Agent Platform",
+    "icon": "work",
+    "cwd": "${workspaceRoot}/projects/axi-agent-platform/frontend",
+    "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm exec vite -- --host 127.0.0.1 --port ${port} --strictPort",
+    "packageManager": "npm",
+    "defaultRoute": "/",
+    "healthPath": "/",
+    "routes": [
+      "/",
+      "/dashboard",
+      "/settings"
+    ],
+    "menuGroups": [
+      {
+        "key": "agent",
+        "label": "Agent 平台",
+        "icon": "work",
+        "children": [
+          {
+            "key": "chat",
+            "label": "对话",
+            "icon": "msg",
+            "route": "/"
+          },
+          {
+            "key": "dashboard",
+            "label": "运行概览",
+            "icon": "stats",
+            "route": "/dashboard"
+          },
+          {
+            "key": "settings",
+            "label": "设置",
+            "icon": "params",
+            "route": "/settings"
+          }
+        ]
+      }
+    ],
+    "capabilities": [
+      "web",
+      "agent-runtime",
+      "tasks",
+      "memory"
+    ],
+    "hostedMode": true,
+    "nativeFallback": false
+  }
+]

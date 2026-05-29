@@ -1,0 +1,294 @@
+[
+  {
+    "id": "axi-devsvc-dashboard",
+    "title": "Axi DevSvc Dashboard",
+    "kind": "dashboard-host",
+    "surface": "dashboard-host",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/devsvc-dashboard",
+    "dashboardRoute": "/overview",
+    "capabilities": [
+      "axi-apps",
+      "dev-services",
+      "ops"
+    ],
+    "notes": "Unified Axi dashboard shell and local service dashboard inside Axi Workbench."
+  },
+  {
+    "id": "axi-fleet-console",
+    "title": "Axi Fleet Console",
+    "kind": "hosted-app",
+    "surface": "hosted-app",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/infra/fleet-console",
+    "dashboardRoute": "/apps/axi-fleet-console/dashboard",
+    "capabilities": [
+      "fleet",
+      "ops",
+      "credentials"
+    ],
+    "notes": "Fleet executor/resource view hosted by the dashboard inside Axi Workbench."
+  },
+  {
+    "id": "axi-coder",
+    "title": "Axi Coder",
+    "kind": "hosted-app",
+    "surface": "hosted-app",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
+    "dashboardRoute": "/apps/axi-coder/overview",
+    "capabilities": [
+      "coder",
+      "model-gateway",
+      "agent-task"
+    ],
+    "notes": "Development workbench and model gateway provider surface."
+  },
+  {
+    "id": "axi-verification-inbox",
+    "title": "Axi Verification Inbox",
+    "kind": "hosted-app",
+    "surface": "hosted-app",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/verification-inbox",
+    "dashboardRoute": "/apps/axi-verification-inbox/",
+    "capabilities": [
+      "accounts",
+      "imap",
+      "otp",
+      "oauth"
+    ],
+    "notes": "Verification inbox appears in dashboard; native Tauri bridge remains the runtime for real mailbox actions."
+  },
+  {
+    "id": "axi-workbench",
+    "title": "Axi Workbench",
+    "kind": "workbench-monorepo",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "control-plane",
+      "workbench",
+      "resource-snapshot",
+      "agent-task"
+    ],
+    "notes": "Canonical Workbench monorepo; hosts control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI."
+  },
+  {
+    "id": "axi-agent-platform",
+    "title": "Axi Agent Platform",
+    "kind": "agent-runtime",
+    "surface": "hosted-app",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-agent-platform",
+    "dashboardRoute": "/apps/axi-agent-platform/",
+    "capabilities": [
+      "web",
+      "agent-runtime",
+      "worktree-guard",
+      "quality-gate"
+    ],
+    "notes": "Agent runtime frontend is hosted by the dashboard; runtime contracts remain under Axi Agent Platform."
+  },
+  {
+    "id": "axi-agent-mcp",
+    "title": "Axi Agent MCP",
+    "kind": "mcp-service",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-agent-platform/infra/axi-agent-mcp",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "mcp",
+      "tools",
+      "quality-gate"
+    ],
+    "notes": "43-tool MCP service contract surfaced through the Axi resource index."
+  },
+  {
+    "id": "axi-agent-transport",
+    "title": "Axi Agent Transport",
+    "kind": "transport-service",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-agent-platform/infra/axi-agent-transport",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "terminal-transport",
+      "websocket",
+      "correlation"
+    ],
+    "notes": "Terminal transport owner surfaced as a dashboard resource."
+  },
+  {
+    "id": "axi-docs",
+    "title": "Axi Docs",
+    "kind": "knowledge-service",
+    "surface": "hosted-app",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-docs/app",
+    "dashboardRoute": "/apps/axi-docs/",
+    "capabilities": [
+      "web",
+      "docs",
+      "knowledge",
+      "manifest",
+      "search"
+    ],
+    "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime."
+  },
+  {
+    "id": "axi-image-preview",
+    "title": "Axi Image Preview",
+    "kind": "image-preview-app",
+    "surface": "hosted-app",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-image-preview",
+    "dashboardRoute": "/apps/axi-image-preview/",
+    "capabilities": [
+      "web",
+      "image",
+      "gallery",
+      "preview"
+    ],
+    "notes": "Image and wallpaper preview UI is hosted by the dashboard shell."
+  },
+  {
+    "id": "axi-accounts",
+    "title": "Axi Accounts Contract",
+    "kind": "contract",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/docs/axi",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "account-profile",
+      "credential-ref",
+      "provider-credential-ref"
+    ],
+    "notes": "Contract owner only; cockpit-tools remains reference and is not an Axi application."
+  },
+  {
+    "id": "axi-model-gateway",
+    "title": "Axi Model Gateway",
+    "kind": "contract",
+    "surface": "hosted-subroute",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
+    "dashboardRoute": "/apps/axi-coder/providers",
+    "capabilities": [
+      "provider-profile",
+      "proxy-diagnostics",
+      "cli-route"
+    ],
+    "notes": "Provider runtime is owned by Axi Coder and entered through its Providers page."
+  },
+  {
+    "id": "axi-notify",
+    "title": "Axi Notify",
+    "kind": "notification-service",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-notify",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "relay",
+      "events",
+      "device-targeting"
+    ],
+    "notes": "Notify relay and event persistence owner; not a dashboard-hosted web app."
+  },
+  {
+    "id": "axi-mobile",
+    "title": "Axi Mobile",
+    "kind": "mobile-app",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-notify/android-app",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "android",
+      "inbox",
+      "workflow-events"
+    ],
+    "notes": "Android companion host remains under Axi Notify and is visible as a dashboard resource."
+  },
+  {
+    "id": "axi-todo",
+    "title": "Axi Todo",
+    "kind": "local-agent-tool",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-agent-platform/tools/axi-todo",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "todo",
+      "assistant",
+      "mcp",
+      "daemon"
+    ],
+    "notes": "Local task ledger and Codex runner are part of Axi Agent Platform."
+  },
+  {
+    "id": "axi-ui",
+    "title": "Axi UI",
+    "kind": "shared-runtime",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/shared/axi-ui",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "tokens",
+      "react",
+      "antd",
+      "dashboard-shell"
+    ],
+    "notes": "Shared UI/runtime provider consumed by dashboard and hosted apps."
+  },
+  {
+    "id": "axi-registry",
+    "title": "Axi Local Registry",
+    "kind": "local-registry",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/infra/axi-registry",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "verdaccio",
+      "package-distribution"
+    ],
+    "notes": "Local distribution boundary for @axi/* packages."
+  },
+  {
+    "id": "axi-app-cli",
+    "title": "Axi App CLI",
+    "kind": "scaffold-tool",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/tools/axi-app-cli",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "scaffold",
+      "template",
+      "governance"
+    ],
+    "notes": "Generated app governance and scaffold runtime are part of Axi Workbench."
+  },
+  {
+    "id": "axi-ollama-menu-assistant",
+    "title": "Axi Ollama Menu Assistant",
+    "kind": "macos-product",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/ollama-menu-assistant",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "local-ollama",
+      "voice-workflows",
+      "macos-menu"
+    ],
+    "notes": "Native macOS menu assistant is indexed by the dashboard inside Axi Workbench."
+  }
+]

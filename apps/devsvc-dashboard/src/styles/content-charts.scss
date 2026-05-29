@@ -1,0 +1,91 @@
+@media (max-width: 980px) {
+  .sidebar {
+    padding: 0;
+  }
+
+  .brand,
+  .axi-admin-brand {
+    padding: 0 16px;
+  }
+
+  .brand strong,
+  .axi-admin-brand-copy strong {
+    font-size: 17px;
+  }
+
+  .app-topbar {
+    align-items: center;
+    flex-direction: row;
+    height: var(--topbar-height);
+    gap: 10px;
+  }
+
+  .toolbar-filter-row {
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .app-breadcrumb {
+    font-size: 13px;
+  }
+
+  .topbar-right {
+    gap: 8px;
+  }
+
+  .global-search-trigger {
+    width: 176px;
+    min-width: 132px;
+  }
+
+  .settings-drawer {
+    width: min(300px, 100vw);
+  }
+
+  .route-tabs {
+    max-width: 46vw;
+  }
+
+  .app-topbar .message {
+    display: none;
+  }
+
+  .toolbar-filter-select {
+    width: 96px;
+  }
+
+  .toolbar-filter-reset span {
+    display: none;
+  }
+
+  .user-trigger {
+    padding-right: 6px;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .metric-grid,
+  .graph-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-layout {
+    grid-template-columns: minmax(180px, 0.72fr) minmax(180px, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .global-search-trigger {
+    display: none;
+  }
+
+  .donut-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-panel-body {
+    padding: 12px;
+  }
+}

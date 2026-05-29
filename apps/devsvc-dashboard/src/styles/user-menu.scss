@@ -1,0 +1,509 @@
+.recharts-cartesian-grid line {
+  stroke: var(--line);
+}
+
+.recharts-text {
+  fill: var(--muted);
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  border-color: var(--panel-border) !important;
+
+  background: var(--panel-strong) !important;
+  color: var(--text) !important;
+}
+
+.service-name {
+  font-weight: 700;
+}
+
+.service-desc,
+.resource,
+.checks {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.services-table .ant-table {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.services-panel {
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.services-panel > .axi-table-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.services-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.services-table .ant-spin-nested-loading,
+.services-table .ant-spin-container,
+.services-table .ant-table,
+.services-table .ant-table-container {
+  height: 100%;
+  min-height: 0;
+}
+
+.services-table .ant-table-body {
+  overflow: auto !important;
+}
+
+.services-table .ant-table-sticky-scroll {
+  display: none !important;
+}
+
+.services-panel .services-table,
+.services-panel .services-table .ant-spin-nested-loading,
+.services-panel .services-table .ant-spin-container,
+.services-panel .services-table .ant-table,
+.services-panel .services-table .ant-table-container {
+  height: auto;
+}
+
+.services-panel .services-table .ant-table-content {
+  overflow-y: visible !important;
+}
+
+.services-pagination {
+  flex: 0 0 32px;
+  min-height: 32px;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.services-table .ant-table-container {
+  border-color: var(--panel-border) !important;
+}
+
+.services-table .ant-table-thead > tr > th {
+  color: var(--table-header-text) !important;
+  background: var(--panel-strong) !important;
+  font-size: 12px;
+  font-weight: 700;
+  border-color: var(--line);
+  padding: 8px 12px !important;
+  text-align: center !important;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.services-table .ant-table-tbody > tr > td {
+  background: var(--panel) !important;
+  padding: 8px 12px !important;
+  text-align: center !important;
+  vertical-align: middle;
+  border-color: var(--line);
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.services-table .ant-table-tbody > tr.ant-table-measure-row,
+.services-table .ant-table-tbody > tr.ant-table-measure-row > td {
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  visibility: hidden;
+}
+
+.services-table .ant-table-tbody > tr:hover > td {
+  background: var(--surface-hover) !important;
+}
+
+.services-table .ant-table-cell-fix,
+.services-table .ant-table-cell-fix-left {
+  background: var(--panel) !important;
+  box-shadow: none !important;
+}
+
+.services-table .ant-table-cell-fix-right,
+.services-table .ant-table-cell-fix-end {
+  background: var(--panel) !important;
+  box-shadow: none !important;
+  z-index: 5;
+}
+
+.services-table .ant-table-thead .ant-table-cell-fix,
+.services-table .ant-table-thead .ant-table-cell-fix-left,
+.services-table .ant-table-thead .ant-table-cell-fix-right,
+.services-table .ant-table-thead .ant-table-cell-fix-start,
+.services-table .ant-table-thead .ant-table-cell-fix-end,
+.services-table .ant-table-thead .ant-table-cell-scrollbar {
+  background: var(--panel-strong) !important;
+  z-index: 6;
+}
+
+.services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix,
+.services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-left,
+.services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-right,
+.services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-start,
+.services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-end {
+  background: var(--surface-hover) !important;
+}
+
+.services-table .ant-table-cell-fix-left-first::after,
+.services-table .ant-table-cell-fix-left-last::after,
+.services-table .ant-table-cell-fix-right-first::after,
+.services-table .ant-table-cell-fix-right-last::after,
+.services-table .ant-table-cell-fix-start-shadow::after,
+.services-table .ant-table-cell-fix-end-shadow::after {
+  box-shadow: none !important;
+}
+
+.services-table .ant-table-cell-fix-end-shadow,
+.services-table .ant-table-cell-fix-end-shadow-show {
+  border-inline-start: 1px solid var(--table-grid-line) !important;
+}
+
+.services-table .service-row-fail > td {
+  background: color-mix(in srgb, var(--red-bg), var(--panel) 72%) !important;
+}
+
+.services-table .service-row-fail > .ant-table-cell-fix-left,
+.services-table .service-row-fail > .ant-table-cell-fix-right,
+.services-table .service-row-fail > .ant-table-cell-fix-start,
+.services-table .service-row-fail > .ant-table-cell-fix-end {
+  background: color-mix(in srgb, var(--red-bg), var(--panel) 72%) !important;
+}
+
+.service-cell {
+  min-width: 0;
+  text-align: center;
+}
+
+.service-name,
+.service-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-chip {
+  min-width: 70px;
+  max-width: 100%;
+  gap: 3px;
+  border-left-width: 4px;
+}
+
+.status-chip .axi-tag__content {
+  gap: 4px;
+}
+
+.status-chip-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--axi-tag-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--axi-tag-color), transparent 82%);
+}
+
+.status-chip-value {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.check-status-stack,
+.check-target-stack {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+
+.component-role {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.component-name {
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check-line {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.check-line-center {
+  justify-content: center;
+}
+
+.check-badge {
+  min-width: 42px;
+  flex: 0 0 auto;
+}
+
+.check-target {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-tag {
+  min-width: 44px;
+  max-width: none;
+}
+
+.resource-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.resource-line span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--text);
+}
+
+.resource-line b {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.services-table .table-actions {
+  min-width: 108px;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.services-table .table-actions .ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+}
+
+.services-table .table-actions .ant-btn > span:not(.ant-btn-icon) {
+  display: none !important;
+}
+
+.button {
+  min-height: 32px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--primary);
+  background: var(--panel-strong);
+}
+
+.button.primary {
+  color: var(--text-inverse);
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.button.primary:hover {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+}
+
+.button.danger {
+  color: var(--red);
+}
+
+.deploy-table-wrap,
+.server-table-wrap {
+  padding: 0;
+}
+
+.deploy-panel,
+.server-panel {
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.deploy-table.services-table,
+.server-ant-table.services-table {
+  flex: 0 0 auto;
+}
+
+.deploy-table.services-table .ant-spin-nested-loading,
+.deploy-table.services-table .ant-spin-container,
+.deploy-table.services-table .ant-table,
+.deploy-table.services-table .ant-table-container,
+.server-ant-table.services-table .ant-spin-nested-loading,
+.server-ant-table.services-table .ant-spin-container,
+.server-ant-table.services-table .ant-table,
+.server-ant-table.services-table .ant-table-container {
+  height: auto;
+}
+
+.deploy-table.services-table .ant-table-body,
+.server-ant-table.services-table .ant-table-body {
+  overflow: auto !important;
+}
+
+.deploy-table .deploy-row-active > td {
+  background: color-mix(in srgb, var(--green-bg), var(--panel) 70%) !important;
+}
+
+.deploy-table .deploy-row-active > .ant-table-cell-fix-left,
+.deploy-table .deploy-row-active > .ant-table-cell-fix-right,
+.deploy-table .deploy-row-active > .ant-table-cell-fix-start,
+.deploy-table .deploy-row-active > .ant-table-cell-fix-end {
+  background: color-mix(in srgb, var(--green-bg), var(--panel) 70%) !important;
+}
+
+.result-box {
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.result-box.ok {
+  color: var(--green);
+  background: var(--green-bg);
+}
+
+.result-box.warn {
+  color: var(--warning-text);
+  background: var(--amber-bg);
+}
+
+.result-box ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--text);
+}
+
+.logs {
+  min-height: 560px;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  margin: 0;
+  padding: 14px 16px;
+  color: var(--code-text);
+  background: var(--code-bg);
+  line-height: 1.55;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.service-log-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--modal-backdrop);
+}
+
+.service-log-dialog {
+  width: min(920px, 100%);
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--text), transparent 72%);
+}
+
+.service-log-dialog-header {
+  flex: 0 0 auto;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.service-log-dialog-header h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-log-dialog-actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.service-log-dialog-logs {
+  min-height: 420px;
+
+  max-height: min(62vh, 560px);
+  border-radius: 0;
+}

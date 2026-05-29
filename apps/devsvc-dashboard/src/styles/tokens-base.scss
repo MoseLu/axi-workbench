@@ -1,0 +1,400 @@
+::view-transition-new(root),
+::view-transition-old(root) {
+  animation-duration: 400ms;
+  animation-fill-mode: both;
+  animation-timing-function: ease-in-out;
+  mix-blend-mode: normal;
+}
+
+:root[data-theme-transition]::view-transition-new(root),
+:root[data-theme-transition]::view-transition-old(root) {
+  animation-name: none;
+}
+
+:root[data-theme-transition="to-light"]::view-transition-new(root) {
+  z-index: 100;
+  clip-path: var(--theme-transition-clip-start);
+  animation-name: theme-transition-reveal;
+}
+
+:root[data-theme-transition="to-dark"]::view-transition-old(root) {
+  z-index: 100;
+  clip-path: var(--theme-transition-clip-end);
+  animation-name: theme-transition-conceal;
+}
+
+@keyframes theme-transition-reveal {
+  from {
+    clip-path: var(--theme-transition-clip-start);
+  }
+
+  to {
+    clip-path: var(--theme-transition-clip-end);
+  }
+}
+
+@keyframes theme-transition-conceal {
+  from {
+    clip-path: var(--theme-transition-clip-end);
+  }
+
+  to {
+    clip-path: var(--theme-transition-clip-start);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: var(--chrome-bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  background: var(--chrome-bg);
+  overflow: hidden;
+}
+
+.app-shell.color-weak {
+
+  filter: grayscale(0.92);
+}
+
+.login-screen {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--primary), transparent 88%), transparent 28%),
+    linear-gradient(135deg, var(--primary-softer) 0%, var(--login-field-bg) 48%, var(--bg) 100%);
+}
+
+.login-panel {
+  width: min(420px, 100%);
+  padding: 28px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--login-panel-bg);
+  color: var(--login-text);
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.16);
+}
+
+.login-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.login-avatar {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  border: 3px solid var(--login-field-bg);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 24%;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.2);
+}
+
+.login-heading span {
+  display: block;
+  color: var(--login-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-heading h1 {
+  margin-top: 4px;
+  color: var(--login-text);
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.login-field {
+  display: grid;
+  gap: 7px;
+}
+
+.login-field span {
+  color: var(--login-label);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-field input {
+  height: 38px;
+  width: 100%;
+  border: 1px solid var(--login-field-border);
+  border-radius: 7px;
+  padding: 0 11px;
+  background: var(--login-field-bg);
+  color: var(--login-text);
+  outline: none;
+}
+
+.login-field input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary), transparent 88%);
+}
+
+.login-error {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--login-error-border);
+  border-radius: 7px;
+  padding: 0 10px;
+  background: var(--red-bg);
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-button {
+  height: 40px;
+  border: 1px solid var(--primary);
+  border-radius: 7px;
+  background: var(--primary);
+  color: var(--text-inverse);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.login-button:hover {
+
+  background: var(--primary-hover);
+}
+
+.sidebar {
+  flex: 0 0 var(--sidebar-width) !important;
+  width: var(--sidebar-width) !important;
+  min-width: var(--sidebar-width) !important;
+  max-width: var(--sidebar-width) !important;
+  height: 100vh;
+  background: var(--slider-bg) !important;
+  color: var(--slider-text);
+  padding: 0;
+  border-right: 1px solid var(--panel-border);
+  position: sticky;
+  inset-inline-start: 0;
+  top: 0;
+  overflow: hidden;
+  transition:
+    flex-basis 0.2s ease-in-out,
+    width 0.2s ease-in-out,
+    min-width 0.2s ease-in-out,
+    max-width 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    border-width 0.2s ease-in-out;
+}
+
+.sidebar.is-collapsed {
+  flex-basis: var(--sidebar-collapsed-width) !important;
+  width: var(--sidebar-collapsed-width) !important;
+  min-width: var(--sidebar-collapsed-width) !important;
+  max-width: var(--sidebar-collapsed-width) !important;
+}
+
+.sidebar.is-collapsed .brand,
+.sidebar.is-collapsed .axi-admin-brand {
+  padding: 0;
+}
+
+.sidebar.is-collapsed .brand strong,
+.sidebar.is-collapsed .axi-admin-brand-copy strong {
+  display: none;
+}
+
+.sidebar .ant-layout-sider-children {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand,
+.app-shell .axi-admin-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--topbar-height);
+  min-height: var(--topbar-height);
+  padding: 0 16px;
+  margin-bottom: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.brand-logo {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.brand strong,
+.app-shell .axi-admin-brand-copy strong {
+  display: block;
+  color: var(--slider-text);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.app-shell .axi-admin-brand-copy {
+  min-width: 0;
+}
+
+.sidebar-search {
+  height: 36px;
+  min-height: 36px;
+  margin: 7px 10px;
+  border-radius: 6px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-strong);
+  color: var(--muted);
+}
+
+.sidebar-search input {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--slider-text);
+  font-size: 14px;
+}
+
+.sidebar-search input::placeholder {
+  color: var(--muted);
+}
+
+.sidebar-search button {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sidebar-search button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--slider-text);
+}
+
+.side-menu.ant-menu-dark {
+  background: transparent;
+  border-inline-end: 0;
+}
+
+.side-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  overflow: auto;
+  font-size: 14px;
+  user-select: none;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  scrollbar-width: thin;
+}
+
+.side-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.side-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.side-menu::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--scrollbar-thumb);
+}
+
+.side-menu.ant-menu-dark .ant-menu-sub,
+.side-menu.ant-menu-dark.ant-menu-inline .ant-menu-sub.ant-menu-inline {
+  background: transparent;
+}
+
+.side-menu .ant-menu-submenu {
+  margin: 0;
+}
+
+.side-menu .ant-menu-item,
+.side-menu .ant-menu-submenu-title {
+  height: 50px !important;
+  line-height: 50px !important;
+  margin: 0 !important;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  border-radius: 0;
+  padding-inline: 24px !important;
+  transition: none !important;
+}
+
+.side-menu.ant-menu-dark .ant-menu-item,
+.side-menu.ant-menu-dark .ant-menu-submenu-title {
+  color: var(--slider-text);
+}
+
+.side-menu.ant-menu-dark .ant-menu-item:hover,
+.side-menu.ant-menu-dark .ant-menu-submenu-title:hover {
+  background: var(--panel-strong) !important;
+  color: var(--text) !important;
+}
+
+.side-menu.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title,
+.side-menu.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  background: transparent !important;
+  color: var(--slider-text) !important;
+}
+
+.side-menu .ant-menu-item-selected {
+  width: 100%;
+  margin: 0 !important;
+  border-radius: 0;
+}

@@ -1,0 +1,47 @@
+{
+  "name": "axi-devsvc-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "build": "PATH=\"$HOME/.local/share/micromamba/envs/ielts-mac-runtime/bin:$PATH\" node node_modules/vite/bin/vite.js build",
+    "check:file-lines": "node scripts/check-file-lines.mjs",
+    "check:file-lines:push": "node scripts/check-file-lines.mjs --push",
+    "check:file-lines:staged": "node scripts/check-file-lines.mjs --staged",
+    "dev": "PATH=\"$HOME/.local/share/micromamba/envs/ielts-mac-runtime/bin:$PATH\" vite --host 127.0.0.1 --port 17889 --strictPort",
+    "prepare": "node scripts/install-git-hooks.mjs",
+    "preview": "PATH=\"$HOME/.local/share/micromamba/envs/ielts-mac-runtime/bin:$PATH\" vite preview --host 127.0.0.1 --port 17890 --strictPort",
+    "tauri": "tauri",
+    "test": "node --test scripts/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@axi/addons": "link:../../../../shared/axi-ui/packages/addons",
+    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/crud": "link:../../../../shared/axi-ui/packages/crud",
+    "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",
+    "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
+    "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
+    "@axi/widgets": "link:../../../../shared/axi-ui/packages/widgets",
+    "@tauri-apps/api": "^2.11.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "antd": "^6.4.3",
+    "i18next": "^26.2.0",
+    "lucide-react": "^0.561.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-i18next": "^17.0.8",
+    "react-router-dom": "^7.11.0",
+    "recharts": "^3.5.1",
+    "vite": "^7.3.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2",
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "sass": "^1.100.0",
+    "typescript": "^6.0.3"
+  }
+}
