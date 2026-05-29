@@ -1,0 +1,16 @@
+{
+  "name": "@axi/workstation-control-plane",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.mjs",
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "smoke": "node src/smoke.mjs"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.47",
+    "@langchain/langgraph": "^1.3.2"
+  }
+}
