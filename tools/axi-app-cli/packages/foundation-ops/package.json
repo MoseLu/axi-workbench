@@ -1,0 +1,20 @@
+{
+  "name": "@axi/scaffold-foundation-ops",
+  "version": "1.0.0",
+  "description": "Workspace, docs, tooling, governance, and resource foundation modules for the Axi scaffold.",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@axi/scaffold-kit": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --target node22 --clean",
+    "typecheck": "tsc --noEmit"
+  }
+}

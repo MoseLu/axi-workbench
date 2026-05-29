@@ -1,0 +1,32 @@
+{
+  "name": "axi-app-cli-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workspace root for the Axi App CLI monorepo.",
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "boundaries:check": "node ./scripts/check-package-boundaries.mjs",
+    "check:file-lines": "node ./scripts/check-file-lines.mjs",
+    "check:file-lines:push": "node ./scripts/check-file-lines.mjs --push",
+    "check:file-lines:staged": "node ./scripts/check-file-lines.mjs --staged",
+    "capabilities:check": "node ./scripts/check-capability-packages.mjs",
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm --filter axi-app-cli dev",
+    "package:new": "node ./scripts/new-workspace-package.mjs",
+    "prepare": "node ./scripts/install-git-hooks.mjs",
+    "test": "pnpm -r --if-present test",
+    "test:watch": "pnpm --filter @axi/scaffold-runtime test:watch",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "workspace:check": "pnpm boundaries:check && pnpm capabilities:check"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}

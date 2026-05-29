@@ -1,0 +1,48 @@
+export function createAxiTridentLogoSvg(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-78 -78 156 180" width="156" height="180">
+  <path fill="#111111" d="M 0,-78 L 6,-48 L 9,0 L 6,36 L 0,52 L -6,36 L -9,0 L -6,-48 Z" />
+  <path fill="#111111" d="M -36,-70 L -46,-20 L -22,48 L -16,48 L -22,-16 L -36,-70 Z" />
+  <path fill="#111111" d="M 36,-70 L 46,-20 L 22,48 L 16,48 L 22,-16 L 36,-70 Z" />
+  <path fill="#111111" d="M -24,48 L 24,48 L 16,60 L -16,60 Z" />
+  <rect fill="#111111" x="-9" y="60" width="18" height="8" />
+  <path fill="#111111" d="M -52,66 C -52,60 -46,57 -38,59 L -9,63 L -9,78 L -38,82 C -46,84 -52,81 -52,75 Z" />
+  <path fill="#111111" d="M 52,66 C 52,60 46,57 38,59 L 9,63 L 9,78 L 38,82 C 46,84 52,81 52,75 Z" />
+  <rect fill="#111111" x="-9" y="63" width="18" height="15" />
+  <rect fill="#111111" x="-8" y="78" width="16" height="14" />
+  <path fill="#111111" d="M -8,92 L 8,92 L 3,102 L 0,108 L -3,102 Z" />
+</svg>
+`;
+}
+
+export function createAxiLogoMarkComponent(): string {
+  return `import type { SVGProps } from 'react';
+
+type AxiLogoMarkProps = SVGProps<SVGSVGElement> & {
+  title?: string;
+};
+
+export function AxiLogoMark({ title = 'Axi trident logo', ...props }: AxiLogoMarkProps) {
+  return (
+    <svg
+      aria-hidden={title ? undefined : true}
+      role={title ? 'img' : undefined}
+      viewBox="-78 -78 156 180"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      {title ? <title>{title}</title> : null}
+      <path fill="currentColor" d="M 0,-78 L 6,-48 L 9,0 L 6,36 L 0,52 L -6,36 L -9,0 L -6,-48 Z" />
+      <path fill="currentColor" d="M -36,-70 L -46,-20 L -22,48 L -16,48 L -22,-16 L -36,-70 Z" />
+      <path fill="currentColor" d="M 36,-70 L 46,-20 L 22,48 L 16,48 L 22,-16 L 36,-70 Z" />
+      <path fill="currentColor" d="M -24,48 L 24,48 L 16,60 L -16,60 Z" />
+      <rect fill="currentColor" height="8" width="18" x="-9" y="60" />
+      <path fill="currentColor" d="M -52,66 C -52,60 -46,57 -38,59 L -9,63 L -9,78 L -38,82 C -46,84 -52,81 -52,75 Z" />
+      <path fill="currentColor" d="M 52,66 C 52,60 46,57 38,59 L 9,63 L 9,78 L 38,82 C 46,84 52,81 52,75 Z" />
+      <rect fill="currentColor" height="15" width="18" x="-9" y="63" />
+      <rect fill="currentColor" height="14" width="16" x="-8" y="78" />
+      <path fill="currentColor" d="M -8,92 L 8,92 L 3,102 L 0,108 L -3,102 Z" />
+    </svg>
+  );
+}
+`;
+}

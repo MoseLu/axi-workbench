@@ -1,0 +1,17 @@
+{
+  "name": "@axi/scaffold-kit",
+  "version": "1.0.0",
+  "description": "Shared scaffold contracts and helpers for Axi workspace packages.",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --target node22 --clean",
+    "typecheck": "tsc --noEmit"
+  }
+}

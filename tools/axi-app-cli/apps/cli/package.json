@@ -1,0 +1,21 @@
+{
+  "name": "axi-app-cli",
+  "version": "1.0.0",
+  "description": "CLI entrypoint for the Axi full-stack scaffold.",
+  "type": "module",
+  "bin": {
+    "axi": "./dist/cli.js",
+    "create-axi-app": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "pnpm --filter @axi/scaffold-runtime build && tsx src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@axi/scaffold-runtime": "workspace:*"
+  }
+}

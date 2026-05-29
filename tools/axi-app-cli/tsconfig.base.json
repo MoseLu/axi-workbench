@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@axi/scaffold-foundation-api": ["packages/foundation-api/src/index.ts"],
+      "@axi/scaffold-foundation-design": ["packages/foundation-design/src/index.ts"],
+      "@axi/scaffold-foundation-ops": ["packages/foundation-ops/src/index.ts"],
+      "@axi/scaffold-foundation-web": ["packages/foundation-web/src/index.ts"],
+      "@axi/scaffold-feature-experimental": ["packages/feature-experimental/src/index.ts"],
+      "@axi/scaffold-feature-hooks": ["packages/feature-hooks/src/index.ts"],
+      "@axi/scaffold-feature-theme": ["packages/feature-theme/src/index.ts"],
+      "@axi/scaffold-feature-ui": ["packages/feature-ui/src/index.ts"],
+      "@axi/scaffold-registry": ["packages/scaffold-registry/src/index.ts"],
+      "@axi/scaffold-runtime": ["packages/scaffold-runtime/src/index.ts"],
+      "@axi/scaffold-kit": ["packages/scaffold-kit/src/index.ts"]
+    },
+    "types": ["node"],
+    "noEmit": true
+  }
+}

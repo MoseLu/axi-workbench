@@ -1,0 +1,20 @@
+{
+  "name": "@axi/scaffold-feature-hooks",
+  "version": "1.0.0",
+  "description": "Hooks-related extension modules for the Axi scaffold.",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@axi/scaffold-kit": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --target node22 --clean",
+    "typecheck": "tsc --noEmit"
+  }
+}

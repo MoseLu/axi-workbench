@@ -1,0 +1,9 @@
+node_modules/
+dist/
+apps/*/dist/
+packages/*/dist/
+coverage/
+.turbo/
+tmp/
+.env.resources.local
+tmp_*.html

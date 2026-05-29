@@ -1,0 +1,28 @@
+{
+  "name": "@axi/scaffold-registry",
+  "version": "1.0.0",
+  "description": "Feature registry and preset policy assembly for the Axi scaffold.",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@axi/scaffold-foundation-api": "workspace:*",
+    "@axi/scaffold-foundation-design": "workspace:*",
+    "@axi/scaffold-foundation-ops": "workspace:*",
+    "@axi/scaffold-foundation-web": "workspace:*",
+    "@axi/scaffold-feature-experimental": "workspace:*",
+    "@axi/scaffold-feature-hooks": "workspace:*",
+    "@axi/scaffold-feature-theme": "workspace:*",
+    "@axi/scaffold-feature-ui": "workspace:*",
+    "@axi/scaffold-kit": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --target node22 --clean",
+    "typecheck": "tsc --noEmit"
+  }
+}
