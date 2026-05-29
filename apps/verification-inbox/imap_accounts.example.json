@@ -1,0 +1,27 @@
+{
+  "accounts": [
+    {
+      "email": "name@gmail.com",
+      "password": "gmail-app-password",
+      "provider": "gmail"
+    },
+    {
+      "email": "name@mail.com",
+      "password": "mailbox-password",
+      "provider": "mail.com"
+    },
+    {
+      "email": "name@outlook.com",
+      "auth_type": "oauth2",
+      "provider": "outlook",
+      "client_id": "microsoft-oauth-client-id",
+      "refresh_token": "microsoft-refresh-token"
+    },
+    {
+      "email": "name@example.com",
+      "password": "mailbox-password",
+      "host": "imap.example.com",
+      "port": 993
+    }
+  ]
+}

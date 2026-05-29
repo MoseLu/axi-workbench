@@ -1,0 +1,15 @@
+node_modules
+node_modules/
+dist/
+src-tauri/target/
+__pycache__/
+*.py[cod]
+
+# Local credentials and OTP tokens.
+11个outlook_整理表格.md
+11个邮箱_整理表格.md
+otp_accounts.json
+imap_accounts.json
+
+# macOS metadata.
+.DS_Store
