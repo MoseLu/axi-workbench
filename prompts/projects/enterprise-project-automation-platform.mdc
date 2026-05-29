@@ -1,0 +1,30 @@
+---
+description: "axi-workstation 项目的领域、边界和验证入口；文件名为迁移兼容路径"
+globs: ["**/*"]
+alwaysApply: false
+epapLayer: "project"
+project: "axi-workstation"
+locked: false
+source: "epap"
+---
+
+# axi-workstation Project Prompt
+
+## 定位
+
+Axi Workstation 是六层多项目自然语言控制面。它把 IM 输入、通信网关、软件层项目、基础服务能力、物理资源和外接能力严格分层。
+
+## 工作偏好
+
+- 任何 IM 入口能力都必须经过 communication-gateway 标准化。
+- 任何 agent 执行都必须形成 control-plane `AgentTask`。
+- Feishu 是情报站：输出短、结构化、适合列表/表格/card。
+- MossCoder 是全能工作台：输出可包含任务状态、artifact、审批和控制项。
+- memory-only 查询只能读记忆面，不得扫描目录。
+
+## 验证偏好
+
+- 控制面：优先跑 `pnpm --filter @axi/workstation-control-plane test`。
+- 通信层：优先跑 `pnpm --filter @axi/workstation-communication-gateway test`。
+- schema：优先跑 `pnpm --filter @axi/workstation-contracts type-check`。
+- UI 或真实路径：必须补浏览器/Chrome/`computer-use` 分层验证。

@@ -45,6 +45,7 @@ Thumbs.db
 
 # Turbo
 .turbo/
+.omx/
 
 # pnpm
 .pnpm-store/
@@ -64,6 +65,7 @@ bin/
 __pycache__/
 *.py[cod]
 *$py.class
+*.tsbuildinfo
 *.egg-info/
 .eggs/
 dist/

@@ -1,0 +1,28 @@
+---
+description: "EPAP prompt 层结构和加载顺序，适用于 prompt/rules 相关修改"
+globs: ["prompts/**/*", "docs/rules/**/*", "AGENTS.md"]
+alwaysApply: false
+---
+
+# EPAP Prompt 层
+
+Prompt 正文使用 MDC 文件：
+
+- `prompts/system/*.mdc`：不可变底座。
+- `prompts/global/*.mdc`：所有项目通用。
+- `prompts/projects/*.mdc`：特定项目补充。
+- `prompts/global/project-doc-system-agent.mdc`：项目文档系统 agent 通用 prompt。
+
+加载顺序：
+
+1. system
+2. global
+3. project
+
+冲突处理：
+
+- system 永远优先。
+- global/project 不得覆盖 system。
+- prompt 不授予权限；权限和边界由 `docs/rules/epap-six-layer-sop.md` 决定。
+
+项目文档系统接入见 `docs/rules/epap-project-doc-agent-sop.md`。

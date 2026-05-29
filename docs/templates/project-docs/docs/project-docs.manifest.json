@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "project": "<project-name>",
+  "status": "partial",
+  "documents": {
+    "readme": "README.md",
+    "agents": "AGENTS.md",
+    "changelog": "CHANGELOG.md",
+    "todo": "TODO.md",
+    "milestone": "MILESTONE.md",
+    "prd": "docs/PRD.md",
+    "tdd": "docs/TDD.md",
+    "memory": "docs/MEMORY.md",
+    "adr": "docs/ADR"
+  },
+  "owners": {
+    "docsAgent": "control-plane AgentTask",
+    "memoryPlane": "base_service"
+  },
+  "verification": {
+    "test": "<test-command>",
+    "build": "<build-command>",
+    "docs": "manifest JSON parse + required file existence"
+  }
+}
+

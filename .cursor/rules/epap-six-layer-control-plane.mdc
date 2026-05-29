@@ -1,0 +1,27 @@
+---
+description: "EPAP 六层控制面边界，适用于本仓库所有 Cursor agent 会话"
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# EPAP 六层控制面边界
+
+本仓库使用 EPAP 六层控制面模型：
+
+1. IM 层只输入和展示。
+2. 通信层只做 route、配对、审批、附件引用、幂等、回执和渲染。
+3. 软件层拥有项目、服务、工作流、AgentTask、运行时会话。
+4. 基础服务层拥有 memory、docs、files、audit、tools、MCP/skills、本地模型和浏览器能力目录。
+5. 物理服务层只拥有机器、设备、端口、进程、网络资源，不拥有项目。
+6. 外接能力层只提供第三方 API、远端模型和远端 agent 能力。
+
+禁止事项：
+
+- communication-gateway 不得调用 Codex、读取 memory、扫描项目目录或拥有项目状态。
+- 非平凡执行必须通过 control-plane 受管 `AgentTask`。
+- memory-only 查询不得扫描目录。
+- 不得使用 hook 作为 EPAP 运行时旁路。
+- 用户可见输出默认中文。
+
+详细 SOP 见 `docs/rules/epap-six-layer-sop.md`。
+

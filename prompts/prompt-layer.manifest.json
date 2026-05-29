@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "layers": [
+    {
+      "kind": "system",
+      "path": "prompts/system",
+      "extension": ".mdc",
+      "scope": "all",
+      "locked": true,
+      "description": "不可变 EPAP prompt runtime 底座"
+    },
+    {
+      "kind": "global",
+      "path": "prompts/global",
+      "extension": ".mdc",
+      "scope": "all-projects",
+      "locked": false,
+      "description": "所有项目通用的 agent 行为、输出和验证偏好"
+    },
+    {
+      "kind": "project",
+      "path": "prompts/projects",
+      "extension": ".mdc",
+      "scope": "project-specific",
+      "locked": false,
+      "description": "特定项目的领域、边界和验证提示"
+    }
+  ],
+  "conflictPolicy": {
+    "highestPriority": "system",
+    "projectMaySpecializeGlobal": true,
+    "globalMayOverrideSystem": false,
+    "projectMayOverrideSystem": false
+  }
+}

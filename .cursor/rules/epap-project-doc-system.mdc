@@ -1,0 +1,30 @@
+---
+description: "EPAP 项目文档系统标准，适用于 README/AGENTS/CHANGELOG/TODO/MILESTONE/PRD/TDD/MEMORY"
+globs: ["**/README.md", "**/AGENTS.md", "**/CHANGELOG.md", "**/TODO.md", "**/MILESTONE.md", "**/docs/**/*.md", "**/docs/project-docs.manifest.json"]
+alwaysApply: false
+---
+
+# EPAP 项目文档系统
+
+每个纳管项目应有：
+
+- `README.md`
+- `AGENTS.md`
+- `CHANGELOG.md`
+- `TODO.md`
+- `MILESTONE.md`
+- `docs/PRD.md`
+- `docs/TDD.md`
+- `docs/project-docs.manifest.json`
+- 可选 `docs/MEMORY.md`
+
+规则：
+
+- Docs agent 必须通过 control-plane `AgentTask` 改文档。
+- 文档和 MEMORY 属于基础服务层。
+- `docs/MEMORY.md` 写入必须有来源、时间和置信度。
+- 通信层不得直接写文档。
+- `MINESTONE` 应归一为 `MILESTONE`。
+
+详细 SOP 见 `docs/rules/epap-project-doc-agent-sop.md`。
+

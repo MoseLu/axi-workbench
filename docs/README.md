@@ -17,6 +17,9 @@
 | 第六章 | [06-infrastructure.md](./06-infrastructure.md) | Docker、K8s、CI/CD、监控、安全 |
 | 第七章 | [07-docs-project.md](./07-docs-project.md) | Docusaurus 文档站、API 规范、ADR |
 | 第八章 | [08-todo.md](./08-todo.md) | 完整 TODO 清单（1020 项） |
+| 运行规约 | [rules/epap-six-layer-sop.md](./rules/epap-six-layer-sop.md) | 六层控制面 SOP、AGENT/MEMORY/SOUL/HEARTBEAT/DOCS 边界 |
+| 项目文档系统 | [rules/epap-project-doc-agent-sop.md](./rules/epap-project-doc-agent-sop.md) | 每个项目的 README/AGENTS/CHANGELOG/MILESTONE/TODO/PRD/TDD/MEMORY 接入方式 |
+| Prompt 层 | [../prompts/README.md](../prompts/README.md) | system/global/project 三层 prompt 管理 |
 
 ---
 
@@ -41,3 +44,5 @@ AI        LangChain · Qdrant · Anthropic Claude · RAG · Multi-Agent
 - 想做 AI 功能？→ [第五章 AI 能力层](./05-ai-layer.md)
 - 想部署运维？→ [第六章 基础设施](./06-infrastructure.md)
 - 想知道要做什么？→ [第八章 TODO 清单](./08-todo.md)
+- 想修改 IM/通信/控制面/Agent/记忆/文档/心跳工作流？→ [六层控制面 SOP](./rules/epap-six-layer-sop.md)
+- 想让某个项目接入文档系统 agent？→ [项目文档系统 Agent SOP](./rules/epap-project-doc-agent-sop.md)
