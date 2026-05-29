@@ -11,7 +11,7 @@ export const AgentChatInput = z.object({
   message: z.string().min(1),
   sessionId: z.string().uuid().optional(),
   agentType: z.enum(["code", "docs", "test", "review", "research", "data"]).optional(),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type KBSearchInput = z.infer<typeof KBSearchInput>

@@ -10,7 +10,7 @@ export const ProjectSchema = z.object({
   status: ProjectStatusEnum,
   ownerId: UUIDSchema,
   teamId: UUIDSchema.optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })

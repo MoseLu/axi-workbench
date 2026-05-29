@@ -7,7 +7,7 @@ export const WorkflowDefinitionSchema = z.object({
   id: UUIDSchema,
   name: z.string().min(1).max(100),
   description: z.string().max(2000).optional(),
-  definition: z.record(z.unknown()), // DAG JSON
+  definition: z.record(z.string(), z.unknown()), // DAG JSON
   status: WorkflowStatusEnum,
   createdBy: UUIDSchema,
   createdAt: z.coerce.date(),

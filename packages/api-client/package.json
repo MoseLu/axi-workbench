@@ -15,7 +15,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@epap/schemas": "workspace:*",
+    "@axi/workstation-contracts": "workspace:*",
     "@epap/types": "workspace:*",
     "axios": "^1.6.0"
   },

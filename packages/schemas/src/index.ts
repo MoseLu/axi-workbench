@@ -68,7 +68,7 @@ export const ProjectSchema = z.object({
   status: ProjectStatusEnum,
   ownerId: UUIDSchema,
   teamId: UUIDSchema.optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -101,12 +101,14 @@ export const LoginInput = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 })
+export type LoginInput = z.infer<typeof LoginInput>
 
 export const RegisterInput = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(1).max(100),
 })
+export type RegisterInput = z.infer<typeof RegisterInput>
 
 export const RefreshTokenInput = z.object({
   refreshToken: z.string(),
@@ -138,14 +140,17 @@ export const TokenResponse = z.object({
   refreshToken: z.string(),
   expiresIn: z.number(),
 })
+export type TokenResponse = z.infer<typeof TokenResponse>
 
 export const UserResponse = UserSchema
 
 export const ProjectListResponse = PaginatedResponseSchema(ProjectSchema)
+export type ProjectListResponse = z.infer<typeof ProjectListResponse>
 
 export const ProjectResponse = ProjectSchema
 
 export const TaskListResponse = PaginatedResponseSchema(TaskSchema)
+export type TaskListResponse = z.infer<typeof TaskListResponse>
 
 export const TaskResponse = TaskSchema
 

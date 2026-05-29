@@ -12,7 +12,7 @@ export const UpdateWorkflowInput = CreateWorkflowInput.partial()
 
 export const TriggerWorkflowInput = z.object({
   workflowId: z.string().uuid(),
-  inputs: z.record(z.unknown()).optional(),
+  inputs: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type CreateWorkflowInput = z.infer<typeof CreateWorkflowInput>

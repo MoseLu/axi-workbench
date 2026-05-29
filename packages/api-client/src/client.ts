@@ -1,7 +1,9 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios"
 import type { ApiResponse } from "@epap/types"
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {}
+const API_BASE_URL = metaEnv.VITE_API_BASE_URL || "http://localhost:8080"
+const CONTROL_PLANE_BASE_URL = metaEnv.VITE_CONTROL_PLANE_BASE_URL || "http://localhost:8092"
 
 export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   const client = axios.create({
@@ -65,3 +67,7 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
 }
 
 export const apiClient = createApiClient()
+
+export const controlPlaneClient = createApiClient({
+  baseURL: CONTROL_PLANE_BASE_URL,
+})

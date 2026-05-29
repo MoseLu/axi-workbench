@@ -1,1 +1,2 @@
-export { apiClient, createApiClient } from "./client"
+export { apiClient, controlPlaneClient, createApiClient } from "./client"
+export * from "./hooks"

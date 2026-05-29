@@ -1,6 +1,5 @@
 import { z } from "zod"
 import { ProjectSchema } from "../entities/project"
-import { PaginationSchema } from "../common"
 
 export const ProjectResponse = ProjectSchema
 

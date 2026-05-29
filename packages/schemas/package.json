@@ -1,5 +1,5 @@
 {
-  "name": "@epap/schemas",
+  "name": "@axi/workstation-contracts",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "zod": "^4.0.0"
