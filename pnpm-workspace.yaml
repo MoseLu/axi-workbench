@@ -3,6 +3,8 @@ packages:
   - 'packages/*'
   - 'services/*'
   - 'ai/*'
+  - 'infra/*'
+  - 'tools/*'
 
 onlyBuiltDependencies:
   - turbo

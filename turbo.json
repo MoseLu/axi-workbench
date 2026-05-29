@@ -1,32 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["NODE_ENV", "API_BASE_URL", "VITE_API_URL"],
-  "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "build/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "type-check": {
-      "dependsOn": ["^build"]
-    },
-    "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
-    },
-    "clean": {
-      "cache": false
-    },
-    "clean:cache": {
-      "cache": false
-    }
-  },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
