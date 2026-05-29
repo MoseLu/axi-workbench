@@ -1,0 +1,43 @@
+{
+  "name": "axi-docs-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "homepage": ".",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "build:control": "REACT_APP_TITLE=\"Axi Docs Control\" pnpm run build",
+    "build:display": "REACT_APP_TITLE=\"Axi Docs Display v2.0 OTA Test\" pnpm run build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/device": "^8.0.1",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/geolocation": "^8.0.0",
+    "@capacitor/synapse": "^1.0.4",
+    "@capawesome-team/capacitor-file-opener": "^8.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "typescript": "^5.9.3"
+  },
+  "browserslist": {
+    "production": [
+      "last 1 electron version"
+    ],
+    "development": [
+      "last 1 electron version"
+    ]
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.2.0",
+    "@types/node": "^20.19.41"
+  }
+}

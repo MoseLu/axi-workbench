@@ -1,0 +1,59 @@
+{
+  "name": "axi-docs-control",
+  "version": "1.0.0",
+  "description": "Axi Docs Control",
+  "main": "main.js",
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "build:ts": "tsc",
+    "start": "tsc && electron .",
+    "build": "tsc && electron-builder --win --x64",
+    "pack": "tsc && electron-builder --win --dir"
+  },
+  "dependencies": {
+    "electron-log": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "app-builder-bin": "^3.5.10",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.axi.docs.control",
+    "productName": "Axi Docs Control",
+    "extends": null,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../build",
+        "to": "webapp"
+      }
+    ],
+    "win": {
+      "icon": "../assets/logo-256X256.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

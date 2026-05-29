@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportHeight="108"
+    android:viewportWidth="108">
+    <!-- 阴影层 -->
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M32,67C32,67 38.39,55.99 44.13,53.95C51.37,51.37 70.14,52.57 70.14,52.57L82.26,64.69L82,82.01L75.97,81.97L32,67Z"
+        android:strokeColor="#00000000"
+        android:strokeWidth="1">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="78.5885"
+                android:endY="80.9159"
+                android:startX="48.7653"
+                android:startY="51.0927"
+                android:type="linear">
+                <item
+                    android:color="#33000000"
+                    android:offset="0.0" />
+                <item
+                    android:color="#00000000"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- 主体：剪贴板图标，完全位于安全区域内（x:18-90, y:18-90） -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="nonZero"
+        android:pathData="M68.94,44.02L68.94,44.02C74.44,48.07 78,54.61 78,62L34,62C34,54.61 37.56,48.11 42.98,44.06L38.18,39.19C37.45,38.45 37.45,37.3 38.18,36.56C38.91,35.81 40.05,35.81 40.78,36.56L46.25,42.05C49.18,40.57 52.48,39.71 56,39.71C59.48,39.71 62.78,40.57 65.68,42.05L71.11,36.56C71.84,35.81 72.98,35.81 73.71,36.56C74.44,37.3 74.44,38.45 73.71,39.19L68.94,44.02ZM64.94,54.92C66.08,54.92 67,54.01 67,52.88C67,51.76 66.08,50.85 64.94,50.85C63.8,50.85 62.88,51.76 62.88,52.88C62.88,54.01 63.8,54.92 64.94,54.92ZM47.06,54.92C48.2,54.92 49.13,54.01 49.13,52.88C49.13,51.76 48.2,50.85 47.06,50.85C45.92,50.85 45,51.76 45,52.88C45,54.01 45.92,54.92 47.06,54.92Z"
+        android:strokeColor="#00000000"
+        android:strokeWidth="1" />
+</vector>

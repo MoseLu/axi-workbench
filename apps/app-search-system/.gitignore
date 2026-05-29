@@ -1,0 +1,78 @@
+# 敏感配置文件
+backend/config.json
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.pyc
+**/*.pyo
+**/*.egg-info/
+**/.eggs/
+**/*.egg
+
+# Build outputs (unify into one place)
+**/dist/
+**/build/
+**/.deepspeed/
+**/control/dist/
+**/control/build/
+backend/bundle_updates/
+backend/installer/
+*.exe
+
+# Node/Electron
+**/node_modules/
+
+# 数据文件
+**/chroma_db/
+**/pdf_images/
+**/*.db
+**/logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# .serena (app cache)
+.serena/
+
+# Claude Code 运行时文件
+.claude/
+
+# OMC (oh-my-claudecode) 运行时文件
+.omc/
+
+# Agent / MCP 运行时数据
+.agents/
+.minimax/
+
+# 后端临时修复脚本
+backend/fix_*.py
+backend/run_fix.py
+backend/update_jobname*.py
+
+# 后端数据目录
+backend/data/data/
+backend/data/server.id
+
+# 前端 Android 构建产物
+frontend/display/android/app/src/main/assets/
+
+# 日志
+*.log
+
+# 临时参考目录
+tmp-claude-code-reference-2/
+tmp-check/
+
+# 临时参考文档
+docs/SOP文档目录结构与命名规范.md
+
+# 插件（非项目代码）
+plugins/

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="description" content="Axi Docs vector index search tool" />
+    <link rel="icon" href="%PUBLIC_URL%/assets/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="256x256" href="%PUBLIC_URL%/assets/logo-256x256.png" />
+    <title>Axi Docs Display</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      :root {
+        --bg-primary: #f5f5f5;
+        --bg-secondary: #ffffff;
+        --bg-tertiary: #e8e8e8;
+        --accent: #2563eb;
+        --accent-hover: #3b82f6;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border: #e5e7eb;
+        --shadow: rgba(0,0,0,0.1);
+        --title-text: #1f2937;
+        --sidebar-bg: #1e293b;
+        --sidebar-text: #e2e8f0;
+        --sidebar-text-muted: #94a3b8;
+        --sidebar-border: rgba(255,255,255,0.1);
+      }
+      [data-theme="dark"] {
+        --bg-primary: #141414 !important;
+        --bg-secondary: #1f1f1f !important;
+        --bg-tertiary: #2a2a2a !important;
+        --accent: #177ddc !important;
+        --accent-hover: #3c9ae8 !important;
+        --text-primary: rgba(255,255,255,0.88) !important;
+        --text-secondary: rgba(255,255,255,0.65) !important;
+        --border: #434343 !important;
+        --shadow: rgba(0,0,0,0.45) !important;
+        --title-text: rgba(255,255,255,0.88) !important;
+        --sidebar-bg: rgba(255,255,255,0.06) !important;
+        --sidebar-text: #e2e8f0 !important;
+        --sidebar-text-muted: #94a3b8 !important;
+        --sidebar-border: rgba(255,255,255,0.08) !important;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        overflow: hidden;
+      }
+      #root { height: 100vh; display: flex; flex-direction: column; }
+    </style>
+  </head>
+  <body>
+    <noscript>需要启用JavaScript</noscript>
+    <div id="root"></div>
+  </body>
+</html>

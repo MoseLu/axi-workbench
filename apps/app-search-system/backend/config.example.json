@@ -1,0 +1,13 @@
+{
+  "dashscope": {
+    "api_key": "YOUR_API_KEY_HERE"
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8765
+  },
+  "pdf_sync": {
+    "source_dir": "\\\\cnszxapp01\\Quality ISO\\01-ProcedureSOPcontrolplan\\02-SOP\\04-SOP(PDF)",
+    "collection_name": "sop_pages"
+  }
+}

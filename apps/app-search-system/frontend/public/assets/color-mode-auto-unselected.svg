@@ -1,0 +1,31 @@
+<svg width="180" height="140" viewBox="0 0 180 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="caa"><rect x="0" y="0" width="180" height="140" rx="14"/></clipPath>
+  </defs>
+  <g clip-path="url(#caa)">
+    <!-- left light half -->
+    <rect x="0" y="0" width="90" height="140" fill="#F0EEE8"/>
+    <!-- right dark half -->
+    <rect x="90" y="0" width="90" height="140" fill="#2C2C2A"/>
+    <!-- top bar left -->
+    <rect x="0" y="0" width="90" height="36" fill="#E5E3DC"/>
+    <!-- top bar right -->
+    <rect x="90" y="0" width="90" height="36" fill="#1A1A18"/>
+    <!-- pill centered -->
+    <rect x="60" y="11" width="60" height="14" rx="7" fill="#888780"/>
+    <!-- body lines left -->
+    <rect x="14" y="48" width="60" height="8" rx="4" fill="#C8C6BC"/>
+    <rect x="14" y="62" width="44" height="7" rx="3.5" fill="#D8D6CE"/>
+    <!-- body lines right -->
+    <rect x="104" y="48" width="60" height="8" rx="4" fill="#4A4A47"/>
+    <rect x="104" y="62" width="44" height="7" rx="3.5" fill="#3A3A38"/>
+    <!-- card light side -->
+    <rect x="14" y="78" width="66" height="42" rx="6" fill="#FFFFFF"/>
+    <!-- card dark side -->
+    <rect x="96" y="78" width="66" height="42" rx="6" fill="#3A3A38"/>
+    <!-- dot light -->
+    <circle cx="68" cy="105" r="6" fill="#E8593C" opacity="0.85"/>
+    <!-- dot dark -->
+    <circle cx="150" cy="105" r="6" fill="#E8593C" opacity="0.85"/>
+  </g>
+</svg>
