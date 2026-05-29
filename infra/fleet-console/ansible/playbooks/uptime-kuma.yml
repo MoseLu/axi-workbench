@@ -1,0 +1,38 @@
+---
+- name: Run Uptime Kuma on the fleet utility host
+  hosts: tag_uptime_kuma
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check Uptime Kuma data volume
+      ansible.builtin.command: docker volume inspect uptime-kuma
+      changed_when: false
+      failed_when: false
+      register: uptime_kuma_volume_state
+
+    - name: Ensure Uptime Kuma data volume exists
+      ansible.builtin.command: docker volume create uptime-kuma
+      when: uptime_kuma_volume_state.rc != 0
+
+    - name: Check Uptime Kuma container
+      ansible.builtin.command: docker container inspect uptime-kuma
+      changed_when: false
+      failed_when: false
+      register: uptime_kuma_container
+
+    - name: Create Uptime Kuma container
+      ansible.builtin.command: >
+        docker run -d
+        --name uptime-kuma
+        --restart=always
+        -p {{ fleet_admin_bind_address }}:{{ uptime_kuma_port }}:3001
+        -v uptime-kuma:/app/data
+        {{ uptime_kuma_image }}
+      when: uptime_kuma_container.rc != 0
+
+    - name: Start Uptime Kuma container
+      ansible.builtin.command: docker start uptime-kuma
+      changed_when: false
+      failed_when: false
+      when: uptime_kuma_container.rc == 0

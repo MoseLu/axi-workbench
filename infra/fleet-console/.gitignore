@@ -1,0 +1,9 @@
+.venv/
+.omx/
+__pycache__/
+*.pyc
+.DS_Store
+dashboard/dist/
+dashboard/node_modules/
+dashboard/*.tsbuildinfo
+scripts/__pycache__/

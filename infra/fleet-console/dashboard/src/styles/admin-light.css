@@ -1,0 +1,439 @@
+:root[data-axi-mode="light"] body {
+  color: #1f2937;
+  background: #f3f6fb;
+}
+
+:root[data-axi-mode="light"] .admin-shell {
+  min-height: 100vh;
+  color: #1f2937;
+  background: #f3f6fb;
+}
+
+:root[data-axi-mode="light"] .admin-sider.ant-layout-sider {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex: 0 0 248px !important;
+  min-width: 248px !important;
+  max-width: 248px !important;
+  width: 248px !important;
+  padding: 16px 12px;
+  overflow-y: auto;
+  background: #111827 !important;
+  border-right: 1px solid rgba(15, 23, 42, 0.18);
+}
+
+:root[data-axi-mode="light"] .admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 4px 8px 14px;
+}
+
+:root[data-axi-mode="light"] .admin-brand-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: #ffffff;
+  background: #1677ff;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(22, 119, 255, 0.28);
+}
+
+:root[data-axi-mode="light"] .admin-brand .ant-typography {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  color: #cbd5e1;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-axi-mode="light"] .admin-brand .ant-typography-strong {
+  color: #ffffff;
+  font-size: 17px;
+}
+
+:root[data-axi-mode="light"] .admin-menu {
+  margin-top: 8px;
+  border-inline-end: 0 !important;
+  background: transparent !important;
+}
+
+:root[data-axi-mode="light"] .admin-menu .ant-menu-item {
+  height: 42px;
+  margin: 4px 0;
+  border-radius: 8px;
+  color: #cbd5e1;
+}
+
+:root[data-axi-mode="light"] .admin-menu .ant-menu-item:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-axi-mode="light"] .admin-menu .ant-menu-item-selected {
+  color: #ffffff !important;
+  background: #1677ff !important;
+  box-shadow: 0 8px 20px rgba(22, 119, 255, 0.2);
+}
+
+:root[data-axi-mode="light"] .admin-main {
+  min-width: 0;
+  background: #f3f6fb;
+}
+
+:root[data-axi-mode="light"] .admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 72px;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+:root[data-axi-mode="light"] .admin-header h3.ant-typography {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+:root[data-axi-mode="light"] .admin-header .ant-typography {
+  margin: 3px 0 0;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+:root[data-axi-mode="light"] .admin-header-actions {
+  justify-content: flex-end;
+}
+
+:root[data-axi-mode="light"] .admin-content {
+  min-width: 0;
+  padding: 20px 24px 28px;
+}
+
+:root[data-axi-mode="light"] .admin-shell .page-stack {
+  gap: 16px;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-typography {
+  color: #1f2937;
+}
+
+:root[data-axi-mode="light"] .admin-shell .admin-brand .ant-typography {
+  color: #94a3b8;
+}
+
+:root[data-axi-mode="light"] .admin-shell .admin-brand .ant-typography-strong {
+  color: #ffffff;
+}
+
+:root[data-axi-mode="light"] .admin-shell .cyber-panel {
+  padding: 16px;
+  overflow: hidden;
+  color: #1f2937;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  backdrop-filter: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .cyber-panel::before,
+:root[data-axi-mode="light"] .admin-shell .cyber-panel::after {
+  display: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .panel-title {
+  margin-bottom: 14px;
+}
+
+:root[data-axi-mode="light"] .admin-shell .panel-title h4.ant-typography {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+:root[data-axi-mode="light"] .admin-shell .panel-title .anticon,
+:root[data-axi-mode="light"] .admin-shell .row-icon {
+  color: #1677ff;
+}
+
+:root[data-axi-mode="light"] .admin-shell .panel-signal {
+  width: 3px;
+  height: 16px;
+  background: #1677ff;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .panel-count {
+  color: #1677ff !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-strip {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-card {
+  min-height: 96px;
+  padding: 15px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-card::after {
+  display: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-corner {
+  right: auto;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: #1677ff;
+  box-shadow: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-violet .stat-corner {
+  background: #722ed1;
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-amber .stat-corner {
+  background: #faad14;
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-card span,
+:root[data-axi-mode="light"] .admin-shell .stat-card em {
+  color: #64748b;
+}
+
+:root[data-axi-mode="light"] .admin-shell .stat-card strong {
+  margin: 8px 0 6px;
+  color: #0f172a;
+  font-size: 30px;
+  text-shadow: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .topology-panel {
+  min-height: 0;
+}
+
+:root[data-axi-mode="light"] .admin-topology {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+:root[data-axi-mode="light"] .admin-node-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+:root[data-axi-mode="light"] .admin-node-head,
+:root[data-axi-mode="light"] .admin-node-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+:root[data-axi-mode="light"] .admin-node-head {
+  margin-bottom: 9px;
+}
+
+:root[data-axi-mode="light"] .admin-node-head .ant-typography {
+  max-width: 180px;
+  overflow: hidden;
+  color: #0f172a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-axi-mode="light"] .admin-node-meta {
+  margin-bottom: 10px;
+}
+
+:root[data-axi-mode="light"] .admin-node-meta span {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-axi-mode="light"] .admin-shell .subtext {
+  color: #64748b !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .donut {
+  background:
+    radial-gradient(circle, #ffffff 0 44%, transparent 45%),
+    conic-gradient(#1677ff 0 52%, #722ed1 52% 78%, #faad14 78% 100%);
+  box-shadow: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .donut strong {
+  color: #0f172a;
+  text-shadow: none;
+}
+
+:root[data-axi-mode="light"] .admin-shell .donut span,
+:root[data-axi-mode="light"] .admin-shell .donut-legend span {
+  color: #64748b;
+}
+
+:root[data-axi-mode="light"] .admin-shell .risk-list > div,
+:root[data-axi-mode="light"] .admin-shell .expand-row div {
+  border-color: #e5e7eb;
+  background: #f8fafc;
+}
+
+:root[data-axi-mode="light"] .admin-shell .risk-list span,
+:root[data-axi-mode="light"] .admin-shell .expand-row strong,
+:root[data-axi-mode="light"] .admin-shell .project-progress strong {
+  color: #0f172a;
+}
+
+:root[data-axi-mode="light"] .admin-shell .expand-row span,
+:root[data-axi-mode="light"] .admin-shell .project-progress span {
+  color: #64748b;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table-wrapper .ant-table {
+  color: #1f2937;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table-thead > tr > th {
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border-bottom-color: #e5e7eb !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table-tbody > tr > td {
+  color: #1f2937;
+  border-bottom-color: #edf2f7 !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table .ant-typography,
+:root[data-axi-mode="light"] .admin-shell .ant-table .ant-badge-status-text {
+  color: #1f2937;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table .subtext,
+:root[data-axi-mode="light"] .admin-shell .ant-table .mono.subtext {
+  color: #64748b !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: #f8fbff !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-table-cell::before {
+  background: #e5e7eb !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-segmented {
+  background: #f8fafc;
+  border-color: #e5e7eb;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-segmented-item {
+  color: #64748b;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-segmented-item-selected {
+  color: #0f172a;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-input-affix-wrapper {
+  background: #ffffff !important;
+  border-color: #d9e2ec !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-input,
+:root[data-axi-mode="light"] .admin-shell .ant-input::placeholder {
+  color: #1f2937 !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-input::placeholder {
+  opacity: 0.55;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-input-affix-wrapper-focused,
+:root[data-axi-mode="light"] .admin-shell .ant-input-affix-wrapper:hover {
+  border-color: #1677ff !important;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1) !important;
+}
+
+:root[data-axi-mode="light"] .admin-shell .ant-btn-primary.ant-btn-background-ghost {
+  border-color: #1677ff;
+  color: #1677ff;
+  background: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  :root[data-axi-mode="light"] .admin-topology {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  :root[data-axi-mode="light"] .admin-shell {
+    display: block;
+  }
+
+  :root[data-axi-mode="light"] .admin-sider.ant-layout-sider {
+    position: relative;
+    height: auto;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  :root[data-axi-mode="light"] .admin-header {
+    align-items: flex-start;
+    height: auto;
+    padding: 16px;
+    flex-direction: column;
+  }
+
+  :root[data-axi-mode="light"] .admin-header-actions {
+    justify-content: flex-start;
+  }
+
+  :root[data-axi-mode="light"] .admin-content {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root[data-axi-mode="light"] .admin-node-head,
+:root[data-axi-mode="light"] .admin-node-meta {
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-axi-mode="light"] .admin-node-head,
+:root[data-axi-mode="light"] .admin-node-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+

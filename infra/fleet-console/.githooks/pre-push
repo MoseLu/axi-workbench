@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+npm --prefix dashboard run check:file-lines:push

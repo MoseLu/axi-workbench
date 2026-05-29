@@ -1,0 +1,61 @@
+---
+fleet_base_packages_debian:
+  - ca-certificates
+  - curl
+  - git
+  - htop
+  - jq
+  - lsof
+  - ncdu
+  - python3
+  - python3-apt
+  - rsync
+  - tmux
+  - unzip
+  - vim
+  - wget
+
+fleet_base_packages_redhat:
+  - ca-certificates
+  - curl
+  - git
+  - htop
+  - jq
+  - lsof
+  - ncdu
+  - python3
+  - rsync
+  - tmux
+  - unzip
+  - vim
+  - wget
+
+fleet_enable_tailscale: true
+fleet_tailscale_yum_repo_url: "https://pkgs.tailscale.com/stable/centos/9/tailscale.repo"
+fleet_tailscale_authkey: ""
+fleet_tailscale_accept_routes: false
+fleet_tailscale_ssh: false
+
+fleet_enable_netdata: true
+fleet_netdata_bind_address: "127.0.0.1"
+fleet_netdata_release_channel: stable
+fleet_netdata_auto_update: true
+fleet_netdata_repo_config_rpm_url: "https://repository.netdata.cloud/repos/repoconfig/el/9/x86_64/netdata-repo-5-4.noarch.rpm"
+fleet_netdata_redhat_releasever_major: "9"
+fleet_netdata_redhat_native_soft_fail: true
+fleet_netdata_static_fallback: false
+fleet_netdata_static_fallback_timeout: 300
+fleet_netdata_claim_token: ""
+fleet_netdata_claim_rooms: ""
+fleet_netdata_claim_url: "https://app.netdata.cloud"
+
+fleet_enable_cockpit: true
+fleet_cockpit_bind_address: "127.0.0.1"
+fleet_enable_docker_baseline: true
+
+fleet_admin_bind_address: "127.0.0.1"
+uptime_kuma_port: 3001
+uptime_kuma_image: "louislam/uptime-kuma:1"
+
+portainer_https_port: 9443
+portainer_image: "portainer/portainer-ce:lts"

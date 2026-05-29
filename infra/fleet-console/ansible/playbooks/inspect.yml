@@ -1,0 +1,38 @@
+---
+- name: Inspect fleet health
+  hosts: lifecycle_active
+  become: false
+  gather_facts: false
+
+  tasks:
+    - name: Ping host
+      ansible.builtin.ping:
+
+    - name: Read uptime
+      ansible.builtin.command: uptime
+      changed_when: false
+      register: uptime_result
+
+    - name: Read disk usage
+      ansible.builtin.command: df -h /
+      changed_when: false
+      register: disk_result
+
+    - name: Read key service states
+      ansible.builtin.shell: |
+        set -eu
+        for unit in ssh sshd docker redis redis-server postgresql rabbitmq-server tailscaled netdata cockpit.socket; do
+          systemctl is-active "$unit" >/dev/null 2>&1 && printf '%s=active\n' "$unit" || true
+        done
+      args:
+        executable: /bin/sh
+      changed_when: false
+      failed_when: false
+      register: service_result
+
+    - name: Print health summary
+      ansible.builtin.debug:
+        msg:
+          - "{{ uptime_result.stdout }}"
+          - "{{ disk_result.stdout_lines | join(' | ') }}"
+          - "{{ service_result.stdout_lines | default([]) | join(', ') }}"

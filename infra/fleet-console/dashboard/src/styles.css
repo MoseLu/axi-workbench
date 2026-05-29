@@ -1,0 +1,32 @@
+@import "./styles/foundation.css";
+@import "./styles/workspace.css";
+@import "./styles/admin-light.css";
+@import "./styles/admin-dark.css";
+
+.fleet-dashboard-shell {
+  --axi-layout-sidebar-bg: var(--axi-bg-surface);
+  --axi-layout-surface: var(--axi-bg-surface);
+  --axi-layout-chrome-bg: var(--axi-bg-page);
+}
+
+.fleet-admin-scope.admin-shell {
+  min-height: auto;
+  overflow: visible;
+  background: transparent;
+}
+
+.fleet-admin-scope.admin-shell::before {
+  display: none;
+}
+
+.hosted-content-scope.admin-shell {
+  height: 100%;
+  min-height: 100%;
+  padding: 18px 16px 28px;
+  overflow: auto;
+  background: transparent;
+}
+
+.hosted-content-scope.admin-shell::before {
+  display: none;
+}

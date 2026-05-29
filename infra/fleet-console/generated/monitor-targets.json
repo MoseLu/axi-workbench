@@ -1,0 +1,62 @@
+{
+  "targets": [
+    {
+      "machine_id": "homelab-ubuntu-vm",
+      "provider": "homelab",
+      "role": "utility",
+      "lifecycle": "active",
+      "name": "homelab ssh",
+      "type": "tcp",
+      "host": "10.10.10.2",
+      "port": 22
+    },
+    {
+      "machine_id": "tencent-2c2g",
+      "provider": "tencent-cloud",
+      "role": "app",
+      "lifecycle": "active",
+      "name": "tencent ssh",
+      "type": "tcp",
+      "host": "43.136.80.19",
+      "port": 22
+    },
+    {
+      "machine_id": "ielts-vocab-prod",
+      "provider": "tencent-cloud",
+      "role": "app",
+      "lifecycle": "active",
+      "name": "ielts-vocab ssh",
+      "type": "tcp",
+      "host": "119.29.182.134",
+      "port": 22
+    },
+    {
+      "machine_id": "ielts-vocab-prod",
+      "provider": "tencent-cloud",
+      "role": "app",
+      "lifecycle": "active",
+      "name": "ielts-vocab https",
+      "type": "http",
+      "url": "https://axiomaticworld.com/"
+    },
+    {
+      "machine_id": "ielts-vocab-prod",
+      "provider": "tencent-cloud",
+      "role": "app",
+      "lifecycle": "active",
+      "name": "ielts-vocab api books",
+      "type": "http",
+      "url": "https://axiomaticworld.com/api/books"
+    },
+    {
+      "machine_id": "aliyun-main",
+      "provider": "aliyun",
+      "role": "utility",
+      "lifecycle": "staging",
+      "name": "aliyun ssh",
+      "type": "tcp",
+      "host": "8.216.45.86",
+      "port": 22
+    }
+  ]
+}

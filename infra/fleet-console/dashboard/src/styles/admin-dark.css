@@ -1,0 +1,559 @@
+:root[data-axi-mode="dark"] body {
+  color: var(--text);
+  background:
+    linear-gradient(112deg, rgba(14, 165, 233, 0.18), transparent 28%),
+    linear-gradient(248deg, rgba(168, 85, 247, 0.24), transparent 30%),
+    linear-gradient(180deg, #040816 0%, #071737 52%, #040816 100%);
+}
+
+:root[data-axi-mode="dark"] .admin-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: var(--text);
+  background:
+    linear-gradient(rgba(34, 211, 238, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+    radial-gradient(ellipse at top, rgba(34, 211, 238, 0.18), transparent 45%),
+    transparent;
+  background-size: 42px 42px, 42px 42px, 100% 100%, 100% 100%;
+}
+
+:root[data-axi-mode="dark"] .admin-shell::before {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.07), transparent 20%, transparent 80%, rgba(168, 85, 247, 0.08)),
+    repeating-linear-gradient(90deg, transparent 0 28px, rgba(125, 211, 252, 0.025) 29px 30px);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.28));
+}
+
+:root[data-axi-mode="dark"] .admin-sider.ant-layout-sider {
+  z-index: 2;
+  padding: 20px 12px;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.08), transparent 34%),
+    rgba(5, 18, 46, 0.88) !important;
+  border-right: 1px solid rgba(34, 211, 238, 0.22);
+  box-shadow: 16px 0 48px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-axi-mode="dark"] .admin-brand {
+  min-height: 72px;
+  padding: 8px 10px 18px;
+}
+
+:root[data-axi-mode="dark"] .admin-brand-mark {
+  color: #dff8ff;
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.95), rgba(96, 165, 250, 0.28)),
+    rgba(6, 18, 48, 0.9);
+  border: 1px solid rgba(125, 211, 252, 0.72);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.36);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .admin-brand .ant-typography {
+  color: var(--muted);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .admin-brand .ant-typography-strong {
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+:root[data-axi-mode="dark"] .admin-menu .ant-menu-item {
+  height: 44px;
+  margin: 6px 0;
+  color: #bceaff;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  background: rgba(4, 15, 38, 0.42);
+}
+
+:root[data-axi-mode="dark"] .admin-menu .ant-menu-item:hover {
+  color: #ffffff !important;
+  border-color: rgba(34, 211, 238, 0.55);
+  background: rgba(34, 211, 238, 0.1) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-menu .ant-menu-item-selected {
+  color: #ffffff !important;
+  border-color: rgba(34, 211, 238, 0.78);
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.34), rgba(168, 85, 247, 0.26)) !important;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+}
+
+:root[data-axi-mode="dark"] .admin-main {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+:root[data-axi-mode="dark"] .admin-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  min-height: 96px;
+  padding: 16px 28px 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(6, 18, 48, 0.92), rgba(6, 18, 48, 0.42));
+  border-bottom: 1px solid rgba(34, 211, 238, 0.26);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-axi-mode="dark"] .admin-header::before {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 50px;
+  height: 2px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--cyan), rgba(168, 85, 247, 0.72), transparent);
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.8);
+}
+
+:root[data-axi-mode="dark"] .admin-header > div:first-child {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: min(560px, 72%);
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+:root[data-axi-mode="dark"] .admin-header h3.ant-typography {
+  margin: 0;
+  color: #f2fbff;
+  font-size: clamp(30px, 3vw, 46px);
+  font-weight: 900;
+  line-height: 1.08;
+  text-shadow: 0 0 28px rgba(34, 211, 238, 0.6);
+}
+
+:root[data-axi-mode="dark"] .admin-header .ant-typography {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+:root[data-axi-mode="dark"] .admin-header-actions {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  align-self: start;
+  justify-content: flex-end;
+}
+
+:root[data-axi-mode="dark"] .admin-content {
+  min-width: 0;
+  padding: 18px 16px 28px;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-typography {
+  color: var(--text);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .cyber-panel {
+  position: relative;
+  padding: 15px;
+  overflow: hidden;
+  color: var(--text);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.1), transparent 28%),
+    linear-gradient(315deg, rgba(168, 85, 247, 0.14), transparent 30%),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--panel-radius);
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 211, 252, 0.07),
+    0 0 28px rgba(34, 211, 238, 0.12),
+    0 18px 48px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(16px);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .cyber-panel::before,
+:root[data-axi-mode="dark"] .admin-shell .cyber-panel::after {
+  display: block;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .panel-title h4.ant-typography {
+  color: #eefbff;
+  font-size: 17px;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .panel-title .anticon,
+:root[data-axi-mode="dark"] .admin-shell .row-icon {
+  color: var(--cyan);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .panel-signal {
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(180deg, var(--cyan), var(--violet));
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.75);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .panel-count {
+  color: var(--cyan) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-strip {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-card {
+  min-height: 100px;
+  padding: 14px 15px;
+  border: 1px solid rgba(96, 165, 250, 0.32);
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.18), transparent 58%),
+    rgba(7, 24, 58, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-card::after {
+  display: block;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-corner {
+  top: 0;
+  right: 16px;
+  left: auto;
+  width: 58px;
+  height: 3px;
+  background: var(--cyan);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.8);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-violet {
+  background:
+    linear-gradient(135deg, rgba(168, 85, 247, 0.28), transparent 58%),
+    rgba(17, 24, 68, 0.82);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-amber {
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.22), transparent 58%),
+    rgba(43, 29, 16, 0.72);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-card span,
+:root[data-axi-mode="dark"] .admin-shell .stat-card em {
+  color: var(--muted);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .stat-card strong {
+  color: #f0fbff;
+  text-shadow: 0 0 16px rgba(34, 211, 238, 0.52);
+}
+
+:root[data-axi-mode="dark"] .admin-topology {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+:root[data-axi-mode="dark"] .admin-node-card {
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  background: rgba(8, 27, 68, 0.68);
+}
+
+:root[data-axi-mode="dark"] .admin-node-head .ant-typography {
+  color: #ecfeff;
+}
+
+:root[data-axi-mode="dark"] .admin-node-meta span,
+:root[data-axi-mode="dark"] .admin-shell .subtext {
+  color: var(--muted) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .donut {
+  background:
+    radial-gradient(circle, rgba(8, 27, 68, 0.95) 0 44%, transparent 45%),
+    conic-gradient(var(--cyan) 0 52%, var(--violet) 52% 78%, var(--amber) 78% 100%);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.18);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .donut strong {
+  color: #f2fbff;
+  text-shadow: none;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .donut span,
+:root[data-axi-mode="dark"] .admin-shell .donut-legend span {
+  color: var(--muted);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .risk-list > div,
+:root[data-axi-mode="dark"] .admin-shell .expand-row div {
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(8, 27, 68, 0.68);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .risk-list span,
+:root[data-axi-mode="dark"] .admin-shell .expand-row strong,
+:root[data-axi-mode="dark"] .admin-shell .project-progress strong {
+  color: #dff7ff;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .expand-row span,
+:root[data-axi-mode="dark"] .admin-shell .project-progress span {
+  color: var(--muted);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table-wrapper .ant-table {
+  color: var(--text);
+  background: rgba(5, 19, 46, 0.76);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table-thead > tr > th {
+  color: #bceaff !important;
+  background: rgba(8, 27, 68, 0.96) !important;
+  border-bottom-color: rgba(34, 211, 238, 0.24) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table-tbody > tr > td {
+  color: var(--text);
+  border-bottom-color: rgba(96, 165, 250, 0.14) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table .ant-typography,
+:root[data-axi-mode="dark"] .admin-shell .ant-table .ant-badge-status-text {
+  color: var(--text);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table .subtext,
+:root[data-axi-mode="dark"] .admin-shell .ant-table .mono.subtext {
+  color: var(--muted) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: rgba(34, 211, 238, 0.08) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table-cell::before {
+  background: rgba(34, 211, 238, 0.2) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-segmented {
+  background: rgba(4, 15, 38, 0.92);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-segmented-item {
+  color: var(--muted);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-segmented-item-selected {
+  color: #dff7ff;
+  background: rgba(34, 211, 238, 0.2);
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-input-affix-wrapper {
+  background: rgba(4, 15, 38, 0.82) !important;
+  border-color: rgba(96, 165, 250, 0.28) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-input,
+:root[data-axi-mode="dark"] .admin-shell .ant-input::placeholder {
+  color: var(--text) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-input::placeholder {
+  opacity: 0.55;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-input-affix-wrapper-focused,
+:root[data-axi-mode="dark"] .admin-shell .ant-input-affix-wrapper:hover {
+  border-color: rgba(34, 211, 238, 0.72) !important;
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.12) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-btn-primary.ant-btn-background-ghost {
+  border-color: rgba(34, 211, 238, 0.58);
+  color: #dff7ff;
+  background: rgba(34, 211, 238, 0.07);
+}
+
+@media (max-width: 900px) {
+  :root[data-axi-mode="dark"] .admin-header > div:first-child {
+    position: static;
+    width: auto;
+    text-align: left;
+    transform: none;
+  }
+}
+
+/* Ant Design admin layout, with the original dark glass skin preserved. */
+:root[data-axi-mode="dark"] .admin-sider.ant-layout-sider {
+  padding: 0 12px 16px;
+  background:
+    linear-gradient(180deg, rgba(6, 18, 48, 0.92), rgba(5, 18, 46, 0.76)),
+    rgba(5, 18, 46, 0.88) !important;
+  backdrop-filter: blur(18px);
+}
+
+:root[data-axi-mode="dark"] .admin-brand {
+  justify-content: center;
+  min-height: 52px;
+  height: 52px;
+  padding: 0 10px;
+}
+
+:root[data-axi-mode="dark"] .admin-menu {
+  margin-top: 20px;
+}
+
+:root[data-axi-mode="dark"] .admin-menu .ant-menu-item {
+  height: 42px;
+  margin: 4px 0;
+  border: 0;
+  color: #bceaff;
+  background: transparent;
+}
+
+:root[data-axi-mode="dark"] .admin-menu .ant-menu-item:hover {
+  color: #ffffff !important;
+  background: rgba(34, 211, 238, 0.1) !important;
+}
+
+:root[data-axi-mode="dark"] .admin-menu .ant-menu-item-selected {
+  color: #ffffff !important;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.32), rgba(168, 85, 247, 0.22)) !important;
+  box-shadow: inset 3px 0 0 var(--cyan), 0 0 18px rgba(34, 211, 238, 0.14);
+}
+
+:root[data-axi-mode="dark"] .admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 64px;
+  height: 64px;
+  padding: 0 24px;
+  overflow: visible;
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.08), transparent 42%, rgba(168, 85, 247, 0.1)),
+    rgba(7, 24, 58, 0.78);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.24);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+}
+
+:root[data-axi-mode="dark"] .admin-header::before {
+  display: none;
+}
+
+:root[data-axi-mode="dark"] .admin-header > div:first-child {
+  position: static;
+  width: auto;
+  min-width: 0;
+  text-align: left;
+  transform: none;
+}
+
+:root[data-axi-mode="dark"] .admin-header h3.ant-typography {
+  margin: 0;
+  overflow: hidden;
+  color: #f2fbff;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+:root[data-axi-mode="dark"] .admin-header-actions {
+  position: static;
+  flex: none;
+  align-self: auto;
+  justify-content: flex-end;
+}
+
+:root[data-axi-mode="dark"] .admin-header.admin-header-compact {
+  min-height: 52px;
+  height: 52px;
+  padding: 0 20px;
+  justify-content: flex-end;
+}
+
+:root[data-axi-mode="dark"] .admin-shell .ant-table-cell {
+  text-align: center !important;
+}
+
+:root[data-axi-mode="dark"] .table-cell-stack {
+  width: 100%;
+  align-items: center;
+  text-align: center;
+}
+
+:root[data-axi-mode="dark"] .table-cell-inline {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+:root[data-axi-mode="dark"] .credential-path {
+  display: inline-block;
+  max-width: min(520px, 62vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  :root[data-axi-mode="dark"] .admin-header {
+    align-items: flex-start;
+    height: auto;
+    min-height: 64px;
+    padding: 14px 16px;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  :root[data-axi-mode="dark"] .admin-shell {
+    display: flex;
+  }
+
+  :root[data-axi-mode="dark"] .admin-shell .admin-sider.ant-layout-sider {
+    inset: 0 auto 0 0;
+    position: fixed !important;
+    flex: 0 0 var(--axi-sidebar-collapsed-width, 60px) !important;
+    width: var(--axi-sidebar-collapsed-width, 60px) !important;
+    min-width: var(--axi-sidebar-collapsed-width, 60px) !important;
+    max-width: var(--axi-sidebar-collapsed-width, 60px) !important;
+    height: 100vh;
+    padding: 10px 6px;
+    overflow-x: hidden;
+  }
+
+  :root[data-axi-mode="dark"] .admin-shell .axi-admin-brand-copy,
+:root[data-axi-mode="dark"] .admin-shell .ant-menu-title-content {
+    display: none;
+  }
+
+  :root[data-axi-mode="dark"] .admin-shell .admin-main {
+    flex: 1 1 auto;
+    margin-left: var(--axi-sidebar-collapsed-width, 60px);
+    width: calc(100% - var(--axi-sidebar-collapsed-width, 60px));
+    max-width: calc(100vw - var(--axi-sidebar-collapsed-width, 60px));
+  }
+
+  :root[data-axi-mode="dark"] .admin-shell .admin-content {
+    width: 100%;
+  }
+
+  :root[data-axi-mode="dark"] .admin-shell .admin-topology {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

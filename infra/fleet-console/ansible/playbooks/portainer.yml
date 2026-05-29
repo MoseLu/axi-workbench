@@ -1,0 +1,39 @@
+---
+- name: Run Portainer on tagged Docker hosts
+  hosts: tag_portainer
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check Portainer data volume
+      ansible.builtin.command: docker volume inspect portainer_data
+      changed_when: false
+      failed_when: false
+      register: portainer_volume_state
+
+    - name: Ensure Portainer data volume exists
+      ansible.builtin.command: docker volume create portainer_data
+      when: portainer_volume_state.rc != 0
+
+    - name: Check Portainer container
+      ansible.builtin.command: docker container inspect portainer
+      changed_when: false
+      failed_when: false
+      register: portainer_container
+
+    - name: Create Portainer container
+      ansible.builtin.command: >
+        docker run -d
+        --name portainer
+        --restart=always
+        -p {{ fleet_admin_bind_address }}:{{ portainer_https_port }}:9443
+        -v /var/run/docker.sock:/var/run/docker.sock
+        -v portainer_data:/data
+        {{ portainer_image }}
+      when: portainer_container.rc != 0
+
+    - name: Start Portainer container
+      ansible.builtin.command: docker start portainer
+      changed_when: false
+      failed_when: false
+      when: portainer_container.rc == 0

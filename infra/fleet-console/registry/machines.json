@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "ssh_port": 22,
+    "ansible_python_interpreter": "/usr/bin/python3",
+    "credential_vault_path": "/Users/mose/knowledge_base"
+  },
+  "machines": [
+    {
+      "id": "homelab-ubuntu-vm",
+      "display_name": "VM Workspace",
+      "provider": "homelab",
+      "region": "10.10.10.0/24 直连",
+      "spec": "VMware Ubuntu",
+      "role": "utility",
+      "ssh_user": "feiyu",
+      "public_ip": "10.10.10.2",
+      "bootstrap_host": "10.10.10.2",
+      "tailscale_name": "server-local",
+      "ssh_key_path": "~/.ssh/id_ed25519_homelab",
+      "lifecycle": "active",
+      "tags": [
+        "core",
+        "db",
+        "docker",
+        "portainer",
+        "uptime_kuma",
+        "utility"
+      ],
+      "monitors": [
+        {
+          "name": "homelab ssh",
+          "type": "tcp",
+          "host": "10.10.10.2",
+          "port": 22
+        }
+      ]
+    },
+    {
+      "id": "tencent-2c2g",
+      "display_name": "腾讯云 2核2G",
+      "provider": "tencent-cloud",
+      "spec": "2核2G",
+      "role": "app",
+      "ssh_user": "root",
+      "public_ip": "43.136.80.19",
+      "bootstrap_host": "43.136.80.19",
+      "tailscale_name": "",
+      "ssh_key_path": "~/.ssh/tencent-2c2g-codex-hermes.pem",
+      "credential_ref": "bw://item/server/tencent/2c2g-main-ssh/notes",
+      "credential_profile": "tencent-2c2g",
+      "credential_status": "managed_by_bitwarden",
+      "lifecycle": "active",
+      "tags": [
+        "app",
+        "core",
+        "public",
+        "tencent"
+      ],
+      "monitors": [
+        {
+          "name": "tencent ssh",
+          "type": "tcp",
+          "host": "43.136.80.19",
+          "port": 22
+        }
+      ]
+    },
+    {
+      "id": "ielts-vocab-prod",
+      "display_name": "腾讯云 2核4G / IELTS 生产",
+      "provider": "tencent-cloud",
+      "spec": "2核4G",
+      "role": "app",
+      "ssh_user": "root",
+      "public_ip": "119.29.182.134",
+      "bootstrap_host": "119.29.182.134",
+      "tailscale_name": "",
+      "ssh_key_path": "/Users/mose/Downloads/ssh.pem",
+      "lifecycle": "active",
+      "tags": [
+        "app",
+        "core",
+        "db",
+        "ielts-vocab",
+        "production",
+        "public"
+      ],
+      "monitors": [
+        {
+          "name": "ielts-vocab ssh",
+          "type": "tcp",
+          "host": "119.29.182.134",
+          "port": 22
+        },
+        {
+          "name": "ielts-vocab https",
+          "type": "http",
+          "url": "https://axiomaticworld.com/"
+        },
+        {
+          "name": "ielts-vocab api books",
+          "type": "http",
+          "url": "https://axiomaticworld.com/api/books"
+        }
+      ]
+    },
+    {
+      "id": "aliyun-main",
+      "display_name": "阿里云 Tokyo",
+      "provider": "aliyun",
+      "region": "Tokyo",
+      "role": "utility",
+      "ssh_user": "root",
+      "public_ip": "8.216.45.86",
+      "bootstrap_host": "8.216.45.86",
+      "tailscale_name": "",
+      "ssh_key_path": "/Users/mose/Downloads/mose.pem",
+      "credential_status": "local_key_file",
+      "lifecycle": "staging",
+      "tags": [
+        "aliyun",
+        "core",
+        "public",
+        "utility"
+      ],
+      "monitors": [
+        {
+          "name": "aliyun ssh",
+          "type": "tcp",
+          "host": "8.216.45.86",
+          "port": 22
+        }
+      ]
+    }
+  ]
+}
