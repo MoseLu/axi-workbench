@@ -1,0 +1,17 @@
+{
+  "brandColor": "#10B981",
+  "capabilityLabels": [
+    "wechat",
+    "im",
+    "mobile-handoff"
+  ],
+  "category": "Productivity",
+  "description": "Bridge real Codex threads to WeChat iLink for phone handoff.",
+  "developerName": "Local",
+  "displayName": "WeChat IM",
+  "id": "wechat-im.local",
+  "mcpConfigPath": ".mcp.json",
+  "skillsPath": "skills",
+  "source": "local",
+  "version": "0.2.0"
+}

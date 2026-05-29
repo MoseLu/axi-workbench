@@ -1,0 +1,41 @@
+{
+  "name": "wechat-im",
+  "version": "0.2.0",
+  "description": "Bridge real Codex threads to WeChat iLink so a phone can continue the same session.",
+  "author": {
+    "name": "Local",
+    "email": "local@example.invalid",
+    "url": "https://github.com/local"
+  },
+  "homepage": "https://github.com/local/wechat-im",
+  "repository": "https://github.com/local/wechat-im",
+  "license": "MIT",
+  "keywords": [
+    "wechat",
+    "im",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "WeChat IM",
+    "shortDescription": "Continue Codex sessions from WeChat",
+    "longDescription": "Poll WeChat iLink messages, bind a WeChat chat to a real Codex thread, and continue that same Codex session from a phone.",
+    "developerName": "Local",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/local/wechat-im",
+    "privacyPolicyURL": "https://github.com/local/wechat-im",
+    "termsOfServiceURL": "https://github.com/local/wechat-im",
+    "defaultPrompt": [
+      "列出最近的 Codex 会话并绑定到微信",
+      "检查微信 IM 和 Codex 线程桥是否在线",
+      "从微信收取新消息并继续同一个 Codex 会话"
+    ],
+    "brandColor": "#10B981",
+    "screenshots": []
+  }
+}

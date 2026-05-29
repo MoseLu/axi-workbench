@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stabilize Clash Node"
+  short_description: "Bind a stable non-HK Clash node"
+  default_prompt: "Use $stabilize-clash-node to find and bind a stable non-HK node for OpenAI/Codex traffic."

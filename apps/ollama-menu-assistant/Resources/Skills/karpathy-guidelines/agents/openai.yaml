@@ -1,0 +1,6 @@
+interface:
+  display_name: "Karpathy Guidelines"
+  short_description: "Keep coding changes simple, scoped, and verified"
+  default_prompt: "Use $karpathy-guidelines when writing, reviewing, or refactoring code."
+policy:
+  allow_implicit_invocation: true

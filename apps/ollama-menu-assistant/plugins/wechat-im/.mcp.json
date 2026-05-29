@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "wechat-im": {
+      "command": "./scripts/wechat-im-mcp.js",
+      "cwd": ".",
+      "note": "Local stdio MCP server for polling WeChat iLink, binding WeChat chats to real Codex threads across Codex/Cockpit homes, and resuming those threads."
+    }
+  }
+}

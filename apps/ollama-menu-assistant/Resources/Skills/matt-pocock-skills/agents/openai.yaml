@@ -1,0 +1,7 @@
+interface:
+  display_name: "Matt Pocock Skills"
+  short_description: "Disciplined engineering workflow router"
+  default_prompt: "Use $matt-pocock-skills to diagnose this bug with a tight feedback loop."
+
+policy:
+  allow_implicit_invocation: true

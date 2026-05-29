@@ -1,0 +1,4 @@
+interface:
+  display_name: "Summary"
+  short_description: "Write a handoff summary for a new thread"
+  default_prompt: "Use $summary to write a compact handoff summary for continuing this Codex thread in a new conversation."

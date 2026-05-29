@@ -1,0 +1,20 @@
+{
+  "name": "ollama-menu-assistant-local",
+  "interface": {
+    "displayName": "Ollama Menu Assistant Local"
+  },
+  "plugins": [
+    {
+      "name": "wechat-im",
+      "source": {
+        "source": "local",
+        "path": "./plugins/wechat-im"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

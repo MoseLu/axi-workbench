@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Commit Batch"
+  short_description: "Split a dirty git tree into ordered feature commits"
+  default_prompt: "Use $git-commit-batch to inspect the current repo, then run the direct execute flow to batch commits and write the submit log."
