@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { RegisterInput } from '@epap/schemas';
+import { RegisterInput } from '@axi/workstation-contracts';
 import { useAuth } from '../contexts/AuthContext';
 
 const Register: React.FC = () => {
@@ -124,7 +124,7 @@ const Register: React.FC = () => {
             fontSize: 14, 
             color: 'rgba(255, 255, 255, 0.5)',
           }}>
-            Join EPAP Portal to get started
+            Join Axi Workstation to get started
           </p>
         </div>
 

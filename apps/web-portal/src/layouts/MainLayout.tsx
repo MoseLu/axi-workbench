@@ -2,12 +2,13 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   HomeOutlined,
   ProjectOutlined,
-  AppmapOutlined,
+  ApartmentOutlined,
   BookOutlined,
   SettingOutlined,
   UserOutlined,
   LogoutOutlined,
   LoginOutlined,
+  ControlOutlined,
 } from '@ant-design/icons';
 import { AppLayout, Topbar, SidebarMenu } from '@epap/ui';
 import type { MenuItem } from '@epap/ui';
@@ -16,8 +17,9 @@ import { useAuth } from '../contexts/AuthContext';
 // Menu items for the sidebar
 const menuItems: MenuItem[] = [
   { key: '/', icon: <HomeOutlined />, label: 'Home' },
+  { key: '/command-center', icon: <ControlOutlined />, label: 'Command Center' },
   { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
-  { key: '/workflows', icon: <AppmapOutlined />, label: 'Workflows' },
+  { key: '/workflows', icon: <ApartmentOutlined />, label: 'Workflows' },
   { key: '/knowledge', icon: <BookOutlined />, label: 'Knowledge Base' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
 ];
@@ -44,7 +46,7 @@ const MainLayout: React.FC = () => {
     <Topbar
       left={
         <div style={{ fontWeight: 600, fontSize: 16, paddingLeft: 16 }}>
-          EPAP Portal
+          Axi Workstation
         </div>
       }
       right={

@@ -10,7 +10,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@epap/schemas": "workspace:*",
+    "@ant-design/icons": "^5.2.6",
+    "@axi/workstation-contracts": "workspace:*",
     "@epap/types": "workspace:*",
     "@epap/utils": "workspace:*",
     "@epap/ui": "workspace:*",

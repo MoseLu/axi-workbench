@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import CommandCenter from './pages/CommandCenter';
 import { AuthProvider } from './contexts/AuthContext';
 
 const queryClient = new QueryClient({
@@ -28,6 +29,7 @@ const App: React.FC = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Home />} />
+              <Route path="command-center" element={<CommandCenter />} />
               <Route path="projects" element={<Projects />} />
               <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="workflows" element={<div>Workflows Page - Coming Soon</div>} />

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { LoginInput, RegisterInput, User } from '@epap/schemas';
-import { useLogin as useLoginMutation, useRegister as useRegisterMutation } from '@epap/api-client/hooks';
+import type { LoginInput, RegisterInput, User } from '@axi/workstation-contracts';
+import { useLogin as useLoginMutation, useRegister as useRegisterMutation } from '@epap/api-client';
 
 interface AuthContextType {
   user: User | null;

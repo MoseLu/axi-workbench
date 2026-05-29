@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LoginInput } from '@epap/schemas';
+import { LoginInput } from '@axi/workstation-contracts';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -115,7 +115,7 @@ const Login: React.FC = () => {
             fontSize: 14, 
             color: 'rgba(255, 255, 255, 0.5)',
           }}>
-            Sign in to your EPAP Portal account
+            Sign in to your Axi Workstation account
           </p>
         </div>
 
