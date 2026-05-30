@@ -36,7 +36,7 @@ export const AXI_CODER_PRODUCT_SURFACE: AxiCoderProductSurface = {
     "artifact_review",
   ],
   consumesContracts: [
-    "axi-workstation",
+    "axi-workbench",
     "axi-agent",
     "axi-model-gateway",
     "axi-accounts",

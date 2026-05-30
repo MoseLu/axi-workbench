@@ -5,8 +5,11 @@ import { WorkbenchPanel } from "../product/WorkbenchPanel";
 import { buildAxiCoderWorkbenchModel, type WorkbenchTarget } from "../product/axiCoderWorkbench";
 import type { AxiSuiteSnapshot } from "../mobile/axiSuiteSnapshot";
 import type { CliRoute, Provider, RequestLog } from "../providers/types";
+import { ProjectCompletionPanel } from "./ProjectCompletionPanel";
+import type { ProjectCompletionSnapshot } from "./projectCompletion";
 
 type OverviewPageProps = {
+  completionSnapshot: ProjectCompletionSnapshot | null;
   providers: Provider[];
   routes: CliRoute[];
   logs: RequestLog[];
@@ -14,7 +17,7 @@ type OverviewPageProps = {
   onAction: (target: WorkbenchTarget | "mobile" | "agent") => void;
 };
 
-export function OverviewPage({ providers, routes, logs, suiteSnapshot, onAction }: OverviewPageProps) {
+export function OverviewPage({ completionSnapshot, providers, routes, logs, suiteSnapshot, onAction }: OverviewPageProps) {
   const workbenchModel = buildAxiCoderWorkbenchModel();
   const enabledRoutes = routes.filter((route) => route.enabled).length;
   const successLogs = logs.filter((log) => log.status === "success").length;
@@ -29,6 +32,7 @@ export function OverviewPage({ providers, routes, logs, suiteSnapshot, onAction 
       </div>
 
       <WorkbenchPanel model={workbenchModel} onAction={onAction} />
+      <ProjectCompletionPanel snapshot={completionSnapshot} />
 
       <div className="ops-grid">
         <article className="ops-panel">

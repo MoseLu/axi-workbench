@@ -12,6 +12,11 @@ import type {
   TerminalTranscriptResult,
 } from "../features/providers/types";
 import { buildMockAxiSuiteSnapshot, type AxiSuiteSnapshot } from "../features/mobile/axiSuiteSnapshot";
+import {
+  assertProjectCompletionSnapshot,
+  emptyProjectCompletionSnapshot,
+  type ProjectCompletionSnapshot,
+} from "../features/workbench/projectCompletion";
 import { isHostedApp } from "./hosted";
 
 declare global {
@@ -54,12 +59,22 @@ let mockTerminalCommands: TerminalCommandConfig[] = Object.entries(defaultTermin
   updatedAt: new Date().toISOString(),
 }));
 
-async function call<T>(command: string, args: Record<string, unknown>, fallback: () => T): Promise<T> {
+async function call<T>(command: string, args: Record<string, unknown>, fallback: () => T | Promise<T>): Promise<T> {
   if (!isTauri) {
     await new Promise((resolve) => window.setTimeout(resolve, 120));
     return fallback();
   }
   return invoke<T>(command, args);
+}
+
+async function fetchProjectCompletionSnapshot(): Promise<ProjectCompletionSnapshot> {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}workspace-project-completion.json`, { cache: "no-store" });
+    if (!response.ok) return emptyProjectCompletionSnapshot;
+    return assertProjectCompletionSnapshot(await response.json());
+  } catch {
+    return emptyProjectCompletionSnapshot;
+  }
 }
 
 export const api = {
@@ -202,6 +217,9 @@ export const api = {
   },
   getAxiSuiteSnapshot() {
     return call<AxiSuiteSnapshot>("get_axi_suite_snapshot", {}, buildMockAxiSuiteSnapshot);
+  },
+  getProjectCompletionSnapshot() {
+    return fetchProjectCompletionSnapshot();
   },
 };
 

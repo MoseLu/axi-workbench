@@ -668,6 +668,127 @@ code {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.project-completion-panel {
+  gap: 12px;
+}
+
+.panel-meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  margin-left: auto;
+}
+
+.completion-metrics {
+  border-block: 1px solid var(--border);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.completion-stat {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.completion-stat + .completion-stat {
+  border-left: 1px solid var(--border);
+}
+
+.completion-stat span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.completion-stat strong {
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.completion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.completion-empty {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 0;
+}
+
+.completion-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 104px minmax(0, 1fr) 72px;
+  min-height: 42px;
+}
+
+.completion-row strong,
+.completion-row small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.completion-row strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.completion-row small {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.completion-stage,
+.completion-docs {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 5px;
+  justify-content: center;
+  min-height: 26px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.completion-stage.is-success {
+  background: #eaf8ef;
+  color: #0f6b39;
+}
+
+.completion-stage.is-info {
+  background: #edf5ff;
+  color: #165fb7;
+}
+
+.completion-stage.is-warning {
+  background: #fff8e8;
+  color: #8a5a08;
+}
+
+.completion-stage.is-danger {
+  background: #ffecec;
+  color: #b42318;
+}
+
+.completion-stage.is-neutral,
+.completion-docs {
+  background: #f4f6f8;
+  color: #5f6b7a;
+}
+
 .ops-panel,
 .detail-card,
 .provider-edit-card {
@@ -1805,6 +1926,7 @@ label {
   }
 
   .overview-metrics,
+  .completion-metrics,
   .usage-grid,
   .param-grid,
   .param-grid.compact,
@@ -1814,6 +1936,16 @@ label {
   .workbench-stats,
   .mobile-hero,
   .form-grid.two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .completion-stat + .completion-stat {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .completion-row {
+    align-items: start;
     grid-template-columns: 1fr;
   }
 

@@ -10,6 +10,10 @@ type WorkspaceProject = {
   provides: string[];
   consumes?: string[];
   contracts?: string[];
+  completion?: {
+    stage: string;
+    confidence: string;
+  };
 };
 
 type WorkspaceGraph = {
@@ -54,8 +58,12 @@ describe("Axi Coder workspace E2E contract", () => {
       ]),
     );
     expect(axiCoder.consumes).toEqual(
-      expect.arrayContaining(["axi-workstation", "axi-agent", "axi-model-gateway", "axi-accounts", "axi-notify"]),
+      expect.arrayContaining(["axi-workbench", "axi-agent", "axi-model-gateway", "axi-accounts", "axi-notify"]),
     );
+    expect(axiCoder.completion).toMatchObject({
+      stage: "building",
+      confidence: "medium",
+    });
     expect(modelGateway).toMatchObject({
       path: "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
       kind: "infrastructure-contract-consumed-by-axi-coder",

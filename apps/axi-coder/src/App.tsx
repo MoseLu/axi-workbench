@@ -9,6 +9,7 @@ import { LogsPage, type LogFilter } from "./features/logs/LogsPage";
 import { MobilePage } from "./features/mobile/MobilePage";
 import type { AxiSuiteSnapshot } from "./features/mobile/axiSuiteSnapshot";
 import type { WorkbenchTarget } from "./features/product/axiCoderWorkbench";
+import type { ProjectCompletionSnapshot } from "./features/workbench/projectCompletion";
 import {
   ProvidersPage,
   type ProviderCardModel,
@@ -44,6 +45,7 @@ export function App() {
   const [autoPrompt, setAutoPrompt] = useState("调试一个 TypeScript CLI 代理路由，场景是 429 响应失败");
   const [autoParams, setAutoParams] = useState<AutoParameterResult | null>(null);
   const [suiteSnapshot, setSuiteSnapshot] = useState<AxiSuiteSnapshot | null>(null);
+  const [projectCompletion, setProjectCompletion] = useState<ProjectCompletionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
 
   const terminal = useTerminalWorkbench({
@@ -57,6 +59,7 @@ export function App() {
   useEffect(() => {
     void refreshAll();
     void refreshSuiteSnapshot();
+    void refreshProjectCompletion();
   }, []);
 
   useEffect(() => {
@@ -105,6 +108,17 @@ export function App() {
       setNotice(errorMessage(error));
     } finally {
       setBusy((current) => (current === "suite-snapshot" ? null : current));
+    }
+  }
+
+  async function refreshProjectCompletion() {
+    setBusy((current) => current ?? "completion-snapshot");
+    try {
+      setProjectCompletion(await api.getProjectCompletionSnapshot());
+    } catch (error) {
+      setNotice(errorMessage(error));
+    } finally {
+      setBusy((current) => (current === "completion-snapshot" ? null : current));
     }
   }
 
@@ -312,7 +326,16 @@ export function App() {
   function renderActivePage() {
     switch (activeRoute) {
       case "/overview":
-        return <OverviewPage providers={providers} routes={routes} logs={logs} suiteSnapshot={suiteSnapshot} onAction={openWorkbenchAction} />;
+        return (
+          <OverviewPage
+            completionSnapshot={projectCompletion}
+            logs={logs}
+            providers={providers}
+            routes={routes}
+            suiteSnapshot={suiteSnapshot}
+            onAction={openWorkbenchAction}
+          />
+        );
       case "/terminal":
         return (
           <TerminalPage
