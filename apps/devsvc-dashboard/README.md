@@ -46,6 +46,10 @@ open "src-tauri/target/release/bundle/macos/Axi Dashboard.app"
 
 ## Axi Dashboard Host
 
+The dashboard is an AxiomaticWorld (公理世界) surface. `Axi` is the stable short
+prefix used for local ids and UI labels; it should not be expanded into path or
+package renames without a dedicated migration.
+
 `config/axi-apps.json` declares Axi applications that can be opened inside the
 dashboard under stable routes such as `/apps/axi-fleet-console/dashboard`. The
 dashboard allocates the real loopback port at runtime and injects it through
@@ -60,8 +64,8 @@ Notify/Mobile, Todo, Axi UI, and the local registry. New Axi entrypoints should
 be registered here or in `config/axi-apps.json` instead of creating a separate
 dashboard shell.
 
-In the dashboard sidebar, `Axi 应用` now only lists openable hosted apps, while
-`Axi 资源` holds the resource index and other non-app entries.
+In the dashboard sidebar, `Axi 应用` lists **Axi Dashboard Apps** only, while
+`Axi 资源` holds the broader **Axi Resources** index and other non-app entries.
 
 The desktop shell lives under `src-tauri/` and follows the workspace Tauri
 starter boundary: shared cache/bootstrap conventions stay in

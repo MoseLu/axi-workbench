@@ -71,7 +71,7 @@
   },
   {
     "appId": "axi-coder",
-    "title": "Axi 编码器",
+    "title": "Axi Coder",
     "icon": "workbench",
     "cwd": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
