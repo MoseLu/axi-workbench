@@ -14,6 +14,18 @@ fleet_netdata_homelab_ubuntu_vm() {
   ssh -F "$FLEET_SSH_CONFIG" -N -L "${1:-19999}:127.0.0.1:19999" fleet-homelab-ubuntu-vm
 }
 
+fleet_ssh_windows_host() {
+  ssh -F "$FLEET_SSH_CONFIG" fleet-windows-host "$@"
+}
+
+fleet_cockpit_windows_host() {
+  ssh -F "$FLEET_SSH_CONFIG" -N -L "${1:-9090}:127.0.0.1:9090" fleet-windows-host
+}
+
+fleet_netdata_windows_host() {
+  ssh -F "$FLEET_SSH_CONFIG" -N -L "${1:-19999}:127.0.0.1:19999" fleet-windows-host
+}
+
 fleet_ssh_tencent_2c2g() {
   ssh -F "$FLEET_SSH_CONFIG" fleet-tencent-2c2g "$@"
 }

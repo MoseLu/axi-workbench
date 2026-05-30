@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-23T18:49:39.280455+00:00",
+  "generated_at": "2026-05-30T03:14:22.356114+00:00",
   "network": "bootstrap",
   "machines": [
     {
@@ -32,6 +32,61 @@
         }
       ],
       "selected_host": "10.10.10.2"
+    },
+    {
+      "id": "windows-host",
+      "display_name": "Windows Terminal PC",
+      "provider": "homelab",
+      "region": "192.168.101.0/24 LAN",
+      "spec": "Windows 10 Pro / DESKTOP-519U63K",
+      "role": "workstation",
+      "ssh_user": "feiyu",
+      "public_ip": "192.168.101.6",
+      "bootstrap_host": "192.168.101.6",
+      "tailscale_name": "",
+      "ssh_key_path": "~/.ssh/id_ed25519_homelab",
+      "lifecycle": "active",
+      "tags": [
+        "windows",
+        "lan",
+        "workstation",
+        "rdp",
+        "smb",
+        "winrm"
+      ],
+      "monitors": [
+        {
+          "name": "windows-host ssh",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 22
+        },
+        {
+          "name": "windows-host rdp",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 3389
+        },
+        {
+          "name": "windows-host smb",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 445
+        },
+        {
+          "name": "windows-host winrm",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 5985
+        },
+        {
+          "name": "windows-host winrm https",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 5986
+        }
+      ],
+      "selected_host": "192.168.101.6"
     },
     {
       "id": "tencent-2c2g",
@@ -144,6 +199,56 @@
       "type": "tcp",
       "host": "10.10.10.2",
       "port": 22
+    },
+    {
+      "machine_id": "windows-host",
+      "provider": "homelab",
+      "role": "workstation",
+      "lifecycle": "active",
+      "name": "windows-host ssh",
+      "type": "tcp",
+      "host": "192.168.101.6",
+      "port": 22
+    },
+    {
+      "machine_id": "windows-host",
+      "provider": "homelab",
+      "role": "workstation",
+      "lifecycle": "active",
+      "name": "windows-host rdp",
+      "type": "tcp",
+      "host": "192.168.101.6",
+      "port": 3389
+    },
+    {
+      "machine_id": "windows-host",
+      "provider": "homelab",
+      "role": "workstation",
+      "lifecycle": "active",
+      "name": "windows-host smb",
+      "type": "tcp",
+      "host": "192.168.101.6",
+      "port": 445
+    },
+    {
+      "machine_id": "windows-host",
+      "provider": "homelab",
+      "role": "workstation",
+      "lifecycle": "active",
+      "name": "windows-host winrm",
+      "type": "tcp",
+      "host": "192.168.101.6",
+      "port": 5985
+    },
+    {
+      "machine_id": "windows-host",
+      "provider": "homelab",
+      "role": "workstation",
+      "lifecycle": "active",
+      "name": "windows-host winrm https",
+      "type": "tcp",
+      "host": "192.168.101.6",
+      "port": 5986
     },
     {
       "machine_id": "tencent-2c2g",

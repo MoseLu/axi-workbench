@@ -37,6 +37,60 @@
       ]
     },
     {
+      "id": "windows-host",
+      "display_name": "Windows Terminal PC",
+      "provider": "homelab",
+      "region": "192.168.101.0/24 LAN",
+      "spec": "Windows 10 Pro / DESKTOP-519U63K",
+      "role": "workstation",
+      "ssh_user": "feiyu",
+      "public_ip": "192.168.101.6",
+      "bootstrap_host": "192.168.101.6",
+      "tailscale_name": "",
+      "ssh_key_path": "~/.ssh/id_ed25519_homelab",
+      "lifecycle": "active",
+      "tags": [
+        "windows",
+        "lan",
+        "workstation",
+        "rdp",
+        "smb",
+        "winrm"
+      ],
+      "monitors": [
+        {
+          "name": "windows-host ssh",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 22
+        },
+        {
+          "name": "windows-host rdp",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 3389
+        },
+        {
+          "name": "windows-host smb",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 445
+        },
+        {
+          "name": "windows-host winrm",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 5985
+        },
+        {
+          "name": "windows-host winrm https",
+          "type": "tcp",
+          "host": "192.168.101.6",
+          "port": 5986
+        }
+      ]
+    },
+    {
       "id": "tencent-2c2g",
       "display_name": "腾讯云 2核2G",
       "provider": "tencent-cloud",
