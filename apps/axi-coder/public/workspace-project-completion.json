@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-05-30T05:53:59.805Z",
+  "generatedAt": "2026-05-30T06:01:53.330Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 26,
@@ -32,7 +32,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
         "health:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
@@ -432,7 +432,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:swift build",
@@ -533,7 +533,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:test -f scripts/tauri-env.sh",
@@ -645,7 +645,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:python3 -m py_compile app.py",
@@ -815,7 +815,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
         "health:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -861,7 +861,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:test -f package.json",
@@ -911,7 +911,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:test -f go.mod | test -f README.md",
@@ -963,7 +963,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:npm run typecheck | npm run release:preflight",
@@ -1015,7 +1015,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:/Volumes/code/workspace/scripts/workspace-project validate",
@@ -1066,7 +1066,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:python3 -m py_compile main.py",
@@ -1115,7 +1115,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:partial",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
@@ -1166,7 +1166,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:test -f README.md | test -f manifest.json",
@@ -1218,7 +1218,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
         "health:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1264,7 +1264,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
         "health:/Users/mose/.cc-connect/bin/ollama-local models",
@@ -1310,7 +1310,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:pnpm test",
@@ -1361,7 +1361,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-05-30T05:53:59.805Z",
+      "updatedAt": "2026-05-30T06:01:53.330Z",
       "evidence": [
         "docs:legacy",
         "verify:test -d .",
