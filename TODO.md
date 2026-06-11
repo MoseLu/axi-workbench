@@ -25,8 +25,8 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases.
 
 ### Completed — Migrate the project docs manifest to v2
 
-- **Problem:** The v1 manifest listed documents but did not expose the workbench's real entrypoints, six-layer contracts, runtime commands, environment dependencies, active milestones, or fresh smoke evidence.
-- **Solution:** Upgrade `docs/project-docs.manifest.json` to version 2 from repository-local guidance, package scripts, control-plane sources, workspace packages, TODOs, milestones, and docs SOPs.
+- **Problem:** The v1 manifest listed documents but did not expose the workbench's real entrypoints, six-layer contracts, runtime commands, environment dependencies, active milestone, or fresh smoke evidence.
+- **Solution:** Upgrade `docs/project-docs.manifest.json` to version 2 from repository-local guidance, package scripts, control-plane sources, workspace packages, TODOs, milestone, and docs SOPs.
 - **Expected result:** A zero-context agent can enter the canonical workbench, select the correct layer and entrypoint, run the smallest safe command, and identify contract and ownership boundaries without broad rediscovery.
 - **Acceptance:** The manifest contains every v2 onboarding field, parses as JSON, points only to project-local files, contains no secret values, and marks the project verified only after a safe smoke succeeds.
 - **Evidence:** `docs/project-docs.manifest.json`; `pnpm --filter @axi/workstation-control-plane smoke` exited 0 with a 35-resource six-layer snapshot on 2026-06-11.
@@ -36,7 +36,7 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases.
 ### Ongoing — Keep zero-context evidence fresh
 
 - **Problem:** Monorepo package moves, new dashboard apps, service contracts, environment variables, and six-layer ownership changes can make onboarding facts stale quickly.
-- **Solution:** Update the v2 manifest whenever entrypoints, package scripts, contracts, required services, ownership, TODO priorities, milestones, or verification behavior changes.
+- **Solution:** Update the v2 manifest whenever entrypoints, package scripts, contracts, required services, ownership, TODO priorities, milestone, or verification behavior changes.
 - **Expected result:** Future agents can use one current manifest to choose the correct subtree guidance and verification lane.
 - **Acceptance:** Each relevant change updates `updated`, `currentWork`, `contracts`, and `verification`; verified status requires a fresh safe smoke; TODO, milestone, and changelog remain consistent.
 - **Evidence:** Fresh smoke output in `verification.evidence`, JSON/path checks, and a matching `CHANGELOG.md` entry.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-06-11T10:17:07.448Z",
+  "generatedAt": "2026-06-11T10:49:21.343Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 16,
@@ -108,7 +108,7 @@
         "active": [
           "Keep the project documentation contract and generated dossier coverage complete.",
           "Maintain workspace registry coverage and locked documentation sources.",
-          "Continue the VitePress-aligned reader experience and source governance milestones."
+          "Continue the VitePress-aligned reader experience and source governance milestone."
         ],
         "knownFailures": [
           "TODO.md records remaining security, asynchronous I/O, CORS, architecture, UX, and test-coverage work.",

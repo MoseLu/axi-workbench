@@ -15,7 +15,7 @@
 | `AGENTS.md` | Agent rules, boundaries, verification, read order. |
 | `CHANGELOG.md` | Human-visible change log. |
 | `TODO.md` | Requirement-linked task queue. |
-| `MILESTONE.md` | Delivery milestones and evidence. |
+| `MILESTONE.md` | Delivery milestone and evidence. |
 | `PRD.md` | Product/project requirements and non-goals. |
 | `TDD.md` | Technical/test design and verification commands. |
 

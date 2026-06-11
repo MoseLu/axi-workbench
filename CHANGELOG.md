@@ -6,7 +6,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
-- Added the root documentation suite placeholders and governance entrypoints for README, AGENTS, INDEX, PRD, TDD, TODO, and milestones alignment.
+- Added the root documentation suite placeholders and governance entrypoints for README, AGENTS, INDEX, PRD, TDD, TODO, and milestone alignment.
 
 ### Changed
 

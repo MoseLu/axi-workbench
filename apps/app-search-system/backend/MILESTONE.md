@@ -1,6 +1,6 @@
 <!-- Generated: 2026-03-23 | Updated: 2026-03-23 -->
 
-# MILESTONES - backend (Python FastAPI 后端)
+# MILESTONE - backend (Python FastAPI 后端)
 
 > 层级: L3 (Module: backend)
 > 父级里程碑: ../MILESTONE.md (L2 全项目)

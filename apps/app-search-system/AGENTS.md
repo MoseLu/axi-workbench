@@ -9,7 +9,7 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 
 ## Documentation Layers
 
-| Layer | Scope | TODO | MILESTONES | AGENTS |
+| Layer | Scope | TODO | MILESTONE | AGENTS |
 |-------|-------|------|------------|--------|
 | L2 | 全项目 | `./TODO.md` | `./MILESTONE.md` | `./AGENTS.md` |
 | L3 | backend/ | `backend/TODO.md` | `backend/MILESTONE.md` | `backend/AGENTS.md` |
@@ -23,7 +23,7 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 **Overall Progress**: ████████████░░░░ 80%
 **Target Date**: 持续迭代
 
-### Active Milestones
+### Active Milestone
 
 | Milestone | Layer | Progress | Status |
 |-----------|-------|----------|--------|
@@ -49,7 +49,7 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 
 ## Subdirectories / Modules
 
-| Directory | Layer | Purpose | Own TODO | Own MILESTONES |
+| Directory | Layer | Purpose | Own TODO | Own MILESTONE |
 |---------|-------|---------|---------|----------------|
 | `backend/` | L3 | Python FastAPI 后端服务 | ✅ `backend/TODO.md` | ✅ `backend/MILESTONE.md` |
 | `frontend/` | L3 | React 多端前端 | ✅ `frontend/TODO.md` | ✅ `frontend/MILESTONE.md` |

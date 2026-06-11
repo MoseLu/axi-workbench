@@ -17,7 +17,7 @@ This project uses a layered documentation architecture created by `/deepinit`. C
 |-------|----------|-----------|-------|
 | L2 | Project root | `AGENTS.md`, `TODO.md`, `MILESTONE.md` | Whole project |
 | L3 | `backend/`, `frontend/` | `AGENTS.md`, `TODO.md`, `MILESTONE.md` | Independent modules |
-| L4+ | Subdirectories | `AGENTS.md` | Inherits parent TODO/MILESTONES |
+| L4+ | Subdirectories | `AGENTS.md` | Inherits parent TODO/MILESTONE |
 
 **Traceability:** `MILESTONE.md` → `TODO.md` → `AGENTS.md` → source files
 

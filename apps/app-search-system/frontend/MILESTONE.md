@@ -1,6 +1,6 @@
 <!-- Generated: 2026-03-23 | Updated: 2026-03-23 -->
 
-# MILESTONES - frontend (React 多端前端)
+# MILESTONE - frontend (React 多端前端)
 
 > 层级: L3 (Module: frontend)
 > 父级里程碑: ../MILESTONE.md (L2 全项目)

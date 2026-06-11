@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-06-11T10:17:07.448Z",
+  "generatedAt": "2026-06-11T10:49:21.343Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 32,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
@@ -286,7 +286,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -602,7 +602,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -710,7 +710,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -828,7 +828,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -947,7 +947,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1128,7 +1128,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1183,7 +1183,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1193,8 +1193,7 @@
         "package-scripts:test"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1202,10 +1201,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
@@ -1241,7 +1240,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1250,8 +1249,7 @@
         "contracts:3"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1259,10 +1257,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
@@ -1301,7 +1299,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1311,8 +1309,7 @@
         "package-scripts:build"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1320,10 +1317,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
@@ -1411,7 +1408,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1420,8 +1417,7 @@
         "contracts:2"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1429,10 +1425,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
@@ -1468,7 +1464,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1574,7 +1570,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1630,7 +1626,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1639,8 +1635,7 @@
         "contracts:3"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1648,10 +1643,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
@@ -1690,7 +1685,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1745,7 +1740,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -1800,7 +1795,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1810,8 +1805,7 @@
         "package-scripts:build"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1819,10 +1813,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
@@ -1863,7 +1857,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1917,7 +1911,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T10:17:07.448Z",
+      "updatedAt": "2026-06-11T10:49:21.343Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1926,8 +1920,7 @@
         "contracts:1"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。"
       ],
       "docs": {
         "status": "partial",
@@ -1935,10 +1928,10 @@
           "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
-          "TODO.md"
+          "TODO.md",
+          "MILESTONE.md"
         ],
         "missing": [
-          "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",

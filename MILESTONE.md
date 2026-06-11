@@ -1,8 +1,8 @@
-# Milestones
+# Milestone
 
 ## Current Status
 
-Axi Workbench has a root documentation suite target: README, bilingual README, AGENTS, changelog, TODO, milestones, index, PRD, and TDD.
+Axi Workbench has a root documentation suite target: README, bilingual README, AGENTS, changelog, TODO, milestone, index, PRD, and TDD.
 
 ## Milestone 1: Documentation Baseline
 
