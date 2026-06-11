@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-06-11T16:01:06.926Z",
+  "generatedAt": "2026-06-11T16:06:10.873Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 16,
@@ -81,9 +81,7 @@
       "graphId": "axi-docs",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-docs/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
       "commands": {
         "setup": [
@@ -188,9 +186,7 @@
       "graphId": "axi-image-preview",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-image-preview/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Vite and React image preview UI with a local wallpaper library, a stdio MCP upload server, and a reserved macOS Swift desktop shell.",
       "commands": {
         "setup": [
@@ -237,9 +233,7 @@
       "graphId": "axi-notify",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-notify/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
       "commands": {
         "setup": [
@@ -294,9 +288,7 @@
       "graphId": "axi-pet",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "A large Project AIRI-derived monorepo for browser, Electron, mobile, server, plugin, rendering, and bot surfaces for LLM-driven virtual characters.",
       "commands": {
         "setup": [
@@ -399,9 +391,7 @@
       "graphId": "axi-registry",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/infra/axi-registry/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Local-only Verdaccio registry for authenticated publication and local consumption of @axi/* runtime packages.",
       "commands": {
         "setup": [
@@ -448,9 +438,7 @@
       "graphId": "axi-rules",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-rules/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Local authority for Axi agent routing, memory, safety, verification, and generated project/rule indexes, with a React visualization of the memory pipeline.",
       "commands": {
         "setup": [
@@ -498,9 +486,7 @@
       "graphId": "axi-skills",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-skills/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
       "commands": {
         "setup": [
@@ -549,9 +535,7 @@
       "graphId": "axi-tauri-starter",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Shared reference for Tauri 2 desktop-shell layout, command conventions, and reusable npm, pnpm, Cargo, and Rust cache bootstrap.",
       "commands": {
         "setup": [
@@ -598,9 +582,7 @@
       "graphId": "axi-ui",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-ui/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Shared Axi design tokens, presets, React primitives, shell, settings, CRUD, widgets, addons, and Vite tooling published as @axi packages.",
       "commands": {
         "setup": [
@@ -648,9 +630,7 @@
       "graphId": "axi-video-downloader",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-video-downloader/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Local Python tool that coordinates a Flask UI, Android device automation, mitmproxy capture, downloads, and SQLite tracking for personal-device video capture.",
       "commands": {
         "setup": [
@@ -702,9 +682,7 @@
       "graphId": "axi-workbench",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-workbench/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane, dashboard applications, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
       "commands": {
         "setup": [
