@@ -107,7 +107,7 @@
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| MILESTONES.md | `./MILESTONES.md` | 当前文档 |
+| MILESTONE.md | `./MILESTONE.md` | 当前文档 |
 | TODO.md | `./TODO.md` | 全项目任务 |
 | AGENTS.md | `./AGENTS.md` | 目录级 AI 文档 |
 

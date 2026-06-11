@@ -3,7 +3,7 @@
 # MILESTONES - backend (Python FastAPI 后端)
 
 > 层级: L3 (Module: backend)
-> 父级里程碑: ../MILESTONES.md (L2 全项目)
+> 父级里程碑: ../MILESTONE.md (L2 全项目)
 > 更新时间: 2026-03-23
 
 ---
@@ -53,7 +53,7 @@
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| MILESTONES.md (this) | `./MILESTONES.md` | 后端模块里程碑（当前） |
-| MILESTONES.md (parent) | `../MILESTONES.md` | 全项目里程碑 |
+| MILESTONE.md (this) | `./MILESTONE.md` | 后端模块里程碑（当前） |
+| MILESTONE.md (parent) | `../MILESTONE.md` | 全项目里程碑 |
 | TODO.md | `./TODO.md` | 后端模块任务 |
 | AGENTS.md | `./AGENTS.md` | 后端目录 AI 文档 |
