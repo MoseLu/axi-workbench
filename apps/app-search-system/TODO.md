@@ -176,5 +176,5 @@ curl -X POST http://10.80.8.198:8765/api/devices/cleanup-old \
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | AGENTS.md | `./AGENTS.md` | 目录级 AI 文档 |
-| MILESTONES.md | `./MILESTONES.md` | 版本级路线图 |
+| MILESTONE.md | `./MILESTONE.md` | 版本级路线图 |
 | TODO.md | `./TODO.md` | 当前文档 |
