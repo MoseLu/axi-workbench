@@ -11,6 +11,7 @@ All notable local changes to Axi Workbench are tracked here.
 ### Changed
 
 - Documentation ownership is now explicit for `/Volumes/code/workspace/projects/axi-workbench`.
+- Upgraded `docs/project-docs.manifest.json` to the verified v2 zero-context onboarding contract and added freshness governance to `TODO.md`.
 
 ### Notes
 

@@ -1,27 +1,234 @@
 {
-  "version": 1,
+  "version": 2,
   "project": "axi-workbench",
-  "status": "legacy",
+  "name": "Axi Workbench",
+  "status": "verified",
+  "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench",
+  "kind": "pnpm multi-runtime monorepo",
+  "lifecycle": "active",
+  "owner": "Axi Core Projects",
+  "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane, dashboard applications, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+  "readOrder": [
+    "AGENTS.md",
+    "README.md",
+    "docs/rules/epap-six-layer-sop.md",
+    "docs/rules/epap-project-doc-agent-sop.md",
+    "PRD.md"
+  ],
+  "entrypoints": [
+    {
+      "id": "web-portal",
+      "path": "apps/web-portal/src/main.tsx",
+      "purpose": "Primary browser portal for the workbench."
+    },
+    {
+      "id": "control-plane",
+      "path": "services/control-plane/src/server.mjs",
+      "purpose": "Software-layer control API and managed AgentTask runtime surface."
+    },
+    {
+      "id": "communication-gateway",
+      "path": "services/communication-gateway/src/server.mjs",
+      "purpose": "Communication-layer envelope routing and control-plane forwarding."
+    },
+    {
+      "id": "workstation-contracts",
+      "path": "packages/schemas/src/index.ts",
+      "purpose": "Canonical IMEnvelope, AgentTask, and workstation contract exports."
+    },
+    {
+      "id": "fleet-console",
+      "path": "infra/fleet-console/scripts/fleetctl.py",
+      "purpose": "Physical-service inventory and validation CLI."
+    }
+  ],
+  "commands": {
+    "setup": [
+      "pnpm install"
+    ],
+    "start": [
+      "pnpm dev",
+      "pnpm dev:web",
+      "pnpm --filter @axi/workstation-control-plane start",
+      "pnpm --filter @axi/workstation-communication-gateway start"
+    ],
+    "health": [
+      "pnpm --filter @axi/workstation-control-plane smoke",
+      "python3 infra/fleet-console/scripts/fleetctl.py validate"
+    ],
+    "verify": [
+      "pnpm type-check",
+      "pnpm test",
+      "pnpm test:workstation",
+      "pnpm --dir apps/devsvc-dashboard typecheck",
+      "pnpm --dir apps/axi-coder typecheck",
+      "npm --prefix apps/verification-inbox run typecheck"
+    ],
+    "smoke": [
+      "pnpm --filter @axi/workstation-control-plane smoke"
+    ]
+  },
+  "environment": {
+    "runtimes": [
+      "Node.js >=18",
+      "pnpm >=8",
+      "TypeScript",
+      "Go",
+      "Python",
+      "Java"
+    ],
+    "services": [
+      "Control Plane",
+      "Communication Gateway",
+      "PostgreSQL",
+      "Redis",
+      "Kafka",
+      "Qdrant",
+      "MinIO",
+      "Prometheus",
+      "Grafana",
+      "Jaeger"
+    ],
+    "variables": [
+      {
+        "name": "AXI_WORKSTATION_ROOT",
+        "required": false,
+        "secret": false,
+        "source": "control-plane environment"
+      },
+      {
+        "name": "AXI_WORKSTATION_CONTROL_CACHE_DIR",
+        "required": false,
+        "secret": false,
+        "source": "control-plane environment"
+      },
+      {
+        "name": "CC_CONNECT_MEMORY_DATABASE_URL",
+        "required": false,
+        "secret": true,
+        "source": "local credentials or service environment"
+      },
+      {
+        "name": "CODEX_BIN",
+        "required": false,
+        "secret": false,
+        "source": "control-plane environment"
+      },
+      {
+        "name": "AXI_AGENT_PLATFORM_URL",
+        "required": false,
+        "secret": false,
+        "source": "control-plane environment"
+      },
+      {
+        "name": "CONTROL_PLANE_PORT",
+        "required": false,
+        "secret": false,
+        "source": "control-plane environment"
+      },
+      {
+        "name": "AXI_WORKSTATION_CONTROL_PLANE_URL",
+        "required": false,
+        "secret": false,
+        "source": "communication-gateway environment"
+      },
+      {
+        "name": "COMMUNICATION_GATEWAY_PORT",
+        "required": false,
+        "secret": false,
+        "source": "communication-gateway environment"
+      }
+    ]
+  },
+  "contracts": {
+    "provides": [
+      "IMEnvelope and AgentTask schemas",
+      "Six-layer control-plane resource snapshots",
+      "Communication gateway routing",
+      "Axi Dashboard application surfaces",
+      "Axi App CLI scaffolding"
+    ],
+    "consumes": [
+      "Axi Agent Platform API when AXI_AGENT_PLATFORM_URL is configured",
+      "CC-Connect memory database",
+      "Codex CLI or Codex app-server runtime",
+      "Local infrastructure services declared in docker-compose.yml"
+    ],
+    "files": [
+      "packages/schemas/src/index.ts",
+      "services/control-plane/src/control-plane.mjs",
+      "services/communication-gateway/src/gateway.mjs",
+      "docs/rules/epap-six-layer-sop.md",
+      "docs/rules/epap-project-doc-agent-sop.md"
+    ]
+  },
+  "currentWork": {
+    "todo": "TODO.md",
+    "milestone": "MILESTONE.md",
+    "active": [
+      "Keep the root documentation suite current",
+      "Align verification commands with the real project stack",
+      "Preserve ownership and cross-project boundaries",
+      "Complete the operational handoff milestone"
+    ],
+    "knownFailures": [
+      "The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update."
+    ]
+  },
+  "troubleshooting": [
+    {
+      "symptom": "A package command is not found from the repository root.",
+      "diagnosis": "Dependencies are not installed or the target package is outside the current pnpm workspace filter.",
+      "resolution": "Run pnpm install, confirm the package in pnpm-workspace.yaml, and rerun with its package name."
+    },
+    {
+      "symptom": "The control-plane snapshot is empty or the smoke fails.",
+      "diagnosis": "Control-plane resource registration or its local source discovery has regressed.",
+      "resolution": "Run the control-plane tests, inspect services/control-plane/src/control-plane.mjs, and validate the configured workspace root."
+    },
+    {
+      "symptom": "A cross-layer workflow bypasses the control plane.",
+      "diagnosis": "The six-layer SOP was not followed for entry layer, authority source, downstream access, audit, or rendering.",
+      "resolution": "Re-map the workflow using docs/rules/epap-six-layer-sop.md before changing implementation."
+    }
+  ],
+  "decisions": {
+    "adr": "docs/rules/epap-six-layer-sop.md",
+    "changelog": "CHANGELOG.md",
+    "submitLog": "docs/logs/submit/20260611-124603-batch-submit.md"
+  },
   "documents": {
     "readme": "README.md",
     "agents": "AGENTS.md",
     "changelog": "CHANGELOG.md",
     "todo": "TODO.md",
     "milestone": "MILESTONE.md",
-    "prd": "docs/PRD.md",
-    "tdd": "docs/TDD.md",
-    "memory": "docs/MEMORY.md",
-    "adr": "docs/ADR",
+    "index": "INDEX.md",
+    "prd": "PRD.md",
+    "tdd": "TDD.md",
+    "docsIndex": "docs/README.md",
     "manifest": "docs/project-docs.manifest.json"
   },
   "owners": {
+    "product": "Axi Core Projects",
     "docsAgent": "control-plane AgentTask",
-    "memoryPlane": "base_service"
+    "controlPlane": "services/control-plane",
+    "communication": "services/communication-gateway",
+    "contracts": "packages/schemas"
   },
   "verification": {
-    "docs": "manifest JSON parse + required file existence"
+    "status": "verified",
+    "lastVerifiedAt": "2026-06-11",
+    "commands": [
+      "pnpm --filter @axi/workstation-control-plane smoke"
+    ],
+    "evidence": [
+      "Control-plane smoke exited 0 on 2026-06-11.",
+      "Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers."
+    ]
   },
   "created": "2026-06-07",
-  "writer": "workspace-docs-gap-audit-A1",
-  "source": "audit:docs/audit/workspace-docs-gap-audit-2026-06-07.md"
+  "updated": "2026-06-11",
+  "writer": "Codex zero-context-onboarding",
+  "source": "user-authorized zero-context onboarding plan"
 }
