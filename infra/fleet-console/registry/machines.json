@@ -10,12 +10,12 @@
       "id": "homelab-ubuntu-vm",
       "display_name": "VM Workspace",
       "provider": "homelab",
-      "region": "192.168.1.0/24 LAN",
-      "spec": "VMware Ubuntu",
+      "region": "192.168.101.0/24 LAN",
+      "spec": "VMware Ubuntu 24.04 / server-local",
       "role": "utility",
       "ssh_user": "feiyu",
-      "public_ip": "192.168.1.5",
-      "bootstrap_host": "192.168.1.5",
+      "public_ip": "192.168.101.7",
+      "bootstrap_host": "192.168.101.7",
       "tailscale_name": "",
       "ssh_key_path": "~/.ssh/id_ed25519_homelab",
       "lifecycle": "active",
@@ -31,7 +31,7 @@
         {
           "name": "homelab ssh",
           "type": "tcp",
-          "host": "192.168.1.5",
+          "host": "192.168.101.7",
           "port": 22
         }
       ]
