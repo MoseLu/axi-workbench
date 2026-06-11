@@ -9,17 +9,17 @@ This project uses a layered documentation architecture created by `/deepinit`. C
 **Discovery order:**
 1. Read `AGENTS.md` in the current directory and parent directories — these contain AI guidance for each module
 2. Read `TODO.md` to understand current tasks and priorities
-3. Read `MILESTONES.md` to understand version roadmap and project status
+3. Read `MILESTONE.md` to understand version roadmap and project status
 
 **Documentation layers:**
 
 | Layer | Location | Documents | Scope |
 |-------|----------|-----------|-------|
-| L2 | Project root | `AGENTS.md`, `TODO.md`, `MILESTONES.md` | Whole project |
-| L3 | `backend/`, `frontend/` | `AGENTS.md`, `TODO.md`, `MILESTONES.md` | Independent modules |
+| L2 | Project root | `AGENTS.md`, `TODO.md`, `MILESTONE.md` | Whole project |
+| L3 | `backend/`, `frontend/` | `AGENTS.md`, `TODO.md`, `MILESTONE.md` | Independent modules |
 | L4+ | Subdirectories | `AGENTS.md` | Inherits parent TODO/MILESTONES |
 
-**Traceability:** `MILESTONES.md` → `TODO.md` → `AGENTS.md` → source files
+**Traceability:** `MILESTONE.md` → `TODO.md` → `AGENTS.md` → source files
 
 ## Build Commands
 
