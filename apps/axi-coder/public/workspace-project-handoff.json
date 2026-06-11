@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-06-11T15:54:02.004Z",
+  "generatedAt": "2026-06-11T16:01:06.926Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 16,
@@ -25,7 +25,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-agent-platform/VERIFICATION.md"
       ],
       "summary": "Multi-agent collaboration platform combining a FastAPI backend, React dashboard, SubAgent worktree isolation, an MCP model swarm, and the Axi Todo tool.",
       "commands": {
@@ -82,7 +82,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-docs/VERIFICATION.md"
       ],
       "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
       "commands": {
@@ -136,7 +136,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-feishu-codex-bridge/VERIFICATION.md"
       ],
       "summary": "Local Feishu IM bridge that routes messages to Codex CLI, Codex App WebSocket, or Codex Plus CDP execution surfaces and returns replies to Feishu.",
       "commands": {
@@ -189,7 +189,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-image-preview/VERIFICATION.md"
       ],
       "summary": "Vite and React image preview UI with a local wallpaper library, a stdio MCP upload server, and a reserved macOS Swift desktop shell.",
       "commands": {
@@ -238,7 +238,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-notify/VERIFICATION.md"
       ],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
       "commands": {
@@ -295,7 +295,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet/VERIFICATION.md"
       ],
       "summary": "A large Project AIRI-derived monorepo for browser, Electron, mobile, server, plugin, rendering, and bot surfaces for LLM-driven virtual characters.",
       "commands": {
@@ -346,7 +346,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-proxy-companion/VERIFICATION.md"
       ],
       "summary": "Native macOS AppKit companion that starts, stops, inspects, and reports traffic for registered local proxy backends without changing the macOS system proxy.",
       "commands": {
@@ -400,7 +400,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/infra/axi-registry/VERIFICATION.md"
       ],
       "summary": "Local-only Verdaccio registry for authenticated publication and local consumption of @axi/* runtime packages.",
       "commands": {
@@ -449,7 +449,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-rules/VERIFICATION.md"
       ],
       "summary": "Local authority for Axi agent routing, memory, safety, verification, and generated project/rule indexes, with a React visualization of the memory pipeline.",
       "commands": {
@@ -499,7 +499,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-skills/VERIFICATION.md"
       ],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
       "commands": {
@@ -550,7 +550,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/VERIFICATION.md"
       ],
       "summary": "Shared reference for Tauri 2 desktop-shell layout, command conventions, and reusable npm, pnpm, Cargo, and Rust cache bootstrap.",
       "commands": {
@@ -599,7 +599,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-ui/VERIFICATION.md"
       ],
       "summary": "Shared Axi design tokens, presets, React primitives, shell, settings, CRUD, widgets, addons, and Vite tooling published as @axi packages.",
       "commands": {
@@ -649,7 +649,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-video-downloader/VERIFICATION.md"
       ],
       "summary": "Local Python tool that coordinates a Flask UI, Android device automation, mitmproxy capture, downloads, and SQLite tracking for personal-device video capture.",
       "commands": {
@@ -703,7 +703,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-workbench/VERIFICATION.md"
       ],
       "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane, dashboard applications, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
       "commands": {
@@ -763,7 +763,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/ielts-vocab/VERIFICATION.md"
       ],
       "summary": "Full-stack IELTS vocabulary learning product with web, mobile, shared client packages, gateway, split backend services, speech, and production operations.",
       "commands": {
@@ -812,7 +812,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-sports-management-app/VERIFICATION.md"
       ],
       "summary": "Quasar and Vue 3 sports-management application skeleton with Pinia, Vue Router, Vue I18n, and a Capacitor Android wrapper; the backend directory is only a placeholder.",
       "commands": {

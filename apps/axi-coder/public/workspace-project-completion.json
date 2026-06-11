@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-06-11T15:54:02.004Z",
+  "generatedAt": "2026-06-11T16:01:06.926Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 32,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
@@ -295,7 +295,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -621,7 +621,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -734,7 +734,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -864,7 +864,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -988,7 +988,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1176,7 +1176,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1233,7 +1233,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1292,7 +1292,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1353,7 +1353,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1464,7 +1464,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1522,7 +1522,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1630,7 +1630,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1689,7 +1689,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1750,7 +1750,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1807,7 +1807,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -1864,7 +1864,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1928,7 +1928,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1985,7 +1985,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T15:54:02.004Z",
+      "updatedAt": "2026-06-11T16:01:06.926Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
