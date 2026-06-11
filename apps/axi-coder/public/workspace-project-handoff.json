@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-06-11T10:49:21.343Z",
+  "generatedAt": "2026-06-11T13:44:36.761Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 16,
@@ -698,7 +698,8 @@
           "pnpm test:workstation",
           "pnpm --dir apps/devsvc-dashboard typecheck",
           "pnpm --dir apps/axi-coder typecheck",
-          "npm --prefix apps/verification-inbox run typecheck"
+          "npm --prefix apps/verification-inbox run typecheck",
+          "pnpm check:boundaries"
         ],
         "smoke": [
           "pnpm --filter @axi/workstation-control-plane smoke"

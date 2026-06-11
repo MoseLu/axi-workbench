@@ -51,7 +51,7 @@ describe("Axi Coder workspace E2E contract", () => {
         "mac-desktop-client",
         "mobile-companion-client",
         "cli-orchestration",
-        "agent-task-execution",
+        "agent-task-console",
         "model-routing-adapter",
         "terminal-sessions",
         "artifact-review",
