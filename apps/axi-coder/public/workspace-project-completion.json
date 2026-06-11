@@ -1,23 +1,24 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-06-11T09:45:22.329Z",
+  "generatedAt": "2026-06-11T10:17:07.448Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 32,
     "axiTotal": 18,
     "complete": 1,
-    "usableOrBetter": 8,
+    "usableOrBetter": 9,
     "blocked": 0,
     "byStage": {
-      "unassessed": 21,
+      "unassessed": 20,
       "building": 3,
       "usable": 7,
-      "complete": 1
+      "complete": 1,
+      "maintenance": 1
     },
     "byConfidence": {
-      "low": 20,
+      "low": 19,
       "medium": 11,
-      "high": 1
+      "high": 2
     }
   },
   "projects": [
@@ -32,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
@@ -285,7 +286,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -601,7 +602,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -709,7 +710,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -827,7 +828,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -946,7 +947,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1127,7 +1128,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1182,7 +1183,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1240,7 +1241,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1300,7 +1301,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1351,49 +1352,39 @@
     },
     {
       "id": "codex-app-projects",
-      "name": "Codex App Projects",
+      "name": "Workspace Root Anchor",
       "path": "/Volumes/code/workspace",
-      "kind": "workspace",
+      "kind": "workspace-anchor",
       "isAxi": false,
-      "stage": "unassessed",
-      "stageLabel": "未评估",
-      "confidence": "low",
-      "confidenceLabel": "低",
-      "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "stage": "maintenance",
+      "stageLabel": "维护",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Workspace root is a non-git container for project repositories, generated snapshots, and launcher shims.",
+      "updatedAt": "2026-06-11",
       "evidence": [
-        "docs:partial",
-        "handoff:unready",
+        "WORKSPACE_INDEX.md declares the root contract.",
+        "AGENTS.md declares that git work belongs to owning project repositories.",
+        "docs:not-applicable",
+        "handoff:not-applicable",
         "verify:/Volumes/code/workspace/scripts/workspace-project validate",
         "health:test -f /Volumes/code/workspace/WORKSPACE_INDEX.md | test -f /Volumes/code/workspace/workspace.graph.json",
         "contracts:3"
       ],
-      "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
-      ],
+      "remaining": [],
       "docs": {
-        "status": "partial",
+        "status": "not-applicable",
         "present": [
-          "README.md",
-          "AGENTS.md",
-          "CHANGELOG.md",
-          "TODO.md"
+          "/Volumes/code/workspace/WORKSPACE_INDEX.md",
+          "/Volumes/code/workspace/AGENTS.md",
+          "/Volumes/code/workspace/workspace.graph.json"
         ],
-        "missing": [
-          "MILESTONE.md",
-          "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
-        ]
+        "missing": []
       },
       "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "manifest file is missing"
-        ]
+        "status": "not-applicable",
+        "score": null,
+        "errors": []
       },
       "verify": [
         "/Volumes/code/workspace/scripts/workspace-project validate"
@@ -1406,7 +1397,8 @@
         "/Volumes/code/workspace/WORKSPACE_INDEX.md",
         "/Volumes/code/workspace/AGENTS.md",
         "/Volumes/code/workspace/workspace.graph.json"
-      ]
+      ],
+      "workspaceResource": true
     },
     {
       "id": "comfyui",
@@ -1419,7 +1411,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1476,7 +1468,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1582,7 +1574,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1638,7 +1630,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1698,7 +1690,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1753,7 +1745,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -1808,7 +1800,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1871,7 +1863,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1925,7 +1917,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T09:45:22.329Z",
+      "updatedAt": "2026-06-11T10:17:07.448Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
