@@ -71,6 +71,14 @@ export function ServicesPage({ data }: { data: any }) {
       rowSpan: row.serviceIndex === 0 ? row.serviceCount : 0
     };
   }
+  function projectCheckTargets(project: any) {
+    return (project.services || []).flatMap((service: any) =>
+      (service.health?.checks || []).map((check: any, index: number) => ({
+        key: `${service.id}:${index}`,
+        target: check.url || check.command || check.detail || "-"
+      }))
+    );
+  }
   async function loadProjectLogs(project = logProject) {
     if (!project) return;
     setLogLoading(true);
@@ -224,14 +232,17 @@ export function ServicesPage({ data }: { data: any }) {
           align: "center",
           fixed: "end",
           width: 240,
-          render: (_, row) => (
-            <div className="check-target-stack">
-              {row.service.health.checks.length ? row.service.health.checks.map((check, index) => {
-                const target = check.url || check.command || check.detail || "-";
-                return <span className="check-target" aria-label={target} key={index}>{target}</span>;
-              }) : <span className="service-desc">-</span>}
-            </div>
-          )
+          onCell: (row) => projectRowCell(row),
+          render: (_, row) => {
+            const targets = projectCheckTargets(row.project);
+            return (
+              <div className="check-target-stack">
+                {targets.length ? targets.map(({ key, target }) => (
+                  <span className="check-target" aria-label={target} key={key}>{target}</span>
+                )) : <span className="service-desc">-</span>}
+              </div>
+            );
+          }
         },
         {
           title: t("命令"),
