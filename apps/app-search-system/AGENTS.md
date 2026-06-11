@@ -11,9 +11,9 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 
 | Layer | Scope | TODO | MILESTONES | AGENTS |
 |-------|-------|------|------------|--------|
-| L2 | 全项目 | `./TODO.md` | `./MILESTONES.md` | `./AGENTS.md` |
-| L3 | backend/ | `backend/TODO.md` | `backend/MILESTONES.md` | `backend/AGENTS.md` |
-| L3 | frontend/ | `frontend/TODO.md` | `frontend/MILESTONES.md` | `frontend/AGENTS.md` |
+| L2 | 全项目 | `./TODO.md` | `./MILESTONE.md` | `./AGENTS.md` |
+| L3 | backend/ | `backend/TODO.md` | `backend/MILESTONE.md` | `backend/AGENTS.md` |
+| L3 | frontend/ | `frontend/TODO.md` | `frontend/MILESTONE.md` | `frontend/AGENTS.md` |
 | L3 | docs/ | — (inherited) | — (inherited) | `docs/AGENTS.md` |
 | L3 | asserts/ | — (inherited) | — (inherited) | `asserts/AGENTS.md` |
 
@@ -42,7 +42,7 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 |------|-------|-------------|
 | `CLAUDE.md` | L2 | Claude Code 会话规范和分支策略 |
 | `TODO.md` | L2 | 全项目任务追踪 |
-| `MILESTONES.md` | L2 | 全项目里程碑路线图 |
+| `MILESTONE.md` | L2 | 全项目里程碑路线图 |
 | `AGENTS.md` | L2 | 当前文档 |
 | `build_all.bat` | L2 | 全量构建脚本（后端+前端） |
 | `.mcp.json` | L2 | MCP 服务器配置 |
@@ -51,8 +51,8 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 
 | Directory | Layer | Purpose | Own TODO | Own MILESTONES |
 |---------|-------|---------|---------|----------------|
-| `backend/` | L3 | Python FastAPI 后端服务 | ✅ `backend/TODO.md` | ✅ `backend/MILESTONES.md` |
-| `frontend/` | L3 | React 多端前端 | ✅ `frontend/TODO.md` | ✅ `frontend/MILESTONES.md` |
+| `backend/` | L3 | Python FastAPI 后端服务 | ✅ `backend/TODO.md` | ✅ `backend/MILESTONE.md` |
+| `frontend/` | L3 | React 多端前端 | ✅ `frontend/TODO.md` | ✅ `frontend/MILESTONE.md` |
 | `docs/` | L3 | 项目文档 | — (inherited) | — (inherited) |
 | `asserts/` | L3 | SOP 静态资源 | — (inherited) | — (inherited) |
 
@@ -96,19 +96,19 @@ SOP（Standard Operating Procedure）管理系统，用于管理生产作业标�
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | TODO.md (this) | `./TODO.md` | 全项目任务追踪 (L2) |
-| MILESTONES.md (this) | `./MILESTONES.md` | 全项目里程碑 (L2) |
+| MILESTONE.md (this) | `./MILESTONE.md` | 全项目里程碑 (L2) |
 | AGENTS.md (backend) | `./backend/AGENTS.md` | 后端模块文档 (L3) |
 | TODO.md (backend) | `./backend/TODO.md` | 后端模块任务 (L3) |
-| MILESTONES.md (backend) | `./backend/MILESTONES.md` | 后端模块里程碑 (L3) |
+| MILESTONE.md (backend) | `./backend/MILESTONE.md` | 后端模块里程碑 (L3) |
 | AGENTS.md (frontend) | `./frontend/AGENTS.md` | 前端模块文档 (L3) |
 | TODO.md (frontend) | `./frontend/TODO.md` | 前端模块任务 (L3) |
-| MILESTONES.md (frontend) | `./frontend/MILESTONES.md` | 前端模块里程碑 (L3) |
+| MILESTONE.md (frontend) | `./frontend/MILESTONE.md` | 前端模块里程碑 (L3) |
 
 ### Quick Commands
 
 ```bash
 # 查看全项目里程碑
-grep -A 20 "v1.0.0" MILESTONES.md
+grep -A 20 "v1.0.0" MILESTONE.md
 
 # 查看后端任务
 grep -n "P0\|P1\|P2" backend/TODO.md
