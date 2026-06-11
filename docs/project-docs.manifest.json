@@ -13,6 +13,7 @@
     "README.md",
     "docs/rules/epap-six-layer-sop.md",
     "docs/rules/epap-project-doc-agent-sop.md",
+    "docs/rules/axi-workbench-boundary-sop.md",
     "PRD.md"
   ],
   "entrypoints": [
@@ -62,7 +63,8 @@
       "pnpm test:workstation",
       "pnpm --dir apps/devsvc-dashboard typecheck",
       "pnpm --dir apps/axi-coder typecheck",
-      "npm --prefix apps/verification-inbox run typecheck"
+      "npm --prefix apps/verification-inbox run typecheck",
+      "pnpm check:boundaries"
     ],
     "smoke": [
       "pnpm --filter @axi/workstation-control-plane smoke"
@@ -159,7 +161,9 @@
       "services/control-plane/src/control-plane.mjs",
       "services/communication-gateway/src/gateway.mjs",
       "docs/rules/epap-six-layer-sop.md",
-      "docs/rules/epap-project-doc-agent-sop.md"
+      "docs/rules/epap-project-doc-agent-sop.md",
+      "docs/rules/axi-workbench-boundary-sop.md",
+      "scripts/check-workbench-boundaries.mjs"
     ]
   },
   "currentWork": {

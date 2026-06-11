@@ -23,6 +23,7 @@ The root docs form a lightweight control plane:
 - `pnpm install`
 - `pnpm test`
 - `pnpm build`
+- `pnpm check:boundaries`
 
 Minimum documentation check:
 
@@ -37,9 +38,11 @@ rg -n "REQ-DOC-001|PRD|TDD|Milestone" "/Volumes/code/workspace/projects/axi-work
 - Agents edit outside `/Volumes/code/workspace/projects/axi-workbench` without explicit scope.
 - Reference checkouts are mistaken for Axi-owned product surfaces.
 - Verification commands become stale after dependency or layout changes.
+- Workbench starts importing neighboring project implementations instead of consuming package/API/config contracts.
 
 ## Test Strategy
 
 - Treat required docs as contract files.
 - Prefer existing project test/build commands when implementation changes occur.
+- Run `pnpm check:boundaries` for control-plane, dashboard-hosting, cross-project, or package dependency changes.
 - For doc-only changes, run the minimum documentation check above and inspect diffs for placeholder language.

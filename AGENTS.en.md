@@ -51,6 +51,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 | Project entry and current structure | [`README.md`](README.md) |
 | Security policy | [`SECURITY.md`](SECURITY.md) |
 | Six-Layer Control Plane boundary and runtime SOP | [`docs/rules/epap-six-layer-sop.md`](docs/rules/epap-six-layer-sop.md) |
+| Workbench aggregation boundary and decoupling rules | [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) |
 | Project doc system SOP | [`docs/rules/epap-project-doc-agent-sop.md`](docs/rules/epap-project-doc-agent-sop.md) |
 | Prompt layering (system / global / projects) | `prompts/README.md`, [`prompts/AGENTS.md`](prompts/AGENTS.md), `prompts/prompt-layer.manifest.json` |
 | Subtree-internal implementation and contracts | `apps/AGENTS.md`, `services/AGENTS.md`, `packages/AGENTS.md`, `tools/AGENTS.md`, `ai/AGENTS.md` |
@@ -188,6 +189,7 @@ When testing user-visible behavior, use the layered verification ladder:
 - **Do not** put `.omx/` as a whole under version control (only explicit configuration exceptions such as `.omx/config/` are allowed).
 - **Do not** merge into `main`, push tags, delete remote branches, or publish a formal release without an explicit owner instruction.
 - **Do not** treat `references/*` or `infra/axi-workspace-governance/` content as the writable scope of this project.
+- **Do not** pull neighboring project implementation code, absolute paths, or private schemas into Workbench runtime; before adding cross-project behavior, follow [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) and run `pnpm check:boundaries`.
 - **Do not** directly cite sub-package install/path examples such as `tools/axi-app-cli/packages/*/README.md`; only cite the top-level `tools/axi-app-cli/AGENTS.md` / `tools/axi-app-cli/README.md`.
 - **Do not** repeat any hard-coded JWT / API key / personal email; if a literal token is encountered, **redact it to a `Bearer <REDACTED>` placeholder**.
 - **Do** keep the two-layer structure of the root `AGENTS.md` and the 6 subtree `AGENTS.md` files (`apps/` `services/` `packages/` `tools/` `ai/` `prompts/`): the root talks about boundaries and the Six-Layer SOP, the subtree talks about implementation and contracts.

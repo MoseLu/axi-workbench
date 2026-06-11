@@ -51,6 +51,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 | 项目入口与当前结构 | [`README.md`](README.md) |
 | 安全策略 | [`SECURITY.md`](SECURITY.md) |
 | 六层控制面边界与运行 SOP | [`docs/rules/epap-six-layer-sop.md`](docs/rules/epap-six-layer-sop.md) |
+| Workbench 聚合边界与反耦合规则 | [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) |
 | 项目文档系统 SOP | [`docs/rules/epap-project-doc-agent-sop.md`](docs/rules/epap-project-doc-agent-sop.md) |
 | Prompt 分层（system / global / projects） | `prompts/README.md`、[`prompts/AGENTS.md`](prompts/AGENTS.md)、`prompts/prompt-layer.manifest.json` |
 | 子树内部实现与契约 | `apps/AGENTS.md`、`services/AGENTS.md`、`packages/AGENTS.md`、`tools/AGENTS.md`、`ai/AGENTS.md` |
@@ -188,6 +189,7 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 - **不要**把 `.omx/` 整体加入版本控制（仅允许 `.omx/config/` 之类的显式配置例外）。
 - **不要**在没有 owner 显式指令的情况下合并到 `main`、推送标签、删除远程分支、发布正式 release。
 - **不要**把 `references/*` 或 `infra/axi-workspace-governance/` 的内容当作本项目可写范围。
+- **不要**把邻居项目的实现代码、绝对路径或私有 schema 引入 Workbench runtime；新增跨项目能力前先走 [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) 并运行 `pnpm check:boundaries`。
 - **不要**直接引用 `tools/axi-app-cli/packages/*/README.md` 等子包内安装 / 路径示例，只引顶层 `tools/axi-app-cli/AGENTS.md` / `tools/axi-app-cli/README.md`。
 - **不要**复述任何硬编码 JWT / API key / 个人邮箱；如遇字面 token，**脱敏为 `Bearer <REDACTED>` 占位**。
 - **要**保持根级 `AGENTS.md` 与 6 份子树 `AGENTS.md`（`apps/` `services/` `packages/` `tools/` `ai/` `prompts/`）的双层结构：根级谈边界与六层 SOP，子树谈实现与契约。

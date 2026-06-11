@@ -1,13 +1,17 @@
 use crate::models::{AxiDesktopStatus, AxiMobileStatus, AxiNotifyContract, AxiSuiteSnapshot};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const MOSSCODER_ROOT: &str = "/Volumes/code/workspace/projects/axi-notify";
 const ANDROID_PACKAGE_NAME: &str = "com.mosscoder.notify";
+const AXI_NOTIFY_ANDROID_REF: &str = "workspace://project/axi-notify/android-app";
 
 pub fn build_axi_suite_snapshot() -> AxiSuiteSnapshot {
-    let mobile_project_path = Path::new(MOSSCODER_ROOT).join("android-app");
-    let verification_dir = mobile_project_path.join("docs").join("verification");
+    let mobile_project_path = resolve_axi_notify_android_root();
+    let latest_goal70_artifact = mobile_project_path
+        .as_ref()
+        .and_then(|path| find_latest_goal70_artifact(&path.join("docs").join("verification")).ok().flatten())
+        .map(|path| path.display().to_string());
 
     AxiSuiteSnapshot {
         product_name: "Axi Coder".to_string(),
@@ -26,11 +30,10 @@ pub fn build_axi_suite_snapshot() -> AxiSuiteSnapshot {
         mobile: AxiMobileStatus {
             owner: "axi-mobile".to_string(),
             package_name: ANDROID_PACKAGE_NAME.to_string(),
-            project_path: mobile_project_path.display().to_string(),
-            latest_goal70_artifact: find_latest_goal70_artifact(&verification_dir)
-                .ok()
-                .flatten()
-                .map(|path| path.display().to_string()),
+            project_path: mobile_project_path
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| AXI_NOTIFY_ANDROID_REF.to_string()),
+            latest_goal70_artifact,
             deep_links: vec![
                 "axi://chat".to_string(),
                 "axi://todo".to_string(),
@@ -43,6 +46,27 @@ pub fn build_axi_suite_snapshot() -> AxiSuiteSnapshot {
             auth_header: "X-Axi-Notify-Api-Key".to_string(),
         },
     }
+}
+
+fn resolve_axi_notify_android_root() -> Option<PathBuf> {
+    if let Ok(path) = env::var("AXI_NOTIFY_ANDROID_ROOT") {
+        return non_empty_path(path);
+    }
+    if let Ok(path) = env::var("AXI_NOTIFY_ROOT") {
+        return non_empty_path(path).map(|root| root.join("android-app"));
+    }
+    if let Ok(path) = env::var("AXI_WORKSPACE_ROOT") {
+        return non_empty_path(path).map(|root| root.join("projects").join("axi-notify").join("android-app"));
+    }
+    None
+}
+
+fn non_empty_path(path: String) -> Option<PathBuf> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    Some(PathBuf::from(trimmed))
 }
 
 pub fn find_latest_goal70_artifact(verification_dir: &Path) -> std::io::Result<Option<PathBuf>> {

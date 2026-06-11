@@ -14,7 +14,7 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases.
   - Test: run the commands listed in `TDD.md` or document the blocker in `CHANGELOG.md`.
 
 - [ ] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
-  - Test: review `AGENTS.md` before broad edits and confirm no generated caches or external sources were edited.
+  - Test: review `AGENTS.md` and `docs/rules/axi-workbench-boundary-sop.md` before broad edits and run `pnpm check:boundaries`.
 
 ## P2
 

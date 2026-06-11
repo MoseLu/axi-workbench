@@ -12,7 +12,8 @@
 2. `README.md`
 3. `docs/rules/epap-six-layer-sop.md`
 4. `docs/rules/epap-project-doc-agent-sop.md`
-5. `PRD.md`
+5. `docs/rules/axi-workbench-boundary-sop.md`
+6. `PRD.md`
 
 ## Entrypoints
 
@@ -37,6 +38,7 @@
 - Verify: `pnpm --dir apps/devsvc-dashboard typecheck`
 - Verify: `pnpm --dir apps/axi-coder typecheck`
 - Verify: `npm --prefix apps/verification-inbox run typecheck`
+- Verify: `pnpm check:boundaries`
 - Smoke: `pnpm --filter @axi/workstation-control-plane smoke`
 
 ## Environment
@@ -57,6 +59,7 @@
 - Provides: `IMEnvelope and AgentTask schemas`, `Six-layer control-plane resource snapshots`, `Communication gateway routing`, `Axi Dashboard application surfaces`, `Axi App CLI scaffolding`
 - Consumes: `Axi Agent Platform API when AXI_AGENT_PLATFORM_URL is configured`, `CC-Connect memory database`, `Codex CLI or Codex app-server runtime`, `Local infrastructure services declared in docker-compose.yml`
 - Contract files: `packages/schemas/src/index.ts`, `services/control-plane/src/control-plane.mjs`, `services/communication-gateway/src/gateway.mjs`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/epap-project-doc-agent-sop.md`
+- Boundary guard: `docs/rules/axi-workbench-boundary-sop.md`, `scripts/check-workbench-boundaries.mjs`
 
 ## Current Work
 

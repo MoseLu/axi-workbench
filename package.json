@@ -17,6 +17,7 @@
     "build:api-client": "turbo run build --filter=@epap/api-client",
     "test": "turbo run test",
     "test:workstation": "pnpm --filter @axi/workstation-contracts test && pnpm --filter @axi/workstation-communication-gateway test && pnpm --filter @axi/workstation-control-plane test",
+    "check:boundaries": "node scripts/check-workbench-boundaries.mjs",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean && rm -rf node_modules",
