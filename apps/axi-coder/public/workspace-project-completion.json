@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-06-11T05:26:37.931Z",
+  "generatedAt": "2026-06-11T05:34:37.955Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 31,
@@ -32,7 +32,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
@@ -92,7 +92,7 @@
       "evidence": [
         "Workspace verify covers runtime API smoke tests plus MCP, transport, bridge, and todo packages.",
         "Governance source still classifies the project as development.",
-        "docs:partial",
+        "docs:ready",
         "handoff:verified",
         "verify:PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py | npm --prefix infra/axi-agent-mcp test | npm --prefix infra/axi-agent-transport test | npm --prefix infra/codex-remote-bridge test | npm --prefix tools/axi-todo test",
         "health:test -f backend/app/api/workstation.py | test -f infra/axi-agent-mcp/package.json | test -f infra/axi-agent-transport/package.json | test -f tools/axi-todo/package.json",
@@ -103,7 +103,7 @@
         "Keep MCP/transport/bridge consumer checks green as Axi Coder grows."
       ],
       "docs": {
-        "status": "partial",
+        "status": "ready",
         "present": [
           "README.md",
           "AGENTS.md",
@@ -112,11 +112,10 @@
           "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
-        "missing": [
-          "docs/HANDOFF.md"
-        ]
+        "missing": []
       },
       "handoff": {
         "status": "verified",
@@ -248,12 +247,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -286,7 +285,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -303,12 +302,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -365,12 +364,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -491,12 +490,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -558,12 +557,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -602,7 +601,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -619,12 +618,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -675,12 +674,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -710,7 +709,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -727,12 +726,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -765,7 +764,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -782,12 +781,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -839,12 +838,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -884,7 +883,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -901,12 +900,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -960,12 +959,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -1065,7 +1064,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1120,7 +1119,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1178,7 +1177,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1238,7 +1237,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1298,7 +1297,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1357,7 +1356,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1414,7 +1413,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1520,7 +1519,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1538,12 +1537,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -1576,7 +1575,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1636,7 +1635,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1691,7 +1690,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -1746,7 +1745,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1809,7 +1808,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1827,12 +1826,12 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -1863,7 +1862,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:26:37.931Z",
+      "updatedAt": "2026-06-11T05:34:37.955Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",

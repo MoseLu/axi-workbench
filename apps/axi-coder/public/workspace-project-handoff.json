@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-06-11T05:26:37.931Z",
+  "generatedAt": "2026-06-11T05:34:37.955Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 15,
@@ -61,9 +61,7 @@
           "Axi Todo integration",
           "README mirror parity"
         ],
-        "knownFailures": [
-          "The 2026-06-11 runtime smoke could not collect because the available Python environments do not contain the complete backend dependency set."
-        ]
+        "knownFailures": []
       },
       "lastVerifiedAt": "2026-06-11"
     },
