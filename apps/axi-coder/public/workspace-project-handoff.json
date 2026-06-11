@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-06-11T05:34:37.955Z",
+  "generatedAt": "2026-06-11T09:45:22.329Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
-    "total": 15,
-    "verified": 15,
+    "total": 16,
+    "verified": 16,
     "documented": 0,
     "stale": 0,
     "unready": 0
@@ -459,9 +459,59 @@
         "milestone": "MILESTONE.md",
         "active": [
           "Maintain the frontend contract track registered in todo/index.json.",
-          "Keep generated indexes synchronized with rule and workspace changes."
+          "Keep generated indexes synchronized with rule and workspace changes.",
+          "Keep AR-HANDOFF-004 aligned with workspace-project onboard, handoff-check, verify, deps, and consumers."
         ],
         "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-06-11"
+    },
+    {
+      "id": "axi-skills",
+      "name": "Axi Skills",
+      "path": "/Volumes/code/workspace/shared/axi-skills",
+      "kind": "shared",
+      "lifecycle": "active-shared-provider",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/shared/axi-skills/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/shared/axi-skills/docs/HANDOFF.md",
+      "graphId": "axi-skills",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
+      "commands": {
+        "setup": [
+          "python3 --version"
+        ],
+        "start": [
+          "scripts/install-global-links.sh"
+        ],
+        "health": [
+          "python3 scripts/verify.py"
+        ],
+        "verify": [
+          "python3 scripts/verify.py",
+          "python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff"
+        ],
+        "smoke": [
+          "python3 scripts/verify.py"
+        ]
+      },
+      "currentWork": {
+        "todo": "TODO.md",
+        "milestone": "MILESTONE.md",
+        "active": [
+          "Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state.",
+          "Keep the generated skill index and i18n batch manifest aligned with skills/.",
+          "Preserve skills/ as the runtime source of truth and keep skills.zh/ out of runtime loading."
+        ],
+        "knownFailures": [
+          "Full translation validation across every batch is intentionally heavier than the safe onboarding smoke.",
+          "skills.zh/ is git-ignored and must not be treated as runtime source."
+        ]
       },
       "lastVerifiedAt": "2026-06-11"
     },

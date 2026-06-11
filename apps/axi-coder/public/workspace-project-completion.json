@@ -1,22 +1,22 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-06-11T05:34:37.955Z",
+  "generatedAt": "2026-06-11T09:45:22.329Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 31,
-    "axiTotal": 17,
+    "total": 32,
+    "axiTotal": 18,
     "complete": 1,
-    "usableOrBetter": 7,
+    "usableOrBetter": 8,
     "blocked": 0,
     "byStage": {
       "unassessed": 21,
       "building": 3,
-      "usable": 6,
+      "usable": 7,
       "complete": 1
     },
     "byConfidence": {
       "low": 20,
-      "medium": 10,
+      "medium": 11,
       "high": 1
     }
   },
@@ -32,7 +32,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
@@ -285,7 +285,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -601,7 +601,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -709,7 +709,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -754,6 +754,69 @@
       ]
     },
     {
+      "id": "axi-skills",
+      "name": "Axi Skills",
+      "path": "/Volumes/code/workspace/shared/axi-skills",
+      "kind": "shared-skill-catalog",
+      "isAxi": true,
+      "stage": "usable",
+      "stageLabel": "可用",
+      "confidence": "medium",
+      "confidenceLabel": "中",
+      "summary": "Axi Skills is the shared runtime skill catalog and i18n batch contract for compatible agent runtimes.",
+      "updatedAt": "2026-06-11",
+      "evidence": [
+        "Repository verifier covers skill entrypoints, logical names, forbidden runtime artifacts, and generated index output.",
+        "i18n verifier protects the English runtime source while tracking translation batch coverage.",
+        "docs:ready",
+        "handoff:verified",
+        "verify:python3 scripts/verify.py | python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff",
+        "health:python3 scripts/verify.py",
+        "contracts:9"
+      ],
+      "remaining": [
+        "Keep the generated skill index and i18n batch manifest synchronized after skill catalog changes."
+      ],
+      "docs": {
+        "status": "ready",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": []
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [
+        "python3 scripts/verify.py",
+        "python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff"
+      ],
+      "health": [
+        "python3 scripts/verify.py"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "README.md",
+        "docs/MIGRATION.md",
+        "docs/i18n/README.md",
+        "docs/SKILL_INDEX.md",
+        "skills/.sync-manifest.json",
+        "scripts/verify.py",
+        "scripts/verify_i18n.py",
+        "scripts/build_batches.py"
+      ]
+    },
+    {
       "id": "axi-tauri-starter",
       "name": "Axi Tauri Starter",
       "path": "/Volumes/code/workspace/shared/axi-tauri-starter",
@@ -764,7 +827,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -883,7 +946,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1064,7 +1127,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1119,7 +1182,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1177,7 +1240,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1237,7 +1300,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1297,7 +1360,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1356,7 +1419,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1413,7 +1476,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1519,7 +1582,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1575,7 +1638,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1635,7 +1698,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1690,7 +1753,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -1745,7 +1808,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1808,7 +1871,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1862,7 +1925,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T05:34:37.955Z",
+      "updatedAt": "2026-06-11T09:45:22.329Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
