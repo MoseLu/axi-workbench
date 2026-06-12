@@ -35,7 +35,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 | `prompts/` | 是 | Prompt 分层底座（system / global / projects），`prompts/AGENTS.md` 与 `prompts/README.md` 详述 |
 | `docs/` | 是 | 项目文档（`01-overview.md` ~ `08-todo.md`、`rules/`、`templates/`、`project-docs.manifest.json`） |
 | `infra/fleet-console/` | 是 | Fleet Console 物理服务管理 |
-| `AGENTS.md`, `README.md`, `SECURITY.md`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `docker-compose.yml` | 是 | 根级项目门面与构建编排 |
+| `AGENTS.md`, `README.md`, `docs/governance/SECURITY.md`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `docker-compose.yml` | 是 | 根级项目门面与构建编排 |
 | `references/*`（工作区级） | 否 | 由 `infra/axi-workspace-governance/` 治理，本项目不翻译、不编辑 |
 | `infra/axi-workspace-governance/` | 否 | 工作区治理仓库，不在本项目所有权内 |
 | `node_modules/`, `dist/`, `build/`, `.turbo/`, `.omx/`, `.codegraph/` | 否 | 运行时 / 构建 / 编排器状态，不进 commit |
@@ -49,7 +49,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 | 议题 | 权威来源 |
 |------|----------|
 | 项目入口与当前结构 | [`README.md`](README.md) |
-| 安全策略 | [`SECURITY.md`](SECURITY.md) |
+| 安全策略 | [`docs/governance/SECURITY.md`](docs/governance/SECURITY.md) |
 | 六层控制面边界与运行 SOP | [`docs/rules/epap-six-layer-sop.md`](docs/rules/epap-six-layer-sop.md) |
 | Workbench 聚合边界与反耦合规则 | [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) |
 | 项目文档系统 SOP | [`docs/rules/epap-project-doc-agent-sop.md`](docs/rules/epap-project-doc-agent-sop.md) |
@@ -198,4 +198,4 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 
 ### manifest 状态说明
 
-`docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `CHANGELOG.md` / `TODO.md` / `MILESTONE.md` 等根级门面文件**尚未补齐**（参见 `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 清单）。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的根级门面文件。
+`docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**（参见 `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 清单）。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的状态文档。

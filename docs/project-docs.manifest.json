@@ -197,21 +197,22 @@
   ],
   "decisions": {
     "adr": "docs/rules/epap-six-layer-sop.md",
-    "changelog": "CHANGELOG.md",
+    "changelog": "docs/state/CHANGELOG.md",
     "submitLog": "docs/logs/submit/20260611-124603-batch-submit.md"
   },
   "documents": {
     "readme": "README.md",
     "agents": "AGENTS.md",
-    "changelog": "CHANGELOG.md",
-    "todo": "TODO.md",
-    "milestone": "MILESTONE.md",
+    "changelog": "docs/state/CHANGELOG.md",
+    "todo": "docs/state/TODO.md",
+    "milestone": "docs/state/MILESTONE.md",
     "index": "INDEX.md",
-    "prd": "PRD.md",
-    "tdd": "TDD.md",
+    "prd": "docs/state/PRD.md",
+    "tdd": "docs/state/TDD.md",
+    "security": "docs/governance/SECURITY.md",
     "docsIndex": "docs/README.md",
     "manifest": "docs/project-docs.manifest.json",
-    "verification": "VERIFICATION.md"
+    "verification": "docs/state/VERIFICATION.md"
   },
   "owners": {
     "product": "Axi Core Projects",

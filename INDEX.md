@@ -13,11 +13,11 @@
 | `README.md` | English entrypoint and quickstart. |
 | `README.zh-CN.md` | Simplified Chinese entrypoint. |
 | `AGENTS.md` | Agent rules, boundaries, verification, read order. |
-| `CHANGELOG.md` | Human-visible change log. |
-| `TODO.md` | Requirement-linked task queue. |
-| `MILESTONE.md` | Delivery milestone and evidence. |
-| `PRD.md` | Product/project requirements and non-goals. |
-| `TDD.md` | Technical/test design and verification commands. |
+| `docs/state/CHANGELOG.md` | Human-visible change log. |
+| `docs/state/TODO.md` | Requirement-linked task queue. |
+| `docs/state/MILESTONE.md` | Delivery milestone and evidence. |
+| `docs/state/PRD.md` | Product/project requirements and non-goals. |
+| `docs/state/TDD.md` | Technical/test design and verification commands. |
 
 ## Top-Level Inventory
 
@@ -26,7 +26,7 @@
 - `Makefile`
 - `README.md`
 - `README.zh-CN.md`
-- `SECURITY.md`
+- `docs/governance/SECURITY.md`
 - `ai/`
 - `apps/`
 - `backend/`

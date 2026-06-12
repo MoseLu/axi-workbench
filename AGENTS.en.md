@@ -35,7 +35,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 | `prompts/` | yes | Prompt layered foundation (system / global / projects), detailed in `prompts/AGENTS.md` and `prompts/README.md` |
 | `docs/` | yes | Project docs (`01-overview.md` ~ `08-todo.md`, `rules/`, `templates/`, `project-docs.manifest.json`) |
 | `infra/fleet-console/` | yes | Fleet Console physical service management |
-| `AGENTS.md`, `README.md`, `SECURITY.md`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `docker-compose.yml` | yes | Root-level project facade and build orchestration |
+| `AGENTS.md`, `README.md`, `docs/governance/SECURITY.md`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `docker-compose.yml` | yes | Root-level project facade and build orchestration |
 | `references/*` (workspace-level) | no | Governed by `infra/axi-workspace-governance/`; this project does not translate or edit it |
 | `infra/axi-workspace-governance/` | no | Workspace governance repo, not owned by this project |
 | `node_modules/`, `dist/`, `build/`, `.turbo/`, `.omx/`, `.codegraph/` | no | Runtime / build / orchestrator state, must not be committed |
@@ -49,7 +49,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 | Topic | Authoritative source |
 |------|----------|
 | Project entry and current structure | [`README.md`](README.md) |
-| Security policy | [`SECURITY.md`](SECURITY.md) |
+| Security policy | [`docs/governance/SECURITY.md`](docs/governance/SECURITY.md) |
 | Six-Layer Control Plane boundary and runtime SOP | [`docs/rules/epap-six-layer-sop.md`](docs/rules/epap-six-layer-sop.md) |
 | Workbench aggregation boundary and decoupling rules | [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) |
 | Project doc system SOP | [`docs/rules/epap-project-doc-agent-sop.md`](docs/rules/epap-project-doc-agent-sop.md) |
@@ -198,4 +198,4 @@ When testing user-visible behavior, use the layered verification ladder:
 
 ### manifest status note
 
-The `status: legacy` in `docs/project-docs.manifest.json` means that the root-level facade files of this repo (such as `CHANGELOG.md` / `TODO.md` / `MILESTONE.md`) **have not yet been completed** (see `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 list). Until the owner decides the completion order, the auditable changes of this repo must **go directly through the commit log + `docs/08-todo.md`**, and must not rely on the root-level facade files listed by the manifest.
+The `status: legacy` in `docs/project-docs.manifest.json` means that the state/contract documents under `docs/state/` (`CHANGELOG.md` / `TODO.md` / `MILESTONE.md`) **still await a complete entry-point rollout per the plan** (see `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 list). Until the owner decides the completion order, the auditable changes of this repo must **go directly through the commit log + `docs/08-todo.md`**, and must not rely on the state documents listed by the manifest.

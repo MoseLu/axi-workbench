@@ -12,7 +12,7 @@
 2. `README.md`
 3. `docs/rules/epap-six-layer-sop.md`
 4. `docs/rules/axi-workbench-boundary-sop.md`
-5. `PRD.md`
+5. `docs/state/PRD.md`
 
 ## Entrypoints
 
@@ -61,8 +61,8 @@
 
 ## Current Work
 
-- TODO: `TODO.md`
-- Milestone: `MILESTONE.md`
+- TODO: `docs/state/TODO.md`
+- Milestone: `docs/state/MILESTONE.md`
 - Active: Keep the root documentation suite current
 - Active: Align verification commands with the real project stack
 - Active: Preserve ownership and cross-project boundaries
@@ -84,7 +84,7 @@
 ## Decisions And Freshness
 
 - ADR: `docs/rules/epap-six-layer-sop.md`
-- Changelog: `CHANGELOG.md`
+- Changelog: `docs/state/CHANGELOG.md`
 - Submit log: `docs/logs/submit/20260611-124603-batch-submit.md`
 - Last verified: `2026-06-11`
 - Evidence: `Control-plane smoke exited 0 on 2026-06-11.`, `Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers.`
