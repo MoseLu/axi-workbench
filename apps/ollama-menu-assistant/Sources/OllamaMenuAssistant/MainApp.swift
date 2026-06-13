@@ -77,8 +77,6 @@ final class MainApp: NSObject, NSApplicationDelegate {
             return
         }
         hasShownInitialPanel = true
-        if NSApp.isActive {
-            panelController.open(relativeTo: statusItemController.statusButton)
-        }
+        panelController.open(relativeTo: statusItemController.statusButton)
     }
 }
