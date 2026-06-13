@@ -756,50 +756,33 @@ extension SettingsPanelView {
         isPreviewingDarkTheme ? AppTheme.diffAddedBackground : DesignTokens.ColorToken(hex: 0xE6FFEC).color
     }
 
-    var themePreviewScrollbarTrackColor: Color {
-        isPreviewingDarkTheme ? AppTheme.themePreviewScrollbarTrack : Color.black.opacity(0.06)
-    }
-
-    var themePreviewScrollbarThumbColor: Color {
-        isPreviewingDarkTheme ? AppTheme.themePreviewScrollbarThumb : Color.black.opacity(0.12)
-    }
-
     var themeDiffPreview: some View {
-        ZStack(alignment: .bottom) {
-            HStack(spacing: 0) {
-                diffPane(
-                    markerColor: themePreviewRemovedTextColor,
-                    lines: [
-                        themeHeaderLine(),
-                        themeCodeLine(number: "2", key: "surface", value: "\"sidebar\"", changedBackground: themePreviewRemovedBackground),
-                        themeCodeLine(number: "3", key: "accent", value: "\"\(AppTheme.themePreviewPreviousAccentHex)\"", changedBackground: themePreviewRemovedBackground),
-                        themeCodeLine(number: "4", key: "contrast", value: "42", changedBackground: themePreviewRemovedBackground),
-                        themeFooterLine(),
-                    ]
-                )
+        HStack(spacing: 0) {
+            diffPane(
+                markerColor: themePreviewRemovedTextColor,
+                lines: [
+                    themeHeaderLine(),
+                    themeCodeLine(number: "2", key: "surface", value: "\"sidebar\"", changedBackground: themePreviewRemovedBackground),
+                    themeCodeLine(number: "3", key: "accent", value: "\"\(AppTheme.themePreviewPreviousAccentHex)\"", changedBackground: themePreviewRemovedBackground),
+                    themeCodeLine(number: "4", key: "contrast", value: "42", changedBackground: themePreviewRemovedBackground),
+                    themeFooterLine(),
+                ]
+            )
 
-                Rectangle()
-                    .fill(themeAccentColor)
-                    .frame(width: 3)
+            Rectangle()
+                .fill(themeAccentColor)
+                .frame(width: 3)
 
-                diffPane(
-                    markerColor: themePreviewAddedTextColor,
-                    lines: [
-                        themeHeaderLine(),
-                        themeCodeLine(number: "2", key: "surface", value: "\"sidebar-elevated\"", changedBackground: themePreviewAddedBackground),
-                        themeCodeLine(number: "3", key: "accent", value: "\"\(normalizedThemeAccentHex)\"", changedBackground: themePreviewAddedBackground),
-                        themeCodeLine(number: "4", key: "contrast", value: "68", changedBackground: themePreviewAddedBackground),
-                        themeFooterLine(),
-                    ]
-                )
-            }
-
-            HStack(spacing: 40) {
-                previewScrollbar()
-                previewScrollbar()
-            }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 5)
+            diffPane(
+                markerColor: themePreviewAddedTextColor,
+                lines: [
+                    themeHeaderLine(),
+                    themeCodeLine(number: "2", key: "surface", value: "\"sidebar-elevated\"", changedBackground: themePreviewAddedBackground),
+                    themeCodeLine(number: "3", key: "accent", value: "\"\(normalizedThemeAccentHex)\"", changedBackground: themePreviewAddedBackground),
+                    themeCodeLine(number: "4", key: "contrast", value: "68", changedBackground: themePreviewAddedBackground),
+                    themeFooterLine(),
+                ]
+            )
         }
         .frame(minWidth: 0, maxWidth: .infinity)
         .frame(height: 124)
@@ -895,18 +878,6 @@ extension SettingsPanelView {
                 ThemeDiffFragment(text: "};", color: themePreviewTextColor),
             ]
         )
-    }
-
-    func previewScrollbar() -> some View {
-        ZStack(alignment: .leading) {
-            Capsule()
-                .fill(themePreviewScrollbarTrackColor)
-            Capsule()
-                .fill(themePreviewScrollbarThumbColor)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 34)
-        }
-        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 7, maxHeight: 7)
     }
 
     func appearanceModeButton(_ mode: AppearanceMode) -> some View {
