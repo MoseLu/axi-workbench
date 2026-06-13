@@ -228,6 +228,9 @@ struct SettingsPanelView: View {
     @State var environmentStatusMessage: String?
     @State var agentPlatformHealthReport: AxiAgentPlatformHealthReport?
     @State var isCheckingAgentPlatformHealth = false
+    @State var archivedConversationQuery = ""
+    @State var archivedConversationProjectFilter: ArchivedConversationProjectFilter = .all
+    @State var archivedConversationSortOption: ArchivedConversationSortOption = .updatedAt
 
     var body: some View {
         ScrollViewReader { scrollProxy in
