@@ -7,8 +7,25 @@ struct ThemePresetOption: Identifiable, Equatable {
     let backgroundHex: String
     let foregroundHex: String
     let contrast: Double
+    let translucentSidebar: Bool
 
     var id: String { name }
+
+    init(
+        name: String,
+        accentHex: String,
+        backgroundHex: String,
+        foregroundHex: String,
+        contrast: Double,
+        translucentSidebar: Bool = true
+    ) {
+        self.name = name
+        self.accentHex = accentHex
+        self.backgroundHex = backgroundHex
+        self.foregroundHex = foregroundHex
+        self.contrast = contrast
+        self.translucentSidebar = translucentSidebar
+    }
 }
 
 struct ThemeDiffFragment {
@@ -440,6 +457,7 @@ extension SettingsPanelView {
             ThemePresetOption(name: "Ayu", accentHex: "#FFCC66", backgroundHex: "#0B0E14", foregroundHex: "#B3B1AD", contrast: 62),
             ThemePresetOption(name: "Catppuccin", accentHex: "#CBA6F7", backgroundHex: "#1E1E2E", foregroundHex: "#CDD6F4", contrast: 64),
             ThemePresetOption(name: "Assistant", accentHex: "#339CFF", backgroundHex: "#181818", foregroundHex: "#FFFFFF", contrast: 68),
+            ThemePresetOption(name: "Glass", accentHex: "#F5B84B", backgroundHex: "#123C3F", foregroundHex: "#F6EDDC", contrast: 42, translucentSidebar: true),
             ThemePresetOption(name: "Dracula", accentHex: "#FF79C6", backgroundHex: "#282A36", foregroundHex: "#F8F8F2", contrast: 66),
             ThemePresetOption(name: "Everforest", accentHex: "#A7C080", backgroundHex: "#2D353B", foregroundHex: "#D3C6AA", contrast: 60),
             ThemePresetOption(name: "GitHub", accentHex: "#2F81F7", backgroundHex: "#0D1117", foregroundHex: "#C9D1D9", contrast: 64),
@@ -648,6 +666,7 @@ extension SettingsPanelView {
         themeBackgroundHex = preset.backgroundHex
         themeForegroundHex = preset.foregroundHex
         contrast = preset.contrast
+        translucentSidebar = preset.translucentSidebar
     }
 
     func migrateLegacyThemeDefaultsIfNeeded() {
