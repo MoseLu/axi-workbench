@@ -46,10 +46,13 @@ final class MainApp: NSObject, NSApplicationDelegate {
         }
         appModel.setHotkeyRegistrationResult(success: registered)
 
+        DispatchQueue.main.async { [weak self] in
+            self?.showPanelOnFirstLaunchIfNeeded()
+        }
+
         Task {
             await appModel.startup()
             self.automationScheduler.start()
-            self.showPanelOnFirstLaunchIfNeeded()
         }
     }
 
