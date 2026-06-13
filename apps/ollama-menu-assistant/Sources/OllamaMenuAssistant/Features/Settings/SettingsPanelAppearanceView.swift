@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import SwiftUI
 
 struct ThemePresetOption: Identifiable, Equatable {
@@ -42,6 +43,92 @@ struct ThemeDiffLine: Identifiable {
     var id: String { number }
 }
 
+private enum PetThumbnailLoader {
+    static func thumbnail(for pet: PetDescriptor?) -> NSImage? {
+        guard let pet,
+              pet.isInstalled,
+              let spritesheetURL = spritesheetURL(for: pet),
+              let source = CGImageSourceCreateWithURL(spritesheetURL as CFURL, nil),
+              let sheet = CGImageSourceCreateImageAtIndex(source, 0, nil)
+        else {
+            return nil
+        }
+
+        let frameWidth = min(192, sheet.width)
+        let frameHeight = min(208, sheet.height)
+        guard frameWidth > 0,
+              frameHeight > 0,
+              let frame = sheet.cropping(to: CGRect(x: 0, y: 0, width: frameWidth, height: frameHeight))
+        else {
+            return nil
+        }
+
+        return NSImage(cgImage: frame, size: NSSize(width: frameWidth, height: frameHeight))
+    }
+
+    private static func spritesheetURL(for pet: PetDescriptor) -> URL? {
+        let trimmedSpritesheetPath = pet.spritesheetPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidates = [
+            pet.rootURL.appending(path: "spritesheet.redraw.webp"),
+            pet.rootURL.appending(path: "spritesheet.directional.webp"),
+            trimmedSpritesheetPath.isEmpty ? nil : pet.rootURL.appending(path: trimmedSpritesheetPath),
+        ].compactMap { $0 }
+
+        return candidates.first { FileManager.default.fileExists(atPath: $0.path) }
+    }
+}
+
+private struct PetThumbnailView: View {
+    var pet: PetDescriptor?
+    var fallbackSystemName: String
+    var isSelected: Bool = false
+    var isUnavailable: Bool = false
+    var size: CGFloat = 24
+
+    @State private var image: NSImage?
+
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            RoundedRectangle(cornerRadius: 7)
+                .fill(AppTheme.surface.opacity(0.86))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 7)
+                        .stroke(AppTheme.border.opacity(0.72), lineWidth: 1)
+                )
+
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.none)
+                    .scaledToFit()
+                    .padding(2)
+            } else {
+                Image(systemName: fallbackSystemName)
+                    .font(.system(size: max(10, size * 0.46), weight: .semibold))
+                    .foregroundStyle(isSelected ? AppTheme.accent : AppTheme.textTertiary)
+            }
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: max(10, size * 0.42), weight: .bold))
+                    .foregroundStyle(AppTheme.accent)
+                    .background(Circle().fill(AppTheme.surface))
+                    .offset(x: 4, y: 4)
+            }
+        }
+        .frame(width: size, height: size)
+        .opacity(isUnavailable ? 0.55 : 1)
+        .onAppear(perform: loadThumbnail)
+        .onChange(of: pet?.rootURL.path ?? "") { _, _ in
+            loadThumbnail()
+        }
+    }
+
+    private func loadThumbnail() {
+        image = PetThumbnailLoader.thumbnail(for: pet)
+    }
+}
+
 extension SettingsPanelView {
     var appearanceSettings: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -52,7 +139,7 @@ extension SettingsPanelView {
                             Text(tr("主题", "Theme"))
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(AppTheme.textPrimary)
-                            Text(tr("使用浅色、深色，或匹配系统设置", "Use light, dark, or match system settings"))
+                            Text(tr("使用浅色、深色、玻璃态，或匹配系统设置", "Use light, dark, glass, or match system settings"))
                                 .font(.system(size: 12))
                                 .foregroundStyle(AppTheme.textSecondary)
                         }
@@ -63,6 +150,7 @@ extension SettingsPanelView {
                             ForEach([AppearanceMode.light, .dark, .system]) { mode in
                                 appearanceModeButton(mode)
                             }
+                            glassAppearanceButton
                         }
                     }
 
@@ -193,30 +281,72 @@ extension SettingsPanelView {
     }
 
     var petGroupList: some View {
-        ScrollView(.vertical, showsIndicators: appModel.petGroups.count > 7) {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(appModel.petGroups) { group in
-                    petGroupRow(group)
-                }
+        petWeakScrollColumn(needsScrolling: appModel.petGroups.count > 7) {
+            ForEach(appModel.petGroups) { group in
+                petGroupRow(group)
             }
-            .padding(.trailing, appModel.petGroups.count > 7 ? 4 : 0)
         }
         .frame(width: SettingsPanelMetrics.petRosterGroupListWidth)
         .frame(maxHeight: SettingsPanelMetrics.petRosterBrowserMaxHeight, alignment: .topLeading)
     }
 
+    @ViewBuilder
+    func petWeakScrollColumn<Content: View>(
+        needsScrolling: Bool,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        if needsScrolling {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 4) {
+                    content()
+                }
+                .padding(.trailing, 4)
+            }
+            .overlay(petScrollEdgeFade)
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                content()
+            }
+        }
+    }
+
+    var petScrollEdgeFade: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [AppTheme.surface.opacity(0.95), AppTheme.surface.opacity(0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 14)
+
+            Spacer()
+
+            LinearGradient(
+                colors: [AppTheme.surface.opacity(0), AppTheme.surface.opacity(0.95)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 14)
+        }
+        .allowsHitTesting(false)
+    }
+
     func petGroupRow(_ group: PetGroupDescriptor) -> some View {
         let isSelected = activePetGroup?.id == group.id
+        let representativePet = representativePet(for: group)
 
         return Button {
             selectedPetGroupID = group.id
             selectedPetCharacterID = nil
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: isSelected ? "books.vertical.fill" : "books.vertical")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(isSelected ? AppTheme.accent : AppTheme.textTertiary)
-                    .frame(width: 14, height: 14)
+                PetThumbnailView(
+                    pet: representativePet,
+                    fallbackSystemName: isSelected ? "books.vertical.fill" : "books.vertical",
+                    isSelected: isSelected,
+                    isUnavailable: representativePet?.isInstalled == false,
+                    size: 24
+                )
 
                 Text(group.title(language: appLanguage))
                     .font(.system(size: 12, weight: .semibold))
@@ -235,7 +365,7 @@ extension SettingsPanelView {
             }
             .padding(.leading, 10)
             .padding(.trailing, 8)
-            .frame(height: 34)
+            .frame(height: 40)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(isSelected ? AppTheme.surfaceRaised : AppTheme.transparent)
             .overlay(alignment: .leading) {
@@ -278,6 +408,18 @@ extension SettingsPanelView {
             ?? characters.first
     }
 
+    func representativePet(for group: PetGroupDescriptor) -> PetDescriptor? {
+        group.pets.first { appModel.isPetSelected($0) }
+            ?? group.pets.first { $0.isInstalled }
+            ?? group.pets.first
+    }
+
+    func representativePet(for character: PetCharacterDescriptor) -> PetDescriptor? {
+        character.pets.first { appModel.isPetSelected($0) }
+            ?? character.pets.first { $0.isInstalled }
+            ?? character.pets.first
+    }
+
     @ViewBuilder
     func petCharacterList(_ group: PetGroupDescriptor) -> some View {
         let characters = group.petCharacters()
@@ -291,13 +433,10 @@ extension SettingsPanelView {
             if characters.isEmpty {
                 emptyPetColumnMessage
             } else {
-                ScrollView(.vertical, showsIndicators: characters.count > 7) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(characters) { character in
-                            petCharacterRow(character, in: group)
-                        }
+                petWeakScrollColumn(needsScrolling: characters.count > 7) {
+                    ForEach(characters) { character in
+                        petCharacterRow(character, in: group)
                     }
-                    .padding(.trailing, characters.count > 7 ? 4 : 0)
                 }
             }
         }
@@ -308,16 +447,20 @@ extension SettingsPanelView {
     func petCharacterRow(_ character: PetCharacterDescriptor, in group: PetGroupDescriptor) -> some View {
         let isSelected = activePetCharacter(in: group)?.id == character.id
         let hasSelectedPet = character.pets.contains { appModel.isPetSelected($0) }
+        let representativePet = representativePet(for: character)
 
         return Button {
             selectedPetGroupID = group.id
             selectedPetCharacterID = character.id
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: hasSelectedPet ? "person.crop.circle.fill" : "person.crop.circle")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(hasSelectedPet || isSelected ? AppTheme.accent : AppTheme.textTertiary)
-                    .frame(width: 16, height: 16)
+                PetThumbnailView(
+                    pet: representativePet,
+                    fallbackSystemName: hasSelectedPet ? "person.crop.circle.fill" : "person.crop.circle",
+                    isSelected: hasSelectedPet,
+                    isUnavailable: representativePet?.isInstalled == false,
+                    size: 22
+                )
 
                 Text(character.title(language: appLanguage))
                     .font(.system(size: 12, weight: .semibold))
@@ -338,7 +481,7 @@ extension SettingsPanelView {
             }
             .padding(.leading, 9)
             .padding(.trailing, 8)
-            .frame(height: 32)
+            .frame(height: 38)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(isSelected ? AppTheme.surfaceRaised : AppTheme.transparent)
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -367,6 +510,7 @@ extension SettingsPanelView {
                     }
                     .padding(.trailing, character.pets.count > 7 ? 4 : 0)
                 }
+                .overlay(petScrollEdgeFade)
                 .frame(maxHeight: SettingsPanelMetrics.petRosterBrowserMaxHeight, alignment: .topLeading)
             }
         }
@@ -389,10 +533,13 @@ extension SettingsPanelView {
             appModel.setPetSelection(selection, enabled: !isSelected)
         } label: {
             HStack(spacing: 9) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isSelected ? AppTheme.accent : AppTheme.textTertiary)
-                    .frame(width: 16, height: 16)
+                PetThumbnailView(
+                    pet: pet,
+                    fallbackSystemName: isSelected ? "checkmark.circle.fill" : "circle",
+                    isSelected: isSelected,
+                    isUnavailable: isUnavailable,
+                    size: 30
+                )
 
                 Text(group.petSkinTitle(pet, language: appLanguage))
                     .font(.system(size: 12, weight: .medium))
@@ -414,7 +561,7 @@ extension SettingsPanelView {
                 Spacer(minLength: 4)
             }
             .padding(.horizontal, 10)
-            .frame(height: 32)
+            .frame(height: 44)
             .background(isSelected ? AppTheme.surfaceRaised : AppTheme.surface)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
@@ -470,6 +617,10 @@ extension SettingsPanelView {
 
     var selectedThemePreset: ThemePresetOption {
         themePresetOptions.first { $0.name == themePreset } ?? themePresetOptions[2]
+    }
+
+    var glassThemePreset: ThemePresetOption {
+        themePresetOptions.first { $0.name == "Glass" } ?? themePresetOptions[3]
     }
 
     var normalizedThemeAccentHex: String {
@@ -667,6 +818,11 @@ extension SettingsPanelView {
         themeForegroundHex = preset.foregroundHex
         contrast = preset.contrast
         translucentSidebar = preset.translucentSidebar
+    }
+
+    func applyGlassAppearance() {
+        appearanceMode = .dark
+        applyThemePreset(glassThemePreset)
     }
 
     func migrateLegacyThemeDefaultsIfNeeded() {
@@ -907,6 +1063,36 @@ extension SettingsPanelView {
         }
         .buttonStyle(.plain)
         .fixedSize(horizontal: true, vertical: false)
+    }
+
+    var glassAppearanceButton: some View {
+        Button {
+            applyGlassAppearance()
+        } label: {
+            let isSelected = selectedThemePreset.name == "Glass" && translucentSidebar
+
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .medium))
+                Text(tr("玻璃", "Glass"))
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .foregroundStyle(isSelected ? AppTheme.textPrimary : AppTheme.textSecondary)
+            .padding(.horizontal, 10)
+            .frame(minWidth: 58)
+            .frame(height: 28)
+            .background(isSelected ? AppTheme.surfaceRaised : AppTheme.transparent)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? AppTheme.borderStrong : AppTheme.transparent, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+        .fixedSize(horizontal: true, vertical: false)
+        .help(tr("应用 Glass 主题并启用半透明侧边栏", "Apply the Glass theme and enable the translucent sidebar"))
     }
 
     func appearancePreviewCard(

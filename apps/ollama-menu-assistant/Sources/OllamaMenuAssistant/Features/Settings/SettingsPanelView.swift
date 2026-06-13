@@ -63,7 +63,7 @@ enum SettingsPanelMetrics {
     static let sidebarWidth: CGFloat = 300
     static let sidebarHorizontalPadding: CGFloat = 20
     static let sidebarContentWidth: CGFloat = sidebarWidth - (sidebarHorizontalPadding * 2)
-    static let sidebarTopPadding: CGFloat = 34
+    static let sidebarTopInsetAdjustment: CGFloat = 6
     static let sidebarBackListSpacing: CGFloat = 14
     static let sidebarRowHeight: CGFloat = 30
     static let sidebarRowCornerRadius: CGFloat = 8
@@ -86,7 +86,7 @@ enum SettingsPanelMetrics {
     static let segmentedOptionMinWidth: CGFloat = 56
     static let petRosterGroupListWidth: CGFloat = 190
     static let petRosterCharacterListWidth: CGFloat = 128
-    static let petRosterBrowserMaxHeight: CGFloat = 284
+    static let petRosterBrowserMaxHeight: CGFloat = 320
 }
 
 struct SettingsPanelChromeMetrics: Equatable {
@@ -255,6 +255,7 @@ struct SettingsPanelView: View {
             selectedSection: selectedSection,
             language: appLanguage,
             isTranslucent: translucentSidebar,
+            topInset: settingsPanelTopInset + SettingsPanelMetrics.sidebarTopInsetAdjustment,
             onBack: {
                 isPresented = false
             },
