@@ -110,12 +110,15 @@ final class AssistantPanelController: NSObject, NSWindowDelegate {
     }
 
     func open(relativeTo button: NSStatusBarButton?) {
+        NSRunningApplication.current.activate(options: [.activateAllWindows])
         NSApp.activate(ignoringOtherApps: true)
         installSidebarToggleButtonIfNeeded()
         updateSidebarToggleButton()
         updateHistoryNavigationButtons()
         updateCollapsedNewConversationButton()
         positionWindowIfNeeded(relativeTo: button)
+        window.deminiaturize(nil)
+        window.orderFrontRegardless()
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         DispatchQueue.main.async { [weak self] in
