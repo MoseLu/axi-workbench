@@ -2,6 +2,35 @@
 
 import PackageDescription
 
+let developerDir = Context.environment["DEVELOPER_DIR"] ?? "/Library/Developer/CommandLineTools"
+// Standalone Command Line Tools do not add Swift Testing's framework and macro paths to SwiftPM test targets.
+let testingSwiftSettings: [SwiftSetting] = [
+    .unsafeFlags([
+        "-F",
+        "\(developerDir)/Library/Developer/Frameworks",
+        "-load-plugin-library",
+        "\(developerDir)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib",
+    ], .when(platforms: [.macOS])),
+]
+let testingLinkerSettings: [LinkerSetting] = [
+    .unsafeFlags([
+        "-F",
+        "\(developerDir)/Library/Developer/Frameworks",
+        "-Xlinker",
+        "-rpath",
+        "-Xlinker",
+        "\(developerDir)/Library/Developer/Frameworks",
+        "-Xlinker",
+        "-rpath",
+        "-Xlinker",
+        "\(developerDir)/Library/Developer/usr/lib",
+    ], .when(platforms: [.macOS])),
+    .linkedFramework("Testing", .when(platforms: [.macOS])),
+    .linkedFramework("_Testing_AppKit", .when(platforms: [.macOS])),
+    .linkedFramework("_Testing_CoreGraphics", .when(platforms: [.macOS])),
+    .linkedFramework("_Testing_Foundation", .when(platforms: [.macOS])),
+]
+
 let package = Package(
     name: "OllamaMenuAssistant",
     platforms: [
@@ -35,11 +64,15 @@ let package = Package(
         ),
         .testTarget(
             name: "OllamaMenuAssistantTests",
-            dependencies: ["OllamaMenuAssistant"]
+            dependencies: ["OllamaMenuAssistant"],
+            swiftSettings: testingSwiftSettings,
+            linkerSettings: testingLinkerSettings
         ),
         .testTarget(
             name: "OllamaPetRunnerTests",
-            dependencies: ["OllamaPetRunner"]
+            dependencies: ["OllamaPetRunner"],
+            swiftSettings: testingSwiftSettings,
+            linkerSettings: testingLinkerSettings
         ),
     ],
     swiftLanguageModes: [.v6]
