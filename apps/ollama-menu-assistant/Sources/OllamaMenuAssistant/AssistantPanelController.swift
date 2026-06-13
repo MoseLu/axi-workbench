@@ -117,6 +117,7 @@ final class AssistantPanelController: NSObject, NSWindowDelegate {
         updateCollapsedNewConversationButton()
         positionWindowIfNeeded(relativeTo: button)
         window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
         DispatchQueue.main.async { [weak self] in
             self?.layoutWindowChromeControls()
         }

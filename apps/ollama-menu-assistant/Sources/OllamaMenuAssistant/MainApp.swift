@@ -41,19 +41,14 @@ final class MainApp: NSObject, NSApplicationDelegate {
         statusItemController = StatusItemController(appModel: appModel, panelController: panelController)
         automationScheduler = AutomationScheduler(appModel: appModel)
 
+        showPanelOnFirstLaunchIfNeeded()
+        scheduleInitialPanelVisibilityChecks()
+
         let registered = hotkeyCoordinator.registerOptionSpace { [weak self] in
             self?.panelController.toggle(relativeTo: self?.statusItemController.statusButton)
         }
         appModel.setHotkeyRegistrationResult(success: registered)
-
-        DispatchQueue.main.async { [weak self] in
-            self?.showPanelOnFirstLaunchIfNeeded()
-        }
-
-        Task {
-            await appModel.startup()
-            self.automationScheduler.start()
-        }
+        startAppModelAfterInitialPanelPresentation()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -81,5 +76,32 @@ final class MainApp: NSObject, NSApplicationDelegate {
         }
         hasShownInitialPanel = true
         panelController.open(relativeTo: statusItemController.statusButton)
+    }
+
+    private func scheduleInitialPanelVisibilityChecks() {
+        for delay in [0.25, 0.75, 1.5] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.restoreInitialPanelIfHidden()
+            }
+        }
+    }
+
+    private func restoreInitialPanelIfHidden() {
+        guard hasShownInitialPanel else {
+            return
+        }
+        panelController.open(relativeTo: statusItemController.statusButton)
+    }
+
+    private func startAppModelAfterInitialPanelPresentation() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self else {
+                return
+            }
+            Task {
+                await self.appModel.startup()
+                self.automationScheduler.start()
+            }
+        }
     }
 }
