@@ -5,6 +5,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
     case general
     case appearance
     case configuration
+    case agentPlatform
     case personalization
     case mcpServers
     case git
@@ -26,6 +27,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .general: language == .english ? "General" : "常规"
         case .appearance: language == .english ? "Appearance" : "外观"
         case .configuration: language == .english ? "Configuration" : "配置"
+        case .agentPlatform: language == .english ? "Agent Platform" : "智能体平台"
         case .personalization: language == .english ? "Personalization" : "个性化"
         case .mcpServers: language == .english ? "MCP Servers" : "MCP 服务器"
         case .git: "Git"
@@ -43,6 +45,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .general: "gearshape"
         case .appearance: "sun.max"
         case .configuration: "speedometer"
+        case .agentPlatform: "point.3.connected.trianglepath.dotted"
         case .personalization: "clock"
         case .mcpServers: "paperclip"
         case .git: "point.3.connected.trianglepath.dotted"
@@ -180,6 +183,28 @@ struct SettingsPanelView: View {
     @AppStorage(AssistantSettingsPreferences.customInstructionsKey) var customInstructions = ""
     @AppStorage(AssistantSettingsPreferences.memoryEnabledKey) var memoryEnabled = false
     @AppStorage(AssistantSettingsPreferences.skipToolAssistedMemoryKey) var skipToolAssistedMemory = false
+    @AppStorage(AppPreferenceKeys.AgentPlatform.provider) var agentPlatformProvider = AxiAgentPlatformPreferences.defaultProvider
+    @AppStorage(AppPreferenceKeys.AgentPlatform.minimaxAPIKey) var agentPlatformMiniMaxAPIKey = ""
+    @AppStorage(AppPreferenceKeys.AgentPlatform.minimaxAPIURL) var agentPlatformMiniMaxAPIURL = AxiAgentPlatformPreferences.defaultMiniMaxAPIURL
+    @AppStorage(AppPreferenceKeys.AgentPlatform.minimaxDefaultModel) var agentPlatformMiniMaxDefaultModel = AxiAgentPlatformPreferences.defaultMiniMaxModel
+    @AppStorage(AppPreferenceKeys.AgentPlatform.openAIAPIKey) var agentPlatformOpenAIAPIKey = ""
+    @AppStorage(AppPreferenceKeys.AgentPlatform.openAIDefaultModel) var agentPlatformOpenAIDefaultModel = AxiAgentPlatformPreferences.defaultOpenAIModel
+    @AppStorage(AppPreferenceKeys.AgentPlatform.qwenAPIKey) var agentPlatformQwenAPIKey = ""
+    @AppStorage(AppPreferenceKeys.AgentPlatform.qwenAPIURL) var agentPlatformQwenAPIURL = AxiAgentPlatformPreferences.defaultQwenAPIURL
+    @AppStorage(AppPreferenceKeys.AgentPlatform.qwenDefaultModel) var agentPlatformQwenDefaultModel = AxiAgentPlatformPreferences.defaultQwenModel
+    @AppStorage(AppPreferenceKeys.AgentPlatform.defaultTemperature) var agentPlatformDefaultTemperature = AxiAgentPlatformPreferences.defaultTemperature
+    @AppStorage(AppPreferenceKeys.AgentPlatform.defaultMaxTokens) var agentPlatformDefaultMaxTokens = AxiAgentPlatformPreferences.defaultMaxTokens
+    @AppStorage(AppPreferenceKeys.AgentPlatform.maxAgents) var agentPlatformMaxAgents = AxiAgentPlatformPreferences.defaultMaxAgents
+    @AppStorage(AppPreferenceKeys.AgentPlatform.repositoryPath) var agentPlatformRepositoryPath = AxiAgentPlatformPreferences.defaultRepositoryPath
+    @AppStorage(AppPreferenceKeys.AgentPlatform.maxWorktrees) var agentPlatformMaxWorktrees = AxiAgentPlatformPreferences.defaultMaxWorktrees
+    @AppStorage(AppPreferenceKeys.AgentPlatform.maxParallelAgents) var agentPlatformMaxParallelAgents = AxiAgentPlatformPreferences.defaultMaxParallelAgents
+    @AppStorage(AppPreferenceKeys.AgentPlatform.defaultBaseBranch) var agentPlatformDefaultBaseBranch = AxiAgentPlatformPreferences.defaultBaseBranch
+    @AppStorage(AppPreferenceKeys.AgentPlatform.worktreesCleanupHours) var agentPlatformWorktreesCleanupHours = AxiAgentPlatformPreferences.defaultWorktreesCleanupHours
+    @AppStorage(AppPreferenceKeys.AgentPlatform.mcpCommand) var agentPlatformMCPCommand = AxiAgentPlatformPreferences.defaultMCPCommand
+    @AppStorage(AppPreferenceKeys.AgentPlatform.mcpArguments) var agentPlatformMCPArguments = ""
+    @AppStorage(AppPreferenceKeys.AgentPlatform.mcpCWD) var agentPlatformMCPCWD = ""
+    @AppStorage(AppPreferenceKeys.AgentPlatform.mcpTimeoutSeconds) var agentPlatformMCPTimeoutSeconds = AxiAgentPlatformPreferences.defaultMCPTimeoutSeconds
+    @AppStorage(AppPreferenceKeys.AgentPlatform.mcpProtocolVersion) var agentPlatformMCPProtocolVersion = AxiAgentPlatformPreferences.defaultMCPProtocolVersion
     @State var chromeMetrics = SettingsPanelChromeMetrics()
     @State var scrollMetrics = AppScrollMetrics()
     @State var scrollController = AppScrollController()
@@ -201,6 +226,8 @@ struct SettingsPanelView: View {
     @State var setupScriptScope = ProjectEnvironmentScriptScope.default
     @State var cleanupScriptScope = ProjectEnvironmentScriptScope.default
     @State var environmentStatusMessage: String?
+    @State var agentPlatformHealthReport: AxiAgentPlatformHealthReport?
+    @State var isCheckingAgentPlatformHealth = false
 
     var body: some View {
         ScrollViewReader { scrollProxy in
@@ -316,6 +343,7 @@ struct SettingsPanelView: View {
             general: { generalSettings },
             appearance: { appearanceSettings },
             configuration: { configurationSettings },
+            agentPlatform: { agentPlatformSettings },
             personalization: { personalizationSettings },
             mcpServers: { mcpServersSettings },
             git: { gitSettings },
