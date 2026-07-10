@@ -33,20 +33,39 @@ const BLOCK_PATTERNS = [
 ];
 
 export function createControlPlane(options = {}) {
-  const workspaceRoot = resolve(options.workspaceRoot || process.env.AXI_WORKSTATION_ROOT || process.env.EPAP_WORKSPACE_ROOT || DEFAULT_WORKSPACE_ROOT);
-  const graphPath = options.graphPath || join(workspaceRoot, "workspace.graph.json");
-  const cacheDir = options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane");
-  const memoryDatabaseUrl = Object.hasOwn(options, "memoryDatabaseUrl")
+  const deps = {
+    workspaceRoot: resolve(options.workspaceRoot || process.env.AXI_WORKSTATION_ROOT || process.env.EPAP_WORKSPACE_ROOT || DEFAULT_WORKSPACE_ROOT),
+    graphPath: options.graphPath || join(workspaceRootOf(options), "workspace.graph.json"),
+    cacheDir: options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane"),
+    memoryDatabaseUrl: Object.hasOwn(options, "memoryDatabaseUrl")
+      ? options.memoryDatabaseUrl
+      : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL),
+    memoryProjectReader: options.memoryProjectReader || (() => readMemoryProjects(memoryDatabaseUrlOf(options))),
+    agentTaskExecutor: options.agentTaskExecutor || executeAgentTask,
+    roleAgentExecutor: options.roleAgentExecutor || executeRoleAgentRun,
+    axiAgentTaskExecutor: options.axiAgentTaskExecutor || executeAxiAgentTask,
+    heartbeatMs: options.heartbeatMs || JOB_HEARTBEAT_MS,
+    codexBin: options.codexBin || process.env.CODEX_BIN || "codex",
+    appServerBin: options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex",
+    pairingTokenSecret: options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "",
+  };
+  return buildControlPlaneSurface(deps);
+}
+
+function workspaceRootOf(options) {
+  return resolve(options.workspaceRoot || process.env.AXI_WORKSTATION_ROOT || process.env.EPAP_WORKSPACE_ROOT || DEFAULT_WORKSPACE_ROOT);
+}
+function memoryDatabaseUrlOf(options) {
+  return Object.hasOwn(options, "memoryDatabaseUrl")
     ? options.memoryDatabaseUrl
     : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL);
-  const memoryProjectReader = options.memoryProjectReader || (() => readMemoryProjects(memoryDatabaseUrl));
-  const agentTaskExecutor = options.agentTaskExecutor || executeAgentTask;
-  const roleAgentExecutor = options.roleAgentExecutor || executeRoleAgentRun;
-  const axiAgentTaskExecutor = options.axiAgentTaskExecutor || executeAxiAgentTask;
-  const heartbeatMs = options.heartbeatMs || JOB_HEARTBEAT_MS;
-  const codexBin = options.codexBin || process.env.CODEX_BIN || "codex";
-  const appServerBin = options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex";
-  const pairingTokenSecret = options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "";
+}
+
+function buildControlPlaneSurface({
+  workspaceRoot, graphPath, cacheDir, memoryDatabaseUrl, memoryProjectReader,
+  agentTaskExecutor, roleAgentExecutor, axiAgentTaskExecutor, heartbeatMs,
+  codexBin, appServerBin, pairingTokenSecret,
+}) {
   const pairingEnabled = process.env.AXI_MOBILE_PAIRING_ENABLED === "true";
   const pairing = pairingTokenSecret
     ? createPairingService({ cacheDir, tokenSecret: pairingTokenSecret })
@@ -59,7 +78,7 @@ export function createControlPlane(options = {}) {
   const jobs = new Map();
   const jobEnvelopeIndex = new Map();
 
-  return {
+  const surface = {
     workspaceRoot,
     graphPath,
     cacheDir,
@@ -89,19 +108,24 @@ export function createControlPlane(options = {}) {
     getRun: (id) => runs.get(id) || readRun(cacheDir, id),
     getAgentTask: (id) => agentTasks.get(id) || readJson(join(cacheDir, "agent-tasks", `${id}.json`), null),
     cancelAgentTask: (id) => cancelAgentTask({ id, cacheDir, agentTasks }),
-    decideApproval: (input) => decideApproval({ input, cacheDir, approvals, agentTasks }),
-    createJob: (input) => createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }),
+    decideApproval: null, // backfilled below — TDZ-safe bridge
+    createJob: (input) => createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }),
     getJob: (id) => jobs.get(id) || readJson(join(cacheDir, "jobs", id, "job.json"), null),
     getJobEvents: (id, options = {}) => readJobEvents({ cacheDir, id, afterEventId: options.afterEventId }),
     getJobArtifacts: (id) => listJobArtifacts({ cacheDir, id }),
     cancelJob: (id) => cancelControlJob({ cacheDir, jobs, id }),
     normalizeIMEnvelope,
-    /** Append a mobile_action audit event into cacheDir/audit.jsonl.
-     *  Fields are normalized server-side so callers do not need to
-     *  import the audit schema; missing fields land as null so the
-     *  audit log is always self-describing. */
     recordMobileAudit: (event) => recordMobileAudit({ cacheDir, event }),
   };
+  // Wire the mobile approval bridge now that the surface exists.
+  surface.decideApproval = (input) => decideApproval({
+    input,
+    cacheDir,
+    approvals,
+    agentTasks,
+    dispatchApprovedJob: (seed) => surface.createJob(seed),
+  });
+  return surface;
 }
 
 /**
@@ -799,7 +823,7 @@ function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, age
   return task;
 }
 
-function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
+function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
   const envelope = normalizeIMEnvelope(input?.envelope || input || {});
   if (jobEnvelopeIndex.has(envelope.id)) {
     const existingId = jobEnvelopeIndex.get(envelope.id);
@@ -814,6 +838,50 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
     : axiAgentTask
       ? assessAxiAgentTask(axiAgentTask)
       : assessTask(envelope.text);
+
+  // DevHub / Axi Mobile stage-B item 7: requiresApproval gate.
+  // When the assessment says the action needs explicit owner approval,
+  // we DO NOT enqueue the job.  Instead we file a pending ApprovalRequest
+  // that the owner reviews via the existing decideApproval path; once
+  // approved, decideApproval re-enters createControlJob with the same
+  // envelope id and the gate short-circuits because the envelope id is
+  // already indexed by the approval entry.  The replay-safe index
+  // (jobEnvelopeIndex) is intentionally NOT populated here so a future
+  // direct createJob() with the same envelope id would still be gated
+  // by the approval's riskLevel rather than collapsing to a duplicate.
+  if (assessment.requiresApproval && !input?.__approvedByApproval) {
+    const approval = {
+      id: `apr_${randomUUID()}`,
+      routeKey: envelope.raw?.routeKey || envelope.channel || "mobile",
+      runId: undefined,
+      taskId: undefined,
+      actionSummary: assessment.summary,
+      riskLevel: assessment.risk,
+      status: "pending",
+      source: "mobile_pairing",
+      sourceDeviceId: input?.deviceId || null,
+      projectId: input?.projectId || null,
+      idempotencyKey: input?.idempotencyKey || null,
+      actionType: input?.actionType || null,
+      createdAt: new Date().toISOString(),
+      envelopeId: envelope.id,
+      envelopeText: envelope.text,
+    };
+    approvals.set(approval.id, approval);
+    persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+    appendFileSync(join(cacheDir, "audit.jsonl"), JSON.stringify({
+      auditKind: "approval_requested",
+      approvalId: approval.id,
+      deviceId: approval.sourceDeviceId,
+      idempotencyKey: approval.idempotencyKey,
+      projectId: approval.projectId,
+      actionType: approval.actionType,
+      riskLevel: approval.riskLevel,
+      occurredAt: Math.floor(Date.now() / 1000),
+    }) + "\n");
+    return { status: "pending_approval", approvalId: approval.id, riskLevel: approval.riskLevel, actionSummary: approval.actionSummary };
+  }
+
   const now = new Date();
   const job = {
     id: randomUUID(),
@@ -900,6 +968,7 @@ function assessReadOnlyRegisteredCommand() {
     estimatedDuration: "sync",
     requiresOrchestration: false,
     requiresAudit: true,
+    requiresApproval: false,
     requiresLibrarian: false,
     risk: "low",
     summary: "ops / small / registered read-only command",
@@ -960,6 +1029,7 @@ function assessAxiAgentTask(task = {}) {
     estimatedDuration: "sync",
     requiresOrchestration: false,
     requiresAudit: true,
+    requiresApproval: false,
     requiresLibrarian: false,
     risk: "low",
     summary: isToolResult ? "ops / small / axi-agent readonly tool result" : "code / small / axi-agent quality gate",
@@ -1425,6 +1495,7 @@ function assessTask(text) {
     estimatedDuration,
     requiresOrchestration: kind !== "chat",
     requiresAudit: ["code", "ops", "docs"].includes(kind),
+    requiresApproval: risk === "destructive",
     requiresLibrarian: kind !== "chat",
     risk,
     summary: `${kind} / ${complexity} / ${estimatedDuration}`,
@@ -1645,7 +1716,7 @@ function cancelAgentTask({ id, cacheDir, agentTasks }) {
   return task;
 }
 
-function decideApproval({ input, cacheDir, approvals, agentTasks }) {
+function decideApproval({ input, cacheDir, approvals, agentTasks, dispatchApprovedJob }) {
   const approval = approvals.get(input.id) || readJson(join(cacheDir, "approvals", `${input.id}.json`), null);
   if (!approval) return null;
   if (approval.status !== "pending") return approval;
@@ -1661,6 +1732,34 @@ function decideApproval({ input, cacheDir, approvals, agentTasks }) {
       task.summary = "审批已拒绝，任务取消。";
       task.completedAt = new Date().toISOString();
       persistAgentTask(cacheDir, task);
+    }
+  }
+  // DevHub / Axi Mobile stage-B: when a pending approval filed by the
+  // mobile gate is approved, re-run the original job creation so the
+  // control plane transitions from pending_approval to a real job.
+  // Re-entry skips the gate because input.__approvedByApproval is set.
+  if (approval.status === "approved" && approval.source === "mobile_pairing" && dispatchApprovedJob) {
+    const seeded = {
+      __approvedByApproval: approval.id,
+      envelope: {
+        id: approval.envelopeId,
+        channel: "unknown",
+        conversationId: "control-plane",
+        senderId: "approval-bridge",
+        text: approval.envelopeText || "",
+        receivedAt: new Date().toISOString(),
+        raw: { routeKey: approval.routeKey, sourceDeviceId: approval.sourceDeviceId, projectId: approval.projectId, idempotencyKey: approval.idempotencyKey, actionType: approval.actionType },
+      },
+      idempotencyKey: approval.idempotencyKey,
+      actionType: approval.actionType,
+      projectId: approval.projectId,
+      deviceId: approval.sourceDeviceId,
+    };
+    const jobResult = dispatchApprovedJob(seeded);
+    const dispatchedId = jobResult?.job?.id || jobResult?.id;
+    if (dispatchedId) {
+      approval.dispatchedJobId = dispatchedId;
+      persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
     }
   }
   return approval;
