@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Annotation, END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import { createPairingService } from "./pairing.mjs";
+import { createIdempotencyService } from "./idempotency.mjs";
 
 const DEFAULT_WORKSPACE_ROOT = "/Volumes/code/workspace";
 const WORKSTATION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -50,6 +51,7 @@ export function createControlPlane(options = {}) {
   const pairing = pairingTokenSecret
     ? createPairingService({ cacheDir, tokenSecret: pairingTokenSecret })
     : null;
+  const idempotency = createIdempotencyService({ cacheDir });
   const runs = new Map();
   const envelopeRuns = new Map();
   const agentTasks = new Map();
@@ -63,6 +65,7 @@ export function createControlPlane(options = {}) {
     cacheDir,
     pairingEnabled,
     pairing,
+    idempotency,
     snapshot: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileSnapshot: () => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileProject: (id) => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }).projects.find((project) => project.id === id) || null,
@@ -93,7 +96,41 @@ export function createControlPlane(options = {}) {
     getJobArtifacts: (id) => listJobArtifacts({ cacheDir, id }),
     cancelJob: (id) => cancelControlJob({ cacheDir, jobs, id }),
     normalizeIMEnvelope,
+    /** Append a mobile_action audit event into cacheDir/audit.jsonl.
+     *  Fields are normalized server-side so callers do not need to
+     *  import the audit schema; missing fields land as null so the
+     *  audit log is always self-describing. */
+    recordMobileAudit: (event) => recordMobileAudit({ cacheDir, event }),
   };
+}
+
+/**
+ * Write one mobile_action entry into the existing audit.jsonl ledger
+ * (the same file the desktop control plane already uses).  Format:
+ *   { auditKind: "mobile_action", deviceId, idempotencyKey, projectId,
+ *     actionType, approvalRef, status, occurredAt }
+ * chmod 600 on first write; existing files keep their permissions.
+ */
+export function recordMobileAudit({ cacheDir, event = {} }) {
+  if (!cacheDir) return { ok: false, error: "cacheDir required" };
+  const path = join(cacheDir, "audit.jsonl");
+  const payload = {
+    auditKind: "mobile_action",
+    deviceId: event.deviceId || null,
+    idempotencyKey: event.idempotencyKey || null,
+    projectId: event.projectId || null,
+    actionType: event.actionType || null,
+    approvalRef: event.approvalRef || null,
+    status: event.status || "executed",
+    occurredAt: Math.floor(Date.now() / 1000),
+  };
+  if (!existsSync(path)) {
+    writeFileSync(path, JSON.stringify(payload) + "\n", { mode: 0o600 });
+    try { chmodSync(path, 0o600); } catch { /* tolerate fs without chmod */ }
+    return { ok: true };
+  }
+  appendFileSync(path, JSON.stringify(payload) + "\n");
+  return { ok: true };
 }
 
 /**

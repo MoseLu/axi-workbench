@@ -70,18 +70,72 @@ const server = createServer(async (req, res) => {
       }
       if (req.method === "POST" && url.pathname === "/mobile/v1/jobs") {
         const body = await readJsonBody(req);
-        return sendJson(res, 202, controlPlane.createJob({ ...body, deviceId: auth.deviceId, auditDeviceId: auth.deviceId }));
+        const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionType"]);
+        if (!fields.ok) return sendJson(res, 400, { error: fields.error });
+        const idempotency = controlPlane.idempotency;
+        const cached = idempotency.check({ deviceId: auth.deviceId, key: body.idempotencyKey });
+        if (cached.cached) {
+          res.writeHead(cached.response.status, {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "X-Idempotency-Replay": "true",
+          });
+          res.end(JSON.stringify(cached.response.body));
+          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: null, status: "replayed" });
+          return;
+        }
+        const result = controlPlane.createJob({ ...body, deviceId: auth.deviceId, auditDeviceId: auth.deviceId });
+        idempotency.record({ deviceId: auth.deviceId, key: body.idempotencyKey, response: { status: 202, body: result } });
+        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: null, status: "executed" });
+        return sendJson(res, 202, result);
       }
       const mobileCancelMatch = url.pathname.match(/^\/mobile\/v1\/jobs\/([^/]+)\/cancel$/);
       if (req.method === "POST" && mobileCancelMatch) {
+        const body = await readJsonBody(req);
+        const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionType"]);
+        if (!fields.ok) return sendJson(res, 400, { error: fields.error });
+        const idempotency = controlPlane.idempotency;
+        const cached = idempotency.check({ deviceId: auth.deviceId, key: body.idempotencyKey });
+        if (cached.cached) {
+          res.writeHead(cached.response.status, {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "X-Idempotency-Replay": "true",
+          });
+          res.end(JSON.stringify(cached.response.body));
+          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: "cancel_job", approvalRef: null, status: "replayed" });
+          return;
+        }
         const job = controlPlane.cancelJob(decodeURIComponent(mobileCancelMatch[1]));
-        return sendJson(res, job ? 200 : 404, job || { error: "job not found" });
+        const responseBody = job || { error: "job not found" };
+        const status = job ? 200 : 404;
+        idempotency.record({ deviceId: auth.deviceId, key: body.idempotencyKey, response: { status, body: responseBody } });
+        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: "cancel_job", approvalRef: null, status: job ? "executed" : "not_found" });
+        return sendJson(res, status, responseBody);
       }
       const mobileApprovalMatch = url.pathname.match(/^\/mobile\/v1\/approvals\/([^/]+)\/decision$/);
       if (req.method === "POST" && mobileApprovalMatch) {
         const body = await readJsonBody(req);
+        const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionType", "approvalRef"]);
+        if (!fields.ok) return sendJson(res, 400, { error: fields.error });
+        const idempotency = controlPlane.idempotency;
+        const cached = idempotency.check({ deviceId: auth.deviceId, key: body.idempotencyKey });
+        if (cached.cached) {
+          res.writeHead(cached.response.status, {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "X-Idempotency-Replay": "true",
+          });
+          res.end(JSON.stringify(cached.response.body));
+          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: body.approvalRef, status: "replayed" });
+          return;
+        }
         const decision = controlPlane.decideApproval({ id: decodeURIComponent(mobileApprovalMatch[1]), ...body, deviceId: auth.deviceId });
-        return sendJson(res, decision ? 200 : 404, decision || { error: "approval not found" });
+        const responseBody = decision || { error: "approval not found" };
+        const status = decision ? 200 : 404;
+        idempotency.record({ deviceId: auth.deviceId, key: body.idempotencyKey, response: { status, body: responseBody } });
+        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: body.approvalRef, status: decision ? "executed" : "not_found" });
+        return sendJson(res, status, responseBody);
       }
       return sendJson(res, 404, { error: "mobile endpoint not found" });
     }
@@ -188,6 +242,26 @@ function authenticate(req, controlPlane) {
   }
   if (isPairedOwner(req)) return { ok: true, deviceId: "static-owner-token", scopes: ["owner-static"] };
   return { ok: false, error: "owner device pairing required" };
+}
+
+/**
+ * validateMobileAction — fail-fast field presence check for the six
+ * fields the mobile contract promises on every write (idempotencyKey,
+ * deviceId is taken from the token; projectId, actionType,
+ * approvalRef is conditional, auditEvent is the response-side
+ * concern).  Returns { ok, error } so the route handler can emit a
+ * 400 with a single-line message.
+ */
+function validateMobileAction(body, required) {
+  if (!body || typeof body !== "object") return { ok: false, error: "request body must be a JSON object" };
+  const missing = required.filter((key) => {
+    const value = body[key];
+    if (value === undefined || value === null) return true;
+    if (typeof value === "string" && value.trim() === "") return true;
+    return false;
+  });
+  if (missing.length) return { ok: false, error: `missing required field(s): ${missing.join(", ")}` };
+  return { ok: true };
 }
 
 async function readJsonBody(req) {
