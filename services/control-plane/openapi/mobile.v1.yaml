@@ -1,0 +1,671 @@
+openapi: 3.0.3
+info:
+  title: Axi Workstation Control Plane — Mobile v1
+  version: 1.0.0
+  description: |
+    DevHub / Axi Mobile stage-B machine-readable contract for the mobile
+    client. Every mobile write path accepts a uniform six-field contract
+    (idempotencyKey, projectId, actionType, plus deviceId from the bearer
+    token, auditEvent on the response side, and approvalRef when the route
+    is the approvals-decision endpoint). Destructive actions return
+    202 with `status: pending_approval` so a paired device does not retry.
+
+    This spec is intentionally hand-written so we do not introduce a
+    zod-to-json-schema dependency just to render the contract. The
+    canonical schema source remains `packages/schemas/src/entities/control-plane.ts`; whenever a zod schema changes there, mirror the change here in the same commit.
+servers:
+  - url: http://127.0.0.1:8092
+    description: Local control plane (default CONTROL_PLANE_PORT)
+  - url: https://control-plane.axiomaticworld.local
+    description: Cluster-internal control plane (not exposed externally)
+tags:
+  - name: pairing
+    description: Device pairing, nonce refresh, token issuance, and revocation
+  - name: workspace
+    description: Read-only workspace projection endpoints
+  - name: jobs
+    description: Mobile job creation, cancellation, and approval bridging
+paths:
+  /mobile/v1/pair/start:
+    post:
+      tags: [pairing]
+      summary: Begin device pairing (no auth required)
+      operationId: startPair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairStartRequest'
+      responses:
+        '200':
+          description: Pairing code issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairStartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/confirm:
+    post:
+      tags: [pairing]
+      summary: Exchange pairing code for a registered deviceId
+      operationId: confirmPair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairConfirmRequest'
+      responses:
+        '200':
+          description: Device registered; nonce issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairConfirmResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/auth/token:
+    post:
+      tags: [pairing]
+      summary: Exchange deviceId for a short-lived HS256 access token
+      operationId: issueAccessToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Access token issued (TTL 1h)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/auth/nonce:
+    post:
+      tags: [pairing]
+      summary: Refresh a single-use nonce for /auth/token re-signing
+      operationId: requestAuthNonce
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Nonce issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/revoke:
+    post:
+      tags: [pairing]
+      summary: Revoke a paired device (soft; tokens become 401)
+      operationId: revokeDevice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        '200':
+          description: Device revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/workspace:
+    get:
+      tags: [workspace]
+      summary: Mobile workspace projection (only explicit HTTPS previews)
+      operationId: mobileSnapshot
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Workspace snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileWorkspaceSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/projects/{id}:
+    get:
+      tags: [workspace]
+      summary: Mobile projection for a single project
+      operationId: mobileProject
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileProjectCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/jobs:
+    post:
+      tags: [jobs]
+      summary: Create a control-plane job from a mobile action
+      operationId: createMobileJob
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileActionRequest'
+      responses:
+        '202':
+          description: Job accepted (executed or pending_approval) or replayed
+          headers:
+            X-Idempotency-Replay:
+              description: Set to "true" when the response is a cache replay
+              schema:
+                type: string
+                enum: ['true', 'false']
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MobileJobAccepted'
+                  - $ref: '#/components/schemas/MobileJobPendingApproval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/jobs/{id}/cancel:
+    post:
+      tags: [jobs]
+      summary: Cancel a running job
+      operationId: cancelMobileJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileActionRequest'
+      responses:
+        '200':
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileJobCancelResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/approvals/{id}/decision:
+    post:
+      tags: [jobs]
+      summary: Approve or reject a pending mobile approval
+      operationId: decideMobileApproval
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileApprovalDecision'
+      responses:
+        '200':
+          description: Decision applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileApprovalDecisionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: HS256
+      description: |
+        Short-lived HS256 access token minted by /mobile/v1/auth/token.
+        TTL 1h. The static AXI_MOBILE_OWNER_TOKEN fallback is honoured
+        only when AXI_MOBILE_PAIRING_ENABLED is not 'true'.
+  responses:
+    BadRequest:
+      description: Missing required field(s) or unparsable body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+    Unauthorized:
+      description: Bearer token missing / expired / revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+    NotFound:
+      description: Project / job / approval not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+    PairingDisabled:
+      description: Pairing is not configured on this server (AXI_MOBILE_TOKEN_SECRET missing)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+  schemas:
+    MobileActionError:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error:
+          type: string
+          minLength: 1
+        message:
+          type: string
+    PairStartRequest:
+      type: object
+      required: [publicKeyHex, deviceName]
+      additionalProperties: false
+      properties:
+        publicKeyHex:
+          type: string
+          minLength: 64
+          maxLength: 64
+          description: 64-char hex-encoded public key (NIST P-256 / Ed25519 raw key bytes)
+        deviceName:
+          type: string
+          minLength: 1
+        clientInfo:
+          type: object
+          additionalProperties: true
+    PairStartResponse:
+      type: object
+      required: [ok, pairingId, code, codeExpiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        pairingId:
+          type: string
+          pattern: '^pair_[A-Za-z0-9_-]{36}$'
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        codeExpiresAt:
+          type: integer
+          description: Unix epoch seconds (5-minute TTL by default)
+    PairConfirmRequest:
+      type: object
+      required: [pairingId, code]
+      additionalProperties: false
+      properties:
+        pairingId:
+          type: string
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+    PairConfirmResponse:
+      type: object
+      required: [ok, deviceId, status, nonce]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        deviceId:
+          type: string
+          pattern: '^dev_[A-Za-z0-9_-]{36}$'
+        status:
+          type: string
+          enum: [active]
+        nonce:
+          $ref: '#/components/schemas/NonceResponse'
+    TokenRequest:
+      type: object
+      required: [deviceId]
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+    TokenResponse:
+      type: object
+      required: [ok, accessToken, expiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        accessToken:
+          type: string
+          description: HS256 JWT
+        expiresAt:
+          type: integer
+    NonceResponse:
+      type: object
+      required: [nonceId, nonce, expiresAt]
+      additionalProperties: false
+      properties:
+        nonceId:
+          type: string
+        nonce:
+          type: string
+        expiresAt:
+          type: integer
+    RevokeRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+        reason:
+          type: string
+    RevokeResponse:
+      type: object
+      required: [ok, deviceId, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        deviceId:
+          type: string
+        status:
+          type: string
+          enum: [revoked]
+    MobileActionRequest:
+      type: object
+      required:
+        - idempotencyKey
+        - projectId
+        - actionType
+      additionalProperties: false
+      properties:
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+        projectId:
+          type: string
+        actionType:
+          type: string
+        text:
+          type: string
+          description: Optional natural-language task body (used by assessTask)
+        payload:
+          type: object
+          additionalProperties: true
+    MobileApprovalDecision:
+      allOf:
+        - $ref: '#/components/schemas/MobileActionRequest'
+        - type: object
+          required: [decision, approvalRef]
+          additionalProperties: false
+          properties:
+            decision:
+              type: string
+              enum: [approved, rejected]
+            decisionText:
+              type: string
+            approvalRef:
+              type: string
+              description: |
+                The approvalId of the pending approval; must equal the
+                path parameter.
+    MobileJobAccepted:
+      type: object
+      required: [ignored, accepted, job]
+      additionalProperties: false
+      properties:
+        ignored:
+          type: boolean
+        accepted:
+          type: boolean
+        job:
+          $ref: '#/components/schemas/JobSummary'
+        latestEvent:
+          type: object
+          additionalProperties: true
+    MobileJobPendingApproval:
+      type: object
+      required: [status, approvalId, riskLevel, actionSummary]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [pending_approval]
+        approvalId:
+          type: string
+          pattern: '^apr_[A-Za-z0-9-]{36}$'
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        actionSummary:
+          type: string
+    MobileJobCancelResponse:
+      type: object
+      required: [id, status]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [cancelled, completed, failed]
+    MobileApprovalDecisionResponse:
+      type: object
+      required: [id, status]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [approved, rejected]
+        decisionText:
+          type: string
+        dispatchedJobId:
+          type: string
+          nullable: true
+          description: Set when an approved mobile_pairing approval triggers a real job; null when rejected.
+    JobSummary:
+      type: object
+      required: [id, status, summary]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        summary:
+          type: string
+    MobileProjectCard:
+      type: object
+      required: [id, name, kind, status, summary, architecture, phase, preview, actions, source]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+        status:
+          type: string
+        summary:
+          type: string
+        architecture:
+          type: object
+          additionalProperties: false
+          properties:
+            provides:
+              type: array
+              items:
+                type: string
+            consumes:
+              type: array
+              items:
+                type: string
+            contracts:
+              type: array
+              items:
+                type: string
+        phase:
+          type: string
+        lastVerifiedAt:
+          type: string
+          nullable: true
+        preview:
+          $ref: '#/components/schemas/MobilePreview'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileAction'
+        source:
+          type: string
+          enum: [workspace.graph]
+    MobileWorkspaceSnapshot:
+      type: object
+      required: [generatedAt, source, projects, runningTasks, approvals]
+      additionalProperties: false
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [workspace.graph]
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileProjectCard'
+        runningTasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobSummary'
+        approvals:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalSummary'
+    MobilePreview:
+      type: object
+      required:
+        - mode
+        - url
+        - allowEmbedded
+        - coverUrl
+        - infoPageUrl
+        - fallbackMessage
+      additionalProperties: false
+      properties:
+        mode:
+          type: string
+          enum:
+            - none
+            - embedded_web
+            - external_web
+        url:
+          type: string
+          nullable: true
+          description: HTTPS URL only; null when mode is "none"
+        allowEmbedded:
+          type: boolean
+        coverUrl:
+          type: string
+          nullable: true
+        infoPageUrl:
+          type: string
+          nullable: true
+        fallbackMessage:
+          type: string
+          nullable: true
+    MobileAction:
+      type: object
+      required: [commandId, label, intent, autoExecutable]
+      additionalProperties: false
+      properties:
+        commandId:
+          type: string
+        label:
+          type: string
+        intent:
+          type: string
+        autoExecutable:
+          type: boolean
+    ApprovalSummary:
+      type: object
+      required: [id, status, actionSummary, riskLevel]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired]
+        actionSummary:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        createdAt:
+          type: string
+          format: date-time
