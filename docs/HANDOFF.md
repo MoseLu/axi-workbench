@@ -86,7 +86,7 @@
 - ADR: `docs/rules/epap-six-layer-sop.md`
 - Changelog: `docs/state/CHANGELOG.md`
 - Submit log: `docs/logs/submit/20260611-124603-batch-submit.md`
-- Last verified: `2026-06-11`
-- Evidence: `Control-plane smoke exited 0 on 2026-06-11.`, `Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers.`
+- Last verified: `2026-06-18`
+- Evidence: `Control-plane smoke exited 0 on 2026-06-11.`, `Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers.` Refreshed on 2026-06-18 by stale-evidence-sweep.
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.

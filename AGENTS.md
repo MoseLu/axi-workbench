@@ -48,6 +48,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 
 | 议题 | 权威来源 |
 |------|----------|
+| 变更日志（Change Log） | [`CHANGE.md`](CHANGE.md) (root pointer) → [`docs/state/CHANGELOG.md`](docs/state/CHANGELOG.md) (canonical) |
 | 项目入口与当前结构 | [`README.md`](README.md) |
 | 安全策略 | [`docs/governance/SECURITY.md`](docs/governance/SECURITY.md) |
 | 六层控制面边界与运行 SOP | [`docs/rules/epap-six-layer-sop.md`](docs/rules/epap-six-layer-sop.md) |

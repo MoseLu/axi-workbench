@@ -1,23 +1,23 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-06-11T16:06:10.873Z",
+  "generatedAt": "2026-07-02T22:41:22.839Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 32,
-    "axiTotal": 18,
+    "total": 34,
+    "axiTotal": 20,
     "complete": 1,
     "usableOrBetter": 9,
     "blocked": 0,
     "byStage": {
-      "unassessed": 20,
+      "unassessed": 22,
       "building": 3,
       "usable": 7,
       "complete": 1,
       "maintenance": 1
     },
     "byConfidence": {
-      "low": 19,
-      "medium": 11,
+      "low": 20,
+      "medium": 12,
       "high": 2
     }
   },
@@ -33,11 +33,12 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
+        "docs:legacy",
         "handoff:unready",
-        "verify:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
-        "health:test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md",
+        "verify:test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md",
+        "health:test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md",
         "contracts:2"
       ],
       "remaining": [
@@ -47,10 +48,11 @@
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
-        "status": "missing",
-        "present": [],
+        "status": "legacy",
+        "present": [
+          "README.md"
+        ],
         "missing": [
-          "README.md",
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
@@ -70,14 +72,14 @@
         ]
       },
       "verify": [
-        "test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md"
+        "test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md"
       ],
       "health": [
-        "test -f /Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md"
+        "test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md"
       ],
       "contracts": [
-        "/Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_MERGE_PLAN.md",
-        "/Volumes/code/workspace/docs/axi/AXI_ACCOUNTS_SHARED_SCHEMA.md"
+        "/Volumes/code/workspace/docs/axi/merge-plans/AXI_ACCOUNTS_MERGE_PLAN.md",
+        "/Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md"
       ]
     },
     {
@@ -96,7 +98,7 @@
         "Workspace verify covers runtime API smoke tests plus MCP, transport, bridge, and todo packages.",
         "Governance source still classifies the project as development.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py | npm --prefix infra/axi-agent-mcp test | npm --prefix infra/axi-agent-transport test | npm --prefix infra/codex-remote-bridge test | npm --prefix tools/axi-todo test",
         "health:test -f backend/app/api/workstation.py | test -f infra/axi-agent-mcp/package.json | test -f infra/axi-agent-transport/package.json | test -f tools/axi-todo/package.json",
         "contracts:8"
@@ -124,9 +126,14 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder must contain at most 5 item(s)",
+          "readOrder[2] path does not exist: UPGRADE_v1.1.0.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py",
@@ -149,7 +156,80 @@
         "infra/axi-agent-transport/docs/adr/0001-axi-agent-transport.md",
         "infra/codex-remote-bridge/package.json",
         "tools/axi-todo/package.json",
-        "/Volumes/code/workspace/docs/axi/AXI_AGENT_MERGE_PLAN.md"
+        "/Volumes/code/workspace/docs/axi/merge-plans/AXI_AGENT_MERGE_PLAN.md"
+      ]
+    },
+    {
+      "id": "axi-artboard",
+      "name": "Axi Artboard",
+      "path": "/Volumes/code/workspace/products/axi-artboard",
+      "kind": "product",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "evidence": [
+        "docs:legacy",
+        "handoff:unready",
+        "verify:/Volumes/code/workspace/scripts/workspace-project validate | pnpm --dir /Volumes/code/workspace/products/axi-artboard build",
+        "health:test -f /Volumes/code/workspace/products/axi-artboard/AGENTS.md | test -f /Volumes/code/workspace/products/axi-artboard/README.md | test -f /Volumes/code/workspace/products/axi-artboard/package.json | test -d /Volumes/code/workspace/products/axi-artboard/.git | curl -sS -m 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:5173/ | grep -q '^200$'",
+        "contracts:9",
+        "package-scripts:test,build"
+      ],
+      "remaining": [
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "legacy",
+        "present": [
+          "README.md",
+          "AGENTS.md"
+        ],
+        "missing": [
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [
+        "/Volumes/code/workspace/scripts/workspace-project validate",
+        "pnpm --dir /Volumes/code/workspace/products/axi-artboard build"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/products/axi-artboard/AGENTS.md",
+        "test -f /Volumes/code/workspace/products/axi-artboard/README.md",
+        "test -f /Volumes/code/workspace/products/axi-artboard/package.json",
+        "test -d /Volumes/code/workspace/products/axi-artboard/.git",
+        "curl -sS -m 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:5173/ | grep -q '^200$'"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "package.json",
+        "vite.config.ts",
+        "src/App.tsx",
+        "src/main.tsx",
+        "src/overlay/OverlayCanvas.tsx",
+        "src/overlay/inspect.ts",
+        "src/overlay/source-map.ts",
+        "src/overlay/vite-plugin-source-attrs.ts"
       ]
     },
     {
@@ -238,7 +318,7 @@
         "Workspace graph registers app verification and MCP/document contracts.",
         "Workspace governance docs are mirrored into the Axi Docs source tree.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm --dir app verify",
         "health:test -d app | test -f app/package.json",
         "contracts:4"
@@ -265,9 +345,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder must contain at most 5 item(s)"
+        ]
       },
       "verify": [
         "pnpm --dir app verify"
@@ -277,7 +359,7 @@
         "test -f app/package.json"
       ],
       "contracts": [
-        "TODO.md",
+        "docs/state/TODO.md",
         "docs",
         "app/package.json",
         "app/src/mcp/server.ts"
@@ -294,10 +376,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
         "health:test -f pyproject.toml | test -d src/codex_feishu_bridge",
         "contracts:5"
@@ -323,9 +405,15 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[3] path does not exist: TODO.md",
+          "readOrder[4] path does not exist: MILESTONE.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "decisions.changelog path does not exist: CHANGELOG.md"
+        ]
       },
       "verify": [
         "PYTHONPATH=src .venv/bin/python -m unittest discover -s tests"
@@ -377,12 +465,12 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
@@ -489,13 +577,14 @@
         "Relay and local smoke verification are registered in the workspace graph.",
         "Axi Coder consumes Notify for mobile companion task and notification return paths.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:make test-relay | make smoke-relay-local",
         "health:make test-relay | test -d android-app/app | test -d donors/android-workspace-app | test -d donors/feiyu-agentflow",
         "contracts:7"
       ],
       "remaining": [
-        "Keep mobile workbench evidence and goal artifacts discoverable from project docs."
+        "Keep mobile workbench evidence and goal artifacts discoverable from project docs.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -506,18 +595,21 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "make test-relay",
@@ -555,7 +647,7 @@
         "Project now lives under /Volumes/code/workspace/projects/axi-pet.",
         "Local verification covers stage-web, stage-ui, and stage-layouts typechecks.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm -F @proj-airi/stage-web typecheck | pnpm -F @proj-airi/stage-ui typecheck | pnpm -F @proj-airi/stage-layouts typecheck",
         "health:test -f package.json | test -d apps/stage-web | test -d packages/stage-ui",
         "contracts:7",
@@ -563,7 +655,8 @@
       ],
       "remaining": [
         "Decide whether to keep upstream AIRI branding internally or run a separate package/product rename pass.",
-        "Promote local STT helper into a documented project script if it becomes durable."
+        "Promote local STT helper into a documented project script if it becomes durable.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -574,18 +667,23 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[3] path does not exist: PRD.md",
+          "readOrder[4] path does not exist: TDD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "pnpm -F @proj-airi/stage-web typecheck",
@@ -608,6 +706,86 @@
       ]
     },
     {
+      "id": "axi-pet-desktop",
+      "name": "Axi Pet Desktop",
+      "path": "/Volumes/code/workspace/projects/axi-pet-desktop",
+      "kind": "axi-pet-desktop-monorepo",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "medium",
+      "confidenceLabel": "中",
+      "summary": "Axi Pet Desktop is the Electron desktop monorepo extracted from axi-pet on 2026-06-18. Owns stage-tamagotchi (legacy) and desktop-pet (active macOS-first VRM pet). Local verification covers both apps' typecheck and desktop-pet test:run.",
+      "updatedAt": "2026-06-19",
+      "evidence": [
+        "Root AGENTS.md, docs/HANDOFF.md, root CHANGE.md written on 2026-06-19.",
+        "infra/axi-workspace-governance/workspace.json has axi-pet-desktop entry.",
+        "pnpm -F @proj-airi/desktop-pet typecheck passes (vue-tsc --noEmit, no output).",
+        "docs:partial",
+        "handoff:unready",
+        "verify:pnpm -F @proj-airi/desktop-pet typecheck | pnpm -F @proj-airi/desktop-pet test:run | pnpm -F @proj-airi/stage-tamagotchi typecheck | pnpm typecheck",
+        "health:test -f package.json | test -f pnpm-workspace.yaml | test -d apps/desktop-pet | test -d apps/stage-tamagotchi | test -d packages/stage-ui",
+        "contracts:9",
+        "package-scripts:test,build"
+      ],
+      "remaining": [
+        "Add GitHub remote + .github/workflows/* CI lane (P1, owner-approved).",
+        "Lock contract package version-sync workflow with axi-pet (P1).",
+        "Decide whether stage-tamagotchi stays as legacy anchor or deprecates.",
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "TODO.md",
+          "docs/HANDOFF.md"
+        ],
+        "missing": [
+          "CHANGELOG.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [
+        "pnpm -F @proj-airi/desktop-pet typecheck",
+        "pnpm -F @proj-airi/desktop-pet test:run",
+        "pnpm -F @proj-airi/stage-tamagotchi typecheck",
+        "pnpm typecheck"
+      ],
+      "health": [
+        "test -f package.json",
+        "test -f pnpm-workspace.yaml",
+        "test -d apps/desktop-pet",
+        "test -d apps/stage-tamagotchi",
+        "test -d packages/stage-ui"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "README.md",
+        "SEPARATION.md",
+        "CHANGE.md",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "apps/desktop-pet/AGENTS.md",
+        "apps/stage-tamagotchi/package.json",
+        "docs/HANDOFF.md"
+      ]
+    },
+    {
       "id": "axi-proxy-companion",
       "name": "Axi Proxy Companion",
       "path": "/Volumes/code/workspace/tools/axi-proxy-companion",
@@ -618,10 +796,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:swift build",
         "health:swift build",
         "contracts:2"
@@ -647,9 +825,13 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[4] path does not exist: PRD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "swift build"
@@ -678,13 +860,14 @@
         "Workspace graph registers registry health verification.",
         "Axi UI declares the registry as its package distribution boundary.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:npm run health",
         "health:npm run health",
         "contracts:2"
       ],
       "remaining": [
-        "Keep registry health visible when shared packages are published or consumed."
+        "Keep registry health visible when shared packages are published or consumed.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -695,18 +878,22 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[4] path does not exist: PRD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "npm run health"
@@ -730,7 +917,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -792,7 +979,7 @@
         "i18n verifier protects the English runtime source while tracking translation batch coverage.",
         "apm.yml exposes a focused zero-context bootstrap skill subset for cross-harness consumers.",
         "docs:ready",
-        "handoff:verified",
+        "handoff:unready",
         "verify:python3 scripts/verify.py | python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff | test -f apm.yml",
         "health:python3 scripts/verify.py",
         "contracts:13"
@@ -817,9 +1004,14 @@
         "missing": []
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[3] path does not exist: TODO.md",
+          "readOrder[4] path does not exist: MILESTONE.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "python3 scripts/verify.py",
@@ -856,15 +1048,17 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:test -f scripts/tauri-env.sh",
         "health:test -f scripts/tauri-env.sh",
         "contracts:2"
       ],
-      "remaining": [],
+      "remaining": [
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
       "docs": {
         "status": "partial",
         "present": [
@@ -874,18 +1068,23 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[4] path does not exist: PRD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "decisions.changelog path does not exist: CHANGELOG.md"
+        ]
       },
       "verify": [
         "test -f scripts/tauri-env.sh"
@@ -914,14 +1113,15 @@
         "Workspace verify covers file-line guard, typecheck, and tests.",
         "Axi Coder and dashboard surfaces consume linked @axi packages.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm check:file-lines | pnpm typecheck | pnpm test",
         "health:pnpm check:file-lines | pnpm typecheck",
         "contracts:9",
         "package-scripts:test,build"
       ],
       "remaining": [
-        "Continue additive package hardening without breaking @axi/* style/runtime contracts."
+        "Continue additive package hardening without breaking @axi/* style/runtime contracts.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -932,18 +1132,22 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[4] path does not exist: PRD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "pnpm check:file-lines",
@@ -977,10 +1181,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:python3 -m py_compile app.py",
         "health:test -f app.py",
         "contracts:3"
@@ -1004,9 +1208,13 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[4] path does not exist: PRD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "python3 -m py_compile app.py"
@@ -1036,7 +1244,7 @@
         "DevSvc Dashboard and Axi Coder are registered as hosted workbench surfaces.",
         "Workspace verify covers dashboard, Axi Coder, verification inbox, and fleet console.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm --dir apps/devsvc-dashboard typecheck | pnpm --dir apps/axi-coder typecheck | npm --prefix apps/verification-inbox run typecheck | python3 infra/fleet-console/scripts/fleetctl.py validate",
         "health:test -f package.json | test -d apps/devsvc-dashboard | test -d apps/axi-coder | test -d infra/fleet-console",
         "contracts:10",
@@ -1044,7 +1252,8 @@
       ],
       "remaining": [
         "Finish the project completion data and UI loop for Axi Coder.",
-        "Continue consolidating dashboard/control-plane documentation and evidence."
+        "Continue consolidating dashboard/control-plane documentation and evidence.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1055,18 +1264,22 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md"
+          "docs/TDD.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[4] path does not exist: PRD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "pnpm --dir apps/devsvc-dashboard typecheck",
@@ -1109,13 +1322,14 @@
         "workspace:docs:sync generates catalog and completion docs.",
         "workspace-project validate remains the root graph sanity check.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm workspace:audit",
         "health:test -f /Volumes/code/workspace/infra/axi-workspace-governance/workspace.json",
         "contracts:2"
       ],
       "remaining": [
-        "Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves."
+        "Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1125,19 +1339,24 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/HANDOFF.md",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[3] path does not exist: TODO.md",
+          "readOrder[4] path does not exist: MILESTONE.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "pnpm workspace:audit"
@@ -1161,7 +1380,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1218,7 +1437,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1228,7 +1447,8 @@
         "package-scripts:test"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1237,14 +1457,14 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
-          "VERIFICATION.md"
+          "MILESTONE.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
@@ -1276,7 +1496,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1336,7 +1556,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1346,7 +1566,8 @@
         "package-scripts:build"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1355,14 +1576,14 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
-          "VERIFICATION.md"
+          "MILESTONE.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
@@ -1446,7 +1667,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1455,7 +1676,8 @@
         "contracts:2"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1464,14 +1686,14 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
-          "VERIFICATION.md"
+          "MILESTONE.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
@@ -1503,7 +1725,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1611,10 +1833,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
         "health:pnpm --dir frontend verify:repo-guards",
         "contracts:4",
@@ -1641,9 +1863,14 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[3] path does not exist: PRD.md",
+          "readOrder[4] path does not exist: TDD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "pnpm --dir frontend verify:repo-guards",
@@ -1670,7 +1897,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1679,7 +1906,8 @@
         "contracts:3"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1688,14 +1916,14 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
-          "VERIFICATION.md"
+          "MILESTONE.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
@@ -1730,7 +1958,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -1787,7 +2015,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -1844,7 +2072,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1854,7 +2082,8 @@
         "package-scripts:build"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1863,14 +2092,14 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
-          "VERIFICATION.md"
+          "MILESTONE.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {
@@ -1907,18 +2136,16 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:unready",
         "verify:pnpm test",
         "health:test -f package.json",
         "contracts:3",
         "package-scripts:test,build"
       ],
-      "remaining": [
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
-      ],
+      "remaining": [],
       "docs": {
         "status": "partial",
         "present": [
@@ -1928,18 +2155,23 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "VERIFICATION.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "readOrder[3] path does not exist: PRD.md",
+          "readOrder[4] path does not exist: TDD.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md"
+        ]
       },
       "verify": [
         "pnpm test"
@@ -1964,7 +2196,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-06-11T16:06:10.873Z",
+      "updatedAt": "2026-07-02T22:41:22.839Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1973,7 +2205,8 @@
         "contracts:1"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。"
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
         "status": "partial",
@@ -1982,14 +2215,14 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
-          "VERIFICATION.md"
+          "MILESTONE.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ]
       },
       "handoff": {

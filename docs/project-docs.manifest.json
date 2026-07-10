@@ -223,7 +223,7 @@
   },
   "verification": {
     "status": "verified",
-    "lastVerifiedAt": "2026-06-11",
+    "lastVerifiedAt": "2026-06-18",
     "commands": [
       "pnpm --filter @axi/workstation-control-plane smoke"
     ],
@@ -232,8 +232,25 @@
       "Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers."
     ]
   },
+  "startup_profile": {
+    "startup": "pnpm install",
+    "build": null,
+    "test": null,
+    "lint": null,
+    "typecheck": "pnpm type-check",
+    "clean": null
+  },
+  "consumers": [],
+  "shared_packages_exposed": [],
+  "docs_entrypoints": [
+    "AGENTS.md",
+    "README.md",
+    "INDEX.md",
+    "CHANGE.md",
+    "docs/HANDOFF.md"
+  ],
   "created": "2026-06-07",
-  "updated": "2026-06-11",
+  "updated": "2026-06-18",
   "writer": "Codex zero-context-onboarding",
   "source": "user-authorized zero-context onboarding plan"
 }

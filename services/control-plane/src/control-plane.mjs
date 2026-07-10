@@ -56,6 +56,8 @@ export function createControlPlane(options = {}) {
     graphPath,
     cacheDir,
     snapshot: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
+    mobileSnapshot: () => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
+    mobileProject: (id) => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }).projects.find((project) => project.id === id) || null,
     query: (input) => handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin }),
     handleCommunicationMessage: (input, messageOptions = {}) => handleCommunicationMessage({
       input,
@@ -83,6 +85,51 @@ export function createControlPlane(options = {}) {
     getJobArtifacts: (id) => listJobArtifacts({ cacheDir, id }),
     cancelJob: (id) => cancelControlJob({ cacheDir, jobs, id }),
     normalizeIMEnvelope,
+  };
+}
+
+/**
+ * Mobile is a projection of the workstation control plane, never an
+ * independent project registry.  Projects may opt into an HTTPS preview with
+ * `mobile.preview` in workspace.graph.json; absent that declaration they get
+ * a navigable information card instead of an unsafe guessed URL.
+ */
+export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), agentTasks = new Map(), approvals = new Map(), codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" } = {}) {
+  const snapshot = buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  const graph = readJson(graphPath, { projects: {} });
+  const projects = Object.entries(graph.projects || {}).map(([id, project]) => {
+    const resource = snapshot.resources.find((item) => item.id === id);
+    const mobile = project.mobile || {};
+    const preview = mobile.preview || {};
+    const previewUrl = typeof preview.url === "string" && /^https:\/\//.test(preview.url) ? preview.url : null;
+    const previewMode = previewUrl && ["embedded_web", "external_web"].includes(preview.mode) ? preview.mode : "none";
+    return {
+      id,
+      name: project.name || id,
+      kind: project.kind || "project",
+      status: resource?.status || project.status || "unknown",
+      summary: mobile.summary || project.description || (resource?.provides || []).join("，") || "尚未提供项目摘要。",
+      architecture: mobile.architecture || { provides: project.provides || [], consumes: project.consumes || [], contracts: project.contracts || [] },
+      phase: mobile.phase || "unknown",
+      lastVerifiedAt: mobile.lastVerifiedAt || null,
+      preview: {
+        mode: previewMode,
+        url: previewUrl,
+        allowEmbedded: previewMode === "embedded_web" && preview.allowEmbedded === true,
+        coverUrl: typeof preview.coverUrl === "string" && /^https:\/\//.test(preview.coverUrl) ? preview.coverUrl : null,
+        infoPageUrl: typeof mobile.infoPageUrl === "string" && /^https:\/\//.test(mobile.infoPageUrl) ? mobile.infoPageUrl : null,
+        fallbackMessage: previewMode === "none" ? "该项目尚未登记受控预览；请查看项目摘要与架构信息。" : null,
+      },
+      actions: (resource?.commands || []).map(({ id: commandId, label, intent, autoExecutable }) => ({ commandId, label, intent, autoExecutable: Boolean(autoExecutable) })),
+      source: "workspace.graph",
+    };
+  }).sort((left, right) => left.name.localeCompare(right.name));
+  return {
+    generatedAt: snapshot.generatedAt,
+    source: "workspace.graph",
+    projects,
+    runningTasks: snapshot.agentTasks.filter((task) => !["succeeded", "failed", "cancelled"].includes(task.status)),
+    approvals: snapshot.approvals.filter((approval) => approval.status === "pending"),
   };
 }
 

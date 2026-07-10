@@ -3,6 +3,7 @@ import { createControlPlane } from "./control-plane.mjs";
 
 const port = Number.parseInt(process.env.CONTROL_PLANE_PORT || "8092", 10);
 const controlPlane = createControlPlane();
+const mobileOwnerToken = process.env.AXI_MOBILE_OWNER_TOKEN || "";
 
 const server = createServer(async (req, res) => {
   try {
@@ -15,6 +16,27 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/snapshot") {
       return sendJson(res, 200, controlPlane.snapshot());
+    }
+    if (url.pathname.startsWith("/mobile/v1/")) {
+      if (!isPairedOwner(req)) return sendJson(res, 401, { error: "owner device pairing required" });
+      if (req.method === "GET" && url.pathname === "/mobile/v1/workspace") return sendJson(res, 200, controlPlane.mobileSnapshot());
+      const mobileProjectMatch = url.pathname.match(/^\/mobile\/v1\/projects\/([^/]+)$/);
+      if (req.method === "GET" && mobileProjectMatch) {
+        const project = controlPlane.mobileProject(decodeURIComponent(mobileProjectMatch[1]));
+        return sendJson(res, project ? 200 : 404, project || { error: "project not found" });
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/jobs") return sendJson(res, 202, controlPlane.createJob(await readJsonBody(req)));
+      const mobileCancelMatch = url.pathname.match(/^\/mobile\/v1\/jobs\/([^/]+)\/cancel$/);
+      if (req.method === "POST" && mobileCancelMatch) {
+        const job = controlPlane.cancelJob(decodeURIComponent(mobileCancelMatch[1]));
+        return sendJson(res, job ? 200 : 404, job || { error: "job not found" });
+      }
+      const mobileApprovalMatch = url.pathname.match(/^\/mobile\/v1\/approvals\/([^/]+)\/decision$/);
+      if (req.method === "POST" && mobileApprovalMatch) {
+        const decision = controlPlane.decideApproval({ id: decodeURIComponent(mobileApprovalMatch[1]), ...await readJsonBody(req) });
+        return sendJson(res, decision ? 200 : 404, decision || { error: "approval not found" });
+      }
+      return sendJson(res, 404, { error: "mobile endpoint not found" });
     }
     if (req.method === "POST" && url.pathname === "/query") {
       return sendJson(res, 200, await controlPlane.query(await readJsonBody(req)));
@@ -94,6 +116,12 @@ function sendJson(res, statusCode, payload) {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   });
   res.end(body);
+}
+
+function isPairedOwner(req) {
+  if (!mobileOwnerToken) return false;
+  const authorization = req.headers.authorization || "";
+  return authorization === `Bearer ${mobileOwnerToken}`;
 }
 
 async function readJsonBody(req) {
