@@ -4,6 +4,7 @@ import { createControlPlane } from "./control-plane.mjs";
 const port = Number.parseInt(process.env.CONTROL_PLANE_PORT || "8092", 10);
 const controlPlane = createControlPlane();
 const mobileOwnerToken = process.env.AXI_MOBILE_OWNER_TOKEN || "";
+const pairingRequired = controlPlane.pairingEnabled || Boolean(controlPlane.pairing);
 
 const server = createServer(async (req, res) => {
   try {
@@ -18,14 +19,59 @@ const server = createServer(async (req, res) => {
       return sendJson(res, 200, controlPlane.snapshot());
     }
     if (url.pathname.startsWith("/mobile/v1/")) {
-      if (!isPairedOwner(req)) return sendJson(res, 401, { error: "owner device pairing required" });
+      // Pairing endpoints are unauthenticated by design — the caller is
+      // trying to establish an identity. The 3 routes /pair/start,
+      // /pair/confirm, /auth/token sit on the same prefix.
+      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/start") {
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
+        const body = await readJsonBody(req);
+        const r = controlPlane.pairing.startPair(body || {});
+        return sendJson(res, r.ok ? 200 : 400, r);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/confirm") {
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
+        const body = await readJsonBody(req);
+        const r = controlPlane.pairing.confirmPair(body || {});
+        return sendJson(res, r.ok ? 200 : 400, r);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/auth/token") {
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
+        const body = await readJsonBody(req);
+        const r = controlPlane.pairing.issueAccessToken({ deviceId: body?.deviceId, scopes: body?.scopes });
+        return sendJson(res, r.ok ? 200 : 400, r);
+      }
+      // Nonce refresh endpoint — authenticated (we want only known devices
+      // to pull new nonces).
+      if (req.method === "POST" && url.pathname === "/mobile/v1/auth/nonce") {
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
+        const auth = authenticate(req, controlPlane);
+        if (!auth.ok) return sendJson(res, 401, { error: auth.error });
+        const r = controlPlane.pairing.requestAuthNonce({ deviceId: auth.deviceId });
+        return sendJson(res, r.ok ? 200 : 400, r);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/revoke") {
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
+        const auth = authenticate(req, controlPlane);
+        if (!auth.ok) return sendJson(res, 401, { error: auth.error });
+        const body = await readJsonBody(req);
+        const r = controlPlane.pairing.revokeDevice({ deviceId: body?.deviceId || auth.deviceId, reason: body?.reason || "owner_revoked" });
+        return sendJson(res, r.ok ? 200 : 400, r);
+      }
+
+      // Authenticated routes below this point.
+      const auth = authenticate(req, controlPlane);
+      if (!auth.ok) return sendJson(res, 401, { error: auth.error });
+
       if (req.method === "GET" && url.pathname === "/mobile/v1/workspace") return sendJson(res, 200, controlPlane.mobileSnapshot());
       const mobileProjectMatch = url.pathname.match(/^\/mobile\/v1\/projects\/([^/]+)$/);
       if (req.method === "GET" && mobileProjectMatch) {
         const project = controlPlane.mobileProject(decodeURIComponent(mobileProjectMatch[1]));
         return sendJson(res, project ? 200 : 404, project || { error: "project not found" });
       }
-      if (req.method === "POST" && url.pathname === "/mobile/v1/jobs") return sendJson(res, 202, controlPlane.createJob(await readJsonBody(req)));
+      if (req.method === "POST" && url.pathname === "/mobile/v1/jobs") {
+        const body = await readJsonBody(req);
+        return sendJson(res, 202, controlPlane.createJob({ ...body, deviceId: auth.deviceId, auditDeviceId: auth.deviceId }));
+      }
       const mobileCancelMatch = url.pathname.match(/^\/mobile\/v1\/jobs\/([^/]+)\/cancel$/);
       if (req.method === "POST" && mobileCancelMatch) {
         const job = controlPlane.cancelJob(decodeURIComponent(mobileCancelMatch[1]));
@@ -33,7 +79,8 @@ const server = createServer(async (req, res) => {
       }
       const mobileApprovalMatch = url.pathname.match(/^\/mobile\/v1\/approvals\/([^/]+)\/decision$/);
       if (req.method === "POST" && mobileApprovalMatch) {
-        const decision = controlPlane.decideApproval({ id: decodeURIComponent(mobileApprovalMatch[1]), ...await readJsonBody(req) });
+        const body = await readJsonBody(req);
+        const decision = controlPlane.decideApproval({ id: decodeURIComponent(mobileApprovalMatch[1]), ...body, deviceId: auth.deviceId });
         return sendJson(res, decision ? 200 : 404, decision || { error: "approval not found" });
       }
       return sendJson(res, 404, { error: "mobile endpoint not found" });
@@ -119,9 +166,28 @@ function sendJson(res, statusCode, payload) {
 }
 
 function isPairedOwner(req) {
+  // Bootstrap fallback: when pairing is not enabled AND a static
+  // owner token is configured, treat its bearer as the only valid
+  // credential. When pairing is enabled (AXI_MOBILE_PAIRING_ENABLED=true
+  // or AXI_MOBILE_TOKEN_SECRET set), the device-token path takes over.
+  if (pairingRequired) return false;
   if (!mobileOwnerToken) return false;
   const authorization = req.headers.authorization || "";
   return authorization === `Bearer ${mobileOwnerToken}`;
+}
+
+function authenticate(req, controlPlane) {
+  // Order: device-token (preferred) → static owner token (bootstrap only).
+  if (controlPlane.pairing) {
+    const authorization = req.headers.authorization || "";
+    const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+    const verified = controlPlane.pairing.verifyAccessToken(token);
+    if (verified.ok) return { ok: true, deviceId: verified.deviceId, scopes: verified.scopes };
+    if (controlPlane.pairingEnabled) return { ok: false, error: verified.error };
+    // fall through to static owner token when pairing is configured but not strictly required
+  }
+  if (isPairedOwner(req)) return { ok: true, deviceId: "static-owner-token", scopes: ["owner-static"] };
+  return { ok: false, error: "owner device pairing required" };
 }
 
 async function readJsonBody(req) {

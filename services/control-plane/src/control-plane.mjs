@@ -1,9 +1,10 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Annotation, END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
+import { createPairingService } from "./pairing.mjs";
 
 const DEFAULT_WORKSPACE_ROOT = "/Volumes/code/workspace";
 const WORKSTATION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -44,6 +45,11 @@ export function createControlPlane(options = {}) {
   const heartbeatMs = options.heartbeatMs || JOB_HEARTBEAT_MS;
   const codexBin = options.codexBin || process.env.CODEX_BIN || "codex";
   const appServerBin = options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex";
+  const pairingTokenSecret = options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "";
+  const pairingEnabled = process.env.AXI_MOBILE_PAIRING_ENABLED === "true";
+  const pairing = pairingTokenSecret
+    ? createPairingService({ cacheDir, tokenSecret: pairingTokenSecret })
+    : null;
   const runs = new Map();
   const envelopeRuns = new Map();
   const agentTasks = new Map();
@@ -55,6 +61,8 @@ export function createControlPlane(options = {}) {
     workspaceRoot,
     graphPath,
     cacheDir,
+    pairingEnabled,
+    pairing,
     snapshot: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileSnapshot: () => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileProject: (id) => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }).projects.find((project) => project.id === id) || null,
