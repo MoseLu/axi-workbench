@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button as AntButton, Space } from "antd";
 import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -12,13 +12,27 @@ import { statusText, StatusChip } from "../status/status";
 export function ServersPage() {
   const { t } = useTranslation();
   const tableToolbarContainer = useTableToolbarSlot();
-  const [data, setData] = useState<any>(null);
+  const [servers, setServers] = useState<any[]>([]);
   const [checkServer, setCheckServer] = useState<any>(null);
   const [checkText, setCheckText] = useState(() => t("选择服务器后可以执行只读巡检。"));
   const [checkResults, setCheckResults] = useState<Record<string, { status: string; text: string; checkedAt?: string }>>({});
   const [loading, setLoading] = useState(false);
-	  const servers = data?.remoteServers?.servers || [];
-	  const serverPagination = useAxiClientPagination(servers, { pageSize: 5 });
+
+  const serverPagination = useAxiClientPagination(servers, { pageSize: 5 });
+
+  const service = useMemo(() => ({
+    page: async () => {
+      try {
+        const body = await api("/api/alerts") as { remoteServers?: { servers?: any[] } };
+        const rows = body?.remoteServers?.servers || [];
+        setServers(rows);
+        return rows;
+      } catch (error) {
+        console.error(requestErrorMessage(error));
+        return servers;
+      }
+    }
+  }), [servers]);
 
   useEffect(() => {
     if (!checkServer) setCheckText(t("选择服务器后可以执行只读巡检。"));
@@ -48,16 +62,6 @@ export function ServersPage() {
       ...seeded,
       ...current
     }));
-  }
-
-  async function load() {
-    const body = await api("/api/alerts");
-    const rows = body?.remoteServers?.servers || [];
-    setData(body);
-    seedCheckResults(rows);
-    if (rows.some((server) => !server.checkResult)) {
-      void runChecks(rows);
-    }
   }
 
   async function runCheck(serverId = checkServer?.id, showDialog = true) {
@@ -111,9 +115,15 @@ export function ServersPage() {
     void runCheck(server.id);
   }
 
+  // Re-seed check results whenever the polled server list changes. This keeps
+  // a single timer (AxiCrud.polling) and avoids racing the mount-only loader.
   useEffect(() => {
-    void load();
-  }, []);
+    if (!servers.length) return;
+    seedCheckResults(servers);
+    if (servers.some((server) => !server.checkResult)) {
+      void runChecks(servers);
+    }
+  }, [servers]);
 
   function serverCheckSummary(server: any) {
     const result = checkResults[server.id];
@@ -229,7 +239,7 @@ export function ServersPage() {
   ];
 
   return (
-    <AxiCrud dataSource={serverPagination.rows} className="page-stack">
+    <AxiCrud className="page-stack" dataSource={serverPagination.rows} polling={30000} service={service}>
       <section className="panel server-panel">
         <div className="server-table-wrap">
           <AxiTable<any>
@@ -279,3 +289,4 @@ export function ServersPage() {
     </AxiCrud>
   );
 }
+

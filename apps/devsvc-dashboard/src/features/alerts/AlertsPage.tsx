@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AxiCrud, AxiPagination, AxiTable, AxiTableButton, useAxiClientPagination } from "@axi/crud";
@@ -22,73 +22,47 @@ type AlertChannelRow = {
   canSendTest: boolean;
 };
 
-export function useAlertsData() {
-  const { t } = useTranslation();
-  const [alerts, setAlerts] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [testing, setTesting] = useState(false);
+type AlertsPayload = {
+  notification?: {
+    channel?: string;
+    provider?: string;
+    daemonRunning?: boolean;
+    renderFormat?: string;
+    cardConfigured?: boolean;
+  };
+  alerts?: {
+    monitorProfiles?: string[];
+    intervalMs?: number;
+    failureThreshold?: number;
+    notifyOnRecovery?: boolean;
+  };
+};
 
-  async function load() {
-    setLoading(true);
-    try {
-      setAlerts(await api("/api/alerts"));
-    } catch (error) {
-      console.error(requestErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function sendTest() {
-    setTesting(true);
-    try {
-	      await api("/api/notify-test", {
-	        method: "POST",
-	        body: JSON.stringify({ content: t("DevSvc 飞书告警通道自检：本地服务面板已经接入通知入口。") })
-	      });
-      await load();
-    } catch (error) {
-      console.error(requestErrorMessage(error));
-    } finally {
-      setTesting(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  return { alerts, loading, sendTest, testing };
-}
-
-export function AlertsPage() {
-  const { t } = useTranslation();
-  const tableToolbarContainer = useTableToolbarSlot();
-  const { alerts, loading, sendTest, testing } = useAlertsData();
-  const notification = alerts?.notification;
-  const policy = alerts?.alerts || {};
+function buildAlertRows(payload: AlertsPayload | null, loading: boolean, t: (key: string, opts?: Record<string, unknown>) => string): AlertChannelRow[] {
+  const notification = payload?.notification;
+  const policy = payload?.alerts || {};
   const profiles = policy.monitorProfiles || [];
   const configured = Boolean(notification);
-  const rows: AlertChannelRow[] = [
+  return [
     {
       id: "feishu",
       name: "Feishu",
-	      description: notification?.channel || t("飞书告警"),
+      description: notification?.channel || t("飞书告警"),
       provider: notification?.provider || "-",
       configuredStatus: loading ? "launching" : configured ? "configured" : "unconfigured",
       runtimeStatus: loading ? "launching" : notification?.daemonRunning ? "online" : configured ? "stopped" : "unconfigured",
-	      renderFormat: notification?.renderFormat === "text-fallback" ? t("文本降级") : notification?.renderFormat || "-",
-	      templateStatus: notification?.cardConfigured ? t("卡片启用") : configured ? t("未启用") : "-",
-	      profiles: configured ? profiles.join(", ") || "-" : "-",
-	      interval: configured ? t("{{seconds}} 秒", { seconds: Math.round((policy.intervalMs || 0) / 1000) }) : "-",
-	      failureRule: configured ? t("连续 {{count}} 次", { count: policy.failureThreshold || 3 }) : "-",
-	      recovery: configured ? policy.notifyOnRecovery === false ? t("关闭状态") : t("开启") : "-",
+      renderFormat: notification?.renderFormat === "text-fallback" ? t("文本降级") : notification?.renderFormat || "-",
+      templateStatus: notification?.cardConfigured ? t("卡片启用") : configured ? t("未启用") : "-",
+      profiles: configured ? profiles.join(", ") || "-" : "-",
+      interval: configured ? t("{{seconds}} 秒", { seconds: Math.round((policy.intervalMs || 0) / 1000) }) : "-",
+      failureRule: configured ? t("连续 {{count}} 次", { count: policy.failureThreshold || 3 }) : "-",
+      recovery: configured ? policy.notifyOnRecovery === false ? t("关闭状态") : t("开启") : "-",
       canSendTest: configured
     },
     {
       id: "wecom",
-	      name: t("企业微信"),
-	      description: t("企业微信告警"),
+      name: t("企业微信"),
+      description: t("企业微信告警"),
       provider: "-",
       configuredStatus: "unconfigured",
       runtimeStatus: "unconfigured",
@@ -102,8 +76,8 @@ export function AlertsPage() {
     },
     {
       id: "email",
-	      name: t("邮箱告警"),
-	      description: t("邮件通知"),
+      name: t("邮箱告警"),
+      description: t("邮件通知"),
       provider: "-",
       configuredStatus: "unconfigured",
       runtimeStatus: "unconfigured",
@@ -116,13 +90,54 @@ export function AlertsPage() {
       canSendTest: false
     }
   ];
+}
+
+export function AlertsPage() {
+  const { t } = useTranslation();
+  const tableToolbarContainer = useTableToolbarSlot();
+  const [payload, setPayload] = useState<AlertsPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState(false);
+
+  const service = useMemo(() => ({
+    page: async () => {
+      try {
+        const body = await api("/api/alerts") as AlertsPayload;
+        setPayload(body);
+        setLoading(false);
+        return buildAlertRows(body, false, t);
+      } catch (error) {
+        console.error(requestErrorMessage(error));
+        setLoading(false);
+        return buildAlertRows(payload, true, t);
+      }
+    }
+  }), [payload, t]);
+
+  async function sendTest() {
+    setTesting(true);
+    try {
+      await api("/api/notify-test", {
+        method: "POST",
+        body: JSON.stringify({ content: t("DevSvc 飞书告警通道自检：本地服务面板已经接入通知入口。") })
+      });
+      const body = await api("/api/alerts") as AlertsPayload;
+      setPayload(body);
+    } catch (error) {
+      console.error(requestErrorMessage(error));
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  const rows = useMemo(() => buildAlertRows(payload, loading, t), [loading, payload, t]);
   const alertPagination = useAxiClientPagination(rows, { pageSize: 10 });
   const columns: any[] = [
     {
 	      title: t("通知通道"),
       children: [
         {
-	          title: t("名称"),
+		          title: t("名称"),
           dataIndex: "name",
           width: 150,
           render: (_: string, row: AlertChannelRow) => (
@@ -133,7 +148,7 @@ export function AlertsPage() {
           )
         },
         {
-	          title: t("发送器"),
+		          title: t("发送器"),
           dataIndex: "provider",
           width: 110,
           render: (value: string) => <span className="component-name" aria-label={value}>{value}</span>
@@ -144,13 +159,13 @@ export function AlertsPage() {
 	      title: t("通道状态"),
       children: [
         {
-	          title: t("接入"),
+		          title: t("接入"),
           dataIndex: "configuredStatus",
           width: 92,
           render: (value: string) => <StatusChip value={value} />
         },
         {
-	          title: t("运行"),
+		          title: t("运行"),
           dataIndex: "runtimeStatus",
           width: 92,
           render: (value: string) => <StatusChip value={value} />
@@ -161,7 +176,7 @@ export function AlertsPage() {
 	      title: t("配置"),
       children: [
         {
-	          title: t("格式/模板"),
+		          title: t("格式/模板"),
           width: 150,
           render: (_: unknown, row: AlertChannelRow) => row.renderFormat === "-" && row.templateStatus === "-"
             ? <span className="service-desc">-</span>
@@ -178,7 +193,7 @@ export function AlertsPage() {
 	      title: t("告警策略"),
       children: [
         {
-	          title: t("策略摘要"),
+		          title: t("策略摘要"),
           width: 260,
           render: (_: unknown, row: AlertChannelRow) => row.profiles === "-"
             ? <span className="service-desc">-</span>
@@ -198,7 +213,7 @@ export function AlertsPage() {
       fixed: "end",
       children: [
         {
-	          title: t("命令"),
+		          title: t("命令"),
           fixed: "end",
           width: 136,
           render: (_: unknown, row: AlertChannelRow) => row.canSendTest ? (
@@ -216,7 +231,7 @@ export function AlertsPage() {
   ];
 
   return (
-    <AxiCrud dataSource={alertPagination.rows} className="services-panel alerts-panel">
+    <AxiCrud className="services-panel alerts-panel" dataSource={alertPagination.rows} polling={15000} service={service}>
       <AxiTable<AlertChannelRow>
         bordered
         className="services-table alerts-table"
