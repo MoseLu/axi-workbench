@@ -169,53 +169,35 @@ export function Shell({
     <div className="app-breadcrumb-table-toolbar" ref={setTableToolbarContainer} />
   ) : null;
   const hostedSidebarControls = isHostedPage ? (
-    <div className="hosted-sidebar-controls">
-      <div className={`hosted-navigation-switch ${visibleNavigationMode === "subapp" ? "is-subapp-mode" : ""}`} role="tablist" aria-label={t("菜单模式")}>
-        <button
-          aria-selected={visibleNavigationMode === "host"}
-          className={visibleNavigationMode === "host" ? "is-active" : ""}
-          title={t("宿主菜单")}
-          role="tab"
-          type="button"
-          onClick={() => {
-            setNavigationMode("host");
-            setSidebarKeyword("");
-          }}
-        >
-          <AxiSvgIcon name="home" size={14} />
-          {visibleNavigationMode === "subapp" ? null : <span>{t("宿主菜单")}</span>}
+    <label className="hosted-sidebar-search">
+      <AxiSvgIcon name="search" size={15} />
+      <input
+        aria-label={t("搜索关键字")}
+        placeholder={visibleNavigationMode === "subapp" ? t("搜索子应用菜单") : t("搜索关键字")}
+        value={sidebarKeyword}
+        onChange={(event) => setSidebarKeyword(event.target.value)}
+      />
+      {sidebarKeyword ? (
+        <button type="button" aria-label={t("清空搜索")} onClick={() => setSidebarKeyword("")}>
+          <AxiSvgIcon name="close" size={13} />
         </button>
-        <button
-          aria-selected={visibleNavigationMode === "subapp"}
-          className={visibleNavigationMode === "subapp" ? "is-active" : ""}
-          disabled={!canUseSubappMode}
-          role="tab"
-          type="button"
-          onClick={() => {
-            setNavigationMode("subapp");
-            setSidebarKeyword("");
-          }}
-        >
-          {hostedAppIcon(currentHostedApp, 14)}
-          <span>{currentHostedApp ? hostedAppTitle(currentHostedApp, t) : currentHostedAppId || t("子应用")}</span>
-        </button>
-      </div>
-      <label className="hosted-sidebar-search">
-        <AxiSvgIcon name="search" size={15} />
-        <input
-          aria-label={t("搜索关键字")}
-          placeholder={visibleNavigationMode === "subapp" ? t("搜索子应用菜单") : t("搜索关键字")}
-          value={sidebarKeyword}
-          onChange={(event) => setSidebarKeyword(event.target.value)}
-        />
-        {sidebarKeyword ? (
-          <button type="button" aria-label={t("清空搜索")} onClick={() => setSidebarKeyword("")}>
-            <AxiSvgIcon name="close" size={13} />
-          </button>
-        ) : null}
-      </label>
-    </div>
+      ) : null}
+    </label>
   ) : null;
+  const hostedModeSwitchConfig = isHostedPage && currentHostedApp ? {
+    ariaLabel: t("菜单模式"),
+    className: "hosted-navigation-switch",
+    currentHostedApp: {
+      icon: hostedAppIcon(currentHostedApp, 14),
+      title: hostedAppTitle(currentHostedApp, t)
+    },
+    hostLabel: t("宿主菜单"),
+    mode: visibleNavigationMode,
+    onChange: (mode: "host" | "subapp") => {
+      setNavigationMode(mode);
+      setSidebarKeyword("");
+    }
+  } : undefined;
 
   function closeLeftTabs() {
     const activeIndex = visitedTabKeys.indexOf(selectedKey);
@@ -386,6 +368,7 @@ export function Shell({
           sidebarSearch={hostedSidebarControls}
           sidebarSearchPlaceholder={t("搜索关键字")}
           sidebarSearchValue={sidebarKeyword}
+          hostedModeSwitch={hostedModeSwitchConfig}
           tabs={settings.multiTab ? visitedTabs.map((tab) => ({
             closable: !tab.pinned,
             key: tab.key,
