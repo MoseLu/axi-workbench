@@ -4,9 +4,10 @@ import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { AxiCrud, AxiDialog, AxiPagination, AxiTable, AxiTableButton, useAxiClientPagination } from "@axi/crud";
+import { AxiTag } from "@axi/core";
 import { useTableToolbarSlot } from "../../app-shell/toolbarSlot";
 import { api, requestErrorMessage } from "../../lib/api";
-import { MetricTag, statusText, StatusChip } from "../status/status";
+import { statusText, StatusChip } from "../status/status";
 
 export function ServersPage() {
   const { t } = useTranslation();
@@ -141,7 +142,7 @@ export function ServersPage() {
 	      title: t("服务器"),
       children: [
         {
-	          title: t("名称"),
+		          title: t("名称"),
           align: "center",
           dataIndex: "id",
           width: 280,
@@ -170,13 +171,13 @@ export function ServersPage() {
 	      title: t("接入信息"),
       children: [
         {
-	          title: t("可用性"),
+		          title: t("可用性"),
           align: "center",
           width: 88,
           render: (_, server) => <StatusChip value={serverCheckSummary(server).status} />
         },
         {
-	          title: t("巡检结果"),
+		          title: t("巡检结果"),
           align: "center",
           width: 220,
           render: (_, server) => {
@@ -190,13 +191,13 @@ export function ServersPage() {
           }
         },
         {
-	          title: t("环境"),
+		          title: t("环境"),
           align: "center",
           width: 82,
-          render: (_, server) => <MetricTag>{server.environment || "-"}</MetricTag>
+          render: (_, server) => <AxiTag className="metric-tag" effect="light" round>{server.environment || "-"}</AxiTag>
         },
         {
-	          title: t("接入"),
+		          title: t("接入"),
           align: "center",
           width: 200,
           render: (_, server) => (
@@ -215,7 +216,7 @@ export function ServersPage() {
       fixed: "end",
       children: [
         {
-	          title: t("命令"),
+		          title: t("命令"),
           align: "center",
           fixed: "end",
           width: 100,

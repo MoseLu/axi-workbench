@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AxiCrud, AxiPagination, AxiTable, AxiTableButton, useAxiClientPagination } from "@axi/crud";
+import { AxiTag } from "@axi/core";
 import { useTableToolbarSlot } from "../../app-shell/toolbarSlot";
 import { api } from "../../lib/api";
-import { MetricTag, StatusChip } from "../status/status";
+import { metricTagType, StatusChip } from "../status/status";
 
 export function DeployPage() {
   const { t } = useTranslation();
@@ -103,13 +104,13 @@ export function DeployPage() {
 	          title: t("类型"),
           align: "center",
           width: 88,
-          render: (_, row) => <MetricTag>{row.target.kind || "-"}</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type={metricTagType(row.target.kind)}>{row.target.kind || "-"}</AxiTag>
         },
         {
 	          title: t("接入"),
           align: "center",
           width: 156,
-          render: (_, row) => <MetricTag>{row.target.access || "-"}</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type={metricTagType(row.target.access)}>{row.target.access || "-"}</AxiTag>
         },
         {
 	          title: t("策略"),
@@ -131,7 +132,7 @@ export function DeployPage() {
 	            { text: t("未绑定"), value: false }
           ],
           onFilter: (value, row) => row.active === value,
-          render: (_, row) => row.active ? <StatusChip value={current?.status || "active"} /> : <MetricTag>-</MetricTag>
+          render: (_, row) => row.active ? <StatusChip value={current?.status || "active"} /> : <AxiTag className="metric-tag" effect="light" round>-</AxiTag>
         },
         {
 	          title: t("上游入口"),
