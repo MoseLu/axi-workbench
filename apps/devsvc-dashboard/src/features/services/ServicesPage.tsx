@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button as AntButton, Space } from "antd";
+import { Button as AntButton } from "antd";
 import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -295,14 +295,14 @@ export function ServicesPage({ data }: { data: any }) {
         width={920}
         fullscreenLabel={t("切换全屏")}
         footer={(
-          <Space>
+          <>
             <AntButton icon={<RefreshCw size={14} />} loading={logLoading} onClick={() => void loadProjectLogs()}>
               {t("刷新日志")}
             </AntButton>
             <AntButton type="primary" onClick={() => setLogProject(null)}>
               {t("关闭")}
             </AntButton>
-          </Space>
+          </>
         )}
         onClose={() => setLogProject(null)}
       >
