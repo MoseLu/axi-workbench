@@ -1,11 +1,12 @@
 import { type ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, CircleX, Fullscreen, Home, Pin, PinOff, RefreshCw, Shrink, X } from "lucide-react";
+import { ChevronLeft, Fullscreen, Home, Pin, PinOff, RefreshCw, Shrink, X } from "lucide-react";
 
 import type { NavRouteKey, RouteTab } from "../app-registry";
 import { AxiPopoverMenu } from "@axi/crud";
 import { AxiSvgIcon } from "@axi/core";
+import { AxiTabMenu, type AxiTabMenuActionKey } from "@axi/shell";
 import type { AppSettings } from "../settings/useAppSettings";
 
 export function AppToolbar({
@@ -40,62 +41,81 @@ export function AppToolbar({
   const [menuOpen, setMenuOpen] = useState(false);
   const activeTabIndex = tabs.findIndex((tab) => tab.key === activeKey);
   const activeTab = tabs[activeTabIndex];
-  const canCloseLeft = activeTabIndex > 0;
-  const canCloseRight = activeTabIndex >= 0 && activeTabIndex < tabs.length - 1;
   const showRouteTabs = settings.multiTab;
+
+  const disabledActions: AxiTabMenuActionKey[] = [];
+  if (activeTabIndex <= 0) disabledActions.push("close-left");
+  if (activeTabIndex < 0 || activeTabIndex >= tabs.length - 1) disabledActions.push("close-right");
+  if (tabs.length <= 1) disabledActions.push("close-others", "close-all");
 
   function closeMenu() {
     setMenuOpen(false);
   }
 
+  function handleAction(action: AxiTabMenuActionKey | string) {
+    switch (action) {
+      case "reload":
+        closeMenu();
+        window.location.reload();
+        return;
+      case "toggle-pin":
+        onTogglePin(activeKey);
+        closeMenu();
+        return;
+      case "close-left":
+        onCloseLeft();
+        closeMenu();
+        return;
+      case "close-right":
+        onCloseRight();
+        closeMenu();
+        return;
+      case "close-others":
+        onCloseOthers();
+        closeMenu();
+        return;
+      case "close-all":
+        onCloseAll();
+        closeMenu();
+        return;
+      default:
+        return;
+    }
+  }
+
   const menuContent = (
-    <div className="tabbar-menu-popover">
-      <div className="tabbar-menu-section">
-        <button className="tabbar-menu-action" type="button" onClick={() => {
-          closeMenu();
-          window.location.reload();
-        }}>
-          <RefreshCw size={16} />
-	          <span>{t("刷新")}</span>
-        </button>
-        <button className="tabbar-menu-action" type="button" onClick={() => {
-          onTogglePin(activeKey);
-          closeMenu();
-        }}>
-          {activeTab?.pinned ? <PinOff size={16} /> : <Pin size={16} />}
-	          <span>{activeTab?.pinned ? t("取消固定") : t("固定")}</span>
-        </button>
-        <div className="tabbar-menu-divider" role="separator" />
-        <button className="tabbar-menu-action" type="button" disabled={!canCloseLeft} onClick={() => {
-          onCloseLeft();
-          closeMenu();
-        }}>
-          <ChevronLeft size={16} />
-	          <span>{t("关闭左侧")}</span>
-        </button>
-        <button className="tabbar-menu-action" type="button" disabled={!canCloseRight} onClick={() => {
-          onCloseRight();
-          closeMenu();
-        }}>
-          <ChevronRight size={16} />
-	          <span>{t("关闭右侧")}</span>
-        </button>
-        <button className="tabbar-menu-action" type="button" disabled={tabs.length <= 1} onClick={() => {
-          onCloseOthers();
-          closeMenu();
-        }}>
+    <AxiTabMenu
+      activeKey={activeKey}
+      customActions={() => (
+        <button
+          className="tabbar-menu-action tabbar-menu-action--legacy"
+          type="button"
+          onClick={() => {
+            onCloseTab(activeKey);
+            closeMenu();
+          }}
+        >
           <X size={16} />
-	          <span>{t("关闭其他")}</span>
+          <span>{t("关闭当前")}</span>
         </button>
-        <button className="tabbar-menu-action" type="button" disabled={tabs.length <= 1} onClick={() => {
-          onCloseAll();
-          closeMenu();
-        }}>
-          <CircleX size={16} />
-	          <span>{t("关闭全部")}</span>
-        </button>
-      </div>
-    </div>
+      )}
+      disabledActions={disabledActions}
+      items={tabs.map((tab) => ({
+        key: tab.key,
+        label: tab.title,
+        pinned: tab.pinned,
+        closable: !tab.pinned
+      }))}
+      labels={{
+        reload: t("刷新"),
+        "toggle-pin": activeTab?.pinned ? t("取消固定") : t("固定"),
+        "close-left": t("关闭左侧"),
+        "close-right": t("关闭右侧"),
+        "close-others": t("关闭其他"),
+        "close-all": t("关闭全部")
+      }}
+      onAction={handleAction}
+    />
   );
 
   return (
@@ -104,24 +124,24 @@ export function AppToolbar({
         {settings.quickEntry || settings.reloadButton ? (
           <div className="toolbar-nav">
             {settings.quickEntry ? (
-	              <button className="toolbar-icon-button" type="button" aria-label={t("返回")} onClick={() => navigate(-1)}>
+              <button className="toolbar-icon-button" type="button" aria-label={t("返回")} onClick={() => navigate(-1)}>
                 <ChevronLeft size={17} />
               </button>
             ) : null}
             {settings.reloadButton ? (
-	              <button className="toolbar-icon-button" type="button" aria-label={t("刷新")} onClick={() => window.location.reload()}>
+              <button className="toolbar-icon-button" type="button" aria-label={t("刷新")} onClick={() => window.location.reload()}>
                 <RefreshCw size={16} />
               </button>
             ) : null}
             {settings.quickEntry ? (
-	              <button className="toolbar-icon-button" type="button" aria-label={t("首页")} onClick={() => navigate("/overview")}>
+              <button className="toolbar-icon-button" type="button" aria-label={t("首页")} onClick={() => navigate("/overview")}>
                 <Home size={16} />
               </button>
             ) : null}
           </div>
         ) : null}
         {showRouteTabs ? (
-	          <nav className="route-tabs" aria-label={t("已打开页面")}>
+          <nav className="route-tabs" aria-label={t("已打开页面")}>
             {tabs.map((tab) => (
               <button
                 className={`route-tab ${tab.key === activeKey ? "is-active" : ""} ${tab.pinned ? "is-pinned" : ""}`}
@@ -160,8 +180,8 @@ export function AppToolbar({
           <button
             className="toolbar-icon-button"
             type="button"
-	            aria-label={contentFullscreen ? t("退出内容全屏") : t("内容区域全屏")}
-	            title={contentFullscreen ? t("退出内容全屏") : t("内容区域全屏")}
+            aria-label={contentFullscreen ? t("退出内容全屏") : t("内容区域全屏")}
+            title={contentFullscreen ? t("退出内容全屏") : t("内容区域全屏")}
             onClick={onContentFullscreenToggle}
           >
             {contentFullscreen ? <Shrink size={16} /> : <Fullscreen size={16} />}
@@ -172,7 +192,7 @@ export function AppToolbar({
             rootClassName="tabbar-menu-root"
             onOpenChange={setMenuOpen}
           >
-	            <button className="toolbar-icon-button" type="button" aria-label={t("标签页菜单")} title={t("标签页菜单")}>
+            <button className="toolbar-icon-button" type="button" aria-label={t("标签页菜单")} title={t("标签页菜单")}>
               <AxiSvgIcon name="tabbar-menu" size={16} />
             </button>
           </AxiPopoverMenu>
