@@ -1,12 +1,12 @@
 import { type ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, Fullscreen, Home, Pin, PinOff, RefreshCw, Shrink, X } from "lucide-react";
+import { ChevronLeft, Fullscreen, Home, Pin, RefreshCw, Shrink, X } from "lucide-react";
 
 import type { NavRouteKey, RouteTab } from "../app-registry";
 import { AxiPopoverMenu } from "@axi/crud";
 import { AxiSvgIcon } from "@axi/core";
-import { AxiTabMenu, type AxiTabMenuActionKey } from "@axi/shell";
+import { AxiTabActionMenu, AxiTabMenu } from "@axi/shell";
 import type { AppSettings } from "../settings/useAppSettings";
 
 export function AppToolbar({
@@ -39,83 +39,69 @@ export function AppToolbar({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const activeTabIndex = tabs.findIndex((tab) => tab.key === activeKey);
-  const activeTab = tabs[activeTabIndex];
   const showRouteTabs = settings.multiTab;
-
-  const disabledActions: AxiTabMenuActionKey[] = [];
-  if (activeTabIndex <= 0) disabledActions.push("close-left");
-  if (activeTabIndex < 0 || activeTabIndex >= tabs.length - 1) disabledActions.push("close-right");
-  if (tabs.length <= 1) disabledActions.push("close-others", "close-all");
 
   function closeMenu() {
     setMenuOpen(false);
   }
 
-  function handleAction(action: AxiTabMenuActionKey | string) {
-    switch (action) {
-      case "reload":
-        closeMenu();
-        window.location.reload();
-        return;
-      case "toggle-pin":
-        onTogglePin(activeKey);
-        closeMenu();
-        return;
-      case "close-left":
-        onCloseLeft();
-        closeMenu();
-        return;
-      case "close-right":
-        onCloseRight();
-        closeMenu();
-        return;
-      case "close-others":
-        onCloseOthers();
-        closeMenu();
-        return;
-      case "close-all":
-        onCloseAll();
-        closeMenu();
-        return;
-      default:
-        return;
-    }
-  }
-
   const menuContent = (
-    <AxiTabMenu
-      activeKey={activeKey}
-      customActions={() => (
-        <button
-          className="tabbar-menu-action tabbar-menu-action--legacy"
-          type="button"
-          onClick={() => {
-            onCloseTab(activeKey);
-            closeMenu();
-          }}
-        >
-          <X size={16} />
-          <span>{t("关闭当前")}</span>
-        </button>
-      )}
-      disabledActions={disabledActions}
-      items={tabs.map((tab) => ({
-        key: tab.key,
-        label: tab.title,
-        pinned: tab.pinned,
-        closable: !tab.pinned
-      }))}
-      labels={{
-        reload: t("刷新"),
-        "toggle-pin": activeTab?.pinned ? t("取消固定") : t("固定"),
-        "close-left": t("关闭左侧"),
-        "close-right": t("关闭右侧"),
-        "close-others": t("关闭其他"),
-        "close-all": t("关闭全部")
-      }}
-      onAction={handleAction}
-    />
+    <div className="tabbar-menu-popover">
+      <AxiTabMenu
+        activeKey={activeKey}
+        items={tabs.map((tab) => ({
+          key: tab.key,
+          label: tab.title,
+          pinned: tab.pinned,
+          closable: !tab.pinned
+        }))}
+        onSelect={(key) => {
+          onCloseTab(key as NavRouteKey);
+          closeMenu();
+        }}
+      />
+      <AxiTabActionMenu
+        activeKey={activeKey}
+        items={tabs.map((tab) => ({
+          key: tab.key,
+          label: tab.title,
+          pinned: tab.pinned,
+          closable: !tab.pinned
+        }))}
+        onCloseAll={closeMenu}
+        onCloseCurrent={(key) => {
+          onCloseTab(key as NavRouteKey);
+          closeMenu();
+        }}
+        onCloseLeft={() => {
+          onCloseLeft();
+          closeMenu();
+        }}
+        onCloseOthers={() => {
+          onCloseOthers();
+          closeMenu();
+        }}
+        onCloseRight={() => {
+          onCloseRight();
+          closeMenu();
+        }}
+        onReload={() => {
+          closeMenu();
+          window.location.reload();
+        }}
+      />
+      <button
+        className="tabbar-menu-action tabbar-menu-action--legacy"
+        type="button"
+        onClick={() => {
+          onTogglePin(activeKey);
+          closeMenu();
+        }}
+      >
+        <Pin size={16} />
+        <span>{t("固定 / 取消固定")}</span>
+      </button>
+    </div>
   );
 
   return (
