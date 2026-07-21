@@ -5,10 +5,10 @@ import { useTranslation } from "react-i18next";
 
 import { AxiCrud, AxiDialog, AxiPagination, AxiTable, AxiTableButton, AxiTableActions, useAxiClientPagination } from "@axi/crud";
 import { AxiTag } from "@axi/core";
-import { useTableToolbarSlot, useToolbarSlot } from "../../app-shell/toolbarSlot";
+import { useTableToolbarSlot } from "../../app-shell/toolbarSlot";
 import { loadLogText, requestErrorMessage } from "../../lib/api";
 import { formatBytes, formatUptime } from "../../lib/format";
-import { cpuMetricTagType, MetricTag, restartMetricTagType, runtimeCountTagType, serviceHealthLabel, serviceRoleLabel, StatusChip } from "../status/status";
+import { cpuMetricTagType, restartMetricTagType, runtimeCountTagType, serviceHealthLabel, serviceRoleLabel, StatusChip } from "../status/status";
 import { ServicesToolbar, type ServiceHealthFilter, type ServiceManagedFilter } from "./ServicesToolbar";
 
 export function ServicesPage({ data }: { data: any }) {
@@ -25,7 +25,8 @@ export function ServicesPage({ data }: { data: any }) {
     setManagedFilter("managed");
     setHealthFilter("normal");
   };
-  const toolbarContent = useMemo(() => (
+
+  const pageToolbar = useMemo(() => (
     <ServicesToolbar
       healthFilter={healthFilter}
       managedFilter={managedFilter}
@@ -34,8 +35,6 @@ export function ServicesPage({ data }: { data: any }) {
       onReset={resetServiceFilters}
     />
   ), [healthFilter, managedFilter]);
-
-  useToolbarSlot(toolbarContent);
 
   useEffect(() => {
     if (!logProject) setLogText(t("请选择一个项目查看日志。"));
@@ -102,7 +101,7 @@ export function ServicesPage({ data }: { data: any }) {
       fixed: "start",
       children: [
         {
-	          title: t("名称"),
+		          title: t("名称"),
           align: "center",
           dataIndex: "id",
           fixed: "start",
@@ -122,21 +121,21 @@ export function ServicesPage({ data }: { data: any }) {
 	      title: t("整体状态"),
       children: [
         {
-	          title: t("托管"),
+		          title: t("托管"),
           align: "center",
           width: 92,
           onCell: (row) => projectRowCell(row),
           render: (_, row) => <StatusChip value={row.project.pm2.status} />
         },
         {
-	          title: t("健康"),
+		          title: t("健康"),
           align: "center",
           width: 88,
           onCell: (row) => projectRowCell(row),
           render: (_, row) => <StatusChip value={serviceHealthLabel(row.project)} />
         },
         {
-	          title: t("检查"),
+		          title: t("检查"),
           align: "center",
           width: 76,
           onCell: (row) => projectRowCell(row),
@@ -158,25 +157,25 @@ export function ServicesPage({ data }: { data: any }) {
 	      title: t("组件"),
       children: [
         {
-	          title: t("类型"),
+		          title: t("类型"),
           align: "center",
           width: 64,
           render: (_, row) => <span className="component-role">{serviceRoleLabel(row.service.id, row.project.id)}</span>
         },
         {
-	          title: t("名称"),
+		          title: t("名称"),
           align: "center",
           width: 180,
           render: (_, row) => <span className="component-name" aria-label={row.service.id}>{row.service.id}</span>
         },
         {
-	          title: t("进程"),
+		          title: t("进程"),
           align: "center",
           width: 92,
           render: (_, row) => <StatusChip value={row.service.pm2.status} />
         },
         {
-	          title: t("健康"),
+		          title: t("健康"),
           align: "center",
           width: 88,
           render: (_, row) => <StatusChip value={serviceHealthLabel(row.service)} />
@@ -187,39 +186,39 @@ export function ServicesPage({ data }: { data: any }) {
 	      title: t("资源"),
       children: [
         {
-	          title: t("运行"),
+		          title: t("运行"),
           align: "center",
           width: 80,
           onCell: (row) => projectRowCell(row),
-          render: (_, row) => <MetricTag type={runtimeCountTagType(row.project.pm2)}>{row.project.pm2.online}/{row.project.pm2.total}</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type={runtimeCountTagType(row.project.pm2)}>{row.project.pm2.online}/{row.project.pm2.total}</AxiTag>
         },
         {
-	          title: t("内存"),
+		          title: t("内存"),
           align: "center",
           width: 104,
           onCell: (row) => projectRowCell(row),
-          render: (_, row) => <MetricTag type="geekblue">{formatBytes(row.project.pm2.memoryBytes)}</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type="geekblue">{formatBytes(row.project.pm2.memoryBytes)}</AxiTag>
         },
         {
           title: "CPU",
           align: "center",
           width: 76,
           onCell: (row) => projectRowCell(row),
-          render: (_, row) => <MetricTag type={cpuMetricTagType(row.project.pm2.cpu)}>{row.project.pm2.cpu}%</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type={cpuMetricTagType(row.project.pm2.cpu)}>{row.project.pm2.cpu}%</AxiTag>
         },
         {
-	          title: t("时长"),
+		          title: t("时长"),
           align: "center",
           width: 116,
           onCell: (row) => projectRowCell(row),
-          render: (_, row) => <MetricTag type="purple">{formatUptime(row.project.pm2.uptimeMs)}</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type="purple">{formatUptime(row.project.pm2.uptimeMs)}</AxiTag>
         },
         {
-	          title: t("重启次数"),
+		          title: t("重启次数"),
           align: "center",
           width: 80,
           onCell: (row) => projectRowCell(row),
-          render: (_, row) => <MetricTag type={restartMetricTagType(row.project.pm2.restarts)}>{row.project.pm2.restarts}</MetricTag>
+          render: (_, row) => <AxiTag className="metric-tag" effect="light" round type={restartMetricTagType(row.project.pm2.restarts)}>{row.project.pm2.restarts}</AxiTag>
         }
       ]
     },
@@ -228,7 +227,7 @@ export function ServicesPage({ data }: { data: any }) {
       fixed: "end",
       children: [
         {
-	          title: t("目标"),
+		          title: t("目标"),
           align: "center",
           fixed: "end",
           width: 240,
@@ -264,7 +263,7 @@ export function ServicesPage({ data }: { data: any }) {
   ];
 
   return (
-    <AxiCrud dataSource={rows} className="services-panel">
+    <AxiCrud className="services-panel" dataSource={rows} pageToolbar={pageToolbar}>
       <AxiTable<any>
         bordered
         className="services-table"

@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import { useTranslation } from "react-i18next";
 import { ConfigProvider, theme as AntTheme } from "antd";
 import { createAxiAntdTheme } from "@axi/core";
-import { AxiDashboardShell, type AxiDashboardNavGroup } from "@axi/shell";
+import { AxiDashboardShell, type AxiDashboardNavGroup, AxiScrollArea } from "@axi/shell";
 
 import devsvcLogoUrl from "../assets/devsvc-logo.svg";
 import {
@@ -38,7 +38,6 @@ import { OverviewPage } from "../features/overview/OverviewPage";
 import { ServicesPage } from "../features/services/ServicesPage";
 import { ServersPage } from "../features/servers/ServersPage";
 import { useThemeState } from "../features/theme/useThemeState";
-import { AppScrollbar } from "./AppScrollbar";
 import { ToolbarSlotContext } from "./toolbarSlot";
 import { GlobalSearchBox } from "../features/search/GlobalSearchBox";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
@@ -71,7 +70,6 @@ export function Shell({
   const isHostedPage = selectedKey.startsWith("/apps/");
   const isTablePage = selectedKey === "/services" || selectedKey === "/alerts" || selectedKey.startsWith("/axi-resources");
   const hasTableToolbarSlot = selectedKey === "/services" || selectedKey === "/alerts" || selectedKey === "/servers" || selectedKey === "/deploy" || selectedKey.startsWith("/axi-resources");
-  const [toolbarContent, setToolbarContent] = useState<ReactNode>(null);
   const [tableToolbarContainer, setTableToolbarContainer] = useState<HTMLDivElement | null>(null);
   const [contentFullscreen, setContentFullscreen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -80,7 +78,6 @@ export function Shell({
   const [axiResources, setAxiResources] = useState<AxiResource[]>([]);
   const [navigationMode, setNavigationMode] = useState<NavigationMode>("host");
   const previousHostedAppIdRef = useRef<string | null>(null);
-  const toolbarSlot = useMemo(() => ({ setToolbarContent, tableToolbarContainer }), [tableToolbarContainer]);
   const { recentAccess, addRecentAccess, clearRecentAccess } = useRecentAccessTracker(selectedKey);
   const [pinnedTabKeys, setPinnedTabKeys] = useState<NavRouteKey[]>(() => readPinnedTabKeys());
   const [visitedTabKeys, setVisitedTabKeys] = useState<NavRouteKey[]>(() => normalizeTabKeys([...readPinnedTabKeys(), selectedKey]));
@@ -168,11 +165,8 @@ export function Shell({
     setVisitedTabKeys((keys) => normalizeTabKeys(keys.includes(selectedKey) ? keys : [...keys, selectedKey]));
   }, [selectedKey]);
   const visitedTabs = useMemo(() => visitedTabKeys.map((key) => ({ ...makeRouteTab(key, t, hostedApps, axiResources), pinned: pinnedTabKeySet.has(key) })), [axiResources, hostedApps, language, pinnedTabKeySet, t, visitedTabKeys]);
-  const breadcrumbActions = toolbarContent || hasTableToolbarSlot ? (
-    <div className="app-breadcrumb-actions-group">
-      {toolbarContent}
-      <div className="app-breadcrumb-table-toolbar" ref={setTableToolbarContainer} />
-    </div>
+  const breadcrumbActions = hasTableToolbarSlot ? (
+    <div className="app-breadcrumb-table-toolbar" ref={setTableToolbarContainer} />
   ) : null;
   const hostedSidebarControls = isHostedPage ? (
     <div className="hosted-sidebar-controls">
@@ -316,7 +310,7 @@ export function Shell({
 
   return (
     <ConfigProvider locale={antdLocaleByAppLocale[locale]} theme={antdThemeConfig}>
-      <ToolbarSlotContext.Provider value={toolbarSlot}>
+      <ToolbarSlotContext.Provider value={{ tableToolbarContainer }}>
         <AxiDashboardShell
           activeNavKey={activeNavKey}
           activeTabKey={selectedKey}
@@ -440,11 +434,11 @@ export function Shell({
             <section className={`app-view-container ${isTablePage ? "app-view-container-services" : ""}`}>
               {settings.progressBar && data.loading ? <div className="top-progress" role="progressbar" aria-label={t("正在加载")} /> : null}
               {settings.watermark ? <div className="global-watermark" data-watermark={t("Axi DevSvc Dashboard")} aria-hidden="true">{t("Axi DevSvc Dashboard")}</div> : null}
-              <AppScrollbar className={isTablePage ? "services-scrollbar" : ""}>
+              <AxiScrollArea className={isTablePage ? "services-scrollbar" : ""}>
                 <div className={`page-transition page-transition-${settings.pageTransition}`} key={location.pathname}>
                   {routedPages}
                 </div>
-              </AppScrollbar>
+              </AxiScrollArea>
             </section>
           )}
         </AxiDashboardShell>
