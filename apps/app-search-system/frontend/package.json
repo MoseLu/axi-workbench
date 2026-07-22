@@ -38,6 +38,6 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.2.0",
-    "@types/node": "^20.19.41"
+    "@types/node": "^26.1.1"
   }
 }
