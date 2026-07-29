@@ -1,5 +1,5 @@
 import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -166,21 +166,36 @@ export function recordMobileAudit({ cacheDir, event = {} }) {
 export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), agentTasks = new Map(), approvals = new Map(), codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" } = {}) {
   const snapshot = buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
   const graph = readJson(graphPath, { projects: {} });
+  const completion = readJson(join(workspaceRoot, ".workspace", "project-completion.json"), { projects: [] });
+  const completionById = new Map(
+    (Array.isArray(completion.projects) ? completion.projects : [])
+      .filter((item) => item && typeof item.id === "string")
+      .map((item) => [item.id, item]),
+  );
   const projects = Object.entries(graph.projects || {}).map(([id, project]) => {
     const resource = snapshot.resources.find((item) => item.id === id);
     const mobile = project.mobile || {};
+    const completionEntry = completionById.get(id) || null;
     const preview = mobile.preview || {};
     const previewUrl = typeof preview.url === "string" && /^https:\/\//.test(preview.url) ? preview.url : null;
     const previewMode = previewUrl && ["embedded_web", "external_web"].includes(preview.mode) ? preview.mode : "none";
+    const lastVerifiedAt = mobile.lastVerifiedAt || completionEntry?.updatedAt || null;
+    const health = mobile.health || deriveMobileHealth({ resource, completion: completionEntry, lastVerifiedAt });
+    const progress = mobile.progress || buildMobileProgress(completionEntry);
+    const capabilities = normalizedStrings(mobile.capabilities || project.provides || []);
     return {
       id,
       name: project.name || id,
       kind: project.kind || "project",
       status: resource?.status || project.status || "unknown",
+      health,
       summary: mobile.summary || project.description || (resource?.provides || []).join("，") || "尚未提供项目摘要。",
       architecture: mobile.architecture || { provides: project.provides || [], consumes: project.consumes || [], contracts: project.contracts || [] },
       phase: mobile.phase || "unknown",
-      lastVerifiedAt: mobile.lastVerifiedAt || null,
+      lastVerifiedAt,
+      capabilities,
+      progress,
+      configuration: buildMobileConfiguration({ id, project, graph, workspaceRoot }),
       preview: {
         mode: previewMode,
         url: previewUrl,
@@ -193,13 +208,145 @@ export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE
       source: "workspace.graph",
     };
   }).sort((left, right) => left.name.localeCompare(right.name));
+  const attentionItems = projects
+    .flatMap((project) => buildProjectAttention(project))
+    .concat(buildRuntimeAttention(snapshot))
+    .sort((left, right) => severityRank(right.severity) - severityRank(left.severity) || right.updatedAt.localeCompare(left.updatedAt));
+  const summary = {
+    total: projects.length,
+    healthy: projects.filter((project) => project.health === "healthy").length,
+    attention: projects.filter((project) => project.health === "attention").length,
+    blocked: projects.filter((project) => project.health === "blocked").length,
+    stale: projects.filter((project) => project.health === "stale").length,
+    unknown: projects.filter((project) => project.health === "unknown").length,
+  };
   return {
     generatedAt: snapshot.generatedAt,
     source: "workspace.graph",
+    summary,
+    attentionItems,
     projects,
     runningTasks: snapshot.agentTasks.filter((task) => !["succeeded", "failed", "cancelled"].includes(task.status)),
     approvals: snapshot.approvals.filter((approval) => approval.status === "pending"),
   };
+}
+
+function normalizedStrings(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim());
+}
+
+function buildMobileProgress(completion) {
+  if (!completion) {
+    return {
+      stage: "unknown",
+      confidence: "unknown",
+      summary: "尚未生成项目完成度证据。",
+      updatedAt: null,
+      evidenceCount: 0,
+      remaining: [],
+    };
+  }
+  return {
+    stage: completion.stage || "unknown",
+    confidence: completion.confidence || "unknown",
+    summary: completion.summary || "尚未提供进展摘要。",
+    updatedAt: completion.updatedAt || null,
+    evidenceCount: Array.isArray(completion.evidence) ? completion.evidence.length : 0,
+    remaining: normalizedStrings(completion.remaining).slice(0, 8),
+  };
+}
+
+function buildMobileConfiguration({ id, project, graph, workspaceRoot }) {
+  const projectPath = typeof project.path === "string" ? project.path : "";
+  const relativePath = projectPath
+    ? relative(workspaceRoot, projectPath).replaceAll("\\", "/") || "."
+    : null;
+  const profiles = Object.entries(graph.profiles || {})
+    .filter(([, profile]) => profile?.projectId === id || profile?.project === id || profile?.owner === id)
+    .map(([profileId]) => profileId);
+  const projectFacts = [
+    { key: "kind", label: "类型", value: project.kind || "project" },
+    relativePath ? { key: "path", label: "工作区路径", value: relativePath } : null,
+    { key: "source", label: "事实源", value: "workspace.graph" },
+  ].filter(Boolean);
+  const architectureFacts = [
+    { key: "provides", label: "提供能力", value: String(normalizedStrings(project.provides).length) },
+    { key: "consumes", label: "消费依赖", value: String(normalizedStrings(project.consumes).length) },
+    { key: "contracts", label: "公开契约", value: String(normalizedStrings(project.contracts).length) },
+  ];
+  const runtimeFacts = [
+    typeof project.runtime === "string" ? { key: "runtime", label: "运行时", value: project.runtime } : null,
+    typeof project.packageManager === "string" ? { key: "packageManager", label: "包管理器", value: project.packageManager } : null,
+    profiles.length ? { key: "profiles", label: "启动配置", value: profiles.join("、") } : null,
+  ].filter(Boolean);
+  return [
+    { id: "project", title: "项目", facts: projectFacts },
+    { id: "architecture", title: "架构", facts: architectureFacts },
+    ...(runtimeFacts.length ? [{ id: "runtime", title: "运行", facts: runtimeFacts }] : []),
+  ];
+}
+
+function deriveMobileHealth({ resource, completion, lastVerifiedAt }) {
+  if (resource?.status === "missing") return "blocked";
+  if (!completion) return "unknown";
+  if (completion.stage === "blocked" || completion.stage === "failed") return "blocked";
+  if (completion.handoff?.status === "unready") return "attention";
+  if (isOlderThanDays(lastVerifiedAt, 30) || completion.handoff?.status === "stale") return "stale";
+  if (completion.confidence === "low" || completion.stage === "unassessed") return "attention";
+  return "healthy";
+}
+
+function isOlderThanDays(value, days) {
+  if (typeof value !== "string" || !value) return false;
+  const epoch = Date.parse(value);
+  if (!Number.isFinite(epoch)) return false;
+  return Date.now() - epoch > days * 24 * 60 * 60 * 1000;
+}
+
+function buildProjectAttention(project) {
+  const updatedAt = project.progress?.updatedAt || project.lastVerifiedAt || new Date(0).toISOString();
+  switch (project.health) {
+    case "blocked":
+      return [{ id: `project:${project.id}:blocked`, projectId: project.id, severity: "critical", type: "project_blocked", title: `${project.name} 已阻塞`, summary: project.progress?.summary || project.summary, updatedAt }];
+    case "stale":
+      return [{ id: `project:${project.id}:stale`, projectId: project.id, severity: "warning", type: "verification_stale", title: `${project.name} 证据已过期`, summary: "最近验证或交接信息超过有效期。", updatedAt }];
+    case "attention":
+      return [{ id: `project:${project.id}:attention`, projectId: project.id, severity: "warning", type: "project_attention", title: `${project.name} 需要关注`, summary: project.progress?.summary || project.summary, updatedAt }];
+    default:
+      return [];
+  }
+}
+
+function buildRuntimeAttention(snapshot) {
+  const now = snapshot.generatedAt;
+  const taskItems = snapshot.agentTasks
+    .filter((task) => ["failed", "blocked", "rejected_rework", "policy_violation"].includes(task.status))
+    .map((task) => ({
+      id: `task:${task.id || task.jobId || `${task.projectId || "unknown"}:${task.status}:${task.updatedAt || now}`}`,
+      projectId: task.projectId || null,
+      severity: task.status === "failed" ? "critical" : "warning",
+      type: "task_attention",
+      title: task.summary || task.title || "任务需要关注",
+      summary: `任务状态：${task.status}`,
+      updatedAt: task.updatedAt || now,
+    }));
+  const approvalItems = snapshot.approvals
+    .filter((approval) => approval.status === "pending")
+    .map((approval) => ({
+      id: `approval:${approval.id}`,
+      projectId: approval.projectId || null,
+      severity: "info",
+      type: "approval_pending",
+      title: approval.actionSummary || "存在待审批事项",
+      summary: `风险等级：${approval.riskLevel || "unknown"}`,
+      updatedAt: approval.createdAt || now,
+    }));
+  return taskItems.concat(approvalItems);
+}
+
+function severityRank(value) {
+  return { critical: 3, warning: 2, info: 1 }[value] || 0;
 }
 
 export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), agentTasks = new Map(), approvals = new Map(), codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" } = {}) {

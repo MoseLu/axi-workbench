@@ -286,6 +286,13 @@ export function createPairingService({
     return { ok: true, device };
   }
 
+  /* exchangeNonceForAccessToken — prove possession of the device key before minting a token. */
+  function exchangeNonceForAccessToken({ deviceId, nonceId, nonce, signatureHex, scopes = [] } = {}) {
+    const verified = verifyNonceSignature({ deviceId, nonceId, nonce, signatureHex });
+    if (!verified.ok) return verified;
+    return issueAccessToken({ deviceId, scopes });
+  }
+
   /* issueAccessToken — mint a 1h HS256 access token for an active device. */
   function issueAccessToken({ deviceId, scopes = [] } = {}) {
     const device = readDevice(deviceId);
@@ -359,6 +366,7 @@ export function createPairingService({
     confirmPair,
     requestAuthNonce,
     verifyNonceSignature,
+    exchangeNonceForAccessToken,
     issueAccessToken,
     verifyAccessToken,
     revokeDevice,

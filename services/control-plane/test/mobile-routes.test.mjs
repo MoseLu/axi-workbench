@@ -44,7 +44,14 @@ function buildServer(controlPlane, opts = {}) {
       if (req.method === "POST" && url.pathname === "/mobile/v1/auth/token") {
         if (!controlPlane.pairing) return json(res, 503, { error: "pairing not configured" });
         const body = await readJson(req);
-        return json(res, 200, controlPlane.pairing.issueAccessToken({ deviceId: body?.deviceId, scopes: body?.scopes }));
+        const result = controlPlane.pairing.exchangeNonceForAccessToken(body);
+        return json(res, result.ok ? 200 : 400, result);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/auth/nonce") {
+        if (!controlPlane.pairing) return json(res, 503, { error: "pairing not configured" });
+        const body = await readJson(req);
+        const result = controlPlane.pairing.requestAuthNonce({ deviceId: body?.deviceId });
+        return json(res, result.ok ? 200 : 400, result);
       }
       const auth = authenticate(req, controlPlane);
       if (!auth.ok) return json(res, 401, { error: auth.error });
@@ -150,18 +157,40 @@ test("mobile v1: pair/confirm/auth/workspace end-to-end", async () => {
 
     // 4. sign the nonce and call auth/token
     const sig = signNonce(TEST_PUBKEY, confirm.body.nonce.nonce);
-    // Issue access token directly via the same surface the server uses.
-    const token = controlPlane.pairing.issueAccessToken({ deviceId });
-    assert.equal(token.ok, true);
+    const token = await fetchJson(server, "POST", "/mobile/v1/auth/token", {
+      body: {
+        deviceId,
+        nonceId: confirm.body.nonce.nonceId,
+        nonce: confirm.body.nonce.nonce,
+        signatureHex: sig,
+        scopes: ["mobile"],
+      },
+    });
+    assert.equal(token.status, 200);
+    assert.equal(token.body.ok, true);
 
     // 5. workspace with bearer token
     const ws = await fetchJson(server, "GET", "/mobile/v1/workspace", {
-      headers: { Authorization: `Bearer ${token.accessToken}` },
+      headers: { Authorization: `Bearer ${token.body.accessToken}` },
     });
     assert.equal(ws.status, 200);
     assert.equal(ws.body.projects.length, 1);
     assert.equal(ws.body.projects[0].id, "ielts-vocab");
     assert.equal(ws.body.projects[0].preview.mode, "embedded_web");
+
+    const refreshedNonce = await fetchJson(server, "POST", "/mobile/v1/auth/nonce", {
+      body: { deviceId },
+    });
+    assert.equal(refreshedNonce.status, 200);
+    const refreshedToken = await fetchJson(server, "POST", "/mobile/v1/auth/token", {
+      body: {
+        deviceId,
+        nonceId: refreshedNonce.body.nonceId,
+        nonce: refreshedNonce.body.nonce,
+        signatureHex: signNonce(TEST_PUBKEY, refreshedNonce.body.nonce),
+      },
+    });
+    assert.equal(refreshedToken.status, 200);
   } finally {
     await new Promise((r) => server.close(r));
   }

@@ -98,6 +98,31 @@ test("verifyNonceSignature + issueAccessToken issue an HS256 token that round-tr
   assert.deepEqual(verify.scopes, ["mobile"]);
 });
 
+test("exchangeNonceForAccessToken requires a valid device-key proof", () => {
+  const pairing = createPairingService({ cacheDir: freshCacheDir(), tokenSecret: FIXED_SECRET });
+  const start = pairing.startPair({ publicKeyHex: TEST_PUBKEY, deviceName: "android-keystore" });
+  const confirm = pairing.confirmPair({ pairingId: start.pairingId, code: start.code });
+  const signatureHex = signNonce(TEST_PUBKEY, confirm.nonce.nonce);
+  const token = pairing.exchangeNonceForAccessToken({
+    deviceId: confirm.deviceId,
+    nonceId: confirm.nonce.nonceId,
+    nonce: confirm.nonce.nonce,
+    signatureHex,
+    scopes: ["mobile"],
+  });
+  assert.equal(token.ok, true);
+  assert.equal(pairing.verifyAccessToken(token.accessToken).ok, true);
+
+  const replay = pairing.exchangeNonceForAccessToken({
+    deviceId: confirm.deviceId,
+    nonceId: confirm.nonce.nonceId,
+    nonce: confirm.nonce.nonce,
+    signatureHex,
+  });
+  assert.equal(replay.ok, false);
+  assert.match(replay.error, /consumed/i);
+});
+
 test("verifyNonceSignature rejects a tampered signature", () => {
   const cacheDir = freshCacheDir();
   const pairing = createPairingService({ cacheDir, tokenSecret: FIXED_SECRET });

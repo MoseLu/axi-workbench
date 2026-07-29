@@ -6,6 +6,7 @@ import path from "node:path";
 const repoRoot = path.resolve(new URL("..", import.meta.url).pathname);
 
 const ignoredParts = new Set([
+  ".build",
   ".cache",
   ".codegraph",
   ".git",

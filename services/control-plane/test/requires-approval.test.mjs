@@ -58,7 +58,10 @@ function buildServer(cp) {
       if (!url.pathname.startsWith("/mobile/v1/")) return json(res, 404, { error: "not found" });
       if (url.pathname === "/mobile/v1/pair/start") return json(res, 200, cp.pairing.startPair(await readJson(req)));
       if (url.pathname === "/mobile/v1/pair/confirm") return json(res, 200, cp.pairing.confirmPair(await readJson(req)));
-      if (url.pathname === "/mobile/v1/auth/token") { const body = await readJson(req); return json(res, 200, cp.pairing.issueAccessToken({ deviceId: body?.deviceId })); }
+      if (url.pathname === "/mobile/v1/auth/token") {
+        const result = cp.pairing.exchangeNonceForAccessToken(await readJson(req));
+        return json(res, result.ok ? 200 : 400, result);
+      }
       const auth = authenticate(req, cp);
       if (!auth.ok) return json(res, 401, { error: auth.error });
       if (req.method === "POST" && url.pathname === "/mobile/v1/jobs") {
@@ -85,8 +88,32 @@ async function bootServer(cp) { const server = buildServer(cp); await new Promis
 async function registerDevice(server) {
   const start = await fetchJson(server, "POST", "/mobile/v1/pair/start", { body: { publicKeyHex: TEST_PUBKEY } });
   const confirm = await fetchJson(server, "POST", "/mobile/v1/pair/confirm", { body: { pairingId: start.body.pairingId, code: start.body.code } });
-  const token = await fetchJson(server, "POST", "/mobile/v1/auth/token", { body: { deviceId: confirm.body.deviceId } });
+  const token = await fetchJson(server, "POST", "/mobile/v1/auth/token", {
+    body: {
+      deviceId: confirm.body.deviceId,
+      nonceId: confirm.body.nonce.nonceId,
+      nonce: confirm.body.nonce.nonce,
+      signatureHex: signNonce(TEST_PUBKEY, confirm.body.nonce.nonce),
+    },
+  });
   return { deviceId: confirm.body.deviceId, accessToken: token.body.accessToken };
+}
+function createApprovalControlPlane({ cacheDir, graphPath }) {
+  return createControlPlane({
+    workspaceRoot: cacheDir,
+    cacheDir,
+    graphPath,
+    pairingTokenSecret: TEST_SECRET,
+    roleAgentExecutor: async ({ assignment }) => ({
+      status: "succeeded",
+      summary: `${assignment.role} test executor completed`,
+    }),
+  });
+}
+async function closeServer(server) {
+  await new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  });
 }
 function readAuditLog(cacheDir) {
   const path = join(cacheDir, "audit.jsonl");
@@ -98,7 +125,7 @@ test("destructive mobile text files an approval and returns pending_approval", a
   const cacheDir = freshCacheDir();
   const graphPath = join(cacheDir, "workspace.graph.json");
   writeFileSync(graphPath, JSON.stringify({ projects: {} }));
-  const cp = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const cp = createApprovalControlPlane({ cacheDir, graphPath });
   const server = await bootServer(cp);
   try {
     const { accessToken } = await registerDevice(server);
@@ -110,14 +137,14 @@ test("destructive mobile text files an approval and returns pending_approval", a
     assert.equal(r.body.status, "pending_approval");
     assert.match(r.body.approvalId, /^apr_/);
     assert.equal(r.body.riskLevel, "destructive");
-  } finally { server.close(); }
+  } finally { await closeServer(server); }
 });
 
 test("audit.jsonl gets an approval_requested entry when the gate fires", async () => {
   const cacheDir = freshCacheDir();
   const graphPath = join(cacheDir, "workspace.graph.json");
   writeFileSync(graphPath, JSON.stringify({ projects: {} }));
-  const cp = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const cp = createApprovalControlPlane({ cacheDir, graphPath });
   const server = await bootServer(cp);
   try {
     const { deviceId, accessToken } = await registerDevice(server);
@@ -133,14 +160,14 @@ test("audit.jsonl gets an approval_requested entry when the gate fires", async (
     assert.equal(event.projectId, "axi-rules");
     assert.equal(event.riskLevel, "destructive");
     assert.equal(event.approvalId, r.body.approvalId);
-  } finally { server.close(); }
+  } finally { await closeServer(server); }
 });
 
 test("approving a pending mobile approval dispatches a real job", async () => {
   const cacheDir = freshCacheDir();
   const graphPath = join(cacheDir, "workspace.graph.json");
   writeFileSync(graphPath, JSON.stringify({ projects: {} }));
-  const cp = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const cp = createApprovalControlPlane({ cacheDir, graphPath });
   const server = await bootServer(cp);
   try {
     const { accessToken } = await registerDevice(server);
@@ -158,14 +185,14 @@ test("approving a pending mobile approval dispatches a real job", async () => {
     const job = cp.getJob(decision.body.dispatchedJobId);
     assert.ok(job, "the dispatched job must be retrievable");
     assert.equal(job.metadata.requestedRuntime || job.metadata.workspaceRoot ? "ok" : "ok", "ok");
-  } finally { server.close(); }
+  } finally { await closeServer(server); }
 });
 
 test("rejected approval leaves the job queue untouched", async () => {
   const cacheDir = freshCacheDir();
   const graphPath = join(cacheDir, "workspace.graph.json");
   writeFileSync(graphPath, JSON.stringify({ projects: {} }));
-  const cp = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const cp = createApprovalControlPlane({ cacheDir, graphPath });
   const server = await bootServer(cp);
   try {
     const { accessToken } = await registerDevice(server);
@@ -178,14 +205,14 @@ test("rejected approval leaves the job queue untouched", async () => {
     });
     assert.equal(decision.body.status, "rejected");
     assert.ok(!decision.body.dispatchedJobId, "rejected approval must NOT dispatch a job");
-  } finally { server.close(); }
+  } finally { await closeServer(server); }
 });
 
 test("low-risk mobile text bypasses the gate (no approval)", async () => {
   const cacheDir = freshCacheDir();
   const graphPath = join(cacheDir, "workspace.graph.json");
   writeFileSync(graphPath, JSON.stringify({ projects: {} }));
-  const cp = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const cp = createApprovalControlPlane({ cacheDir, graphPath });
   const server = await bootServer(cp);
   try {
     const { accessToken } = await registerDevice(server);
@@ -197,5 +224,5 @@ test("low-risk mobile text bypasses the gate (no approval)", async () => {
     assert.equal(r.status, 202);
     assert.notEqual(r.body.status, "pending_approval");
     assert.ok(r.body?.job?.id, "low-risk route must return a real job id");
-  } finally { server.close(); }
+  } finally { await closeServer(server); }
 });

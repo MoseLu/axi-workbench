@@ -20,8 +20,9 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname.startsWith("/mobile/v1/")) {
       // Pairing endpoints are unauthenticated by design — the caller is
-      // trying to establish an identity. The 3 routes /pair/start,
-      // /pair/confirm, /auth/token sit on the same prefix.
+      // trying to establish an identity. Token/nonce calls remain
+      // unauthenticated at HTTP level but require proof of device-key
+      // possession before a bearer token is minted.
       if (req.method === "POST" && url.pathname === "/mobile/v1/pair/start") {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
         const body = await readJsonBody(req);
@@ -37,16 +38,15 @@ const server = createServer(async (req, res) => {
       if (req.method === "POST" && url.pathname === "/mobile/v1/auth/token") {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
         const body = await readJsonBody(req);
-        const r = controlPlane.pairing.issueAccessToken({ deviceId: body?.deviceId, scopes: body?.scopes });
+        const r = controlPlane.pairing.exchangeNonceForAccessToken(body || {});
         return sendJson(res, r.ok ? 200 : 400, r);
       }
-      // Nonce refresh endpoint — authenticated (we want only known devices
-      // to pull new nonces).
+      // A nonce is safe to issue without a bearer token: only a device that
+      // still owns the registered secret can sign it and obtain a token.
       if (req.method === "POST" && url.pathname === "/mobile/v1/auth/nonce") {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
-        const auth = authenticate(req, controlPlane);
-        if (!auth.ok) return sendJson(res, 401, { error: auth.error });
-        const r = controlPlane.pairing.requestAuthNonce({ deviceId: auth.deviceId });
+        const body = await readJsonBody(req);
+        const r = controlPlane.pairing.requestAuthNonce({ deviceId: body?.deviceId });
         return sendJson(res, r.ok ? 200 : 400, r);
       }
       if (req.method === "POST" && url.pathname === "/mobile/v1/pair/revoke") {

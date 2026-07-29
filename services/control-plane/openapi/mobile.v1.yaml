@@ -73,7 +73,7 @@ paths:
   /mobile/v1/auth/token:
     post:
       tags: [pairing]
-      summary: Exchange deviceId for a short-lived HS256 access token
+      summary: Exchange a signed single-use nonce for a short-lived HS256 access token
       operationId: issueAccessToken
       requestBody:
         required: true
@@ -95,10 +95,14 @@ paths:
   /mobile/v1/auth/nonce:
     post:
       tags: [pairing]
-      summary: Refresh a single-use nonce for /auth/token re-signing
+      summary: Request a single-use nonce for /auth/token re-signing
       operationId: requestAuthNonce
-      security:
-        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NonceRequest'
       responses:
         '200':
           description: Nonce issued
@@ -106,8 +110,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NonceResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '503':
           $ref: '#/components/responses/PairingDisabled'
   /mobile/v1/pair/revoke:
@@ -325,7 +329,7 @@ components:
           type: string
           minLength: 64
           maxLength: 64
-          description: 64-char hex-encoded public key (NIST P-256 / Ed25519 raw key bytes)
+          description: 64-char hex-encoded device authentication key; stored under Android Keystore protection
         deviceName:
           type: string
           minLength: 1
@@ -377,11 +381,19 @@ components:
           $ref: '#/components/schemas/NonceResponse'
     TokenRequest:
       type: object
-      required: [deviceId]
+      required: [deviceId, nonceId, nonce, signatureHex]
       additionalProperties: false
       properties:
         deviceId:
           type: string
+        nonceId:
+          type: string
+        nonce:
+          type: string
+        signatureHex:
+          type: string
+          minLength: 64
+          maxLength: 64
         scopes:
           type: array
           items:
@@ -410,6 +422,13 @@ components:
           type: string
         expiresAt:
           type: integer
+    NonceRequest:
+      type: object
+      required: [deviceId]
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
     RevokeRequest:
       type: object
       additionalProperties: false
@@ -536,6 +555,9 @@ components:
           type: string
         status:
           type: string
+        health:
+          type: string
+          enum: [healthy, attention, blocked, stale, unknown]
         summary:
           type: string
     MobileProjectCard:
@@ -574,6 +596,16 @@ components:
         lastVerifiedAt:
           type: string
           nullable: true
+        capabilities:
+          type: array
+          items:
+            type: string
+        progress:
+          $ref: '#/components/schemas/ProjectProgress'
+        configuration:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectConfigurationGroup'
         preview:
           $ref: '#/components/schemas/MobilePreview'
         actions:
@@ -583,9 +615,91 @@ components:
         source:
           type: string
           enum: [workspace.graph]
+    WorkspaceSummary:
+      type: object
+      required: [total, healthy, attention, blocked, stale, unknown]
+      additionalProperties: false
+      properties:
+        total:
+          type: integer
+        healthy:
+          type: integer
+        attention:
+          type: integer
+        blocked:
+          type: integer
+        stale:
+          type: integer
+        unknown:
+          type: integer
+    AttentionItem:
+      type: object
+      required: [id, projectId, severity, type, title, summary, updatedAt]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        type:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        updatedAt:
+          type: string
+    ProjectProgress:
+      type: object
+      required: [stage, confidence, summary, updatedAt, evidenceCount, remaining]
+      additionalProperties: false
+      properties:
+        stage:
+          type: string
+        confidence:
+          type: string
+        summary:
+          type: string
+        updatedAt:
+          type: string
+          nullable: true
+        evidenceCount:
+          type: integer
+        remaining:
+          type: array
+          items:
+            type: string
+    ProjectConfigurationFact:
+      type: object
+      required: [key, label, value]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        value:
+          type: string
+    ProjectConfigurationGroup:
+      type: object
+      required: [id, title, facts]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        facts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectConfigurationFact'
     MobileWorkspaceSnapshot:
       type: object
-      required: [generatedAt, source, projects, runningTasks, approvals]
+      required: [generatedAt, source, summary, attentionItems, projects, runningTasks, approvals]
       additionalProperties: false
       properties:
         generatedAt:
@@ -594,6 +708,12 @@ components:
         source:
           type: string
           enum: [workspace.graph]
+        summary:
+          $ref: '#/components/schemas/WorkspaceSummary'
+        attentionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttentionItem'
         projects:
           type: array
           items:
