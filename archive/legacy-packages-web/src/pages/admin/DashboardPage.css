@@ -1,0 +1,94 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard-page__main-card {
+  border-radius: 8px;
+}
+
+.dashboard-page__progress-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dashboard-page__progress-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dashboard-page__progress-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary-color, #4165d7);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.dashboard-page__stat {
+  border-radius: 8px;
+}
+
+.dashboard-page__card {
+  border-radius: 8px;
+}
+
+.dashboard-page__card .ant-card-head {
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.dashboard-page__card .ant-card-head-title {
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.dashboard-page__card .ant-card-body {
+  padding: 0;
+}
+
+/* Activity list */
+.dashboard-page__activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page__activity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.2s;
+}
+
+.dashboard-page__activity-item:last-child {
+  border-bottom: none;
+}
+
+.dashboard-page__activity-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dashboard-page__activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dashboard-page__activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.dashboard-page__activity-status {
+  flex-shrink: 0;
+  font-size: 14px;
+}

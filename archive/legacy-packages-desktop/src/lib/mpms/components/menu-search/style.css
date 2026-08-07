@@ -1,0 +1,107 @@
+/* ========== Menu Search — bellis style ========== */
+.mpms-menu-search {
+  position: relative;
+  height: 39px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--mpms-border-color);
+  padding: 6px 10px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.mpms-menu-search__input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 27px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.mpms-menu-search__input-wrap:focus-within {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.mpms-menu-search__prefix {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--mpms-text-secondary);
+  font-size: 14px;
+}
+
+.mpms-menu-search__input {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--mpms-text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.mpms-menu-search__input::placeholder {
+  color: var(--mpms-text-secondary);
+  opacity: 0.6;
+}
+
+.mpms-menu-search__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--mpms-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.mpms-menu-search__clear:hover {
+  color: var(--mpms-text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ========== Dropdown ========== */
+.mpms-menu-search__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--mpms-sidebar-bg, #191919);
+  border: 1px solid var(--mpms-border-color);
+  border-radius: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mpms-menu-search__dropdown-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--mpms-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mpms-menu-search__dropdown-item:hover {
+  color: var(--mpms-text-primary);
+  background: var(--mpms-hover-bg);
+}
+
+.mpms-menu-search__dropdown-parent {
+  opacity: 0.5;
+  font-size: 12px;
+}

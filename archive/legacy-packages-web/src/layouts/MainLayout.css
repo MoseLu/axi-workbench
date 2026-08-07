@@ -1,0 +1,43 @@
+/* ========== Web-specific layout overrides ========== */
+
+/* Mobile mask overlay */
+.app-layout__mask {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* ========== Responsive ========== */
+
+/* Tablet */
+@media (max-width: 992px) {
+  :root {
+    --mpms-sidebar-width: 200px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .app-layout__mask {
+    display: block;
+  }
+
+  .mpms-layout__sidebar {
+    transform: translateX(0);
+  }
+
+  .mpms-layout__sidebar.is-collapsed {
+    width: 0;
+    transform: translateX(-100%);
+  }
+
+  .mpms-layout__right {
+    margin-left: 0 !important;
+  }
+
+  .mpms-layout__content {
+    margin: 8px;
+  }
+}

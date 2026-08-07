@@ -1,0 +1,33 @@
+.mpms-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: var(--mpms-header-height, 46px);
+  padding: 0 16px;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.mpms-logo.is-collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.mpms-logo__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 24px;
+}
+
+.mpms-logo__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--mpms-text-primary, rgba(255, 255, 255, 0.85));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

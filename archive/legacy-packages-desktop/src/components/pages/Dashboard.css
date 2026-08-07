@@ -1,0 +1,81 @@
+.dashboard-page {
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.dashboard-page__main-card {
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.dashboard-page__main-card .ant-card-body {
+  padding: 20px;
+}
+
+.dashboard-page__progress-info {
+  color: #fff;
+}
+
+.dashboard-page__progress-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dashboard-page__progress-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dashboard-page__progress-value {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.dashboard-page__stat {
+  margin-bottom: 10px;
+}
+
+.dashboard-page__card {
+  margin-bottom: 12px;
+}
+
+.dashboard-page__activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page__activity-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dashboard-page__activity-item:last-child {
+  border-bottom: none;
+}
+
+.dashboard-page__activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.dashboard-page__activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dashboard-page__activity-status {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
