@@ -1,5 +1,7 @@
 # 第二章 总架构设计
 
+> 说明：本文包含历史设计章节。当前物理源码角色、主入口和根 workspace membership 以 [`architecture/source-catalog.md`](./architecture/source-catalog.md) 为准。
+
 ## 2.0 当前生产后端边界（2026-08）
 
 本节是当前实现的权威入口；后续仍保留的 EPAP / `auth-service` / Spring `core-service` 图示属于历史或迁移兼容说明。

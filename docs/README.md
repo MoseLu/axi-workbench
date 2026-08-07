@@ -7,6 +7,8 @@
 
 ## 文档索引
 
+> 当前物理源码角色、主入口和根 workspace membership 以 [`architecture/source-catalog.md`](./architecture/source-catalog.md) 为准；本目录中的早期架构设计文档保留历史设计背景，不作为目录结构的唯一事实源。
+
 | 章节 | 文件 | 核心内容 |
 |------|------|----------|
 | 第一章 | [01-overview.md](./01-overview.md) | 平台简介、设计原则、技术选型 |

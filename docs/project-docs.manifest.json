@@ -17,6 +17,11 @@
   ],
   "entrypoints": [
     {
+      "id": "source-catalog",
+      "path": "docs/architecture/source-catalog.md",
+      "purpose": "Canonical physical source topology: application roles, runtime boundaries, root workspace membership, host registration, and cleanup order."
+    },
+    {
       "id": "workbench-web",
       "path": "apps/workbench/src/main.tsx",
       "purpose": "Independent Web admin application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, and Web-only pages."
@@ -244,6 +249,7 @@
     "tdd": "docs/state/TDD.md",
     "security": "docs/governance/SECURITY.md",
     "docsIndex": "docs/README.md",
+    "sourceCatalog": "docs/architecture/source-catalog.md",
     "manifest": "docs/project-docs.manifest.json",
     "verification": "docs/state/VERIFICATION.md"
   },
@@ -294,11 +300,12 @@
     "AGENTS.md",
     "README.md",
     "INDEX.md",
+    "docs/architecture/source-catalog.md",
     "CHANGE.md",
     "docs/HANDOFF.md"
   ],
   "created": "2026-06-07",
-  "updated": "2026-08-07",
+  "updated": "2026-08-08",
   "writer": "Codex zero-context-onboarding",
   "source": "user-authorized zero-context onboarding plan"
 }

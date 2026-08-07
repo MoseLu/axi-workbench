@@ -21,6 +21,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- Added the canonical source catalog at `docs/architecture/source-catalog.md`, separating the two user workbench clients from the Host, hosted tools, vertical runtimes, nested CLI monorepo, and root pnpm workspace membership; root navigation now points to that catalog.
 - Replaced browser local token/refresh handling with HttpOnly gateway sessions; apps use relative API paths in development and an explicit HTTPS gateway origin in production, while shared locale preference synchronizes with platform-core after authentication and retains a local offline cache.
 - Reclassified `auth-service` and Spring/H2 `core-service` as migration compatibility only; the production Helm chart exposes only the Go gateway and its internal Go services.
 - Hardened the Go API plane after independent review: access-token audience/scope checks, exact credentialed CORS origins, QR completion through the single gateway ingress, graceful server shutdown, SMTP TLS protection, migration-only configuration, protected Owner transitions, and leased/idempotent Outbox delivery.

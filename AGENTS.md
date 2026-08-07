@@ -27,8 +27,8 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 
 | 路径 | 是否项目内 | 说明 |
 |------|------------|------|
-| `apps/` | 是 | 7 个 Dashboard Apps（workbench Web / workbench-mobile / devsvc-dashboard / axi-coder / verification-inbox / app-search-system / ollama-menu-assistant），子树 `apps/AGENTS.md` 详述 |
-| `services/` | 是 | 8 个微服务（api-gateway / auth-service / core-service / file-service / notification-service / communication-gateway / control-plane / workflow-engine），子树 `services/AGENTS.md` 详述 |
+| `apps/` | 是 | 混合源码树：两个正式用户端（workbench Web / workbench-mobile）、Host（devsvc-dashboard）及 Hosted/垂直工具；角色与根 workspace membership 见 [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md)，子树 `apps/AGENTS.md` 详述 |
+| `services/` | 是 | 生产 Go API 平面、控制面、通信网关、迁移兼容服务与专职服务；不要按目录数量把它们视为同一运行时，详见 [`services/AGENTS.md`](services/AGENTS.md) |
 | `packages/` | 是 | 共享包（含 api-client / schemas / epap-schemas-compat / types / ui / utils / workbench-foundation），子树 `packages/AGENTS.md` 详述 |
 | `tools/axi-app-cli/` | 是 | Axi 应用脚手架 CLI（独立子 monorepo），以 `tools/axi-app-cli/AGENTS.md` / `README.md` 为权威入口；**不引用**子包内 `README.md` |
 | `ai/` | 是 | 知识库 / Agent Platform 集成层（`ai/AGENTS.md`） |
@@ -50,6 +50,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 |------|----------|
 | 变更日志（Change Log） | [`CHANGE.md`](CHANGE.md) (root pointer) → [`docs/state/CHANGELOG.md`](docs/state/CHANGELOG.md) (canonical) |
 | 项目入口与当前结构 | [`README.md`](README.md) |
+| 源码角色、主入口与 workspace membership | [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md) |
 | 安全策略 | [`docs/governance/SECURITY.md`](docs/governance/SECURITY.md) |
 | 六层控制面边界与运行 SOP | [`docs/rules/epap-six-layer-sop.md`](docs/rules/epap-six-layer-sop.md) |
 | Workbench 聚合边界与反耦合规则 | [`docs/rules/axi-workbench-boundary-sop.md`](docs/rules/axi-workbench-boundary-sop.md) |

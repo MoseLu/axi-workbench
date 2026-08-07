@@ -34,6 +34,8 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 
 ## Current Structure
 
+源码目录同时包含用户端、Host、Hosted 子应用、垂直工具和多种运行时；不要把 `apps/` 下的目录数量当成门户数量。当前角色、根 pnpm membership、主入口和后续整理边界以 [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md) 为准。
+
 ```text
 axi-workbench/
 ├── apps/
@@ -42,11 +44,11 @@ axi-workbench/
 │   ├── devsvc-dashboard/      # 本地服务管理和 Axi 应用 host（运维壳，非第二门户）
 │   ├── axi-coder/             # 编码工具（可被 host 挂载）
 │   ├── verification-inbox/    # 验证码收件箱
-│   ├── app-search-system/     # Docs/Search 控制与展示
-│   └── ollama-menu-assistant/ # macOS Ollama 菜单助手
+│   ├── app-search-system/     # 嵌入式多运行时 Docs/Search 工具（非根 pnpm member）
+│   └── ollama-menu-assistant/ # macOS Swift 菜单助手（非 Node Dashboard）
 ├── packages/
 │   ├── api-client/
-│   ├── axi-rag/
+│   ├── axi-rag/                # 当前源码目录，尚未纳入根 pnpm package 生命周期
 │   ├── schemas/
 │   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口
 │   ├── types/
@@ -65,12 +67,12 @@ axi-workbench/
 │   ├── control-plane/
 │   └── workflow-engine/
 ├── ai/
-├── backend/
+├── backend/                    # 嵌入式 Python runtime（非根 pnpm member）
 ├── docs/
 ├── infra/
-│   └── fleet-console/
+│   └── fleet-console/           # 物理服务层工具；dashboard 不属于根 apps package 集合
 ├── tools/
-│   └── axi-app-cli/
+│   └── axi-app-cli/             # 独立嵌套 monorepo 的脚手架 CLI
 ├── docker-compose.yml
 ├── pnpm-workspace.yaml
 └── turbo.json

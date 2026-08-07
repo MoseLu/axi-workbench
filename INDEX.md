@@ -15,6 +15,7 @@
 - Canonical HANDOFF: [`docs/HANDOFF.md`](./docs/HANDOFF.md)
 - Canonical AGENTS: [`AGENTS.md`](./AGENTS.md)
 - Canonical README: [`README.md`](./README.md)
+- Canonical source catalog: [`docs/architecture/source-catalog.md`](./docs/architecture/source-catalog.md)
 
 The project ships **two independent workbench applications**:
 
@@ -22,4 +23,11 @@ The project ships **two independent workbench applications**:
 - `apps/workbench-mobile` — Mobile Admin app (header + tab bar + mobile
   page composition; uses `@axi/workbench-foundation` for auth + locale).
 
-- Last refreshed: 2026-08-07
+`apps/devsvc-dashboard` is the local Host/operations shell. `axi-coder`,
+`verification-inbox`, Fleet Console, App Search, and Ollama Menu Assistant are
+vertical tools or hosted surfaces, not additional copies of the user portal.
+Root pnpm membership is a separate fact from “directory exists” or “Host can
+open it”; use the [source catalog](./docs/architecture/source-catalog.md) for
+that distinction.
+
+- Last refreshed: 2026-08-08
