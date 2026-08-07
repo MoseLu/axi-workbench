@@ -61,6 +61,8 @@ workflow-engine 的派发 worker 默认由 `WORKFLOW_DISPATCH_*` 与 `WORKFLOW_M
 
 文件上传的病毒扫描由 `FILE_VIRUS_SCAN_BACKEND=clamav` 启用，`FILE_CLAMAV_HOST` / `FILE_CLAMAV_PORT` 指向集群内或受管的 ClamAV daemon。生产配置禁止使用 `disabled`；扫描服务不可达时 file-service 会拒绝上传，不会把未经扫描的对象写入 S3/MinIO。
 
+图片上传默认由 Pillow 生成同主体隔离的 WebP 缩略图；`FILE_THUMBNAIL_ENABLED`、`FILE_THUMBNAIL_MAX_WIDTH`、`FILE_THUMBNAIL_MAX_HEIGHT` 和 `FILE_THUMBNAIL_QUALITY` 控制派生对象。缩略图元数据与原文件同一行持久化，删除或覆盖原文件时同步清理旧缩略图。
+
 `PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN` 在启用 Outbox worker 时必需，且必须与 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 相同。
 
 平台数据库迁移账号是唯一拥有 `BYPASSRLS` 的 Axi 平台账号，且只能注入 pre-install/pre-upgrade Job。`platform-core` Deployment 永远只得到 `axi_platform_app`。初始化开发数据库可用 [`scripts/init-db.sql`](../../scripts/init-db.sql)；生产角色/DSN 由数据库 IaC 或 DBA 预先创建。

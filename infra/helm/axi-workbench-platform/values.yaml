@@ -164,6 +164,10 @@ fileService:
   s3Region: us-east-1
   presignedURLTTLSeconds: 900
   maxFileSize: 104857600
+  thumbnailEnabled: true
+  thumbnailMaxWidth: 320
+  thumbnailMaxHeight: 320
+  thumbnailQuality: 85
   # Production must set this to clamav and provide a reachable ClamAV daemon.
   virusScanBackend: disabled
   clamavHost: 127.0.0.1

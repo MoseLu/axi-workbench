@@ -76,6 +76,9 @@ def _file_info(record) -> FileInfo:
         modified_at=record.modified_at,
         content_type=record.content_type or mimetypes.guess_type(record.name)[0],
         checksum_sha256=record.checksum_sha256,
+        thumbnail_available=record.thumbnail_object_key is not None,
+        thumbnail_width=record.thumbnail_width,
+        thumbnail_height=record.thumbnail_height,
     )
 
 
@@ -108,6 +111,9 @@ async def upload_file(
         path=record.name,
         size=record.size,
         checksum_sha256=record.checksum_sha256,
+        thumbnail_available=record.thumbnail_object_key is not None,
+        thumbnail_width=record.thumbnail_width,
+        thumbnail_height=record.thumbnail_height,
         message="File uploaded successfully",
     )
 
@@ -144,6 +150,9 @@ async def upload_multiple_files(
                 path=record.name,
                 size=record.size,
                 checksum_sha256=record.checksum_sha256,
+                thumbnail_available=record.thumbnail_object_key is not None,
+                thumbnail_width=record.thumbnail_width,
+                thumbnail_height=record.thumbnail_height,
                 message="File uploaded successfully",
             )
         )
@@ -170,6 +179,23 @@ async def download_file(filename: str, subject: str = Depends(require_gateway_id
         path=path,
         filename=record.name,
         media_type=record.content_type or "application/octet-stream",
+        background=background,
+    )
+
+
+@router.get("/thumbnail/{filename}")
+async def thumbnail_file(filename: str, subject: str = Depends(require_gateway_identity)) -> FileResponse:
+    """Serve a generated WebP thumbnail without exposing its object key."""
+    filename = _safe_filename(filename)
+    try:
+        record, path, temporary = await get_file_service().get_thumbnail(subject, filename)
+    except (FileNotFound, FileNotFoundError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Thumbnail for {filename} not found") from exc
+    background = BackgroundTask(path.unlink, missing_ok=True) if temporary else None
+    return FileResponse(
+        path=path,
+        filename=f"{record.name}.webp",
+        media_type="image/webp",
         background=background,
     )
 

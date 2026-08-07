@@ -66,6 +66,22 @@ class Settings(BaseSettings):
         default=900,
         validation_alias=AliasChoices("FILE_PRESIGNED_URL_TTL_SECONDS"),
     )
+    thumbnail_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("FILE_THUMBNAIL_ENABLED"),
+    )
+    thumbnail_max_width: int = Field(
+        default=320,
+        validation_alias=AliasChoices("FILE_THUMBNAIL_MAX_WIDTH"),
+    )
+    thumbnail_max_height: int = Field(
+        default=320,
+        validation_alias=AliasChoices("FILE_THUMBNAIL_MAX_HEIGHT"),
+    )
+    thumbnail_quality: int = Field(
+        default=85,
+        validation_alias=AliasChoices("FILE_THUMBNAIL_QUALITY"),
+    )
 
     # Upload safety
     virus_scan_backend: str = Field(
@@ -111,6 +127,10 @@ def validate_settings() -> None:
     """Reject development storage and missing durable state in production."""
     if settings.virus_scan_backend.lower() not in {"disabled", "clamav"}:
         raise ValueError("FILE_VIRUS_SCAN_BACKEND must be disabled or clamav")
+    if settings.thumbnail_max_width < 1 or settings.thumbnail_max_height < 1:
+        raise ValueError("FILE_THUMBNAIL_MAX_WIDTH and FILE_THUMBNAIL_MAX_HEIGHT must be positive")
+    if not 1 <= settings.thumbnail_quality <= 100:
+        raise ValueError("FILE_THUMBNAIL_QUALITY must be between 1 and 100")
     if settings.environment.lower() != "production":
         return
     if not settings.internal_service_token:

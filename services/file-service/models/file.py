@@ -16,6 +16,9 @@ class FileInfo(BaseModel):
     modified_at: datetime = Field(..., description="File last modification timestamp")
     content_type: Optional[str] = Field(None, description="MIME content type")
     checksum_sha256: Optional[str] = Field(None, description="SHA-256 checksum of the uploaded object")
+    thumbnail_available: bool = Field(False, description="Whether a derived thumbnail is available")
+    thumbnail_width: Optional[int] = Field(None, description="Generated thumbnail width in pixels")
+    thumbnail_height: Optional[int] = Field(None, description="Generated thumbnail height in pixels")
 
     class Config:
         from_attributes = True
@@ -29,6 +32,9 @@ class FileUploadResponse(BaseModel):
     size: int = Field(..., description="File size in bytes")
     message: str = Field(..., description="Success message")
     checksum_sha256: Optional[str] = Field(None, description="SHA-256 checksum of the uploaded object")
+    thumbnail_available: bool = Field(False, description="Whether a derived thumbnail is available")
+    thumbnail_width: Optional[int] = Field(None, description="Generated thumbnail width in pixels")
+    thumbnail_height: Optional[int] = Field(None, description="Generated thumbnail height in pixels")
 
 
 class FileListResponse(BaseModel):

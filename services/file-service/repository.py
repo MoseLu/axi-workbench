@@ -27,6 +27,9 @@ class FileRecord:
     checksum_sha256: str | None
     created_at: datetime
     modified_at: datetime
+    thumbnail_object_key: str | None = None
+    thumbnail_width: int | None = None
+    thumbnail_height: int | None = None
 
 
 class FileNotFound(Exception):
@@ -140,17 +143,22 @@ class PostgresFileRepository(FileRepository):
                     """
                     INSERT INTO axi_files.files
                         (id, owner_subject, name, object_key, size_bytes, content_type,
-                         etag, checksum_sha256, created_at, modified_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         etag, checksum_sha256, created_at, modified_at,
+                         thumbnail_object_key, thumbnail_width, thumbnail_height)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (owner_subject, name) DO UPDATE SET
                         object_key = EXCLUDED.object_key,
                         size_bytes = EXCLUDED.size_bytes,
                         content_type = EXCLUDED.content_type,
                         etag = EXCLUDED.etag,
                         checksum_sha256 = EXCLUDED.checksum_sha256,
-                        modified_at = EXCLUDED.modified_at
+                        modified_at = EXCLUDED.modified_at,
+                        thumbnail_object_key = EXCLUDED.thumbnail_object_key,
+                        thumbnail_width = EXCLUDED.thumbnail_width,
+                        thumbnail_height = EXCLUDED.thumbnail_height
                     RETURNING id, owner_subject, name, object_key, size_bytes,
-                              content_type, etag, checksum_sha256, created_at, modified_at
+                              content_type, etag, checksum_sha256, created_at, modified_at,
+                              thumbnail_object_key, thumbnail_width, thumbnail_height
                     """,
                     (
                         record.id,
@@ -163,6 +171,9 @@ class PostgresFileRepository(FileRepository):
                         record.checksum_sha256,
                         record.created_at,
                         record.modified_at,
+                        record.thumbnail_object_key,
+                        record.thumbnail_width,
+                        record.thumbnail_height,
                     ),
                 )
                 row = await cursor.fetchone()
@@ -176,7 +187,8 @@ class PostgresFileRepository(FileRepository):
                 await cursor.execute(
                     """
                     SELECT id, owner_subject, name, object_key, size_bytes,
-                           content_type, etag, checksum_sha256, created_at, modified_at
+                           content_type, etag, checksum_sha256, created_at, modified_at,
+                           thumbnail_object_key, thumbnail_width, thumbnail_height
                     FROM axi_files.files
                     WHERE owner_subject = %s
                     ORDER BY modified_at DESC, name
@@ -190,7 +202,8 @@ class PostgresFileRepository(FileRepository):
         row = await self._fetch_one(
             """
             SELECT id, owner_subject, name, object_key, size_bytes,
-                   content_type, etag, checksum_sha256, created_at, modified_at
+                   content_type, etag, checksum_sha256, created_at, modified_at,
+                   thumbnail_object_key, thumbnail_width, thumbnail_height
             FROM axi_files.files
             WHERE owner_subject = %s AND name = %s
             """,
@@ -208,7 +221,8 @@ class PostgresFileRepository(FileRepository):
                     DELETE FROM axi_files.files
                     WHERE owner_subject = %s AND name = %s
                     RETURNING id, owner_subject, name, object_key, size_bytes,
-                              content_type, etag, checksum_sha256, created_at, modified_at
+                              content_type, etag, checksum_sha256, created_at, modified_at,
+                              thumbnail_object_key, thumbnail_width, thumbnail_height
                     """,
                     (subject, name),
                 )
@@ -252,4 +266,7 @@ def _record_from_row(row: tuple[Any, ...]) -> FileRecord:
         checksum_sha256=row[7],
         created_at=row[8],
         modified_at=row[9],
+        thumbnail_object_key=row[10],
+        thumbnail_width=row[11],
+        thumbnail_height=row[12],
     )

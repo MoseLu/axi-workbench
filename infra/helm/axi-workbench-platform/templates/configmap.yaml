@@ -55,6 +55,10 @@ data:
   FILE_S3_REGION: {{ .Values.fileService.s3Region | quote }}
   FILE_PRESIGNED_URL_TTL_SECONDS: {{ .Values.fileService.presignedURLTTLSeconds | quote }}
   FILE_MAX_FILE_SIZE: {{ .Values.fileService.maxFileSize | quote }}
+  FILE_THUMBNAIL_ENABLED: {{ .Values.fileService.thumbnailEnabled | quote }}
+  FILE_THUMBNAIL_MAX_WIDTH: {{ .Values.fileService.thumbnailMaxWidth | quote }}
+  FILE_THUMBNAIL_MAX_HEIGHT: {{ .Values.fileService.thumbnailMaxHeight | quote }}
+  FILE_THUMBNAIL_QUALITY: {{ .Values.fileService.thumbnailQuality | quote }}
   FILE_VIRUS_SCAN_BACKEND: {{ .Values.fileService.virusScanBackend | quote }}
   FILE_CLAMAV_HOST: {{ .Values.fileService.clamavHost | quote }}
   FILE_CLAMAV_PORT: {{ .Values.fileService.clamavPort | quote }}

@@ -11,11 +11,19 @@ CREATE TABLE IF NOT EXISTS axi_files.files (
     checksum_sha256 TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     modified_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    thumbnail_object_key TEXT,
+    thumbnail_width INTEGER,
+    thumbnail_height INTEGER,
     UNIQUE (owner_subject, name)
 );
 
 ALTER TABLE axi_files.files
     ADD COLUMN IF NOT EXISTS checksum_sha256 TEXT;
+
+ALTER TABLE axi_files.files
+    ADD COLUMN IF NOT EXISTS thumbnail_object_key TEXT,
+    ADD COLUMN IF NOT EXISTS thumbnail_width INTEGER,
+    ADD COLUMN IF NOT EXISTS thumbnail_height INTEGER;
 
 CREATE INDEX IF NOT EXISTS files_owner_modified_idx
     ON axi_files.files (owner_subject, modified_at DESC, name);

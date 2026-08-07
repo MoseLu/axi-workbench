@@ -1,4 +1,7 @@
+from io import BytesIO
+
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from config import settings
 from main import app
@@ -104,6 +107,40 @@ def test_file_objects_cannot_be_downloaded_or_deleted_by_another_subject(tmp_pat
             assert client.get("/files/download/private.txt", headers=bob_headers).status_code == 404
             assert client.delete("/files/private.txt", headers=bob_headers).status_code == 404
             assert client.get("/files/download/private.txt", headers=alice_headers).content == b"secret"
+    finally:
+        settings.internal_service_token = original_token
+        settings.storage_path = original_storage
+
+
+def test_image_upload_creates_subject_scoped_thumbnail(tmp_path) -> None:
+    original_token = settings.internal_service_token
+    original_storage = settings.storage_path
+    settings.internal_service_token = "file-test-token"
+    settings.storage_path = tmp_path
+    image_bytes = BytesIO()
+    Image.new("RGB", (800, 400), color=(35, 95, 180)).save(image_bytes, format="PNG")
+    try:
+        headers = {
+            "X-Axi-Internal-Token": "file-test-token",
+            "X-Axi-Subject": "alice",
+        }
+        with TestClient(app) as client:
+            uploaded = client.post(
+                "/files/upload",
+                headers=headers,
+                files={"file": ("cover.png", image_bytes.getvalue(), "image/png")},
+            )
+            listed = client.get("/files/", headers=headers)
+            thumbnail = client.get("/files/thumbnail/cover.png", headers=headers)
+        assert uploaded.status_code == 201
+        assert uploaded.json()["thumbnail_available"] is True
+        assert uploaded.json()["thumbnail_width"] == 320
+        assert uploaded.json()["thumbnail_height"] == 160
+        assert listed.json()["files"][0]["thumbnail_available"] is True
+        assert thumbnail.status_code == 200
+        assert thumbnail.headers["content-type"].startswith("image/webp")
+        with Image.open(BytesIO(thumbnail.content)) as generated:
+            assert generated.size == (320, 160)
     finally:
         settings.internal_service_token = original_token
         settings.storage_path = original_storage
