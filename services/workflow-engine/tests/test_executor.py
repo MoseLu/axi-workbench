@@ -1,7 +1,18 @@
 import asyncio
+from typing import Any
 
 from models.workflow import StepType, Workflow, WorkflowStep, WorkflowStatus
 from services.executor import ConditionEvaluationError, WorkflowExecutor, evaluate_condition
+
+
+class FakeHTTPClient:
+    def __init__(self, response: dict[str, Any]) -> None:
+        self.response = response
+        self.calls: list[dict[str, Any]] = []
+
+    async def request(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append(kwargs)
+        return self.response
 
 
 def test_executor_evaluates_structured_conditions_against_event_and_step_context() -> None:
@@ -119,5 +130,64 @@ def test_executor_rejects_duplicate_parallel_child_names() -> None:
 
         assert execution.status == WorkflowStatus.FAILED
         assert "duplicated" in (execution.error or "")
+
+    asyncio.run(scenario())
+
+
+def test_executor_runs_allowlisted_http_task_with_bounded_contract() -> None:
+    async def scenario() -> None:
+        client = FakeHTTPClient(
+            {
+                "statusCode": 202,
+                "headers": {"content-type": "application/json"},
+                "body": {"accepted": True},
+            }
+        )
+        workflow = Workflow(
+            name="http workflow",
+            steps=[
+                WorkflowStep(
+                    name="notify-external",
+                    step_type=StepType.HTTP,
+                    config={
+                        "url": "https://hooks.example.com/jobs",
+                        "method": "POST",
+                        "headers": {"x-request-kind": "workflow"},
+                        "body": {"event": "created"},
+                        "expectedStatus": [200, 202],
+                    },
+                )
+            ],
+        )
+
+        execution = await WorkflowExecutor(
+            step_timeout=1,
+            http_client=client,
+        ).execute_workflow(workflow)
+
+        assert execution.status == WorkflowStatus.COMPLETED
+        assert execution.steps[0].result["statusCode"] == 202
+        assert client.calls[0]["url"] == "https://hooks.example.com/jobs"
+
+    asyncio.run(scenario())
+
+
+def test_executor_rejects_http_task_without_matching_policy() -> None:
+    async def scenario() -> None:
+        workflow = Workflow(
+            name="blocked http workflow",
+            steps=[
+                WorkflowStep(
+                    name="blocked",
+                    step_type=StepType.HTTP,
+                    config={"url": "https://not-allowlisted.example/jobs"},
+                )
+            ],
+        )
+
+        execution = await WorkflowExecutor(step_timeout=1).execute_workflow(workflow)
+
+        assert execution.status == WorkflowStatus.FAILED
+        assert "allowlisted" in (execution.error or "")
 
     asyncio.run(scenario())

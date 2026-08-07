@@ -31,7 +31,19 @@ repository: WorkflowRepository = _memory_repository
 # Production requests use the repository interface above, not these maps.
 workflows_db = _memory_repository.workflows
 executing_workflows = _memory_repository.executions
-executor = WorkflowExecutor(step_timeout=get_settings().step_timeout_seconds)
+
+
+def _parse_http_allowed_hosts(value: str) -> frozenset[str]:
+    return frozenset(item.strip().lower() for item in value.split(",") if item.strip())
+
+
+_settings = get_settings()
+executor = WorkflowExecutor(
+    step_timeout=_settings.step_timeout_seconds,
+    http_allowed_hosts=_parse_http_allowed_hosts(_settings.http_allowed_hosts),
+    allow_insecure_http=_settings.environment.lower() != "production",
+    max_http_response_bytes=_settings.http_max_response_bytes,
+)
 
 
 def set_repository(value: WorkflowRepository) -> None:

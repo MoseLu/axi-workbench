@@ -14,6 +14,7 @@ from models.workflow import (
     WorkflowStatus,
     WorkflowStep,
 )
+from services.http_client import HttpStepClient, HttpxStepClient
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,21 @@ logger = logging.getLogger(__name__)
 class WorkflowExecutor:
     """Service for executing workflow steps."""
 
-    def __init__(self, step_timeout: int = 300):
+    def __init__(
+        self,
+        step_timeout: int = 300,
+        *,
+        http_client: HttpStepClient | None = None,
+        http_allowed_hosts: set[str] | frozenset[str] = frozenset(),
+        allow_insecure_http: bool = False,
+        max_http_response_bytes: int = 1024 * 1024,
+    ):
         self.step_timeout = max(0.1, float(step_timeout))
+        self.http_client = http_client or HttpxStepClient(
+            allowed_hosts=http_allowed_hosts,
+            allow_insecure_http=allow_insecure_http,
+            max_response_bytes=max_http_response_bytes,
+        )
 
     async def execute_workflow(self, workflow: Workflow, event_payload: Any = None) -> WorkflowExecution:
         """Execute all steps in a workflow."""
@@ -81,6 +95,8 @@ class WorkflowExecutor:
                 return await self._execute_delay(step, context)
             case StepType.PARALLEL:
                 return await self._execute_parallel(step, context)
+            case StepType.HTTP:
+                return await self._execute_http(step, context)
             case _:
                 raise ValueError(f"Unknown step type: {step.step_type}")
 
@@ -130,6 +146,55 @@ class WorkflowExecutor:
         return {
             "delayed_seconds": delay_seconds,
             "completed": True,
+        }
+
+    async def _execute_http(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:
+        """Call an allowlisted external task endpoint with a bounded response."""
+        url = step.config.get("url")
+        if not isinstance(url, str) or not url.strip():
+            raise ValueError("HTTP step requires a URL")
+        method = step.config.get("method", "POST")
+        if not isinstance(method, str):
+            raise ValueError("HTTP step method must be a string")
+        raw_headers = step.config.get("headers", {})
+        if not isinstance(raw_headers, dict) or any(
+            not isinstance(key, str) or not isinstance(value, str) for key, value in raw_headers.items()
+        ):
+            raise ValueError("HTTP step headers must be a string map")
+        if len(raw_headers) > 32:
+            raise ValueError("HTTP step cannot send more than 32 headers")
+        body = step.config.get("body", step.config.get("payload"))
+        timeout_seconds = step.config.get("timeoutSeconds", self.step_timeout)
+        try:
+            timeout_seconds = float(timeout_seconds)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("HTTP step timeoutSeconds must be a number") from exc
+        if timeout_seconds <= 0 or timeout_seconds > self.step_timeout:
+            raise ValueError("HTTP step timeoutSeconds must be greater than 0 and no greater than the workflow step timeout")
+
+        response = await self.http_client.request(
+            method=method,
+            url=url,
+            headers=raw_headers,
+            body=body,
+            timeout_seconds=timeout_seconds,
+        )
+        status_code = response.get("statusCode")
+        expected = step.config.get("expectedStatus")
+        if expected is None:
+            accepted = isinstance(status_code, int) and 200 <= status_code < 300
+        elif isinstance(expected, int) and not isinstance(expected, bool):
+            accepted = status_code == expected
+        elif isinstance(expected, list) and all(isinstance(item, int) and not isinstance(item, bool) for item in expected):
+            accepted = status_code in expected
+        else:
+            raise ValueError("HTTP step expectedStatus must be an integer or an array of integers")
+        if not accepted:
+            raise ValueError(f"HTTP step returned unexpected status: {status_code}")
+        return {
+            "method": method.upper().strip(),
+            "statusCode": status_code,
+            "response": response,
         }
 
     async def _execute_parallel(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:

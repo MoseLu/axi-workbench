@@ -75,6 +75,14 @@ class Settings(BaseSettings):
             "WORKFLOW_DISPATCH_RETRY_MAX_SECONDS", "DISPATCH_RETRY_MAX_SECONDS"
         ),
     )
+    http_allowed_hosts: str = Field(
+        default="",
+        validation_alias=AliasChoices("WORKFLOW_HTTP_ALLOWED_HOSTS"),
+    )
+    http_max_response_bytes: int = Field(
+        default=1024 * 1024,
+        validation_alias=AliasChoices("WORKFLOW_HTTP_MAX_RESPONSE_BYTES"),
+    )
 
     class Config:
         env_file = ".env"

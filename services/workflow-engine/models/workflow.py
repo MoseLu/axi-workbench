@@ -32,6 +32,7 @@ class StepType(str, Enum):
     CONDITION = "condition"
     DELAY = "delay"
     PARALLEL = "parallel"
+    HTTP = "http"
 
 
 class WorkflowStep(BaseModel):

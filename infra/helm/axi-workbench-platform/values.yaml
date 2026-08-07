@@ -123,6 +123,8 @@ workflowEngine:
   maxDispatchAttempts: 10
   dispatchRetryBaseSeconds: 5
   dispatchRetryMaxSeconds: 300
+  httpAllowedHosts: ""
+  httpMaxResponseBytes: 1048576
 
 notificationService:
   # Notification records are stored in PostgreSQL. Delivery workers remain

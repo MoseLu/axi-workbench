@@ -47,6 +47,8 @@ data:
   WORKFLOW_MAX_DISPATCH_ATTEMPTS: {{ .Values.workflowEngine.maxDispatchAttempts | quote }}
   WORKFLOW_DISPATCH_RETRY_BASE_SECONDS: {{ .Values.workflowEngine.dispatchRetryBaseSeconds | quote }}
   WORKFLOW_DISPATCH_RETRY_MAX_SECONDS: {{ .Values.workflowEngine.dispatchRetryMaxSeconds | quote }}
+  WORKFLOW_HTTP_ALLOWED_HOSTS: {{ .Values.workflowEngine.httpAllowedHosts | quote }}
+  WORKFLOW_HTTP_MAX_RESPONSE_BYTES: {{ .Values.workflowEngine.httpMaxResponseBytes | quote }}
   FILE_SERVICE_PORT: {{ .Values.fileService.service.port | quote }}
   FILE_STORAGE_PATH: {{ .Values.fileService.storagePath | quote }}
   FILE_STORAGE_BACKEND: {{ .Values.fileService.storageBackend | quote }}
