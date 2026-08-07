@@ -155,7 +155,9 @@ func (s *MemoryStore) PutDictionary(_ context.Context, actor string, dictionary 
 	dictionary.UpdatedAt = s.now().UTC()
 	dictionary = cloneDictionary(dictionary)
 	s.dictionaries[key] = dictionary
-	s.appendOutbox(dictionary.TenantID, "dictionary.changed", map[string]any{"tenantId": dictionary.TenantID, "key": dictionary.Key, "version": dictionary.Version})
+	s.appendOutbox(dictionary.TenantID, "dictionary.changed", map[string]any{
+		"tenantId": dictionary.TenantID, "key": dictionary.Key, "version": dictionary.Version, "changedBy": actor,
+	})
 	return cloneDictionary(dictionary), nil
 }
 

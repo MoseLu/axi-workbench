@@ -69,3 +69,32 @@ func TestConsumeEventIsIdempotentAndCreatesTargetedNotification(t *testing.T) {
 		t.Fatalf("notifications = %d, want one", len(service.storage))
 	}
 }
+
+func TestConsumeDictionaryEventCreatesWorkspaceNotification(t *testing.T) {
+	service := &NotificationService{
+		cfg:        &config.Config{},
+		storage:    make(map[string]*models.Notification),
+		eventInbox: make(map[string]struct{}),
+	}
+	event := &models.OutboxEvent{
+		ID:      "dictionary-event-1",
+		Topic:   "dictionary.changed",
+		Payload: json.RawMessage(`{"changedBy":"alice","key":"statuses","version":2}`),
+	}
+
+	accepted, err := service.ConsumeEvent(event)
+	if err != nil || !accepted {
+		t.Fatalf("dictionary event = accepted %v, err %v", accepted, err)
+	}
+	if len(service.storage) != 1 {
+		t.Fatalf("notifications = %d, want one", len(service.storage))
+	}
+	for _, notification := range service.storage {
+		if notification.UserID != "alice" || notification.Category != models.TabWorkspace {
+			t.Fatalf("notification target = %#v", notification)
+		}
+		if notification.Content != "字典 statuses 已更新至第 2 版" {
+			t.Fatalf("notification content = %q", notification.Content)
+		}
+	}
+}

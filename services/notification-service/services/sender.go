@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/smtp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -433,6 +434,9 @@ func notificationForEvent(event *models.OutboxEvent) *models.Notification {
 		recipient = eventPayloadString(payload, "createdBy")
 	}
 	if recipient == "" {
+		recipient = eventPayloadString(payload, "changedBy")
+	}
+	if recipient == "" {
 		return nil
 	}
 
@@ -463,6 +467,12 @@ func notificationForEvent(event *models.OutboxEvent) *models.Notification {
 			titleText = eventPayloadString(payload, "taskId")
 		}
 		content = fmt.Sprintf("任务 %s 已创建", titleText)
+	case "dictionary.changed":
+		title = "业务字典已更新"
+		category = models.TabWorkspace
+		key := eventPayloadString(payload, "key")
+		version := eventPayloadString(payload, "version")
+		content = fmt.Sprintf("字典 %s 已更新至第 %s 版", key, version)
 	default:
 		return nil
 	}
@@ -485,6 +495,10 @@ func eventPayloadString(payload map[string]json.RawMessage, key string) string {
 	var value string
 	if raw, ok := payload[key]; ok && json.Unmarshal(raw, &value) == nil {
 		return strings.TrimSpace(value)
+	}
+	var number int64
+	if raw, ok := payload[key]; ok && json.Unmarshal(raw, &number) == nil {
+		return strconv.FormatInt(number, 10)
 	}
 	return ""
 }

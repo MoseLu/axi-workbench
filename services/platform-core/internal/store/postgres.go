@@ -201,7 +201,9 @@ func (s *PostgresStore) PutDictionary(ctx context.Context, actor string, diction
 		if err != nil {
 			return err
 		}
-		return s.insertOutbox(ctx, tx, dictionary.TenantID, "dictionary.changed", map[string]any{"tenantId": dictionary.TenantID, "key": dictionary.Key, "version": dictionary.Version})
+		return s.insertOutbox(ctx, tx, dictionary.TenantID, "dictionary.changed", map[string]any{
+			"tenantId": dictionary.TenantID, "key": dictionary.Key, "version": dictionary.Version, "changedBy": actor,
+		})
 	})
 	return dictionary, normalizeError(err)
 }
