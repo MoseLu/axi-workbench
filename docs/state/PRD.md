@@ -2,34 +2,73 @@
 
 ## Problem
 
-Axi Workbench - canonical workbench monorepo for control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI
+`Axi Workbench` 是 AxiomaticWorld（公理世界）产品线的本地工作站控制面，也是 Axi 工作台大项目的权威 owner。它由原 Axi Workstation 控制面吸收 DevSvc Dashboard、Axi Coder、Verification Inbox、App Search、Fleet Console、Ollama Menu Assistant 和 Axi App CLI 后形成，承载 Web 门户、`IMEnvelope`、`AgentTask`、资源快照、审计、artifact 服务边界和本地工作台入口。远端仓库名称与少量 `EPAP_*`/`@epap/*` 兼容入口在迁移验证完成前保留。
 
-The project needs a complete root documentation suite so humans and agents can understand scope, ownership, requirements, tests, and delivery status before editing.
+工作台必须以单一可验证的产品形态向用户、Agent 和下游项目交付：
+
+- 唯一用户工作台（Web + 移动 Web 同一 SPA，入口 `apps/workbench`）。
+- 本地运维 Host（`apps/devsvc-dashboard`，运维壳而非第二门户）。
+- 六层控制面（IM / Communication / Software / Base Service / Physical Service / External Capability）。
+- 共享合同包（`@axi/workstation-control-plane`、`@axi/workstation-communication-gateway`、`@axi/workstation-contracts` 等）。
+- 工作台手册化的端到端验证与反向链接体系。
 
 ## Users
 
-- Maintainers working inside `/Volumes/code/workspace/projects/axi-workbench`.
-- Agents that need stable read order, boundaries, and verification commands.
-- Downstream projects that depend on this root or reference it from the workspace index.
+- **维护者**：在 `/Volumes/code/workspace/projects/axi-workbench` 内直接修改源代码、合同或文档的工程师。
+- **Agent**：首次进入仓库的 Codex / Cursor / 自动化扫描器 / 编排器，需要稳定的 read order、ownership、跨项目边界与验证命令。
+- **下游项目 / Dashboard Apps**：通过 `@axi/workstation-*` 合同、`IMEnvelope` / `AgentTask` 协议、共享类型与 DevSvc Dashboard 接入 Axi Workbench 的能力。
+- **远程协作方（远端 agent、AI 平台、外部设备）**：通过 IM 层和 External Capability 层的合同接口访问工作台。
+- **本机运维**：通过 DevSvc Dashboard 管理本地服务、健康检查与桌面 host 挂载。
+
+## Goals
+
+1. 把六层控制面落地为可运行的代码、合同与文档，并在 UI 上可被验证（desktop ≥ 768px 用 Axi Dashboard Chrome；mobile < 768px 用独立移动端壳）。
+2. 把所有用户工作台门面收敛到 `apps/workbench`，移除/归档任何其他门户型应用。
+3. 让 root AGENTS、PRD、TDD、TODO、Milestone、INDEX、CHANGELOG、README（含 zh-CN）始终互链且反映实现现状。
+4. 让 `pnpm check:boundaries` 与 `scripts/check-workbench-boundaries.mjs` 真正阻断跨项目硬耦合（import 邻居实现、绕过合同、绕过控制面）。
+5. 让 zero-context agent 30 秒内决定「读哪个 AGENTS、跑哪条验证、申请哪个合同」。
+
+## Non-Goals
+
+- 不替代实现源码；本仓库不创造第二份业务代码。
+- 不在本仓库内 vendoring 其他 Axi 项目（`axi-notify`、`axi-pet`、`axi-agent-platform`、`axi-docs`、`axi-image-preview`、`shared/axi-ui` 等）的实现树，只能消费合同。
+- 不把 hook 当成 Axi Workbench 的运行时旁路；hook 仅用于工程治理与本仓库 docs/HANDOFF 同步。
+- 不保留多余的 Web 门户；`apps/web-portal` 已归档，工作台仅存在 `apps/workbench`。
+- 不为生成 AGENTS / PRD / TDD 终止会话或覆盖用户原话。
+- 不在 docs 中宣扬「下一阶段才会实现」的能力作为现状承诺。
 
 ## Requirements
 
 | ID | Requirement | Acceptance Criteria |
 | --- | --- | --- |
-| REQ-DOC-001 | Maintain the full root documentation suite. | All required docs exist and are internally consistent. |
-| REQ-VERIFY-001 | Document runnable verification. | `TDD.md` lists concrete commands or exact blockers. |
-| REQ-BOUNDARY-001 | Preserve ownership boundaries. | `AGENTS.md` explains writable scope and cross-project limits, and `pnpm check:boundaries` blocks direct runtime coupling to neighboring project implementations. |
-| REQ-MILESTONE-001 | Track delivery status. | `MILESTONE.md` records current state and exit criteria. |
-
-## Non-Goals
-
-- Do not replace implementation source files with documentation.
-- Do not create broad architecture claims that are not supported by local files.
-
+| REQ-DOC-001 | Maintain the full root documentation suite. | `README.md`、`README.zh-CN.md`、`AGENTS.md`、`CHANGE.md`、`docs/state/CHANGELOG.md`、`docs/state/TODO.md`、`docs/state/MILESTONE.md`、`docs/state/PRD.md`、`docs/state/TDD.md`、`docs/state/VERIFICATION.md`、`INDEX.md`、`docs/project-docs.manifest.json` 全部存在且互链。 |
+| REQ-DOC-002 | Keep the v2 zero-context manifest current. | `docs/project-docs.manifest.json` 的 `readOrder`、`entrypoints`、`commands`、`environment`、`contracts`、`currentWork`、`verification` 与实现同步；fresh smoke 成功后才标记 `verified`。 |
+| REQ-VERIFY-001 | 文档运行验证命令。 | `TDD.md` 列出 workbench / control-plane / dashboard / inbox / fleet-console 的可运行验证命令或精确 blocker；`docs/HANDOFF.md` 给出默认零上下文 90 秒路径。 |
+| REQ-VERIFY-002 | UI 合同可自动验证。 | `node apps/workbench/scripts/verify-ui-contracts.mjs` 通过；TypeScript 严格模式、`pnpm --filter @axi/workbench test`、`pnpm --filter @axi/workbench build` 全部通过。 |
+| REQ-BOUNDARY-001 | Preserve ownership boundaries. | `pnpm check:boundaries` 阻断来自邻居项目实现的 import、阻断绕过六层控制面的 control flow、阻断绕过合同直接走 `services/api-gateway`。`AGENTS.md` 与 `docs/rules/axi-workbench-boundary-sop.md` 描述规则来源。 |
+| REQ-BOUNDARY-002 | 服务合同接入。 | 新增/修改服务必须声明「入口层 / 权威事实源 / 允许访问的下游层 / 输出渲染器 / 审计产物 / 验证路径」，否则不应进入软件层。 |
+| REQ-CONTROLPLANE-001 | 软件层以 AgentTask 形式承载 Agent 执行。 | `services/control-plane` 暴露 `AgentTask` 协议；IM / 通信层不直读项目目录；外部平台调用走 `AXI_AGENT_PLATFORM_URL` 合同入口。 |
+| REQ-COMMUNICATION-001 | 通信层只做 envelope 路由。 | `services/communication-gateway` 仅做 route 绑定、配对、审批、附件引用、幂等、回执、渠道渲染；不读取工作区索引、不查询记忆表、不拥有项目状态。 |
+| REQ-WORKBENCH-001 | 唯一工作台入口收敛。 | `apps/workbench` 是工作台门面的唯一目录；其它 Web 门户型 app 已归档；desktop 与 mobile 共用同一 SPA，按 viewport 切换 chrome。 |
+| REQ-WORKBENCH-002 | 桌面/移动渲染边界。 | viewport ≥ 768 渲染 Axi Dashboard Chrome（sidebar / topbar / tabs / breadcrumbs / theme / settings）；viewport < 768 渲染移动端 topbar + bottom navigation，绝不渲染桌面 chrome。 |
+| REQ-MILESTONE-001 | 跟踪交付状态。 | `docs/state/MILESTONE.md` 记录 current status、milestones 与 exit criteria；每次 deliver 后产生新 evidence。 |
+| REQ-LOG-001 | 记录变更与提交。 | `docs/state/CHANGELOG.md` 记录用户/Operator/Downstream-Agent 可见变更；批量提交对应 `docs/logs/submit/<batch-id>.md`。 |
+| REQ-AXI-CODER-001 | Axi Coder 不再写死外部资源路径。 | Axi Coder 的 workspace 项目快照用 `workspace://` 合同引用 + 环境变量解析；移除对 Axi Notify artifact 路径的硬编码。 |
+| REQ-MOBILE-001 | 移动 Web 是工作台的合法 UI。 | 移动端独立 topbar / bottom navigation / 设置/主题页；token 持久化字段（`axi.workbench.theme.mode` 等）受 supporting 状态保护。 |
 
 ## Success Metrics
 
-- Required docs are present.
-- P0/P1 TODO entries include requirement IDs and tests.
-- Verification commands are specific enough for a future agent to run without rediscovery.
-- Cross-project integrations use schema/API/config contracts instead of hard-coded implementation paths.
+- 必需文档全部存在且 cross-link 完整，`REQg -DOC-001` 单元测试 100% 通过。
+- 桌面 1440px + 移动 500px 浏览器 smoke 均无运行时报错，仅可接受 React Router v7 future-flag warnings。
+- `pnpm --filter @axi/workbench type-check` / `test` / `build` 与 `node apps/workbench/scripts/verify-ui-contracts.mjs` 全部通过；23 个单元测试在最新验证日志中可见。
+- `pnpm test:workstation`（control-plane + communication-gateway + workstation-contracts）通过；`pnpm --filter @axi/workstation-control-plane smoke` 输出 ≥ 35 资源、六层快照完整。
+- `pnpm check:boundaries` 退出码 0；任意新增跨项目 import 都会立即被拦截。
+- Verifier / QA agent 进入项目后能在 90 秒内确认入口 + 跑出第一条最小验证。
+- 跨项目接入：`workspace-project consumers axi-workbench` 报告下游消费者无 breaking 改动。
+
+## Out-of-Scope (current milestone)
+
+- 不在本 PRD 内承诺「迁移所有 `@epap/*` 出口」（保留到 `epap-schemas-compat`）。
+- 不在本 PRD 内承诺 A2A / MCP 远端桥接的统一租户。
+- 不在本 PRD 内承诺把 `axi-pet` / `axi-notify` 的渲染迁入工作台 chrome。
+- 不在本 PRD 内把 `references/*` 翻译进 docs（治理仓库负责）。

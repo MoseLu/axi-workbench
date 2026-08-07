@@ -1,25 +1,56 @@
 # TODO
 
-Tasks are grouped by inferred requirements. P0/P1 items include test cases.
+Tasks are grouped by inferred requirements. P0/P1 items include test cases and reference the
+`REQ-*` IDs in `docs/state/PRD.md` and the verification commands in `docs/state/TDD.md`.
 
 ## P0
 
 - [ ] REQ-DOC-001: Keep the root documentation suite complete and current.
-  - Test: verify `README.md README.zh-CN.md AGENTS.md CHANGELOG.md TODO.md MILESTONE.md INDEX.md PRD.md TDD.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
-  - Test: run `rg -n "REQ-DOC-001|PRD|TDD|Milestone" README.md PRD.md TDD.md MILESTONE.md INDEX.md`.
+  - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
+  - Test: `rg -n "REQ-DOC-001|REQ-VERIFY|REQ-BOUNDARY|PRD|TDD|Milestone" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
+
+- [ ] REQ-VERIFY-002: Keep the Workbench UI contract verifier, type-check, tests, and build green on every change that touches `apps/workbench/**`.
+  - Test: `pnpm --filter @axi/workbench type-check`, `pnpm --filter @axi/workbench test`, `pnpm --filter @axi/workbench build`, `node apps/workbench/scripts/verify-ui-contracts.mjs` all exit 0; `pnpm --filter @axi/workbench test` continues to report 23 unit tests passing.
+
+- [ ] REQ-CONTROLPLANE-001: Keep the control-plane smoke and six-layer snapshot green.
+  - Test: `pnpm --filter @axi/workstation-control-plane smoke` exits 0 and reports ≥ 35 resources across the six layers.
+
+- [ ] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
+  - Test: `pnpm check:boundaries` exits 0; `docs/rules/axi-workbench-boundary-sop.md` and `scripts/check-workbench-boundaries.mjs` remain in sync; `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` reports ok.
+
+- [ ] REQ-WORKBENCH-001: Do not reintroduce a second Web portal in `apps/`.
+  - Test: `ls apps/` shows only `workbench`, `devsvc-dashboard`, `axi-coder`, `verification-inbox`, `app-search-system`, `ollama-menu-assistant`; `apps/web-portal` is absent or archived; PRD/TDD/CHANGELOG state this invariant.
 
 ## P1
 
 - [ ] REQ-VERIFY-001: Keep verification commands accurate for the real project stack.
-  - Test: run the commands listed in `TDD.md` or document the blocker in `CHANGELOG.md`.
+  - Test: every command listed in `TDD.md` runs against the current monorepo or the blocker is recorded in `docs/state/CHANGELOG.md`.
 
-- [ ] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
-  - Test: review `AGENTS.md` and `docs/rules/axi-workbench-boundary-sop.md` before broad edits and run `pnpm check:boundaries`.
+- [ ] REQ-BOUNDARY-002: Service contracts declare six-layer paths before merge.
+  - Test: every modified service under `services/` has its `entry / authority / downstream / renderer / audit / verification` declared in the PR description and verified against `docs/rules/epap-six-layer-sop.md`.
+
+- [ ] REQ-COMMUNICATION-001: Keep communication-gateway above business logic.
+  - Test: `pnpm --filter @axi/workstation-communication-gateway test` passes and the gateway source does not import Codex, workspace index, memory tables, or project state owners.
+
+- [ ] REQ-WORKBENCH-002: Keep desktop / mobile rendering boundaries clean.
+  - Test: 1440px desktop smoke renders Axi Dashboard chrome; 500px mobile smoke renders only mobile topbar + bottom navigation; `node apps/workbench/scripts/verify-ui-contracts.mjs` covers both breakpoints.
+
+- [ ] REQ-DOC-002: Keep the v2 zero-context manifest current.
+  - Test: `docs/project-docs.manifest.json` parses as JSON, references only project-local files, contains no secret values, and reflects the latest entrypoints, contracts, and verification evidence.
+
+- [ ] REQ-AXI-CODER-001: Keep Axi Coder snapshots free of hard-coded neighbor paths.
+  - Test: no Axi Coder snapshot contains a hard-coded `/projects/axi-notify/...` artifact path; resolution goes through environment variables and `workspace://` contract references.
+
+- [ ] REQ-MOBILE-001: Keep the mobile shell's persisted token surface auditable.
+  - Test: every persisted key under `axi.workbench.*` is listed in `TDD.md` or a successor storage SOP; mobile theme switching round-trips through `axi.workbench.theme.mode`.
+
+- [ ] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
+  - Test: each `docs/logs/submit/<batch-id>.md` is cited in the latest MILESTONE entry, and the linked deliverable evidence is current.
 
 ## P2
 
-- [ ] REQ-DOC-002: Add deeper module docs only where source ownership and repeated workflows justify them.
-- [ ] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
+- [ ] REQ-LOG-001: Promote submit-log discipline to P0 once weekly cadence stabilizes.
+  - Test: every merged batch has both `docs/logs/submit/<batch-id>.md` and a matching `CHANGELOG.md` entry; missing entries are listed by `pnpm check:boundaries` (when extended).
 
 ## Zero-context handoff governance
 
@@ -32,6 +63,16 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases.
 - **Evidence:** `docs/project-docs.manifest.json`; `pnpm --filter @axi/workstation-control-plane smoke` exited 0 with a 35-resource six-layer snapshot on 2026-06-11.
 - **Dependencies:** `AGENTS.md`, `README.md`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/epap-project-doc-agent-sop.md`, package manifests, and control-plane sources.
 - **Status:** Completed on 2026-06-11.
+
+### Completed — Refresh PRD/TDD/CHANGELOG/MILESTONE for the v2 workbench (2026-08-07)
+
+- **Problem:** The previous `PRD.md` and `TDD.md` were sparse (3 and 4 requirements respectively) and did not yet list the new `REQ-*` families covering Workbench UI contracts, control plane, communication gateway, mobile shell, workbench entrypoint consolidation, Axi Coder snapshot contract, and milestone/log governance. The TODOs and milestones lagged behind.
+- **Solution:** Rewrite `docs/state/PRD.md` with 13 `REQ-*` rows mapped to acceptance criteria and success metrics; rewrite `docs/state/TDD.md` with per-surface verification commands and explicit risk cases; re-tag `docs/state/TODO.md` tasks by `REQ-*`; refresh `docs/state/MILESTONE.md` evidence; add a CHANGELOG entry.
+- **Expected result:** Every PRD requirement is traceable to a TDD command and a TODO test case, and the milestone evidence matches the latest verified smoke.
+- **Acceptance:** `rg -n "REQ-(DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER|MOBILE)" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every REQ.
+- **Evidence:** `docs/state/PRD.md`, `docs/state/TDD.md`, `docs/state/TODO.md`, `docs/state/MILESTONE.md`, `docs/state/CHANGELOG.md` updated on 2026-08-07.
+- **Dependencies:** `AGENTS.md`, `README.md`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `docs/project-docs.manifest.json`.
+- **Status:** Completed on 2026-08-07.
 
 ### Ongoing — Keep zero-context evidence fresh
 

@@ -13,13 +13,13 @@
     "README.md",
     "docs/rules/epap-six-layer-sop.md",
     "docs/rules/axi-workbench-boundary-sop.md",
-    "PRD.md"
+    "docs/state/PRD.md"
   ],
   "entrypoints": [
     {
-      "id": "web-portal",
-      "path": "apps/web-portal/src/main.tsx",
-      "purpose": "Primary browser portal for the workbench."
+      "id": "workbench",
+      "path": "apps/workbench/src/main.tsx",
+      "purpose": "唯一多端后台工作台入口：桌面 Web 使用 Axi Dashboard Chrome，移动 Web 使用独立移动端壳。"
     },
     {
       "id": "control-plane",
@@ -47,8 +47,7 @@
       "pnpm install"
     ],
     "start": [
-      "pnpm dev",
-      "pnpm dev:web",
+      "pnpm dev:workbench",
       "pnpm --filter @axi/workstation-control-plane start",
       "pnpm --filter @axi/workstation-communication-gateway start"
     ],
@@ -57,6 +56,9 @@
       "python3 infra/fleet-console/scripts/fleetctl.py validate"
     ],
     "verify": [
+      "pnpm --filter @axi/workbench type-check",
+      "pnpm --filter @axi/workbench test",
+      "pnpm --filter @axi/workbench build",
       "pnpm type-check",
       "pnpm test",
       "pnpm test:workstation",
@@ -166,8 +168,8 @@
     ]
   },
   "currentWork": {
-    "todo": "TODO.md",
-    "milestone": "MILESTONE.md",
+    "todo": "docs/state/TODO.md",
+    "milestone": "docs/state/MILESTONE.md",
     "active": [
       "Keep the root documentation suite current",
       "Align verification commands with the real project stack",
@@ -223,13 +225,17 @@
   },
   "verification": {
     "status": "verified",
-    "lastVerifiedAt": "2026-06-18",
+    "lastVerifiedAt": "2026-08-07",
     "commands": [
-      "pnpm --filter @axi/workstation-control-plane smoke"
+      "pnpm --filter @axi/workbench type-check",
+      "pnpm --filter @axi/workbench test",
+      "pnpm --filter @axi/workbench build",
+      "node apps/workbench/scripts/verify-ui-contracts.mjs"
     ],
     "evidence": [
-      "Control-plane smoke exited 0 on 2026-06-11.",
-      "Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers."
+      "Desktop 1440px browser smoke rendered the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.",
+      "Mobile 500px browser smoke rendered the independent mobile topbar and bottom navigation without desktop sidebar/chrome nodes.",
+      "Workbench UI contract verifier, TypeScript, 23 unit tests, and production build passed on 2026-08-07."
     ]
   },
   "startup_profile": {
@@ -250,7 +256,7 @@
     "docs/HANDOFF.md"
   ],
   "created": "2026-06-07",
-  "updated": "2026-06-18",
+  "updated": "2026-08-07",
   "writer": "Codex zero-context-onboarding",
   "source": "user-authorized zero-context onboarding plan"
 }
