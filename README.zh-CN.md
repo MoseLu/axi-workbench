@@ -25,7 +25,8 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 ```text
 axi-workbench/
 ├── apps/
-│   ├── workbench/             # ★ 唯一用户工作台（Web + 移动 Web）
+│   ├── workbench/             # ★ Web 管理端（独立 Axi Dashboard 应用）
+│   ├── workbench-mobile/      # ★ 移动端应用（独立微信式路由与移动壳）
 │   ├── devsvc-dashboard/      # 本地服务管理和 Axi 应用 host
 │   ├── axi-coder/             # Axi 开发工作台
 │   ├── verification-inbox/    # 验证码收件箱
@@ -40,7 +41,8 @@ axi-workbench/
 │   ├── types/
 │   ├── ui/
 │   ├── utils/
-│   └── web/
+│   ├── web/
+│   └── workbench-foundation/  # Web / 移动端共享认证与语言状态
 ├── services/
 │   ├── api-gateway/
 │   ├── auth-service/
@@ -74,7 +76,10 @@ axi-workbench/
 ```bash
 pnpm install
 pnpm run dev
+# Web 管理端（5173）
 pnpm run dev:workbench
+# 移动端应用（5174）
+pnpm run dev:mobile
 pnpm run build
 pnpm run test
 pnpm run lint

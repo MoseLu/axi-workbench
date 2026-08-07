@@ -27,9 +27,9 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 
 | 路径 | 是否项目内 | 说明 |
 |------|------------|------|
-| `apps/` | 是 | 6 个 Dashboard Apps（web-portal / devsvc-dashboard / axi-coder / verification-inbox / app-search-system / ollama-menu-assistant），子树 `apps/AGENTS.md` 详述 |
+| `apps/` | 是 | 7 个 Dashboard Apps（workbench Web / workbench-mobile / devsvc-dashboard / axi-coder / verification-inbox / app-search-system / ollama-menu-assistant），子树 `apps/AGENTS.md` 详述 |
 | `services/` | 是 | 8 个微服务（api-gateway / auth-service / core-service / file-service / notification-service / communication-gateway / control-plane / workflow-engine），子树 `services/AGENTS.md` 详述 |
-| `packages/` | 是 | 8 个共享包（api-client / axi-rag / desktop / schemas / epap-schemas-compat / types / ui / utils / web），子树 `packages/AGENTS.md` 详述 |
+| `packages/` | 是 | 共享包（含 api-client / schemas / epap-schemas-compat / types / ui / utils / workbench-foundation），子树 `packages/AGENTS.md` 详述 |
 | `tools/axi-app-cli/` | 是 | Axi 应用脚手架 CLI（独立子 monorepo），以 `tools/axi-app-cli/AGENTS.md` / `README.md` 为权威入口；**不引用**子包内 `README.md` |
 | `ai/` | 是 | 知识库 / Agent Platform 集成层（`ai/AGENTS.md`） |
 | `prompts/` | 是 | Prompt 分层底座（system / global / projects），`prompts/AGENTS.md` 与 `prompts/README.md` 详述 |

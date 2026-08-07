@@ -22,6 +22,7 @@ This AGENTS.md scopes guidance to `packages`. Parent AGENTS guidance still appli
 - `types/`
 - `ui/`
 - `utils/`
+- `workbench-foundation/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
@@ -32,6 +33,7 @@ This AGENTS.md scopes guidance to `packages`. Parent AGENTS guidance still appli
 |---------|------|
 | `schemas` (`@axi/workstation-contracts`) | Canonical contracts |
 | `api-client` / `types` / `utils` | Portal/service clients |
+| `workbench-foundation` (`@axi/workbench-foundation`) | 独立 Web / 移动端的认证会话与语言偏好基础包；不包含任何页面或布局 |
 | `epap-schemas-compat` | Compatibility re-exports |
 | `axi-rag` | RAG helpers |
 | `ui` (`@epap/ui`) | **Legacy** layout for `apps/workbench` only — see `ui/LEGACY.md` |

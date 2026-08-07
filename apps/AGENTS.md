@@ -21,28 +21,31 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 - `ollama-menu-assistant/`
 - `verification-inbox/`
 - `workbench/`
+- `workbench-mobile/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
 
-### 用户工作台只有一个
+### 用户工作台是两个独立应用
 
 | App | Role | Notes |
 |-----|------|-------|
-| **`workbench`** (`@axi/workbench`) | **唯一** Web + 移动 Web 工作台 | 目录 `apps/workbench`；`pnpm dev:workbench`；登录 `/login`（密码+扫码同页） |
+| **`workbench`** (`@axi/workbench`) | Web 管理端 | 目录 `apps/workbench`；`pnpm dev:workbench`；Axi Dashboard Chrome、标签栏、面包屑、设置面板 |
+| **`workbench-mobile`** (`@axi/workbench-mobile`) | 移动端应用 | 目录 `apps/workbench-mobile`；`pnpm dev:mobile`；微信式顶栏、五项绿色底栏、角标、扫一扫与移动页面组合 |
 | `devsvc-dashboard` | 本地服务 + Axi **Host** | 挂子应用，不是第二份用户门户 |
 | `axi-coder` | 编码工具 | Hosted 子应用；不是第二门户 |
 | `verification-inbox` | OTP 工具 | 垂直 |
 | `app-search-system` | SOP 搜索 | 垂直 |
 | `ollama-menu-assistant` | macOS 菜单助手 | 垂直 |
 
-**禁止**：再建 `web-portal` / `mobile-portal` / 独立 MobileLogin 产品入口。  
-旧路径：`apps/web-portal` 已更名为 `apps/workbench`；`/mobile-login` 仅兼容重定向。
+**禁止**：把 `workbench-mobile` 重新塞回 `workbench` 的 viewport / CSS 分支；或再建第三个重复用户门户。
+`apps/web-portal` 是已归档的旧门户；Web 与移动端仅共享认证、API、契约、语言偏好和 design tokens，不共享页面与布局实现。Axi UI 的 sidebar / topbar / tabs / breadcrumbs / settings 只属于 Web；微信式 header / 五项底栏 / 扫一扫只属于移动端。
 
 ### 启动
 
 ```bash
-pnpm dev:workbench          # 用户工作台（Web+移动）
+pnpm dev:workbench          # Web 管理端（5173）
+pnpm dev:mobile             # 移动端应用（5174）
 pnpm dev:dashboard          # 本地 Host（运维）
 pnpm dev:coder              # 编码工具（可选）
 ```
@@ -50,6 +53,8 @@ pnpm dev:coder              # 编码工具（可选）
 ### Verification
 
 - `pnpm --filter @axi/workbench type-check`
+- `pnpm --filter @axi/workbench-mobile type-check`
+- `pnpm --filter @axi/workbench-mobile verify:contracts`
 - `pnpm --dir apps/devsvc-dashboard typecheck`
 - `pnpm check:boundaries`
 <!-- OMX:AGENTS-INIT:MANUAL:END -->

@@ -1,7 +1,6 @@
 # Axi 工作台（`@axi/workbench`）
 
-**唯一**面向用户的 Web + 移动 Web 工作台 SPA。  
-不要再拆「移动端门户 / Web 门户」两个产品或两个启动目录。
+Web 管理端应用。它拥有 Axi Dashboard Chrome、侧栏、顶栏、标签栏、面包屑和设置面板；不再按 viewport 渲染移动端壳。
 
 | 项 | 值 |
 |----|-----|
@@ -9,8 +8,8 @@
 | 包名 | `@axi/workbench` |
 | 启动 | 仓库根：`pnpm dev:workbench` |
 | 本地 URL | http://127.0.0.1:5173 |
-| 登录 | `/login`（邮箱密码 + 扫码同页；窄屏默认扫码） |
-| 兼容 | `/mobile-login` → `/login?mode=qr` |
+| 登录 | `/login`（邮箱密码 + 扫码同页） |
+| 移动端 | 独立应用 `apps/workbench-mobile`，开发 URL 为 http://127.0.0.1:5174 |
 
 ## 启动
 
@@ -27,6 +26,7 @@ API 代理默认指向 `localhost:8088`（见 `vite.config.ts`）。需登录时
 | App | 是否用户工作台 |
 |-----|----------------|
 | **workbench** | **是** — 本应用 |
+| **workbench-mobile** | **是** — 独立移动端应用；仅共享认证 / API / 契约 / locale / tokens |
 | devsvc-dashboard | 否 — 本地 PM2 / 子应用 **Host**（运维壳） |
 | axi-coder | 否 — 开发工具（可被 Host 挂载） |
 | verification-inbox 等 | 否 — 垂直工具 |

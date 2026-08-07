@@ -1,42 +1,25 @@
 # Axi Workbench Index
 
-## Ownership
+> This root file is a **builder-friendly stub**. The canonical index lives
+> at [`INDEX.md`](./INDEX.md) (this file's parent). See that file for the
+> full Top-Level Inventory, Document Map, and Source of Truth.
 
-- Root: `/Volumes/code/workspace/projects/axi-workbench`
-- Type: workspace project/tool
-- Stack signals: Node/TypeScript, document/config driven
+## Quick Map
 
-## Document Map
+- Canonical INDEX: [`INDEX.md`](./INDEX.md)
+- Canonical PRD: [`docs/state/PRD.md`](./docs/state/PRD.md)
+- Canonical TDD: [`docs/state/TDD.md`](./docs/state/TDD.md)
+- Canonical TODO: [`docs/state/TODO.md`](./docs/state/TODO.md)
+- Canonical MILESTONE: [`docs/state/MILESTONE.md`](./docs/state/MILESTONE.md)
+- Canonical CHANGELOG: [`docs/state/CHANGELOG.md`](./docs/state/CHANGELOG.md)
+- Canonical HANDOFF: [`docs/HANDOFF.md`](./docs/HANDOFF.md)
+- Canonical AGENTS: [`AGENTS.md`](./AGENTS.md)
+- Canonical README: [`README.md`](./README.md)
 
-| Document | Purpose |
-| --- | --- |
-| `README.md` | English entrypoint and quickstart. |
-| `README.zh-CN.md` | Simplified Chinese entrypoint. |
-| `AGENTS.md` | Agent rules, boundaries, verification, read order. |
-| `docs/state/CHANGELOG.md` | Human-visible change log. |
-| `docs/state/TODO.md` | Requirement-linked task queue. |
-| `docs/state/MILESTONE.md` | Delivery milestone and evidence. |
-| `docs/state/PRD.md` | Product/project requirements and non-goals. |
-| `docs/state/TDD.md` | Technical/test design and verification commands. |
+The project ships **two independent workbench applications**:
 
-## Top-Level Inventory
+- `apps/workbench` — Web Admin SPA (Axi Dashboard Chrome ≥ 768px).
+- `apps/workbench-mobile` — Mobile Admin app (header + tab bar + mobile
+  page composition; uses `@axi/workbench-foundation` for auth + locale).
 
-- `AGENTS.en.md`
-- `AGENTS.md`
-- `Makefile`
-- `README.md`
-- `README.zh-CN.md`
-- `docs/governance/SECURITY.md`
-- `ai/`
-- `apps/`
-- `backend/`
-- `docker-compose.yml`
-- `docs/`
-- `infra/`
-- `package.json`
-- `packages/`
-
-## Source of Truth
-
-- Existing source files and package manifests define implementation reality.
-- This document maps local documentation and does not replace code-level ownership.
+- Last refreshed: 2026-08-07
