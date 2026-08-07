@@ -1,24 +1,24 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-07-02T22:41:22.839Z",
+  "generatedAt": "2026-08-06T21:51:36.109Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 34,
+    "total": 35,
     "axiTotal": 20,
     "complete": 1,
     "usableOrBetter": 9,
     "blocked": 0,
     "byStage": {
-      "unassessed": 22,
-      "building": 3,
+      "unassessed": 24,
+      "building": 2,
       "usable": 7,
       "complete": 1,
       "maintenance": 1
     },
     "byConfidence": {
-      "low": 20,
-      "medium": 12,
-      "high": 2
+      "low": 19,
+      "high": 6,
+      "medium": 10
     }
   },
   "projects": [
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:legacy",
         "handoff:unready",
@@ -83,22 +83,29 @@
       ]
     },
     {
-      "id": "axi-agent",
+      "id": "axi-agent-platform",
       "name": "Axi Agent Platform",
       "path": "/Volumes/code/workspace/projects/axi-agent-platform",
       "kind": "axi-agent-monorepo",
       "isAxi": true,
-      "stage": "building",
-      "stageLabel": "建设中",
-      "confidence": "medium",
-      "confidenceLabel": "中",
-      "summary": "Axi Agent Platform remains an active-canonical development surface for runtime/API, MCP, transport, remote bridge, and local task ledger work.",
-      "updatedAt": "2026-05-30",
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Axi Agent Platform is the canonical agent runtime/API/MCP/transport/bridge monorepo. Backend (FastAPI + uv + pytest + chroma_db) + frontend (React + built dist) + apps/desktop-glass-ui + infra/codex-remote-bridge + tools/axi-todo all surface green verify paths.",
+      "updatedAt": "2026-07-17",
       "evidence": [
-        "Workspace verify covers runtime API smoke tests plus MCP, transport, bridge, and todo packages.",
-        "Governance source still classifies the project as development.",
+        "projects/axi-agent-platform/backend/app/api/workstation.py (FastAPI runtime)",
+        "projects/axi-agent-platform/backend/tests/test_runtime_api_smoke.py + test_workstation_agent_tasks.py + test_task_scheduler_mcp_quality.py + test_axi_agent_mcp_client.py (pytest verify)",
+        "projects/axi-agent-platform/backend/chroma_db (vector store is wired)",
+        "projects/axi-agent-platform/frontend (React + dist built)",
+        "projects/axi-agent-platform/apps/desktop-glass-ui (secondary desktop surface)",
+        "projects/axi-agent-platform/infra/axi-agent-mcp/package.json (MCP service)",
+        "projects/axi-agent-platform/infra/axi-agent-transport/package.json (transport)",
+        "projects/axi-agent-platform/infra/codex-remote-bridge/package.json (remote bridge)",
+        "projects/axi-agent-platform/tools/axi-todo/package.json (local task ledger)",
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py | npm --prefix infra/axi-agent-mcp test | npm --prefix infra/axi-agent-transport test | npm --prefix infra/codex-remote-bridge test | npm --prefix tools/axi-todo test",
         "health:test -f backend/app/api/workstation.py | test -f infra/axi-agent-mcp/package.json | test -f infra/axi-agent-transport/package.json | test -f tools/axi-todo/package.json",
         "contracts:8"
@@ -106,6 +113,7 @@
       "remaining": [
         "Consolidate agent runtime completion evidence into project docs.",
         "Keep MCP/transport/bridge consumer checks green as Axi Coder grows.",
+        "Resolve graph node ID drift — fixed 2026-07-17 (was 'axi-agent', now 'axi-agent-platform' to match workspace.json).",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
@@ -126,13 +134,14 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder must contain at most 5 item(s)",
           "readOrder[2] path does not exist: UPGRADE_v1.1.0.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -167,11 +176,16 @@
       "isAxi": true,
       "stage": "unassessed",
       "stageLabel": "未评估",
-      "confidence": "low",
-      "confidenceLabel": "低",
+      "confidence": "high",
+      "confidenceLabel": "高",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-07-17",
       "evidence": [
+        "products/axi-artboard/package.json (React 19.2 + Vite 8.1 + TypeScript ~6.0 + vitest)",
+        "products/axi-artboard/src/overlay/OverlayCanvas.tsx",
+        "products/axi-artboard/src/overlay/vite-plugin-source-attrs-ast.ts",
+        "products/axi-artboard/src/overlay/{inspect,perception,source-map,server-perception}.ts",
+        "products/axi-artboard/src/styles/** (full scss token/layout/component/theme tree)",
         "docs:legacy",
         "handoff:unready",
         "verify:/Volumes/code/workspace/scripts/workspace-project validate | pnpm --dir /Volumes/code/workspace/products/axi-artboard build",
@@ -180,6 +194,8 @@
         "package-scripts:test,build"
       ],
       "remaining": [
+        "First non-overlay product feature (owner scope)",
+        "GitHub remote (axiomaticworld/axi-artboard) when ready to publish",
         "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 TODO.md，让待办和里程碑可审计。",
         "补齐 MILESTONE.md，让待办和里程碑可审计。",
@@ -229,7 +245,7 @@
         "src/overlay/OverlayCanvas.tsx",
         "src/overlay/inspect.ts",
         "src/overlay/source-map.ts",
-        "src/overlay/vite-plugin-source-attrs.ts"
+        "src/overlay/vite-plugin-source-attrs-ast.ts"
       ]
     },
     {
@@ -318,7 +334,7 @@
         "Workspace graph registers app verification and MCP/document contracts.",
         "Workspace governance docs are mirrored into the Axi Docs source tree.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:pnpm --dir app verify",
         "health:test -d app | test -f app/package.json",
         "contracts:4"
@@ -345,10 +361,11 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
-          "readOrder must contain at most 5 item(s)"
+          "readOrder must contain at most 5 item(s)",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -376,10 +393,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
         "health:test -f pyproject.toml | test -d src/codex_feishu_bridge",
         "contracts:5"
@@ -405,14 +422,15 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[3] path does not exist: TODO.md",
           "readOrder[4] path does not exist: MILESTONE.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "decisions.changelog path does not exist: CHANGELOG.md"
+          "decisions.changelog path does not exist: CHANGELOG.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -577,7 +595,7 @@
         "Relay and local smoke verification are registered in the workspace graph.",
         "Axi Coder consumes Notify for mobile companion task and notification return paths.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:make test-relay | make smoke-relay-local",
         "health:make test-relay | test -d android-app/app | test -d donors/android-workspace-app | test -d donors/feiyu-agentflow",
         "contracts:7"
@@ -604,11 +622,12 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -641,20 +660,21 @@
       "stageLabel": "未评估",
       "confidence": "medium",
       "confidenceLabel": "中",
-      "summary": "Axi Pet is the workspace-local virtual companion project migrated from moeru-ai/airi, currently focused on provider setup and local STT behavior.",
-      "updatedAt": "2026-06-07",
+      "summary": "Axi Pet is the workspace-local virtual companion project migrated from moeru-ai/airi, currently focused on provider setup and local STT behavior. Namespace intentionally kept as @proj-airi/* — see namespace_status.",
+      "updatedAt": "2026-07-17",
       "evidence": [
         "Project now lives under /Volumes/code/workspace/projects/axi-pet.",
         "Local verification covers stage-web, stage-ui, and stage-layouts typechecks.",
+        "13 packages confirmed using @proj-airi/* namespace (grep across apps/*/package.json + packages/*/package.json).",
         "docs:partial",
-        "handoff:unready",
-        "verify:pnpm -F @proj-airi/stage-web typecheck | pnpm -F @proj-airi/stage-ui typecheck | pnpm -F @proj-airi/stage-layouts typecheck",
+        "handoff:stale",
+        "verify:[object Object] | [object Object] | [object Object]",
         "health:test -f package.json | test -d apps/stage-web | test -d packages/stage-ui",
         "contracts:7",
         "package-scripts:test,build"
       ],
       "remaining": [
-        "Decide whether to keep upstream AIRI branding internally or run a separate package/product rename pass.",
+        "Decide whether to keep upstream AIRI branding internally or run a separate package/product rename pass (see namespace_status).",
         "Promote local STT helper into a documented project script if it becomes durable.",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
@@ -676,19 +696,35 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[3] path does not exist: PRD.md",
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 56 days old (max 30)"
         ]
       },
       "verify": [
-        "pnpm -F @proj-airi/stage-web typecheck",
-        "pnpm -F @proj-airi/stage-ui typecheck",
-        "pnpm -F @proj-airi/stage-layouts typecheck"
+        {
+          "command": "pnpm -F @proj-airi/stage-web typecheck",
+          "namespace": "@proj-airi/*",
+          "namespace_status": "kept-upstream-intent",
+          "deprecation_note": "axi-pet intentionally keeps the upstream moeru-ai/airi @proj-airi/* namespace. Do NOT auto-rename to @axi-pet/* — owner owns the rename decision. This verify entry is the project's source of truth, not a drift bug."
+        },
+        {
+          "command": "pnpm -F @proj-airi/stage-ui typecheck",
+          "namespace": "@proj-airi/*",
+          "namespace_status": "kept-upstream-intent",
+          "deprecation_note": "See stage-web entry above — kept-upstream-intent applies to every @proj-airi/* verify command on this project."
+        },
+        {
+          "command": "pnpm -F @proj-airi/stage-layouts typecheck",
+          "namespace": "@proj-airi/*",
+          "namespace_status": "kept-upstream-intent",
+          "deprecation_note": "See stage-web entry above — kept-upstream-intent applies to every @proj-airi/* verify command on this project."
+        }
       ],
       "health": [
         "test -f package.json",
@@ -713,25 +749,26 @@
       "isAxi": true,
       "stage": "unassessed",
       "stageLabel": "未评估",
-      "confidence": "medium",
-      "confidenceLabel": "中",
-      "summary": "Axi Pet Desktop is the Electron desktop monorepo extracted from axi-pet on 2026-06-18. Owns stage-tamagotchi (legacy) and desktop-pet (active macOS-first VRM pet). Local verification covers both apps' typecheck and desktop-pet test:run.",
-      "updatedAt": "2026-06-19",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Axi Pet Desktop is the Electron desktop monorepo extracted from axi-pet on 2026-06-18. Owns desktop-pet (active macOS-first VRM pet) as the canonical desktop runtime. Legacy stage-tamagotchi retired from contracts and moved to references/archives on 2026-07-17. Local verification covers desktop-pet typecheck/test:run and root pnpm typecheck.",
+      "updatedAt": "2026-07-17",
       "evidence": [
         "Root AGENTS.md, docs/HANDOFF.md, root CHANGE.md written on 2026-06-19.",
         "infra/axi-workspace-governance/workspace.json has axi-pet-desktop entry.",
-        "pnpm -F @proj-airi/desktop-pet typecheck passes (vue-tsc --noEmit, no output).",
+        "pnpm -F @axi-pet-desktop/desktop-pet typecheck passes (tsc --noEmit, no output).",
+        "workspace.graph.json contracts aligned to apps/desktop-pet on 2026-07-17.",
         "docs:partial",
         "handoff:unready",
-        "verify:pnpm -F @proj-airi/desktop-pet typecheck | pnpm -F @proj-airi/desktop-pet test:run | pnpm -F @proj-airi/stage-tamagotchi typecheck | pnpm typecheck",
-        "health:test -f package.json | test -f pnpm-workspace.yaml | test -d apps/desktop-pet | test -d apps/stage-tamagotchi | test -d packages/stage-ui",
+        "verify:pnpm -F @axi-pet-desktop/desktop-pet typecheck | pnpm -F @axi-pet-desktop/desktop-pet test:run | pnpm -F @axi-pet-desktop/desktop-pet lint | pnpm typecheck",
+        "health:test -f package.json | test -f pnpm-workspace.yaml | test -d apps/desktop-pet | test -d packages/stage-ui",
         "contracts:9",
         "package-scripts:test,build"
       ],
       "remaining": [
         "Add GitHub remote + .github/workflows/* CI lane (P1, owner-approved).",
         "Lock contract package version-sync workflow with axi-pet (P1).",
-        "Decide whether stage-tamagotchi stays as legacy anchor or deprecates.",
+        "Final deprecation PR to remove references/archives/axi-pet-desktop-stage-tamagotchi once downstream axi-pet imports are confirmed unused.",
         "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 MILESTONE.md，让待办和里程碑可审计。",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
@@ -761,16 +798,15 @@
         ]
       },
       "verify": [
-        "pnpm -F @proj-airi/desktop-pet typecheck",
-        "pnpm -F @proj-airi/desktop-pet test:run",
-        "pnpm -F @proj-airi/stage-tamagotchi typecheck",
+        "pnpm -F @axi-pet-desktop/desktop-pet typecheck",
+        "pnpm -F @axi-pet-desktop/desktop-pet test:run",
+        "pnpm -F @axi-pet-desktop/desktop-pet lint",
         "pnpm typecheck"
       ],
       "health": [
         "test -f package.json",
         "test -f pnpm-workspace.yaml",
         "test -d apps/desktop-pet",
-        "test -d apps/stage-tamagotchi",
         "test -d packages/stage-ui"
       ],
       "contracts": [
@@ -781,7 +817,7 @@
         "package.json",
         "pnpm-workspace.yaml",
         "apps/desktop-pet/AGENTS.md",
-        "apps/stage-tamagotchi/package.json",
+        "apps/desktop-pet/package.json",
         "docs/HANDOFF.md"
       ]
     },
@@ -796,10 +832,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:swift build",
         "health:swift build",
         "contracts:2"
@@ -825,12 +861,13 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -860,7 +897,7 @@
         "Workspace graph registers registry health verification.",
         "Axi UI declares the registry as its package distribution boundary.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:npm run health",
         "health:npm run health",
         "contracts:2"
@@ -887,12 +924,13 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -917,10 +955,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:python3 scripts/validate-index.py",
         "health:python3 scripts/validate-index.py",
         "contracts:5"
@@ -944,9 +982,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 56 days old (max 30)"
+        ]
       },
       "verify": [
         "python3 scripts/validate-index.py"
@@ -979,7 +1019,7 @@
         "i18n verifier protects the English runtime source while tracking translation batch coverage.",
         "apm.yml exposes a focused zero-context bootstrap skill subset for cross-harness consumers.",
         "docs:ready",
-        "handoff:unready",
+        "handoff:stale",
         "verify:python3 scripts/verify.py | python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff | test -f apm.yml",
         "health:python3 scripts/verify.py",
         "contracts:13"
@@ -1004,13 +1044,14 @@
         "missing": []
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[3] path does not exist: TODO.md",
           "readOrder[4] path does not exist: MILESTONE.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -1048,10 +1089,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:test -f scripts/tauri-env.sh",
         "health:test -f scripts/tauri-env.sh",
         "contracts:2"
@@ -1077,13 +1118,14 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "decisions.changelog path does not exist: CHANGELOG.md"
+          "decisions.changelog path does not exist: CHANGELOG.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -1113,15 +1155,14 @@
         "Workspace verify covers file-line guard, typecheck, and tests.",
         "Axi Coder and dashboard surfaces consume linked @axi packages.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:verified",
         "verify:pnpm check:file-lines | pnpm typecheck | pnpm test",
         "health:pnpm check:file-lines | pnpm typecheck",
         "contracts:9",
         "package-scripts:test,build"
       ],
       "remaining": [
-        "Continue additive package hardening without breaking @axi/* style/runtime contracts.",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+        "Continue additive package hardening without breaking @axi/* style/runtime contracts."
       ],
       "docs": {
         "status": "partial",
@@ -1132,22 +1173,18 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "VERIFICATION.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[4] path does not exist: PRD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
-        ]
+        "errors": []
       },
       "verify": [
         "pnpm check:file-lines",
@@ -1181,10 +1218,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:python3 -m py_compile app.py",
         "health:test -f app.py",
         "contracts:3"
@@ -1208,12 +1245,13 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -1244,7 +1282,7 @@
         "DevSvc Dashboard and Axi Coder are registered as hosted workbench surfaces.",
         "Workspace verify covers dashboard, Axi Coder, verification inbox, and fleet console.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:verified",
         "verify:pnpm --dir apps/devsvc-dashboard typecheck | pnpm --dir apps/axi-coder typecheck | npm --prefix apps/verification-inbox run typecheck | python3 infra/fleet-console/scripts/fleetctl.py validate",
         "health:test -f package.json | test -d apps/devsvc-dashboard | test -d apps/axi-coder | test -d infra/fleet-console",
         "contracts:10",
@@ -1252,8 +1290,7 @@
       ],
       "remaining": [
         "Finish the project completion data and UI loop for Axi Coder.",
-        "Continue consolidating dashboard/control-plane documentation and evidence.",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+        "Continue consolidating dashboard/control-plane documentation and evidence."
       ],
       "docs": {
         "status": "partial",
@@ -1264,22 +1301,18 @@
           "TODO.md",
           "MILESTONE.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "VERIFICATION.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[4] path does not exist: PRD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
-        ]
+        "errors": []
       },
       "verify": [
         "pnpm --dir apps/devsvc-dashboard typecheck",
@@ -1322,7 +1355,7 @@
         "workspace:docs:sync generates catalog and completion docs.",
         "workspace-project validate remains the root graph sanity check.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:pnpm workspace:audit",
         "health:test -f /Volumes/code/workspace/infra/axi-workspace-governance/workspace.json",
         "contracts:2"
@@ -1349,13 +1382,14 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[3] path does not exist: TODO.md",
           "readOrder[4] path does not exist: MILESTONE.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -1380,7 +1414,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1437,7 +1471,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1496,7 +1530,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1556,7 +1590,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1667,7 +1701,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1725,7 +1759,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1833,10 +1867,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
         "health:pnpm --dir frontend verify:repo-guards",
         "contracts:4",
@@ -1863,13 +1897,14 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[3] path does not exist: PRD.md",
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -1897,7 +1932,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1958,7 +1993,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2015,7 +2050,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2072,7 +2107,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2136,10 +2171,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:stale",
         "verify:pnpm test",
         "health:test -f package.json",
         "contracts:3",
@@ -2164,13 +2199,14 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "stale",
         "score": 10,
         "errors": [
           "readOrder[3] path does not exist: PRD.md",
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md"
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 49 days old (max 30)"
         ]
       },
       "verify": [
@@ -2186,6 +2222,79 @@
       ]
     },
     {
+      "id": "story-graph",
+      "name": "Story Graph",
+      "path": "/Volumes/code/workspace/products/story-graph",
+      "kind": "standalone-product",
+      "isAxi": false,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Story Graph is copied into the canonical workspace product path with its Git history, corpus, evidence store, SQLite database, and React/Vite viewer preserved.",
+      "updatedAt": "2026-08-03",
+      "evidence": [
+        "products/story-graph/AGENTS.md",
+        "products/story-graph/docs/HANDOFF.md",
+        "products/story-graph/app/package.json",
+        "products/story-graph/data/evidence-store/graph.json",
+        "products/story-graph/db/graph.db",
+        "docs:partial",
+        "handoff:verified",
+        "verify:python3 -m unittest -q tests/test_evidence_pipeline.py | node --test app/server/evidence-store.test.mjs | npm --prefix app run build",
+        "health:test -f /Volumes/code/workspace/products/story-graph/README.md | test -f /Volumes/code/workspace/products/story-graph/app/package.json | test -f /Volumes/code/workspace/products/story-graph/db/graph.db",
+        "contracts:9"
+      ],
+      "remaining": [
+        "Run the focused Python, Node, and viewer build verification from the canonical path.",
+        "Retire the rollback checkout only after owner acceptance.",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": [
+          "CHANGELOG.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [
+        "python3 -m unittest -q tests/test_evidence_pipeline.py",
+        "node --test app/server/evidence-store.test.mjs",
+        "npm --prefix app run build"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/products/story-graph/README.md",
+        "test -f /Volumes/code/workspace/products/story-graph/app/package.json",
+        "test -f /Volumes/code/workspace/products/story-graph/db/graph.db"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "README.md",
+        "docs/HANDOFF.md",
+        "PRD.md",
+        "DESIGN.md",
+        "TASK.md",
+        "app/package.json",
+        "scripts/pipeline/evidence_pipeline.py",
+        "db/graph.db"
+      ]
+    },
+    {
       "id": "sub2api",
       "name": "Sub2API Reference",
       "path": "/Volumes/code/workspace/references/sub2api",
@@ -2196,7 +2305,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-07-02T22:41:22.839Z",
+      "updatedAt": "2026-08-06T21:51:36.109Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
