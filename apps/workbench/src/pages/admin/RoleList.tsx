@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Table, Tag, Space, Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { WorkbenchIcon } from '../../components/WorkbenchIcon';
 
 const RoleList: React.FC = () => {
   const dataSource = [
@@ -26,7 +26,7 @@ const RoleList: React.FC = () => {
     <div style={{ padding: 16 }}>
       <Card
         title="角色列表"
-        extra={<Button type="primary" icon={<PlusOutlined />} size="small">新增角色</Button>}
+        extra={<Button type="primary" icon={<WorkbenchIcon name="add" />} size="small">新增角色</Button>}
       >
         <Table dataSource={dataSource} columns={columns} pagination={{ pageSize: 10 }} size="middle" />
       </Card>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { CheckOutlined } from '@ant-design/icons';
 import { useAxiTheme } from '@axi/core';
+import { WorkbenchIcon } from '../../../components/WorkbenchIcon';
 import { MeGroup, MeSubPage } from './MeSubChrome';
 
 const modes = [
@@ -28,7 +28,7 @@ const Theme: React.FC = () => {
               <div className="wb-me-sub__theme-title">{m.label}</div>
               <div className="wb-me-sub__theme-desc">{m.desc}</div>
             </span>
-            {preference === m.id ? <CheckOutlined className="wb-me-sub__check" /> : null}
+            {preference === m.id ? <WorkbenchIcon name="check" className="wb-me-sub__check" /> : null}
           </button>
         ))}
       </MeGroup>

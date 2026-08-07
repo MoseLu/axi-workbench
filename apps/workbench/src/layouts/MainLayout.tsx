@@ -1,16 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import {
-  UserOutlined,
-  DashboardOutlined,
-  ProjectOutlined,
-  FileTextOutlined,
-  TeamOutlined,
-  SettingOutlined,
-  MenuOutlined,
-  UnorderedListOutlined,
-} from '@ant-design/icons';
-import { useAxiTheme } from '@axi/core';
+import { AxiLogoMark, useAxiTheme } from '@axi/core';
+import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { axiStylePresets } from '@axi/presets';
 import { AxiAdminSettingsPanel, useAxiAdminSettings } from '@axi/settings';
 import {
@@ -34,19 +25,19 @@ import {
   closeAll,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
-import logoImg from '../assets/logo-axi-core-color.png';
+import { WorkbenchIcon } from '../components/WorkbenchIcon';
 import './MainLayout.css';
 
-const menuRouteMap: Record<string, { label: string; icon?: React.ReactNode; parent?: string; parentIcon?: React.ReactNode }> = {
-  '/admin/dashboard': { label: '概览', icon: <DashboardOutlined /> },
-  '/admin/project': { label: '项目', icon: <ProjectOutlined /> },
-  '/admin/task': { label: '工作区', icon: <FileTextOutlined /> },
-  '/admin/team': { label: '团队', icon: <TeamOutlined /> },
+const menuRouteMap: Record<string, { label: string }> = {
+  '/admin/dashboard': { label: '概览' },
+  '/admin/project': { label: '项目' },
+  '/admin/task': { label: '工作区' },
+  '/admin/team': { label: '团队' },
   '/admin/scan': { label: '扫一扫' },
-  '/admin/me': { label: '我的', icon: <UserOutlined /> },
-  '/admin/settings/menu': { label: '菜单列表', icon: <MenuOutlined />, parent: '系统设置', parentIcon: <SettingOutlined /> },
-  '/admin/settings/user': { label: '我的', icon: <UserOutlined /> },
-  '/admin/settings/role': { label: '角色列表', icon: <UnorderedListOutlined />, parent: '系统设置', parentIcon: <SettingOutlined /> },
+  '/admin/me': { label: '我的' },
+  '/admin/settings/menu': { label: '菜单列表' },
+  '/admin/settings/user': { label: '我的' },
+  '/admin/settings/role': { label: '角色列表' },
 };
 
 /**
@@ -57,24 +48,24 @@ const desktopNavGroups: AxiDashboardNavGroup[] = [
   {
     key: 'workbench',
     label: '工作台',
-    iconName: 'admin-dashboard',
+    iconName: axiWorkbenchIconMap.overview,
     children: [
-      { key: '/admin/dashboard', label: '概览', iconName: 'admin-dashboard' },
-      { key: '/admin/project', label: '项目', iconName: 'admin-project' },
-      { key: '/admin/task', label: '工作区', iconName: 'admin-folder' },
-      { key: '/admin/team', label: '团队', iconName: 'admin-team' },
-      { key: '/admin/scan', label: '扫一扫', iconName: 'admin-scan' },
+      { key: '/admin/dashboard', label: '概览', iconName: axiWorkbenchIconMap.overview },
+      { key: '/admin/project', label: '项目', iconName: axiWorkbenchIconMap.project },
+      { key: '/admin/task', label: '工作区', iconName: axiWorkbenchIconMap.workspace },
+      { key: '/admin/team', label: '团队', iconName: axiWorkbenchIconMap.team },
+      { key: '/admin/scan', label: '扫一扫', iconName: axiWorkbenchIconMap.scan },
     ],
   },
   {
     key: 'account',
     label: '账号与设置',
-    iconName: 'admin-settings',
+    iconName: axiWorkbenchIconMap.settings,
     children: [
-      { key: '/admin/me', label: '个人中心', iconName: 'admin-user' },
-      { key: '/admin/me/notifications', label: '通知设置', iconName: 'notice' },
-      { key: '/admin/settings/menu', label: '菜单配置', iconName: 'admin-menu' },
-      { key: '/admin/settings/role', label: '角色权限', iconName: 'admin-safety' },
+      { key: '/admin/me', label: '个人中心', iconName: axiWorkbenchIconMap.account },
+      { key: '/admin/me/notifications', label: '通知设置', iconName: axiWorkbenchIconMap.notification },
+      { key: '/admin/settings/menu', label: '菜单配置', iconName: axiWorkbenchIconMap.menu },
+      { key: '/admin/settings/role', label: '角色权限', iconName: axiWorkbenchIconMap.roles },
     ],
   },
 ];
@@ -122,7 +113,7 @@ const MainLayout: React.FC = () => {
         description: '打开后台页面',
         group: String(group.label),
         path: item.key,
-        iconName: item.iconName ?? 'admin-menu',
+        iconName: item.iconName ?? axiWorkbenchIconMap.menu,
       })),
     );
     const corpusItems = SEARCH_CORPUS.map((hit) => ({
@@ -131,7 +122,7 @@ const MainLayout: React.FC = () => {
       description: hit.subtitle,
       group: hit.kind === 'project' ? '项目' : hit.kind === 'doc' ? '文档' : '相关内容',
       path: hit.path,
-      iconName: (hit.kind === 'project' ? 'admin-project' : hit.kind === 'doc' ? 'admin-file-text' : 'admin-search') as GlobalSearchItem['iconName'],
+      iconName: (hit.kind === 'project' ? axiWorkbenchIconMap.project : hit.kind === 'doc' ? axiWorkbenchIconMap.file : axiWorkbenchIconMap.search) as GlobalSearchItem['iconName'],
     }));
     return [...navItems, ...corpusItems];
   }, []);
@@ -297,19 +288,19 @@ const MainLayout: React.FC = () => {
         activeNavKey={location.pathname}
         activeTabKey={activeTab}
         avatarConfig={{
-          avatar: <UserOutlined />,
+          avatar: <WorkbenchIcon name="account" size={16} />,
           label: displayName,
           menuItems: [
             {
               key: 'profile',
               label: '个人中心',
-              iconName: 'admin-user',
+              iconName: axiWorkbenchIconMap.account,
               onClick: () => navigate('/admin/me'),
             },
             {
               key: 'logout',
               label: '退出登录',
-              iconName: 'exit',
+              iconName: axiWorkbenchIconMap.logout,
               onClick: () => {
                 logout();
                 navigate('/login');
@@ -319,7 +310,7 @@ const MainLayout: React.FC = () => {
           name: displayName,
         }}
         brand={{
-          logo: <img src={logoImg} alt="" className="workbench-axi-brand-logo" />,
+          logo: <AxiLogoMark size={24} className="workbench-axi-brand-mark" />,
           title: 'Axi WorkBench',
         }}
         breadcrumbs={settings.breadcrumb ? desktopBreadcrumbs : []}
@@ -358,31 +349,31 @@ const MainLayout: React.FC = () => {
           notice: {
             badge: unreadCount || undefined,
             badgeTone: 'danger',
-            iconName: 'notice',
+            iconName: axiWorkbenchIconMap.notification,
             key: 'notice',
             label: '通知',
             onClick: () => navigate('/admin/me/notifications'),
           },
           message: {
-            iconName: 'msg',
+            iconName: axiWorkbenchIconMap.message,
             key: 'message',
             label: '消息',
             onClick: () => navigate('/admin/me/notifications'),
           },
           language: {
-            iconName: 'lang',
+            iconName: axiWorkbenchIconMap.language,
             key: 'language',
             label: locale === 'zh-CN' ? '切换为 English' : '切换为中文',
             onClick: () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN'),
           },
           theme: {
-            iconName: mode === 'dark' ? 'admin-sun' : 'admin-night-mode',
+            iconName: mode === 'dark' ? axiWorkbenchIconMap.sun : axiWorkbenchIconMap.moon,
             key: 'theme',
             label: mode === 'dark' ? '切换亮色模式' : '切换暗色模式',
             onClick: (event) => toggleMode(event.currentTarget),
           },
           settings: {
-            iconName: 'settings',
+            iconName: axiWorkbenchIconMap.settings,
             key: 'settings',
             label: '系统设置',
             onClick: () => setSettingsOpen(true),

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { RightOutlined } from '@ant-design/icons';
+import { WorkbenchIcon } from '../../../components/WorkbenchIcon';
 import avatarDefault from '../../../assets/avatar-me.jpg';
 import {
   loadProfile,
@@ -156,28 +156,28 @@ const AccountInfo: React.FC = () => {
           <span>头像</span>
           <span className="wb-account__avatar-trail">
             <img className="wb-account__avatar" src={avatarSrc} alt="头像" />
-            <RightOutlined style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
+            <WorkbenchIcon name="forward" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
           </span>
         </button>
         <button type="button" className="wb-me-sub__row has-divider" onClick={() => openEdit('nickname')}>
           <span>昵称</span>
           <span className="wb-me-sub__value">
             {profile.nickname}
-            <RightOutlined style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
+            <WorkbenchIcon name="forward" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
           </span>
         </button>
         <button type="button" className="wb-me-sub__row has-divider" onClick={() => openEdit('email')}>
           <span>邮箱</span>
           <span className="wb-me-sub__value">
             {profile.email}
-            <RightOutlined style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
+            <WorkbenchIcon name="forward" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
           </span>
         </button>
         <button type="button" className="wb-me-sub__row has-divider" onClick={() => openEdit('phone')}>
           <span>手机号</span>
           <span className="wb-me-sub__value">
             {phoneDisplay(profile.phone)}
-            <RightOutlined style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
+            <WorkbenchIcon name="forward" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} />
           </span>
         </button>
       </MeGroup>

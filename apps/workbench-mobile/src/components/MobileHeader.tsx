@@ -4,14 +4,6 @@ import { MobileIcon } from './MobileIcons';
 import { mobilePageTitleKey } from '../lib/navigation';
 import { useMobileI18n } from '../i18n';
 
-function ScanGlyph({ size = 18 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
-      <path fill="currentColor" d="M4 3h5v2H6v3H4V3Zm11 0h5v5h-2V5h-3V3ZM4 16h2v3h3v2H4v-5Zm14 0h2v5h-5v-2h3v-3ZM8 8h8v8H8V8Zm2 2v4h4v-4h-4Z" />
-    </svg>
-  );
-}
-
 /**
  * 从旧移动端迁来的微信式主 Tab 顶栏：标题对整屏绝对居中，
  * 搜索与圆圈加号位于右侧；它不包含 Web 后台的品牌、插件或面包屑。
@@ -44,7 +36,7 @@ export function MobileHeader() {
             onClick={() => navigate('/search')}
             aria-label={t('common.search')}
           >
-            <MobileIcon name="search" size={22} strokeWidth={1.9} />
+            <MobileIcon name="search" size={20} />
           </button>
           <div className="wb-mobile-topbar__plus-wrap" ref={menuRef}>
             <button
@@ -54,7 +46,7 @@ export function MobileHeader() {
               aria-label={t('common.more')}
               aria-expanded={menuOpen}
             >
-              <span className="wb-mobile-topbar__plus" aria-hidden="true" />
+              <MobileIcon className="wb-mobile-topbar__plus" name="plus" size={20} />
             </button>
             {menuOpen ? (
               <div className="wb-mobile-topbar__menu" role="menu">
@@ -68,7 +60,7 @@ export function MobileHeader() {
                       navigate('/scan');
                     }}
                   >
-                    <ScanGlyph />
+                    <MobileIcon name="scan" size={18} />
                     <span>{t('nav.scan')}</span>
                   </button>
                 </div>

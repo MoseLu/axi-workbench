@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftOutlined, RightOutlined } from '@ant-design/icons';
+import { WorkbenchIcon } from '../../../components/WorkbenchIcon';
 import './MeSubLayout.css';
 
 export function MeSubPage({
@@ -25,7 +25,7 @@ export function MeSubPage({
           onClick={() => (onBack ? onBack() : navigate(-1))}
           aria-label="返回"
         >
-          <ArrowLeftOutlined />
+          <WorkbenchIcon name="back" />
         </button>
         <h1 className="wb-me-sub__title">{title}</h1>
         <div className="wb-me-sub__trailing">{trailing}</div>
@@ -64,7 +64,7 @@ export function MeNavRow({
       <span>{label}</span>
       <span className="wb-me-sub__value">
         {value}
-        {chevron ? <RightOutlined style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} /> : null}
+        {chevron ? <WorkbenchIcon name="forward" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-chevron)' }} /> : null}
       </span>
     </Tag>
   );

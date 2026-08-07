@@ -128,27 +128,20 @@ body {
 }
 
 .wb-mobile-topbar__plus {
-  position: relative;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 20px;
+  box-sizing: border-box;
   border: 1.35px solid currentColor;
   border-radius: 50%;
 }
 
-.wb-mobile-topbar__plus::before,
-.wb-mobile-topbar__plus::after {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 1px;
-  background: currentColor;
-  content: '';
-  transform: translate(-50%, -50%);
+.wb-mobile-topbar__plus svg {
+  width: 10px;
+  height: 10px;
 }
-
-.wb-mobile-topbar__plus::before { width: 9px; height: 1.35px; }
-.wb-mobile-topbar__plus::after { width: 1.35px; height: 9px; }
 
 .wb-mobile-topbar__menu {
   --arrow-height: 7px;

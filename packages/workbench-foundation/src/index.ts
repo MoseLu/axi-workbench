@@ -11,3 +11,8 @@ export {
   type WorkbenchLocale,
   type WorkbenchLocaleContextValue,
 } from './locale';
+export {
+  axiWorkbenchIconMap,
+  resolveAxiWorkbenchIcon,
+  type AxiWorkbenchIconName,
+} from './icons';

@@ -1,24 +1,28 @@
 import React from 'react';
 import { Row, Col, Card, Statistic, Progress, Tag, Space, Typography } from 'antd';
-import {
-  ProjectOutlined,
-  FileTextOutlined,
-  CloudUploadOutlined,
-  DatabaseOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-} from '@ant-design/icons';
+import { WorkbenchIcon } from '../../components/WorkbenchIcon';
+import type { AxiWorkbenchIconName } from '@axi/workbench-foundation/icons';
 import { useI18n } from '../../i18n';
 import './Dashboard.css';
 
 const { Title, Text } = Typography;
 
+type MetricCard = {
+  key: string;
+  title: string;
+  value: number | string;
+  icon: AxiWorkbenchIconName;
+  trend: number;
+  color: string;
+  suffix?: string;
+};
+
 const metricCards = [
-  { key: 'projects', title: '进行中项目', value: 12, icon: <ProjectOutlined />, trend: 2, color: 'var(--color-brand)' },
-  { key: 'tasks', title: '今日待办', value: 5, icon: <FileTextOutlined />, trend: -1, color: 'var(--palette-orange-500)' },
-  { key: 'uploads', title: '已下载资料', value: 23, icon: <CloudUploadOutlined />, trend: 8, color: 'var(--color-success-alt)' },
-  { key: 'storage', title: '存储用量', value: '8.2 GB', icon: <DatabaseOutlined />, trend: 0, color: 'var(--palette-purple-500)', suffix: ' / 50 GB' },
-];
+  { key: 'projects', title: '进行中项目', value: 12, icon: 'project', trend: 2, color: 'var(--color-brand)' },
+  { key: 'tasks', title: '今日待办', value: 5, icon: 'workspace', trend: -1, color: 'var(--palette-orange-500)' },
+  { key: 'uploads', title: '已下载资料', value: 23, icon: 'upload', trend: 8, color: 'var(--color-success-alt)' },
+  { key: 'storage', title: '存储用量', value: '8.2 GB', icon: 'database', trend: 0, color: 'var(--palette-purple-500)', suffix: ' / 50 GB' },
+] satisfies readonly MetricCard[];
 
 const recentProjects = [
   { id: 'p1', name: '项目 A · Mobile Redesign', progress: 80, meta: '2 小时前 · 5 个成员', color: 'var(--color-brand)' },
@@ -44,7 +48,7 @@ const Dashboard: React.FC = () => {
             <Card size="small" bordered>
               <div className="metric-card">
                 <div className="metric-card__icon" style={{ background: `${card.color}22`, color: card.color }}>
-                  {card.icon}
+                  <WorkbenchIcon name={card.icon} />
                 </div>
                 <div className="metric-card__body">
                   <Text type="secondary" style={{ fontSize: 12 }}>{card.title}</Text>
@@ -54,7 +58,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   {card.trend !== 0 && (
                     <span className={`metric-card__trend ${card.trend > 0 ? 'is-up' : 'is-down'}`}>
-                      {card.trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                      <WorkbenchIcon name={card.trend > 0 ? 'trendUp' : 'trendDown'} size={13} />
                       {Math.abs(card.trend)} 较上周
                     </span>
                   )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RightOutlined } from '@ant-design/icons';
 import { useAxiTheme } from '@axi/core';
+import { WorkbenchIcon } from '../../components/WorkbenchIcon';
 import avatarDefault from '../../assets/avatar-me.jpg';
 import { loadProfile, type UserProfile } from './me/profileStore';
 import './Me.css';
@@ -35,7 +35,7 @@ const UserList: React.FC = () => {
             <span>在线</span>
           </div>
         </div>
-        <RightOutlined className="wb-me__chevron" />
+        <WorkbenchIcon name="forward" className="wb-me__chevron" />
       </button>
 
       <div className="wb-me__group">
@@ -50,7 +50,7 @@ const UserList: React.FC = () => {
             onClick={() => navigate(item.path)}
           >
             <span>{item.label}</span>
-            <RightOutlined className="wb-me__chevron" />
+            <WorkbenchIcon name="forward" className="wb-me__chevron" />
           </button>
         ))}
       </div>
@@ -60,12 +60,12 @@ const UserList: React.FC = () => {
           <span>主题外观</span>
           <span className="wb-me__value">
             {themeLabel}
-            <RightOutlined className="wb-me__chevron" />
+            <WorkbenchIcon name="forward" className="wb-me__chevron" />
           </span>
         </button>
         <button type="button" className="wb-me__row" onClick={() => navigate('/admin/me/settings')}>
           <span>设置</span>
-          <RightOutlined className="wb-me__chevron" />
+          <WorkbenchIcon name="forward" className="wb-me__chevron" />
         </button>
       </div>
     </div>

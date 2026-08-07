@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Table, Tag, Space, Button, Switch } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { WorkbenchIcon } from '../../components/WorkbenchIcon';
 
 const MenuList: React.FC = () => {
   const dataSource = [
@@ -37,7 +37,7 @@ const MenuList: React.FC = () => {
         title="菜单列表"
         extra={
           <Space>
-            <Button type="primary" icon={<PlusOutlined />} size="small">新增菜单</Button>
+            <Button type="primary" icon={<WorkbenchIcon name="add" />} size="small">新增菜单</Button>
           </Space>
         }
       >

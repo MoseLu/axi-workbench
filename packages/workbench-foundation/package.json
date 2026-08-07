@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth.tsx",
+    "./icons": "./src/icons.ts",
     "./locale": "./src/locale.tsx"
   },
   "scripts": {
@@ -15,6 +16,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
     "@axi/workstation-contracts": "workspace:*"
   },
   "peerDependencies": {

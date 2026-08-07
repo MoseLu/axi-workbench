@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftOutlined, CloseCircleFilled, FileTextOutlined, FolderOutlined, SearchOutlined } from '@ant-design/icons';
+import { WorkbenchIcon } from '../../components/WorkbenchIcon';
 import { filterSearchCorpus, SEARCH_SECTIONS } from '../../lib/search-data';
 import './Search.css';
 
@@ -26,10 +26,10 @@ const SearchPage: React.FC = () => {
     <div className="wb-search">
       <div className="wb-search__bar">
         <button type="button" className="wb-search__icon-btn" onClick={() => navigate(-1)} aria-label="返回">
-          <ArrowLeftOutlined />
+          <WorkbenchIcon name="back" />
         </button>
         <div className="wb-search__field">
-          <SearchOutlined className="wb-search__field-icon" />
+          <WorkbenchIcon name="search" className="wb-search__field-icon" />
           <input
             autoFocus
             value={query}
@@ -39,7 +39,7 @@ const SearchPage: React.FC = () => {
           />
           {query ? (
             <button type="button" className="wb-search__clear" onClick={() => setQuery('')} aria-label="清除">
-              <CloseCircleFilled />
+              <WorkbenchIcon name="close" />
             </button>
           ) : null}
         </div>
@@ -76,9 +76,9 @@ const SearchPage: React.FC = () => {
                   onClick={() => navigate(hit.path)}
                 >
                   <span className="wb-search__row-icon">
-                    {hit.kind === 'project' ? <FolderOutlined /> : null}
-                    {hit.kind === 'doc' ? <FileTextOutlined /> : null}
-                    {hit.kind === 'content' ? <SearchOutlined /> : null}
+                    {hit.kind === 'project' ? <WorkbenchIcon name="folder" /> : null}
+                    {hit.kind === 'doc' ? <WorkbenchIcon name="file" /> : null}
+                    {hit.kind === 'content' ? <WorkbenchIcon name="search" /> : null}
                   </span>
                   <span className="wb-search__row-text">
                     <span className="wb-search__row-title">{hit.title}</span>

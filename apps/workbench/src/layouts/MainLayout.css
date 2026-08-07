@@ -44,14 +44,14 @@
   flex-basis: 24px;
 }
 
-.workbench-axi-shell .workbench-axi-brand-logo {
+.workbench-axi-shell .workbench-axi-brand-mark {
   width: 24px;
   height: 24px;
-  object-fit: contain;
+  display: block;
 }
 
-/* AXI Core 四色版保持原色，明暗主题不做反相。 */
-.workbench-axi-shell .workbench-axi-brand-logo {
+/* 共享四色标记由 token 分别提供深浅主题可读的绿色。 */
+.workbench-axi-shell .workbench-axi-brand-mark {
   filter: none;
 }
 

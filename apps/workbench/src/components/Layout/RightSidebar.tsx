@@ -1,5 +1,5 @@
 import React from 'react';
-import { CloseOutlined, CheckOutlined } from '@ant-design/icons';
+import { WorkbenchIcon } from '../WorkbenchIcon';
 import './RightSidebar.css';
 
 interface RightSidebarProps {
@@ -38,7 +38,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
         <div className="right-sidebar__header">
           <span className="right-sidebar__title">系统设置</span>
           <button className="right-sidebar__close" onClick={onClose}>
-            <CloseOutlined />
+            <WorkbenchIcon name="close" />
           </button>
         </div>
 
@@ -57,7 +57,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
                     className="right-sidebar__theme-preview"
                     style={{ background: theme.color, border: theme.key === 'light' ? '1px solid rgba(255,255,255,0.15)' : 'none' }}
                   >
-                    {currentTheme === theme.key && <CheckOutlined style={{ color: theme.key === 'light' ? 'var(--palette-gray-333)' : 'var(--color-bg-card)', fontSize: 14 }} />}
+                    {currentTheme === theme.key && <WorkbenchIcon name="check" style={{ color: theme.key === 'light' ? 'var(--palette-gray-333)' : 'var(--color-bg-card)', fontSize: 14 }} />}
                   </div>
                   <span className="right-sidebar__theme-label">{theme.label}</span>
                 </div>
@@ -76,7 +76,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
                   style={{ background: color }}
                   onClick={() => setCurrentColor(color)}
                 >
-                  {currentColor === color && <CheckOutlined style={{ color: 'var(--color-bg-card)', fontSize: 12 }} />}
+                  {currentColor === color && <WorkbenchIcon name="check" style={{ color: 'var(--color-bg-card)', fontSize: 12 }} />}
                 </div>
               ))}
             </div>

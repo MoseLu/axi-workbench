@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AxiLogoMark } from '@axi/core';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
@@ -38,9 +39,12 @@ const Login: React.FC = () => {
     <main style={shell}>
       <section style={card} aria-labelledby="axi-login-title">
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <h1 id="axi-login-title" style={{ fontSize: 26, fontWeight: 600, color: 'var(--color-bg-card)', marginBottom: 8, letterSpacing: '-0.5px' }}>
-            Axi 工作台
-          </h1>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <AxiLogoMark size={28} />
+            <h1 id="axi-login-title" style={{ fontSize: 24, fontWeight: 650, color: 'var(--axi-text, #f8fafc)', letterSpacing: '-0.5px', margin: 0 }}>
+              Axi WorkBench
+            </h1>
+          </div>
           <p style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(255, 255, 255, 0.54)', margin: 0 }}>
             在 Axi Identity 中完成邮箱验证、密码登录或扫码审批。
           </p>
@@ -61,8 +65,8 @@ const Login: React.FC = () => {
             padding: '14px 24px',
             fontSize: 14,
             fontWeight: 600,
-            color: 'var(--color-bg-card)',
-            background: isLoading ? 'rgba(24, 144, 255, 0.6)' : 'var(--color-info-antd)',
+            color: 'var(--axi-text-inverse, #fff)',
+            background: isLoading ? 'color-mix(in srgb, var(--axi-primary) 60%, transparent)' : 'var(--axi-primary)',
             border: 'none',
             borderRadius: 8,
             cursor: isLoading ? 'wait' : 'pointer',
@@ -73,7 +77,7 @@ const Login: React.FC = () => {
 
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'rgba(255, 255, 255, 0.5)' }}>
           需要新建账户？{' '}
-          <Link to="/register" style={{ color: 'var(--color-info-antd)', textDecoration: 'none', fontWeight: 500 }}>
+          <Link to="/register" style={{ color: 'var(--axi-primary)', textDecoration: 'none', fontWeight: 500 }}>
             前往 Axi Identity 注册
           </Link>
         </p>

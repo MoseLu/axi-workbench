@@ -16,7 +16,12 @@
  */
 
 import React from 'react';
-import { AxiSvgIcon, type AxiIconName } from '@axi/core';
+import { AxiSvgIcon } from '@axi/core';
+import {
+  axiWorkbenchIconMap,
+  resolveAxiWorkbenchIcon,
+  type AxiWorkbenchIconName,
+} from '@axi/workbench-foundation/icons';
 
 export interface BreadcrumbItem {
   /** Visible label. */
@@ -32,7 +37,7 @@ export interface BreadcrumbItem {
 /** A hierarchy node rendered before the current route. */
 export interface BreadcrumbNode {
   label: string;
-  icon?: React.ReactNode;
+  icon?: AxiWorkbenchIconName | React.ReactNode;
   /** Optional route for a navigable ancestor. */
   path?: string;
 }
@@ -40,7 +45,7 @@ export interface BreadcrumbNode {
 /** A registered primary route. `match` allows multi-segment active matching. */
 export interface BreadcrumbRoute {
   label: string;
-  icon?: React.ReactNode;
+  icon?: AxiWorkbenchIconName | React.ReactNode;
   /** One-level compatibility field for callers that only have one parent. */
   parent?: BreadcrumbNode;
   /** Ordered ancestors, from the top-level group to the immediate parent. */
@@ -58,51 +63,51 @@ export interface BreadcrumbRoute {
  */
 const WORKBENCH_PARENT: BreadcrumbNode = {
   label: '工作台',
-  icon: 'admin-dashboard',
+  icon: 'overview',
   path: '/admin/dashboard',
 };
 
 const ACCOUNT_PARENT: BreadcrumbNode = {
   label: '账号与设置',
-  icon: 'admin-settings',
+  icon: 'settings',
 };
 
 const PROFILE_PARENT: BreadcrumbNode = {
   label: '个人中心',
-  icon: 'admin-user',
+  icon: 'account',
   path: '/admin/me',
 };
 
 export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
-  '/admin/dashboard': { label: '概览', icon: 'admin-dashboard' },
-  '/admin/project': { label: '项目', icon: 'admin-project', parents: [WORKBENCH_PARENT] },
-  '/admin/task': { label: '工作区', icon: 'admin-folder', parents: [WORKBENCH_PARENT] },
-  '/admin/team': { label: '团队', icon: 'admin-team', parents: [WORKBENCH_PARENT] },
-  '/admin/scan': { label: '扫一扫', icon: 'admin-scan', parents: [WORKBENCH_PARENT] },
+  '/admin/dashboard': { label: '概览', icon: 'overview' },
+  '/admin/project': { label: '项目', icon: 'project', parents: [WORKBENCH_PARENT] },
+  '/admin/task': { label: '工作区', icon: 'workspace', parents: [WORKBENCH_PARENT] },
+  '/admin/team': { label: '团队', icon: 'team', parents: [WORKBENCH_PARENT] },
+  '/admin/scan': { label: '扫一扫', icon: 'scan', parents: [WORKBENCH_PARENT] },
   '/admin/search': { label: '搜索', icon: 'search', parents: [WORKBENCH_PARENT] },
   '/admin/me': {
     label: '个人中心',
-    icon: 'admin-user',
+    icon: 'account',
     parents: [ACCOUNT_PARENT],
   },
   '/admin/me/account': {
     label: '账号信息',
-    icon: 'admin-profile',
+    icon: 'account',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/devices': {
     label: '设备管理',
-    icon: 'admin-mobile',
+    icon: 'mobile',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/notifications': {
     label: '通知设置',
-    icon: 'notice',
+    icon: 'notification',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/theme': {
     label: '主题外观',
-    icon: 'theme',
+    icon: 'settings',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/settings': {
@@ -112,45 +117,29 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
   },
   '/admin/settings/menu': {
     label: '菜单列表',
-    icon: 'admin-menu',
+    icon: 'menu',
     parents: [ACCOUNT_PARENT],
   },
   '/admin/settings/user': {
     label: '账号信息',
-    icon: 'admin-user',
+    icon: 'account',
     parents: [ACCOUNT_PARENT],
   },
   '/admin/settings/role': {
     label: '角色列表',
-    icon: 'admin-safety',
+    icon: 'roles',
     parents: [ACCOUNT_PARENT],
   },
 };
 
-/** Map semantic route hints to the shared Axi icon registry. */
-const ICON_HINTS: Record<string, AxiIconName> = {
-  'admin-dashboard': 'admin-dashboard',
-  'admin-folder': 'admin-folder',
-  'admin-menu': 'admin-menu',
-  'admin-mobile': 'admin-mobile',
-  'admin-profile': 'admin-profile',
-  'admin-project': 'admin-project',
-  'admin-safety': 'admin-safety',
-  'admin-scan': 'admin-scan',
-  'admin-settings': 'admin-settings',
-  'admin-team': 'admin-team',
-  'admin-user': 'admin-user',
-  notice: 'notice',
-  search: 'search',
-  settings: 'settings',
-  theme: 'theme',
-};
+function isAxiWorkbenchIconName(icon: unknown): icon is AxiWorkbenchIconName {
+  return typeof icon === 'string' && icon in axiWorkbenchIconMap;
+}
 
-function hint(icon: string | React.ReactNode | undefined): React.ReactNode | undefined {
+function hint(icon: AxiWorkbenchIconName | React.ReactNode | undefined): React.ReactNode | undefined {
   if (icon === undefined) return undefined;
-  if (typeof icon !== 'string') return icon;
-  const iconName = ICON_HINTS[icon];
-  return iconName ? React.createElement(AxiSvgIcon, { name: iconName, size: 14 }) : undefined;
+  if (!isAxiWorkbenchIconName(icon)) return icon;
+  return React.createElement(AxiSvgIcon, { name: resolveAxiWorkbenchIcon(icon), size: 14 });
 }
 
 /**

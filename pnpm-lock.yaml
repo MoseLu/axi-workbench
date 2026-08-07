@@ -198,9 +198,6 @@ importers:
 
   apps/workbench:
     dependencies:
-      '@ant-design/icons':
-        specifier: ^5.2.6
-        version: 5.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@axi/core':
         specifier: link:../../../../shared/axi-ui/packages/core
         version: link:../../../../shared/axi-ui/packages/core
@@ -486,6 +483,9 @@ importers:
 
   packages/workbench-foundation:
     dependencies:
+      '@axi/core':
+        specifier: link:../../../../shared/axi-ui/packages/core
+        version: link:../../../../shared/axi-ui/packages/core
       '@axi/workstation-contracts':
         specifier: workspace:*
         version: link:../schemas

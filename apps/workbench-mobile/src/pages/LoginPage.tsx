@@ -1,5 +1,5 @@
 import { useAuth } from '@axi/workbench-foundation';
-import { AxiMark } from '../components/MobileIcons';
+import { AxiLogoMark } from '@axi/core';
 import { useMobileI18n } from '../i18n';
 
 /** 独立移动端登录页；认证策略由 Axi Identity 的 OIDC/PKCE 流程拥有。 */
@@ -9,7 +9,7 @@ export default function LoginPage() {
 
   return (
     <main className="axi-mobile-login">
-      <div className="axi-mobile-login__brand"><AxiMark size={34} /><span>{t('app.name')}</span></div>
+      <div className="axi-mobile-login__brand"><AxiLogoMark size={34} /><span>{t('app.name')}</span></div>
       <div className="axi-mobile-login__copy">
         <p>{t('login.eyebrow')}</p>
         <h1>{t('login.title')}</h1>

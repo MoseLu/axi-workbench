@@ -11,7 +11,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ant-design/icons": "^5.2.6",
     "@axi/core": "link:../../../../shared/axi-ui/packages/core",
     "@axi/presets": "link:../../../../shared/axi-ui/packages/presets",
     "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",

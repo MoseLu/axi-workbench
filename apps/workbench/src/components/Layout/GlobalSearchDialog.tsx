@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AxiSvgIcon, type AxiIconName } from '@axi/core';
+import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import './GlobalSearchDialog.css';
 
 export type GlobalSearchItem = {
@@ -130,7 +131,7 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
       >
         <header className="wb-global-search__header">
           <div className="wb-global-search__field">
-            <AxiSvgIcon name="search" size={18} className="wb-global-search__search-icon" />
+            <AxiSvgIcon name={axiWorkbenchIconMap.search} size={18} className="wb-global-search__search-icon" />
             <input
               ref={inputRef}
               value={query}
@@ -143,14 +144,14 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
             />
             {query ? (
               <button type="button" className="wb-global-search__clear" onClick={() => onChange('')} aria-label="清除搜索">
-                <AxiSvgIcon name="close" size={14} />
+                <AxiSvgIcon name={axiWorkbenchIconMap.close} size={14} />
               </button>
             ) : (
               <kbd className="wb-global-search__enter-key">Enter</kbd>
             )}
           </div>
           <button type="button" className="wb-global-search__close" onClick={onClose} aria-label="关闭全局搜索">
-            <AxiSvgIcon name="close" size={16} />
+            <AxiSvgIcon name={axiWorkbenchIconMap.close} size={16} />
             <kbd>Esc</kbd>
           </button>
         </header>
@@ -198,7 +199,7 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
                           </span>
                         </span>
                         <span className="wb-global-search__result-group">{item.group}</span>
-                        <AxiSvgIcon name="admin-right" size={14} className="wb-global-search__result-arrow" />
+                        <AxiSvgIcon name={axiWorkbenchIconMap.forward} size={14} className="wb-global-search__result-arrow" />
                       </button>
                     );
                   })}
@@ -207,7 +208,7 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
             </div>
           ) : (
             <div className="wb-global-search__empty">
-              <span className="wb-global-search__empty-icon"><AxiSvgIcon name="search" size={22} /></span>
+              <span className="wb-global-search__empty-icon"><AxiSvgIcon name={axiWorkbenchIconMap.search} size={22} /></span>
               <strong>没有找到匹配结果</strong>
               <span>试试搜索“项目”、“文档”或“设计”</span>
             </div>
@@ -220,7 +221,6 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
             <span><kbd>Enter</kbd> 打开</span>
             <span><kbd>Esc</kbd> 关闭</span>
           </div>
-          <span className="wb-global-search__footer-brand">Axi WorkBench Search</span>
         </footer>
       </section>
     </div>,
