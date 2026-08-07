@@ -63,7 +63,7 @@ const desktopNavGroups: AxiDashboardNavGroup[] = [
     iconName: axiWorkbenchIconMap.settings,
     children: [
       { key: '/admin/me', label: '个人中心', iconName: axiWorkbenchIconMap.account },
-      { key: '/admin/me/notifications', label: '通知设置', iconName: axiWorkbenchIconMap.notification },
+      { key: '/admin/me/notifications', label: '通知中心', iconName: axiWorkbenchIconMap.notification },
       { key: '/admin/settings/menu', label: '菜单配置', iconName: axiWorkbenchIconMap.menu },
       { key: '/admin/settings/role', label: '角色权限', iconName: axiWorkbenchIconMap.roles },
     ],
@@ -92,16 +92,7 @@ const MainLayout: React.FC = () => {
 
   // Web 顶栏通知角标。
   const tabBadges = useNavBadges(true);
-  const unreadCount = useMemo(() => {
-    const acc = (b: { kind: string; value?: number }) =>
-      b.kind === 'count' && typeof b.value === 'number' ? b.value : 0;
-    return (
-      acc(tabBadges.home) +
-      acc(tabBadges.projects) +
-      acc(tabBadges.workspace) +
-      acc(tabBadges.me)
-    );
-  }, [tabBadges]);
+  const unreadCount = tabBadges.unreadTotal;
 
   const displayName = user?.name || t('common.user.admin') || '用户';
 
@@ -354,12 +345,8 @@ const MainLayout: React.FC = () => {
             label: '通知',
             onClick: () => navigate('/admin/me/notifications'),
           },
-          message: {
-            iconName: axiWorkbenchIconMap.message,
-            key: 'message',
-            label: '消息',
-            onClick: () => navigate('/admin/me/notifications'),
-          },
+          // 没有独立即时通讯领域时，不渲染会误导到通知中心的消息入口。
+          message: false,
           language: {
             iconName: axiWorkbenchIconMap.language,
             key: 'language',

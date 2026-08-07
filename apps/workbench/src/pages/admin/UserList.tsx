@@ -41,7 +41,7 @@ const UserList: React.FC = () => {
       <div className="wb-me__group">
         {[
           { label: '设备管理', path: '/admin/me/devices' },
-          { label: '通知设置', path: '/admin/me/notifications' },
+          { label: '通知中心', path: '/admin/me/notifications' },
         ].map((item, i, arr) => (
           <button
             key={item.path}

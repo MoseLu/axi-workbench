@@ -1,4 +1,4 @@
-.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow verify-go verify-specialists verify-helm verify-identity-mailpit
+.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
 
 help:
 	@echo "EPAP - Enterprise Project Automation Platform"
@@ -101,6 +101,9 @@ migrate-identity:
 
 migrate-platform:
 	cd services/platform-core && go run ./cmd/migrate
+
+migrate-notification:
+	cd services/notification-service && go run ./cmd/migrate
 
 verify-go:
 	cd services/api-gateway && go test -race ./...

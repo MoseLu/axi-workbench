@@ -10,6 +10,7 @@ type NavBadgesResponse = {
   projects?: NavBadgeDto;
   workspace?: NavBadgeDto;
   me?: NavBadgeDto;
+  unreadTotal?: number;
 };
 
 export type NavBadge =
@@ -22,6 +23,7 @@ export type TabBadges = {
   projects: NavBadge;
   workspace: NavBadge;
   me: NavBadge;
+  unreadTotal: number;
 };
 
 export const EMPTY_TAB_BADGES: TabBadges = {
@@ -29,6 +31,7 @@ export const EMPTY_TAB_BADGES: TabBadges = {
   projects: { kind: 'none' },
   workspace: { kind: 'none' },
   me: { kind: 'none' },
+  unreadTotal: 0,
 };
 
 function toBadge(dto?: NavBadgeDto): NavBadge {
@@ -56,6 +59,7 @@ export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
     projects: toBadge(data.projects),
     workspace: toBadge(data.workspace),
     me: toBadge(data.me),
+    unreadTotal: Math.max(0, Math.trunc(Number(data.unreadTotal) || 0)),
   };
 }
 import { resolveGatewayURL } from '@axi/workbench-foundation';

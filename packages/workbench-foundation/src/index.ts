@@ -17,3 +17,14 @@ export {
   resolveAxiWorkbenchIcon,
   type AxiWorkbenchIconName,
 } from './icons';
+export {
+  NOTIFICATIONS_CHANGED_EVENT,
+  NotificationApiError,
+  announceNotificationChange,
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  type WorkbenchNotification,
+  type WorkbenchNotificationCategory,
+  type WorkbenchNotificationType,
+} from './notifications';

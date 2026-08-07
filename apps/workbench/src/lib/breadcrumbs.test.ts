@@ -65,7 +65,7 @@ describe('resolveBreadcrumbs', () => {
 
   it('builds a three-level hierarchy for personal subpages', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/me/notifications'));
-    expect(chain.map((c) => c.label)).toEqual(['账号与设置', '个人中心', '通知设置']);
+    expect(chain.map((c) => c.label)).toEqual(['账号与设置', '个人中心', '通知中心']);
     expect(chain[1]?.path).toBe('/admin/me');
     expect(chain[2]?.path).toBe('/admin/me/notifications');
     expect(chain[2]?.isActive).toBe(true);

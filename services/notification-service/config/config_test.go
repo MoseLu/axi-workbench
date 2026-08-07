@@ -2,7 +2,7 @@ package config
 
 import "testing"
 
-func TestValidateProductionRequiresDurableConfiguration(t *testing.T) {
+func TestValidateRequiresDurableConfiguration(t *testing.T) {
 	tests := []struct {
 		name       string
 		config     Config
@@ -19,9 +19,9 @@ func TestValidateProductionRequiresDurableConfiguration(t *testing.T) {
 			wantPhrase: "INTERNAL_SERVICE_TOKEN",
 		},
 		{
-			name: "missing database",
+			name: "development missing database",
 			config: Config{
-				Environment:          "production",
+				Environment:          "development",
 				InternalServiceToken: "secret",
 			},
 			wantErr:    true,
@@ -41,6 +41,7 @@ func TestValidateProductionRequiresDurableConfiguration(t *testing.T) {
 				KafkaBrokers: "kafka:9092",
 				KafkaTopic:   "",
 				KafkaGroupID: "",
+				DatabaseURL:  "postgres://notification",
 			},
 			wantErr:    true,
 			wantPhrase: "KAFKA_TOPIC",

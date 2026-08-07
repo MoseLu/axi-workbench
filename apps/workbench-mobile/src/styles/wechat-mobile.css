@@ -395,8 +395,12 @@ body {
 
 .axi-mobile-inbox-list { margin: 0; border-top: 0; background: var(--wb-surface); }
 .axi-mobile-message { padding: 14px 16px; border-bottom: 0.5px solid var(--wb-divider); color: var(--wb-ink); }
+.axi-mobile-message:disabled { cursor: default; opacity: 1; }
 .axi-mobile-message__body small, .axi-mobile-message__time { color: var(--wb-ink-muted); }
 .axi-mobile-message.is-unread { background: color-mix(in srgb, var(--wb-success) 4%, var(--wb-surface)); }
+.axi-mobile-inbox-state { margin: 0; padding: 28px 16px; color: var(--wb-ink-muted); background: var(--wb-surface); font-size: 14px; text-align: center; }
+.axi-mobile-inbox-state.is-error { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--wb-badge); }
+.axi-mobile-inbox-state.is-error button { border: 0; color: var(--wb-success); background: transparent; cursor: pointer; }
 
 .axi-mobile-profile { padding-top: 0; }
 .axi-mobile-profile-card, .axi-mobile-setting-group {

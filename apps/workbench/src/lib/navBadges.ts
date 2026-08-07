@@ -28,6 +28,7 @@ export type TabBadges = {
   projects: NavBadge;
   workspace: NavBadge;
   me: NavBadge;
+  unreadTotal: number;
 };
 
 export const EMPTY_TAB_BADGES: TabBadges = {
@@ -35,6 +36,7 @@ export const EMPTY_TAB_BADGES: TabBadges = {
   projects: { kind: 'none' },
   workspace: { kind: 'none' },
   me: { kind: 'none' },
+  unreadTotal: 0,
 };
 
 function dtoToBadge(dto?: NavBadgeDto): NavBadge {
@@ -62,5 +64,6 @@ export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
     projects: dtoToBadge(data.projects),
     workspace: dtoToBadge(data.workspace),
     me: dtoToBadge(data.me),
+    unreadTotal: Math.max(0, Math.trunc(Number(data.unreadTotal) || 0)),
   };
 }

@@ -1,13 +1,128 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
+	"sort"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"notification-service/config"
 	"notification-service/models"
+	"notification-service/store"
 )
+
+type fakeNotificationRepository struct {
+	mu            sync.Mutex
+	notifications map[string]*models.Notification
+	events        map[string]struct{}
+}
+
+func newFakeNotificationRepository() *fakeNotificationRepository {
+	return &fakeNotificationRepository{
+		notifications: make(map[string]*models.Notification),
+		events:        make(map[string]struct{}),
+	}
+}
+
+func (r *fakeNotificationRepository) CreateNotification(_ context.Context, notification *models.Notification) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.notifications[notification.ID] = notification
+	return nil
+}
+
+func (r *fakeNotificationRepository) ConsumeEvent(_ context.Context, event *models.OutboxEvent, notification *models.Notification) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.events[event.ID]; exists {
+		return false, nil
+	}
+	r.events[event.ID] = struct{}{}
+	if notification != nil {
+		r.notifications[notification.ID] = notification
+	}
+	return true, nil
+}
+
+func (r *fakeNotificationRepository) ListNotifications(_ context.Context, userID string, unreadOnly bool) ([]*models.Notification, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	result := make([]*models.Notification, 0, len(r.notifications))
+	for _, notification := range r.notifications {
+		if userID != "" && notification.UserID != "" && notification.UserID != userID {
+			continue
+		}
+		if unreadOnly && notification.Read {
+			continue
+		}
+		result = append(result, notification)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+	return result, nil
+}
+
+func (r *fakeNotificationRepository) MarkRead(_ context.Context, id, userID string) (*models.Notification, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	notification, exists := r.notifications[id]
+	if !exists || (notification.UserID != "" && notification.UserID != userID) {
+		return nil, store.ErrNotFound
+	}
+	notification.Read = true
+	return notification, nil
+}
+
+func (r *fakeNotificationRepository) MarkAllRead(_ context.Context, userID string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	marked := 0
+	for _, notification := range r.notifications {
+		if userID != "" && notification.UserID != "" && notification.UserID != userID {
+			continue
+		}
+		if !notification.Read {
+			notification.Read = true
+			marked++
+		}
+	}
+	return marked, nil
+}
+
+func (r *fakeNotificationRepository) UpdateDelivery(_ context.Context, id string, status models.NotificationStatus, sentAt *time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	notification, exists := r.notifications[id]
+	if !exists {
+		return store.ErrNotFound
+	}
+	notification.Status = status
+	notification.SentAt = sentAt
+	return nil
+}
+
+func (r *fakeNotificationRepository) Ping(context.Context) error { return nil }
+
+func (r *fakeNotificationRepository) Close() {}
+
+func TestNewNotificationServiceRejectsMissingDatabase(t *testing.T) {
+	t.Setenv("ENVIRONMENT", "development")
+	t.Setenv("NOTIFICATION_DATABASE_URL", "")
+
+	service, err := NewNotificationServiceWithContext(context.Background())
+	if err == nil {
+		t.Fatal("expected missing notification database to prevent service startup")
+	}
+	if service != nil {
+		t.Fatal("service must not fall back to an in-memory inbox")
+	}
+}
 
 func TestNewKafkaEventConsumerIsDisabledWithoutBrokers(t *testing.T) {
 	consumer, err := NewKafkaEventConsumer(&config.Config{}, &NotificationService{})
@@ -33,12 +148,13 @@ func TestDecodeKafkaEventUsesMessageKeyWhenIDIsOmitted(t *testing.T) {
 }
 
 func TestMarkReadCannotCrossUserBoundary(t *testing.T) {
+	repository := newFakeNotificationRepository()
 	service := &NotificationService{
-		cfg:     &config.Config{},
-		storage: make(map[string]*models.Notification),
+		cfg:        &config.Config{},
+		repository: repository,
 	}
 	notification := &models.Notification{ID: "n-1", UserID: "alice"}
-	service.storage[notification.ID] = notification
+	repository.notifications[notification.ID] = notification
 
 	if _, err := service.MarkRead(notification.ID, "bob"); err == nil {
 		t.Fatal("cross-user mark read unexpectedly succeeded")
@@ -71,10 +187,10 @@ func TestSendEmailRejectsHeaderInjection(t *testing.T) {
 }
 
 func TestConsumeEventIsIdempotentAndCreatesTargetedNotification(t *testing.T) {
+	repository := newFakeNotificationRepository()
 	service := &NotificationService{
 		cfg:        &config.Config{},
-		storage:    make(map[string]*models.Notification),
-		eventInbox: make(map[string]struct{}),
+		repository: repository,
 	}
 	event := &models.OutboxEvent{
 		ID:      "event-1",
@@ -89,16 +205,16 @@ func TestConsumeEventIsIdempotentAndCreatesTargetedNotification(t *testing.T) {
 	if err != nil || accepted {
 		t.Fatalf("duplicate event = accepted %v, err %v", accepted, err)
 	}
-	if len(service.storage) != 1 {
-		t.Fatalf("notifications = %d, want one", len(service.storage))
+	if len(repository.notifications) != 1 {
+		t.Fatalf("notifications = %d, want one", len(repository.notifications))
 	}
 }
 
 func TestConsumeDictionaryEventCreatesWorkspaceNotification(t *testing.T) {
+	repository := newFakeNotificationRepository()
 	service := &NotificationService{
 		cfg:        &config.Config{},
-		storage:    make(map[string]*models.Notification),
-		eventInbox: make(map[string]struct{}),
+		repository: repository,
 	}
 	event := &models.OutboxEvent{
 		ID:      "dictionary-event-1",
@@ -110,10 +226,10 @@ func TestConsumeDictionaryEventCreatesWorkspaceNotification(t *testing.T) {
 	if err != nil || !accepted {
 		t.Fatalf("dictionary event = accepted %v, err %v", accepted, err)
 	}
-	if len(service.storage) != 1 {
-		t.Fatalf("notifications = %d, want one", len(service.storage))
+	if len(repository.notifications) != 1 {
+		t.Fatalf("notifications = %d, want one", len(repository.notifications))
 	}
-	for _, notification := range service.storage {
+	for _, notification := range repository.notifications {
 		if notification.UserID != "alice" || notification.Category != models.TabWorkspace {
 			t.Fatalf("notification target = %#v", notification)
 		}

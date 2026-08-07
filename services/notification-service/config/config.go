@@ -44,8 +44,10 @@ func (c *Config) Validate() error {
 	if c.Environment == "production" && (c.InternalServiceToken == "" || c.InternalServiceToken == "axi-development-internal-token") {
 		return fmt.Errorf("NOTIFICATION_INTERNAL_SERVICE_TOKEN must be injected in production")
 	}
-	if c.Environment == "production" && c.DatabaseURL == "" {
-		return fmt.Errorf("NOTIFICATION_DATABASE_URL must be injected in production")
+	// A notification inbox must always have durable storage. Missing storage is
+	// a startup configuration error, never a degraded delivery mode.
+	if c.DatabaseURL == "" {
+		return fmt.Errorf("NOTIFICATION_DATABASE_URL must be injected")
 	}
 	if c.KafkaBrokers != "" && (c.KafkaTopic == "" || c.KafkaGroupID == "") {
 		return fmt.Errorf("NOTIFICATION_KAFKA_TOPIC and NOTIFICATION_KAFKA_GROUP_ID are required when Kafka is enabled")

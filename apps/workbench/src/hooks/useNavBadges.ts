@@ -4,6 +4,7 @@ import {
   fetchNavBadges,
   type TabBadges,
 } from '../lib/navBadges';
+import { NOTIFICATIONS_CHANGED_EVENT } from '@axi/workbench-foundation';
 
 const POLL_MS = 30_000;
 
@@ -40,8 +41,12 @@ export function useNavBadges(enabled = true): TabBadges {
     const onVisibility = () => {
       if (document.visibilityState === 'visible') void refresh();
     };
+    const onNotificationsChanged = () => {
+      void refresh();
+    };
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onNotificationsChanged);
 
     return () => {
       mounted.current = false;
@@ -49,6 +54,7 @@ export function useNavBadges(enabled = true): TabBadges {
       window.clearInterval(timer);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onNotificationsChanged);
     };
   }, [enabled, refresh]);
 

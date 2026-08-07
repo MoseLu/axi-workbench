@@ -101,7 +101,7 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/notifications': {
-    label: '通知设置',
+    label: '通知中心',
     icon: 'notification',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
