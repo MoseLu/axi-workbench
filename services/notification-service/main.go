@@ -70,6 +70,24 @@ func main() {
 	}
 	shutdownSignal, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	kafkaConsumer, err := services.NewKafkaEventConsumer(cfg, notificationService)
+	if err != nil {
+		log.Fatalf("initialize Kafka event consumer: %v", err)
+	}
+	consumerContext, cancelConsumer := context.WithCancel(shutdownSignal)
+	defer cancelConsumer()
+	if kafkaConsumer != nil {
+		go func() {
+			if err := kafkaConsumer.Run(consumerContext); err != nil && !errors.Is(err, context.Canceled) {
+				log.Printf("Kafka event consumer stopped: %v", err)
+			}
+		}()
+		defer func() {
+			if err := kafkaConsumer.Close(); err != nil {
+				log.Printf("close Kafka event consumer: %v", err)
+			}
+		}()
+	}
 	notificationService.StartDeliveryWorker(shutdownSignal)
 	serverErrors := make(chan error, 1)
 	go func() { serverErrors <- server.ListenAndServe() }()

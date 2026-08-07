@@ -35,6 +35,16 @@ func TestValidateProductionRequiresDurableConfiguration(t *testing.T) {
 				DatabaseURL:          "postgres://notification",
 			},
 		},
+		{
+			name: "Kafka requires topic and group",
+			config: Config{
+				KafkaBrokers: "kafka:9092",
+				KafkaTopic:   "",
+				KafkaGroupID: "",
+			},
+			wantErr:    true,
+			wantPhrase: "KAFKA_TOPIC",
+		},
 	}
 
 	for _, tt := range tests {

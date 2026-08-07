@@ -4,9 +4,33 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/segmentio/kafka-go"
 	"notification-service/config"
 	"notification-service/models"
 )
+
+func TestNewKafkaEventConsumerIsDisabledWithoutBrokers(t *testing.T) {
+	consumer, err := NewKafkaEventConsumer(&config.Config{}, &NotificationService{})
+	if err != nil {
+		t.Fatalf("creating disabled Kafka consumer: %v", err)
+	}
+	if consumer != nil {
+		t.Fatal("Kafka consumer was created without brokers")
+	}
+}
+
+func TestDecodeKafkaEventUsesMessageKeyWhenIDIsOmitted(t *testing.T) {
+	event, err := decodeKafkaEvent(kafka.Message{
+		Key:   []byte("event-key"),
+		Value: []byte(`{"tenantId":"tenant-1","topic":"task.created","payload":{}}`),
+	})
+	if err != nil {
+		t.Fatalf("decode Kafka event: %v", err)
+	}
+	if event.ID != "event-key" || event.Topic != "task.created" {
+		t.Fatalf("decoded event = %#v", event)
+	}
+}
 
 func TestMarkReadCannotCrossUserBoundary(t *testing.T) {
 	service := &NotificationService{

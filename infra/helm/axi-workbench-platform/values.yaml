@@ -136,6 +136,9 @@ notificationService:
     pullPolicy: IfNotPresent
   service:
     port: 8084
+  kafkaBrokers: ""
+  kafkaTopic: axi.platform.events
+  kafkaGroupID: axi-notification-service
   resources:
     requests:
       cpu: 100m

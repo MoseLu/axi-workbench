@@ -66,4 +66,7 @@ data:
   FILE_CLAMAV_PORT: {{ .Values.fileService.clamavPort | quote }}
   FILE_VIRUS_SCAN_TIMEOUT_SECONDS: {{ .Values.fileService.virusScanTimeoutSeconds | quote }}
   NOTIFICATION_PORT: {{ .Values.notificationService.service.port | quote }}
+  NOTIFICATION_KAFKA_BROKERS: {{ .Values.notificationService.kafkaBrokers | quote }}
+  NOTIFICATION_KAFKA_TOPIC: {{ .Values.notificationService.kafkaTopic | quote }}
+  NOTIFICATION_KAFKA_GROUP_ID: {{ .Values.notificationService.kafkaGroupID | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.observability.otlpEndpoint | quote }}

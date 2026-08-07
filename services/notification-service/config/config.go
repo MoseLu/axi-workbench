@@ -16,6 +16,9 @@ type Config struct {
 	SMTPUsername         string
 	SMTPPassword         string
 	FromEmail            string
+	KafkaBrokers         string
+	KafkaTopic           string
+	KafkaGroupID         string
 }
 
 func Load() *Config {
@@ -31,6 +34,9 @@ func Load() *Config {
 		SMTPUsername: getEnv("SMTP_USERNAME", ""),
 		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
 		FromEmail:    getEnv("FROM_EMAIL", "noreply@example.com"),
+		KafkaBrokers: getEnv("NOTIFICATION_KAFKA_BROKERS", ""),
+		KafkaTopic:   getEnv("NOTIFICATION_KAFKA_TOPIC", "axi.platform.events"),
+		KafkaGroupID: getEnv("NOTIFICATION_KAFKA_GROUP_ID", "axi-notification-service"),
 	}
 }
 
@@ -40,6 +46,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Environment == "production" && c.DatabaseURL == "" {
 		return fmt.Errorf("NOTIFICATION_DATABASE_URL must be injected in production")
+	}
+	if c.KafkaBrokers != "" && (c.KafkaTopic == "" || c.KafkaGroupID == "") {
+		return fmt.Errorf("NOTIFICATION_KAFKA_TOPIC and NOTIFICATION_KAFKA_GROUP_ID are required when Kafka is enabled")
 	}
 	return nil
 }
