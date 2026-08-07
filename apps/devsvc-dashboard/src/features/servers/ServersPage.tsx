@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button as AntButton } from "antd";
 import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -20,19 +20,26 @@ export function ServersPage() {
 
   const serverPagination = useAxiClientPagination(servers, { pageSize: 5 });
 
-  const service = useMemo(() => ({
-    page: async () => {
+  // AxiCrud no longer owns polling; load servers on an interval at page level.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
       try {
         const body = await api("/api/alerts") as { remoteServers?: { servers?: any[] } };
-        const rows = body?.remoteServers?.servers || [];
-        setServers(rows);
-        return rows;
+        if (cancelled) return;
+        setServers(body?.remoteServers?.servers || []);
       } catch (error) {
+        if (cancelled) return;
         console.error(requestErrorMessage(error));
-        return servers;
       }
-    }
-  }), [servers]);
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!checkServer) setCheckText(t("选择服务器后可以执行只读巡检。"));
@@ -239,7 +246,7 @@ export function ServersPage() {
   ];
 
   return (
-    <AxiCrud className="page-stack" dataSource={serverPagination.rows} polling={30000} service={service}>
+    <AxiCrud className="page-stack" dataSource={serverPagination.rows}>
       <section className="panel server-panel">
         <div className="server-table-wrap">
           <AxiTable<any>

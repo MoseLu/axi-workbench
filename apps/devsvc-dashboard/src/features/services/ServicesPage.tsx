@@ -263,7 +263,8 @@ export function ServicesPage({ data }: { data: any }) {
   ];
 
   return (
-    <AxiCrud className="services-panel" dataSource={rows} pageToolbar={pageToolbar}>
+    <AxiCrud className="services-panel" dataSource={rows}>
+      {pageToolbar}
       <AxiTable<any>
         bordered
         className="services-table"

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AxiCrud, AxiPagination, AxiTable, AxiTableButton, useAxiClientPagination } from "@axi/crud";
@@ -99,20 +99,28 @@ export function AlertsPage() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
 
-  const service = useMemo(() => ({
-    page: async () => {
+  // AxiCrud no longer owns polling; keep alert channels fresh with a page-level timer.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
       try {
         const body = await api("/api/alerts") as AlertsPayload;
+        if (cancelled) return;
         setPayload(body);
         setLoading(false);
-        return buildAlertRows(body, false, t);
       } catch (error) {
+        if (cancelled) return;
         console.error(requestErrorMessage(error));
         setLoading(false);
-        return buildAlertRows(payload, true, t);
       }
-    }
-  }), [payload, t]);
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   async function sendTest() {
     setTesting(true);
@@ -231,7 +239,7 @@ export function AlertsPage() {
   ];
 
   return (
-    <AxiCrud className="services-panel alerts-panel" dataSource={alertPagination.rows} polling={15000} service={service}>
+    <AxiCrud className="services-panel alerts-panel" dataSource={alertPagination.rows}>
       <AxiTable<AlertChannelRow>
         bordered
         className="services-table alerts-table"
