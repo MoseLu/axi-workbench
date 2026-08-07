@@ -12,6 +12,8 @@ import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import ScanPage from './pages/ScanPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
+import RequireSession from './components/RequireSession';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +32,8 @@ const MobileSurface: React.FC = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<MobileShell />}>
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/" element={<RequireSession><MobileShell /></RequireSession>}>
               <Route index element={<Navigate to="home" replace />} />
               <Route path="home" element={<HomePage />} />
               <Route path="projects" element={<ProjectsPage />} />

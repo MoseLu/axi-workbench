@@ -1,0 +1,6 @@
+The Axi Workbench business API is exposed at:
+  https://{{ .Values.ingress.host }}/api/v1
+
+The chart expects the existing Secret {{ .Values.secrets.existingSecret | quote }}
+to contain runtime database, Redis, SMTP, OIDC and internal service secrets.
+See infra/helm/README.md before deploying.

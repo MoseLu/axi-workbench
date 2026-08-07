@@ -4,7 +4,7 @@
 - Path: `/Volumes/code/workspace/projects/axi-workbench`
 - Owner: `Axi Core Projects`
 - Readiness: `verified`
-- Purpose: Canonical AxiomaticWorld workbench for the six-layer control plane: a Web Axi Dashboard application and a separate WeChat-style mobile application, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.
+- Purpose: Canonical AxiomaticWorld workbench for the six-layer control plane: independent Web and mobile applications plus a production Go API plane (ZITADEL, Gin gateway, identity adapter, modular platform core), shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.
 
 ## 90-Second Read Order
 
@@ -19,6 +19,7 @@
 - `apps/workbench/src/main.tsx`: Independent Web admin application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, and Web-only pages.
 - `apps/workbench-mobile/src/main.tsx`: Independent WeChat-style mobile application: its own Vite entry, centered header, search/plus menu, overview/project/workspace/scan/me tab bar, badges, scan flow, login, and page composition.
 - `packages/workbench-foundation/src/index.ts`: Shared auth-session and locale-preference foundation for the independent user applications; no page or layout exports.
+- `services/api-gateway/cmd/gateway/main.go`: Production Go API plane: public Gin gateway plus sibling identity-adapter and platform-core for ZITADEL, QR/email/EPS, tenant/RBAC and RLS business modules.
 - `services/control-plane/src/server.mjs`: Software-layer control API and managed AgentTask runtime surface.
 - `services/communication-gateway/src/server.mjs`: Communication-layer envelope routing and control-plane forwarding.
 - `packages/schemas/src/index.ts`: Canonical IMEnvelope, AgentTask, and workstation contract exports.
@@ -27,12 +28,15 @@
 ## Commands
 
 - Setup: `pnpm install`
+- Start: `make docker-up && make migrate-identity && make migrate-platform`
 - Start: `pnpm dev:workbench`
 - Start: `pnpm dev:mobile`
 - Start: `pnpm --filter @axi/workstation-control-plane start`
 - Start: `pnpm --filter @axi/workstation-communication-gateway start`
 - Health: `pnpm --filter @axi/workstation-control-plane smoke`
 - Health: `python3 infra/fleet-console/scripts/fleetctl.py validate`
+- Verify: `make verify-go`
+- Verify: `make verify-helm`
 - Verify: `pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check`
 - Verify: `pnpm --filter @axi/workbench --filter @axi/workbench-mobile test`
 - Verify: `pnpm --filter @axi/workbench --filter @axi/workbench-mobile build`
@@ -44,7 +48,7 @@
 ## Environment
 
 - Runtimes: `Node.js >=18`, `pnpm >=8`, `TypeScript`, `Go`, `Python`, `Java`
-- Services: `Control Plane`, `Communication Gateway`, `PostgreSQL`, `Redis`, `Kafka`, `Qdrant`, `MinIO`, `Prometheus`, `Grafana`, `Jaeger`
+- Services: `Control Plane`, `Communication Gateway`, `ZITADEL`, `PostgreSQL`, `Redis`, `Mailpit (local SMTP integration)`, `Kafka`, `Qdrant`, `MinIO`, `Prometheus`, `Grafana`, `Jaeger`
 - `AXI_WORKSTATION_ROOT`: required=no, secret=no, source=control-plane environment
 - `AXI_WORKSTATION_CONTROL_CACHE_DIR`: required=no, secret=no, source=control-plane environment
 - `CC_CONNECT_MEMORY_DATABASE_URL`: required=no, secret=yes, source=local credentials or service environment
@@ -56,9 +60,9 @@
 
 ## Contracts
 
-- Provides: `IMEnvelope and AgentTask schemas`, `Six-layer control-plane resource snapshots`, `Communication gateway routing`, `Axi Dashboard application surfaces`, `Independent Web admin and mobile workbench applications`, `Shared Workbench auth-session and locale foundation`, `Axi App CLI scaffolding`
+- Provides: `IMEnvelope and AgentTask schemas`, `Six-layer control-plane resource snapshots`, `Communication gateway routing`, `Axi Dashboard application surfaces`, `Independent Web admin and mobile workbench applications`, `Shared Workbench auth-session and locale foundation`, `ZITADEL-backed OIDC and PKCE business API boundary`, `Tenant-aware platform core with PostgreSQL RLS and transactional outbox`, `Axi App CLI scaffolding`
 - Consumes: `Axi Agent Platform API when AXI_AGENT_PLATFORM_URL is configured`, `CC-Connect memory database`, `Codex CLI or Codex app-server runtime`, `Local infrastructure services declared in docker-compose.yml`
-- Contract files: `packages/schemas/src/index.ts`, `packages/workbench-foundation/src/index.ts`, `apps/workbench/src/layouts/MainLayout.tsx`, `apps/workbench-mobile/src/layouts/MobileShell.tsx`, `services/control-plane/src/control-plane.mjs`, `services/communication-gateway/src/gateway.mjs`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/epap-project-doc-agent-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `scripts/check-workbench-boundaries.mjs`
+- Contract files: `packages/schemas/src/index.ts`, `packages/workbench-foundation/src/index.ts`, `apps/workbench/src/layouts/MainLayout.tsx`, `apps/workbench-mobile/src/layouts/MobileShell.tsx`, `services/api-gateway/cmd/gateway/main.go`, `services/identity-adapter/cmd/identity-adapter/main.go`, `services/platform-core/cmd/platform-core/main.go`, `infra/helm/axi-workbench-platform/Chart.yaml`, `docs/adr/0001-zitadel-gin-platform-core.md`, `services/control-plane/src/control-plane.mjs`, `services/communication-gateway/src/gateway.mjs`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/epap-project-doc-agent-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `scripts/check-workbench-boundaries.mjs`
 
 ## Current Work
 
@@ -68,8 +72,9 @@
 - Active: Align verification commands with the real project stack
 - Active: Keep Web Axi Dashboard Chrome and WeChat-style mobile composition independent
 - Active: Preserve ownership and cross-project boundaries
-- Active: Complete the operational handoff milestone
+- Active: Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment
 - Known failure: The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.
+- Known failure: No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; cluster end-to-end acceptance remains external.
 
 ## Troubleshooting
 
@@ -85,10 +90,10 @@
 
 ## Decisions And Freshness
 
-- ADR: `docs/rules/epap-six-layer-sop.md`
+- ADR: `docs/adr/0001-zitadel-gin-platform-core.md`
 - Changelog: `docs/state/CHANGELOG.md`
 - Submit log: `docs/logs/submit/20260611-124603-batch-submit.md`
 - Last verified: `2026-08-07`
-- Evidence: `Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, five-tab green navigation, badges, and scan flow without Web dashboard nodes.`, `Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.`
+- Evidence: `Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, five-tab green navigation, badges, and scan flow without Web dashboard nodes.`, `Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.`, `Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template passed; required local Mailpit SMTP delivery passed; an isolated PostgreSQL migration/runtime-role integration test proved direct owner-downgrade and cross-tenant denial on 2026-08-07.`
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.

@@ -30,3 +30,12 @@ pnpm check:boundaries
 - Production builds passed for both applications. The Web build retains its pre-existing large-chunk advisory; the mobile build has the same non-blocking Rollup advisory.
 
 The production build still reports the existing non-blocking large-chunk advisory for the dashboard bundle.
+
+## 2026-08 Go API plane
+
+- API Gateway: go test -race ./... passed. Coverage includes single-use OIDC state, opaque HttpOnly sessions, access-token audience/scope enforcement, explicit credentialed CORS origins, rate limiting, spoofed-header removal, QR completion proxying, and W3C trace continuation.
+- Identity adapter: go test -race ./... passed. QR ticket/poll/resume material is hashed; short-lived transactions use Redis with atomic replay prevention, email/EPS data remains PostgreSQL-backed, and a temporary local Mailpit instance accepted the required SMTP delivery smoke test.
+- Platform Core: go test -race ./... passed. An isolated PostgreSQL test database was migrated with a dedicated BYPASSRLS account, queried through NOBYPASSRLS runtime credentials, and removed after the test. It proved API and direct-SQL denial of an admin downgrading another owner, plus zero visible cross-tenant rows.
+- Helm strict lint and template passed, including the negative rendering check that an enabled Outbox worker without a delivery URL is rejected. The only lint note is Helm’s optional Chart icon recommendation.
+
+Cluster-level acceptance is still pending an attached Kubernetes cluster, real ZITADEL issuer/client, SMTP credentials, and failure-injection environment; no production infrastructure was changed by this verification.

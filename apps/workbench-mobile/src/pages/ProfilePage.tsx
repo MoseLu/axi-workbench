@@ -34,7 +34,7 @@ export default function ProfilePage() {
         </button>
       </div>
       {signedIn ? (
-        <button type="button" className="axi-mobile-signout" onClick={() => { logout(); navigate('/login'); }}><MobileIcon name="logout" size={19} />{t('profile.logout')}</button>
+        <button type="button" className="axi-mobile-signout" onClick={() => { void logout(); navigate('/login'); }}><MobileIcon name="logout" size={19} />{t('profile.logout')}</button>
       ) : (
         <button type="button" className="axi-mobile-signout" onClick={() => navigate('/login')}>{t('profile.signIn')}</button>
       )}

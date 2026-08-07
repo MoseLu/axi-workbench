@@ -1,255 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { RegisterInput } from '@axi/workstation-contracts';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+// 账号创建、邮箱验证和安全策略由 Axi Identity/ZITADEL 统一拥有，避免
+// Web 管理端另存一套密码与验证令牌。
 const Register: React.FC = () => {
-  const navigate = useNavigate();
-  const { register, isLoading, error } = useAuth();
-  
-  const [formData, setFormData] = useState<RegisterInput>({
-    email: '',
-    password: '',
-    name: '',
-  });
-  
-  const [validationErrors, setValidationErrors] = useState<Partial<Record<keyof RegisterInput, string>>>({});
-
-  const validate = (): boolean => {
-    const errors: Partial<Record<keyof RegisterInput, string>> = {};
-    
-    if (!formData.name) {
-      errors.name = 'Name is required';
-    } else if (formData.name.length < 1) {
-      errors.name = 'Name must be at least 1 character';
-    } else if (formData.name.length > 100) {
-      errors.name = 'Name must be less than 100 characters';
-    }
-    
-    if (!formData.email) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format';
-    }
-    
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
-    }
-    
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validate()) {
-      return;
-    }
-    
-    try {
-      await register(formData);
-      navigate('/');
-    } catch {
-      // Error is handled by AuthContext
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear validation error when user types
-    if (validationErrors[name as keyof RegisterInput]) {
-      setValidationErrors(prev => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '12px 16px',
-    fontSize: 14,
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    color: 'var(--color-bg-card)',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 500,
-    color: 'rgba(255, 255, 255, 0.75)',
-    marginBottom: 8,
-  };
-
-  const errorTextStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: 'var(--color-chart-4)',
-    marginTop: 4,
-  };
+  const { beginLogin, isLoading } = useAuth();
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, var(--color-tabbar-dark) 0%, var(--color-login-bg) 100%)',
-      padding: 20,
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: 400,
-        padding: 40,
-        background: 'rgba(255, 255, 255, 0.02)',
-        borderRadius: 16,
-        border: '1px solid rgba(255, 255, 255, 0.06)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{ 
-            fontSize: 28, 
-            fontWeight: 600, 
-            color: 'var(--color-bg-card)',
-            marginBottom: 8,
-            letterSpacing: '-0.5px',
-          }}>
-            Create Account
-          </h1>
-          <p style={{ 
-            fontSize: 14, 
-            color: 'rgba(255, 255, 255, 0.5)',
-          }}>
-            Join Axi Workstation to get started
-          </p>
-        </div>
-
-        {error && (
-          <div style={{
-            padding: '12px 16px',
-            background: 'rgba(255, 77, 79, 0.1)',
-            border: '1px solid rgba(255, 77, 79, 0.3)',
-            borderRadius: 8,
-            color: 'var(--color-chart-4)',
-            fontSize: 13,
-            marginBottom: 24,
-          }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 20 }}>
-            <label htmlFor="name" style={labelStyle}>
-              Full Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="John Doe"
-              style={{
-                ...inputStyle,
-                borderColor: validationErrors.name ? 'var(--color-chart-4)' : 'rgba(255, 255, 255, 0.1)',
-              }}
-            />
-            {validationErrors.name && (
-              <span style={errorTextStyle}>{validationErrors.name}</span>
-            )}
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label htmlFor="email" style={labelStyle}>
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@company.com"
-              style={{
-                ...inputStyle,
-                borderColor: validationErrors.email ? 'var(--color-chart-4)' : 'rgba(255, 255, 255, 0.1)',
-              }}
-            />
-            {validationErrors.email && (
-              <span style={errorTextStyle}>{validationErrors.email}</span>
-            )}
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <label htmlFor="password" style={labelStyle}>
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              style={{
-                ...inputStyle,
-                borderColor: validationErrors.password ? 'var(--color-chart-4)' : 'rgba(255, 255, 255, 0.1)',
-              }}
-            />
-            {validationErrors.password && (
-              <span style={errorTextStyle}>{validationErrors.password}</span>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              width: '100%',
-              padding: '14px 24px',
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--color-bg-card)',
-              background: isLoading ? 'rgba(24, 144, 255, 0.6)' : 'var(--color-info-antd)',
-              border: 'none',
-              borderRadius: 8,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s, transform 0.1s',
-              opacity: isLoading ? 0.7 : 1,
-            }}
-          >
-            {isLoading ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <p style={{
-          textAlign: 'center',
-          marginTop: 24,
-          fontSize: 13,
-          color: 'rgba(255, 255, 255, 0.5)',
-        }}>
-          Already have an account?{' '}
-          <Link 
-            to="/login" 
-            style={{
-              color: 'var(--color-info-antd)',
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-          >
-            Sign in
-          </Link>
+    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, var(--color-tabbar-dark) 0%, var(--color-login-bg) 100%)', padding: 20 }}>
+      <section style={{ width: '100%', maxWidth: 400, padding: 40, background: 'rgba(255, 255, 255, 0.02)', borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.06)', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)', textAlign: 'center' }}>
+        <h1 style={{ fontSize: 28, color: 'var(--color-bg-card)', margin: '0 0 12px' }}>创建 Axi 账户</h1>
+        <p style={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.56)', lineHeight: 1.7, margin: '0 0 28px' }}>
+          继续后将在 Axi Identity 中完成注册和邮箱验证；Web 管理端不会保存密码或验证令牌。
         </p>
-      </div>
-    </div>
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={() => beginLogin('/admin/dashboard')}
+          style={{ width: '100%', padding: '14px 24px', border: 0, borderRadius: 8, background: 'var(--color-info-antd)', color: 'var(--color-bg-card)', cursor: isLoading ? 'wait' : 'pointer', fontWeight: 600 }}
+        >
+          前往 Axi Identity
+        </button>
+        <p style={{ marginTop: 24, fontSize: 13, color: 'rgba(255, 255, 255, 0.5)' }}>
+          已有账户？ <Link to="/login" style={{ color: 'var(--color-info-antd)' }}>返回登录</Link>
+        </p>
+      </section>
+    </main>
   );
 };
 

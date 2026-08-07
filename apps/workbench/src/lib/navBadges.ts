@@ -37,9 +37,6 @@ export const EMPTY_TAB_BADGES: TabBadges = {
   me: { kind: 'none' },
 };
 
-const TOKEN_KEY = 'epap_auth_token';
-const USER_KEY = 'epap_user';
-
 function dtoToBadge(dto?: NavBadgeDto): NavBadge {
   if (!dto) return { kind: 'none' };
   const kind = String(dto.kind || 'none').toLowerCase();
@@ -51,37 +48,11 @@ function dtoToBadge(dto?: NavBadgeDto): NavBadge {
   return { kind: 'none' };
 }
 
-function resolveUserId(): string {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    if (raw) {
-      const user = JSON.parse(raw) as { id?: string; email?: string };
-      if (user?.id && user.id !== '1') return String(user.id);
-      // Seed inbox is scoped to demo; map default local user to demo seed.
-      if (user?.email?.startsWith('demo')) return 'demo';
-    }
-  } catch {
-    /* ignore */
-  }
-  return 'demo';
-}
-
 /**
- * Fetch bottom-tab badges from notification-service (via gateway / Vite proxy).
+ * Fetch navigation badges through the gateway's HttpOnly Axi session.
  */
 export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
-  const userId = resolveUserId();
-  const token = localStorage.getItem(TOKEN_KEY);
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'X-User-Id': userId,
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const url = `/api/v1/notifications/nav-badges?userId=${encodeURIComponent(userId)}`;
-  const res = await fetch(url, { headers, signal, credentials: 'same-origin' });
+  const res = await fetch('/api/v1/notifications/nav-badges', { headers: { Accept: 'application/json' }, signal, credentials: 'include' });
   if (!res.ok) {
     throw new Error(`nav-badges HTTP ${res.status}`);
   }

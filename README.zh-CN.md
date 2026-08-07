@@ -20,6 +20,17 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 - **Axi Dashboard Apps**：可以在 DevSvc Dashboard 中打开的应用。
 - **Axi Resources**：服务、合同、工具、shared runtime 和本地基础设施的完整能力索引。
 
+## 生产后端演进（2026-08）
+
+Web 管理端和移动端是两个独立部署的应用，各自拥有 UI、路由与交互；共享的只有 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。
+
+- `api-gateway`（Go + Gin）是唯一业务 API 入口，负责 ZITADEL JWKS、HttpOnly 会话、Redis 限流、追踪关联和无请求体审计日志。
+- `identity-adapter`（Go + Gin）负责邮箱验证、扫码登录事务和 EPS 身份映射；二维码事务存 Redis，长期验证/映射数据存 PostgreSQL。
+- `platform-core`（Go + Gin）按模块实现租户、成员/RBAC、偏好、字典、项目、任务、Outbox 与 PostgreSQL RLS。
+- `auth-service` 与 Spring/H2 `core-service` 仅是迁移兼容来源，不再是生产身份或业务数据 owner。
+
+部署见 [`infra/helm/README.md`](infra/helm/README.md)，架构决策见 [`docs/adr/0001-zitadel-gin-platform-core.md`](docs/adr/0001-zitadel-gin-platform-core.md)。
+
 ## 目录结构
 
 ```text
@@ -44,9 +55,11 @@ axi-workbench/
 │   ├── web/
 │   └── workbench-foundation/  # Web / 移动端共享认证与语言状态
 ├── services/
-│   ├── api-gateway/
-│   ├── auth-service/
-│   ├── core-service/
+│   ├── api-gateway/            # Go/Gin 唯一业务 API 入口
+│   ├── identity-adapter/        # Go/Gin Axi Identity 适配边界
+│   ├── platform-core/           # Go/Gin 租户与业务模块核心
+│   ├── auth-service/            # 原型兼容，不进入生产身份链路
+│   ├── core-service/            # Spring/H2 只读迁移兼容
 │   ├── file-service/
 │   ├── notification-service/
 │   ├── communication-gateway/
@@ -67,7 +80,7 @@ axi-workbench/
 ## 技术栈
 
 - 前端：React 18 + TypeScript + Vite + Turborepo
-- 后端：Go、Java Spring Boot、Python FastAPI
+- 后端：Go/Gin + ZITADEL OIDC；Python/Node 专职能力；Spring/H2 仅迁移兼容
 - AI：LangChain、Qdrant、RAG、Multi-Agent
 - 基础设施：PostgreSQL、Redis、Kafka、MinIO、Kubernetes、Terraform
 
@@ -83,6 +96,10 @@ pnpm run dev:mobile
 pnpm run build
 pnpm run test
 pnpm run lint
+# 后端本地依赖与迁移（容器内 8080，宿主机网关 8088）
+make docker-up
+make migrate-identity
+make migrate-platform
 ```
 
 ## 治理说明

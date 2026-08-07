@@ -1,5 +1,3 @@
-import { WORKBENCH_SESSION_KEYS } from '@axi/workbench-foundation';
-
 export type BadgeKind = 'none' | 'dot' | 'count';
 
 type NavBadgeDto = {
@@ -43,28 +41,12 @@ function toBadge(dto?: NavBadgeDto): NavBadge {
   return { kind: 'none' };
 }
 
-function currentUserId(): string {
-  try {
-    const raw = window.localStorage.getItem(WORKBENCH_SESSION_KEYS.user);
-    const user = raw ? (JSON.parse(raw) as { id?: string; email?: string }) : null;
-    if (user?.id && user.id !== '1') return String(user.id);
-    if (user?.email?.startsWith('demo')) return 'demo';
-  } catch {
-    // 徽标失败不影响导航。
-  }
-  return 'demo';
-}
-
 /** 移动端独立拉取微信式角标；失败时保持无角标，而不是阻塞导航。 */
 export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
-  const token = window.localStorage.getItem(WORKBENCH_SESSION_KEYS.accessToken);
-  const headers: Record<string, string> = { Accept: 'application/json', 'X-User-Id': currentUserId() };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const response = await fetch(`/api/v1/notifications/nav-badges?userId=${encodeURIComponent(currentUserId())}`, {
-    headers,
+  const response = await fetch('/api/v1/notifications/nav-badges', {
+    headers: { Accept: 'application/json' },
     signal,
-    credentials: 'same-origin',
+    credentials: 'include',
   });
   if (!response.ok) throw new Error(`nav-badges HTTP ${response.status}`);
 

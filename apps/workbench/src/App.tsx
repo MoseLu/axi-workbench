@@ -26,6 +26,8 @@ import Devices from './pages/admin/me/Devices';
 import Notifications from './pages/admin/me/Notifications';
 import Theme from './pages/admin/me/Theme';
 import MeSettings from './pages/admin/me/Settings';
+import AuthCallback from './pages/AuthCallback';
+import RequireSession from './components/Auth/RequireSession';
 import { AuthProvider } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
 
@@ -60,12 +62,13 @@ const WorkbenchSurface: React.FC = () => {
             <I18nProvider>
               <BrowserRouter>
                 <Routes>
-                  {/* Web 管理端登录：密码 + 扫码。移动端有自己的独立应用入口。 */}
+                  {/* Web 与移动端拥有独立 UI；登录协议统一通过 Axi Identity OIDC。 */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
 
                   {/* Web 管理端专属壳：Axi Dashboard Chrome。 */}
-                  <Route path="/" element={<MainLayout />}>
+                  <Route path="/" element={<RequireSession><MainLayout /></RequireSession>}>
                     <Route index element={<Navigate to="admin/dashboard" replace />} />
                     <Route path="admin/dashboard" element={<Dashboard />} />
                     <Route

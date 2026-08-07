@@ -66,9 +66,9 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 
 ### Completed — Refresh PRD/TDD/CHANGELOG/MILESTONE for the v2 workbench (2026-08-07)
 
-- **Problem:** The previous `PRD.md` and `TDD.md` were sparse (3 and 4 requirements respectively) and did not yet list the new `REQ-*` families covering Workbench UI contracts, control plane, communication gateway, mobile shell, workbench entrypoint consolidation, Axi Coder snapshot contract, and milestone/log governance. The TODOs and milestones lagged behind.
+- **Problem:** The previous `PRD.md` and `TDD.md` were sparse (3 and 4 requirements respectively) and did not yet list the new `REQ-*` families covering Workbench UI contracts, control plane, communication gateway, mobile shell, workbench entrypoint consolidation, Axi Coder snapshot contract, and delivery-state/log governance. The TODOs and delivery-state record lagged behind.
 - **Solution:** Rewrite `docs/state/PRD.md` with 13 `REQ-*` rows mapped to acceptance criteria and success metrics; rewrite `docs/state/TDD.md` with per-surface verification commands and explicit risk cases; re-tag `docs/state/TODO.md` tasks by `REQ-*`; refresh `docs/state/MILESTONE.md` evidence; add a CHANGELOG entry.
-- **Expected result:** Every PRD requirement is traceable to a TDD command and a TODO test case, and the milestone evidence matches the latest verified smoke.
+- **Expected result:** Every PRD requirement is traceable to a TDD command and a TODO test case, and the delivery evidence matches the latest verified smoke.
 - **Acceptance:** `rg -n "REQ-(DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER|MOBILE)" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every REQ.
 - **Evidence:** `docs/state/PRD.md`, `docs/state/TDD.md`, `docs/state/TODO.md`, `docs/state/MILESTONE.md`, `docs/state/CHANGELOG.md` updated on 2026-08-07.
 - **Dependencies:** `AGENTS.md`, `README.md`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `docs/project-docs.manifest.json`.

@@ -1,5 +1,32 @@
 # 第二章 总架构设计
 
+## 2.0 当前生产后端边界（2026-08）
+
+本节是当前实现的权威入口；后续仍保留的 EPAP / `auth-service` / Spring `core-service` 图示属于历史或迁移兼容说明。
+
+```text
+独立 Web 管理端 / 独立移动端 / EPS（Authorization Code + PKCE）
+                             │
+                             ▼
+              NGINX Ingress + cert-manager
+                             │
+                             ▼
+              api-gateway（Go/Gin，唯一业务入口）
+               ├── ZITADEL（JWKS 校验、中央 OIDC Issuer）
+               ├── identity-adapter（邮件、扫码、EPS 映射）
+               └── platform-core（租户、RBAC、偏好、字典、项目、任务）
+                         ├── PostgreSQL（独立 schema + tenant_id + RLS）
+                         └── Redis（会话、限流、短期二维码事务）
+```
+
+- Web 与移动端是独立界面应用，但当前浏览器交付都使用网关 BFF 的 Authorization Code + PKCE 会话；JavaScript 不保存 access 或 refresh token。EPS 使用独立 client 的 PKCE access token。
+- 网关只接受同时满足 ZITADEL JWKS、audience 与所需 scope 的 Bearer access token；浏览器 ID Token 不可作为业务 API 凭据。
+- Gateway 仅将已验证 subject 注入到内部服务，剥离客户端伪造的身份/租户头；`platform-core` 再执行成员检查和 RLS。
+- Python 文件/工作流服务、Node 控制面与通信网关保持各自六层职责，经 Gateway/合同访问，不承担用户认证或租户业务核心。
+- `auth-service` 和 H2 `core-service` 仅在显式配置 `LEGACY_CORE_SERVICE_URL` 时提供只读兼容路由，生产 Helm Chart 不部署它们。
+
+部署细节见 [`infra/helm/README.md`](../infra/helm/README.md)，决策依据见 [`ADR-0001`](./adr/0001-zitadel-gin-platform-core.md)。
+
 ## 2.1 系统分层架构
 
 EPAP 采用六层架构模型，从用户交互到数据存储，每层职责清晰，层间通过定义良好的接口通信。

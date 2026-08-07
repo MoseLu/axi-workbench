@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useControlQuery, useControlSnapshot, useProject, useRunControlCommand } from '@epap/api-client';
+import { useControlQuery, useControlSnapshot, useLegacyProject, useRunControlCommand } from '@epap/api-client';
 import type { AgentTask, ManagedCommand, ManagedResource, ProjectStatus } from '@axi/workstation-contracts';
 
 const projectStatusColors: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
@@ -15,7 +15,7 @@ const ProjectDetail: React.FC = () => {
   const projectId = decodeURIComponent(id || '');
   const navigate = useNavigate();
   const { data: snapshot } = useControlSnapshot();
-  const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId);
+  const { data: project, isLoading: projectLoading, error: projectError } = useLegacyProject(projectId);
   const runCommand = useRunControlCommand();
   const controlQuery = useControlQuery();
   const [lastSummary, setLastSummary] = useState('');

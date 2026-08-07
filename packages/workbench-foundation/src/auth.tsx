@@ -1,33 +1,23 @@
-import React, { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
-import type { LoginInput, RegisterInput, User } from '@axi/workstation-contracts';
-import { useLogin as useLoginMutation, useRegister as useRegisterMutation } from '@epap/api-client';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { User } from '@axi/workstation-contracts';
 
-/**
- * 两个独立应用共享同一份认证协议与存储键。
- *
- * 存储仍受浏览器 origin 隔离；跨域单点登录由 auth-service 的 cookie / token
- * 合同负责，而不是由一个 React 壳跨端偷读 localStorage。
- */
-export const WORKBENCH_SESSION_KEYS = {
-  accessToken: 'epap_auth_token',
-  refreshToken: 'epap_refresh_token',
-  user: 'epap_user',
-} as const;
-
-/** api-client 的既有键；保留双写以兼容已经登录的 Web 用户与刷新拦截器。 */
-const API_CLIENT_SESSION_KEYS = {
-  accessToken: 'accessToken',
-  refreshToken: 'refreshToken',
-} as const;
+type GatewaySessionResponse = {
+  authenticated: boolean;
+  user?: {
+    subject: string;
+    email?: string;
+    name?: string;
+  };
+};
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: LoginInput) => Promise<void>;
-  register: (data: RegisterInput) => Promise<void>;
-  logout: () => void;
   error: string | null;
+  beginLogin: (returnTo?: string) => void;
+  refreshSession: () => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 export interface AuthProviderProps {
@@ -36,101 +26,111 @@ export interface AuthProviderProps {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function readPersistedUser(): User | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const savedUser = window.localStorage.getItem(WORKBENCH_SESSION_KEYS.user);
-    return savedUser ? (JSON.parse(savedUser) as User) : null;
-  } catch {
-    window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.user);
-    return null;
-  }
+const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {};
+const gatewayBaseURL = (metaEnv.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
+function gatewayURL(path: string): string {
+  return `${gatewayBaseURL}${path}`;
 }
 
-function persistSession(tokens: { accessToken: string; refreshToken: string }, user: User) {
-  window.localStorage.setItem(WORKBENCH_SESSION_KEYS.accessToken, tokens.accessToken);
-  window.localStorage.setItem(WORKBENCH_SESSION_KEYS.refreshToken, tokens.refreshToken);
-  window.localStorage.setItem(API_CLIENT_SESSION_KEYS.accessToken, tokens.accessToken);
-  window.localStorage.setItem(API_CLIENT_SESSION_KEYS.refreshToken, tokens.refreshToken);
-  window.localStorage.setItem(WORKBENCH_SESSION_KEYS.user, JSON.stringify(user));
-}
-
-function buildUser(data: Pick<LoginInput, 'email'> & Partial<Pick<RegisterInput, 'name'>>): User {
+function mapGatewayUser(value: NonNullable<GatewaySessionResponse['user']>): User {
+  const displayName = value.name?.trim() || value.email?.split('@')[0] || value.subject;
+  const now = new Date();
   return {
-    id: '1',
-    email: data.email,
-    name: data.name || data.email.split('@')[0] || data.email,
+    id: value.subject,
+    email: value.email || '',
+    name: displayName,
     role: 'user',
     status: 'active',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: now,
+    updatedAt: now,
   };
 }
 
+function defaultCallbackURL(): string {
+  if (typeof window === 'undefined') return '/auth/callback';
+  return new URL('/auth/callback', window.location.origin).toString();
+}
+
+function safeLocalPath(value: string | undefined): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return '/';
+  return value;
+}
+
+/**
+ * Shared authentication protocol for the independent Web and mobile apps.
+ * The browser only carries an HttpOnly gateway session cookie; it never stores
+ * an access token, refresh token, OIDC code, or QR credential in JavaScript.
+ */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(readPersistedUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const loginMutation = useLoginMutation();
-  const registerMutation = useRegisterMutation();
 
-  const login = useCallback(
-    async (data: LoginInput) => {
-      setError(null);
-      try {
-        const response = await loginMutation.mutateAsync(data);
-        const nextUser = buildUser(data);
-        persistSession(response, nextUser);
-        setUser(nextUser);
-      } catch (caught: unknown) {
-        const message = caught instanceof Error ? caught.message : 'Login failed';
-        setError(message);
-        throw caught;
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch(gatewayURL('/api/v1/auth/session'), {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        setUser(null);
+        return false;
       }
-    },
-    [loginMutation],
-  );
-
-  const register = useCallback(
-    async (data: RegisterInput) => {
-      setError(null);
-      try {
-        const response = await registerMutation.mutateAsync(data);
-        const nextUser = buildUser(data);
-        persistSession(response, nextUser);
-        setUser(nextUser);
-      } catch (caught: unknown) {
-        const message = caught instanceof Error ? caught.message : 'Registration failed';
-        setError(message);
-        throw caught;
+      const session = (await response.json()) as GatewaySessionResponse;
+      if (!session.authenticated || !session.user?.subject) {
+        setUser(null);
+        return false;
       }
-    },
-    [registerMutation],
-  );
-
-  const logout = useCallback(() => {
-    window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.accessToken);
-    window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.refreshToken);
-    window.localStorage.removeItem(API_CLIENT_SESSION_KEYS.accessToken);
-    window.localStorage.removeItem(API_CLIENT_SESSION_KEYS.refreshToken);
-    window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.user);
-    setUser(null);
+      setUser(mapGatewayUser(session.user));
+      setError(null);
+      return true;
+    } catch (caught: unknown) {
+      setUser(null);
+      setError(caught instanceof Error ? caught.message : 'Unable to restore Axi session');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: Boolean(user),
-        isLoading: loginMutation.isPending || registerMutation.isPending,
-        login,
-        register,
-        logout,
-        error,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  useEffect(() => {
+    void refreshSession();
+  }, [refreshSession]);
+
+  const beginLogin = useCallback((returnTo?: string) => {
+    if (typeof window === 'undefined') return;
+    const destination = safeLocalPath(returnTo);
+    window.sessionStorage.setItem('axi.auth.return-to', destination);
+    window.location.assign(gatewayURL(`/api/v1/auth/oidc/start?return_to=${encodeURIComponent(defaultCallbackURL())}`));
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch(gatewayURL('/api/v1/auth/logout'), {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } finally {
+      setUser(null);
+      setError(null);
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('axi.auth.return-to');
+      }
+    }
+  }, []);
+
+  const value = useMemo<AuthContextType>(() => ({
+    user,
+    isAuthenticated: Boolean(user),
+    isLoading,
+    error,
+    beginLogin,
+    refreshSession,
+    logout,
+  }), [beginLogin, error, isLoading, logout, refreshSession, user]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

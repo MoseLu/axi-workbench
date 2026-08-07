@@ -1,7 +1,6 @@
 export {
   AuthProvider,
   useAuth,
-  WORKBENCH_SESSION_KEYS,
   type AuthContextType,
   type AuthProviderProps,
 } from './auth';

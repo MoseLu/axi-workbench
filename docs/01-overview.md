@@ -6,6 +6,8 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 
 > EPAP 不是一个单体应用，而是一套**多前端、多后端、多 AI 能力协同**的工作空间生态系统，所有子系统在统一的 Monorepo 框架下协同演进。
 
+> **当前生产后端口径（2026-08）**：以 [`ADR-0001`](./adr/0001-zitadel-gin-platform-core.md) 为准。ZITADEL 是中央 OIDC Issuer，Go/Gin `api-gateway` 是唯一业务 API 入口，`identity-adapter` 与模块化 `platform-core` 承担身份编排和租户业务；本章以下未标注“当前”的旧 EPAP/Spring 方案仅作历史设计参考。
+
 ---
 
 ## 1.2 核心能力矩阵
@@ -13,11 +15,12 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | 能力域 | 子系统 | 技术栈 | 状态 |
 |--------|--------|--------|------|
 | 前端展示 | `apps/workbench`（桌面 Web） | React + TS + Vite + Axi UI | 已接入 |
-| 移动端 | `apps/workbench`（移动 Web，同一 SPA） | React + TS + Vite + 移动端独立壳 | 已接入 |
+| 移动端 | `apps/workbench-mobile`（独立应用） | React + TS + Vite + 微信式移动端壳 | 已接入 |
 | 组件体系 | `shared/axi-ui` | Axi Core / Shell / Settings / Tokens | 已接入 |
-| API 网关 | api-gateway | Go + Gin | 规划中 |
-| 认证授权 | auth-service | Go + JWT + OAuth2 | 规划中 |
-| 核心业务 | core-service | Java 21 + Spring Boot 3 | 规划中 |
+| API 网关 | api-gateway | Go + Gin + ZITADEL JWKS + Redis | 已实现（待集群验收） |
+| 身份适配 | identity-adapter | Go + Gin + ZITADEL + SMTP | 已实现（待集群验收） |
+| 平台核心 | platform-core | Go + Gin + PostgreSQL RLS + Outbox | 已实现（待集群验收） |
+| 原型兼容 | auth-service / core-service | Go JWT / Spring H2 | 只读迁移兼容 |
 | 工作流 | workflow-engine | Python + FastAPI + Celery | 规划中 |
 | 消息通知 | notification-service | Go + Kafka | 规划中 |
 | 文件处理 | file-service | Python + S3 | 规划中 |
@@ -72,9 +75,9 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | 服务 | 端口 |
 |------|------|
 | api-gateway | 8080 |
-| auth-service HTTP | 8081 |
-| auth-service gRPC | 9081 |
-| core-service | 8082 |
+| identity-adapter | 8081 |
+| platform-core | 8082 |
+| api-gateway（宿主机开发映射） | 8088 |
 | workflow-engine | 8083 |
 | notification-service | 8084 |
 | file-service | 8085 |
@@ -106,11 +109,11 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 
 ## 1.7 多端后台覆盖范围
 
-`apps/workbench` 是唯一用户后台入口，但按运行端明确拆分渲染边界：
+用户后台按应用而非视口拆分：
 
-- **桌面 Web（视口宽度 ≥ 768px）**：使用 `shared/axi-ui` 的 Axi Dashboard Chrome，覆盖左侧导航、顶栏插件/快捷操作、标签栏、面包屑、主题切换、系统设置面板和页面内容区。
-- **移动 Web（视口宽度 < 768px）**：不渲染桌面侧栏、标签栏或桌面设置抽屉，使用移动顶栏、页面级设置/主题页和底部导航，保证触控密度与窄屏布局独立。
-- **共享层**：认证、路由、主题状态、设计令牌和业务页面复用；布局壳、导航密度和交互入口按端隔离，避免把桌面后台压缩成错误的移动布局。
+- **桌面 Web**：`apps/workbench` 是独立的 Axi Dashboard 管理端，拥有侧边栏、顶栏插件、标签栏、面包屑、主题切换和设置面板。
+- **移动端**：`apps/workbench-mobile` 是独立的微信式移动应用，拥有自己的顶栏、底部导航、扫码与个人页；它不导入 Web Dashboard 壳。
+- **共享层**：只共享 Axi Identity 会话协议、相对 API 合同、语言偏好和设计令牌。两个应用不共享页面、路由或布局组件。
 
 ---
 

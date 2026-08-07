@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useControlSnapshot, useProjects } from '@epap/api-client';
+import { useControlSnapshot, useLegacyProjects } from '@epap/api-client';
 import type { AxiResourceView, ManagedResource, Project, ProjectStatus } from '@axi/workstation-contracts';
 
 const statusColors: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
@@ -13,7 +13,7 @@ const statusColors: Record<ProjectStatus, { bg: string; text: string; border: st
 const Projects: React.FC = () => {
   const navigate = useNavigate();
   const { data: snapshot, isLoading: snapshotLoading } = useControlSnapshot();
-  const { data: projectsResponse, isLoading, error } = useProjects();
+  const { data: projectsResponse, isLoading, error } = useLegacyProjects();
 
   const serviceProjects = snapshot?.axiResources?.project ?? (snapshot?.resources || []).filter((resource) => resource.layer === 'software');
   const projects: Project[] = projectsResponse?.items || [];

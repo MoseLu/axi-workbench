@@ -1,0 +1,135 @@
+# This chart owns the Axi business API plane only. PostgreSQL, Redis and
+# ZITADEL are provisioned independently and referenced through Kubernetes
+# Secrets. Production values must override every example domain and image tag.
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+gateway:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-api-gateway
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  publicBaseURL: https://api.axi.example.com
+  oidc:
+    issuerURL: https://id.axi.example.com
+    clientID: axi-workbench-web
+    apiAudience: axi-workbench-api
+    requiredAccessTokenScopes:
+      - axi.api
+    callbackURL: https://api.axi.example.com/api/v1/auth/oidc/callback
+    allowedReturnURLs:
+      - https://web.axi.example.com/auth/callback
+      - https://m.axi.example.com/auth/callback
+  cors:
+    allowedOrigins:
+      - https://web.axi.example.com
+      - https://m.axi.example.com
+  session:
+    cookieName: axi_session
+    cookieDomain: ""
+    ttl: 8h
+  rateLimitPerMinute: 120
+
+identityAdapter:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-identity-adapter
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8081
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  qrTransactionTTL: 2m
+  emailVerificationTTL: 15m
+  zitadelCustomLoginURL: https://id.axi.example.com/ui/v2/login
+
+platformCore:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-platform-core
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8082
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  outbox:
+    # A delivery URL is an explicit production contract. Keep the worker off
+    # until an idempotent internal consumer is configured for this release.
+    workerEnabled: false
+    pollInterval: 5s
+    deliveryURL: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: api.axi.example.com
+  tls:
+    enabled: true
+    secretName: axi-workbench-api-tls
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx
+
+observability:
+  otlpEndpoint: ""
+  logLevel: info
+
+# The existing Secret is created by External Secrets, Sealed Secrets, or the
+# cluster operator. It never belongs in Git. See infra/helm/README.md.
+secrets:
+  existingSecret: axi-workbench-runtime
+  create: false
+  values: {}
+
+migrations:
+  enabled: true
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600

@@ -4,75 +4,128 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
+	"github.com/epap/api-gateway/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-// ProxyHandler handles proxying requests to backend services
+// ProxyHandler is the gateway's narrow downstream boundary. It removes every
+// client-controlled internal identity header before injecting a verified OIDC
+// subject and a per-service internal credential.
 type ProxyHandler struct {
-	authServiceURL  string
-	coreServiceURL  string
-	fileServiceURL  string
-	workflowURL     string
-	notificationURL string
+	identityAdapterURL    string
+	platformCoreURL       string
+	legacyCoreServiceURL  string
+	fileServiceURL        string
+	workflowURL           string
+	notificationURL       string
+	identityInternalToken string
+	platformInternalToken string
 }
 
-// NewProxyHandler creates a new proxy handler
-func NewProxyHandler(authURL, coreURL, fileURL, workflowURL, notificationURL string) *ProxyHandler {
+func NewProxyHandler(
+	identityAdapterURL string,
+	platformCoreURL string,
+	legacyCoreServiceURL string,
+	fileServiceURL string,
+	workflowURL string,
+	notificationURL string,
+	identityInternalToken string,
+	platformInternalToken string,
+) *ProxyHandler {
 	return &ProxyHandler{
-		authServiceURL:  authURL,
-		coreServiceURL:  coreURL,
-		fileServiceURL:  fileURL,
-		workflowURL:     workflowURL,
-		notificationURL: notificationURL,
+		identityAdapterURL:    identityAdapterURL,
+		platformCoreURL:       platformCoreURL,
+		legacyCoreServiceURL:  legacyCoreServiceURL,
+		fileServiceURL:        fileServiceURL,
+		workflowURL:           workflowURL,
+		notificationURL:       notificationURL,
+		identityInternalToken: identityInternalToken,
+		platformInternalToken: platformInternalToken,
 	}
 }
 
-// ProxyToAuth proxies requests to auth service
-func (p *ProxyHandler) ProxyToAuth() gin.HandlerFunc {
-	return p.createProxy(p.authServiceURL)
+func (p *ProxyHandler) ProxyToIdentity() gin.HandlerFunc {
+	return p.createProxy(p.identityAdapterURL, p.identityInternalToken)
 }
 
-// ProxyToCore proxies requests to core service
-func (p *ProxyHandler) ProxyToCore() gin.HandlerFunc {
-	return p.createProxy(p.coreServiceURL)
+func (p *ProxyHandler) ProxyToPlatform() gin.HandlerFunc {
+	return p.createProxy(p.platformCoreURL, p.platformInternalToken)
 }
 
-// ProxyToFile proxies requests to file service
+func (p *ProxyHandler) ProxyToLegacyCore() gin.HandlerFunc {
+	return p.createProxy(p.legacyCoreServiceURL, "")
+}
+
 func (p *ProxyHandler) ProxyToFile() gin.HandlerFunc {
-	return p.createProxy(p.fileServiceURL)
+	return p.createProxy(p.fileServiceURL, "")
 }
 
-// ProxyToWorkflow proxies requests to workflow service
 func (p *ProxyHandler) ProxyToWorkflow() gin.HandlerFunc {
-	return p.createProxy(p.workflowURL)
+	return p.createProxy(p.workflowURL, "")
 }
 
-// ProxyToNotification proxies requests to notification service
 func (p *ProxyHandler) ProxyToNotification() gin.HandlerFunc {
-	return p.createProxy(p.notificationURL)
+	return p.createProxy(p.notificationURL, "")
 }
 
-func (p *ProxyHandler) createProxy(targetURL string) gin.HandlerFunc {
+func (p *ProxyHandler) createProxy(targetURL, internalToken string) gin.HandlerFunc {
 	target, err := url.Parse(targetURL)
-	if err != nil {
+	if err != nil || target.Scheme == "" || target.Host == "" {
 		return func(c *gin.Context) {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid target URL"})
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "downstream service is not configured"})
 		}
 	}
+	proxy := httputil.NewSingleHostReverseProxy(target)
+	originalDirector := proxy.Director
+	proxy.Director = func(request *http.Request) {
+		originalDirector(request)
+		request.Host = target.Host
+	}
+	proxy.ErrorHandler = func(writer http.ResponseWriter, _ *http.Request, proxyErr error) {
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusBadGateway)
+		_, _ = writer.Write([]byte(`{"error":"downstream service unavailable"}`))
+	}
+
 	return func(c *gin.Context) {
-		// Create reverse proxy
-		proxy := httputil.NewSingleHostReverseProxy(target)
-
-		// Set headers
-		c.Request.Host = target.Host
-
-		// Forward the request
-		proxy.ServeHTTP(c.Writer, c.Request)
+		request := c.Request.Clone(c.Request.Context())
+		stripUntrustedInternalHeaders(request.Header)
+		if principal, ok := middleware.PrincipalFromContext(c); ok {
+			request.Header.Set("X-Axi-Subject", principal.Subject)
+			request.Header.Set("X-User-Id", principal.Subject)
+			if principal.Email != "" {
+				request.Header.Set("X-Axi-Email", principal.Email)
+			}
+		}
+		if internalToken != "" {
+			request.Header.Set("X-Axi-Internal-Token", internalToken)
+		}
+		proxy.ServeHTTP(c.Writer, request)
 	}
 }
 
-// NotFoundHandler handles undefined routes
+func stripUntrustedInternalHeaders(headers http.Header) {
+	for _, header := range []string{
+		"Authorization",
+		"X-Axi-Internal-Token",
+		"X-Axi-Subject",
+		"X-Axi-Tenant-ID",
+		"X-Axi-Email",
+		"X-Axi-Development-Subject",
+		"X-Axi-Development-Email",
+		"X-User-Id",
+	} {
+		headers.Del(header)
+	}
+	for key := range headers {
+		if strings.HasPrefix(strings.ToLower(key), "x-axi-internal-") {
+			headers.Del(key)
+		}
+	}
+}
+
 func NotFoundHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{

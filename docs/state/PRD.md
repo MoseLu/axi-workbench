@@ -51,7 +51,7 @@
 | REQ-COMMUNICATION-001 | 通信层只做 envelope 路由。 | `services/communication-gateway` 仅做 route 绑定、配对、审批、附件引用、幂等、回执、渠道渲染；不读取工作区索引、不查询记忆表、不拥有项目状态。 |
 | REQ-WORKBENCH-001 | 双应用入口收敛。 | `apps/workbench` 是 Web 管理端，`apps/workbench-mobile` 是移动端；`apps/web-portal` 保持归档，不能再创建第三个重复门户。 |
 | REQ-WORKBENCH-002 | Web / 移动端渲染边界。 | Web 端独占 sidebar / topbar plugins / tabs / breadcrumbs / theme / settings；移动端独占微信式绝对居中 header、搜索/加号菜单、概览/项目/工作区/扫一扫/我的五项底栏、角标与扫码页。两个端不得依赖 viewport 条件在同一 React 路由树内互相渲染。 |
-| REQ-MILESTONE-001 | 跟踪交付状态。 | `docs/state/MILESTONE.md` 记录 current status、milestones 与 exit criteria；每次 deliver 后产生新 evidence。 |
+| REQ-MILESTONE-001 | 跟踪交付状态。 | `docs/state/MILESTONE.md` 记录 current status、delivery checkpoints 与 exit criteria；每次 deliver 后产生新 evidence。 |
 | REQ-LOG-001 | 记录变更与提交。 | `docs/state/CHANGELOG.md` 记录用户/Operator/Downstream-Agent 可见变更；批量提交对应 `docs/logs/submit/<batch-id>.md`。 |
 | REQ-AXI-CODER-001 | Axi Coder 不再写死外部资源路径。 | Axi Coder 的 workspace 项目快照用 `workspace://` 合同引用 + 环境变量解析；移除对 Axi Notify artifact 路径的硬编码。 |
 | REQ-MOBILE-001 | 移动端是独立的微信式工作台应用。 | `@axi/workbench-mobile` 以自己的入口、路由、页面和微信式 UI 交付；只共享 `@axi/workbench-foundation` 认证 / locale、API 合同和 Axi design tokens。跨 origin SSO 由 auth-service 合同负责，前端不跨 origin 读取 localStorage。 |

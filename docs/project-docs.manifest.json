@@ -7,7 +7,7 @@
   "kind": "pnpm multi-runtime monorepo",
   "lifecycle": "active",
   "owner": "Axi Core Projects",
-  "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane: a Web Axi Dashboard application and a separate WeChat-style mobile application, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+  "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane: independent Web and mobile applications plus a production Go API plane (ZITADEL, Gin gateway, identity adapter, modular platform core), shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
   "readOrder": [
     "AGENTS.md",
     "README.md",
@@ -30,6 +30,11 @@
       "id": "workbench-foundation",
       "path": "packages/workbench-foundation/src/index.ts",
       "purpose": "Shared auth-session and locale-preference foundation for the independent user applications; no page or layout exports."
+    },
+    {
+      "id": "go-api-plane",
+      "path": "services/api-gateway/cmd/gateway/main.go",
+      "purpose": "Production Go API plane: public Gin gateway plus sibling identity-adapter and platform-core for ZITADEL, QR/email/EPS, tenant/RBAC and RLS business modules."
     },
     {
       "id": "control-plane",
@@ -57,6 +62,7 @@
       "pnpm install"
     ],
     "start": [
+      "make docker-up && make migrate-identity && make migrate-platform",
       "pnpm dev:workbench",
       "pnpm dev:mobile",
       "pnpm --filter @axi/workstation-control-plane start",
@@ -67,6 +73,8 @@
       "python3 infra/fleet-console/scripts/fleetctl.py validate"
     ],
     "verify": [
+      "make verify-go",
+      "make verify-helm",
       "pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check",
       "pnpm --filter @axi/workbench --filter @axi/workbench-mobile test",
       "pnpm --filter @axi/workbench --filter @axi/workbench-mobile build",
@@ -90,8 +98,10 @@
     "services": [
       "Control Plane",
       "Communication Gateway",
+      "ZITADEL",
       "PostgreSQL",
       "Redis",
+      "Mailpit (local SMTP integration)",
       "Kafka",
       "Qdrant",
       "MinIO",
@@ -158,6 +168,8 @@
       "Axi Dashboard application surfaces",
       "Independent Web admin and mobile workbench applications",
       "Shared Workbench auth-session and locale foundation",
+      "ZITADEL-backed OIDC and PKCE business API boundary",
+      "Tenant-aware platform core with PostgreSQL RLS and transactional outbox",
       "Axi App CLI scaffolding"
     ],
     "consumes": [
@@ -171,6 +183,11 @@
       "packages/workbench-foundation/src/index.ts",
       "apps/workbench/src/layouts/MainLayout.tsx",
       "apps/workbench-mobile/src/layouts/MobileShell.tsx",
+      "services/api-gateway/cmd/gateway/main.go",
+      "services/identity-adapter/cmd/identity-adapter/main.go",
+      "services/platform-core/cmd/platform-core/main.go",
+      "infra/helm/axi-workbench-platform/Chart.yaml",
+      "docs/adr/0001-zitadel-gin-platform-core.md",
       "services/control-plane/src/control-plane.mjs",
       "services/communication-gateway/src/gateway.mjs",
       "docs/rules/epap-six-layer-sop.md",
@@ -187,10 +204,11 @@
       "Align verification commands with the real project stack",
       "Keep Web Axi Dashboard Chrome and WeChat-style mobile composition independent",
       "Preserve ownership and cross-project boundaries",
-      "Complete the operational handoff milestone"
+      "Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment"
     ],
     "knownFailures": [
-      "The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update."
+      "The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.",
+      "No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; cluster end-to-end acceptance remains external."
     ]
   },
   "troubleshooting": [
@@ -211,7 +229,7 @@
     }
   ],
   "decisions": {
-    "adr": "docs/rules/epap-six-layer-sop.md",
+    "adr": "docs/adr/0001-zitadel-gin-platform-core.md",
     "changelog": "docs/state/CHANGELOG.md",
     "submitLog": "docs/logs/submit/20260611-124603-batch-submit.md"
   },
@@ -248,12 +266,16 @@
       "pnpm --filter @axi/workbench-mobile type-check",
       "pnpm --filter @axi/workbench-mobile test",
       "pnpm --filter @axi/workbench-mobile build",
-      "pnpm --filter @axi/workbench-mobile verify:contracts"
+      "pnpm --filter @axi/workbench-mobile verify:contracts",
+      "make verify-go",
+      "make verify-helm",
+      "make verify-identity-mailpit"
     ],
     "evidence": [
       "Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.",
       "Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, five-tab green navigation, badges, and scan flow without Web dashboard nodes.",
-      "Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07."
+      "Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.",
+      "Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template passed; required local Mailpit SMTP delivery passed; an isolated PostgreSQL migration/runtime-role integration test proved direct owner-downgrade and cross-tenant denial on 2026-08-07."
     ]
   },
   "startup_profile": {

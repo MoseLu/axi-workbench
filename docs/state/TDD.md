@@ -34,6 +34,11 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | Web admin UI | `apps/workbench` | `pnpm --filter @axi/workbench type-check`, `pnpm --filter @axi/workbench test`, `pnpm --filter @axi/workbench build`, `node apps/workbench/scripts/verify-ui-contracts.mjs` |
 | Mobile application UI | `apps/workbench-mobile` | 微信式居中顶栏、加号菜单、五项绿色底栏、角标和扫码页；`pnpm --filter @axi/workbench-mobile type-check`, `pnpm --filter @axi/workbench-mobile test`, `pnpm --filter @axi/workbench-mobile build`, `pnpm --filter @axi/workbench-mobile verify:contracts` |
 | Shared app foundation | `packages/workbench-foundation` | `pnpm --filter @axi/workbench-foundation type-check` |
+| Go API Gateway | `services/api-gateway` | `cd services/api-gateway && go test -race ./...`；验证 JWKS/OIDC state、Bearer audience/scope、HttpOnly session、精确 CORS、安全头剥离、Redis 限流和 OTLP trace continuation |
+| Axi Identity adapter | `services/identity-adapter` | `cd services/identity-adapter && go test -race ./...`；验证 Redis QR 一次性 resume、轮询无 token 泄露、邮箱令牌单次消费，以及 `make verify-identity-mailpit` SMTP smoke |
+| Platform Core | `services/platform-core` | `cd services/platform-core && go test -race ./...`；验证成员边界、Owner 保护、字典版本、偏好和具租约/幂等头的 Outbox |
+| PostgreSQL tenant RLS | `services/platform-core/internal/store` | `PLATFORM_TEST_MIGRATION_DATABASE_URL=... PLATFORM_TEST_DATABASE_URL=... go test -tags=integration ./internal/store -run TestPostgresRLSDeniesCrossTenantAccess` |
+| Helm API plane | `infra/helm/axi-workbench-platform` | `go run helm.sh/helm/v3/cmd/helm@v3.18.6 lint infra/helm/axi-workbench-platform --strict` 与 `helm template` |
 | Web / mobile contract verifiers | `apps/workbench/scripts/verify-ui-contracts.mjs`, `apps/workbench-mobile/scripts/verify-mobile-contracts.mjs` | Same as above |
 | Workstation control plane | `services/control-plane` | `pnpm --filter @axi/workstation-control-plane test`, `pnpm --filter @axi/workstation-control-plane smoke` |
 | Communication gateway | `services/communication-gateway` | `pnpm --filter @axi/workstation-communication-gateway test` |
@@ -78,6 +83,12 @@ pnpm --filter @axi/workbench-mobile verify:contracts
 # 6) Control-plane smoke + Fleet Console validate
 pnpm --filter @axi/workstation-control-plane smoke
 python3 infra/fleet-console/scripts/fleetctl.py validate
+
+# 7) Go production API plane
+(cd services/api-gateway && go test -race ./...)
+(cd services/identity-adapter && go test -race ./...)
+(cd services/platform-core && go test -race ./...)
+go run helm.sh/helm/v3/cmd/helm@v3.18.6 lint infra/helm/axi-workbench-platform --strict
 ```
 
 ### Surface-specific commands

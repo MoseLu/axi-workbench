@@ -1,0 +1,72 @@
+# Copy this file outside Git, replace all example domains, and supply the
+# referenced Secrets before installing the official ZITADEL chart.
+#
+# helm repo add zitadel https://charts.zitadel.com
+# helm upgrade --install zitadel zitadel/zitadel --namespace axi-identity \
+#   --create-namespace --values zitadel-values.production.yaml --wait
+
+replicaCount: 2
+
+postgresql:
+  enabled: false
+
+zitadel:
+  masterkeySecretName: axi-zitadel-masterkey
+  env:
+    - name: ZITADEL_DATABASE_POSTGRES_DSN
+      valueFrom:
+        secretKeyRef:
+          name: axi-zitadel-database
+          key: dsn
+    - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: axi-zitadel-bootstrap
+          key: first-instance-password
+  configmapConfig:
+    ExternalDomain: id.axi.example.com
+    ExternalSecure: true
+    ExternalPort: 443
+    TLS:
+      Enabled: false
+    FirstInstance:
+      Org:
+        Human:
+          UserName: axi-admin
+          Email: identity-admin@axi.example.com
+          PasswordChangeRequired: true
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: id.axi.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: axi-zitadel-tls
+      hosts:
+        - id.axi.example.com
+
+login:
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - host: id.axi.example.com
+        paths:
+          - path: /ui/v2/login
+            pathType: Prefix
+    tls:
+      - secretName: axi-zitadel-tls
+        hosts:
+          - id.axi.example.com
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

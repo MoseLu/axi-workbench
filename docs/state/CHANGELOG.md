@@ -6,6 +6,11 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
+- Added ADR-0001 and the Go production API plane: ZITADEL-oriented Gin `api-gateway`, `identity-adapter`, modular `platform-core`, Dockerfiles, local role bootstrap, Helm chart, migration jobs, NetworkPolicy, PDB and ZITADEL values example.
+- Added server-side Authorization Code + PKCE session handling, JWKS validation, Redis rate limiting, Redis-backed one-time QR transactions, SMTP verification adapters, EPS identity-link records, tenant/RBAC/preferences/dictionaries/projects/tasks/outbox modules and PostgreSQL RLS integration coverage.
+- Added OTLP/HTTP trace export in gateway, identity-adapter and platform-core; an empty endpoint remains offline/no-op for local development while W3C trace context continues across services.
+- Added tenant-scoped platform API client contracts; legacy Spring/H2 project endpoints are explicitly read-only compatibility hooks.
+
 - Added a formal independent mobile application at `apps/workbench-mobile` with its own Vite entry, routes, header, tab bar, mobile pages, login surface, unit test, and UI boundary verifier.
 - Added `@axi/workbench-foundation` to share only authentication session behavior and locale preference between the Web and mobile applications.
 - Added the root documentation suite placeholders and governance entrypoints for README, AGENTS, INDEX, PRD, TDD, TODO, and milestone alignment.
@@ -15,6 +20,10 @@ All notable local changes to Axi Workbench are tracked here.
 - Linked every `REQ-*` row to the corresponding commands and tests captured in `docs/state/TODO.md` and `docs/state/TDD.md`.
 
 ### Changed
+
+- Replaced browser local token/refresh handling with HttpOnly gateway sessions; apps use relative API paths in development and an explicit HTTPS gateway origin in production, while shared locale preference synchronizes with platform-core after authentication and retains a local offline cache.
+- Reclassified `auth-service` and Spring/H2 `core-service` as migration compatibility only; the production Helm chart exposes only the Go gateway and its internal Go services.
+- Hardened the Go API plane after independent review: access-token audience/scope checks, exact credentialed CORS origins, QR completion through the single gateway ingress, graceful server shutdown, SMTP TLS protection, migration-only configuration, protected Owner transitions, and leased/idempotent Outbox delivery.
 
 - Restored the independent mobile application to the prior WeChat-inspired interaction system: centered title, search and plus menu, overview/project/workspace/scan/me navigation, green active state, badges, and a scan page. Web Axi Dashboard Chrome remains Web-only.
 - Converted `apps/workbench` into the Web-admin-only application: the viewport-driven `MobileTopBar` / `MobileBottomNav` branch was removed, and the Web UI verifier now blocks its reintroduction.

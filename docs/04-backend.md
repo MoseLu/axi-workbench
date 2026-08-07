@@ -1,5 +1,27 @@
 # 第四章 后端服务层详细设计
 
+## 4.0 当前生产实现（2026-08）
+
+以 [`ADR-0001`](./adr/0001-zitadel-gin-platform-core.md) 为准，当前后端不是重写成另一套 Gin，而是将已有 Go 网关演进为三条明确边界：
+
+| 边界 | 当前实现 | 生产职责 |
+|---|---|---|
+| API Gateway | `services/api-gateway`（Go + Gin） | 唯一 `/api/v1` 入口、ZITADEL JWKS 校验、授权码 + PKCE、HttpOnly 会话、Redis 限流、请求/追踪/审计关联、安全转发 |
+| Axi Identity | `services/identity-adapter`（Go + Gin） + ZITADEL | 邮箱验证、短期 Redis 扫码事务、ZITADEL custom-login 续接、EPS 外部主体映射；不手写 JWT Issuer |
+| Platform Core | `services/platform-core`（Go + Gin） | 租户、成员/RBAC、偏好、字典、项目、任务、Outbox；PostgreSQL schema、`tenant_id` 与强制 RLS |
+
+关键约束：
+
+- Web 和移动端是独立应用，当前浏览器交付共享 gateway BFF 的 Authorization Code + PKCE 身份合同，而不共享 UI 壳。生产构建必须显式指向同一 HTTPS VITE_API_BASE_URL；EPS 使用独立 PKCE client。
+- Bearer token 必须通过 ZITADEL JWKS、配置的 API audience 与全部所需 scope 校验；浏览器 ID Token 不能替代业务 API access token。
+- QR 轮询只返回状态，审批后由一次性 resume 事务进入 ZITADEL；任何 QR 接口不返回 JWT 或 OIDC code。
+- ZITADEL 的 QR completion 仅经 gateway 的 /api/v1/internal/zitadel/... 反向代理进入 ClusterIP identity-adapter，并额外校验 webhook secret。
+- Outbox 采用至少一次投递；五分钟租约、指数退避、第十次失败死信标记和 X-Axi-Event-ID 共同构成消费者幂等契约。
+- 运行时 `axi_platform_app` 是 `NOBYPASSRLS`；只有 pre-install/pre-upgrade migration Job 的专用账号拥有 `BYPASSRLS`，从而让 `SECURITY DEFINER` 的 RLS helper 可工作而不泄露运行时权限。
+- `auth-service` 和 Spring/H2 `core-service` 是迁移兼容来源；网关只会在显式配置时向它们开放只读旧路径，生产 Chart 不部署它们。
+
+Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 [`infra/helm`](../infra/helm/README.md)。以下内容为早期 EPAP 设计记录，不覆盖本节的当前边界。
+
 ## 4.1 api-gateway — Go + Gin
 
 > **职责**：统一入口、流量路由、JWT 验证（调用 auth-service gRPC）、请求限流、链路追踪注入、响应日志。

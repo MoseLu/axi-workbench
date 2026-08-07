@@ -15,8 +15,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@axi/workstation-contracts": "workspace:*",
-    "@epap/api-client": "workspace:*"
+    "@axi/workstation-contracts": "workspace:*"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
