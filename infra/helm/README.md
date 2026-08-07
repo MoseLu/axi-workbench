@@ -10,15 +10,15 @@ NGINX Ingress ──► api-gateway ──► identity-adapter ──► ZITADEL
                     │     ▲              │
                     │     └─ QR complete─┘ (webhook secret)
                     ├──────────► platform-core ──► PostgreSQL / Redis
-                    ├──────────► workflow-engine
-                    ├──────────► notification-service
-                    └──────────► file-service ──► PVC
+                    ├──────────► workflow-engine ──► PostgreSQL
+                    ├──────────► notification-service ──► PostgreSQL
+                    └──────────► file-service ──► S3/MinIO（生产）或 PVC（开发）
 ```
 
 ## 先决条件
 
 - Kubernetes 1.30+、NGINX Ingress 和 cert-manager。
-- PostgreSQL 14+ 共享实例：`axi_identity` 与 `axi_platform` 使用独立 schema / 账号；ZITADEL 使用其自己的数据库。
+- PostgreSQL 14+ 共享实例：`axi_identity`、`axi_platform` 与 `axi_notifications` 使用独立 schema / 账号；ZITADEL 使用其自己的数据库。
 - Redis 用于网关 OIDC 会话、PKCE state 与限流，以及 identity-adapter 的短期二维码事务。
 - 官方 ZITADEL Helm Chart。生产环境禁用其 bundled PostgreSQL，并将 `ZITADEL_DATABASE_POSTGRES_DSN` 指向受管 PostgreSQL 的 `postgres` maintenance database；ZITADEL 会创建和维护自己的身份数据。
 
@@ -45,7 +45,14 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 - `PLATFORM_DATABASE_URL`（`axi_platform_app`，必须为 `NOBYPASSRLS`）
 - `PLATFORM_MIGRATION_DATABASE_URL`（仅 Helm migration Job 使用的 `BYPASSRLS` 账号）
 - `PLATFORM_INTERNAL_SERVICE_TOKEN`（值必须与 gateway platform token 相同）
+- `WORKFLOW_DATABASE_URL`（workflow-engine 运行时账号，只能访问 `axi_workflow`）
+- `WORKFLOW_MIGRATION_DATABASE_URL`（仅 workflow migration Job 使用的迁移账号）
+- `NOTIFICATION_DATABASE_URL`（notification-service 运行时账号，只能访问 `axi_notifications`）
+- `NOTIFICATION_MIGRATION_DATABASE_URL`（仅 notification migration Job 使用的迁移账号）
+- `FILE_DATABASE_URL`（file-service 运行时账号，只能访问 `axi_files`）
+- `FILE_MIGRATION_DATABASE_URL`（仅 file migration Job 使用的迁移账号）
 - `FILE_INTERNAL_SERVICE_TOKEN`（值必须与 gateway file token 相同）
+- `FILE_S3_ACCESS_KEY_ID`、`FILE_S3_SECRET_ACCESS_KEY`（生产 S3/MinIO 凭据）
 - `WORKFLOW_INTERNAL_SERVICE_TOKEN`（值必须与 gateway workflow token 相同）
 - `NOTIFICATION_INTERNAL_SERVICE_TOKEN`（值必须与 gateway notification token 相同）
 
@@ -70,7 +77,7 @@ helm upgrade --install axi-workbench ./infra/helm/axi-workbench-platform \
 helm test axi-workbench --namespace axi-workbench
 ```
 
-迁移 Job 在安装/升级前执行。它失败时 Helm 不会推进运行时 Deployment；不要以应用运行时账号手工重试迁移。
+迁移 Job 在安装/升级前执行，包含 identity、platform 和 notification schema。它失败时 Helm 不会推进运行时 Deployment；不要以应用运行时账号手工重试迁移。
 
 ## 验收边界
 

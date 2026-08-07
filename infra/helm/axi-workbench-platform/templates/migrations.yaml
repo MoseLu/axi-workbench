@@ -141,3 +141,147 @@ spec:
                   name: {{ .Values.secrets.existingSecret }}
                   key: PLATFORM_INTERNAL_SERVICE_TOKEN
 {{- end }}
+{{- if .Values.migrations.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-file-migrate
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: file-migration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "axi-workbench-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: file-migration
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "axi-workbench-platform.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: file-migrate
+          image: "{{ .Values.fileService.image.repository }}:{{ default .Chart.AppVersion .Values.fileService.image.tag }}"
+          imagePullPolicy: {{ .Values.fileService.image.pullPolicy }}
+          command: ["python", "migrate.py"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "axi-workbench-platform.fullname" . }}-config
+          env:
+            - name: FILE_MIGRATION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_MIGRATION_DATABASE_URL
+{{- end }}
+{{- if .Values.migrations.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-workflow-migrate
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-migration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-7"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "axi-workbench-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: workflow-migration
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "axi-workbench-platform.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: workflow-migrate
+          image: "{{ .Values.workflowEngine.image.repository }}:{{ default .Chart.AppVersion .Values.workflowEngine.image.tag }}"
+          imagePullPolicy: {{ .Values.workflowEngine.image.pullPolicy }}
+          command: ["python", "migrate.py"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "axi-workbench-platform.fullname" . }}-config
+          env:
+            - name: WORKFLOW_MIGRATION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: WORKFLOW_MIGRATION_DATABASE_URL
+{{- end }}
+{{- if .Values.migrations.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-notification-migrate
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-migration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "axi-workbench-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: notification-migration
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "axi-workbench-platform.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: notification-migrate
+          image: "{{ .Values.notificationService.image.repository }}:{{ default .Chart.AppVersion .Values.notificationService.image.tag }}"
+          imagePullPolicy: {{ .Values.notificationService.image.pullPolicy }}
+          command: ["/notification-migrate"]
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "axi-workbench-platform.fullname" . }}-config
+          env:
+            - name: NOTIFICATION_MIGRATION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: NOTIFICATION_MIGRATION_DATABASE_URL
+{{- end }}

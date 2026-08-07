@@ -8,6 +8,8 @@ import (
 type Config struct {
 	Environment          string
 	InternalServiceToken string
+	DatabaseURL          string
+	MigrationDatabaseURL string
 	Port                 string
 	SMTPHost             string
 	SMTPPort             string
@@ -20,6 +22,8 @@ func Load() *Config {
 	return &Config{
 		Environment:          getEnv("ENVIRONMENT", "development"),
 		InternalServiceToken: getEnv("NOTIFICATION_INTERNAL_SERVICE_TOKEN", getEnv("INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+		DatabaseURL:          getEnv("NOTIFICATION_DATABASE_URL", ""),
+		MigrationDatabaseURL: getEnv("NOTIFICATION_MIGRATION_DATABASE_URL", getEnv("NOTIFICATION_DATABASE_URL", "")),
 		// Align with docs / .env.example: notification-service listens on 8084
 		Port:         getEnv("NOTIFICATION_PORT", "8084"),
 		SMTPHost:     getEnv("SMTP_HOST", "localhost"),
@@ -33,6 +37,9 @@ func Load() *Config {
 func (c *Config) Validate() error {
 	if c.Environment == "production" && (c.InternalServiceToken == "" || c.InternalServiceToken == "axi-development-internal-token") {
 		return fmt.Errorf("NOTIFICATION_INTERNAL_SERVICE_TOKEN must be injected in production")
+	}
+	if c.Environment == "production" && c.DatabaseURL == "" {
+		return fmt.Errorf("NOTIFICATION_DATABASE_URL must be injected in production")
 	}
 	return nil
 }

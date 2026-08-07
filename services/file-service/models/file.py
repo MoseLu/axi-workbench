@@ -43,6 +43,13 @@ class DeleteResponse(BaseModel):
     deleted_file: str = Field(..., description="Name of deleted file")
 
 
+class PresignedURLResponse(BaseModel):
+    """Short-lived object-storage download URL."""
+
+    url: str = Field(..., description="Short-lived download URL")
+    expires_in: int = Field(..., description="URL lifetime in seconds")
+
+
 class HealthResponse(BaseModel):
     """Response model for health check."""
 

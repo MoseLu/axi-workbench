@@ -23,13 +23,24 @@ func main() {
 		log.Fatalf("invalid notification service configuration: %v", err)
 	}
 
-	notificationService := services.NewNotificationService()
+	notificationService, err := services.NewNotificationServiceWithContext(context.Background())
+	if err != nil {
+		log.Fatalf("initialize notification repository: %v", err)
+	}
+	defer notificationService.Close()
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "notification-service"})
+	})
+	r.GET("/ready", func(c *gin.Context) {
+		if err := notificationService.Ping(c.Request.Context()); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not_ready", "service": "notification-service"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready", "service": "notification-service"})
 	})
 
 	api := r.Group("/api/v1/notifications")
@@ -58,6 +69,7 @@ func main() {
 	}
 	shutdownSignal, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	notificationService.StartDeliveryWorker(shutdownSignal)
 	serverErrors := make(chan error, 1)
 	go func() { serverErrors <- server.ListenAndServe() }()
 	log.Printf("Starting notification service on port %s", port)

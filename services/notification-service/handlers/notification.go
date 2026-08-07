@@ -32,7 +32,7 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 		return
 	}
 
-	notification, err := h.service.CreateNotification(&req)
+	notification, err := h.service.CreateNotificationContext(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -47,7 +47,11 @@ func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 		return
 	}
 	unreadOnly := c.Query("unreadOnly") == "true" || c.Query("unread") == "1"
-	notifications := h.service.ListNotifications(userID, unreadOnly)
+	notifications, err := h.service.ListNotificationsContext(c.Request.Context(), userID, unreadOnly)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load notifications"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"notifications": notifications})
 }
 
@@ -58,7 +62,12 @@ func (h *NotificationHandler) GetNavBadges(c *gin.Context) {
 	if !ok {
 		return
 	}
-	c.JSON(http.StatusOK, h.service.GetNavBadges(userID))
+	badges, err := h.service.GetNavBadgesContext(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load notification badges"})
+		return
+	}
+	c.JSON(http.StatusOK, badges)
 }
 
 func (h *NotificationHandler) MarkRead(c *gin.Context) {
@@ -67,7 +76,7 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "id required"})
 		return
 	}
-	n, err := h.service.MarkRead(id, middleware.Subject(c))
+	n, err := h.service.MarkReadContext(c.Request.Context(), id, middleware.Subject(c))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -80,7 +89,11 @@ func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
 	if !ok {
 		return
 	}
-	count := h.service.MarkAllRead(userID)
+	count, err := h.service.MarkAllReadContext(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to mark notifications read"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"marked": count})
 }
 

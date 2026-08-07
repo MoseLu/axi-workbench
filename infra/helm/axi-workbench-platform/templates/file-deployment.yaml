@@ -44,6 +44,21 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: FILE_INTERNAL_SERVICE_TOKEN
+            - name: FILE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_DATABASE_URL
+            - name: FILE_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_S3_ACCESS_KEY_ID
+            - name: FILE_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_S3_SECRET_ACCESS_KEY
           volumeMounts:
             - name: file-storage
               mountPath: {{ .Values.fileService.storagePath }}
@@ -57,7 +72,7 @@ spec:
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /files/health
+              path: /files/ready
               port: http
             initialDelaySeconds: 3
             periodSeconds: 10
@@ -65,7 +80,7 @@ spec:
             {{- toYaml .Values.fileService.resources | nindent 12 }}
       volumes:
         - name: file-storage
-          {{- if .Values.fileService.persistence.enabled }}
+          {{- if and .Values.fileService.persistence.enabled (eq .Values.fileService.storageBackend "local") }}
           persistentVolumeClaim:
             claimName: {{ include "axi-workbench-platform.fullname" . }}-files
           {{- else }}

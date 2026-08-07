@@ -4,13 +4,22 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from config import ensure_storage_directory, settings
-from routers.files import router as files_router
+from config import ensure_storage_directory, settings, validate_settings
+from routers.files import router as files_router, set_file_service
+from service import build_file_service
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    ensure_storage_directory()
-    yield
+    validate_settings()
+    if settings.storage_backend.lower() == "local":
+        ensure_storage_directory()
+    service = await build_file_service(settings)
+    set_file_service(service)
+    try:
+        yield
+    finally:
+        await service.close()
+        set_file_service(None)
 
 
 app = FastAPI(

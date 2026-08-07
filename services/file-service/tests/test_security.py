@@ -79,3 +79,29 @@ def test_file_name_cannot_escape_subject_storage(tmp_path) -> None:
     finally:
         settings.internal_service_token = original_token
         settings.storage_path = original_storage
+
+
+def test_file_objects_cannot_be_downloaded_or_deleted_by_another_subject(tmp_path) -> None:
+    original_token = settings.internal_service_token
+    original_storage = settings.storage_path
+    settings.internal_service_token = "file-test-token"
+    settings.storage_path = tmp_path
+    try:
+        alice_headers = {
+            "X-Axi-Internal-Token": "file-test-token",
+            "X-Axi-Subject": "alice",
+        }
+        bob_headers = {
+            "X-Axi-Internal-Token": "file-test-token",
+            "X-Axi-Subject": "bob",
+        }
+        with TestClient(app) as client:
+            assert client.post(
+                "/files/upload", headers=alice_headers, files={"file": ("private.txt", b"secret", "text/plain")}
+            ).status_code == 201
+            assert client.get("/files/download/private.txt", headers=bob_headers).status_code == 404
+            assert client.delete("/files/private.txt", headers=bob_headers).status_code == 404
+            assert client.get("/files/download/private.txt", headers=alice_headers).content == b"secret"
+    finally:
+        settings.internal_service_token = original_token
+        settings.storage_path = original_storage

@@ -1,23 +1,21 @@
-"""Workflow CRUD endpoints."""
+"""Workflow CRUD and execution endpoints."""
 
 import logging
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 
 from config import get_settings
-from models.workflow import (
-    Workflow,
-    WorkflowCreate,
-    WorkflowExecution,
-    WorkflowStatus,
-    WorkflowUpdate,
-)
-from services.executor import WorkflowExecutor
+from models.workflow import Workflow, WorkflowCreate, WorkflowExecution, WorkflowUpdate
 from security import require_gateway_identity
+from services.executor import WorkflowExecutor
+from services.repository import (
+    MemoryWorkflowRepository,
+    WorkflowAlreadyRunning,
+    WorkflowNotFound,
+    WorkflowRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +25,43 @@ router = APIRouter(
     dependencies=[Depends(require_gateway_identity)],
 )
 
-# In-memory storage (replace with database in production)
-workflows_db: dict[UUID, Workflow] = {}
-executing_workflows: dict[UUID, WorkflowExecution] = {}
+_memory_repository = MemoryWorkflowRepository()
+repository: WorkflowRepository = _memory_repository
+# Compatibility names for the original development tests and local tooling.
+# Production requests use the repository interface above, not these maps.
+workflows_db = _memory_repository.workflows
+executing_workflows = _memory_repository.executions
+executor = WorkflowExecutor(step_timeout=get_settings().step_timeout_seconds)
 
-settings = get_settings()
-executor = WorkflowExecutor(step_timeout=settings.step_timeout_seconds)
+
+def set_repository(value: WorkflowRepository) -> None:
+    global repository, workflows_db, executing_workflows
+    repository = value
+    if isinstance(value, MemoryWorkflowRepository):
+        workflows_db = value.workflows
+        executing_workflows = value.executions
+
+
+def get_repository() -> WorkflowRepository:
+    return repository
+
+
+def set_executor(value: WorkflowExecutor) -> None:
+    global executor
+    executor = value
+
+
+def _not_found(workflow_id: UUID, detail: str | None = None) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=detail or f"Workflow {workflow_id} not found",
+    )
 
 
 @router.get("", response_model=list[Workflow])
 async def list_workflows(subject: str = Depends(require_gateway_identity)) -> list[Workflow]:
-    """List all workflows."""
-    return [workflow for workflow in workflows_db.values() if workflow.owner_subject == subject]
+    """List only workflows owned by the verified subject."""
+    return await repository.list(subject)
 
 
 @router.post("", response_model=Workflow, status_code=status.HTTP_201_CREATED)
@@ -46,16 +69,16 @@ async def create_workflow(
     workflow_data: WorkflowCreate,
     subject: str = Depends(require_gateway_identity),
 ) -> Workflow:
-    """Create a new workflow."""
+    """Create a durable workflow definition."""
     workflow = Workflow(
         name=workflow_data.name,
         description=workflow_data.description,
         steps=workflow_data.steps,
         owner_subject=subject,
     )
-    workflows_db[workflow.id] = workflow
-    logger.info(f"Created workflow: {workflow.id} - {workflow.name}")
-    return workflow
+    created = await repository.create(workflow)
+    logger.info("Created workflow: %s - %s", created.id, created.name)
+    return created
 
 
 @router.get("/{workflow_id}", response_model=Workflow)
@@ -63,13 +86,11 @@ async def get_workflow(
     workflow_id: UUID,
     subject: str = Depends(require_gateway_identity),
 ) -> Workflow:
-    """Get a workflow by ID."""
-    if workflow_id not in workflows_db or workflows_db[workflow_id].owner_subject != subject:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Workflow {workflow_id} not found",
-        )
-    return workflows_db[workflow_id]
+    """Get an owned workflow by ID."""
+    try:
+        return await repository.get(workflow_id, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
 
 
 @router.patch("/{workflow_id}", response_model=Workflow)
@@ -79,14 +100,11 @@ async def update_workflow(
     workflow_data: WorkflowUpdate,
     subject: str = Depends(require_gateway_identity),
 ) -> Workflow:
-    """Update a workflow."""
-    if workflow_id not in workflows_db or workflows_db[workflow_id].owner_subject != subject:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Workflow {workflow_id} not found",
-        )
-
-    workflow = workflows_db[workflow_id]
+    """Update an owned workflow definition."""
+    try:
+        workflow = await repository.get(workflow_id, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
 
     if workflow_data.name is not None:
         workflow.name = workflow_data.name
@@ -94,11 +112,12 @@ async def update_workflow(
         workflow.description = workflow_data.description
     if workflow_data.steps is not None:
         workflow.steps = workflow_data.steps
-
     workflow.updated_at = datetime.now(UTC)
-    workflows_db[workflow_id] = workflow
 
-    return workflow
+    try:
+        return await repository.update(workflow, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
 
 
 @router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -106,14 +125,12 @@ async def delete_workflow(
     workflow_id: UUID,
     subject: str = Depends(require_gateway_identity),
 ) -> None:
-    """Delete a workflow."""
-    if workflow_id not in workflows_db or workflows_db[workflow_id].owner_subject != subject:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Workflow {workflow_id} not found",
-        )
-    del workflows_db[workflow_id]
-    logger.info(f"Deleted workflow: {workflow_id}")
+    """Delete an owned workflow and its execution record."""
+    try:
+        await repository.delete(workflow_id, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
+    logger.info("Deleted workflow: %s", workflow_id)
 
 
 @router.post("/{workflow_id}/execute", response_model=WorkflowExecution)
@@ -121,37 +138,28 @@ async def execute_workflow(
     workflow_id: UUID,
     subject: str = Depends(require_gateway_identity),
 ) -> WorkflowExecution:
-    """Execute a workflow."""
-    if workflow_id not in workflows_db or workflows_db[workflow_id].owner_subject != subject:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Workflow {workflow_id} not found",
-        )
-
-    workflow = workflows_db[workflow_id]
-
-    if workflow.status == WorkflowStatus.RUNNING:
+    """Atomically claim and execute an owned workflow."""
+    try:
+        workflow = await repository.claim_for_execution(workflow_id, subject)
+    except WorkflowAlreadyRunning as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Workflow {workflow_id} is already running",
-        )
+        ) from exc
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
 
-    workflow.status = WorkflowStatus.RUNNING
-    workflow.executed_at = datetime.now(UTC)
-    workflows_db[workflow_id] = workflow
-
-    logger.info(f"Starting execution of workflow: {workflow_id}")
-
+    logger.info("Starting execution of workflow: %s", workflow_id)
     execution = await executor.execute_workflow(workflow)
 
-    # Update workflow with execution results
     workflow.status = execution.status
     workflow.result = execution.result
     workflow.updated_at = datetime.now(UTC)
-    workflows_db[workflow_id] = workflow
-
-    executing_workflows[workflow_id] = execution
-
+    try:
+        await repository.update(workflow, subject)
+        await repository.save_execution(execution, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
     return execution
 
 
@@ -160,14 +168,8 @@ async def get_workflow_execution(
     workflow_id: UUID,
     subject: str = Depends(require_gateway_identity),
 ) -> WorkflowExecution:
-    """Get the execution result of a workflow."""
-    if (
-        workflow_id not in executing_workflows
-        or workflow_id not in workflows_db
-        or workflows_db[workflow_id].owner_subject != subject
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No execution found for workflow {workflow_id}",
-        )
-    return executing_workflows[workflow_id]
+    """Get the latest durable execution result for an owned workflow."""
+    try:
+        return await repository.get_execution(workflow_id, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id, f"No execution found for workflow {workflow_id}") from exc

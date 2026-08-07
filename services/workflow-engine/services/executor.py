@@ -47,7 +47,7 @@ class WorkflowExecutor:
                 step.error = str(e)
                 execution.status = WorkflowStatus.FAILED
                 execution.error = str(e)
-                execution.completed_at = datetime.utcnow()
+                execution.completed_at = datetime.now(UTC)
                 return execution
 
         execution.status = WorkflowStatus.COMPLETED

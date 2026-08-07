@@ -27,7 +27,7 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 - `api-gateway`（Go + Gin）是唯一业务 API 入口，使用 ZITADEL JWKS、HttpOnly 会话、Redis 限流、追踪关联和无请求体审计日志。
 - `identity-adapter`（Go + Gin）承接邮件验证、扫码登录事务和 EPS 身份映射；短期二维码事务在 Redis，长期验证/映射数据在 PostgreSQL。
 - `platform-core`（Go + Gin）是模块化租户核心，包含成员/RBAC、偏好、字典、项目、任务、Outbox 与 PostgreSQL RLS。
-- `workflow-engine`、`notification-service`、`file-service` 已接入同一 Gateway/Helm 内部拓扑；它们分别保留 Python/Go/Python 专职边界，当前仍处于持久化、队列和对象存储迁移阶段。
+- `workflow-engine`、`notification-service`、`file-service` 已接入同一 Gateway/Helm 内部拓扑；workflow 与 notification 已落 PostgreSQL 持久化和 migration Job，notification 还具备可恢复 delivery worker 与 SMTP，file 已支持生产 S3/MinIO + PostgreSQL 元数据及短时预签名 URL，分别保留 Python/Go/Python 专职边界，workflow 异步编排、Kafka 事件消费与文件处理链仍在迁移。
 - `auth-service` 和 Spring/H2 `core-service` 只保留为迁移兼容来源，不是生产身份或业务数据 owner。
 
 部署说明位于 [`infra/helm/README.md`](infra/helm/README.md)，架构决策位于 [`docs/adr/0001-zitadel-gin-platform-core.md`](docs/adr/0001-zitadel-gin-platform-core.md)。

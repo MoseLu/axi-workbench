@@ -1,30 +1,36 @@
-"""File upload/download endpoints."""
-import hashlib
+"""File upload, download and metadata endpoints."""
+
 import mimetypes
-import os
 from pathlib import Path
-from uuid import uuid4
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from config import settings
-from models.file import (
-    DeleteResponse,
-    FileInfo,
-    FileListResponse,
-    FileUploadResponse,
-    HealthResponse,
-)
+from models.file import DeleteResponse, FileInfo, FileListResponse, FileUploadResponse, HealthResponse, PresignedURLResponse
+from repository import FileNotFound
 from security import require_gateway_identity
+from service import FileService, FileSizeExceeded
 
 router = APIRouter(prefix="/files", tags=["files"])
+file_service: FileService | None = None
+
+
+def set_file_service(value: FileService | None) -> None:
+    global file_service
+    file_service = value
+
+
+def get_file_service() -> FileService:
+    if file_service is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="file service is starting")
+    return file_service
 
 
 @router.get("/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
-    """Health check endpoint."""
+    """Liveness check that does not require gateway identity."""
     return HealthResponse(
         status="healthy",
         storage_path=str(settings.storage_path),
@@ -32,18 +38,20 @@ async def health_check() -> HealthResponse:
     )
 
 
-def _subject_storage_path(subject: str) -> Path:
-    """Use a stable opaque directory so one subject cannot address another."""
-
-    digest = hashlib.sha256(subject.encode("utf-8")).hexdigest()
-    path = settings.storage_path / "subjects" / digest
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+@router.get("/ready")
+async def readiness_check() -> dict[str, str]:
+    """Readiness includes metadata and object storage availability."""
+    service = get_file_service()
+    try:
+        await service.ping()
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="file store unavailable") from exc
+    return {"status": "ready", "service": "file-service"}
 
 
 def _safe_filename(filename: str | None) -> str:
     name = (filename or "").strip()
-    if not name or name in {".", ".."} or "/" in name or "\\" in name:
+    if not name or name in {".", ".."} or "/" in name or "\\" in name or "\x00" in name:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="a single safe filename is required",
@@ -58,42 +66,15 @@ def _safe_filename(filename: str | None) -> str:
     return name
 
 
-def _subject_file_path(subject: str, filename: str | None) -> Path:
-    root = _subject_storage_path(subject).resolve()
-    path = (root / _safe_filename(filename)).resolve()
-    if path.parent != root:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="invalid file path",
-        )
-    return path
-
-
-async def _save_upload(subject: str, file: UploadFile) -> tuple[str, Path, int]:
-    filename = _safe_filename(file.filename)
-    target = _subject_file_path(subject, filename)
-    temporary = target.parent / f".{uuid4().hex}.upload"
-    size = 0
-    try:
-        with temporary.open("wb") as output:
-            while chunk := await file.read(1024 * 1024):
-                size += len(chunk)
-                if size > settings.max_file_size:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
-                    )
-                output.write(chunk)
-        os.replace(temporary, target)
-    except HTTPException:
-        temporary.unlink(missing_ok=True)
-        raise
-    except Exception:
-        temporary.unlink(missing_ok=True)
-        raise
-    finally:
-        await file.close()
-    return filename, target, size
+def _file_info(record) -> FileInfo:
+    return FileInfo(
+        name=record.name,
+        path=record.name,
+        size=record.size,
+        created_at=record.created_at,
+        modified_at=record.modified_at,
+        content_type=record.content_type or mimetypes.guess_type(record.name)[0],
+    )
 
 
 @router.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
@@ -101,13 +82,19 @@ async def upload_file(
     subject: str = Depends(require_gateway_identity),
     file: UploadFile = File(...),
 ) -> FileUploadResponse:
-    """Upload a single file."""
-    filename, _, file_size = await _save_upload(subject, file)
-
+    """Stream one upload through the configured object-storage adapter."""
+    filename = _safe_filename(file.filename)
+    try:
+        record = await get_file_service().upload(subject, filename, file)
+    except FileSizeExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
+        ) from exc
     return FileUploadResponse(
-        name=filename,
-        path=filename,
-        size=file_size,
+        name=record.name,
+        path=record.name,
+        size=record.size,
         message="File uploaded successfully",
     )
 
@@ -117,93 +104,74 @@ async def upload_multiple_files(
     subject: str = Depends(require_gateway_identity),
     files: list[UploadFile] = File(...),
 ) -> list[FileUploadResponse]:
-    """Upload multiple files."""
-    responses = []
-
+    """Stream multiple uploads, preserving the single-file size limit."""
+    responses: list[FileUploadResponse] = []
     for file in files:
-        filename, _, file_size = await _save_upload(subject, file)
-
+        filename = _safe_filename(file.filename)
+        try:
+            record = await get_file_service().upload(subject, filename, file)
+        except FileSizeExceeded as exc:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
+            ) from exc
         responses.append(
             FileUploadResponse(
-                name=filename,
-                path=filename,
-                size=file_size,
+                name=record.name,
+                path=record.name,
+                size=record.size,
                 message="File uploaded successfully",
             )
         )
-
     return responses
 
 
 @router.get("/", response_model=FileListResponse)
 async def list_files(subject: str = Depends(require_gateway_identity)) -> FileListResponse:
-    """List all files in storage."""
-    storage_path = _subject_storage_path(subject)
-
-    files = []
-    for file_path in storage_path.iterdir():
-        if file_path.is_file():
-            stat = file_path.stat()
-            content_type, _ = mimetypes.guess_type(str(file_path))
-            files.append(
-                FileInfo(
-                    name=file_path.name,
-                    path=str(file_path.relative_to(storage_path)),
-                    size=stat.st_size,
-                    created_at=datetime.fromtimestamp(stat.st_ctime),
-                    modified_at=datetime.fromtimestamp(stat.st_mtime),
-                    content_type=content_type,
-                )
-            )
-
-    return FileListResponse(files=files, total=len(files))
+    """List only metadata owned by the verified subject."""
+    records = await get_file_service().list(subject)
+    return FileListResponse(files=[_file_info(record) for record in records], total=len(records))
 
 
 @router.get("/download/{filename}")
 async def download_file(filename: str, subject: str = Depends(require_gateway_identity)) -> FileResponse:
-    """Download a file."""
-    file_path = _subject_file_path(subject, filename)
-
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File {filename} not found",
-        )
-
-    if not file_path.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{filename} is not a file",
-        )
-
-    content_type, _ = mimetypes.guess_type(str(file_path))
+    """Download through the gateway; object storage keys are never client-controlled."""
+    filename = _safe_filename(filename)
+    try:
+        record, path, temporary = await get_file_service().get_download(subject, filename)
+    except (FileNotFound, FileNotFoundError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File {filename} not found") from exc
+    background = BackgroundTask(path.unlink, missing_ok=True) if temporary else None
     return FileResponse(
-        path=file_path,
-        filename=filename,
-        media_type=content_type or "application/octet-stream",
+        path=path,
+        filename=record.name,
+        media_type=record.content_type or "application/octet-stream",
+        background=background,
     )
+
+
+@router.get("/presigned/{filename}", response_model=PresignedURLResponse)
+async def presigned_download_url(
+    filename: str,
+    subject: str = Depends(require_gateway_identity),
+) -> PresignedURLResponse:
+    """Return a short-lived S3/MinIO URL without exposing object keys."""
+    filename = _safe_filename(filename)
+    try:
+        url = await get_file_service().get_presigned_download(subject, filename)
+    except FileNotFound as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File {filename} not found") from exc
+    if not url:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="presigned URLs require S3 storage")
+    return PresignedURLResponse(url=url, expires_in=settings.presigned_url_ttl_seconds)
 
 
 @router.delete("/{filename}", response_model=DeleteResponse)
 async def delete_file(filename: str, subject: str = Depends(require_gateway_identity)) -> DeleteResponse:
-    """Delete a file."""
-    file_path = _subject_file_path(subject, filename)
-
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File {filename} not found",
-        )
-
-    if not file_path.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{filename} is not a file",
-        )
-
-    file_path.unlink()
-
-    return DeleteResponse(
-        message="File deleted successfully",
-        deleted_file=filename,
-    )
+    """Delete the object first, then its owner-scoped metadata row."""
+    filename = _safe_filename(filename)
+    try:
+        record = await get_file_service().delete(subject, filename)
+    except (FileNotFound, FileNotFoundError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"File {filename} not found") from exc
+    return DeleteResponse(message="File deleted successfully", deleted_file=record.name)

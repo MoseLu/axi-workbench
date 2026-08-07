@@ -9,9 +9,9 @@
 | API Gateway | `services/api-gateway`（Go + Gin） | 唯一 `/api/v1` 入口、ZITADEL JWKS 校验、授权码 + PKCE、HttpOnly 会话、Redis 限流、请求/追踪/审计关联、安全转发 |
 | Axi Identity | `services/identity-adapter`（Go + Gin） + ZITADEL | 邮箱验证、短期 Redis 扫码事务、ZITADEL custom-login 续接、EPS 外部主体映射；不手写 JWT Issuer |
 | Platform Core | `services/platform-core`（Go + Gin） | 租户、成员/RBAC、偏好、字典、项目、任务、Outbox；PostgreSQL schema、`tenant_id` 与强制 RLS |
-| Workflow Engine | `services/workflow-engine`（Python + FastAPI） | 仅接受 gateway 可信请求；工作流按 subject 隔离；当前执行存储仍是过渡内存实现 |
-| Notification Service | `services/notification-service`（Go + Gin） | 仅接受 gateway 可信请求；通知读写按 subject 隔离；当前存储/发送仍是过渡内存实现 |
-| File Service | `services/file-service`（Python + FastAPI） | 仅接受 gateway 可信请求；文件按 subject 隔离；当前为受 PVC 保护的本地存储，S3 迁移待补 |
+| Workflow Engine | `services/workflow-engine`（Python + FastAPI） | 仅接受 gateway 可信请求；工作流定义与执行认领进入 PostgreSQL；执行器仍是进程内异步任务 |
+| Notification Service | `services/notification-service`（Go + Gin） | 仅接受 gateway 可信请求；通知收件箱与 delivery jobs 进入 PostgreSQL；SMTP 适配器和重启可恢复 worker 已接入，Kafka 事件消费仍待补 |
+| File Service | `services/file-service`（Python + FastAPI） | 仅接受 gateway 可信请求；生产使用 S3/MinIO 对象 + PostgreSQL 元数据并按 subject 隔离；开发保留本地存储降级，文件处理链待补 |
 
 关键约束：
 
@@ -22,7 +22,7 @@
 - Outbox 采用至少一次投递；五分钟租约、指数退避、第十次失败死信标记和 X-Axi-Event-ID 共同构成消费者幂等契约。
 - 运行时 `axi_platform_app` 是 `NOBYPASSRLS`；只有 pre-install/pre-upgrade migration Job 的专用账号拥有 `BYPASSRLS`，从而让 `SECURITY DEFINER` 的 RLS helper 可工作而不泄露运行时权限。
 - `auth-service` 和 Spring/H2 `core-service` 是迁移兼容来源；网关只会在显式配置时向它们开放只读旧路径，生产 Chart 不部署它们。
-- 三个专职服务已经进入 gateway/Helm 拓扑，但还不能称为最终生产完成：workflow/notification 仍需 PostgreSQL 与异步队列，file 仍需 S3/MinIO 元数据、预签名 URL 和处理链；本轮先建立可信调用合同，避免它们绕过网关或发生 subject 越权。
+- 三个专职服务已经进入 gateway/Helm 拓扑：workflow 与 notification 已具备 PostgreSQL schema、独立 migration Job、运行时账号和重启恢复/幂等边界；workflow 的实际执行编排与 notification 的 Kafka 事件消费仍待补。file 已具备 S3/MinIO 对象适配、PostgreSQL 元数据、迁移 Job、subject 隔离和短时预签名下载 URL；病毒扫描/缩略图等处理链仍待补齐，因此整个专职能力平面仍待集群级故障演练后才可称为最终生产完成。
 
 Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 [`infra/helm`](../infra/helm/README.md)。以下内容为早期 EPAP 设计记录，不覆盖本节的当前边界。
 

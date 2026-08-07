@@ -101,9 +101,8 @@ platformCore:
     deliveryURL: ""
 
 workflowEngine:
-  # The current executor store is process-local; keep one replica until the
-  # PostgreSQL/Celery state store is enabled.
-  replicaCount: 1
+  # Workflow definitions and execution claims are stored in PostgreSQL.
+  replicaCount: 2
   image:
     repository: ghcr.io/axiomaticworld/axi-workbench-workflow-engine
     tag: ""
@@ -120,9 +119,9 @@ workflowEngine:
   stepTimeoutSeconds: 300
 
 notificationService:
-  # The current inbox store is process-local; keep one replica until the
-  # PostgreSQL/Kafka consumer path is enabled.
-  replicaCount: 1
+  # Notification records are stored in PostgreSQL. Delivery workers remain
+  # deliberately local until an idempotent event consumer is enabled.
+  replicaCount: 2
   image:
     repository: ghcr.io/axiomaticworld/axi-workbench-notification-service
     tag: ""
@@ -153,8 +152,14 @@ fileService:
       cpu: 750m
       memory: 768Mi
   storagePath: /var/lib/axi/files
+  storageBackend: local
+  s3EndpointURL: ""
+  s3Bucket: ""
+  s3Region: us-east-1
+  presignedURLTTLSeconds: 900
   maxFileSize: 104857600
   persistence:
+    # Used only with storageBackend=local; production S3 does not mount a PVC.
     enabled: true
     accessModes:
       - ReadWriteMany

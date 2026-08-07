@@ -26,8 +26,17 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("WORKFLOW_SERVICE_PORT", "PORT"),
     )
 
-    # Database settings (optional - for future use)
-    database_url: str | None = None
+    # Runtime and migration credentials are intentionally separate. The
+    # deployment only receives WORKFLOW_DATABASE_URL; the migration job may
+    # receive WORKFLOW_MIGRATION_DATABASE_URL.
+    database_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("WORKFLOW_DATABASE_URL", "DATABASE_URL"),
+    )
+    migration_database_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("WORKFLOW_MIGRATION_DATABASE_URL"),
+    )
 
     # Execution settings
     max_concurrent_workflows: int = 10

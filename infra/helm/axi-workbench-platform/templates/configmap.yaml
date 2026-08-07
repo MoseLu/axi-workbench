@@ -43,6 +43,11 @@ data:
   WORKFLOW_STEP_TIMEOUT_SECONDS: {{ .Values.workflowEngine.stepTimeoutSeconds | quote }}
   FILE_SERVICE_PORT: {{ .Values.fileService.service.port | quote }}
   FILE_STORAGE_PATH: {{ .Values.fileService.storagePath | quote }}
+  FILE_STORAGE_BACKEND: {{ .Values.fileService.storageBackend | quote }}
+  FILE_S3_ENDPOINT_URL: {{ .Values.fileService.s3EndpointURL | quote }}
+  FILE_S3_BUCKET: {{ .Values.fileService.s3Bucket | quote }}
+  FILE_S3_REGION: {{ .Values.fileService.s3Region | quote }}
+  FILE_PRESIGNED_URL_TTL_SECONDS: {{ .Values.fileService.presignedURLTTLSeconds | quote }}
   FILE_MAX_FILE_SIZE: {{ .Values.fileService.maxFileSize | quote }}
   NOTIFICATION_PORT: {{ .Values.notificationService.service.port | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.observability.otlpEndpoint | quote }}

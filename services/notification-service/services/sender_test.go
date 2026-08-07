@@ -25,3 +25,22 @@ func TestMarkReadCannotCrossUserBoundary(t *testing.T) {
 		t.Fatal("owner mark read did not update notification")
 	}
 }
+
+func TestSendEmailRejectsHeaderInjection(t *testing.T) {
+	service := &NotificationService{
+		cfg: &config.Config{
+			SMTPHost:  "127.0.0.1",
+			SMTPPort:  "1",
+			FromEmail: "noreply@example.com",
+		},
+	}
+
+	err := service.sendEmail(&models.Notification{
+		Recipient: "alice@example.com\r\nBcc: attacker@example.com",
+		Subject:   "subject",
+		Content:   "body",
+	})
+	if err == nil {
+		t.Fatal("header injection was accepted")
+	}
+}

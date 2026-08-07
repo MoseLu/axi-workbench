@@ -44,6 +44,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: WORKFLOW_INTERNAL_SERVICE_TOKEN
+            - name: WORKFLOW_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: WORKFLOW_DATABASE_URL
           volumeMounts:
             - name: tmp
               mountPath: /tmp
@@ -55,7 +60,7 @@ spec:
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: http
             initialDelaySeconds: 3
             periodSeconds: 10
