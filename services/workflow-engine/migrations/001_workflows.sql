@@ -34,8 +34,33 @@ CREATE TABLE IF NOT EXISTS axi_workflow.executions (
     completed_at TIMESTAMPTZ,
     steps JSONB NOT NULL DEFAULT '[]'::jsonb,
     result JSONB,
-    error TEXT
+    error TEXT,
+    pending_approval JSONB
 );
+
+ALTER TABLE axi_workflow.executions
+    ADD COLUMN IF NOT EXISTS pending_approval JSONB;
+
+CREATE TABLE IF NOT EXISTS axi_workflow.approvals (
+    id UUID PRIMARY KEY,
+    workflow_id UUID NOT NULL REFERENCES axi_workflow.workflows(id) ON DELETE CASCADE,
+    step_id UUID NOT NULL,
+    owner_subject TEXT NOT NULL,
+    step_name TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    approvers JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status TEXT NOT NULL DEFAULT 'pending',
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    decided_at TIMESTAMPTZ,
+    decided_by TEXT,
+    decision_comment TEXT
+);
+
+CREATE INDEX IF NOT EXISTS workflow_approvals_owner_status_idx
+    ON axi_workflow.approvals (owner_subject, status, requested_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS workflow_approvals_pending_workflow_idx
+    ON axi_workflow.approvals (workflow_id) WHERE status = 'pending';
 
 -- Platform Core delivers at least once. Persisting the event ID at the
 -- workflow boundary makes retries harmless before a dispatch is created.

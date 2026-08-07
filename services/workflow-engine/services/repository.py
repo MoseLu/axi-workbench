@@ -17,7 +17,13 @@ from psycopg.rows import tuple_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
-from models.workflow import Workflow, WorkflowExecution, WorkflowStatus
+from models.workflow import (
+    Workflow,
+    WorkflowApproval,
+    WorkflowApprovalStatus,
+    WorkflowExecution,
+    WorkflowStatus,
+)
 
 
 class WorkflowNotFound(Exception):
@@ -26,6 +32,22 @@ class WorkflowNotFound(Exception):
 
 class WorkflowAlreadyRunning(Exception):
     """The workflow has already been claimed by another execution."""
+
+
+class WorkflowWaitingApproval(Exception):
+    """The workflow cannot be started again while an approval is pending."""
+
+
+class WorkflowApprovalNotFound(Exception):
+    """The approval request is absent or belongs to another workflow."""
+
+
+class WorkflowApprovalForbidden(Exception):
+    """The caller is not an allowed approver for the request."""
+
+
+class WorkflowApprovalConflict(Exception):
+    """The approval was already decided or its workflow is not waiting."""
 
 
 class WorkflowDispatchLost(Exception):
@@ -77,6 +99,17 @@ class WorkflowRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def approve_and_claim(
+        self,
+        approval_id: UUID,
+        workflow_id: UUID,
+        subject: str,
+        decision: WorkflowApprovalStatus,
+        comment: str | None,
+    ) -> tuple[Workflow, WorkflowExecution, WorkflowApproval]:
+        raise NotImplementedError
+
+    @abstractmethod
     async def consume_event(
         self,
         event_id: str,
@@ -97,6 +130,14 @@ class WorkflowRepository(ABC):
         dispatch: WorkflowDispatch,
         execution: WorkflowExecution,
         worker_id: str,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def complete_waiting_dispatch(
+        self,
+        workflow_id: UUID,
+        execution: WorkflowExecution,
     ) -> None:
         raise NotImplementedError
 
@@ -141,6 +182,7 @@ class MemoryWorkflowRepository(WorkflowRepository):
     def __init__(self) -> None:
         self.workflows: dict[UUID, Workflow] = {}
         self.executions: dict[UUID, WorkflowExecution] = {}
+        self.approvals: dict[UUID, WorkflowApproval] = {}
         self.event_inbox: dict[str, dict[str, Any]] = {}
         self.event_dispatches: dict[tuple[str, UUID], dict[str, Any]] = {}
         self._lock = asyncio.Lock()
@@ -180,6 +222,10 @@ class MemoryWorkflowRepository(WorkflowRepository):
                 raise WorkflowNotFound
             del self.workflows[workflow_id]
             self.executions.pop(workflow_id, None)
+            for approval_id in [
+                approval_id for approval_id, approval in self.approvals.items() if approval.workflow_id == workflow_id
+            ]:
+                del self.approvals[approval_id]
             for key in [key for key in self.event_dispatches if key[1] == workflow_id]:
                 del self.event_dispatches[key]
 
@@ -190,6 +236,8 @@ class MemoryWorkflowRepository(WorkflowRepository):
                 raise WorkflowNotFound
             if workflow.status == WorkflowStatus.RUNNING:
                 raise WorkflowAlreadyRunning
+            if workflow.status == WorkflowStatus.WAITING_APPROVAL:
+                raise WorkflowWaitingApproval
             workflow.status = WorkflowStatus.RUNNING
             workflow.executed_at = datetime.now(UTC)
             workflow.updated_at = datetime.now(UTC)
@@ -200,6 +248,12 @@ class MemoryWorkflowRepository(WorkflowRepository):
             workflow = self.workflows.get(execution.workflow_id)
             if workflow is None or workflow.owner_subject != subject:
                 raise WorkflowNotFound
+            if execution.pending_approval is not None:
+                execution.pending_approval.owner_subject = subject
+                existing = self.approvals.get(execution.pending_approval.id)
+                if existing is not None and existing.status != WorkflowApprovalStatus.PENDING:
+                    raise WorkflowApprovalConflict
+                self.approvals[execution.pending_approval.id] = execution.pending_approval.model_copy(deep=True)
             self.executions[execution.workflow_id] = execution.model_copy(deep=True)
             return self.executions[execution.workflow_id].model_copy(deep=True)
 
@@ -210,6 +264,40 @@ class MemoryWorkflowRepository(WorkflowRepository):
             if workflow is None or workflow.owner_subject != subject or execution is None:
                 raise WorkflowNotFound
             return execution.model_copy(deep=True)
+
+    async def approve_and_claim(
+        self,
+        approval_id: UUID,
+        workflow_id: UUID,
+        subject: str,
+        decision: WorkflowApprovalStatus,
+        comment: str | None,
+    ) -> tuple[Workflow, WorkflowExecution, WorkflowApproval]:
+        async with self._lock:
+            approval = self.approvals.get(approval_id)
+            if approval is None or approval.workflow_id != workflow_id:
+                raise WorkflowApprovalNotFound
+            if not approval.can_be_decided_by(subject):
+                raise WorkflowApprovalForbidden
+            if approval.status != WorkflowApprovalStatus.PENDING:
+                raise WorkflowApprovalConflict
+            workflow = self.workflows.get(approval.workflow_id)
+            execution = self.executions.get(approval.workflow_id)
+            if workflow is None or execution is None:
+                raise WorkflowApprovalNotFound
+            if workflow.status != WorkflowStatus.WAITING_APPROVAL:
+                raise WorkflowApprovalConflict
+            approval.status = decision
+            approval.decided_at = datetime.now(UTC)
+            approval.decided_by = subject
+            approval.decision_comment = comment
+            workflow.status = WorkflowStatus.RUNNING
+            workflow.updated_at = datetime.now(UTC)
+            return (
+                workflow.model_copy(deep=True),
+                execution.model_copy(deep=True),
+                approval.model_copy(deep=True),
+            )
 
     async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any, actor_subject: str = "") -> bool:
         async with self._lock:
@@ -304,13 +392,35 @@ class MemoryWorkflowRepository(WorkflowRepository):
             workflow.result = execution.result
             workflow.updated_at = now
             self.executions[execution.workflow_id] = execution.model_copy(deep=True)
+            dispatch_status = "waiting" if execution.status == WorkflowStatus.WAITING_APPROVAL else (
+                "completed" if execution.status == WorkflowStatus.COMPLETED else "failed"
+            )
             stored_dispatch.update(
-                status="completed" if execution.status == WorkflowStatus.COMPLETED else "failed",
-                completed_at=now,
+                status=dispatch_status,
+                completed_at=None if dispatch_status == "waiting" else now,
                 locked_by=None,
                 locked_until=None,
                 last_error=execution.error,
             )
+
+    async def complete_waiting_dispatch(
+        self,
+        workflow_id: UUID,
+        execution: WorkflowExecution,
+    ) -> None:
+        now = datetime.now(UTC)
+        async with self._lock:
+            status = "completed" if execution.status == WorkflowStatus.COMPLETED else "failed"
+            for (event_id, dispatch_workflow_id), dispatch in self.event_dispatches.items():
+                if dispatch_workflow_id != workflow_id or dispatch.get("status") != "waiting":
+                    continue
+                dispatch.update(
+                    status=status,
+                    completed_at=now,
+                    last_error=execution.error,
+                    locked_by=None,
+                    locked_until=None,
+                )
 
     async def renew_event_dispatch(
         self,
@@ -519,7 +629,8 @@ class PostgresWorkflowRepository(WorkflowRepository):
                     """
                     UPDATE axi_workflow.workflows
                     SET status = 'running', executed_at = %s, updated_at = %s
-                    WHERE id = %s AND owner_subject = %s AND status <> 'running'
+                    WHERE id = %s AND owner_subject = %s
+                      AND status NOT IN ('running', 'waiting_approval')
                     RETURNING id, owner_subject, name, description, trigger_topic, steps, status,
                               created_at, updated_at, executed_at, result
                     """,
@@ -540,6 +651,8 @@ class PostgresWorkflowRepository(WorkflowRepository):
             raise WorkflowNotFound
         if status_row[0] == WorkflowStatus.RUNNING.value:
             raise WorkflowAlreadyRunning
+        if status_row[0] == WorkflowStatus.WAITING_APPROVAL.value:
+            raise WorkflowWaitingApproval
         raise WorkflowNotFound
 
     async def save_execution(self, execution: WorkflowExecution, subject: str) -> WorkflowExecution:
@@ -548,8 +661,8 @@ class PostgresWorkflowRepository(WorkflowRepository):
                 await cursor.execute(
                     """
                     INSERT INTO axi_workflow.executions
-                        (workflow_id, status, started_at, completed_at, steps, result, error)
-                    SELECT %s, %s, %s, %s, %s, %s, %s
+                        (workflow_id, status, started_at, completed_at, steps, result, error, pending_approval)
+                    SELECT %s, %s, %s, %s, %s, %s, %s, %s
                     WHERE EXISTS (
                         SELECT 1 FROM axi_workflow.workflows
                         WHERE id = %s AND owner_subject = %s
@@ -560,7 +673,8 @@ class PostgresWorkflowRepository(WorkflowRepository):
                         completed_at = EXCLUDED.completed_at,
                         steps = EXCLUDED.steps,
                         result = EXCLUDED.result,
-                        error = EXCLUDED.error
+                        error = EXCLUDED.error,
+                        pending_approval = EXCLUDED.pending_approval
                     """,
                     (
                         execution.workflow_id,
@@ -570,12 +684,37 @@ class PostgresWorkflowRepository(WorkflowRepository):
                         Jsonb(_json_steps(execution.steps)),
                         Jsonb(execution.result) if execution.result is not None else None,
                         execution.error,
+                        Jsonb(execution.pending_approval.model_dump(mode="json", by_alias=True, exclude={"owner_subject"}))
+                        if execution.pending_approval is not None
+                        else None,
                         execution.workflow_id,
                         subject,
                     ),
                 )
                 if cursor.rowcount == 0:
                     raise WorkflowNotFound
+                if execution.pending_approval is not None:
+                    execution.pending_approval.owner_subject = subject
+                    await cursor.execute(
+                        """
+                        INSERT INTO axi_workflow.approvals
+                            (id, workflow_id, step_id, owner_subject, step_name, prompt,
+                             approvers, status, requested_at, decided_at, decided_by, decision_comment)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id) DO UPDATE SET
+                            owner_subject = EXCLUDED.owner_subject,
+                            step_name = EXCLUDED.step_name,
+                            prompt = EXCLUDED.prompt,
+                            approvers = EXCLUDED.approvers,
+                            status = EXCLUDED.status,
+                            requested_at = EXCLUDED.requested_at,
+                            decided_at = EXCLUDED.decided_at,
+                            decided_by = EXCLUDED.decided_by,
+                            decision_comment = EXCLUDED.decision_comment
+                        WHERE axi_workflow.approvals.status = 'pending'
+                        """,
+                        _approval_values(execution.pending_approval),
+                    )
             await connection.commit()
         return execution
 
@@ -583,7 +722,8 @@ class PostgresWorkflowRepository(WorkflowRepository):
         row = await self._fetch_one(
             """
             SELECT execution.workflow_id, execution.status, execution.started_at,
-                   execution.completed_at, execution.steps, execution.result, execution.error
+                   execution.completed_at, execution.steps, execution.result, execution.error,
+                   execution.pending_approval
             FROM axi_workflow.executions execution
             JOIN axi_workflow.workflows workflow ON workflow.id = execution.workflow_id
             WHERE execution.workflow_id = %s AND workflow.owner_subject = %s
@@ -593,6 +733,93 @@ class PostgresWorkflowRepository(WorkflowRepository):
         if row is None:
             raise WorkflowNotFound
         return _execution_from_row(row)
+
+    async def approve_and_claim(
+        self,
+        approval_id: UUID,
+        workflow_id: UUID,
+        subject: str,
+        decision: WorkflowApprovalStatus,
+        comment: str | None,
+    ) -> tuple[Workflow, WorkflowExecution, WorkflowApproval]:
+        now = datetime.now(UTC)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    SELECT id, workflow_id, step_id, owner_subject, step_name, prompt,
+                           approvers, status, requested_at, decided_at, decided_by, decision_comment
+                    FROM axi_workflow.approvals
+                    WHERE id = %s AND workflow_id = %s
+                    FOR UPDATE
+                    """,
+                    (approval_id, workflow_id),
+                )
+                approval_row = await cursor.fetchone()
+                if approval_row is None:
+                    raise WorkflowApprovalNotFound
+                approval = _approval_from_row(approval_row)
+                if not approval.can_be_decided_by(subject):
+                    raise WorkflowApprovalForbidden
+                if approval.status != WorkflowApprovalStatus.PENDING:
+                    raise WorkflowApprovalConflict
+
+                await cursor.execute(
+                    """
+                    SELECT id, owner_subject, name, description, trigger_topic, steps, status,
+                           created_at, updated_at, executed_at, result
+                    FROM axi_workflow.workflows
+                    WHERE id = %s AND owner_subject = %s AND status = 'waiting_approval'
+                    FOR UPDATE
+                    """,
+                    (approval.workflow_id, approval.owner_subject),
+                )
+                workflow_row = await cursor.fetchone()
+                if workflow_row is None:
+                    raise WorkflowApprovalConflict
+                await cursor.execute(
+                    """
+                    SELECT execution.workflow_id, execution.status, execution.started_at,
+                           execution.completed_at, execution.steps, execution.result, execution.error,
+                           execution.pending_approval
+                    FROM axi_workflow.executions execution
+                    WHERE execution.workflow_id = %s
+                    FOR UPDATE
+                    """,
+                    (approval.workflow_id,),
+                )
+                execution_row = await cursor.fetchone()
+                if execution_row is None:
+                    raise WorkflowApprovalConflict
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.approvals
+                    SET status = %s, decided_at = %s, decided_by = %s, decision_comment = %s
+                    WHERE id = %s AND status = 'pending'
+                    """,
+                    (decision.value, now, subject, comment, approval_id),
+                )
+                if cursor.rowcount == 0:
+                    raise WorkflowApprovalConflict
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.workflows
+                    SET status = 'running', updated_at = %s
+                    WHERE id = %s AND status = 'waiting_approval'
+                    """,
+                    (now, approval.workflow_id),
+                )
+                if cursor.rowcount == 0:
+                    raise WorkflowApprovalConflict
+                await connection.commit()
+        approval.status = decision
+        approval.decided_at = now
+        approval.decided_by = subject
+        approval.decision_comment = comment
+        workflow = _workflow_from_row(workflow_row)
+        workflow.status = WorkflowStatus.RUNNING
+        workflow.updated_at = now
+        return workflow, _execution_from_row(execution_row), approval
 
     async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any, actor_subject: str = "") -> bool:
         async with self.pool.connection() as connection:
@@ -708,7 +935,13 @@ class PostgresWorkflowRepository(WorkflowRepository):
         execution: WorkflowExecution,
         worker_id: str,
     ) -> None:
-        dispatch_status = "completed" if execution.status == WorkflowStatus.COMPLETED else "failed"
+        dispatch_status = (
+            "waiting"
+            if execution.status == WorkflowStatus.WAITING_APPROVAL
+            else "completed"
+            if execution.status == WorkflowStatus.COMPLETED
+            else "failed"
+        )
         async with self.pool.connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(
@@ -729,15 +962,16 @@ class PostgresWorkflowRepository(WorkflowRepository):
                 await cursor.execute(
                     """
                     INSERT INTO axi_workflow.executions
-                        (workflow_id, status, started_at, completed_at, steps, result, error)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        (workflow_id, status, started_at, completed_at, steps, result, error, pending_approval)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (workflow_id) DO UPDATE SET
                         status = EXCLUDED.status,
                         started_at = EXCLUDED.started_at,
                         completed_at = EXCLUDED.completed_at,
                         steps = EXCLUDED.steps,
                         result = EXCLUDED.result,
-                        error = EXCLUDED.error
+                        error = EXCLUDED.error,
+                        pending_approval = EXCLUDED.pending_approval
                     """,
                     (
                         execution.workflow_id,
@@ -747,13 +981,28 @@ class PostgresWorkflowRepository(WorkflowRepository):
                         Jsonb(_json_steps(execution.steps)),
                         Jsonb(execution.result) if execution.result is not None else None,
                         execution.error,
+                        Jsonb(execution.pending_approval.model_dump(mode="json", by_alias=True, exclude={"owner_subject"}))
+                        if execution.pending_approval is not None
+                        else None,
                     ),
                 )
+                if execution.pending_approval is not None:
+                    execution.pending_approval.owner_subject = dispatch.owner_subject
+                    await cursor.execute(
+                        """
+                        INSERT INTO axi_workflow.approvals
+                            (id, workflow_id, step_id, owner_subject, step_name, prompt,
+                             approvers, status, requested_at, decided_at, decided_by, decision_comment)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id) DO NOTHING
+                        """,
+                        _approval_values(execution.pending_approval),
+                    )
                 await cursor.execute(
                     """
                     UPDATE axi_workflow.event_dispatches
                     SET status = %s,
-                        completed_at = now(),
+                        completed_at = CASE WHEN %s THEN NULL ELSE now() END,
                         locked_by = NULL,
                         locked_until = NULL,
                         last_error = %s
@@ -762,6 +1011,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
                     """,
                     (
                         dispatch_status,
+                        dispatch_status != "waiting",
                         execution.error,
                         dispatch.event_id,
                         dispatch.workflow_id,
@@ -770,6 +1020,25 @@ class PostgresWorkflowRepository(WorkflowRepository):
                 )
                 if cursor.rowcount == 0:
                     raise WorkflowDispatchLost
+            await connection.commit()
+
+    async def complete_waiting_dispatch(
+        self,
+        workflow_id: UUID,
+        execution: WorkflowExecution,
+    ) -> None:
+        status = "completed" if execution.status == WorkflowStatus.COMPLETED else "failed"
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.event_dispatches
+                    SET status = %s, completed_at = now(), last_error = %s,
+                        locked_by = NULL, locked_until = NULL
+                    WHERE workflow_id = %s AND status = 'waiting'
+                    """,
+                    (status, execution.error, workflow_id),
+                )
             await connection.commit()
 
     async def renew_event_dispatch(
@@ -937,6 +1206,40 @@ def _json_steps(steps: list[Any]) -> list[dict[str, Any]]:
     return [step.model_dump(mode="json") if hasattr(step, "model_dump") else step for step in steps]
 
 
+def _approval_values(approval: WorkflowApproval) -> tuple[Any, ...]:
+    return (
+        approval.id,
+        approval.workflow_id,
+        approval.step_id,
+        approval.owner_subject,
+        approval.step_name,
+        approval.prompt,
+        Jsonb(approval.approvers),
+        approval.status.value,
+        approval.requested_at,
+        approval.decided_at,
+        approval.decided_by,
+        approval.decision_comment,
+    )
+
+
+def _approval_from_row(row: tuple[Any, ...]) -> WorkflowApproval:
+    return WorkflowApproval(
+        id=row[0],
+        workflow_id=row[1],
+        step_id=row[2],
+        owner_subject=row[3],
+        step_name=row[4],
+        prompt=row[5],
+        approvers=_json_value(row[6]),
+        status=WorkflowApprovalStatus(row[7]),
+        requested_at=row[8],
+        decided_at=row[9],
+        decided_by=row[10],
+        decision_comment=row[11],
+    )
+
+
 def _json_value(value: Any) -> Any:
     if isinstance(value, str):
         return json.loads(value)
@@ -968,4 +1271,7 @@ def _execution_from_row(row: tuple[Any, ...]) -> WorkflowExecution:
         steps=_json_value(row[4]),
         result=_json_value(row[5]) if row[5] is not None else None,
         error=row[6],
+        pending_approval=(
+            WorkflowApproval.model_validate(_json_value(row[7])) if row[7] is not None else None
+        ),
     )

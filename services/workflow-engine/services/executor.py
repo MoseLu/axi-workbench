@@ -9,6 +9,8 @@ from uuid import UUID
 from models.workflow import (
     StepStatus,
     StepType,
+    WorkflowApproval,
+    WorkflowApprovalStatus,
     Workflow,
     WorkflowExecution,
     WorkflowStatus,
@@ -17,6 +19,14 @@ from models.workflow import (
 from services.http_client import HttpStepClient, HttpxStepClient
 
 logger = logging.getLogger(__name__)
+
+
+class ApprovalRequired(Exception):
+    """Raised internally when a workflow must pause for a manual decision."""
+
+    def __init__(self, approval: WorkflowApproval) -> None:
+        super().__init__(approval.prompt)
+        self.approval = approval
 
 
 class WorkflowExecutor:
@@ -51,14 +61,71 @@ class WorkflowExecutor:
         if event_payload is not None:
             context["event"] = event_payload
 
-        for step in execution.steps:
+        return await self._run_steps(execution, context, 0)
+
+    async def resume_workflow(
+        self,
+        workflow: Workflow,
+        execution: WorkflowExecution,
+        approval: WorkflowApproval,
+    ) -> WorkflowExecution:
+        """Resume a paused workflow after an atomic approval decision."""
+        if execution.status != WorkflowStatus.WAITING_APPROVAL or execution.pending_approval is None:
+            raise ValueError("workflow has no pending approval")
+        if execution.pending_approval.id != approval.id or approval.workflow_id != workflow.id:
+            raise ValueError("approval does not belong to the pending workflow execution")
+        context = dict(execution.result or {})
+        pending_index = next(
+            (index for index, step in enumerate(execution.steps) if step.id == approval.step_id),
+            None,
+        )
+        if pending_index is None:
+            raise ValueError("approval step is not present in the workflow execution")
+        pending_step = execution.steps[pending_index]
+        execution.pending_approval = None
+        if approval.status == WorkflowApprovalStatus.REJECTED:
+            pending_step.status = StepStatus.FAILED
+            pending_step.error = approval.decision_comment or "workflow approval was rejected"
+            execution.status = WorkflowStatus.FAILED
+            execution.error = pending_step.error
+            execution.result = context
+            execution.completed_at = datetime.now(UTC)
+            return execution
+
+        pending_step.status = StepStatus.COMPLETED
+        pending_step.result = {
+            "approvalId": str(approval.id),
+            "approved": True,
+            "decidedBy": approval.decided_by,
+            "comment": approval.decision_comment,
+        }
+        context[pending_step.name] = pending_step.result
+        return await self._run_steps(execution, context, pending_index + 1)
+
+    async def _run_steps(
+        self,
+        execution: WorkflowExecution,
+        context: dict[str, Any],
+        start_index: int,
+    ) -> WorkflowExecution:
+        """Run the remaining steps and converge the execution state."""
+
+        for step in execution.steps[start_index:]:
             try:
                 result = await asyncio.wait_for(
-                    self._execute_step(step, context), timeout=self.step_timeout
+                    self._execute_step(step, context, execution.workflow_id), timeout=self.step_timeout
                 )
                 step.status = StepStatus.COMPLETED
                 step.result = result
                 context[step.name] = result
+            except ApprovalRequired as exc:
+                step.status = StepStatus.WAITING
+                step.error = None
+                execution.status = WorkflowStatus.WAITING_APPROVAL
+                execution.pending_approval = exc.approval
+                execution.result = context
+                execution.completed_at = None
+                return execution
             except asyncio.TimeoutError:
                 error = f"step exceeded timeout of {self.step_timeout:g} seconds"
                 logger.error("Step %s failed: %s", step.name, error)
@@ -82,7 +149,12 @@ class WorkflowExecutor:
         execution.completed_at = datetime.now(UTC)
         return execution
 
-    async def _execute_step(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:
+    async def _execute_step(
+        self,
+        step: WorkflowStep,
+        context: dict[str, Any],
+        workflow_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """Execute a single workflow step."""
         step.status = StepStatus.RUNNING
 
@@ -97,6 +169,10 @@ class WorkflowExecutor:
                 return await self._execute_parallel(step, context)
             case StepType.HTTP:
                 return await self._execute_http(step, context)
+            case StepType.APPROVAL:
+                if workflow_id is None:
+                    raise ValueError("approval step requires a workflow execution")
+                return await self._execute_approval(step, workflow_id)
             case _:
                 raise ValueError(f"Unknown step type: {step.step_type}")
 
@@ -197,6 +273,24 @@ class WorkflowExecutor:
             "response": response,
         }
 
+    async def _execute_approval(self, step: WorkflowStep, workflow_id: UUID) -> dict[str, Any]:
+        """Pause execution and emit a durable approval request."""
+        raw_approvers = step.config.get("approvers", [])
+        if not isinstance(raw_approvers, list) or any(not isinstance(item, str) or not item.strip() for item in raw_approvers):
+            raise ValueError("approval approvers must be an array of non-empty subjects")
+        prompt = step.config.get("prompt", f"Approval required for workflow step {step.name}")
+        if not isinstance(prompt, str) or not prompt.strip():
+            raise ValueError("approval prompt must be a non-empty string")
+        raise ApprovalRequired(
+            WorkflowApproval(
+                workflow_id=workflow_id,
+                step_id=step.id,
+                step_name=step.name,
+                prompt=prompt.strip(),
+                approvers=sorted(set(item.strip() for item in raw_approvers)),
+            )
+        )
+
     async def _execute_parallel(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:
         """Execute independent child steps with a bounded worker pool.
 
@@ -230,6 +324,8 @@ class WorkflowExecutor:
                 raise ValueError(f"parallel child {name} has an unknown step type") from exc
             if step_type is StepType.PARALLEL:
                 raise ValueError("nested parallel steps are not supported")
+            if step_type is StepType.APPROVAL:
+                raise ValueError("approval steps are not supported inside parallel groups")
             child_config = raw_step.get("config", {})
             if not isinstance(child_config, dict):
                 raise ValueError(f"parallel child {name} config must be an object")

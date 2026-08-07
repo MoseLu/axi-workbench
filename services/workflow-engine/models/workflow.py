@@ -15,6 +15,7 @@ class WorkflowStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    WAITING_APPROVAL = "waiting_approval"
 
 
 class StepStatus(str, Enum):
@@ -24,6 +25,7 @@ class StepStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     SKIPPED = "skipped"
+    WAITING = "waiting"
 
 
 class StepType(str, Enum):
@@ -33,6 +35,22 @@ class StepType(str, Enum):
     DELAY = "delay"
     PARALLEL = "parallel"
     HTTP = "http"
+    APPROVAL = "approval"
+
+
+class WorkflowApprovalStatus(str, Enum):
+    """Lifecycle state of a durable manual approval request."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class ApprovalDecision(str, Enum):
+    """Decision accepted by the approval endpoint."""
+
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class WorkflowStep(BaseModel):
@@ -66,6 +84,35 @@ class WorkflowUpdate(BaseModel):
     steps: list[WorkflowStep] | None = None
 
 
+class WorkflowApproval(BaseModel):
+    """Durable approval request emitted by an approval workflow step."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: UUID = Field(default_factory=uuid4)
+    workflow_id: UUID = Field(..., alias="workflowId")
+    step_id: UUID = Field(..., alias="stepId")
+    owner_subject: str = Field(default="", exclude=True)
+    step_name: str = Field(..., alias="stepName")
+    prompt: str = Field(..., min_length=1, max_length=2000)
+    approvers: list[str] = Field(default_factory=list, max_length=64)
+    status: WorkflowApprovalStatus = WorkflowApprovalStatus.PENDING
+    requested_at: datetime = Field(default_factory=lambda: datetime.now(UTC), alias="requestedAt")
+    decided_at: datetime | None = Field(default=None, alias="decidedAt")
+    decided_by: str | None = Field(default=None, alias="decidedBy")
+    decision_comment: str | None = Field(default=None, alias="decisionComment")
+
+    def can_be_decided_by(self, subject: str) -> bool:
+        return subject == self.owner_subject or subject in self.approvers
+
+
+class ApprovalDecisionRequest(BaseModel):
+    """Request body for approving or rejecting a pending workflow step."""
+
+    decision: ApprovalDecision
+    comment: str | None = Field(default=None, max_length=2000)
+
+
 class Workflow(BaseModel):
     """Workflow model with metadata."""
     model_config = ConfigDict(populate_by_name=True)
@@ -85,6 +132,9 @@ class Workflow(BaseModel):
 
 class WorkflowExecution(BaseModel):
     """Result of workflow execution."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
     workflow_id: UUID
     status: WorkflowStatus
     started_at: datetime
@@ -92,3 +142,4 @@ class WorkflowExecution(BaseModel):
     steps: list[WorkflowStep]
     result: dict[str, Any] | None = None
     error: str | None = None
+    pending_approval: WorkflowApproval | None = Field(default=None, alias="pendingApproval")

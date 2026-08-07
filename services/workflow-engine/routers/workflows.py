@@ -7,14 +7,25 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from config import get_settings
-from models.workflow import Workflow, WorkflowCreate, WorkflowExecution, WorkflowUpdate
+from models.workflow import (
+    ApprovalDecisionRequest,
+    Workflow,
+    WorkflowApprovalStatus,
+    WorkflowCreate,
+    WorkflowExecution,
+    WorkflowUpdate,
+)
 from security import require_gateway_identity
 from services.executor import WorkflowExecutor
 from services.repository import (
     MemoryWorkflowRepository,
     WorkflowAlreadyRunning,
+    WorkflowApprovalConflict,
+    WorkflowApprovalForbidden,
+    WorkflowApprovalNotFound,
     WorkflowNotFound,
     WorkflowRepository,
+    WorkflowWaitingApproval,
 )
 
 logger = logging.getLogger(__name__)
@@ -165,6 +176,11 @@ async def execute_workflow(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Workflow {workflow_id} is already running",
         ) from exc
+    except WorkflowWaitingApproval as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Workflow {workflow_id} is waiting for an approval decision",
+        ) from exc
     except WorkflowNotFound as exc:
         raise _not_found(workflow_id) from exc
 
@@ -177,6 +193,49 @@ async def execute_workflow(
     try:
         await repository.update(workflow, subject)
         await repository.save_execution(execution, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
+    return execution
+
+
+@router.post("/{workflow_id}/approvals/{approval_id}", response_model=WorkflowExecution)
+async def decide_workflow_approval(
+    workflow_id: UUID,
+    approval_id: UUID,
+    request: ApprovalDecisionRequest,
+    subject: str = Depends(require_gateway_identity),
+) -> WorkflowExecution:
+    """Atomically decide an approval and resume the remaining steps."""
+    try:
+        workflow, stored_execution, approval = await repository.approve_and_claim(
+            approval_id,
+            workflow_id,
+            subject,
+            WorkflowApprovalStatus(request.decision.value),
+            request.comment,
+        )
+    except WorkflowApprovalNotFound as exc:
+        raise _not_found(workflow_id, f"Approval {approval_id} not found") from exc
+    except WorkflowApprovalForbidden as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="caller is not an allowed approver",
+        ) from exc
+    except WorkflowApprovalConflict as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="approval has already been decided or workflow is not waiting",
+        ) from exc
+
+    execution = await executor.resume_workflow(workflow, stored_execution, approval)
+    workflow.status = execution.status
+    workflow.result = execution.result
+    workflow.updated_at = datetime.now(UTC)
+    try:
+        await repository.update(workflow, subject)
+        await repository.save_execution(execution, subject)
+        if execution.status != WorkflowStatus.WAITING_APPROVAL:
+            await repository.complete_waiting_dispatch(workflow_id, execution)
     except WorkflowNotFound as exc:
         raise _not_found(workflow_id) from exc
     return execution
