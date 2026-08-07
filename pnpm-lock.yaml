@@ -190,64 +190,6 @@ importers:
         specifier: ^7.0.4
         version: 7.3.1(@types/node@25.9.1)(jiti@1.21.7)(sass@1.100.0)(tsx@4.22.3)
 
-  apps/web-portal:
-    dependencies:
-      '@ant-design/icons':
-        specifier: ^5.2.6
-        version: 5.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@axi/workstation-contracts':
-        specifier: workspace:*
-        version: link:../../packages/schemas
-      '@epap/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
-      '@epap/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@epap/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@epap/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
-      '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.90.21(react@18.3.1)
-      antd:
-        specifier: 5.12.0
-        version: 5.12.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      qrcode.react:
-        specifier: ^4.2.0
-        version: 4.2.0(react@18.3.1)
-      react:
-        specifier: ^18.2.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.20.0
-        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      vite-plugin-svgr:
-        specifier: 4.5.0
-        version: 4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@5.4.21(@types/node@25.9.1)(sass@1.100.0))
-    devDependencies:
-      '@types/react':
-        specifier: ^18.2.43
-        version: 18.3.28
-      '@types/react-dom':
-        specifier: ^18.2.17
-        version: 18.3.7(@types/react@18.3.28)
-      '@vitejs/plugin-react':
-        specifier: ^4.2.1
-        version: 4.7.0(vite@5.4.21(@types/node@25.9.1)(sass@1.100.0))
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-      vite:
-        specifier: ^5.0.8
-        version: 5.4.21(@types/node@25.9.1)(sass@1.100.0)
-
   apps/workbench:
     dependencies:
       '@ant-design/icons':
@@ -268,6 +210,9 @@ importers:
       '@axi/tokens':
         specifier: link:../../../../shared/axi-ui/packages/tokens
         version: link:../../../../shared/axi-ui/packages/tokens
+      '@axi/workbench-foundation':
+        specifier: workspace:*
+        version: link:../../packages/workbench-foundation
       '@axi/workstation-contracts':
         specifier: workspace:*
         version: link:../../packages/schemas
@@ -304,6 +249,49 @@ importers:
       vite-plugin-svgr:
         specifier: 4.5.0
         version: 4.5.0(rollup@4.59.0)(typescript@5.8.3)(vite@5.4.21(@types/node@25.9.1)(sass@1.100.0))
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.43
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.2.17
+        version: 18.3.7(@types/react@18.3.28)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.1)(sass@1.100.0))
+      typescript:
+        specifier: ^5.3.3
+        version: 5.8.3
+      vite:
+        specifier: ^5.0.8
+        version: 5.4.21(@types/node@25.9.1)(sass@1.100.0)
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@25.9.1)(jsdom@23.2.0)(sass@1.100.0)
+
+  apps/workbench-mobile:
+    dependencies:
+      '@axi/core':
+        specifier: link:../../../../shared/axi-ui/packages/core
+        version: link:../../../../shared/axi-ui/packages/core
+      '@axi/tokens':
+        specifier: link:../../../../shared/axi-ui/packages/tokens
+        version: link:../../../../shared/axi-ui/packages/tokens
+      '@axi/workbench-foundation':
+        specifier: workspace:*
+        version: link:../../packages/workbench-foundation
+      '@tanstack/react-query':
+        specifier: ^5.0.0
+        version: 5.90.21(react@18.3.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.20.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/react':
         specifier: ^18.2.43
@@ -492,6 +480,28 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+
+  packages/workbench-foundation:
+    dependencies:
+      '@axi/workstation-contracts':
+        specifier: workspace:*
+        version: link:../schemas
+      '@epap/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+    devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.0.0
+        version: 5.90.21(react@18.3.1)
+      '@types/react':
+        specifier: ^18.2.43
+        version: 18.3.28
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      typescript:
+        specifier: ^5.3.3
+        version: 5.8.3
 
   services/api-gateway: {}
 
@@ -7267,17 +7277,6 @@ snapshots:
       - supports-color
       - typescript
 
-  '@svgr/core@8.1.0(typescript@5.9.3)':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@svgr/babel-preset': 8.1.0(@babel/core@7.29.0)
-      camelcase: 6.3.0
-      cosmiconfig: 8.3.6(typescript@5.9.3)
-      snake-case: 3.0.4
-    transitivePeerDependencies:
-      - supports-color
-      - typescript
-
   '@svgr/hast-util-to-babel-ast@8.0.0':
     dependencies:
       '@babel/types': 7.29.0
@@ -7288,16 +7287,6 @@ snapshots:
       '@babel/core': 7.29.0
       '@svgr/babel-preset': 8.1.0(@babel/core@7.29.0)
       '@svgr/core': 8.1.0(typescript@5.8.3)
-      '@svgr/hast-util-to-babel-ast': 8.0.0
-      svg-parser: 2.0.4
-    transitivePeerDependencies:
-      - supports-color
-
-  '@svgr/plugin-jsx@8.1.0(@svgr/core@8.1.0(typescript@5.9.3))':
-    dependencies:
-      '@babel/core': 7.29.0
-      '@svgr/babel-preset': 8.1.0(@babel/core@7.29.0)
-      '@svgr/core': 8.1.0(typescript@5.9.3)
       '@svgr/hast-util-to-babel-ast': 8.0.0
       svg-parser: 2.0.4
     transitivePeerDependencies:
@@ -7723,7 +7712,7 @@ snapshots:
       '@vitest/spy': 4.0.18
       '@vitest/utils': 4.0.18
       chai: 6.2.2
-      tinyrainbow: 3.0.3
+      tinyrainbow: 3.1.0
 
   '@vitest/expect@4.1.7':
     dependencies:
@@ -7776,7 +7765,7 @@ snapshots:
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
-      tinyrainbow: 3.0.3
+      tinyrainbow: 3.1.0
 
   '@vitest/pretty-format@4.1.7':
     dependencies:
@@ -8232,15 +8221,6 @@ snapshots:
       path-type: 4.0.0
     optionalDependencies:
       typescript: 5.8.3
-
-  cosmiconfig@8.3.6(typescript@5.9.3):
-    dependencies:
-      import-fresh: 3.3.1
-      js-yaml: 4.1.1
-      parse-json: 5.2.0
-      path-type: 4.0.0
-    optionalDependencies:
-      typescript: 5.9.3
 
   cross-spawn@7.0.6:
     dependencies:
@@ -10622,17 +10602,6 @@ snapshots:
       '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
       '@svgr/core': 8.1.0(typescript@5.8.3)
       '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.8.3))
-      vite: 5.4.21(@types/node@25.9.1)(sass@1.100.0)
-    transitivePeerDependencies:
-      - rollup
-      - supports-color
-      - typescript
-
-  vite-plugin-svgr@4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@5.4.21(@types/node@25.9.1)(sass@1.100.0)):
-    dependencies:
-      '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
-      '@svgr/core': 8.1.0(typescript@5.9.3)
-      '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))
       vite: 5.4.21(@types/node@25.9.1)(sass@1.100.0)
     transitivePeerDependencies:
       - rollup
