@@ -5,11 +5,12 @@
   "description": "Axi Workbench - canonical workbench monorepo for control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:web": "turbo run dev --filter=web-portal",
+    "dev:web": "pnpm run dev:workbench",
     "dev:ui": "turbo run dev --filter=@epap/ui",
-    "dev:desktop": "turbo run dev --filter=desktop",
+    "dev:dashboard": "pnpm --dir apps/devsvc-dashboard dev",
+    "dev:coder": "pnpm --dir apps/axi-coder dev",
     "build": "turbo run build",
-    "build:web": "turbo run build --filter=web-portal",
+    "build:web": "pnpm run build:workbench",
     "build:ui": "turbo run build --filter=@epap/ui",
     "build:schemas": "turbo run build --filter=@axi/workstation-contracts",
     "build:types": "turbo run build --filter=@epap/types",
@@ -21,7 +22,9 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean && rm -rf node_modules",
-    "clean:cache": "turbo run clean:cache && rm -rf .turbo"
+    "clean:cache": "turbo run clean:cache && rm -rf .turbo",
+    "dev:workbench": "turbo run dev --filter=@axi/workbench",
+    "build:workbench": "turbo run build --filter=@axi/workbench"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
