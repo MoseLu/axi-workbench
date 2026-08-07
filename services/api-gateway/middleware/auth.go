@@ -101,3 +101,18 @@ func OptionalJWTAuth(secret string) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// InjectUserHeader copies JWT user_id into X-User-Id when the client omitted it.
+// Downstream services (notification-service) read X-User-Id / ?userId= for scoping.
+func InjectUserHeader() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetHeader("X-User-Id") == "" {
+			if uid, ok := c.Get("user_id"); ok {
+				if s, ok := uid.(string); ok && s != "" {
+					c.Request.Header.Set("X-User-Id", s)
+				}
+			}
+		}
+		c.Next()
+	}
+}

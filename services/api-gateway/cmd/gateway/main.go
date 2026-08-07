@@ -75,7 +75,24 @@ func setupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, logger
 			auth.POST("/register", proxyHandler.ProxyToAuth())
 			auth.POST("/refresh", proxyHandler.ProxyToAuth())
 			auth.POST("/logout", middleware.JWTAuth(cfg.JWT.Secret), proxyHandler.ProxyToAuth())
+
+			// QR 码扫码登录：init + poll 公开（Web 端未登录即可生成）
+			// confirm 由 gateway 直传，认证由 auth-service 内部完成（App 端带 JWT）
+			qrcode := auth.Group("/qrcode")
+			{
+				qrcode.POST("/init", proxyHandler.ProxyToAuth())
+				qrcode.GET("/:id", proxyHandler.ProxyToAuth())
+				qrcode.POST("/confirm", proxyHandler.ProxyToAuth())
+			}
 		}
+
+		// Bottom-nav badges: public read (seed demo / mobile chrome poll).
+		// Optional JWT: when present, inject X-User-Id for user-scoped badges.
+		v1.GET("/notifications/nav-badges",
+			middleware.OptionalJWTAuth(cfg.JWT.Secret),
+			middleware.InjectUserHeader(),
+			proxyHandler.ProxyToNotification(),
+		)
 
 		// Protected routes (auth required)
 		protected := v1.Group("")
@@ -120,12 +137,13 @@ func setupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, logger
 				workflows.POST("/:id/execute", proxyHandler.ProxyToWorkflow())
 			}
 
-			// Notification routes
+			// Notification write / list (static paths before :id)
 			notifications := protected.Group("/notifications")
 			{
 				notifications.GET("", proxyHandler.ProxyToNotification())
-				notifications.PUT("/:id/read", proxyHandler.ProxyToNotification())
+				notifications.POST("", proxyHandler.ProxyToNotification())
 				notifications.PUT("/read-all", proxyHandler.ProxyToNotification())
+				notifications.PUT("/:id/read", proxyHandler.ProxyToNotification())
 			}
 
 			// User routes

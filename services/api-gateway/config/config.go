@@ -62,7 +62,8 @@ func Load() *Config {
 			CoreServiceURL:  getEnv("CORE_SERVICE_URL", "http://localhost:3002"),
 			FileServiceURL:  getEnv("FILE_SERVICE_URL", "http://localhost:3003"),
 			WorkflowURL:     getEnv("WORKFLOW_SERVICE_URL", "http://localhost:3004"),
-			NotificationURL: getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:3005"),
+			// Align with docs / .env.example (notification-service:8084)
+			NotificationURL: getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8084"),
 		},
 		JWT: JWTConfig{
 			Secret:          getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
@@ -74,7 +75,7 @@ func Load() *Config {
 		CORS: CORSConfig{
 			AllowedOrigins: getEnvSlice("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3000", "http://localhost:5173"}),
 			AllowedMethods: getEnvSlice("CORS_ALLOWED_METHODS", []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}),
-			AllowedHeaders: getEnvSlice("CORS_ALLOWED_HEADERS", []string{"Origin", "Content-Type", "Authorization", "Accept"}),
+			AllowedHeaders: getEnvSlice("CORS_ALLOWED_HEADERS", []string{"Origin", "Content-Type", "Authorization", "Accept", "X-User-Id", "X-Request-Id"}),
 		},
 	}
 }

@@ -15,7 +15,8 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		Port:         getEnv("NOTIFICATION_PORT", "8081"),
+		// Align with docs / .env.example: notification-service listens on 8084
+		Port:         getEnv("NOTIFICATION_PORT", "8084"),
 		SMTPHost:     getEnv("SMTP_HOST", "localhost"),
 		SMTPPort:     getEnv("SMTP_PORT", "587"),
 		SMTPUsername: getEnv("SMTP_USERNAME", ""),

@@ -11,32 +11,30 @@ import (
 )
 
 func main() {
-	// Load configuration
 	cfg := config.Load()
 
-	// Initialize services
 	notificationService := services.NewNotificationService()
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 
-	// Setup Gin router
 	r := gin.Default()
 
-	// Health check endpoint
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "notification-service"})
 	})
 
-	// API routes
 	api := r.Group("/api/v1/notifications")
 	{
 		api.POST("", notificationHandler.CreateNotification)
 		api.GET("", notificationHandler.ListNotifications)
+		// Static path before /:id
+		api.GET("/nav-badges", notificationHandler.GetNavBadges)
+		api.PUT("/read-all", notificationHandler.MarkAllRead)
+		api.PUT("/:id/read", notificationHandler.MarkRead)
 	}
 
-	// Start server
 	port := cfg.Port
 	if port == "" {
-		port = "8080"
+		port = "8084"
 	}
 
 	log.Printf("Starting notification service on port %s", port)
