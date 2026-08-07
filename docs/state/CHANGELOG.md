@@ -6,6 +6,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
+- Added a formal independent mobile application at `apps/workbench-mobile` with its own Vite entry, routes, header, tab bar, mobile pages, login surface, unit test, and UI boundary verifier.
+- Added `@axi/workbench-foundation` to share only authentication session behavior and locale preference between the Web and mobile applications.
 - Added the root documentation suite placeholders and governance entrypoints for README, AGENTS, INDEX, PRD, TDD, TODO, and milestone alignment.
 - Added `docs/rules/axi-workbench-boundary-sop.md` and `pnpm check:boundaries` to block direct runtime coupling to neighboring project implementations.
 - Added the read-only Axi Mobile project-intelligence projection: workspace health totals, attention items, project progress, capabilities, and allowlisted configuration groups.
@@ -14,6 +16,9 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- Restored the independent mobile application to the prior WeChat-inspired interaction system: centered title, search and plus menu, overview/project/workspace/scan/me navigation, green active state, badges, and a scan page. Web Axi Dashboard Chrome remains Web-only.
+- Converted `apps/workbench` into the Web-admin-only application: the viewport-driven `MobileTopBar` / `MobileBottomNav` branch was removed, and the Web UI verifier now blocks its reintroduction.
+- Replaced the previous single-SPA documentation policy with an explicit two-app policy: independent Web and mobile composition, shared foundation/API/contracts/tokens only.
 - Documentation ownership is now explicit for `/Volumes/code/workspace/projects/axi-workbench`.
 - Upgraded `docs/project-docs.manifest.json` to the verified v2 zero-context onboarding contract and added freshness governance to `TODO.md`.
 - Replaced hard-coded Axi Notify mobile artifact paths in Axi Coder snapshots with environment-driven resolution and `workspace://` contract references.

@@ -9,8 +9,8 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
   - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
   - Test: `rg -n "REQ-DOC-001|REQ-VERIFY|REQ-BOUNDARY|PRD|TDD|Milestone" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
 
-- [ ] REQ-VERIFY-002: Keep the Workbench UI contract verifier, type-check, tests, and build green on every change that touches `apps/workbench/**`.
-  - Test: `pnpm --filter @axi/workbench type-check`, `pnpm --filter @axi/workbench test`, `pnpm --filter @axi/workbench build`, `node apps/workbench/scripts/verify-ui-contracts.mjs` all exit 0; `pnpm --filter @axi/workbench test` continues to report 23 unit tests passing.
+- [ ] REQ-VERIFY-002: Keep both user-app UI contract verifiers, type-checks, tests, and builds green.
+  - Test: Web: `pnpm --filter @axi/workbench type-check`, `test`, `build`, `node apps/workbench/scripts/verify-ui-contracts.mjs`; mobile: `pnpm --filter @axi/workbench-mobile type-check`, `test`, `build`, `verify:contracts`; foundation: `pnpm --filter @axi/workbench-foundation type-check` all exit 0.
 
 - [ ] REQ-CONTROLPLANE-001: Keep the control-plane smoke and six-layer snapshot green.
   - Test: `pnpm --filter @axi/workstation-control-plane smoke` exits 0 and reports ≥ 35 resources across the six layers.
@@ -18,8 +18,8 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
   - Test: `pnpm check:boundaries` exits 0; `docs/rules/axi-workbench-boundary-sop.md` and `scripts/check-workbench-boundaries.mjs` remain in sync; `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` reports ok.
 
-- [ ] REQ-WORKBENCH-001: Do not reintroduce a second Web portal in `apps/`.
-  - Test: `ls apps/` shows only `workbench`, `devsvc-dashboard`, `axi-coder`, `verification-inbox`, `app-search-system`, `ollama-menu-assistant`; `apps/web-portal` is absent or archived; PRD/TDD/CHANGELOG state this invariant.
+- [ ] REQ-WORKBENCH-001: Keep exactly two formal user applications in `apps/`: Web admin and mobile.
+  - Test: `apps/workbench` and `apps/workbench-mobile` both exist; `apps/web-portal` is absent or archived; PRD/TDD/CHANGELOG state that neither app is a viewport branch of the other.
 
 ## P1
 
@@ -32,8 +32,8 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-COMMUNICATION-001: Keep communication-gateway above business logic.
   - Test: `pnpm --filter @axi/workstation-communication-gateway test` passes and the gateway source does not import Codex, workspace index, memory tables, or project state owners.
 
-- [ ] REQ-WORKBENCH-002: Keep desktop / mobile rendering boundaries clean.
-  - Test: 1440px desktop smoke renders Axi Dashboard chrome; 500px mobile smoke renders only mobile topbar + bottom navigation; `node apps/workbench/scripts/verify-ui-contracts.mjs` covers both breakpoints.
+- [ ] REQ-WORKBENCH-002: Keep Web / mobile rendering boundaries clean.
+  - Test: 1440px Web smoke renders Axi Dashboard chrome at `:5173`; 390px mobile-app smoke renders the 微信式居中顶栏、加号菜单、五项绿色底栏与扫码入口 at `:5174`; both app-specific contract verifiers pass and neither app imports the other app’s implementation.
 
 - [ ] REQ-DOC-002: Keep the v2 zero-context manifest current.
   - Test: `docs/project-docs.manifest.json` parses as JSON, references only project-local files, contains no secret values, and reflects the latest entrypoints, contracts, and verification evidence.
@@ -41,8 +41,8 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-AXI-CODER-001: Keep Axi Coder snapshots free of hard-coded neighbor paths.
   - Test: no Axi Coder snapshot contains a hard-coded `/projects/axi-notify/...` artifact path; resolution goes through environment variables and `workspace://` contract references.
 
-- [ ] REQ-MOBILE-001: Keep the mobile shell's persisted token surface auditable.
-  - Test: every persisted key under `axi.workbench.*` is listed in `TDD.md` or a successor storage SOP; mobile theme switching round-trips through `axi.workbench.theme.mode`.
+- [ ] REQ-MOBILE-001: Keep the independent WeChat-style mobile app and its shared foundation auditable.
+  - Test: `apps/workbench-mobile` owns its overview/project/workspace/scan/me routes, centered header, five-tab bar, badges and scan page; `packages/workbench-foundation` lists shared session / locale keys; mobile theme switching round-trips through `axi.workbench.mobile.theme.mode` without importing Web layout code.
 
 - [ ] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
   - Test: each `docs/logs/submit/<batch-id>.md` is cited in the latest MILESTONE entry, and the linked deliverable evidence is current.

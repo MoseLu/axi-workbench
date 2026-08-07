@@ -7,7 +7,7 @@
   "kind": "pnpm multi-runtime monorepo",
   "lifecycle": "active",
   "owner": "Axi Core Projects",
-  "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane, dashboard applications, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+  "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane: a Web Axi Dashboard application and a separate WeChat-style mobile application, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
   "readOrder": [
     "AGENTS.md",
     "README.md",
@@ -17,9 +17,19 @@
   ],
   "entrypoints": [
     {
-      "id": "workbench",
+      "id": "workbench-web",
       "path": "apps/workbench/src/main.tsx",
-      "purpose": "唯一多端后台工作台入口：桌面 Web 使用 Axi Dashboard Chrome，移动 Web 使用独立移动端壳。"
+      "purpose": "Independent Web admin application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, and Web-only pages."
+    },
+    {
+      "id": "workbench-mobile",
+      "path": "apps/workbench-mobile/src/main.tsx",
+      "purpose": "Independent WeChat-style mobile application: its own Vite entry, centered header, search/plus menu, overview/project/workspace/scan/me tab bar, badges, scan flow, login, and page composition."
+    },
+    {
+      "id": "workbench-foundation",
+      "path": "packages/workbench-foundation/src/index.ts",
+      "purpose": "Shared auth-session and locale-preference foundation for the independent user applications; no page or layout exports."
     },
     {
       "id": "control-plane",
@@ -48,6 +58,7 @@
     ],
     "start": [
       "pnpm dev:workbench",
+      "pnpm dev:mobile",
       "pnpm --filter @axi/workstation-control-plane start",
       "pnpm --filter @axi/workstation-communication-gateway start"
     ],
@@ -56,15 +67,11 @@
       "python3 infra/fleet-console/scripts/fleetctl.py validate"
     ],
     "verify": [
-      "pnpm --filter @axi/workbench type-check",
-      "pnpm --filter @axi/workbench test",
-      "pnpm --filter @axi/workbench build",
-      "pnpm type-check",
-      "pnpm test",
-      "pnpm test:workstation",
-      "pnpm --dir apps/devsvc-dashboard typecheck",
-      "pnpm --dir apps/axi-coder typecheck",
-      "npm --prefix apps/verification-inbox run typecheck",
+      "pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check",
+      "pnpm --filter @axi/workbench --filter @axi/workbench-mobile test",
+      "pnpm --filter @axi/workbench --filter @axi/workbench-mobile build",
+      "node apps/workbench/scripts/verify-ui-contracts.mjs",
+      "pnpm --filter @axi/workbench-mobile verify:contracts",
       "pnpm check:boundaries"
     ],
     "smoke": [
@@ -149,6 +156,8 @@
       "Six-layer control-plane resource snapshots",
       "Communication gateway routing",
       "Axi Dashboard application surfaces",
+      "Independent Web admin and mobile workbench applications",
+      "Shared Workbench auth-session and locale foundation",
       "Axi App CLI scaffolding"
     ],
     "consumes": [
@@ -159,6 +168,9 @@
     ],
     "files": [
       "packages/schemas/src/index.ts",
+      "packages/workbench-foundation/src/index.ts",
+      "apps/workbench/src/layouts/MainLayout.tsx",
+      "apps/workbench-mobile/src/layouts/MobileShell.tsx",
       "services/control-plane/src/control-plane.mjs",
       "services/communication-gateway/src/gateway.mjs",
       "docs/rules/epap-six-layer-sop.md",
@@ -173,6 +185,7 @@
     "active": [
       "Keep the root documentation suite current",
       "Align verification commands with the real project stack",
+      "Keep Web Axi Dashboard Chrome and WeChat-style mobile composition independent",
       "Preserve ownership and cross-project boundaries",
       "Complete the operational handoff milestone"
     ],
@@ -230,12 +243,17 @@
       "pnpm --filter @axi/workbench type-check",
       "pnpm --filter @axi/workbench test",
       "pnpm --filter @axi/workbench build",
-      "node apps/workbench/scripts/verify-ui-contracts.mjs"
+      "node apps/workbench/scripts/verify-ui-contracts.mjs",
+      "pnpm --filter @axi/workbench-foundation type-check",
+      "pnpm --filter @axi/workbench-mobile type-check",
+      "pnpm --filter @axi/workbench-mobile test",
+      "pnpm --filter @axi/workbench-mobile build",
+      "pnpm --filter @axi/workbench-mobile verify:contracts"
     ],
     "evidence": [
-      "Desktop 1440px browser smoke rendered the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.",
-      "Mobile 500px browser smoke rendered the independent mobile topbar and bottom navigation without desktop sidebar/chrome nodes.",
-      "Workbench UI contract verifier, TypeScript, 23 unit tests, and production build passed on 2026-08-07."
+      "Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.",
+      "Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, five-tab green navigation, badges, and scan flow without Web dashboard nodes.",
+      "Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07."
     ]
   },
   "startup_profile": {
@@ -247,7 +265,9 @@
     "clean": null
   },
   "consumers": [],
-  "shared_packages_exposed": [],
+  "shared_packages_exposed": [
+    "@axi/workbench-foundation"
+  ],
   "docs_entrypoints": [
     "AGENTS.md",
     "README.md",

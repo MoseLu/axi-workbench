@@ -2,8 +2,8 @@
 
 ## Current Status
 
-Axi Workbench is the canonical AxiomaticWorld workbench: single SPA workbench (`apps/workbench`),
-desktop host shell (`apps/devsvc-dashboard`), six-layer control plane running in
+Axi Workbench is the canonical AxiomaticWorld workbench: independent Web admin (`apps/workbench`),
+independent mobile app (`apps/workbench-mobile`), desktop host shell (`apps/devsvc-dashboard`), six-layer control plane running in
 `services/control-plane` + `services/communication-gateway`, and the v2 zero-context manifest
 lives at `docs/project-docs.manifest.json`. PRD/TDD/TODO have been refreshed to track every
 `REQ-*` against a concrete verification command.
@@ -17,7 +17,7 @@ lives at `docs/project-docs.manifest.json`. PRD/TDD/TODO have been refreshed to 
 ## Milestone 2: Verification Alignment
 
 - Status: In progress
-- Evidence: `pnpm --filter @axi/workbench type-check` / `test` / `build` and `node apps/workbench/scripts/verify-ui-contracts.mjs` all pass; 23 unit tests green; `pnpm --filter @axi/workstation-control-plane smoke` continues to exit 0 with ≥ 35 resources across six layers (last verified 2026-06-11).
+- Evidence: Web and mobile application type-check / test / build / contract-verifier lanes are maintained separately; `packages/workbench-foundation` owns the shared session and locale boundary; `pnpm --filter @axi/workstation-control-plane smoke` continues to exit 0 with ≥ 35 resources across six layers (last verified 2026-06-11).
 - Exit criteria: every P0/P1 TODO item has at least one concrete test command line, and each REQ has both an `Acceptance Criteria` row in `PRD.md` and a matching test in `TDD.md` / `TODO.md`.
 
 ## Milestone 3: Operational Handoff

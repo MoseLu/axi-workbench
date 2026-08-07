@@ -3,16 +3,16 @@
 ## Architecture Assumptions
 
 - Root path: `/Volumes/code/workspace/projects/axi-workbench`.
-- Canonical entrypoint: `apps/workbench/src/main.tsx` — single SPA serving desktop Web (Axi Dashboard Chrome, viewport ≥ 768px) and mobile Web (independent mobile shell, viewport < 768px).
+- Canonical user-app entrypoints: `apps/workbench/src/main.tsx` for the Web admin and `apps/workbench-mobile/src/main.tsx` for the mobile application. They are separate Vite applications, not two viewport branches of one SPA.
 - Stack signals: Node ≥ 18, pnpm ≥ 8, TypeScript, Vite, Turborepo, Go, Java Spring Boot, Python FastAPI, LangChain, Qdrant, RAG.
 - Six-layer control plane is enforced by `docs/rules/epap-six-layer-sop.md`. The TDD treats those boundaries as load-bearing and writes tests around them.
 - Top-level layout:
-  - `apps/`: 6 dashboard apps — `workbench`, `devsvc-dashboard`, `axi-coder`, `verification-inbox`, `app-search-system`, `ollama-menu-assistant`.
+  - `apps/`: 7 dashboard apps — `workbench` (Web admin), `workbench-mobile` (mobile app), `devsvc-dashboard`, `axi-coder`, `verification-inbox`, `app-search-system`, `ollama-menu-assistant`.
   - `services/`: 8 services — `api-gateway`, `auth-service`, `core-service`, `file-service`, `notification-service`, `communication-gateway`, `control-plane`, `workflow-engine`.
-  - `packages/`: `api-client`, `axi-rag`, `schemas`, `epap-schemas-compat` (`@epap/schemas` migration shim), `types`, `ui` (legacy), `utils`.
+  - `packages/`: `api-client`, `axi-rag`, `schemas`, `epap-schemas-compat` (`@epap/schemas` migration shim), `types`, `ui` (legacy), `utils`, `workbench-foundation` (shared session / locale only).
   - `tools/axi-app-cli/`: independent sub-monorepo, governed by its own `AGENTS.md`.
   - `ai/`, `backend/`, `infra/fleet-console/`, `prompts/`, `docs/`.
-- Root scripts (`package.json`): `pnpm install`, `pnpm dev`, `pnpm dev:workbench`, `pnpm dev:dashboard`, `pnpm dev:coder`, `pnpm build`, `pnpm build:workbench`, `pnpm build:schemas`, `pnpm test`, `pnpm test:workstation`, `pnpm type-check`, `pnpm lint`, `pnpm check:boundaries`, `pnpm clean`, `pnpm clean:cache`.
+- Root scripts (`package.json`): `pnpm install`, `pnpm dev`, `pnpm dev:workbench`, `pnpm dev:mobile`, `pnpm dev:dashboard`, `pnpm dev:coder`, `pnpm build`, `pnpm build:workbench`, `pnpm build:mobile`, `pnpm build:schemas`, `pnpm test`, `pnpm test:mobile`, `pnpm test:workstation`, `pnpm type-check`, `pnpm lint`, `pnpm check:boundaries`, `pnpm clean`, `pnpm clean:cache`.
 
 ## Technical Design
 
@@ -31,8 +31,10 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 
 | Surface | Owner | Verification entry |
 | --- | --- | --- |
-| Workbench UI (desktop + mobile shell) | `apps/workbench` | `pnpm --filter @axi/workbench type-check`, `pnpm --filter @axi/workbench test`, `pnpm --filter @axi/workbench build`, `node apps/workbench/scripts/verify-ui-contracts.mjs` |
-| Workbench contract verifier | `apps/workbench/scripts/verify-ui-contracts.mjs` | Same as above |
+| Web admin UI | `apps/workbench` | `pnpm --filter @axi/workbench type-check`, `pnpm --filter @axi/workbench test`, `pnpm --filter @axi/workbench build`, `node apps/workbench/scripts/verify-ui-contracts.mjs` |
+| Mobile application UI | `apps/workbench-mobile` | 微信式居中顶栏、加号菜单、五项绿色底栏、角标和扫码页；`pnpm --filter @axi/workbench-mobile type-check`, `pnpm --filter @axi/workbench-mobile test`, `pnpm --filter @axi/workbench-mobile build`, `pnpm --filter @axi/workbench-mobile verify:contracts` |
+| Shared app foundation | `packages/workbench-foundation` | `pnpm --filter @axi/workbench-foundation type-check` |
+| Web / mobile contract verifiers | `apps/workbench/scripts/verify-ui-contracts.mjs`, `apps/workbench-mobile/scripts/verify-mobile-contracts.mjs` | Same as above |
 | Workstation control plane | `services/control-plane` | `pnpm --filter @axi/workstation-control-plane test`, `pnpm --filter @axi/workstation-control-plane smoke` |
 | Communication gateway | `services/communication-gateway` | `pnpm --filter @axi/workstation-communication-gateway test` |
 | Workstation contracts | `packages/schemas` | `pnpm --filter @axi/workstation-contracts test` |
@@ -60,13 +62,20 @@ pnpm type-check
 pnpm test
 pnpm test:workstation
 
-# 4) Workbench end-to-end (UI contracts + type-check + tests + build)
+# 4) Web admin end-to-end (UI contracts + type-check + tests + build)
 pnpm --filter @axi/workbench type-check
 pnpm --filter @axi/workbench test
 pnpm --filter @axi/workbench build
 node apps/workbench/scripts/verify-ui-contracts.mjs
 
-# 5) Control-plane smoke + Fleet Console validate
+# 5) Independent mobile app
+pnpm --filter @axi/workbench-foundation type-check
+pnpm --filter @axi/workbench-mobile type-check
+pnpm --filter @axi/workbench-mobile test
+pnpm --filter @axi/workbench-mobile build
+pnpm --filter @axi/workbench-mobile verify:contracts
+
+# 6) Control-plane smoke + Fleet Console validate
 pnpm --filter @axi/workstation-control-plane smoke
 python3 infra/fleet-console/scripts/fleetctl.py validate
 ```
@@ -104,10 +113,10 @@ rg -n "REQ-(DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|L
 - Verification commands become stale after dependency or layout changes (e.g. a deprecated package.json script stays in TDD).
 - Workbench starts importing neighboring project implementations instead of consuming `@axi/workstation-*` package / API / config contracts.
 - The desktop host (`devsvc-dashboard`) becomes a second user portal instead of a host shell.
-- `apps/web-portal` is reintroduced as a Web entry, defeating `REQ-WORKBENCH-001`.
+- `apps/web-portal` is reintroduced as a third duplicate portal, defeating `REQ-WORKBENCH-001`.
 - Axi Coder regresses to hard-coded Axi Notify artifact paths, breaking `REQ-AXI-CODER-001`.
 - Six-layer SOP is bypassed: control-plane direct file IO, communication-gateway calling Codex, IM adapter reading project tree.
-- Workbench UI contract verifier is skipped, allowing shared dashboard chrome leaks into the mobile shell or vice versa.
+- A route or layout from one app is imported into the other, reintroducing a responsive single-SPA architecture through the back door.
 - React Router v7 future-flag warnings hide genuine console errors; tests must distinguish them.
 
 ## Test Strategy
@@ -116,8 +125,8 @@ rg -n "REQ-(DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|L
 - Prefer existing project test/build commands; never invent a parallel test runner.
 - Run `pnpm check:boundaries` for any control-plane, dashboard-hosting, cross-project, or package dependency change.
 - For doc-only changes, run the minimum documentation check above and inspect diffs for placeholder language or stale REQ IDs.
-- Run workbench UI contract verifier + 23 unit tests + production build for every `apps/workbench/**` change.
+- Run the Web admin verifier, tests, and build for `apps/workbench/**`; run the mobile verifier, tests, and build for `apps/workbench-mobile/**`; run foundation type-check plus both affected app checks for `packages/workbench-foundation/**` changes.
 - Capture every batch in `docs/logs/submit/<batch-id>.md` and link it from `docs/state/CHANGELOG.md`.
 - Keep `pnpm --filter @axi/workstation-control-plane smoke` exit-code 0 and ≥ 35 resources across six layers; treat smoke regression as a P0 incident.
-- Mobile and desktop smoke must be regenerated whenever `apps/workbench/src/**`, `packages/ui/**`, `@axi/workstation-*` shared chrome tokens, or viewport-aware routing change.
+- Web and mobile browser smoke must be regenerated whenever either application shell, its mobile navigation, shared foundation, or shared Axi tokens change.
 - A failing boundary SOP or six-layer SOP is treated as P0 and blocks merge regardless of green tests.
