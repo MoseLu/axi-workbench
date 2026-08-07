@@ -13,6 +13,7 @@ from models.workflow import (
     WorkflowApprovalStatus,
     WorkflowCreate,
     WorkflowExecution,
+    WorkflowStatus,
     WorkflowUpdate,
 )
 from security import require_gateway_identity
