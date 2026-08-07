@@ -13,6 +13,7 @@ from fastapi import UploadFile
 
 from config import Settings
 from repository import FileNotFound, FileRecord, FileRepository, MemoryFileRepository, PostgresFileRepository
+from scanner import ClamAVScanner, FileScanner, NoopScanner
 from storage import LocalStorage, S3Storage, StorageBackend
 
 
@@ -21,10 +22,17 @@ class FileSizeExceeded(Exception):
 
 
 class FileService:
-    def __init__(self, settings: Settings, repository: FileRepository, storage: StorageBackend) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        repository: FileRepository,
+        storage: StorageBackend,
+        scanner: FileScanner | None = None,
+    ) -> None:
         self.settings = settings
         self.repository = repository
         self.storage = storage
+        self.scanner = scanner or NoopScanner()
 
     async def upload(self, subject: str, filename: str, file: UploadFile) -> FileRecord:
         suffix = Path(filename).suffix
@@ -40,6 +48,7 @@ class FileService:
                         raise FileSizeExceeded
                     checksum.update(chunk)
                     temporary_file.write(chunk)
+            await self.scanner.scan(temporary_path)
             content_type = file.content_type or mimetypes.guess_type(filename)[0]
             previous: FileRecord | None = None
             try:
@@ -124,7 +133,15 @@ async def build_file_service(settings: Settings) -> FileService:
         )
     else:
         storage = LocalStorage(settings.storage_path)
-    return FileService(settings, repository, storage)
+    scanner = build_scanner(settings)
+    return FileService(settings, repository, storage, scanner)
+
+
+def build_scanner(settings: Settings) -> FileScanner:
+    backend = settings.virus_scan_backend.lower().strip()
+    if backend == "clamav":
+        return ClamAVScanner(settings.clamav_host, settings.clamav_port, settings.virus_scan_timeout_seconds)
+    return NoopScanner()
 
 
 def _subject_digest(subject: str) -> str:

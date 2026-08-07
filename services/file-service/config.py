@@ -67,6 +67,24 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("FILE_PRESIGNED_URL_TTL_SECONDS"),
     )
 
+    # Upload safety
+    virus_scan_backend: str = Field(
+        default="disabled",
+        validation_alias=AliasChoices("FILE_VIRUS_SCAN_BACKEND"),
+    )
+    clamav_host: str = Field(
+        default="127.0.0.1",
+        validation_alias=AliasChoices("FILE_CLAMAV_HOST"),
+    )
+    clamav_port: int = Field(
+        default=3310,
+        validation_alias=AliasChoices("FILE_CLAMAV_PORT"),
+    )
+    virus_scan_timeout_seconds: float = Field(
+        default=30.0,
+        validation_alias=AliasChoices("FILE_VIRUS_SCAN_TIMEOUT_SECONDS"),
+    )
+
     # Allowed extensions
     allowed_extensions: list[str] = ["*"]
 
@@ -91,6 +109,8 @@ def ensure_storage_directory() -> None:
 
 def validate_settings() -> None:
     """Reject development storage and missing durable state in production."""
+    if settings.virus_scan_backend.lower() not in {"disabled", "clamav"}:
+        raise ValueError("FILE_VIRUS_SCAN_BACKEND must be disabled or clamav")
     if settings.environment.lower() != "production":
         return
     if not settings.internal_service_token:
@@ -101,3 +121,7 @@ def validate_settings() -> None:
         raise ValueError("FILE_STORAGE_BACKEND must be s3 in production")
     if not settings.s3_bucket or not settings.s3_access_key_id or not settings.s3_secret_access_key:
         raise ValueError("FILE_S3_BUCKET and S3 credentials must be injected in production")
+    if settings.virus_scan_backend.lower() != "clamav":
+        raise ValueError("FILE_VIRUS_SCAN_BACKEND=clamav is required in production")
+    if not settings.clamav_host:
+        raise ValueError("FILE_CLAMAV_HOST must be injected when ClamAV scanning is enabled")

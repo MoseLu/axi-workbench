@@ -164,6 +164,11 @@ fileService:
   s3Region: us-east-1
   presignedURLTTLSeconds: 900
   maxFileSize: 104857600
+  # Production must set this to clamav and provide a reachable ClamAV daemon.
+  virusScanBackend: disabled
+  clamavHost: 127.0.0.1
+  clamavPort: 3310
+  virusScanTimeoutSeconds: 30
   persistence:
     # Used only with storageBackend=local; production S3 does not mount a PVC.
     enabled: true

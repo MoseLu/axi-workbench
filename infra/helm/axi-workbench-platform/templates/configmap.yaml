@@ -55,5 +55,9 @@ data:
   FILE_S3_REGION: {{ .Values.fileService.s3Region | quote }}
   FILE_PRESIGNED_URL_TTL_SECONDS: {{ .Values.fileService.presignedURLTTLSeconds | quote }}
   FILE_MAX_FILE_SIZE: {{ .Values.fileService.maxFileSize | quote }}
+  FILE_VIRUS_SCAN_BACKEND: {{ .Values.fileService.virusScanBackend | quote }}
+  FILE_CLAMAV_HOST: {{ .Values.fileService.clamavHost | quote }}
+  FILE_CLAMAV_PORT: {{ .Values.fileService.clamavPort | quote }}
+  FILE_VIRUS_SCAN_TIMEOUT_SECONDS: {{ .Values.fileService.virusScanTimeoutSeconds | quote }}
   NOTIFICATION_PORT: {{ .Values.notificationService.service.port | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.observability.otlpEndpoint | quote }}

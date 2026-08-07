@@ -10,6 +10,7 @@ from starlette.background import BackgroundTask
 from config import settings
 from models.file import DeleteResponse, FileInfo, FileListResponse, FileUploadResponse, HealthResponse, PresignedURLResponse
 from repository import FileNotFound
+from scanner import MalwareDetected, ScannerUnavailable
 from security import require_gateway_identity
 from service import FileService, FileSizeExceeded
 
@@ -92,6 +93,16 @@ async def upload_file(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
         ) from exc
+    except MalwareDetected as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="file rejected by malware scanner",
+        ) from exc
+    except ScannerUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="virus scanner unavailable",
+        ) from exc
     return FileUploadResponse(
         name=record.name,
         path=record.name,
@@ -116,6 +127,16 @@ async def upload_multiple_files(
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
+            ) from exc
+        except MalwareDetected as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="file rejected by malware scanner",
+            ) from exc
+        except ScannerUnavailable as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="virus scanner unavailable",
             ) from exc
         responses.append(
             FileUploadResponse(

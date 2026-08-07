@@ -59,6 +59,8 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 
 workflow-engine 的派发 worker 默认由 `WORKFLOW_DISPATCH_*` 与 `WORKFLOW_MAX_CONCURRENT_WORKFLOWS` ConfigMap 参数控制；生产环境应按步骤最长执行时间设置租约，并确保 `WORKFLOW_DISPATCH_LEASE_SECONDS` 大于单步骤超时。
 
+文件上传的病毒扫描由 `FILE_VIRUS_SCAN_BACKEND=clamav` 启用，`FILE_CLAMAV_HOST` / `FILE_CLAMAV_PORT` 指向集群内或受管的 ClamAV daemon。生产配置禁止使用 `disabled`；扫描服务不可达时 file-service 会拒绝上传，不会把未经扫描的对象写入 S3/MinIO。
+
 `PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN` 在启用 Outbox worker 时必需，且必须与 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 相同。
 
 平台数据库迁移账号是唯一拥有 `BYPASSRLS` 的 Axi 平台账号，且只能注入 pre-install/pre-upgrade Job。`platform-core` Deployment 永远只得到 `axi_platform_app`。初始化开发数据库可用 [`scripts/init-db.sql`](../../scripts/init-db.sql)；生产角色/DSN 由数据库 IaC 或 DBA 预先创建。
