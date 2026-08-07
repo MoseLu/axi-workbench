@@ -1,12 +1,15 @@
 """File upload/download endpoints."""
+import hashlib
 import mimetypes
-from datetime import datetime
+import os
 from pathlib import Path
+from uuid import uuid4
+from datetime import datetime
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
-from config import ensure_storage_directory, settings
+from config import settings
 from models.file import (
     DeleteResponse,
     FileInfo,
@@ -14,6 +17,7 @@ from models.file import (
     FileUploadResponse,
     HealthResponse,
 )
+from security import require_gateway_identity
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -28,62 +32,101 @@ async def health_check() -> HealthResponse:
     )
 
 
-@router.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
-async def upload_file(file: UploadFile = File(...)) -> FileUploadResponse:
-    """Upload a single file."""
-    ensure_storage_directory()
+def _subject_storage_path(subject: str) -> Path:
+    """Use a stable opaque directory so one subject cannot address another."""
 
-    # Check file size
-    file.file.seek(0, 2)
-    file_size = file.file.tell()
-    file.file.seek(0)
+    digest = hashlib.sha256(subject.encode("utf-8")).hexdigest()
+    path = settings.storage_path / "subjects" / digest
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
-    if file_size > settings.max_file_size:
+
+def _safe_filename(filename: str | None) -> str:
+    name = (filename or "").strip()
+    if not name or name in {".", ".."} or "/" in name or "\\" in name:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="a single safe filename is required",
         )
+    if settings.allowed_extensions != ["*"]:
+        extension = Path(name).suffix.lower().lstrip(".")
+        if extension not in {item.lower().lstrip(".") for item in settings.allowed_extensions}:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail="file extension is not allowed",
+            )
+    return name
 
-    # Save file
-    file_path = settings.storage_path / file.filename
-    content = await file.read()
-    file_path.write_bytes(content)
+
+def _subject_file_path(subject: str, filename: str | None) -> Path:
+    root = _subject_storage_path(subject).resolve()
+    path = (root / _safe_filename(filename)).resolve()
+    if path.parent != root:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="invalid file path",
+        )
+    return path
+
+
+async def _save_upload(subject: str, file: UploadFile) -> tuple[str, Path, int]:
+    filename = _safe_filename(file.filename)
+    target = _subject_file_path(subject, filename)
+    temporary = target.parent / f".{uuid4().hex}.upload"
+    size = 0
+    try:
+        with temporary.open("wb") as output:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > settings.max_file_size:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"File size exceeds maximum allowed size of {settings.max_file_size} bytes",
+                    )
+                output.write(chunk)
+        os.replace(temporary, target)
+    except HTTPException:
+        temporary.unlink(missing_ok=True)
+        raise
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+    finally:
+        await file.close()
+    return filename, target, size
+
+
+@router.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_file(
+    subject: str = Depends(require_gateway_identity),
+    file: UploadFile = File(...),
+) -> FileUploadResponse:
+    """Upload a single file."""
+    filename, _, file_size = await _save_upload(subject, file)
 
     return FileUploadResponse(
-        name=file.filename,
-        path=str(file_path.relative_to(settings.storage_path)),
+        name=filename,
+        path=filename,
         size=file_size,
         message="File uploaded successfully",
     )
 
 
 @router.post("/upload/multipart", response_model=list[FileUploadResponse], status_code=status.HTTP_201_CREATED)
-async def upload_multiple_files(files: list[UploadFile] = File(...)) -> list[FileUploadResponse]:
+async def upload_multiple_files(
+    subject: str = Depends(require_gateway_identity),
+    files: list[UploadFile] = File(...),
+) -> list[FileUploadResponse]:
     """Upload multiple files."""
-    ensure_storage_directory()
     responses = []
 
     for file in files:
-        # Check file size
-        file.file.seek(0, 2)
-        file_size = file.file.tell()
-        file.file.seek(0)
-
-        if file_size > settings.max_file_size:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File {file.filename} exceeds maximum allowed size of {settings.max_file_size} bytes",
-            )
-
-        # Save file
-        file_path = settings.storage_path / file.filename
-        content = await file.read()
-        file_path.write_bytes(content)
+        filename, _, file_size = await _save_upload(subject, file)
 
         responses.append(
             FileUploadResponse(
-                name=file.filename,
-                path=str(file_path.relative_to(settings.storage_path)),
+                name=filename,
+                path=filename,
                 size=file_size,
                 message="File uploaded successfully",
             )
@@ -93,19 +136,19 @@ async def upload_multiple_files(files: list[UploadFile] = File(...)) -> list[Fil
 
 
 @router.get("/", response_model=FileListResponse)
-async def list_files() -> FileListResponse:
+async def list_files(subject: str = Depends(require_gateway_identity)) -> FileListResponse:
     """List all files in storage."""
-    ensure_storage_directory()
+    storage_path = _subject_storage_path(subject)
 
     files = []
-    for file_path in settings.storage_path.iterdir():
+    for file_path in storage_path.iterdir():
         if file_path.is_file():
             stat = file_path.stat()
             content_type, _ = mimetypes.guess_type(str(file_path))
             files.append(
                 FileInfo(
                     name=file_path.name,
-                    path=str(file_path.relative_to(settings.storage_path)),
+                    path=str(file_path.relative_to(storage_path)),
                     size=stat.st_size,
                     created_at=datetime.fromtimestamp(stat.st_ctime),
                     modified_at=datetime.fromtimestamp(stat.st_mtime),
@@ -117,9 +160,9 @@ async def list_files() -> FileListResponse:
 
 
 @router.get("/download/{filename}")
-async def download_file(filename: str) -> FileResponse:
+async def download_file(filename: str, subject: str = Depends(require_gateway_identity)) -> FileResponse:
     """Download a file."""
-    file_path = settings.storage_path / filename
+    file_path = _subject_file_path(subject, filename)
 
     if not file_path.exists():
         raise HTTPException(
@@ -142,9 +185,9 @@ async def download_file(filename: str) -> FileResponse:
 
 
 @router.delete("/{filename}", response_model=DeleteResponse)
-async def delete_file(filename: str) -> DeleteResponse:
+async def delete_file(filename: str, subject: str = Depends(require_gateway_identity)) -> DeleteResponse:
     """Delete a file."""
-    file_path = settings.storage_path / filename
+    file_path = _subject_file_path(subject, filename)
 
     if not file_path.exists():
         raise HTTPException(

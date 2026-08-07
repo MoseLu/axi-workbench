@@ -1,6 +1,6 @@
 # Axi Workbench Kubernetes 部署
 
-`axi-workbench-platform` Helm Chart 只部署 Axi 的业务 API 平面：唯一外部入口 `api-gateway`，以及仅集群内可达的 `identity-adapter` 和 `platform-core`。Web 和移动端都是独立应用，只共享同一个 OIDC/API 合同；它们不共用界面壳层。
+`axi-workbench-platform` Helm Chart 只部署 Axi 的业务 API 平面：唯一外部入口 `api-gateway`，以及仅集群内可达的身份、平台、工作流、通知和文件服务。Web 和移动端都是独立应用，只共享同一个 OIDC/API 合同；它们不共用界面壳层。
 
 ```text
 Web / Mobile (BFF + PKCE) / EPS (PKCE API token)
@@ -9,7 +9,10 @@ Web / Mobile (BFF + PKCE) / EPS (PKCE API token)
 NGINX Ingress ──► api-gateway ──► identity-adapter ──► ZITADEL
                     │     ▲              │
                     │     └─ QR complete─┘ (webhook secret)
-                    └──────────► platform-core ──► PostgreSQL / Redis
+                    ├──────────► platform-core ──► PostgreSQL / Redis
+                    ├──────────► workflow-engine
+                    ├──────────► notification-service
+                    └──────────► file-service ──► PVC
 ```
 
 ## 先决条件
@@ -30,6 +33,9 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 - `GATEWAY_REDIS_URL`
 - `GATEWAY_IDENTITY_INTERNAL_TOKEN`
 - `GATEWAY_PLATFORM_INTERNAL_TOKEN`
+- `GATEWAY_FILE_INTERNAL_TOKEN`
+- `GATEWAY_WORKFLOW_INTERNAL_TOKEN`
+- `GATEWAY_NOTIFICATION_INTERNAL_TOKEN`
 - `OIDC_CLIENT_SECRET`
 - `IDENTITY_DATABASE_URL`
 - `IDENTITY_REDIS_URL`
@@ -39,6 +45,9 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 - `PLATFORM_DATABASE_URL`（`axi_platform_app`，必须为 `NOBYPASSRLS`）
 - `PLATFORM_MIGRATION_DATABASE_URL`（仅 Helm migration Job 使用的 `BYPASSRLS` 账号）
 - `PLATFORM_INTERNAL_SERVICE_TOKEN`（值必须与 gateway platform token 相同）
+- `FILE_INTERNAL_SERVICE_TOKEN`（值必须与 gateway file token 相同）
+- `WORKFLOW_INTERNAL_SERVICE_TOKEN`（值必须与 gateway workflow token 相同）
+- `NOTIFICATION_INTERNAL_SERVICE_TOKEN`（值必须与 gateway notification token 相同）
 
 可选键：`PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN`。
 
@@ -65,13 +74,13 @@ helm test axi-workbench --namespace axi-workbench
 
 ## 验收边界
 
-- Ingress 只暴露 `/api` 到 gateway；identity/platform 的 Service 为 `ClusterIP`，NetworkPolicy 仅允许 gateway 访问。
+- Ingress 只暴露 `/api` 到 gateway；所有后端 Service 为 `ClusterIP`，NetworkPolicy 仅允许 gateway 访问专职服务。
 - 网关通过 ZITADEL JWKS、API audience 与所需 scope 验证 Bearer access token，并为浏览器 BFF 会话发放 HttpOnly cookie；浏览器不保存 access/refresh token，也不会把 ID Token 当作业务 API token。
 - QR 轮询只返回事务状态，审批和一次性 resume 均由内部身份边界处理，绝不返回 JWT。ZITADEL custom-login 完成请求必须打到 https://api…/api/v1/internal/zitadel/qr/transactions/{id}/complete；网关转发到 ClusterIP identity-adapter，适配器再校验 X-Axi-Zitadel-Webhook，不能绕过网关直接公开适配器。
 - Outbox 是至少一次投递：记录有五分钟租约、指数退避和第十次失败后的死信标记；内部消费者必须使用 X-Axi-Event-ID 做幂等去重。
 
 生产 Web 与移动端分别构建，但都必须在各自的构建环境注入同一 VITE_API_BASE_URL=https://api… 。网关仅对 gateway.cors.allowedOrigins 的精确 HTTPS Origin 发送携带 cookie 的 CORS 响应。
 - 跨租户读写要同时被 gateway 身份注入、platform-core 成员检查和 PostgreSQL RLS 拒绝。
-- 三项 Go 服务会在 `OTEL_EXPORTER_OTLP_ENDPOINT` 配置后通过 OTLP/HTTP 导出服务端 Span，并继续 W3C `traceparent`；部署前仍需接入环境的 Collector，并用真实 OIDC/SMTP/数据库故障演练完成上线验收。
+- Gateway、identity-adapter、platform-core 会在 `OTEL_EXPORTER_OTLP_ENDPOINT` 配置后通过 OTLP/HTTP 导出服务端 Span；notification/Python 专职服务先沿用结构化日志和网关注入的 `traceparent`，各自 OTel exporter 仍待补齐。部署前仍需接入环境的 Collector，并用真实 OIDC/SMTP/数据库故障演练完成上线验收。
 
 本地 Mailpit 烟测使用 `make docker-up` 后的 1025 SMTP 端口：`make verify-identity-mailpit`。它显式设置 `IDENTITY_MAILPIT_SMTP_REQUIRED=1`，因此不会回退到 QQ/网易等真实邮箱；受控环境的真实 SMTP 冒烟只能由对应 Secret 注入后单独执行。

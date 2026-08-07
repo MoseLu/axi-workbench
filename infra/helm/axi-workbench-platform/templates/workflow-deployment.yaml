@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-workflow
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-engine
+spec:
+  replicas: {{ .Values.workflowEngine.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: workflow-engine
+  template:
+    metadata:
+      labels:
+        {{- include "axi-workbench-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: workflow-engine
+    spec:
+      serviceAccountName: {{ include "axi-workbench-platform.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: workflow-engine
+          image: "{{ .Values.workflowEngine.image.repository }}:{{ default .Chart.AppVersion .Values.workflowEngine.image.tag }}"
+          imagePullPolicy: {{ .Values.workflowEngine.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8083
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "axi-workbench-platform.fullname" . }}-config
+          env:
+            - name: WORKFLOW_INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: WORKFLOW_INTERNAL_SERVICE_TOKEN
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.workflowEngine.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}

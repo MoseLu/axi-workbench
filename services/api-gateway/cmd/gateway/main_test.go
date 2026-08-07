@@ -34,7 +34,7 @@ func TestGatewayReplacesSpoofedInternalHeadersWithVerifiedIdentity(t *testing.T)
 
 	cfg := testGatewayConfig(downstream.URL, 10)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
-	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token")
+	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
 	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
 
 	server := httptest.NewServer(router)
@@ -61,7 +61,7 @@ func TestGatewayReplacesSpoofedInternalHeadersWithVerifiedIdentity(t *testing.T)
 func TestGatewayRateLimitAppliesBeforePublicRoutes(t *testing.T) {
 	cfg := testGatewayConfig("http://127.0.0.1:1", 1)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
-	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token")
+	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
 	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(1, nil), setupLogger("disabled"))
 
 	first := httptest.NewRecorder()
@@ -93,7 +93,7 @@ func TestGatewayRoutesZitadelQRCompletionThroughIdentityAdapter(t *testing.T) {
 
 	cfg := testGatewayConfig(downstream.URL, 10)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
-	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token")
+	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
 	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
 
 	gateway := httptest.NewServer(router)
@@ -113,6 +113,59 @@ func TestGatewayRoutesZitadelQRCompletionThroughIdentityAdapter(t *testing.T) {
 	}
 }
 
+func TestGatewayRewritesSpecialistPathsAndUsesDedicatedTokens(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		gatewayPath    string
+		downstreamPath string
+		internalToken  string
+	}{
+		{name: "file", method: http.MethodGet, gatewayPath: "/api/v1/files/download/report.pdf", downstreamPath: "/files/download/report.pdf", internalToken: "file-test-token"},
+		{name: "workflow", method: http.MethodPost, gatewayPath: "/api/v1/workflows/workflow-1/execute", downstreamPath: "/workflows/workflow-1/execute", internalToken: "workflow-test-token"},
+		{name: "notification", method: http.MethodGet, gatewayPath: "/api/v1/notifications/nav-badges", downstreamPath: "/api/v1/notifications/nav-badges", internalToken: "notification-test-token"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			downstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				if request.URL.Path != tt.downstreamPath {
+					t.Errorf("downstream path = %q, want %q", request.URL.Path, tt.downstreamPath)
+				}
+				if got := request.Header.Get("X-Axi-Internal-Token"); got != tt.internalToken {
+					t.Errorf("downstream internal token = %q, want %q", got, tt.internalToken)
+				}
+				if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
+					t.Errorf("downstream subject = %q", got)
+				}
+				writer.WriteHeader(http.StatusNoContent)
+			}))
+			defer downstream.Close()
+
+			cfg := testGatewayConfig(downstream.URL, 10)
+			identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
+			proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
+			router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+
+			gateway := httptest.NewServer(router)
+			defer gateway.Close()
+			request, err := http.NewRequest(tt.method, gateway.URL+tt.gatewayPath, nil)
+			if err != nil {
+				t.Fatalf("create gateway request: %v", err)
+			}
+			request.Header.Set("X-Axi-Development-Subject", "zitadel-alice")
+			response, err := gateway.Client().Do(request)
+			if err != nil {
+				t.Fatalf("call gateway: %v", err)
+			}
+			response.Body.Close()
+			if response.StatusCode != http.StatusNoContent {
+				t.Fatalf("gateway status = %d, want %d", response.StatusCode, http.StatusNoContent)
+			}
+		})
+	}
+}
+
 func testGatewayConfig(platformURL string, rateLimit int) *config.Config {
 	return &config.Config{
 		Environment: "development",
@@ -122,7 +175,15 @@ func testGatewayConfig(platformURL string, rateLimit int) *config.Config {
 			DevelopmentHeaderAuth: true,
 		},
 		RateLimit: config.RateLimitConfig{RequestsPerMinute: rateLimit},
-		Services:  config.ServicesConfig{PlatformCoreURL: platformURL},
+		Services: config.ServicesConfig{
+			PlatformCoreURL:           platformURL,
+			FileServiceURL:            platformURL,
+			WorkflowURL:               platformURL,
+			NotificationURL:           platformURL,
+			FileInternalToken:         "file-test-token",
+			WorkflowInternalToken:     "workflow-test-token",
+			NotificationInternalToken: "notification-test-token",
+		},
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"http://127.0.0.1:5173"},
 			AllowedMethods: []string{"GET"},

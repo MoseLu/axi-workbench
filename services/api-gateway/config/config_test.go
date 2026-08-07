@@ -19,8 +19,11 @@ func productionConfigForTest() Config {
 		},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 120},
 		Services: ServicesConfig{
-			IdentityInternalToken: "identity-token",
-			PlatformInternalToken: "platform-token",
+			IdentityInternalToken:     "identity-token",
+			PlatformInternalToken:     "platform-token",
+			FileInternalToken:         "file-token",
+			WorkflowInternalToken:     "workflow-token",
+			NotificationInternalToken: "notification-token",
 		},
 		CORS: CORSConfig{AllowedOrigins: []string{"https://web.axi.example.com"}},
 	}
@@ -44,5 +47,26 @@ func TestProductionRequiresAPIResourceAudienceAndScope(t *testing.T) {
 	cfg.Identity.RequiredAccessTokenScopes = nil
 	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "OIDC_REQUIRED_ACCESS_TOKEN_SCOPES") {
 		t.Fatalf("missing API scope error = %v", err)
+	}
+}
+
+func TestProductionRequiresDedicatedSpecialistCredentials(t *testing.T) {
+	tests := []struct {
+		name  string
+		apply func(*Config)
+		want  string
+	}{
+		{name: "file", apply: func(cfg *Config) { cfg.Services.FileInternalToken = "" }, want: "GATEWAY_FILE_INTERNAL_TOKEN"},
+		{name: "workflow", apply: func(cfg *Config) { cfg.Services.WorkflowInternalToken = "" }, want: "GATEWAY_WORKFLOW_INTERNAL_TOKEN"},
+		{name: "notification", apply: func(cfg *Config) { cfg.Services.NotificationInternalToken = "" }, want: "GATEWAY_NOTIFICATION_INTERNAL_TOKEN"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := productionConfigForTest()
+			tt.apply(&cfg)
+			if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("Validate() error = %v, want %s", err, tt.want)
+			}
+		})
 	}
 }

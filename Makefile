@@ -1,4 +1,4 @@
-.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-auth dev-core dev-workflow dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow verify-go verify-helm verify-identity-mailpit
+.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow verify-go verify-specialists verify-helm verify-identity-mailpit
 
 help:
 	@echo "EPAP - Enterprise Project Automation Platform"
@@ -75,7 +75,13 @@ dev-core:
 	cd services/core-service && ./gradlew bootRun
 
 dev-workflow:
-	cd services/workflow-engine && uv run fastapi dev src/api/main.py
+	cd services/workflow-engine && uv run --with-requirements requirements.txt uvicorn main:app --reload --host 0.0.0.0 --port 8083
+
+dev-file:
+	cd services/file-service && uv run --with-requirements requirements.txt uvicorn main:app --reload --host 0.0.0.0 --port 8085
+
+dev-notification:
+	cd services/notification-service && go run .
 
 dev-kb:
 	cd ai/knowledge-base && uv run fastapi dev src/api/main.py
@@ -100,6 +106,12 @@ verify-go:
 	cd services/api-gateway && go test -race ./...
 	cd services/identity-adapter && go test -race ./...
 	cd services/platform-core && go test -race ./...
+	cd services/notification-service && go test -race ./...
+
+verify-specialists:
+	cd services/workflow-engine && uv run --with-requirements requirements-dev.txt pytest -q
+	cd services/file-service && uv run --with-requirements requirements-dev.txt pytest -q
+	cd services/notification-service && go test -race ./...
 
 verify-helm:
 	go run helm.sh/helm/v3/cmd/helm@v3.18.6 lint infra/helm/axi-workbench-platform --strict

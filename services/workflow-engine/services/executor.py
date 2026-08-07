@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -29,7 +29,7 @@ class WorkflowExecutor:
         execution = WorkflowExecution(
             workflow_id=workflow.id,
             status=WorkflowStatus.RUNNING,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             steps=workflow.steps.copy(),
         )
 
@@ -52,7 +52,7 @@ class WorkflowExecutor:
 
         execution.status = WorkflowStatus.COMPLETED
         execution.result = context
-        execution.completed_at = datetime.utcnow()
+        execution.completed_at = datetime.now(UTC)
         return execution
 
     async def _execute_step(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:

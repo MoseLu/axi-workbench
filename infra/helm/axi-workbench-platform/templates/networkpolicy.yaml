@@ -69,4 +69,75 @@ spec:
       ports:
         - protocol: TCP
           port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-workflow-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: workflow-engine
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8083
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-notification-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-service
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8084
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-file-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: file-service
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: file-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8085
 {{- end }}

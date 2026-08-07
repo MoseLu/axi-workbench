@@ -1,6 +1,6 @@
 """Pydantic models for workflows."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -61,12 +61,13 @@ class WorkflowUpdate(BaseModel):
 class Workflow(BaseModel):
     """Workflow model with metadata."""
     id: UUID = Field(default_factory=uuid4)
+    owner_subject: str = Field(default="", exclude=True)
     name: str
     description: str | None = None
     steps: list[WorkflowStep] = Field(default_factory=list)
     status: WorkflowStatus = WorkflowStatus.PENDING
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     executed_at: datetime | None = None
     result: dict[str, Any] | None = None
 

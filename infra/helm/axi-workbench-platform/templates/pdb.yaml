@@ -40,4 +40,46 @@ spec:
     matchLabels:
       {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: platform-core
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-workflow
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-engine
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: workflow-engine
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-notification
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-service
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: notification-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-file
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: file-service
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: file-service
 {{- end }}

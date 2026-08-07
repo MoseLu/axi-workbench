@@ -14,14 +14,17 @@ import (
 // client-controlled internal identity header before injecting a verified OIDC
 // subject and a per-service internal credential.
 type ProxyHandler struct {
-	identityAdapterURL    string
-	platformCoreURL       string
-	legacyCoreServiceURL  string
-	fileServiceURL        string
-	workflowURL           string
-	notificationURL       string
-	identityInternalToken string
-	platformInternalToken string
+	identityAdapterURL        string
+	platformCoreURL           string
+	legacyCoreServiceURL      string
+	fileServiceURL            string
+	workflowURL               string
+	notificationURL           string
+	identityInternalToken     string
+	platformInternalToken     string
+	fileInternalToken         string
+	workflowInternalToken     string
+	notificationInternalToken string
 }
 
 func NewProxyHandler(
@@ -33,44 +36,50 @@ func NewProxyHandler(
 	notificationURL string,
 	identityInternalToken string,
 	platformInternalToken string,
+	fileInternalToken string,
+	workflowInternalToken string,
+	notificationInternalToken string,
 ) *ProxyHandler {
 	return &ProxyHandler{
-		identityAdapterURL:    identityAdapterURL,
-		platformCoreURL:       platformCoreURL,
-		legacyCoreServiceURL:  legacyCoreServiceURL,
-		fileServiceURL:        fileServiceURL,
-		workflowURL:           workflowURL,
-		notificationURL:       notificationURL,
-		identityInternalToken: identityInternalToken,
-		platformInternalToken: platformInternalToken,
+		identityAdapterURL:        identityAdapterURL,
+		platformCoreURL:           platformCoreURL,
+		legacyCoreServiceURL:      legacyCoreServiceURL,
+		fileServiceURL:            fileServiceURL,
+		workflowURL:               workflowURL,
+		notificationURL:           notificationURL,
+		identityInternalToken:     identityInternalToken,
+		platformInternalToken:     platformInternalToken,
+		fileInternalToken:         fileInternalToken,
+		workflowInternalToken:     workflowInternalToken,
+		notificationInternalToken: notificationInternalToken,
 	}
 }
 
 func (p *ProxyHandler) ProxyToIdentity() gin.HandlerFunc {
-	return p.createProxy(p.identityAdapterURL, p.identityInternalToken)
+	return p.createProxy(p.identityAdapterURL, p.identityInternalToken, "", "")
 }
 
 func (p *ProxyHandler) ProxyToPlatform() gin.HandlerFunc {
-	return p.createProxy(p.platformCoreURL, p.platformInternalToken)
+	return p.createProxy(p.platformCoreURL, p.platformInternalToken, "", "")
 }
 
 func (p *ProxyHandler) ProxyToLegacyCore() gin.HandlerFunc {
-	return p.createProxy(p.legacyCoreServiceURL, "")
+	return p.createProxy(p.legacyCoreServiceURL, "", "", "")
 }
 
 func (p *ProxyHandler) ProxyToFile() gin.HandlerFunc {
-	return p.createProxy(p.fileServiceURL, "")
+	return p.createProxy(p.fileServiceURL, p.fileInternalToken, "/api/v1/files", "/files")
 }
 
 func (p *ProxyHandler) ProxyToWorkflow() gin.HandlerFunc {
-	return p.createProxy(p.workflowURL, "")
+	return p.createProxy(p.workflowURL, p.workflowInternalToken, "/api/v1/workflows", "/workflows")
 }
 
 func (p *ProxyHandler) ProxyToNotification() gin.HandlerFunc {
-	return p.createProxy(p.notificationURL, "")
+	return p.createProxy(p.notificationURL, p.notificationInternalToken, "", "")
 }
 
-func (p *ProxyHandler) createProxy(targetURL, internalToken string) gin.HandlerFunc {
+func (p *ProxyHandler) createProxy(targetURL, internalToken, externalPrefix, downstreamPrefix string) gin.HandlerFunc {
 	target, err := url.Parse(targetURL)
 	if err != nil || target.Scheme == "" || target.Host == "" {
 		return func(c *gin.Context) {
@@ -82,6 +91,7 @@ func (p *ProxyHandler) createProxy(targetURL, internalToken string) gin.HandlerF
 	proxy.Director = func(request *http.Request) {
 		originalDirector(request)
 		request.Host = target.Host
+		rewritePath(request.URL, externalPrefix, downstreamPrefix)
 	}
 	proxy.ErrorHandler = func(writer http.ResponseWriter, _ *http.Request, proxyErr error) {
 		writer.Header().Set("Content-Type", "application/json")
@@ -104,6 +114,19 @@ func (p *ProxyHandler) createProxy(targetURL, internalToken string) gin.HandlerF
 		}
 		proxy.ServeHTTP(c.Writer, request)
 	}
+}
+
+func rewritePath(requestURL *url.URL, externalPrefix, downstreamPrefix string) {
+	if requestURL == nil || externalPrefix == "" {
+		return
+	}
+	path := requestURL.Path
+	if path == externalPrefix {
+		requestURL.Path = downstreamPrefix
+	} else if strings.HasPrefix(path, externalPrefix+"/") {
+		requestURL.Path = downstreamPrefix + strings.TrimPrefix(path, externalPrefix)
+	}
+	requestURL.RawPath = ""
 }
 
 func stripUntrustedInternalHeaders(headers http.Header) {

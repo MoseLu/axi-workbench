@@ -58,6 +58,9 @@ func main() {
 		cfg.Services.NotificationURL,
 		cfg.Services.IdentityInternalToken,
 		cfg.Services.PlatformInternalToken,
+		cfg.Services.FileInternalToken,
+		cfg.Services.WorkflowInternalToken,
+		cfg.Services.NotificationInternalToken,
 	)
 	router := setupRouter(cfg, proxyHandler, identityService, limiter, logger)
 	server := &http.Server{
@@ -200,6 +203,7 @@ func setupRouter(
 	protected.GET("/workflows", proxyHandler.ProxyToWorkflow())
 	protected.POST("/workflows", proxyHandler.ProxyToWorkflow())
 	protected.GET("/workflows/:id", proxyHandler.ProxyToWorkflow())
+	protected.PATCH("/workflows/:id", proxyHandler.ProxyToWorkflow())
 	protected.PUT("/workflows/:id", proxyHandler.ProxyToWorkflow())
 	protected.DELETE("/workflows/:id", proxyHandler.ProxyToWorkflow())
 	protected.POST("/workflows/:id/execute", proxyHandler.ProxyToWorkflow())

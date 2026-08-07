@@ -100,6 +100,67 @@ platformCore:
     pollInterval: 5s
     deliveryURL: ""
 
+workflowEngine:
+  # The current executor store is process-local; keep one replica until the
+  # PostgreSQL/Celery state store is enabled.
+  replicaCount: 1
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-workflow-engine
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8083
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  stepTimeoutSeconds: 300
+
+notificationService:
+  # The current inbox store is process-local; keep one replica until the
+  # PostgreSQL/Kafka consumer path is enabled.
+  replicaCount: 1
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-notification-service
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8084
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+fileService:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-file-service
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8085
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  storagePath: /var/lib/axi/files
+  maxFileSize: 104857600
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteMany
+    size: 20Gi
+    storageClassName: ""
+
 ingress:
   enabled: true
   className: nginx

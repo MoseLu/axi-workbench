@@ -2,6 +2,7 @@
 
 import os
 from functools import lru_cache
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
@@ -12,20 +13,28 @@ class Settings(BaseSettings):
     app_name: str = "Workflow Engine"
     app_version: str = "1.0.0"
     debug: bool = False
+    environment: str = "development"
+    internal_service_token: str = Field(
+        default="",
+        validation_alias=AliasChoices("WORKFLOW_INTERNAL_SERVICE_TOKEN", "INTERNAL_SERVICE_TOKEN"),
+    )
 
     # Server settings
     host: str = "0.0.0.0"
-    port: int = 8000
-
-    # CORS settings
-    cors_origins: list[str] = ["*"]
+    port: int = Field(
+        default=8000,
+        validation_alias=AliasChoices("WORKFLOW_SERVICE_PORT", "PORT"),
+    )
 
     # Database settings (optional - for future use)
     database_url: str | None = None
 
     # Execution settings
     max_concurrent_workflows: int = 10
-    step_timeout_seconds: int = 300
+    step_timeout_seconds: int = Field(
+        default=300,
+        validation_alias=AliasChoices("WORKFLOW_STEP_TIMEOUT_SECONDS", "STEP_TIMEOUT_SECONDS"),
+    )
 
     class Config:
         env_file = ".env"

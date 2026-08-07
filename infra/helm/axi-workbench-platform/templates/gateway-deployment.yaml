@@ -54,6 +54,21 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: GATEWAY_PLATFORM_INTERNAL_TOKEN
+            - name: GATEWAY_FILE_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: GATEWAY_FILE_INTERNAL_TOKEN
+            - name: GATEWAY_WORKFLOW_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: GATEWAY_WORKFLOW_INTERNAL_TOKEN
+            - name: GATEWAY_NOTIFICATION_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: GATEWAY_NOTIFICATION_INTERNAL_TOKEN
             - name: OIDC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:

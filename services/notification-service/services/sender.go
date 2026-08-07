@@ -21,7 +21,9 @@ func NewNotificationService() *NotificationService {
 		cfg:     config.Load(),
 		storage: make(map[string]*models.Notification),
 	}
-	s.seedDemoInbox()
+	if s.cfg.Environment != "production" {
+		s.seedDemoInbox()
+	}
 	return s
 }
 
@@ -73,11 +75,14 @@ func (s *NotificationService) ListNotifications(userID string, unreadOnly bool) 
 	return out
 }
 
-func (s *NotificationService) MarkRead(id string) (*models.Notification, error) {
+func (s *NotificationService) MarkRead(id, userID string) (*models.Notification, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	n, ok := s.storage[id]
 	if !ok {
+		return nil, errNotFound
+	}
+	if n.UserID != "" && n.UserID != userID {
 		return nil, errNotFound
 	}
 	n.Read = true

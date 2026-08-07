@@ -21,9 +21,9 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | 身份适配 | identity-adapter | Go + Gin + ZITADEL + SMTP | 已实现（待集群验收） |
 | 平台核心 | platform-core | Go + Gin + PostgreSQL RLS + Outbox | 已实现（待集群验收） |
 | 原型兼容 | auth-service / core-service | Go JWT / Spring H2 | 只读迁移兼容 |
-| 工作流 | workflow-engine | Python + FastAPI + Celery | 规划中 |
-| 消息通知 | notification-service | Go + Kafka | 规划中 |
-| 文件处理 | file-service | Python + S3 | 规划中 |
+| 工作流 | workflow-engine | Python + FastAPI | 已接入网关（持久化与异步执行待补） |
+| 消息通知 | notification-service | Go + Gin | 已接入网关（PostgreSQL/Kafka 待补） |
+| 文件处理 | file-service | Python + FastAPI | 已接入网关（S3 元数据与处理链待补） |
 | 知识检索 | knowledge-base (RAG) | Python + Qdrant + LangChain | 规划中 |
 | 智能协作 | agent-platform | Python + Anthropic SDK | 规划中 |
 | 文档站点 | docs | Docusaurus 3 | 规划中 |

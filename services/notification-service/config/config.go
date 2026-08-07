@@ -1,20 +1,25 @@
 package config
 
 import (
+	"fmt"
 	"os"
 )
 
 type Config struct {
-	Port         string
-	SMTPHost     string
-	SMTPPort     string
-	SMTPUsername string
-	SMTPPassword string
-	FromEmail    string
+	Environment          string
+	InternalServiceToken string
+	Port                 string
+	SMTPHost             string
+	SMTPPort             string
+	SMTPUsername         string
+	SMTPPassword         string
+	FromEmail            string
 }
 
 func Load() *Config {
 	return &Config{
+		Environment:          getEnv("ENVIRONMENT", "development"),
+		InternalServiceToken: getEnv("NOTIFICATION_INTERNAL_SERVICE_TOKEN", getEnv("INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 		// Align with docs / .env.example: notification-service listens on 8084
 		Port:         getEnv("NOTIFICATION_PORT", "8084"),
 		SMTPHost:     getEnv("SMTP_HOST", "localhost"),
@@ -23,6 +28,13 @@ func Load() *Config {
 		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
 		FromEmail:    getEnv("FROM_EMAIL", "noreply@example.com"),
 	}
+}
+
+func (c *Config) Validate() error {
+	if c.Environment == "production" && (c.InternalServiceToken == "" || c.InternalServiceToken == "axi-development-internal-token") {
+		return fmt.Errorf("NOTIFICATION_INTERNAL_SERVICE_TOKEN must be injected in production")
+	}
+	return nil
 }
 
 func getEnv(key, defaultValue string) string {

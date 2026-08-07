@@ -11,6 +11,9 @@ data:
   GATEWAY_RATE_LIMIT_PER_MINUTE: {{ .Values.gateway.rateLimitPerMinute | quote }}
   IDENTITY_ADAPTER_URL: {{ printf "http://%s-identity:%v" (include "axi-workbench-platform.fullname" .) .Values.identityAdapter.service.port | quote }}
   PLATFORM_CORE_URL: {{ printf "http://%s-platform:%v" (include "axi-workbench-platform.fullname" .) .Values.platformCore.service.port | quote }}
+  FILE_SERVICE_URL: {{ printf "http://%s-file:%v" (include "axi-workbench-platform.fullname" .) .Values.fileService.service.port | quote }}
+  WORKFLOW_SERVICE_URL: {{ printf "http://%s-workflow:%v" (include "axi-workbench-platform.fullname" .) .Values.workflowEngine.service.port | quote }}
+  NOTIFICATION_SERVICE_URL: {{ printf "http://%s-notification:%v" (include "axi-workbench-platform.fullname" .) .Values.notificationService.service.port | quote }}
   OIDC_ISSUER_URL: {{ .Values.gateway.oidc.issuerURL | quote }}
   OIDC_CLIENT_ID: {{ .Values.gateway.oidc.clientID | quote }}
   OIDC_API_AUDIENCE: {{ .Values.gateway.oidc.apiAudience | quote }}
@@ -36,4 +39,10 @@ data:
   {{- else }}
   PLATFORM_OUTBOX_DELIVERY_URL: {{ .Values.platformCore.outbox.deliveryURL | quote }}
   {{- end }}
+  WORKFLOW_SERVICE_PORT: {{ .Values.workflowEngine.service.port | quote }}
+  WORKFLOW_STEP_TIMEOUT_SECONDS: {{ .Values.workflowEngine.stepTimeoutSeconds | quote }}
+  FILE_SERVICE_PORT: {{ .Values.fileService.service.port | quote }}
+  FILE_STORAGE_PATH: {{ .Values.fileService.storagePath | quote }}
+  FILE_MAX_FILE_SIZE: {{ .Values.fileService.maxFileSize | quote }}
+  NOTIFICATION_PORT: {{ .Values.notificationService.service.port | quote }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.observability.otlpEndpoint | quote }}

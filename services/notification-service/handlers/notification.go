@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"notification-service/middleware"
 	"notification-service/models"
 	"notification-service/services"
 )
@@ -23,6 +24,13 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	subject := middleware.Subject(c)
+	if req.UserID == "" {
+		req.UserID = subject
+	} else if req.UserID != subject {
+		c.JSON(http.StatusForbidden, gin.H{"error": "userId must match the verified subject"})
+		return
+	}
 
 	notification, err := h.service.CreateNotification(&req)
 	if err != nil {
@@ -34,9 +42,9 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 }
 
 func (h *NotificationHandler) ListNotifications(c *gin.Context) {
-	userID := c.Query("userId")
-	if userID == "" {
-		userID = c.GetHeader("X-User-Id")
+	userID, ok := resolveScopedUserID(c)
+	if !ok {
+		return
 	}
 	unreadOnly := c.Query("unreadOnly") == "true" || c.Query("unread") == "1"
 	notifications := h.service.ListNotifications(userID, unreadOnly)
@@ -46,13 +54,9 @@ func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 // GetNavBadges returns bottom-tab badges for the mobile chrome.
 // GET /api/v1/notifications/nav-badges?userId=demo
 func (h *NotificationHandler) GetNavBadges(c *gin.Context) {
-	userID := c.Query("userId")
-	if userID == "" {
-		userID = c.GetHeader("X-User-Id")
-	}
-	if userID == "" {
-		// Default demo user so clients without auth still get seeded badges.
-		userID = "demo"
+	userID, ok := resolveScopedUserID(c)
+	if !ok {
+		return
 	}
 	c.JSON(http.StatusOK, h.service.GetNavBadges(userID))
 }
@@ -63,7 +67,7 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "id required"})
 		return
 	}
-	n, err := h.service.MarkRead(id)
+	n, err := h.service.MarkRead(id, middleware.Subject(c))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -72,9 +76,9 @@ func (h *NotificationHandler) MarkRead(c *gin.Context) {
 }
 
 func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
-	userID := c.Query("userId")
-	if userID == "" {
-		userID = c.GetHeader("X-User-Id")
+	userID, ok := resolveScopedUserID(c)
+	if !ok {
+		return
 	}
 	count := h.service.MarkAllRead(userID)
 	c.JSON(http.StatusOK, gin.H{"marked": count})
@@ -82,8 +86,18 @@ func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
 
 // ResolveUserID is a helper for tests / future auth middleware.
 func ResolveUserID(c *gin.Context) string {
-	if u := c.GetHeader("X-User-Id"); u != "" {
-		return strings.TrimSpace(u)
+	if subject := middleware.Subject(c); subject != "" {
+		return subject
 	}
-	return strings.TrimSpace(c.Query("userId"))
+	return ""
+}
+
+func resolveScopedUserID(c *gin.Context) (string, bool) {
+	subject := middleware.Subject(c)
+	requested := strings.TrimSpace(c.Query("userId"))
+	if requested != "" && requested != subject {
+		c.JSON(http.StatusForbidden, gin.H{"error": "userId must match the verified subject"})
+		return "", false
+	}
+	return subject, true
 }

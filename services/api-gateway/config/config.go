@@ -30,14 +30,17 @@ type ServerConfig struct {
 }
 
 type ServicesConfig struct {
-	IdentityAdapterURL    string
-	PlatformCoreURL       string
-	LegacyCoreServiceURL  string
-	FileServiceURL        string
-	WorkflowURL           string
-	NotificationURL       string
-	IdentityInternalToken string
-	PlatformInternalToken string
+	IdentityAdapterURL        string
+	PlatformCoreURL           string
+	LegacyCoreServiceURL      string
+	FileServiceURL            string
+	WorkflowURL               string
+	NotificationURL           string
+	IdentityInternalToken     string
+	PlatformInternalToken     string
+	FileInternalToken         string
+	WorkflowInternalToken     string
+	NotificationInternalToken string
 }
 
 type IdentityConfig struct {
@@ -86,14 +89,17 @@ func Load() (*Config, error) {
 			WriteTimeout: getDurationEnv("WRITE_TIMEOUT", 30*time.Second),
 		},
 		Services: ServicesConfig{
-			IdentityAdapterURL:    getEnv("IDENTITY_ADAPTER_URL", "http://localhost:8081"),
-			PlatformCoreURL:       getEnv("PLATFORM_CORE_URL", "http://localhost:8082"),
-			LegacyCoreServiceURL:  os.Getenv("LEGACY_CORE_SERVICE_URL"),
-			FileServiceURL:        getEnv("FILE_SERVICE_URL", "http://localhost:3003"),
-			WorkflowURL:           getEnv("WORKFLOW_SERVICE_URL", "http://localhost:3004"),
-			NotificationURL:       getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8084"),
-			IdentityInternalToken: getEnv("GATEWAY_IDENTITY_INTERNAL_TOKEN", getEnv("IDENTITY_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
-			PlatformInternalToken: getEnv("GATEWAY_PLATFORM_INTERNAL_TOKEN", getEnv("PLATFORM_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			IdentityAdapterURL:        getEnv("IDENTITY_ADAPTER_URL", "http://localhost:8081"),
+			PlatformCoreURL:           getEnv("PLATFORM_CORE_URL", "http://localhost:8082"),
+			LegacyCoreServiceURL:      os.Getenv("LEGACY_CORE_SERVICE_URL"),
+			FileServiceURL:            getEnv("FILE_SERVICE_URL", "http://localhost:3003"),
+			WorkflowURL:               getEnv("WORKFLOW_SERVICE_URL", "http://localhost:3004"),
+			NotificationURL:           getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8084"),
+			IdentityInternalToken:     getEnv("GATEWAY_IDENTITY_INTERNAL_TOKEN", getEnv("IDENTITY_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			PlatformInternalToken:     getEnv("GATEWAY_PLATFORM_INTERNAL_TOKEN", getEnv("PLATFORM_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			FileInternalToken:         getEnv("GATEWAY_FILE_INTERNAL_TOKEN", getEnv("FILE_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			WorkflowInternalToken:     getEnv("GATEWAY_WORKFLOW_INTERNAL_TOKEN", getEnv("WORKFLOW_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			NotificationInternalToken: getEnv("GATEWAY_NOTIFICATION_INTERNAL_TOKEN", getEnv("NOTIFICATION_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 		},
 		Identity: IdentityConfig{
 			IssuerURL:                 strings.TrimSuffix(os.Getenv("OIDC_ISSUER_URL"), "/"),
@@ -152,6 +158,15 @@ func (c Config) Validate() error {
 		}
 		if c.Services.PlatformInternalToken == "" || c.Services.PlatformInternalToken == "axi-development-internal-token" {
 			return fmt.Errorf("GATEWAY_PLATFORM_INTERNAL_TOKEN must be injected in production")
+		}
+		if c.Services.FileInternalToken == "" || c.Services.FileInternalToken == "axi-development-internal-token" {
+			return fmt.Errorf("GATEWAY_FILE_INTERNAL_TOKEN must be injected in production")
+		}
+		if c.Services.WorkflowInternalToken == "" || c.Services.WorkflowInternalToken == "axi-development-internal-token" {
+			return fmt.Errorf("GATEWAY_WORKFLOW_INTERNAL_TOKEN must be injected in production")
+		}
+		if c.Services.NotificationInternalToken == "" || c.Services.NotificationInternalToken == "axi-development-internal-token" {
+			return fmt.Errorf("GATEWAY_NOTIFICATION_INTERNAL_TOKEN must be injected in production")
 		}
 		if err := validateProductionOrigins(c.CORS.AllowedOrigins); err != nil {
 			return err

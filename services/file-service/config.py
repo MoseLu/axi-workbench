@@ -1,8 +1,7 @@
 """Configuration module for file service."""
-import os
 from pathlib import Path
-from typing import Optional
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
@@ -11,12 +10,26 @@ class Settings(BaseSettings):
 
     # Server settings
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = Field(
+        default=8000,
+        validation_alias=AliasChoices("FILE_SERVICE_PORT", "PORT"),
+    )
     reload: bool = False
+    environment: str = "development"
+    internal_service_token: str = Field(
+        default="",
+        validation_alias=AliasChoices("FILE_INTERNAL_SERVICE_TOKEN", "INTERNAL_SERVICE_TOKEN"),
+    )
 
     # Storage settings
-    storage_path: Path = Path("./storage")
-    max_file_size: int = 100 * 1024 * 1024  # 100MB default
+    storage_path: Path = Field(
+        default=Path("./storage"),
+        validation_alias=AliasChoices("FILE_STORAGE_PATH", "STORAGE_PATH"),
+    )
+    max_file_size: int = Field(
+        default=100 * 1024 * 1024,
+        validation_alias=AliasChoices("FILE_MAX_FILE_SIZE", "MAX_FILE_SIZE"),
+    )
 
     # Allowed extensions
     allowed_extensions: list[str] = ["*"]
