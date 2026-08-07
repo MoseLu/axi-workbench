@@ -60,7 +60,14 @@ class WorkflowRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any) -> bool:
+    async def consume_event(
+        self,
+        event_id: str,
+        tenant_id: str,
+        topic: str,
+        payload: Any,
+        actor_subject: str = "",
+    ) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -83,6 +90,7 @@ class MemoryWorkflowRepository(WorkflowRepository):
         self.workflows: dict[UUID, Workflow] = {}
         self.executions: dict[UUID, WorkflowExecution] = {}
         self.event_inbox: dict[str, dict[str, Any]] = {}
+        self.event_dispatches: dict[tuple[str, UUID], dict[str, Any]] = {}
         self._lock = asyncio.Lock()
 
     async def list(self, subject: str) -> list[Workflow]:
@@ -149,7 +157,7 @@ class MemoryWorkflowRepository(WorkflowRepository):
                 raise WorkflowNotFound
             return execution.model_copy(deep=True)
 
-    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any) -> bool:
+    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any, actor_subject: str = "") -> bool:
         async with self._lock:
             if event_id in self.event_inbox:
                 return False
@@ -158,6 +166,14 @@ class MemoryWorkflowRepository(WorkflowRepository):
                 "topic": topic,
                 "payload": payload,
             }
+            if actor_subject:
+                for workflow in self.workflows.values():
+                    if workflow.trigger_topic != topic or workflow.owner_subject != actor_subject or workflow.status == WorkflowStatus.RUNNING:
+                        continue
+                    self.event_dispatches[(event_id, workflow.id)] = {
+                        "status": "pending",
+                        "payload": payload,
+                    }
             return True
 
     async def recover_interrupted(self) -> int:
@@ -188,7 +204,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
         self.pool = pool
 
     @classmethod
-    async def create(cls, database_url: str) -> PostgresWorkflowRepository:
+    async def connect(cls, database_url: str) -> PostgresWorkflowRepository:
         pool: AsyncConnectionPool[Any] = AsyncConnectionPool(
             conninfo=database_url,
             min_size=1,
@@ -214,7 +230,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
             async with connection.cursor() as cursor:
                 await cursor.execute(
                     """
-                    SELECT id, owner_subject, name, description, steps, status,
+                    SELECT id, owner_subject, name, description, trigger_topic, steps, status,
                            created_at, updated_at, executed_at, result
                     FROM axi_workflow.workflows
                     WHERE owner_subject = %s
@@ -231,9 +247,9 @@ class PostgresWorkflowRepository(WorkflowRepository):
                 await cursor.execute(
                     """
                     INSERT INTO axi_workflow.workflows
-                        (id, owner_subject, name, description, steps, status,
+                        (id, owner_subject, name, description, trigger_topic, steps, status,
                          created_at, updated_at, executed_at, result)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     _workflow_values(workflow),
                 )
@@ -243,7 +259,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
     async def get(self, workflow_id: UUID, subject: str) -> Workflow:
         row = await self._fetch_one(
             """
-            SELECT id, owner_subject, name, description, steps, status,
+            SELECT id, owner_subject, name, description, trigger_topic, steps, status,
                    created_at, updated_at, executed_at, result
             FROM axi_workflow.workflows
             WHERE id = %s AND owner_subject = %s
@@ -260,13 +276,14 @@ class PostgresWorkflowRepository(WorkflowRepository):
                 await cursor.execute(
                     """
                     UPDATE axi_workflow.workflows
-                    SET name = %s, description = %s, steps = %s, status = %s,
+                    SET name = %s, description = %s, trigger_topic = %s, steps = %s, status = %s,
                         updated_at = %s, executed_at = %s, result = %s
                     WHERE id = %s AND owner_subject = %s
                     """,
                     (
                         workflow.name,
                         workflow.description,
+                        workflow.trigger_topic,
                         Jsonb(_json_steps(workflow.steps)),
                         workflow.status.value,
                         workflow.updated_at,
@@ -301,7 +318,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
                     UPDATE axi_workflow.workflows
                     SET status = 'running', executed_at = %s, updated_at = %s
                     WHERE id = %s AND owner_subject = %s AND status <> 'running'
-                    RETURNING id, owner_subject, name, description, steps, status,
+                    RETURNING id, owner_subject, name, description, trigger_topic, steps, status,
                               created_at, updated_at, executed_at, result
                     """,
                     (now, now, workflow_id, subject),
@@ -375,7 +392,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
             raise WorkflowNotFound
         return _execution_from_row(row)
 
-    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any) -> bool:
+    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any, actor_subject: str = "") -> bool:
         async with self.pool.connection() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(
@@ -388,6 +405,19 @@ class PostgresWorkflowRepository(WorkflowRepository):
                     (event_id, tenant_id, topic, Jsonb(payload)),
                 )
                 row = await cursor.fetchone()
+                if row is not None and actor_subject:
+                    await cursor.execute(
+                        """
+                        INSERT INTO axi_workflow.event_dispatches (event_id, workflow_id, payload)
+                        SELECT %s, workflow.id, %s
+                        FROM axi_workflow.workflows workflow
+                        WHERE workflow.trigger_topic = %s
+                          AND workflow.owner_subject = %s
+                          AND workflow.status <> 'running'
+                        ON CONFLICT (event_id, workflow_id) DO NOTHING
+                        """,
+                        (event_id, Jsonb(payload), topic, actor_subject),
+                    )
                 await connection.commit()
                 return row is not None
 
@@ -437,6 +467,7 @@ def _workflow_values(workflow: Workflow) -> tuple[Any, ...]:
         workflow.owner_subject,
         workflow.name,
         workflow.description,
+        workflow.trigger_topic,
         Jsonb(_json_steps(workflow.steps)),
         workflow.status.value,
         workflow.created_at,
@@ -462,12 +493,13 @@ def _workflow_from_row(row: tuple[Any, ...]) -> Workflow:
         owner_subject=row[1],
         name=row[2],
         description=row[3],
-        steps=_json_value(row[4]),
-        status=WorkflowStatus(row[5]),
-        created_at=row[6],
-        updated_at=row[7],
-        executed_at=row[8],
-        result=_json_value(row[9]) if row[9] is not None else None,
+        trigger_topic=row[4],
+        steps=_json_value(row[5]),
+        status=WorkflowStatus(row[6]),
+        created_at=row[7],
+        updated_at=row[8],
+        executed_at=row[9],
+        result=_json_value(row[10]) if row[10] is not None else None,
     )
 
 

@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WorkflowStatus(str, Enum):
@@ -46,24 +46,33 @@ class WorkflowStep(BaseModel):
 
 class WorkflowCreate(BaseModel):
     """Request model for creating a workflow."""
+    model_config = ConfigDict(populate_by_name=True)
+
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
+    trigger_topic: str | None = Field(default=None, alias="triggerTopic", max_length=128, pattern=r"^[a-z][a-z0-9_.-]*$")
     steps: list[WorkflowStep] = Field(default_factory=list)
 
 
 class WorkflowUpdate(BaseModel):
     """Request model for updating a workflow."""
+    model_config = ConfigDict(populate_by_name=True)
+
     name: str | None = None
     description: str | None = None
+    trigger_topic: str | None = Field(default=None, alias="triggerTopic", max_length=128, pattern=r"^[a-z][a-z0-9_.-]*$")
     steps: list[WorkflowStep] | None = None
 
 
 class Workflow(BaseModel):
     """Workflow model with metadata."""
+    model_config = ConfigDict(populate_by_name=True)
+
     id: UUID = Field(default_factory=uuid4)
     owner_subject: str = Field(default="", exclude=True)
     name: str
     description: str | None = None
+    trigger_topic: str | None = Field(default=None, alias="triggerTopic")
     steps: list[WorkflowStep] = Field(default_factory=list)
     status: WorkflowStatus = WorkflowStatus.PENDING
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     runtime_repository = None
     if settings.database_url:
-        runtime_repository = await PostgresWorkflowRepository.create(settings.database_url)
+        runtime_repository = await PostgresWorkflowRepository.connect(settings.database_url)
         recovered = await runtime_repository.recover_interrupted()
         if recovered:
             logger.warning("Marked %d interrupted workflow executions as failed", recovered)

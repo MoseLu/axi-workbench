@@ -13,6 +13,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal/events", tags=["internal-events"])
 
 
+def event_actor_subject(payload: object) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    for key in ("createdBy", "subject"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 @router.post("", status_code=status.HTTP_204_NO_CONTENT)
 async def consume_event(
     event: OutboxEvent,
@@ -32,6 +42,7 @@ async def consume_event(
             tenant_id=event.tenant_id,
             topic=event.topic,
             payload=event.payload,
+            actor_subject=event_actor_subject(event.payload),
         )
     except Exception as exc:
         logger.warning("Could not persist platform event %s: %s", event.id, exc)

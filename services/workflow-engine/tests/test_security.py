@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi.testclient import TestClient
 
 from config import get_settings
@@ -38,7 +40,7 @@ def test_workflows_are_scoped_to_verified_subject() -> None:
             created = client.post(
                 "/workflows",
                 headers=headers,
-                json={"name": "Alice workflow", "steps": []},
+                json={"name": "Alice workflow", "triggerTopic": "task.created", "steps": []},
             )
             workflow_id = created.json()["id"]
             alice = client.get(f"/workflows/{workflow_id}", headers=headers)
@@ -67,6 +69,14 @@ def test_platform_event_route_requires_token_and_event_headers() -> None:
     settings.internal_service_token = "workflow-test-token"
     try:
         with TestClient(app) as client:
+            created = client.post(
+                "/workflows",
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Subject": "alice",
+                },
+                json={"name": "Event workflow", "triggerTopic": "task.created", "steps": []},
+            )
             missing = client.post(
                 "/internal/events",
                 json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {}},
@@ -74,7 +84,7 @@ def test_platform_event_route_requires_token_and_event_headers() -> None:
             )
             accepted = client.post(
                 "/internal/events",
-                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {}},
+                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {"createdBy": "alice"}},
                 headers={
                     "X-Axi-Internal-Token": "workflow-test-token",
                     "X-Axi-Event-ID": "event-1",
@@ -83,20 +93,38 @@ def test_platform_event_route_requires_token_and_event_headers() -> None:
             )
             duplicate = client.post(
                 "/internal/events",
-                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {}},
+                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {"createdBy": "alice"}},
                 headers={
                     "X-Axi-Internal-Token": "workflow-test-token",
                     "X-Axi-Event-ID": "event-1",
                     "X-Axi-Event-Topic": "task.created",
                 },
             )
+            event_workflow = client.get(
+                f"/workflows/{created.json()['id']}",
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Subject": "alice",
+                },
+            )
+            from routers.workflows import get_repository
+
+            repository = get_repository()
+            dispatch_created = ("event-1", UUID(created.json()["id"])) in repository.event_dispatches
         assert missing.status_code == 401
         assert accepted.status_code == 204
         assert duplicate.status_code == 204
+        assert created.status_code == 201
+        assert event_workflow.json()["triggerTopic"] == "task.created"
+        assert dispatch_created
     finally:
         from routers.workflows import get_repository
 
         repository = get_repository()
         if hasattr(repository, "event_inbox"):
             repository.event_inbox.clear()
+        if hasattr(repository, "event_dispatches"):
+            repository.event_dispatches.clear()
+        if hasattr(repository, "workflows"):
+            repository.workflows.clear()
         settings.internal_service_token = original_token

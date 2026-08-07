@@ -73,6 +73,7 @@ async def create_workflow(
     workflow = Workflow(
         name=workflow_data.name,
         description=workflow_data.description,
+        trigger_topic=workflow_data.trigger_topic,
         steps=workflow_data.steps,
         owner_subject=subject,
     )
@@ -110,6 +111,8 @@ async def update_workflow(
         workflow.name = workflow_data.name
     if workflow_data.description is not None:
         workflow.description = workflow_data.description
+    if workflow_data.trigger_topic is not None:
+        workflow.trigger_topic = workflow_data.trigger_topic
     if workflow_data.steps is not None:
         workflow.steps = workflow_data.steps
     workflow.updated_at = datetime.now(UTC)

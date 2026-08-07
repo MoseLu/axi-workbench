@@ -57,3 +57,22 @@ def test_memory_repository_deduplicates_platform_events() -> None:
         assert list(repository.event_inbox) == ["event-1"]
 
     asyncio.run(scenario())
+
+
+def test_memory_repository_persists_trigger_dispatch_for_event_owner() -> None:
+    async def scenario() -> None:
+        repository = MemoryWorkflowRepository()
+        workflow = await repository.create(
+            Workflow(name="on task", owner_subject="alice", trigger_topic="task.created")
+        )
+
+        assert await repository.consume_event(
+            "event-2", "tenant-1", "task.created", {"createdBy": "alice"}, actor_subject="alice"
+        )
+        assert ("event-2", workflow.id) in repository.event_dispatches
+        assert not await repository.consume_event(
+            "event-2", "tenant-1", "task.created", {"createdBy": "alice"}, actor_subject="alice"
+        )
+        assert len(repository.event_dispatches) == 1
+
+    asyncio.run(scenario())
