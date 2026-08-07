@@ -12,6 +12,12 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
+    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/presets": "link:../../../../shared/axi-ui/packages/presets",
+    "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",
+    "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
+    "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
+    "@axi/workbench-foundation": "workspace:*",
     "@axi/workstation-contracts": "workspace:*",
     "@epap/api-client": "workspace:*",
     "@epap/types": "workspace:*",
@@ -33,5 +39,5 @@
     "vite": "^5.0.8",
     "vitest": "^2.1.9"
   },
-  "description": "Axi Workbench — single web+mobile SPA (password + QR login, admin shell)"
+  "description": "Axi Workbench Web admin application (password + QR login, Axi dashboard shell)"
 }

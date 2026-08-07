@@ -1,5 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import 'antd/dist/reset.css';
+import '@axi/tokens/css';
+import '@axi/core/styles.css';
+import '@axi/shell/styles.css';
+import '@axi/settings/styles.css';
 import App from './App';
 import './index.css';
 

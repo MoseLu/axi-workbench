@@ -1,0 +1,168 @@
+/* ========== Overlay ========== */
+.right-sidebar__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* ========== Right Sidebar Panel ==========
+   主题变量统一来自 @epap/ui → styles/variables.css（--mpms-*）。
+   这样无论是 light 还是 dark 主题，面板都能正常显示。 */
+.right-sidebar {
+  position: fixed;
+  right: -340px;
+  top: 0;
+  bottom: 0;
+  width: 340px;
+  z-index: 1001;
+  background: var(--mpms-layout-bg, var(--color-bg-card));
+  border-left: 1px solid var(--mpms-border-color, var(--color-border-light));
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.right-sidebar.is-visible {
+  right: 0;
+}
+
+/* ========== Header ========== */
+.right-sidebar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--mpms-header-height, 46px);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--mpms-border-color, var(--color-border-light));
+  flex-shrink: 0;
+}
+
+.right-sidebar__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mpms-text-primary, var(--color-text-el-primary));
+}
+
+.right-sidebar__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mpms-text-secondary, var(--color-text-el-regular));
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.right-sidebar__close:hover {
+  color: var(--mpms-text-primary, var(--color-text-el-primary));
+  background: var(--mpms-hover-bg, var(--color-blue-soft-el));
+}
+
+/* ========== Body ========== */
+.right-sidebar__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* ========== Section ========== */
+.right-sidebar__section {
+  margin-bottom: 24px;
+}
+
+.right-sidebar__section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mpms-text-primary, var(--color-text-el-primary));
+  margin-bottom: 12px;
+}
+
+/* ========== Themes ==========
+   3 个主题预览块，宽度按 (panel 内宽 - 2 gaps) / 3 平分。 */
+.right-sidebar__themes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.right-sidebar__theme-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.right-sidebar__theme-preview {
+  width: 100%;
+  height: 56px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.2s;
+  border: 1px solid var(--mpms-border-color, var(--color-border-light));
+}
+
+.right-sidebar__theme-item.is-active .right-sidebar__theme-preview {
+  box-shadow: 0 0 0 2px var(--mpms-primary-color, var(--color-antd-primary));
+  border-color: var(--mpms-primary-color, var(--color-antd-primary));
+}
+
+.right-sidebar__theme-label {
+  font-size: 12px;
+  color: var(--mpms-text-secondary, var(--color-text-el-regular));
+}
+
+/* ========== Colors ==========
+   每行 8 个色块，色块尺寸自适应以确保不会换行错乱。 */
+.right-sidebar__colors {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+
+.right-sidebar__color-item {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.right-sidebar__color-item:hover {
+  transform: scale(1.1);
+}
+
+/* ========== Settings Row ========== */
+.right-sidebar__setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mpms-border-color, var(--color-border-light));
+  font-size: 13px;
+  color: var(--mpms-text-primary, var(--color-text-el-primary));
+}
+
+.right-sidebar__setting-row:last-child {
+  border-bottom: none;
+}
+
+.right-sidebar__setting-value {
+  color: var(--mpms-text-secondary, var(--color-text-el-regular));
+  font-size: 12px;
+}

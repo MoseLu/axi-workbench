@@ -1,8 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
   UserOutlined,
   DashboardOutlined,
   ProjectOutlined,
@@ -11,26 +9,20 @@ import {
   SettingOutlined,
   MenuOutlined,
   UnorderedListOutlined,
-  LogoutOutlined,
-  SearchOutlined,
-  BellOutlined,
-  UserAddOutlined,
 } from '@ant-design/icons';
+import { useAxiTheme } from '@axi/core';
+import { axiStylePresets } from '@axi/presets';
+import { AxiAdminSettingsPanel, useAxiAdminSettings } from '@axi/settings';
 import {
-  AppLayout,
-  TopbarIconButton,
-  UserDropdown,
-} from '@epap/ui';
-import type { TabItem } from '@epap/ui';
-import Sidebar from '../components/Layout/Sidebar';
-import RightSettingsDrawer from '../components/Layout/RightSidebar';
-import MobileTopBar from '../components/Layout/MobileTopBar';
-import MobileBottomNav from '../components/Layout/MobileBottomNav';
-import WorkbenchTabBar from '../components/Layout/TabBar';
-import WorkbenchBreadcrumbBar from '../components/Layout/BreadcrumbBar';
+  AxiDashboardShell,
+  type AxiDashboardNavGroup,
+} from '@axi/shell';
+import type { TabItem } from '../lib/tabs';
+import GlobalSearchDialog, { type GlobalSearchItem } from '../components/Layout/GlobalSearchDialog';
 import { useI18n } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
 import { resolveBreadcrumbs } from '../lib/breadcrumbs';
+import { SEARCH_CORPUS } from '../lib/search-data';
 import {
   HOME_TAB,
   openTab,
@@ -40,10 +32,9 @@ import {
   closeRight,
   closeOther,
   closeAll,
-  togglePin,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
-import '../components/Layout/HeaderBar.css';
+import logoImg from '../assets/logo-axi-core-color.png';
 import './MainLayout.css';
 
 const menuRouteMap: Record<string, { label: string; icon?: React.ReactNode; parent?: string; parentIcon?: React.ReactNode }> = {
@@ -58,42 +49,57 @@ const menuRouteMap: Record<string, { label: string; icon?: React.ReactNode; pare
   '/admin/settings/role': { label: '角色列表', icon: <UnorderedListOutlined />, parent: '系统设置', parentIcon: <SettingOutlined /> },
 };
 
-const useIsMobile = (breakpoint = 768) => {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < breakpoint : false,
-  );
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < breakpoint);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, [breakpoint]);
-  return isMobile;
-};
-
-function pageTitle(pathname: string): string {
-  if (pathname.startsWith('/admin/scan')) return '扫一扫';
-  if (pathname.startsWith('/admin/search')) return '搜索';
-  if (pathname.startsWith('/admin/project')) return '项目';
-  if (pathname.startsWith('/admin/task') || pathname.startsWith('/admin/team')) return '工作区';
-  if (pathname.startsWith('/admin/me') || pathname.startsWith('/admin/settings')) return '我的';
-  // 与底栏「概览」文案完全一致
-  if (pathname.startsWith('/admin/dashboard') || pathname === '/' || pathname === '') return '概览';
-  return '概览';
-}
+/**
+ * Web 管理端专属导航。移动端由独立的 @axi/workbench-mobile 应用拥有自己的
+ * 信息架构、页面组合和底部导航，不导入本树。
+ */
+const desktopNavGroups: AxiDashboardNavGroup[] = [
+  {
+    key: 'workbench',
+    label: '工作台',
+    iconName: 'admin-dashboard',
+    children: [
+      { key: '/admin/dashboard', label: '概览', iconName: 'admin-dashboard' },
+      { key: '/admin/project', label: '项目', iconName: 'admin-project' },
+      { key: '/admin/task', label: '工作区', iconName: 'admin-folder' },
+      { key: '/admin/team', label: '团队', iconName: 'admin-team' },
+      { key: '/admin/scan', label: '扫一扫', iconName: 'admin-scan' },
+    ],
+  },
+  {
+    key: 'account',
+    label: '账号与设置',
+    iconName: 'admin-settings',
+    children: [
+      { key: '/admin/me', label: '个人中心', iconName: 'admin-user' },
+      { key: '/admin/me/notifications', label: '通知设置', iconName: 'notice' },
+      { key: '/admin/settings/menu', label: '菜单配置', iconName: 'admin-menu' },
+      { key: '/admin/settings/role', label: '角色权限', iconName: 'admin-safety' },
+    ],
+  },
+];
 
 const MainLayout: React.FC = () => {
-  const isMobile = useIsMobile();
-  const { t } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-  const [rightSidebarVisible, setRightSidebarVisible] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarSearchValue, setSidebarSearchValue] = useState('');
   const [contentFullscreen, setContentFullscreen] = useState(false);
   const [tabs, setTabs] = useState<TabItem[]>([HOME_TAB]);
   const [activeTab, setActiveTab] = useState<string>(HOME_TAB.key);
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const { mode, preference, preset, setPreference, setPreset, toggleMode } = useAxiTheme();
+  const { settings, updateSetting } = useAxiAdminSettings({
+    applyToDocument: true,
+    storageKey: 'axi.workbench.admin-settings',
+    userId: user?.id ?? null,
+  });
 
-  // 通知 / 我的角标（与移动端共用 hook，复用 useNavBadges + MobileBottomNav.formatNavBadgeCount）
+  // Web 顶栏通知角标。
   const tabBadges = useNavBadges(true);
   const unreadCount = useMemo(() => {
     const acc = (b: { kind: string; value?: number }) =>
@@ -106,63 +112,74 @@ const MainLayout: React.FC = () => {
     );
   }, [tabBadges]);
 
-  // 顶栏 "+" 气泡开关
-  const [plusOpen, setPlusOpen] = useState(false);
-  const plusRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!plusOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      if (plusRef.current && !plusRef.current.contains(e.target as Node)) {
-        setPlusOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [plusOpen]);
-
   const displayName = user?.name || t('common.user.admin') || '用户';
 
-  const userMenuItems = useMemo(
-    () => [
-      {
-        key: 'profile',
-        label: '个人中心',
-        icon: <UserOutlined />,
-        onClick: () => navigate('/admin/me'),
-      },
-      {
-        key: 'preferences',
-        label: '偏好设置',
-        icon: <SettingOutlined />,
-        onClick: () => setRightSidebarVisible(true),
-      },
-      { key: 'divider-1', label: '', divider: true },
-      {
-        key: 'logout',
-        label: '退出登录',
-        icon: <LogoutOutlined />,
-        danger: true,
-        onClick: () => {
-          logout();
-          navigate('/login');
-        },
-      },
-    ],
-    [logout, navigate],
-  );
+  const globalSearchItems = useMemo<GlobalSearchItem[]>(() => {
+    const navItems = desktopNavGroups.flatMap((group) =>
+      group.children.map((item) => ({
+        key: `nav:${item.key}`,
+        label: String(item.label),
+        description: '打开后台页面',
+        group: String(group.label),
+        path: item.key,
+        iconName: item.iconName ?? 'admin-menu',
+      })),
+    );
+    const corpusItems = SEARCH_CORPUS.map((hit) => ({
+      key: `content:${hit.id}`,
+      label: hit.title,
+      description: hit.subtitle,
+      group: hit.kind === 'project' ? '项目' : hit.kind === 'doc' ? '文档' : '相关内容',
+      path: hit.path,
+      iconName: (hit.kind === 'project' ? 'admin-project' : hit.kind === 'doc' ? 'admin-file-text' : 'admin-search') as GlobalSearchItem['iconName'],
+    }));
+    return [...navItems, ...corpusItems];
+  }, []);
 
-  /* ---------- Desktop: slim topbar (WeChat-inspired density) ---------- */
-  useEffect(() => {
-    if (isMobile) setCollapsed(true);
-  }, [isMobile]);
+  const recentSearchItems = useMemo(() => {
+    const preferredPaths = [
+      location.pathname,
+      '/admin/dashboard',
+      '/admin/project',
+      '/admin/task',
+      '/admin/me/notifications',
+    ];
+    const seen = new Set<string>();
+    return preferredPaths
+      .map((path) => globalSearchItems.find((item) => item.path === path))
+      .filter((item): item is GlobalSearchItem => {
+        if (!item || seen.has(item.key)) return false;
+        seen.add(item.key);
+        return true;
+      })
+      .slice(0, 5);
+  }, [globalSearchItems, location.pathname]);
+
+  const openGlobalSearch = useCallback(() => {
+    setGlobalSearchQuery('');
+    setGlobalSearchOpen(true);
+  }, []);
+
+  const closeGlobalSearch = useCallback(() => {
+    setGlobalSearchOpen(false);
+    setGlobalSearchQuery('');
+  }, []);
+
+  const handleGlobalSearchSelect = useCallback((item: GlobalSearchItem) => {
+    closeGlobalSearch();
+    navigate(item.path);
+  }, [closeGlobalSearch, navigate]);
 
   useEffect(() => {
-    if (isMobile) return;
-    document.body.classList.add('wb-desktop-body');
-    return () => {
-      document.body.classList.remove('wb-desktop-body');
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        openGlobalSearch();
+      }
     };
-  }, [isMobile]);
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, [openGlobalSearch]);
 
   useEffect(() => {
     const path = location.pathname;
@@ -208,27 +225,6 @@ const MainLayout: React.FC = () => {
     [activeTab, navigate],
   );
 
-  const handleMenuClick = useCallback(
-    (path: string) => {
-      navigate(path);
-      if (isMobile) setCollapsed(true);
-    },
-    [navigate, isMobile],
-  );
-
-  const handleTabNavigate = useCallback(
-    (direction: 'back' | 'reload' | 'home') => {
-      if (direction === 'home') navigate('/admin/dashboard');
-      else if (direction === 'back') window.history.back();
-      else window.location.reload();
-    },
-    [navigate],
-  );
-
-  const handleTogglePin = useCallback((key: string) => {
-    setTabs((prev) => togglePin(prev, key));
-  }, []);
-
   const handleCloseLeft = useCallback(() => {
     setTabs((prev) => closeLeft(prev, activeTab).tabs);
   }, [activeTab]);
@@ -248,168 +244,181 @@ const MainLayout: React.FC = () => {
         setActiveTab(result.nextActive);
         const last = result.tabs[result.tabs.length - 1];
         if (last && last.key === result.nextActive) {
-          navigate(last.path ?? last.key);
+          navigate(last.path);
         }
       }
       return result.tabs;
     });
   }, [navigate]);
 
-  /* ---------- Mobile: WeChat / WorkBench App chrome ---------- */
-  if (isMobile) {
-    const path = location.pathname;
-    const isScan = path.startsWith('/admin/scan');
-    const isSearch = path.startsWith('/admin/search');
-    const isMeRoot = path === '/admin/me' || path === '/admin/me/';
-    const isMeSub =
-      (path.startsWith('/admin/me/') && !isMeRoot) || path.startsWith('/admin/settings');
-    const isMe = isMeRoot || isMeSub;
-    // 我的入口：无壳顶栏、保留底栏；二级页自带顶栏、隐藏底栏
-    const hideChromeTopBar = isScan || isSearch || isMe;
-    const showBottomNav = !isSearch && !isMeSub;
+  const visibleDesktopNavGroups = useMemo(() => {
+    const keyword = sidebarSearchValue.trim().toLowerCase();
+    if (!keyword) return desktopNavGroups;
+    return desktopNavGroups
+      .map((group) => ({
+        ...group,
+        children: group.children.filter((item) => String(item.label).toLowerCase().includes(keyword)),
+      }))
+      .filter((group) => group.children.length > 0);
+  }, [sidebarSearchValue]);
 
-    return (
-      <div className={`wb-mobile-shell ${isScan ? 'is-scan' : ''} ${isMe ? 'is-me' : ''}`}>
-        {!hideChromeTopBar && (
-          <MobileTopBar
-            title={pageTitle(path)}
-            onSearchClick={() => navigate('/admin/search')}
-            onScanClick={() => navigate('/admin/scan')}
-          />
-        )}
-        <main className={`wb-mobile-shell__content ${isScan ? 'is-scan' : ''} ${isMe ? 'is-me' : ''}`}>
-          <Outlet />
-        </main>
-        {showBottomNav && (
-          <MobileBottomNav
-            pathname={path}
-            onNavigate={(p) => navigate(p)}
-          />
-        )}
-        <RightSettingsDrawer visible={rightSidebarVisible} onClose={() => setRightSidebarVisible(false)} />
-      </div>
-    );
-  }
-
-  /* ---------- Desktop: WeChat-style topbar (48px, 居中标题, 微信线型图标) ---------- */
-  const topbarSlot = (
-    <header className="wb-desktop-topbar">
-      <div className="wb-desktop-topbar__left">
-        <TopbarIconButton
-          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          tooltip="折叠菜单"
-          onClick={() => setCollapsed(!collapsed)}
-        />
-      </div>
-
-      <h1 className="wb-desktop-topbar__title">{pageTitle(location.pathname)}</h1>
-
-      <div className="wb-desktop-topbar__right">
-        <TopbarIconButton
-          icon={<SearchOutlined />}
-          tooltip="搜索"
-          onClick={() => navigate('/admin/search')}
-        />
-        <TopbarIconButton
-          icon={<BellOutlined />}
-          tooltip="通知"
-          badge={unreadCount > 0 ? unreadCount : undefined}
-          onClick={() => setRightSidebarVisible(true)}
-        />
-
-        <div className="wb-topbar-plus-wrap" ref={plusRef}>
-          <TopbarIconButton
-            icon={<UserAddOutlined />}
-            tooltip="更多"
-            onClick={() => setPlusOpen((v) => !v)}
-          />
-          {plusOpen && (
-            <div className="wb-topbar-plus-menu" role="menu">
-              <div className="wb-topbar-plus-menu__body">
-                <button
-                  type="button"
-                  className="wb-topbar-plus-menu__item"
-                  onClick={() => {
-                    setPlusOpen(false);
-                    navigate('/admin/scan');
-                  }}
-                >
-                  扫一扫
-                </button>
-                <button
-                  type="button"
-                  className="wb-topbar-plus-menu__item"
-                  onClick={() => {
-                    setPlusOpen(false);
-                    setRightSidebarVisible(true);
-                  }}
-                >
-                  偏好设置
-                </button>
-                <button
-                  type="button"
-                  className="wb-topbar-plus-menu__item"
-                  onClick={() => {
-                    setPlusOpen(false);
-                    // 占位：发起群聊，待后续团队页接通
-                    window.alert('发起群聊');
-                  }}
-                >
-                  发起群聊
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <UserDropdown
-          user={{ name: displayName, avatar: undefined }}
-          avatarIcon={<UserOutlined />}
-          menuItems={userMenuItems}
-        />
-      </div>
-    </header>
+  const desktopBreadcrumbs = useMemo(
+    () => resolveBreadcrumbs(location.pathname).map((item, index) => ({
+      key: `${item.label}-${index}`,
+      label: item.label,
+      icon: item.icon,
+      current: item.isActive,
+      href: item.isActive ? undefined : item.path,
+      onClick: item.path && !item.isActive ? () => navigate(item.path!) : undefined,
+    })),
+    [location.pathname, navigate],
   );
 
-  const tabbarSlot = (
-    <WorkbenchTabBar
-      tabs={tabs}
-      activeTab={activeTab}
-      isFullscreen={contentFullscreen}
-      onTabChange={handleTabChange}
-      onTabClose={handleTabClose}
-      onNavigate={handleTabNavigate}
-      onToggleFullscreen={() => setContentFullscreen((v) => !v)}
-      onCloseLeft={handleCloseLeft}
-      onCloseRight={handleCloseRight}
-      onCloseOther={handleCloseOther}
-      onCloseAll={handleCloseAll}
-      onTogglePin={handleTogglePin}
-    />
+  const desktopTabs = useMemo(
+    () => tabs.map((tab) => ({
+      key: tab.key,
+      label: tab.label,
+      closable: tab.closable !== false,
+      pinned: tab.closable === false,
+      status: 'ready' as const,
+    })),
+    [tabs],
   );
 
+  const stylePresetOptions = useMemo(
+    () => axiStylePresets.map((item) => ({ id: item.id, label: item.label, labelKey: item.id })),
+    [],
+  );
+
+  /* ---------- Web: shared Axi admin chrome ---------- */
   return (
     <>
-      <AppLayout
-        className="wb-desktop-shell"
+      <AxiDashboardShell
+        activeNavKey={location.pathname}
+        activeTabKey={activeTab}
+        avatarConfig={{
+          avatar: <UserOutlined />,
+          label: displayName,
+          menuItems: [
+            {
+              key: 'profile',
+              label: '个人中心',
+              iconName: 'admin-user',
+              onClick: () => navigate('/admin/me'),
+            },
+            {
+              key: 'logout',
+              label: '退出登录',
+              iconName: 'exit',
+              onClick: () => {
+                logout();
+                navigate('/login');
+              },
+            },
+          ],
+          name: displayName,
+        }}
+        brand={{
+          logo: <img src={logoImg} alt="" className="workbench-axi-brand-logo" />,
+          title: 'Axi WorkBench',
+        }}
+        breadcrumbs={settings.breadcrumb ? desktopBreadcrumbs : []}
+        breadcrumbLabel="页面位置"
+        className="workbench-axi-shell"
+        contentClassName="workbench-axi-content"
+        contentFullscreen={contentFullscreen}
+        githubHref="https://github.com/axiomaticworld/axi-workbench"
+        globalSearchLabel="快速搜索"
+        globalSearchShortcut="⌘ K"
+        navGroups={visibleDesktopNavGroups}
+        onBack={() => window.history.back()}
+        onFullscreenToggle={() => setContentFullscreen((value) => !value)}
+        onGlobalSearch={openGlobalSearch}
+        onHome={() => navigate('/admin/dashboard')}
+        onNavSelect={(key) => {
+          if (key.startsWith('/')) navigate(key);
+        }}
+        onReload={() => window.location.reload()}
+        onSettings={() => setSettingsOpen(true)}
+        onSidebarCollapsedChange={setCollapsed}
+        onSidebarSearchChange={setSidebarSearchValue}
+        onTabClose={handleTabClose}
+        onTabCloseAll={() => handleCloseAll()}
+        onTabCloseLeft={() => handleCloseLeft()}
+        onTabCloseOthers={() => handleCloseOther()}
+        onTabCloseRight={() => handleCloseRight()}
+        onTabSelect={handleTabChange}
+        pageProps={{ fluid: true, padded: true }}
+        preferences={settings}
         sidebarCollapsed={collapsed}
-        isFullscreen={contentFullscreen}
-        sidebar={
-          <Sidebar collapsed={collapsed} onMenuClick={handleMenuClick} activeKey={location.pathname} />
-        }
-        topbar={topbarSlot}
-        tabbar={tabbarSlot}
-        breadcrumb={
-          <WorkbenchBreadcrumbBar
-            items={resolveBreadcrumbs(location.pathname)}
-            onNavigate={(p) => navigate(p)}
-          />
-        }
+        sidebarSearchPlaceholder="搜索菜单"
+        sidebarSearchValue={sidebarSearchValue}
+        tabs={settings.multiTab ? desktopTabs : []}
+        topbarActions={{
+          notice: {
+            badge: unreadCount || undefined,
+            badgeTone: 'danger',
+            iconName: 'notice',
+            key: 'notice',
+            label: '通知',
+            onClick: () => navigate('/admin/me/notifications'),
+          },
+          message: {
+            iconName: 'msg',
+            key: 'message',
+            label: '消息',
+            onClick: () => navigate('/admin/me/notifications'),
+          },
+          language: {
+            iconName: 'lang',
+            key: 'language',
+            label: locale === 'zh-CN' ? '切换为 English' : '切换为中文',
+            onClick: () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN'),
+          },
+          theme: {
+            iconName: mode === 'dark' ? 'admin-sun' : 'admin-night-mode',
+            key: 'theme',
+            label: mode === 'dark' ? '切换亮色模式' : '切换暗色模式',
+            onClick: (event) => toggleMode(event.currentTarget),
+          },
+          settings: {
+            iconName: 'settings',
+            key: 'settings',
+            label: '系统设置',
+            onClick: () => setSettingsOpen(true),
+          },
+        }}
       >
         <Outlet />
-      </AppLayout>
+      </AxiDashboardShell>
 
-      <RightSettingsDrawer visible={rightSidebarVisible} onClose={() => setRightSidebarVisible(false)} />
+      <GlobalSearchDialog
+        open={globalSearchOpen}
+        query={globalSearchQuery}
+        items={globalSearchItems}
+        recentItems={recentSearchItems}
+        onChange={setGlobalSearchQuery}
+        onClose={closeGlobalSearch}
+        onSelect={handleGlobalSearchSelect}
+      />
+
+      <AxiAdminSettingsPanel
+        activeStylePreset={settings.stylePreset}
+        activeTheme={preset.name}
+        open={settingsOpen}
+        stylePresetOptions={stylePresetOptions}
+        themePreference={preference}
+        value={settings}
+        onChange={updateSetting}
+        onOpenChange={setSettingsOpen}
+        onStylePresetChange={(stylePreset) => updateSetting('stylePreset', stylePreset)}
+        onThemeChange={(name) => {
+          updateSetting('themeColor', '');
+          setPreset(name);
+        }}
+        onThemeColorChange={(color) => updateSetting('themeColor', color)}
+        onThemePreferenceChange={setPreference}
+      />
     </>
   );
 };

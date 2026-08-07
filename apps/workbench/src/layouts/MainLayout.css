@@ -1,0 +1,220 @@
+/*
+ * Desktop dashboard chrome
+ *
+ * The shared shell intentionally uses quiet, frameless icon controls as its
+ * default. WorkBench follows the denser Cool-Admin-style desktop language:
+ * toolbar controls are visibly framed, route tabs read as compact controls,
+ * and breadcrumbs use the dedicated compact card treatment from the legacy
+ * WorkBench shell.
+ * Keep this override scoped to the web shell. The independent mobile app owns
+ * its own visual system and never imports this stylesheet.
+ */
+.workbench-axi-shell {
+  /* Cool-Admin 的控件与顶栏共用同一层背景，不使用抬高一层的卡片表面。 */
+  --workbench-chrome-control-bg: var(--axi-layout-surface, var(--axi-bg-surface));
+  --workbench-chrome-control-hover: var(--axi-layout-hover, var(--axi-bg-page));
+  --workbench-chrome-control-border: var(--axi-layout-control-border, var(--axi-border));
+  --workbench-chrome-border: var(--axi-layout-border, var(--axi-border));
+  --workbench-chrome-radius: calc(var(--space-1) + var(--space-0_5));
+  --workbench-chrome-control-size: var(--axi-layout-icon-button-size, var(--size-icon-lg));
+  --workbench-chrome-bar-size: var(--axi-layout-toolbar-height, var(--size-bar));
+}
+
+.workbench-axi-shell .axi-topbar {
+  background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
+  border-bottom-color: var(--workbench-chrome-border);
+}
+
+.workbench-axi-shell .axi-topbar__left,
+.workbench-axi-shell .axi-topbar__right,
+.workbench-axi-shell .axi-dashboard-topbar-plugins {
+  gap: var(--space-2_5);
+}
+
+/* 品牌区域使用完整的 Axi 标记，并让品牌组合始终在侧栏宽度内水平居中。 */
+.workbench-axi-shell .axi-sidebar-brand {
+  justify-content: center;
+  padding-inline: 12px;
+  text-align: left;
+}
+
+.workbench-axi-shell .axi-sidebar-brand__logo {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+.workbench-axi-shell .workbench-axi-brand-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* AXI Core 四色版保持原色，明暗主题不做反相。 */
+.workbench-axi-shell .workbench-axi-brand-logo {
+  filter: none;
+}
+
+/*
+ * Web global search follows the Art-style framed trigger: it is a deliberate
+ * 160px command affordance in the desktop topbar. Its height intentionally
+ * matches the 26px icon buttons beside it; mobile owns a separate search page.
+ */
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger {
+  width: 160px;
+  min-width: 160px;
+  height: var(--workbench-chrome-control-size);
+  min-height: var(--workbench-chrome-control-size);
+  box-sizing: border-box;
+  padding: 0 10px;
+  border-radius: var(--workbench-chrome-radius);
+  background: transparent;
+}
+
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger__label {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger kbd {
+  height: 20px;
+  min-width: 0;
+  padding-inline: 6px;
+  border-radius: 4px;
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only {
+  width: var(--workbench-chrome-control-size);
+  min-width: var(--workbench-chrome-control-size);
+  height: var(--workbench-chrome-control-size);
+  min-height: var(--workbench-chrome-control-size);
+  border: 1px solid var(--workbench-chrome-control-border);
+  border-radius: var(--workbench-chrome-radius);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-bg);
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only:hover:not(:disabled):not([aria-disabled="true"]),
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only:hover:not(:disabled):not([aria-disabled="true"]) {
+  border-color: var(--workbench-chrome-control-border);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-hover);
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only:focus-visible,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only:focus-visible {
+  border-color: var(--axi-primary);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-hover);
+  outline: none;
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only.is-active,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only.is-active {
+  border-color: var(--axi-primary);
+  color: var(--axi-text);
+  background: color-mix(in srgb, var(--axi-primary), transparent 84%);
+}
+
+.workbench-axi-shell .axi-tabbar {
+  gap: var(--space-2);
+  padding-inline: var(--space-2_5);
+  background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
+  border-bottom-color: var(--workbench-chrome-border);
+}
+
+.workbench-axi-shell .axi-tabbar__leading,
+.workbench-axi-shell .axi-tabbar__actions {
+  gap: var(--space-2_5);
+}
+
+.workbench-axi-shell .axi-route-tabs {
+  gap: var(--space-2_5);
+}
+
+.workbench-axi-shell .axi-route-tab {
+  height: var(--workbench-chrome-control-size);
+  min-height: var(--workbench-chrome-control-size);
+  border-color: var(--workbench-chrome-control-border);
+  border-radius: var(--workbench-chrome-radius);
+  padding-inline: var(--space-2);
+  color: var(--axi-muted);
+  background: var(--workbench-chrome-control-bg);
+}
+
+.workbench-axi-shell .axi-route-tab:hover:not(.is-active) {
+  border-color: var(--axi-primary);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-hover);
+}
+
+.workbench-axi-shell .axi-route-tab.is-active {
+  border-color: var(--axi-primary);
+  color: var(--axi-text-inverse);
+  background: var(--axi-primary);
+}
+
+.workbench-axi-shell .axi-breadcrumb-bar {
+  /* 历史 WorkBench 面包屑：独立卡片项 + 中间竖向分隔符。 */
+  height: 39px;
+  min-height: 39px;
+  padding: 5px var(--space-2_5);
+  background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
+  border-bottom-color: var(--workbench-chrome-border);
+}
+
+.workbench-axi-shell .axi-breadcrumb {
+  height: var(--workbench-chrome-control-size);
+  color: var(--axi-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item {
+  max-width: 180px;
+  height: var(--workbench-chrome-control-size);
+  border: 1px solid color-mix(in srgb, var(--axi-text) 15%, transparent);
+  border-radius: var(--radius-xs);
+  padding-inline: var(--space-2);
+  color: var(--axi-muted);
+  background: var(--workbench-chrome-control-bg);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-link:hover {
+  border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
+  color: var(--axi-text);
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-link:focus-visible {
+  border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
+  color: var(--axi-text);
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+  outline: 2px solid var(--axi-primary);
+  outline-offset: 2px;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-link:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-current {
+  border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
+  color: var(--axi-text);
+  background: color-mix(in srgb, var(--axi-primary) 8%, transparent);
+  font-weight: 400;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-current .axi-breadcrumb-item__icon {
+  color: var(--axi-primary);
+}
+
+.workbench-axi-shell .axi-breadcrumb-separator {
+  margin-inline: var(--space-2);
+  color: var(--axi-muted);
+  font-size: 13px;
+  opacity: 0.4;
+}

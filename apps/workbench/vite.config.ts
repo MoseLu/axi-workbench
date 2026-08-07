@@ -12,6 +12,12 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    fs: {
+      allow: [
+        path.resolve(__dirname, '../..'),
+        path.resolve(__dirname, '../../../../shared/axi-ui'),
+      ],
+    },
     proxy: {
       // 把 /api/* 代理到 api-gateway（默认 localhost:8088）
       '/api': {

@@ -1,0 +1,222 @@
+/**
+ * Workbench design tokens — Tailwind-style layers
+ * 1. --palette-*  primitive scale (only place for raw hex)
+ * 2. --color-* / --space-* / --text-* / --radius-* / --size-*  semantic
+ *
+ * UI CSS / TSX must use var(--token). No raw #hex or px except inside this file.
+ */
+
+:root {
+  /* ── Palette: gray ── */
+  --palette-white: #ffffff;
+  --palette-black: #000000;
+  --palette-gray-50: #fafafa;
+  --palette-gray-100: #f7f7f7;
+  --palette-gray-125: #f4f4f5;
+  --palette-gray-150: #ededed;
+  --palette-gray-200: #e4e4e7;
+  --palette-gray-250: #d8d8d8;
+  --palette-gray-300: #c0c0c0;
+  --palette-gray-350: #b2b2b2;
+  --palette-gray-400: #a1a1aa;
+  --palette-gray-500: #7f7f7f;
+  --palette-gray-600: #52525b;
+  --palette-gray-700: #4c4c4c;
+  --palette-gray-750: #3f3f46;
+  --palette-gray-800: #27272a;
+  --palette-gray-850: #191919;
+  --palette-gray-900: #181818;
+  --palette-gray-925: #18181b;
+  --palette-gray-333: #333333;
+  --palette-gray-950: #09090b;
+  --palette-gray-975: #1a1a1a;
+
+  /* ── Palette: brand / accent ── */
+  --palette-indigo-50: #eef0ff;
+  --palette-indigo-400: #6366f1;
+  --palette-indigo-500: #3d5afe;
+  --palette-purple-500: #722ed1;
+  --palette-orange-500: #fa8c16;
+  --palette-indigo-600: #324be0;
+  --palette-green-500: #07c160;
+  --palette-green-600: #10b981;
+  --palette-amber-500: #f59e0b;
+  --palette-red-100: #ffccc7;
+  --palette-red-50: #fff1f0;
+  --palette-red-600: #cf1322;
+  --palette-red-500: #ef4444;
+  --palette-blue-500: #3b82f6;
+  --palette-link: #576b95;
+  --palette-black-alpha-08: rgba(0, 0, 0, 0.08);
+
+  /* ── Semantic color ── */
+  --color-bg-page: var(--axi-bg-page, var(--palette-gray-150));
+  --color-bg-chrome: var(--axi-layout-canvas, var(--palette-gray-150));
+  --color-bg-bottom: var(--axi-layout-chrome-bg, var(--palette-gray-100));
+  --color-bg-card: var(--axi-bg-surface, var(--palette-white));
+  --color-bg-subtle: var(--axi-bg-elevated, var(--palette-indigo-50));
+  --color-ink: var(--axi-text, var(--palette-gray-900));
+  --color-ink-strong: var(--axi-text, var(--palette-gray-850));
+  --color-ink-muted: var(--axi-text-muted, var(--palette-gray-500));
+  --color-placeholder: var(--axi-text-muted, var(--palette-gray-350));
+  --color-chevron: var(--axi-text-muted, var(--palette-gray-300));
+  --color-divider: var(--axi-border, var(--palette-black-alpha-08));
+  --color-brand: var(--axi-primary, var(--palette-indigo-500));
+  --color-brand-hover: var(--axi-primary-hover, var(--palette-indigo-600));
+  --color-success: var(--axi-success, var(--palette-green-500));
+  --color-success-alt: var(--axi-success, var(--palette-green-600));
+  --color-warning: var(--palette-amber-500);
+  --color-danger: var(--axi-danger, var(--palette-red-500));
+  --color-danger-bg: var(--palette-red-50);
+  --color-danger-border: var(--palette-red-100);
+  --color-danger-text: var(--palette-red-600);
+  --color-scan-bg: var(--palette-gray-950);
+  --color-scan-panel: var(--palette-gray-975);
+  --color-info: var(--axi-spectrum-blue, var(--palette-blue-500));
+  --color-link: var(--axi-primary, var(--palette-link));
+  --color-done-enabled: var(--palette-green-500);
+  --color-done-disabled: var(--palette-gray-350);
+  /* 微信角标 */
+  --palette-red-badge: #fa5151;
+  --color-badge: var(--palette-red-badge);
+  --color-badge-on: var(--palette-white);
+  --size-badge-dot: 8px;
+  --size-badge-h: 16px;
+  --size-badge-min: 16px;
+  /* 底栏：pad 10+8 + icon 24 + gap 4 + label ≈ 60 */
+  --size-bar-bottom: 60px;
+  --size-nav-icon: 24px;
+  --bar-tab-pad-top: 10px;
+  --bar-tab-pad-bottom: 8px;
+  --bar-tab-icon-label-gap: 4px;
+  /* 锚点：图标右上内侧，徽标向右外伸（1/2 位同锚） */
+  --badge-anchor-inset: 6px;
+  --color-clear-bg: var(--palette-gray-250);
+  --color-on-primary: var(--palette-white);
+  --color-menu-dark: var(--axi-bg-sidebar, var(--palette-gray-700));
+  --color-dark-bg: var(--axi-bg-page, var(--palette-gray-925));
+
+  /* ── Spacing (4px base, Tailwind-like) ── */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0_5: 2px;
+  --space-1: 4px;
+  --space-1_5: 6px;
+  --space-2: 8px;
+  --space-2_5: 10px;
+  --space-3: 12px;
+  --space-3_5: 14px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+
+  /* ── Size ── */
+  --size-bar: 48px;
+  --size-row: 56px;
+  --size-hit: 40px;
+  --size-avatar: 48px;
+  --size-avatar-row: 72px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 18px;
+  --size-icon-lg: 22px;
+  --size-icon-xl: 24px;
+
+  /* ── Radius ── */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* ── Type ── */
+  --text-xxs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-base: 15px;
+  --text-lg: 16px;
+  --text-xl: 17px;
+  --text-2xl: 18px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Shared Axi bridge: both ends consume the same theme runtime. */
+  --palette-blue-antd: #409eff;
+  --palette-layout-bg: #f5f7fa;
+  --palette-border-light: #e4e7ed;
+  --palette-sidebar: #2c3147;
+  --palette-sidebar-muted: #8a8e99;
+  --palette-sidebar-hover: #e5eaf3;
+  --palette-content-dark: #141414;
+  --palette-tabbar-dark: #0a0a0a;
+
+  --color-antd-primary: var(--palette-blue-antd);
+  --color-layout-bg: var(--palette-layout-bg);
+  --color-border-light: var(--palette-border-light);
+  --color-sidebar: var(--palette-sidebar);
+  --color-sidebar-muted: var(--palette-sidebar-muted);
+  --color-sidebar-hover: var(--palette-sidebar-hover);
+  --color-content-dark: var(--palette-content-dark);
+  --color-tabbar-dark: var(--palette-tabbar-dark);
+
+  /* Extended accents (Ant Design chart / login leftovers) */
+  --palette-blue-antd-alt: #1890ff;
+  --palette-blue-soft: #dbe4ff;
+  --palette-blue-brand-alt: #4165d7;
+  --palette-green-antd: #52c41a;
+  --palette-gold: #faad14;
+  --palette-red-antd: #ff4d4f;
+  --palette-red-antd-soft: #ff7875;
+  --palette-cyan: #13c2c2;
+  --palette-magenta: #eb2f96;
+  --palette-navy: #001529;
+  --palette-login-bg: #1a1a2e;
+  --palette-gray-999: #999999;
+  --palette-gray-111: #111111;
+  --palette-gray-f5: #f5f5f7;
+  --palette-text-primary-el: #303133;
+  --palette-text-regular-el: #606266;
+  --palette-blue-soft-el: #ecf5ff;
+
+  --color-info-antd: var(--palette-blue-antd-alt);
+  --color-info-soft: var(--palette-blue-soft);
+  --color-chart-1: var(--palette-blue-brand-alt);
+  --color-chart-2: var(--palette-green-antd);
+  --color-chart-3: var(--palette-gold);
+  --color-chart-4: var(--palette-red-antd);
+  --color-chart-5: var(--palette-cyan);
+  --color-chart-6: var(--palette-magenta);
+  --color-login-bg: var(--palette-login-bg);
+  --color-muted-3: var(--palette-gray-999);
+  --color-ink-abs: var(--palette-black);
+  --color-surface-elevated: var(--palette-gray-f5);
+  --color-text-el-primary: var(--palette-text-primary-el);
+  --color-text-el-regular: var(--palette-text-regular-el);
+  --color-blue-soft-el: var(--palette-blue-soft-el);
+  --color-navy: var(--palette-navy);
+
+  /* Legacy aliases kept only for page-level compatibility during migration. */
+  --mpms-layout-bg: var(--axi-layout-canvas, var(--color-bg-page));
+  --mpms-sidebar-bg: var(--axi-layout-sidebar-bg, var(--axi-bg-sidebar, var(--color-bg-card)));
+  --mpms-header-bg: var(--axi-layout-chrome-bg, var(--color-bg-card));
+  --mpms-topbar-bg: var(--axi-layout-chrome-bg, var(--color-bg-card));
+  --mpms-tabbar-bg: var(--axi-layout-chrome-bg, var(--color-bg-card));
+  --mpms-content-bg: var(--axi-layout-surface, var(--color-bg-page));
+  --mpms-content-elevated: var(--axi-bg-elevated, var(--color-bg-card));
+  --mpms-right-sidebar-bg: var(--axi-bg-surface, var(--color-bg-card));
+  --mpms-border-color: var(--axi-layout-border, var(--color-divider));
+  --mpms-topbar-border-color: var(--axi-layout-border, var(--color-divider));
+  --mpms-primary-color: var(--axi-primary, var(--color-brand));
+  --mpms-text-primary: var(--axi-text, var(--color-ink-strong));
+  --mpms-text-secondary: var(--axi-text-secondary, var(--color-ink-muted));
+  --mpms-text-tertiary: var(--axi-text-muted, var(--color-placeholder));
+  --mpms-hover-bg: var(--axi-layout-hover, var(--color-bg-subtle));
+  --mpms-sidebar-text-primary: var(--axi-layout-sidebar-text, var(--color-ink-strong));
+  --mpms-sidebar-text-secondary: var(--axi-nav-text-muted, var(--color-ink-muted));
+  --mpms-sidebar-hover-bg: var(--axi-nav-surface-hover, var(--color-bg-subtle));
+}

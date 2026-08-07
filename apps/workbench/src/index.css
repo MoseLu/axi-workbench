@@ -1,9 +1,8 @@
 /* ========== Design tokens (Tailwind-style palette + semantic) ========== */
 @import './styles/tokens.css';
 
-/* ========== Web Portal Global Reset ==========
-   桌面主题额外变量由 @epap/ui → styles/variables.css 提供（--mpms-*）。
-   移动微信 chrome 统一消费 --color-* / --space-*（见 tokens.css）。 */
+/* ========== Web admin global reset ==========
+   Axi tokens are shared foundations; page composition stays Web-only here. */
 
 *,
 *::before,
@@ -24,8 +23,8 @@ body {
     'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--mpms-content-bg, var(--color-bg-page));
-  color: var(--mpms-text-primary, var(--color-ink-strong));
+  background: var(--axi-layout-canvas, var(--color-bg-page));
+  color: var(--axi-text, var(--color-ink-strong));
 }
 
 #root {

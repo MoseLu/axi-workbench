@@ -1,0 +1,95 @@
+.wb-account__avatar-row {
+  width: 100%;
+  min-height: var(--size-avatar-row);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  border: none;
+  border-bottom: 0.5px solid var(--color-divider);
+  background: transparent;
+  font-size: var(--text-lg);
+  color: var(--color-ink-strong);
+  cursor: pointer;
+}
+
+.wb-account__avatar-trail {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.wb-account__avatar {
+  width: var(--size-avatar);
+  height: var(--size-bar);
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  display: block;
+  background: var(--color-bg-subtle);
+}
+
+/* 微信式三级编辑：顶栏「完成」矩形文字按钮（非胶囊）
+   未修改=灰不可点；已修改=绿可点 */
+.wb-account__done {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-placeholder);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  padding: 0 var(--space-3);
+  min-width: 56px;
+  height: var(--size-bar);
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wb-account__done.is-enabled {
+  color: var(--color-success);
+  cursor: pointer;
+}
+
+.wb-account__done:disabled {
+  color: var(--color-placeholder);
+  cursor: default;
+  opacity: 1;
+}
+
+.wb-account__edit-row {
+  margin-top: var(--space-3);
+  min-height: var(--size-row);
+  background: var(--color-bg-card);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  gap: var(--space-2);
+}
+
+.wb-account__edit-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--size-row);
+  border: none;
+  outline: none;
+  font-size: var(--text-xl);
+  color: var(--color-ink);
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.wb-account__edit-input::placeholder {
+  color: var(--color-placeholder);
+}
+
+.wb-account__edit-clear {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-clear-bg);
+  color: var(--color-bg-card);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}

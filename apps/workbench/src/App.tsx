@@ -1,9 +1,16 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme as antdTheme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import { IconProvider } from '@epap/ui';
+import {
+  AxiLocaleProvider,
+  AxiThemeProvider,
+  createAxiAntdTheme,
+  useAxiTheme,
+} from '@axi/core';
+import { axiSettingsLocaleContribution } from '@axi/settings';
+import { axiShellLocaleContribution } from '@axi/shell';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -21,7 +28,6 @@ import Theme from './pages/admin/me/Theme';
 import MeSettings from './pages/admin/me/Settings';
 import { AuthProvider } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
-import { iconPathMap } from './assets/icons';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,74 +38,33 @@ const queryClient = new QueryClient({
   },
 });
 
-const iconResolver = (name: string): string => {
-  return (iconPathMap as Record<string, string>)[name] ?? '';
-};
+const WorkbenchSurface: React.FC = () => {
+  const { mode, preset } = useAxiTheme();
+  const antdThemeConfig = React.useMemo(
+    () => ({
+      algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+      ...createAxiAntdTheme(mode, preset, { borderRadius: 6 }),
+    }),
+    [mode, preset],
+  );
 
-/** 旧 /mobile-login 统一并入 /login?mode=qr */
-function MobileLoginRedirect() {
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  params.set('mode', 'qr');
-  return <Navigate to={`/login?${params.toString()}`} replace />;
-}
-
-const App: React.FC = () => {
   return (
-    <IconProvider resolver={iconResolver}>
-      <ConfigProvider
-        locale={zhCN}
-        theme={{
-          token: {
-            colorPrimary: 'var(--mpms-primary-color)',
-            borderRadius: 6,
-            fontSize: 14,
-            colorBgContainer: 'var(--mpms-content-elevated)',
-            colorBgLayout: 'var(--mpms-layout-bg)',
-            colorBgElevated: 'var(--mpms-content-elevated)',
-            colorBorder: 'var(--mpms-border-color)',
-            colorBorderSecondary: 'var(--mpms-border-color)',
-            colorText: 'var(--mpms-text-primary)',
-            colorTextSecondary: 'var(--mpms-text-secondary)',
-            colorTextTertiary: 'var(--mpms-text-tertiary)',
-            colorTextDescription: 'var(--mpms-text-secondary)',
-          },
-          components: {
-            Card: { colorBgContainer: 'var(--mpms-content-elevated)' },
-            Table: {
-              colorBgContainer: 'var(--mpms-content-elevated)',
-              headerBg: 'var(--mpms-layout-bg)',
-              colorText: 'var(--mpms-text-primary)',
-            },
-            Tag: {
-              defaultBg: 'var(--mpms-content-bg)',
-              defaultColor: 'var(--mpms-text-primary)',
-            },
-            Menu: {
-              itemBg: 'var(--mpms-sidebar-bg)',
-              subMenuItemBg: 'var(--mpms-sidebar-bg)',
-              itemColor: 'var(--mpms-sidebar-text-secondary)',
-              itemHoverColor: 'var(--mpms-sidebar-text-primary)',
-              itemHoverBg: 'var(--mpms-sidebar-hover-bg)',
-              itemSelectedColor: '#ffffff',
-              itemSelectedBg: 'var(--mpms-primary-color)',
-              darkItemBg: 'var(--mpms-sidebar-bg)',
-              darkItemColor: 'var(--mpms-sidebar-text-secondary)',
-            },
-          },
-        }}
-      >
+    <AxiLocaleProvider
+      contributions={[axiShellLocaleContribution, axiSettingsLocaleContribution]}
+      fallbackLocale="zh-CN"
+      locale="zh-CN"
+    >
+      <ConfigProvider locale={zhCN} theme={antdThemeConfig}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <I18nProvider>
               <BrowserRouter>
                 <Routes>
-                  {/* 统一登录：密码 + 扫码；Web / 移动同一入口 */}
+                  {/* Web 管理端登录：密码 + 扫码。移动端有自己的独立应用入口。 */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/mobile-login" element={<MobileLoginRedirect />} />
 
-                  {/* 工作台壳（响应式：宽屏侧栏 / 窄屏折叠） */}
+                  {/* Web 管理端专属壳：Axi Dashboard Chrome。 */}
                   <Route path="/" element={<MainLayout />}>
                     <Route index element={<Navigate to="admin/dashboard" replace />} />
                     <Route path="admin/dashboard" element={<Dashboard />} />
@@ -138,8 +103,18 @@ const App: React.FC = () => {
           </AuthProvider>
         </QueryClientProvider>
       </ConfigProvider>
-    </IconProvider>
+    </AxiLocaleProvider>
   );
 };
+
+const App: React.FC = () => (
+  <AxiThemeProvider
+    defaultPreference="dark"
+    defaultPresetName="default"
+    storageNamespace="axi.workbench"
+  >
+    <WorkbenchSurface />
+  </AxiThemeProvider>
+);
 
 export default App;

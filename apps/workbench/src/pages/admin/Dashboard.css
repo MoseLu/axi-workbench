@@ -1,0 +1,162 @@
+.dashboard-page {
+  padding: 0 0 16px;
+  margin: 0;
+}
+
+.dashboard-page__header {
+  display: none; /* 概览欢迎区已去掉；桌面若需可再开 */
+}
+
+/* 浅色主题卡片：白底 + 浅边线，保留 8px 圆角对齐 WeChat / cool-admin */
+.dashboard-page .ant-card {
+  background: var(--mpms-content-elevated, #ffffff);
+  border-radius: 8px;
+  border: 1px solid var(--mpms-border-color, rgba(0, 0, 0, 0.06));
+  box-shadow: none;
+  margin-inline: 0 !important;
+  color: var(--mpms-text-primary, #191919);
+}
+
+.dashboard-page .ant-card-head {
+  background: transparent;
+  border-bottom-color: var(--mpms-border-color, rgba(0, 0, 0, 0.06));
+  color: var(--mpms-text-primary, #191919);
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.dashboard-page .ant-card-head-title {
+  color: var(--mpms-text-primary, #191919);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dashboard-page .ant-card-body {
+  background: var(--mpms-content-elevated, #ffffff);
+  color: var(--mpms-text-primary, #191919);
+}
+
+/* 卡片间留 12px 缝隙（替代原来的 `gutter={[0,0]}`） */
+.dashboard-page .ant-row {
+  margin-left: -6px !important;
+  margin-right: -6px !important;
+  row-gap: 12px;
+}
+
+.dashboard-page .ant-col {
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.metric-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.metric-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metric-card__value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.metric-card__number {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--mpms-text-primary, #191919);
+}
+
+.metric-card__suffix {
+  font-size: 12px;
+  color: var(--mpms-text-secondary, #52525b);
+}
+
+.metric-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.metric-card__trend.is-up {
+  color: var(--color-success-alt);
+}
+
+.metric-card__trend.is-down {
+  color: var(--color-danger);
+}
+
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.project-row__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.project-row__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.project-row__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mpms-text-primary, #191919);
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mpms-border-color, rgba(0, 0, 0, 0.06));
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-row__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.task-row__title {
+  font-size: 13px;
+  color: var(--mpms-text-primary, #191919);
+}
