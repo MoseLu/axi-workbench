@@ -1,6 +1,6 @@
 import asyncio
 
-from models.workflow import Workflow, WorkflowStatus
+from models.workflow import StepType, Workflow, WorkflowApprovalStatus, WorkflowStatus, WorkflowStep
 from services.dispatch_worker import WorkflowDispatchWorker
 from services.executor import WorkflowExecutor
 from services.repository import MemoryWorkflowRepository
@@ -129,5 +129,67 @@ def test_recovery_keeps_another_worker_active_lease() -> None:
         stored = await repository.get(workflow.id, "alice")
         assert stored.status == WorkflowStatus.RUNNING
         assert await repository.renew_event_dispatch(active, "active-worker", 60)
+
+    asyncio.run(scenario())
+
+
+def test_dispatch_worker_leaves_event_waiting_until_approval_resumes() -> None:
+    async def scenario() -> None:
+        repository = MemoryWorkflowRepository()
+        workflow = await repository.create(
+            Workflow(
+                name="approval event",
+                owner_subject="alice",
+                trigger_topic="release.requested",
+                steps=[
+                    WorkflowStep(
+                        name="approval",
+                        step_type=StepType.APPROVAL,
+                        config={"prompt": "Approve release", "approvers": ["alice"]},
+                    ),
+                    WorkflowStep(name="release", step_type=StepType.TASK),
+                ],
+            )
+        )
+        await repository.consume_event(
+            "event-approval-1",
+            "tenant-1",
+            "release.requested",
+            {"releaseId": "release-1"},
+            actor_subject="alice",
+        )
+        dispatch = await repository.claim_event_dispatch("worker-approval", 60)
+        assert dispatch is not None
+        worker = WorkflowDispatchWorker(
+            repository,
+            WorkflowExecutor(step_timeout=1),
+            worker_id="worker-approval",
+        )
+        await worker.process_dispatch(dispatch)
+
+        assert repository.event_dispatches[("event-approval-1", workflow.id)]["status"] == "waiting"
+        stored_execution = await repository.get_execution(workflow.id, "alice")
+        assert stored_execution.pending_approval is not None
+
+        resumed_workflow, pending_execution, approval = await repository.approve_and_claim(
+            stored_execution.pending_approval.id,
+            workflow.id,
+            "alice",
+            WorkflowApprovalStatus.APPROVED,
+            "approved",
+        )
+        resumed = await WorkflowExecutor(step_timeout=1).resume_workflow(
+            resumed_workflow,
+            pending_execution,
+            approval,
+        )
+        resumed_workflow.status = resumed.status
+        resumed_workflow.result = resumed.result
+        await repository.update(resumed_workflow, "alice")
+        await repository.save_execution(resumed, "alice")
+        await repository.complete_waiting_dispatch(workflow.id, resumed)
+
+        assert resumed.status == WorkflowStatus.COMPLETED
+        assert repository.event_dispatches[("event-approval-1", workflow.id)]["status"] == "completed"
 
     asyncio.run(scenario())

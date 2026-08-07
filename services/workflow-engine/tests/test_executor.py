@@ -1,7 +1,13 @@
 import asyncio
 from typing import Any
 
-from models.workflow import StepType, Workflow, WorkflowStep, WorkflowStatus
+from models.workflow import (
+    StepType,
+    Workflow,
+    WorkflowApprovalStatus,
+    WorkflowStep,
+    WorkflowStatus,
+)
 from services.executor import ConditionEvaluationError, WorkflowExecutor, evaluate_condition
 
 
@@ -189,5 +195,42 @@ def test_executor_rejects_http_task_without_matching_policy() -> None:
 
         assert execution.status == WorkflowStatus.FAILED
         assert "allowlisted" in (execution.error or "")
+
+    asyncio.run(scenario())
+
+
+def test_executor_pauses_and_resumes_approval_step() -> None:
+    async def scenario() -> None:
+        workflow = Workflow(
+            name="approval workflow",
+            steps=[
+                WorkflowStep(
+                    name="release-approval",
+                    step_type=StepType.APPROVAL,
+                    config={"prompt": "Approve release", "approvers": ["alice"]},
+                ),
+                WorkflowStep(name="release", step_type=StepType.TASK, config={"action": "release"}),
+            ],
+        )
+        executor = WorkflowExecutor(step_timeout=1)
+        waiting = await executor.execute_workflow(workflow)
+
+        assert waiting.status == WorkflowStatus.WAITING_APPROVAL
+        assert waiting.pending_approval is not None
+        assert waiting.steps[0].status.value == "waiting"
+
+        approval = waiting.pending_approval.model_copy(
+            update={
+                "status": WorkflowApprovalStatus.APPROVED,
+                "decided_by": "alice",
+                "decision_comment": "ship it",
+            }
+        )
+        resumed = await executor.resume_workflow(workflow, waiting, approval)
+
+        assert resumed.status == WorkflowStatus.COMPLETED
+        assert resumed.pending_approval is None
+        assert resumed.steps[0].result["approved"] is True
+        assert resumed.steps[1].result["action"] == "release"
 
     asyncio.run(scenario())

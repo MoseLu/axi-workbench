@@ -63,6 +63,73 @@ def test_workflows_are_scoped_to_verified_subject() -> None:
         settings.internal_service_token = original_token
 
 
+def test_workflow_approval_is_durable_and_resumes_only_for_allowed_approver() -> None:
+    settings = get_settings()
+    original_token = settings.internal_service_token
+    settings.internal_service_token = "workflow-test-token"
+    headers = {
+        "X-Axi-Internal-Token": "workflow-test-token",
+        "X-Axi-Subject": "alice",
+    }
+    try:
+        with TestClient(app) as client:
+            created = client.post(
+                "/workflows",
+                headers=headers,
+                json={
+                    "name": "Approval workflow",
+                    "steps": [
+                        {
+                            "name": "release-approval",
+                            "step_type": "approval",
+                            "config": {"prompt": "Approve release", "approvers": ["alice", "bob"]},
+                        },
+                        {"name": "release", "step_type": "task", "config": {"action": "release"}},
+                    ],
+                },
+            )
+            workflow_id = created.json()["id"]
+            waiting = client.post(f"/workflows/{workflow_id}/execute", headers=headers)
+            approval_id = waiting.json()["pendingApproval"]["id"]
+            rejected_by_carol = client.post(
+                f"/workflows/{workflow_id}/approvals/{approval_id}",
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Subject": "carol",
+                },
+                json={"decision": "approved"},
+            )
+            resumed_by_bob = client.post(
+                f"/workflows/{workflow_id}/approvals/{approval_id}",
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Subject": "bob",
+                },
+                json={"decision": "approved", "comment": "approved"},
+            )
+            duplicate = client.post(
+                f"/workflows/{workflow_id}/approvals/{approval_id}",
+                headers=headers,
+                json={"decision": "approved"},
+            )
+        assert created.status_code == 201
+        assert waiting.status_code == 200
+        assert waiting.json()["status"] == "waiting_approval"
+        assert rejected_by_carol.status_code == 403
+        assert resumed_by_bob.status_code == 200
+        assert resumed_by_bob.json()["status"] == "completed"
+        assert duplicate.status_code == 409
+    finally:
+        from routers.workflows import executing_workflows, get_repository, workflows_db
+
+        workflows_db.clear()
+        executing_workflows.clear()
+        repository = get_repository()
+        if hasattr(repository, "approvals"):
+            repository.approvals.clear()
+        settings.internal_service_token = original_token
+
+
 def test_platform_event_route_requires_token_and_event_headers() -> None:
     settings = get_settings()
     original_token = settings.internal_service_token

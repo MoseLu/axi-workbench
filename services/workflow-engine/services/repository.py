@@ -391,6 +391,9 @@ class MemoryWorkflowRepository(WorkflowRepository):
             workflow.status = execution.status
             workflow.result = execution.result
             workflow.updated_at = now
+            if execution.pending_approval is not None:
+                execution.pending_approval.owner_subject = dispatch.owner_subject
+                self.approvals[execution.pending_approval.id] = execution.pending_approval.model_copy(deep=True)
             self.executions[execution.workflow_id] = execution.model_copy(deep=True)
             dispatch_status = "waiting" if execution.status == WorkflowStatus.WAITING_APPROVAL else (
                 "completed" if execution.status == WorkflowStatus.COMPLETED else "failed"
@@ -715,6 +718,8 @@ class PostgresWorkflowRepository(WorkflowRepository):
                         """,
                         _approval_values(execution.pending_approval),
                     )
+                    if cursor.rowcount == 0:
+                        raise WorkflowApprovalConflict
             await connection.commit()
         return execution
 

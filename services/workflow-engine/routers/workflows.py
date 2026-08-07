@@ -233,8 +233,8 @@ async def decide_workflow_approval(
     workflow.result = execution.result
     workflow.updated_at = datetime.now(UTC)
     try:
-        await repository.update(workflow, subject)
-        await repository.save_execution(execution, subject)
+        await repository.update(workflow, workflow.owner_subject)
+        await repository.save_execution(execution, workflow.owner_subject)
         if execution.status != WorkflowStatus.WAITING_APPROVAL:
             await repository.complete_waiting_dispatch(workflow_id, execution)
     except WorkflowNotFound as exc:

@@ -23,7 +23,7 @@
 - Platform Core 的 Outbox 只配置一个 Gateway 内部投递 URL；Gateway 用独立的 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 校验平台 worker，再用各专职服务凭据扇出到 notification/workflow。两个消费者都把事件 ID 写入自己的 `event_inbox` 后才返回成功。
 - 运行时 `axi_platform_app` 是 `NOBYPASSRLS`；只有 pre-install/pre-upgrade migration Job 的专用账号拥有 `BYPASSRLS`，从而让 `SECURITY DEFINER` 的 RLS helper 可工作而不泄露运行时权限。
 - `auth-service` 和 Spring/H2 `core-service` 是迁移兼容来源；网关只会在显式配置时向它们开放只读旧路径，生产 Chart 不部署它们。
-- 三个专职服务已经进入 gateway/Helm 拓扑：workflow 与 notification 已具备 PostgreSQL schema、独立 migration Job、运行时账号、重启恢复和 Outbox event inbox 幂等边界；workflow 已具备匹配事件持久化、租约领取、指数退避、执行结果原子收敛、重启恢复、安全结构化条件表达式、步骤超时、有限并行编排和受 HTTPS/主机白名单/DNS 公网地址/响应体上限保护的 HTTP 外部任务，人工审批适配和 Kafka 适配仍待补；notification 已具备核心、工作流、文件与安全事件的代码模板 registry、收件箱、已读状态和 delivery worker。file 已具备 S3/MinIO 对象适配、PostgreSQL 元数据、SHA-256 完整性校验、迁移 Job、subject 隔离、短时预签名下载 URL、写入前 ClamAV INSTREAM 扫描适配和图片 WebP 缩略图派生对象；生产仍需在集群中接入 ClamAV、验证 Pillow 处理资源边界并完成故障演练后才可称为最终生产完成。
+- 三个专职服务已经进入 gateway/Helm 拓扑：workflow 与 notification 已具备 PostgreSQL schema、独立 migration Job、运行时账号、重启恢复和 Outbox event inbox 幂等边界；workflow 已具备匹配事件持久化、租约领取、指数退避、执行结果原子收敛、重启恢复、安全结构化条件表达式、步骤超时、有限并行编排、受 HTTPS/主机白名单/DNS 公网地址/响应体上限保护的 HTTP 外部任务，以及带 PostgreSQL approval 记录、主体授权、幂等决策和事件派发挂起/恢复的人工审批步骤；Kafka 适配仍待补。notification 已具备核心、工作流、文件与安全事件的代码模板 registry、收件箱、已读状态和 delivery worker。file 已具备 S3/MinIO 对象适配、PostgreSQL 元数据、SHA-256 完整性校验、迁移 Job、subject 隔离、短时预签名下载 URL、写入前 ClamAV INSTREAM 扫描适配和图片 WebP 缩略图派生对象；生产仍需在集群中接入 ClamAV、验证 Pillow 处理资源边界并完成故障演练后才可称为最终生产完成。
 
 Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 [`infra/helm`](../infra/helm/README.md)。以下内容为早期 EPAP 设计记录，不覆盖本节的当前边界。
 
