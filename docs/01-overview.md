@@ -12,9 +12,9 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 
 | 能力域 | 子系统 | 技术栈 | 状态 |
 |--------|--------|--------|------|
-| 前端展示 | web-portal / admin-dashboard | React + TS + Vite + Turbo | 规划中 |
-| 移动端 | mobile-app | Taro + React + TS | 规划中 |
-| 组件体系 | design-system | Storybook + Radix UI | 规划中 |
+| 前端展示 | `apps/workbench`（桌面 Web） | React + TS + Vite + Axi UI | 已接入 |
+| 移动端 | `apps/workbench`（移动 Web，同一 SPA） | React + TS + Vite + 移动端独立壳 | 已接入 |
+| 组件体系 | `shared/axi-ui` | Axi Core / Shell / Settings / Tokens | 已接入 |
 | API 网关 | api-gateway | Go + Gin | 规划中 |
 | 认证授权 | auth-service | Go + JWT + OAuth2 | 规划中 |
 | 核心业务 | core-service | Java 21 + Spring Boot 3 | 规划中 |
@@ -82,8 +82,7 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | knowledge-base gRPC | 9090 |
 | agent-platform | 8091 |
 | docs site | 3000 |
-| web-portal (dev) | 5173 |
-| admin-dashboard (dev) | 5174 |
+| workbench（Web + 移动 Web dev） | 5173 |
 | Storybook | 6006 |
 | PostgreSQL | 5432 |
 | Redis | 6379 |
@@ -104,6 +103,14 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | dev | 集成测试 | K8s dev namespace | 自动刷新的种子数据 |
 | staging | 预发布验证 | K8s staging namespace | 生产数据镜像（脱敏） |
 | production | 生产环境 | K8s prod namespace | 真实数据，全备份 |
+
+## 1.7 多端后台覆盖范围
+
+`apps/workbench` 是唯一用户后台入口，但按运行端明确拆分渲染边界：
+
+- **桌面 Web（视口宽度 ≥ 768px）**：使用 `shared/axi-ui` 的 Axi Dashboard Chrome，覆盖左侧导航、顶栏插件/快捷操作、标签栏、面包屑、主题切换、系统设置面板和页面内容区。
+- **移动 Web（视口宽度 < 768px）**：不渲染桌面侧栏、标签栏或桌面设置抽屉，使用移动顶栏、页面级设置/主题页和底部导航，保证触控密度与窄屏布局独立。
+- **共享层**：认证、路由、主题状态、设计令牌和业务页面复用；布局壳、导航密度和交互入口按端隔离，避免把桌面后台压缩成错误的移动布局。
 
 ---
 

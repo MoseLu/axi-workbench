@@ -16,7 +16,7 @@
 
 ## Entrypoints
 
-- `apps/web-portal/src/main.tsx`: Primary browser portal for the workbench.
+- `apps/workbench/src/main.tsx`: 唯一多端后台工作台入口：桌面 Web 使用 Axi Dashboard Chrome，移动 Web 使用独立移动端壳。
 - `services/control-plane/src/server.mjs`: Software-layer control API and managed AgentTask runtime surface.
 - `services/communication-gateway/src/server.mjs`: Communication-layer envelope routing and control-plane forwarding.
 - `packages/schemas/src/index.ts`: Canonical IMEnvelope, AgentTask, and workstation contract exports.
@@ -25,12 +25,14 @@
 ## Commands
 
 - Setup: `pnpm install`
-- Start: `pnpm dev`
-- Start: `pnpm dev:web`
+- Start: `pnpm dev:workbench`
 - Start: `pnpm --filter @axi/workstation-control-plane start`
 - Start: `pnpm --filter @axi/workstation-communication-gateway start`
 - Health: `pnpm --filter @axi/workstation-control-plane smoke`
 - Health: `python3 infra/fleet-console/scripts/fleetctl.py validate`
+- Verify: `pnpm --filter @axi/workbench type-check`
+- Verify: `pnpm --filter @axi/workbench test`
+- Verify: `pnpm --filter @axi/workbench build`
 - Verify: `pnpm type-check`
 - Verify: `pnpm test`
 - Verify: `pnpm test:workstation`
@@ -86,7 +88,7 @@
 - ADR: `docs/rules/epap-six-layer-sop.md`
 - Changelog: `docs/state/CHANGELOG.md`
 - Submit log: `docs/logs/submit/20260611-124603-batch-submit.md`
-- Last verified: `2026-06-18`
-- Evidence: `Control-plane smoke exited 0 on 2026-06-11.`, `Snapshot contained 35 resources across im, communication, software, base_service, physical_service, and external_capability layers.` Refreshed on 2026-06-18 by stale-evidence-sweep.
+- Last verified: `2026-08-07`
+- Evidence: `Desktop 1440px browser smoke rendered the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile 500px browser smoke rendered the independent mobile topbar and bottom navigation without desktop sidebar/chrome nodes.`, `Workbench UI contract verifier, TypeScript, 23 unit tests, and production build passed on 2026-08-07.`
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.

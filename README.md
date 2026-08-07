@@ -25,22 +25,20 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 ```text
 axi-workbench/
 ├── apps/
-│   ├── web-portal/            # 主 Web 门户
-│   ├── devsvc-dashboard/      # 本地服务管理和 Axi 应用 host
-│   ├── axi-coder/             # Axi 开发工作台
+│   ├── workbench/             # ★ 唯一用户工作台（Web + 移动 Web 同 SPA）
+│   ├── devsvc-dashboard/      # 本地服务管理和 Axi 应用 host（运维壳，非第二门户）
+│   ├── axi-coder/             # 编码工具（可被 host 挂载）
 │   ├── verification-inbox/    # 验证码收件箱
 │   ├── app-search-system/     # Docs/Search 控制与展示
 │   └── ollama-menu-assistant/ # macOS Ollama 菜单助手
 ├── packages/
 │   ├── api-client/
 │   ├── axi-rag/
-│   ├── desktop/
 │   ├── schemas/
 │   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口
 │   ├── types/
-│   ├── ui/
-│   ├── utils/
-│   └── web/
+│   ├── ui/                    # legacy layout（仅 workbench 过渡期）
+│   └── utils/
 ├── services/
 │   ├── api-gateway/
 │   ├── auth-service/
@@ -73,12 +71,16 @@ axi-workbench/
 
 ```bash
 pnpm install
-pnpm run dev
-pnpm run dev:web
+# ★ 用户工作台（Web + 移动同一入口，唯一目录 apps/workbench）
+pnpm run dev:workbench
+# 本地运维 Host（可选）
+pnpm run dev:dashboard
 pnpm run build
 pnpm run test
 pnpm run lint
 ```
+
+打开：`http://127.0.0.1:5173` · 登录：`/login`（密码 / 扫码同页）
 
 ## Governance Notes
 
