@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/smtp"
@@ -440,40 +439,8 @@ func notificationForEvent(event *models.OutboxEvent) *models.Notification {
 		return nil
 	}
 
-	title := ""
-	content := ""
-	category := models.TabMe
-	switch event.Topic {
-	case "tenant.created":
-		title = "工作区已创建"
-		content = "Axi 工作区已完成初始化"
-	case "tenant.member.changed":
-		title = "成员权限已更新"
-		role := eventPayloadString(payload, "role")
-		content = fmt.Sprintf("你的工作区权限已更新为 %s", role)
-	case "project.created":
-		title = "项目已创建"
-		category = models.TabHome
-		name := eventPayloadString(payload, "name")
-		if name == "" {
-			name = eventPayloadString(payload, "projectId")
-		}
-		content = fmt.Sprintf("项目 %s 已创建", name)
-	case "task.created":
-		title = "任务已创建"
-		category = models.TabHome
-		titleText := eventPayloadString(payload, "title")
-		if titleText == "" {
-			titleText = eventPayloadString(payload, "taskId")
-		}
-		content = fmt.Sprintf("任务 %s 已创建", titleText)
-	case "dictionary.changed":
-		title = "业务字典已更新"
-		category = models.TabWorkspace
-		key := eventPayloadString(payload, "key")
-		version := eventPayloadString(payload, "version")
-		content = fmt.Sprintf("字典 %s 已更新至第 %s 版", key, version)
-	default:
+	template, ok := notificationTemplateForEvent(event.Topic)
+	if !ok {
 		return nil
 	}
 
@@ -483,9 +450,10 @@ func notificationForEvent(event *models.OutboxEvent) *models.Notification {
 		Type:      models.NotificationTypeInApp,
 		UserID:    recipient,
 		Recipient: recipient,
-		Subject:   title,
-		Content:   content,
-		Category:  category,
+		Subject:   template.subject,
+		Content:   template.content(payload),
+		Category:  template.category,
+		DotOnly:   template.dotOnly,
 		Status:    models.NotificationStatusPending,
 		CreatedAt: now,
 	}

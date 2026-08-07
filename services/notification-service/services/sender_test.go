@@ -98,3 +98,35 @@ func TestConsumeDictionaryEventCreatesWorkspaceNotification(t *testing.T) {
 		}
 	}
 }
+
+func TestNotificationTemplatesCoverSpecialistEvents(t *testing.T) {
+	tests := []struct {
+		topic    string
+		payload  string
+		subject  string
+		category models.TabCategory
+		dotOnly  bool
+	}{
+		{topic: "workflow.completed", payload: `{"subject":"alice","workflowId":"wf-1"}`, subject: "工作流已完成", category: models.TabWorkspace},
+		{topic: "workflow.failed", payload: `{"subject":"alice","workflowName":"发布流程"}`, subject: "工作流执行失败", category: models.TabWorkspace},
+		{topic: "file.uploaded", payload: `{"subject":"alice","fileName":"report.pdf"}`, subject: "文件已上传", category: models.TabWorkspace},
+		{topic: "file.scan.rejected", payload: `{"subject":"alice","name":"payload.bin"}`, subject: "文件未通过安全扫描", category: models.TabWorkspace, dotOnly: true},
+		{topic: "security.login", payload: `{"subject":"alice","client":"mobile"}`, subject: "安全提醒", category: models.TabMe},
+	}
+
+	for _, test := range tests {
+		t.Run(test.topic, func(t *testing.T) {
+			event := &models.OutboxEvent{ID: "event-" + test.topic, Topic: test.topic, Payload: json.RawMessage(test.payload)}
+			notification := notificationForEvent(event)
+			if notification == nil {
+				t.Fatal("event did not produce a notification")
+			}
+			if notification.Subject != test.subject || notification.Category != test.category || notification.DotOnly != test.dotOnly {
+				t.Fatalf("notification metadata = %#v", notification)
+			}
+			if notification.Content == "" {
+				t.Fatal("notification content is empty")
+			}
+		})
+	}
+}
