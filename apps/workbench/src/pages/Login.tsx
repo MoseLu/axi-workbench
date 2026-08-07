@@ -5,10 +5,10 @@ import { LoginInput } from '@axi/workstation-contracts';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
- * Axi 工作台统一登录（Web + 移动 同一入口）
- * - 密码：桌面/浏览器邮箱密码
- * - 扫码：本会话展示二维码，手机 App 扫码确认
- * 禁止再拆成独立「移动端登录产品」。
+ * Axi Workbench Web 管理端登录。
+ * - 密码：浏览器邮箱密码
+ * - 扫码：本会话展示二维码，由移动端或受信设备确认
+ * 移动工作台拥有独立应用与自己的登录页，不在此处用 viewport 分支复用页面。
  */
 
 type LoginMode = 'password' | 'qr';
@@ -36,9 +36,6 @@ const USER_KEY = 'epap_user';
 function defaultMode(search: URLSearchParams): LoginMode {
   const mode = search.get('mode');
   if (mode === 'qr' || mode === 'password') return mode;
-  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
-    return 'qr';
-  }
   return 'password';
 }
 
