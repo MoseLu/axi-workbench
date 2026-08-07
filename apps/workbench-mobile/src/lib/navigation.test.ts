@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { mobilePageTitleKey, resolveMobileNavKey } from './navigation';
 
 describe('微信式移动应用导航', () => {
-  it('保留独立的五项移动导航与旧工作区兼容路径', () => {
+  it('保留独立的四项移动导航与旧工作区兼容路径', () => {
     expect(resolveMobileNavKey('/home')).toBe('home');
     expect(resolveMobileNavKey('/projects/atlas')).toBe('projects');
     expect(resolveMobileNavKey('/workspace')).toBe('workspace');
     expect(resolveMobileNavKey('/focus/today')).toBe('workspace');
-    expect(resolveMobileNavKey('/scan')).toBe('scan');
+    expect(resolveMobileNavKey('/scan')).toBe('home');
     expect(resolveMobileNavKey('/me/preferences')).toBe('me');
   });
 

@@ -9,7 +9,6 @@ const navIcons: Record<MobileNavKey, MobileIconName> = {
   home: 'home',
   projects: 'projects',
   workspace: 'workspace',
-  scan: 'scan',
   me: 'profile',
 };
 
@@ -29,7 +28,7 @@ function NavBadgeMark({ badge }: { badge?: NavBadge }) {
   );
 }
 
-/** 从原工作台迁出的微信式五项底栏，不使用桌面 TabBar 或面包屑。 */
+/** 微信式四项底栏；扫一扫由顶部圆形加号承载，不使用桌面 TabBar 或面包屑。 */
 export function MobileTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,11 +37,11 @@ export function MobileTabBar() {
   const badges = useNavBadges(true);
 
   return (
-    <nav className="wb-bottom-nav" aria-label="移动端主导航">
+    <nav className="wb-bottom-nav" aria-label={t('nav.aria')}>
       {MOBILE_NAV_ITEMS.map((item) => {
         const active = item.key === activeKey;
         const iconName = navIcons[item.key];
-        const badge = item.key === 'home' ? badges.home : item.key === 'projects' ? badges.projects : item.key === 'workspace' ? badges.workspace : item.key === 'me' ? badges.me : undefined;
+        const badge = badges[item.key];
         return (
           <button
             key={item.key}

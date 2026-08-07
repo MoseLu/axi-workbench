@@ -1,26 +1,24 @@
-export type MobileNavKey = 'home' | 'projects' | 'workspace' | 'scan' | 'me';
+export type MobileNavKey = 'home' | 'projects' | 'workspace' | 'me';
 
 export const MOBILE_NAV_ITEMS: ReadonlyArray<{
   key: MobileNavKey;
   path: string;
-  labelKey: 'nav.home' | 'nav.projects' | 'nav.workspace' | 'nav.scan' | 'nav.profile';
+  labelKey: 'nav.home' | 'nav.projects' | 'nav.workspace' | 'nav.profile';
 }> = [
   { key: 'home', path: '/home', labelKey: 'nav.home' },
   { key: 'projects', path: '/projects', labelKey: 'nav.projects' },
   { key: 'workspace', path: '/workspace', labelKey: 'nav.workspace' },
-  { key: 'scan', path: '/scan', labelKey: 'nav.scan' },
   { key: 'me', path: '/me', labelKey: 'nav.profile' },
 ];
 
 /**
- * 独立移动端延续既有微信式五项导航；旧的 focus 路径只作为兼容别名，
- * 不再把桌面后台的信息架构折叠到移动端中。
+ * 独立移动端保留微信式四项主导航；扫一扫是顶部圆形加号中的聚焦动作，
+ * 不挤占底栏，也不引入桌面后台的信息架构。
  */
 export function resolveMobileNavKey(pathname: string): MobileNavKey {
   const path = pathname.replace(/\/+$/, '') || '/home';
   if (path === '/projects' || path.startsWith('/projects/')) return 'projects';
   if (path === '/workspace' || path.startsWith('/workspace/') || path === '/focus' || path.startsWith('/focus/')) return 'workspace';
-  if (path === '/scan' || path.startsWith('/scan/')) return 'scan';
   if (path === '/me' || path.startsWith('/me/')) return 'me';
   return 'home';
 }

@@ -1,6 +1,7 @@
 export {
   AuthProvider,
   useAuth,
+  resolveGatewayURL,
   type AuthContextType,
   type AuthProviderProps,
 } from './auth';

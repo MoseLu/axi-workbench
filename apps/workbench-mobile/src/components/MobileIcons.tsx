@@ -13,6 +13,7 @@ export type MobileIconName =
   | 'profile'
   | 'search'
   | 'bell'
+  | 'back'
   | 'arrow-right'
   | 'check'
   | 'moon'
@@ -36,6 +37,7 @@ const mobileIconMap: Record<MobileIconName, AxiWorkbenchIconName> = {
   profile: 'account',
   search: 'search',
   bell: 'notification',
+  back: 'back',
   'arrow-right': 'forward',
   check: 'check',
   moon: 'moon',

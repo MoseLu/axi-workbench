@@ -43,7 +43,7 @@ function toBadge(dto?: NavBadgeDto): NavBadge {
 
 /** 移动端独立拉取微信式角标；失败时保持无角标，而不是阻塞导航。 */
 export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
-  const response = await fetch('/api/v1/notifications/nav-badges', {
+  const response = await fetch(resolveGatewayURL('/api/v1/notifications/nav-badges'), {
     headers: { Accept: 'application/json' },
     signal,
     credentials: 'include',
@@ -58,3 +58,4 @@ export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
     me: toBadge(data.me),
   };
 }
+import { resolveGatewayURL } from '@axi/workbench-foundation';

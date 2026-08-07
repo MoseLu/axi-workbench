@@ -4,17 +4,20 @@ import { MobileIcon } from '../components/MobileIcons';
 import { useMobileI18n } from '../i18n';
 
 const corpus = [
-  { title: 'Axi WorkBench', subtitle: '项目 · 设计系统整理', path: '/projects', tone: 'blue' },
-  { title: 'Story Graph', subtitle: '项目 · 时间线校对', path: '/projects', tone: 'violet' },
-  { title: '后台导航与标签栏审查', subtitle: '待办 · 今天 10:30', path: '/workspace', tone: 'amber' },
-  { title: '工作台同步状态', subtitle: '消息 · 昨天', path: '/inbox', tone: 'mint' },
-];
+  { titleKey: 'search.item.workbench.title', subtitleKey: 'search.item.workbench.subtitle', mark: 'A', path: '/projects', tone: 'blue' },
+  { titleKey: 'search.item.storyGraph.title', subtitleKey: 'search.item.storyGraph.subtitle', mark: 'S', path: '/projects', tone: 'violet' },
+  { titleKey: 'search.item.navigationReview.title', subtitleKey: 'search.item.navigationReview.subtitle', mark: 'R', path: '/workspace', tone: 'amber' },
+  { titleKey: 'search.item.syncStatus.title', subtitleKey: 'search.item.syncStatus.subtitle', mark: 'W', path: '/inbox', tone: 'mint' },
+] as const;
 
 export default function SearchPage() {
   const navigate = useNavigate();
   const { t } = useMobileI18n();
   const [query, setQuery] = useState('');
-  const results = useMemo(() => corpus.filter((item) => `${item.title} ${item.subtitle}`.toLowerCase().includes(query.trim().toLowerCase())), [query]);
+  const results = useMemo(
+    () => corpus.filter((item) => `${t(item.titleKey)} ${t(item.subtitleKey)}`.toLowerCase().includes(query.trim().toLowerCase())),
+    [query, t],
+  );
 
   return (
     <section className="axi-mobile-page axi-mobile-search-page">
@@ -22,9 +25,9 @@ export default function SearchPage() {
       <div className="axi-mobile-section-heading"><h2>{t('search.recent')}</h2></div>
       <div className="axi-mobile-card-list axi-mobile-card-list--spaced">
         {results.map((item) => (
-          <button type="button" className="axi-mobile-search-result" key={item.title} onClick={() => navigate(item.path)}>
-            <span className={`axi-mobile-search-result__mark is-${item.tone}`}>{item.title.slice(0, 1)}</span>
-            <span><strong>{item.title}</strong><small>{item.subtitle}</small></span>
+          <button type="button" className="axi-mobile-search-result" key={item.titleKey} onClick={() => navigate(item.path)}>
+            <span className={`axi-mobile-search-result__mark is-${item.tone}`}>{item.mark}</span>
+            <span><strong>{t(item.titleKey)}</strong><small>{t(item.subtitleKey)}</small></span>
             <MobileIcon name="arrow-right" size={17} />
           </button>
         ))}

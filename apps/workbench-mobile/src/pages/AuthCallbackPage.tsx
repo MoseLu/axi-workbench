@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@axi/workbench-foundation';
+import { useMobileI18n } from '../i18n';
 
 // 移动端保持自己的回调呈现与路由，不复用 Web 管理端页面。
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
   const { refreshSession } = useAuth();
-  const [message, setMessage] = useState('正在建立安全会话…');
+  const { t } = useMobileI18n();
+  const [message, setMessage] = useState(t('auth.callback.loading'));
 
   useEffect(() => {
     let active = true;
@@ -18,12 +20,12 @@ export default function AuthCallbackPage() {
       if (authenticated) {
         navigate(destination, { replace: true });
       } else {
-        setMessage('未能建立会话，正在返回登录页…');
+        setMessage(t('auth.callback.failed'));
         window.setTimeout(() => navigate('/login', { replace: true }), 700);
       }
     });
     return () => { active = false; };
-  }, [navigate, refreshSession]);
+  }, [navigate, refreshSession, t]);
 
   return <main className="axi-mobile-login"><p>{message}</p></main>;
 }

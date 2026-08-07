@@ -29,7 +29,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {};
 const gatewayBaseURL = (metaEnv.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
-function gatewayURL(path: string): string {
+/** Resolve a gateway path for either a same-origin local app or a deployed client. */
+export function resolveGatewayURL(path: string): string {
   return `${gatewayBaseURL}${path}`;
 }
 
@@ -69,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(gatewayURL('/api/v1/auth/session'), {
+      const response = await fetch(resolveGatewayURL('/api/v1/auth/session'), {
         credentials: 'include',
         headers: { Accept: 'application/json' },
       });
@@ -102,12 +103,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (typeof window === 'undefined') return;
     const destination = safeLocalPath(returnTo);
     window.sessionStorage.setItem('axi.auth.return-to', destination);
-    window.location.assign(gatewayURL(`/api/v1/auth/oidc/start?return_to=${encodeURIComponent(defaultCallbackURL())}`));
+    window.location.assign(resolveGatewayURL(`/api/v1/auth/oidc/start?return_to=${encodeURIComponent(defaultCallbackURL())}`));
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await fetch(gatewayURL('/api/v1/auth/logout'), {
+      await fetch(resolveGatewayURL('/api/v1/auth/logout'), {
         method: 'POST',
         credentials: 'include',
       });
