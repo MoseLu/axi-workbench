@@ -31,6 +31,7 @@ class StepType(str, Enum):
     TASK = "task"
     CONDITION = "condition"
     DELAY = "delay"
+    PARALLEL = "parallel"
 
 
 class WorkflowStep(BaseModel):

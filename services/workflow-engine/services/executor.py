@@ -79,6 +79,8 @@ class WorkflowExecutor:
                 return await self._execute_condition(step, context)
             case StepType.DELAY:
                 return await self._execute_delay(step, context)
+            case StepType.PARALLEL:
+                return await self._execute_parallel(step, context)
             case _:
                 raise ValueError(f"Unknown step type: {step.step_type}")
 
@@ -129,6 +131,76 @@ class WorkflowExecutor:
             "delayed_seconds": delay_seconds,
             "completed": True,
         }
+
+    async def _execute_parallel(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:
+        """Execute independent child steps with a bounded worker pool.
+
+        Child steps share a read-only snapshot of the current context. Their
+        outputs are returned under their names and are not written back into
+        sibling context, which avoids order-dependent races.
+        """
+        raw_steps = step.config.get("steps", [])
+        if not isinstance(raw_steps, list):
+            raise ValueError("parallel steps must be an array")
+        if len(raw_steps) > 64:
+            raise ValueError("parallel steps cannot contain more than 64 children")
+
+        children: list[WorkflowStep] = []
+        names: set[str] = set()
+        for index, raw_step in enumerate(raw_steps):
+            if not isinstance(raw_step, dict):
+                raise ValueError(f"parallel child {index} must be an object")
+            name = str(raw_step.get("name", "")).strip()
+            if not name:
+                raise ValueError(f"parallel child {index} requires a name")
+            if name in names:
+                raise ValueError(f"parallel child name is duplicated: {name}")
+            names.add(name)
+            step_type_value = raw_step.get(
+                "stepType", raw_step.get("step_type", raw_step.get("type", "task"))
+            )
+            try:
+                step_type = StepType(step_type_value)
+            except ValueError as exc:
+                raise ValueError(f"parallel child {name} has an unknown step type") from exc
+            if step_type is StepType.PARALLEL:
+                raise ValueError("nested parallel steps are not supported")
+            child_config = raw_step.get("config", {})
+            if not isinstance(child_config, dict):
+                raise ValueError(f"parallel child {name} config must be an object")
+            children.append(WorkflowStep(name=name, step_type=step_type, config=child_config))
+
+        if not children:
+            return {"completed": True, "steps": {}}
+
+        configured_limit = step.config.get("maxConcurrency", len(children))
+        if isinstance(configured_limit, bool):
+            raise ValueError("parallel maxConcurrency must be a positive integer")
+        try:
+            max_concurrency = int(configured_limit)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("parallel maxConcurrency must be a positive integer") from exc
+        if max_concurrency < 1:
+            raise ValueError("parallel maxConcurrency must be a positive integer")
+        semaphore = asyncio.Semaphore(min(max_concurrency, len(children)))
+
+        async def run_child(child: WorkflowStep) -> tuple[str, dict[str, Any]]:
+            async with semaphore:
+                result = await asyncio.wait_for(
+                    self._execute_step(child, context), timeout=self.step_timeout
+                )
+                return child.name, {"status": child.status.value, "result": result}
+
+        tasks = [asyncio.create_task(run_child(child)) for child in children]
+        try:
+            results = await asyncio.gather(*tasks)
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+        return {"completed": True, "steps": dict(results)}
 
 
 class ConditionEvaluationError(ValueError):

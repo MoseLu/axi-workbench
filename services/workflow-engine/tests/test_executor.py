@@ -64,3 +64,60 @@ def test_executor_fails_step_that_exceeds_timeout() -> None:
         assert "timeout" in (execution.error or "")
 
     asyncio.run(scenario())
+
+
+def test_executor_runs_bounded_parallel_children() -> None:
+    async def scenario() -> None:
+        workflow = Workflow(
+            name="parallel workflow",
+            steps=[
+                WorkflowStep(
+                    name="fan-out",
+                    step_type=StepType.PARALLEL,
+                    config={
+                        "maxConcurrency": 2,
+                        "steps": [
+                            {"name": "first", "type": "condition", "config": {"condition": True}},
+                            {"name": "second", "type": "delay", "config": {"seconds": 0.01}},
+                            {"name": "third", "stepType": "condition", "config": {"condition": False}},
+                        ],
+                    },
+                )
+            ],
+        )
+
+        execution = await WorkflowExecutor(step_timeout=1).execute_workflow(workflow)
+
+        assert execution.status == WorkflowStatus.COMPLETED
+        result = execution.steps[0].result
+        assert result["completed"] is True
+        assert result["steps"]["first"]["result"]["result"] is True
+        assert result["steps"]["third"]["result"]["result"] is False
+
+    asyncio.run(scenario())
+
+
+def test_executor_rejects_duplicate_parallel_child_names() -> None:
+    async def scenario() -> None:
+        workflow = Workflow(
+            name="invalid parallel workflow",
+            steps=[
+                WorkflowStep(
+                    name="fan-out",
+                    step_type=StepType.PARALLEL,
+                    config={
+                        "steps": [
+                            {"name": "same", "type": "condition", "config": {"condition": True}},
+                            {"name": "same", "type": "condition", "config": {"condition": True}},
+                        ]
+                    },
+                )
+            ],
+        )
+
+        execution = await WorkflowExecutor(step_timeout=1).execute_workflow(workflow)
+
+        assert execution.status == WorkflowStatus.FAILED
+        assert "duplicated" in (execution.error or "")
+
+    asyncio.run(scenario())
