@@ -18,7 +18,7 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   // Request interceptor
   client.interceptors.request.use(
     (config) => {
-      const token = localStorage.getItem("accessToken")
+      const token = localStorage.getItem("accessToken") || localStorage.getItem("epap_auth_token")
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`
       }
@@ -38,13 +38,14 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
         originalRequest._retry = true
 
         try {
-          const refreshToken = localStorage.getItem("refreshToken")
+          const refreshToken = localStorage.getItem("refreshToken") || localStorage.getItem("epap_refresh_token")
           if (refreshToken) {
             const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
               refreshToken,
             })
             const { accessToken } = response.data.data
             localStorage.setItem("accessToken", accessToken)
+            localStorage.setItem("epap_auth_token", accessToken)
             
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${accessToken}`
@@ -54,6 +55,8 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
         } catch (refreshError) {
           localStorage.removeItem("accessToken")
           localStorage.removeItem("refreshToken")
+          localStorage.removeItem("epap_auth_token")
+          localStorage.removeItem("epap_refresh_token")
           window.location.href = "/login"
           return Promise.reject(refreshError)
         }

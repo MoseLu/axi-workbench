@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "pnpm run dev:workbench",
+    "dev:mobile": "turbo run dev --filter=@axi/workbench-mobile",
     "dev:ui": "turbo run dev --filter=@epap/ui",
     "dev:dashboard": "pnpm --dir apps/devsvc-dashboard dev",
     "dev:coder": "pnpm --dir apps/axi-coder dev",
     "build": "turbo run build",
     "build:web": "pnpm run build:workbench",
+    "build:mobile": "turbo run build --filter=@axi/workbench-mobile",
     "build:ui": "turbo run build --filter=@epap/ui",
     "build:schemas": "turbo run build --filter=@axi/workstation-contracts",
     "build:types": "turbo run build --filter=@epap/types",
@@ -18,13 +20,15 @@
     "build:api-client": "turbo run build --filter=@epap/api-client",
     "test": "turbo run test",
     "test:workstation": "pnpm --filter @axi/workstation-contracts test && pnpm --filter @axi/workstation-communication-gateway test && pnpm --filter @axi/workstation-control-plane test",
+    "test:mobile": "pnpm --filter @axi/workbench-mobile test",
     "check:boundaries": "node scripts/check-workbench-boundaries.mjs",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean && rm -rf node_modules",
     "clean:cache": "turbo run clean:cache && rm -rf .turbo",
     "dev:workbench": "turbo run dev --filter=@axi/workbench",
-    "build:workbench": "turbo run build --filter=@axi/workbench"
+    "build:workbench": "turbo run build --filter=@axi/workbench",
+    "type-check:mobile": "pnpm --filter @axi/workbench-mobile type-check"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

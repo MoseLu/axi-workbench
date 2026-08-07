@@ -14,6 +14,12 @@ export const WORKBENCH_SESSION_KEYS = {
   user: 'epap_user',
 } as const;
 
+/** api-client 的既有键；保留双写以兼容已经登录的 Web 用户与刷新拦截器。 */
+const API_CLIENT_SESSION_KEYS = {
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+} as const;
+
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -44,6 +50,8 @@ function readPersistedUser(): User | null {
 function persistSession(tokens: { accessToken: string; refreshToken: string }, user: User) {
   window.localStorage.setItem(WORKBENCH_SESSION_KEYS.accessToken, tokens.accessToken);
   window.localStorage.setItem(WORKBENCH_SESSION_KEYS.refreshToken, tokens.refreshToken);
+  window.localStorage.setItem(API_CLIENT_SESSION_KEYS.accessToken, tokens.accessToken);
+  window.localStorage.setItem(API_CLIENT_SESSION_KEYS.refreshToken, tokens.refreshToken);
   window.localStorage.setItem(WORKBENCH_SESSION_KEYS.user, JSON.stringify(user));
 }
 
@@ -102,6 +110,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(() => {
     window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.accessToken);
     window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.refreshToken);
+    window.localStorage.removeItem(API_CLIENT_SESSION_KEYS.accessToken);
+    window.localStorage.removeItem(API_CLIENT_SESSION_KEYS.refreshToken);
     window.localStorage.removeItem(WORKBENCH_SESSION_KEYS.user);
     setUser(null);
   }, []);
