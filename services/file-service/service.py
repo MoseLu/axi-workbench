@@ -31,12 +31,14 @@ class FileService:
         temporary_file = tempfile.NamedTemporaryFile(prefix="axi-upload-", suffix=suffix, delete=False, dir="/tmp")
         temporary_path = Path(temporary_file.name)
         size = 0
+        checksum = hashlib.sha256()
         try:
             with temporary_file:
                 while chunk := await file.read(1024 * 1024):
                     size += len(chunk)
                     if size > self.settings.max_file_size:
                         raise FileSizeExceeded
+                    checksum.update(chunk)
                     temporary_file.write(chunk)
             content_type = file.content_type or mimetypes.guess_type(filename)[0]
             previous: FileRecord | None = None
@@ -58,6 +60,7 @@ class FileService:
                 size=size,
                 content_type=content_type,
                 etag=etag,
+                checksum_sha256=checksum.hexdigest(),
                 created_at=now,
                 modified_at=now,
             )

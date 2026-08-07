@@ -15,6 +15,7 @@ class FileInfo(BaseModel):
     created_at: datetime = Field(..., description="File creation timestamp")
     modified_at: datetime = Field(..., description="File last modification timestamp")
     content_type: Optional[str] = Field(None, description="MIME content type")
+    checksum_sha256: Optional[str] = Field(None, description="SHA-256 checksum of the uploaded object")
 
     class Config:
         from_attributes = True
@@ -27,6 +28,7 @@ class FileUploadResponse(BaseModel):
     path: str = Field(..., description="Relative path to uploaded file")
     size: int = Field(..., description="File size in bytes")
     message: str = Field(..., description="Success message")
+    checksum_sha256: Optional[str] = Field(None, description="SHA-256 checksum of the uploaded object")
 
 
 class FileListResponse(BaseModel):

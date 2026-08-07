@@ -53,7 +53,9 @@ def test_files_are_isolated_by_verified_subject(tmp_path) -> None:
                 },
             )
         assert uploaded.status_code == 201
+        assert uploaded.json()["checksum_sha256"] == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
         assert alice.json()["total"] == 1
+        assert alice.json()["files"][0]["checksum_sha256"] == uploaded.json()["checksum_sha256"]
         assert bob.json()["total"] == 0
     finally:
         settings.internal_service_token = original_token

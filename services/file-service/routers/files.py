@@ -74,6 +74,7 @@ def _file_info(record) -> FileInfo:
         created_at=record.created_at,
         modified_at=record.modified_at,
         content_type=record.content_type or mimetypes.guess_type(record.name)[0],
+        checksum_sha256=record.checksum_sha256,
     )
 
 
@@ -95,6 +96,7 @@ async def upload_file(
         name=record.name,
         path=record.name,
         size=record.size,
+        checksum_sha256=record.checksum_sha256,
         message="File uploaded successfully",
     )
 
@@ -120,6 +122,7 @@ async def upload_multiple_files(
                 name=record.name,
                 path=record.name,
                 size=record.size,
+                checksum_sha256=record.checksum_sha256,
                 message="File uploaded successfully",
             )
         )

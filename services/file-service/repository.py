@@ -24,6 +24,7 @@ class FileRecord:
     size: int
     content_type: str | None
     etag: str | None
+    checksum_sha256: str | None
     created_at: datetime
     modified_at: datetime
 
@@ -139,16 +140,17 @@ class PostgresFileRepository(FileRepository):
                     """
                     INSERT INTO axi_files.files
                         (id, owner_subject, name, object_key, size_bytes, content_type,
-                         etag, created_at, modified_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         etag, checksum_sha256, created_at, modified_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (owner_subject, name) DO UPDATE SET
                         object_key = EXCLUDED.object_key,
                         size_bytes = EXCLUDED.size_bytes,
                         content_type = EXCLUDED.content_type,
                         etag = EXCLUDED.etag,
+                        checksum_sha256 = EXCLUDED.checksum_sha256,
                         modified_at = EXCLUDED.modified_at
                     RETURNING id, owner_subject, name, object_key, size_bytes,
-                              content_type, etag, created_at, modified_at
+                              content_type, etag, checksum_sha256, created_at, modified_at
                     """,
                     (
                         record.id,
@@ -158,6 +160,7 @@ class PostgresFileRepository(FileRepository):
                         record.size,
                         record.content_type,
                         record.etag,
+                        record.checksum_sha256,
                         record.created_at,
                         record.modified_at,
                     ),
@@ -173,7 +176,7 @@ class PostgresFileRepository(FileRepository):
                 await cursor.execute(
                     """
                     SELECT id, owner_subject, name, object_key, size_bytes,
-                           content_type, etag, created_at, modified_at
+                           content_type, etag, checksum_sha256, created_at, modified_at
                     FROM axi_files.files
                     WHERE owner_subject = %s
                     ORDER BY modified_at DESC, name
@@ -187,7 +190,7 @@ class PostgresFileRepository(FileRepository):
         row = await self._fetch_one(
             """
             SELECT id, owner_subject, name, object_key, size_bytes,
-                   content_type, etag, created_at, modified_at
+                   content_type, etag, checksum_sha256, created_at, modified_at
             FROM axi_files.files
             WHERE owner_subject = %s AND name = %s
             """,
@@ -205,7 +208,7 @@ class PostgresFileRepository(FileRepository):
                     DELETE FROM axi_files.files
                     WHERE owner_subject = %s AND name = %s
                     RETURNING id, owner_subject, name, object_key, size_bytes,
-                              content_type, etag, created_at, modified_at
+                              content_type, etag, checksum_sha256, created_at, modified_at
                     """,
                     (subject, name),
                 )
@@ -246,6 +249,7 @@ def _record_from_row(row: tuple[Any, ...]) -> FileRecord:
         size=row[4],
         content_type=row[5],
         etag=row[6],
-        created_at=row[7],
-        modified_at=row[8],
+        checksum_sha256=row[7],
+        created_at=row[8],
+        modified_at=row[9],
     )
