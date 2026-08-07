@@ -20,10 +20,36 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 - `devsvc-dashboard/`
 - `ollama-menu-assistant/`
 - `verification-inbox/`
-- `web-portal/`
+- `workbench/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
-- Add subtree-specific constraints, ownership notes, and test commands here.
-- Keep notes scoped to this directory and its children.
+
+### 用户工作台只有一个
+
+| App | Role | Notes |
+|-----|------|-------|
+| **`workbench`** (`@axi/workbench`) | **唯一** Web + 移动 Web 工作台 | 目录 `apps/workbench`；`pnpm dev:workbench`；登录 `/login`（密码+扫码同页） |
+| `devsvc-dashboard` | 本地服务 + Axi **Host** | 挂子应用，不是第二份用户门户 |
+| `axi-coder` | 编码工具 | Hosted 子应用；不是第二门户 |
+| `verification-inbox` | OTP 工具 | 垂直 |
+| `app-search-system` | SOP 搜索 | 垂直 |
+| `ollama-menu-assistant` | macOS 菜单助手 | 垂直 |
+
+**禁止**：再建 `web-portal` / `mobile-portal` / 独立 MobileLogin 产品入口。  
+旧路径：`apps/web-portal` 已更名为 `apps/workbench`；`/mobile-login` 仅兼容重定向。
+
+### 启动
+
+```bash
+pnpm dev:workbench          # 用户工作台（Web+移动）
+pnpm dev:dashboard          # 本地 Host（运维）
+pnpm dev:coder              # 编码工具（可选）
+```
+
+### Verification
+
+- `pnpm --filter @axi/workbench type-check`
+- `pnpm --dir apps/devsvc-dashboard typecheck`
+- `pnpm check:boundaries`
 <!-- OMX:AGENTS-INIT:MANUAL:END -->

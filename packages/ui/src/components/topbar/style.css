@@ -4,10 +4,12 @@
   justify-content: space-between;
   height: var(--mpms-header-height, 46px);
   padding: 0 10px;
-  background: var(--mpms-header-bg, #0a0a0a);
-  border-bottom: 1px solid var(--mpms-border-color);
+  background: var(--mpms-header-bg, #ffffff);
+  border-bottom: 1px solid var(--mpms-border-color, #e4e7ed);
   flex-shrink: 0;
   user-select: none;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease;
 }
 
 .mpms-topbar__left {
@@ -29,6 +31,20 @@
 .mpms-topbar__right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0;
   flex-shrink: 0;
+}
+
+.mpms-topbar__tools {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  gap: 6px;
+}
+
+.mpms-topbar__tools > * {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
 }
