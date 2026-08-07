@@ -39,10 +39,41 @@ class Settings(BaseSettings):
     )
 
     # Execution settings
-    max_concurrent_workflows: int = 10
+    max_concurrent_workflows: int = Field(
+        default=10,
+        validation_alias=AliasChoices(
+            "WORKFLOW_MAX_CONCURRENT_WORKFLOWS", "MAX_CONCURRENT_WORKFLOWS"
+        ),
+    )
     step_timeout_seconds: int = Field(
         default=300,
         validation_alias=AliasChoices("WORKFLOW_STEP_TIMEOUT_SECONDS", "STEP_TIMEOUT_SECONDS"),
+    )
+    dispatch_lease_seconds: int = Field(
+        default=360,
+        validation_alias=AliasChoices("WORKFLOW_DISPATCH_LEASE_SECONDS", "DISPATCH_LEASE_SECONDS"),
+    )
+    dispatch_poll_interval_seconds: float = Field(
+        default=1.0,
+        validation_alias=AliasChoices(
+            "WORKFLOW_DISPATCH_POLL_INTERVAL_SECONDS", "DISPATCH_POLL_INTERVAL_SECONDS"
+        ),
+    )
+    max_dispatch_attempts: int = Field(
+        default=10,
+        validation_alias=AliasChoices("WORKFLOW_MAX_DISPATCH_ATTEMPTS", "MAX_DISPATCH_ATTEMPTS"),
+    )
+    dispatch_retry_base_seconds: int = Field(
+        default=5,
+        validation_alias=AliasChoices(
+            "WORKFLOW_DISPATCH_RETRY_BASE_SECONDS", "DISPATCH_RETRY_BASE_SECONDS"
+        ),
+    )
+    dispatch_retry_max_seconds: int = Field(
+        default=300,
+        validation_alias=AliasChoices(
+            "WORKFLOW_DISPATCH_RETRY_MAX_SECONDS", "DISPATCH_RETRY_MAX_SECONDS"
+        ),
     )
 
     class Config:

@@ -9,7 +9,7 @@
 | API Gateway | `services/api-gateway`（Go + Gin） | 唯一 `/api/v1` 入口、ZITADEL JWKS 校验、授权码 + PKCE、HttpOnly 会话、Redis 限流、请求/追踪/审计关联、安全转发 |
 | Axi Identity | `services/identity-adapter`（Go + Gin） + ZITADEL | 邮箱验证、短期 Redis 扫码事务、ZITADEL custom-login 续接、EPS 外部主体映射；不手写 JWT Issuer |
 | Platform Core | `services/platform-core`（Go + Gin） | 租户、成员/RBAC、偏好、字典、项目、任务、Outbox；PostgreSQL schema、`tenant_id` 与强制 RLS |
-| Workflow Engine | `services/workflow-engine`（Python + FastAPI） | 仅接受 gateway 可信请求；工作流定义、执行认领、Outbox event inbox 与唯一事件派发关联进入 PostgreSQL；执行器仍是进程内异步任务 |
+| Workflow Engine | `services/workflow-engine`（Python + FastAPI） | 仅接受 gateway 可信请求；工作流定义、执行认领、Outbox event inbox、租约派发与执行结果进入 PostgreSQL；worker 支持并发领取、退避重试和重启恢复 |
 | Notification Service | `services/notification-service`（Go + Gin） | 仅接受 gateway 可信请求；通知收件箱、delivery jobs 与 event inbox 进入 PostgreSQL；SMTP 适配器、重启可恢复 worker 和 Outbox 幂等消费已接入 |
 | File Service | `services/file-service`（Python + FastAPI） | 仅接受 gateway 可信请求；生产使用 S3/MinIO 对象 + PostgreSQL 元数据并按 subject 隔离；开发保留本地存储降级，文件处理链待补 |
 
@@ -23,7 +23,7 @@
 - Platform Core 的 Outbox 只配置一个 Gateway 内部投递 URL；Gateway 用独立的 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 校验平台 worker，再用各专职服务凭据扇出到 notification/workflow。两个消费者都把事件 ID 写入自己的 `event_inbox` 后才返回成功。
 - 运行时 `axi_platform_app` 是 `NOBYPASSRLS`；只有 pre-install/pre-upgrade migration Job 的专用账号拥有 `BYPASSRLS`，从而让 `SECURITY DEFINER` 的 RLS helper 可工作而不泄露运行时权限。
 - `auth-service` 和 Spring/H2 `core-service` 是迁移兼容来源；网关只会在显式配置时向它们开放只读旧路径，生产 Chart 不部署它们。
-- 三个专职服务已经进入 gateway/Helm 拓扑：workflow 与 notification 已具备 PostgreSQL schema、独立 migration Job、运行时账号、重启恢复和 Outbox event inbox 幂等边界；workflow 已将匹配事件持久化为唯一 pending dispatch，真正的租约/重试执行 worker、notification 的更多事件模板和 Kafka 适配仍待补。file 已具备 S3/MinIO 对象适配、PostgreSQL 元数据、迁移 Job、subject 隔离和短时预签名下载 URL；病毒扫描/缩略图等处理链仍待补齐，因此整个专职能力平面仍待集群级故障演练后才可称为最终生产完成。
+- 三个专职服务已经进入 gateway/Helm 拓扑：workflow 与 notification 已具备 PostgreSQL schema、独立 migration Job、运行时账号、重启恢复和 Outbox event inbox 幂等边界；workflow 已具备匹配事件持久化、租约领取、指数退避、执行结果原子收敛和重启恢复，复杂步骤处理链、notification 的更多事件模板和 Kafka 适配仍待补。file 已具备 S3/MinIO 对象适配、PostgreSQL 元数据、迁移 Job、subject 隔离和短时预签名下载 URL；病毒扫描/缩略图等处理链仍待补齐，因此整个专职能力平面仍待集群级故障演练后才可称为最终生产完成。
 
 Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 [`infra/helm`](../infra/helm/README.md)。以下内容为早期 EPAP 设计记录，不覆盖本节的当前边界。
 

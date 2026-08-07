@@ -116,7 +116,13 @@ workflowEngine:
     limits:
       cpu: 750m
       memory: 768Mi
+  maxConcurrentWorkflows: 10
   stepTimeoutSeconds: 300
+  dispatchLeaseSeconds: 360
+  dispatchPollIntervalSeconds: 1
+  maxDispatchAttempts: 10
+  dispatchRetryBaseSeconds: 5
+  dispatchRetryMaxSeconds: 300
 
 notificationService:
   # Notification records are stored in PostgreSQL. Delivery workers remain

@@ -24,7 +24,7 @@ class WorkflowExecutor:
     def __init__(self, step_timeout: int = 300):
         self.step_timeout = step_timeout
 
-    async def execute_workflow(self, workflow: Workflow) -> WorkflowExecution:
+    async def execute_workflow(self, workflow: Workflow, event_payload: Any = None) -> WorkflowExecution:
         """Execute all steps in a workflow."""
         execution = WorkflowExecution(
             workflow_id=workflow.id,
@@ -34,6 +34,8 @@ class WorkflowExecutor:
         )
 
         context: dict[str, Any] = {}
+        if event_payload is not None:
+            context["event"] = event_payload
 
         for step in execution.steps:
             try:

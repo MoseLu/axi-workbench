@@ -57,6 +57,8 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 - `WORKFLOW_INTERNAL_SERVICE_TOKEN`（值必须与 gateway workflow token 相同）
 - `NOTIFICATION_INTERNAL_SERVICE_TOKEN`（值必须与 gateway notification token 相同）
 
+workflow-engine 的派发 worker 默认由 `WORKFLOW_DISPATCH_*` 与 `WORKFLOW_MAX_CONCURRENT_WORKFLOWS` ConfigMap 参数控制；生产环境应按步骤最长执行时间设置租约，并确保 `WORKFLOW_DISPATCH_LEASE_SECONDS` 大于单步骤超时。
+
 `PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN` 在启用 Outbox worker 时必需，且必须与 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 相同。
 
 平台数据库迁移账号是唯一拥有 `BYPASSRLS` 的 Axi 平台账号，且只能注入 pre-install/pre-upgrade Job。`platform-core` Deployment 永远只得到 `axi_platform_app`。初始化开发数据库可用 [`scripts/init-db.sql`](../../scripts/init-db.sql)；生产角色/DSN 由数据库 IaC 或 DBA 预先创建。

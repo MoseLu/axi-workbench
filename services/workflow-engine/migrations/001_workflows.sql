@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS axi_workflow.event_dispatches (
     workflow_id UUID NOT NULL REFERENCES axi_workflow.workflows(id) ON DELETE CASCADE,
     status TEXT NOT NULL DEFAULT 'pending',
     attempts INTEGER NOT NULL DEFAULT 0,
+    locked_by TEXT,
     locked_until TIMESTAMPTZ,
     next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -61,6 +62,9 @@ CREATE TABLE IF NOT EXISTS axi_workflow.event_dispatches (
     completed_at TIMESTAMPTZ,
     PRIMARY KEY (event_id, workflow_id)
 );
+
+ALTER TABLE axi_workflow.event_dispatches
+    ADD COLUMN IF NOT EXISTS locked_by TEXT;
 
 CREATE INDEX IF NOT EXISTS workflow_event_dispatch_claim_idx
     ON axi_workflow.event_dispatches (status, next_attempt_at, locked_until, created_at);

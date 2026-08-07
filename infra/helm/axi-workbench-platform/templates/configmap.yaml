@@ -40,7 +40,13 @@ data:
   PLATFORM_OUTBOX_DELIVERY_URL: {{ .Values.platformCore.outbox.deliveryURL | quote }}
   {{- end }}
   WORKFLOW_SERVICE_PORT: {{ .Values.workflowEngine.service.port | quote }}
+  WORKFLOW_MAX_CONCURRENT_WORKFLOWS: {{ .Values.workflowEngine.maxConcurrentWorkflows | quote }}
   WORKFLOW_STEP_TIMEOUT_SECONDS: {{ .Values.workflowEngine.stepTimeoutSeconds | quote }}
+  WORKFLOW_DISPATCH_LEASE_SECONDS: {{ .Values.workflowEngine.dispatchLeaseSeconds | quote }}
+  WORKFLOW_DISPATCH_POLL_INTERVAL_SECONDS: {{ .Values.workflowEngine.dispatchPollIntervalSeconds | quote }}
+  WORKFLOW_MAX_DISPATCH_ATTEMPTS: {{ .Values.workflowEngine.maxDispatchAttempts | quote }}
+  WORKFLOW_DISPATCH_RETRY_BASE_SECONDS: {{ .Values.workflowEngine.dispatchRetryBaseSeconds | quote }}
+  WORKFLOW_DISPATCH_RETRY_MAX_SECONDS: {{ .Values.workflowEngine.dispatchRetryMaxSeconds | quote }}
   FILE_SERVICE_PORT: {{ .Values.fileService.service.port | quote }}
   FILE_STORAGE_PATH: {{ .Values.fileService.storagePath | quote }}
   FILE_STORAGE_BACKEND: {{ .Values.fileService.storageBackend | quote }}

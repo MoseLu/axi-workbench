@@ -46,6 +46,10 @@ def get_repository() -> WorkflowRepository:
     return repository
 
 
+def get_executor() -> WorkflowExecutor:
+    return executor
+
+
 def set_executor(value: WorkflowExecutor) -> None:
     global executor
     executor = value

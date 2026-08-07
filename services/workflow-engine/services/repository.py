@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -24,6 +26,21 @@ class WorkflowNotFound(Exception):
 
 class WorkflowAlreadyRunning(Exception):
     """The workflow has already been claimed by another execution."""
+
+
+class WorkflowDispatchLost(Exception):
+    """The worker no longer owns the dispatch lease."""
+
+
+@dataclass(frozen=True)
+class WorkflowDispatch:
+    """A leased event-to-workflow execution request."""
+
+    event_id: str
+    workflow_id: UUID
+    owner_subject: str
+    payload: Any
+    attempts: int
 
 
 class WorkflowRepository(ABC):
@@ -68,6 +85,41 @@ class WorkflowRepository(ABC):
         payload: Any,
         actor_subject: str = "",
     ) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def claim_event_dispatch(self, worker_id: str, lease_seconds: int) -> WorkflowDispatch | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def complete_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        execution: WorkflowExecution,
+        worker_id: str,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def renew_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        worker_id: str,
+        lease_seconds: int,
+    ) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def fail_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        worker_id: str,
+        error: str,
+        retry_at: datetime | None,
+        max_attempts: int,
+        retry: bool = True,
+        reset_workflow: bool = False,
+    ) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -128,6 +180,8 @@ class MemoryWorkflowRepository(WorkflowRepository):
                 raise WorkflowNotFound
             del self.workflows[workflow_id]
             self.executions.pop(workflow_id, None)
+            for key in [key for key in self.event_dispatches if key[1] == workflow_id]:
+                del self.event_dispatches[key]
 
     async def claim_for_execution(self, workflow_id: UUID, subject: str) -> Workflow:
         async with self._lock:
@@ -172,20 +226,168 @@ class MemoryWorkflowRepository(WorkflowRepository):
                         continue
                     self.event_dispatches[(event_id, workflow.id)] = {
                         "status": "pending",
+                        "attempts": 0,
+                        "next_attempt_at": datetime.now(UTC),
                         "payload": payload,
                     }
             return True
 
+    async def claim_event_dispatch(self, worker_id: str, lease_seconds: int) -> WorkflowDispatch | None:
+        now = datetime.now(UTC)
+        async with self._lock:
+            for (event_id, workflow_id), dispatch in self.event_dispatches.items():
+                workflow = self.workflows.get(workflow_id)
+                if workflow is None:
+                    dispatch.update(status="failed", last_error="workflow was deleted", completed_at=now)
+                    continue
+
+                status = dispatch.get("status", "pending")
+                locked_until = dispatch.get("locked_until")
+                if status == "pending":
+                    if dispatch.get("next_attempt_at", now) > now or workflow.status == WorkflowStatus.RUNNING:
+                        continue
+                elif status == "running":
+                    if locked_until is not None and locked_until > now:
+                        continue
+                    if workflow.status in {
+                        WorkflowStatus.COMPLETED,
+                        WorkflowStatus.FAILED,
+                        WorkflowStatus.CANCELLED,
+                    }:
+                        dispatch.update(
+                            status=workflow.status.value,
+                            completed_at=now,
+                            locked_by=None,
+                            locked_until=None,
+                        )
+                        continue
+                    if workflow.status == WorkflowStatus.RUNNING:
+                        workflow.status = WorkflowStatus.FAILED
+                        workflow.result = {"error": "workflow dispatch lease expired"}
+                        workflow.updated_at = now
+                else:
+                    continue
+
+                attempts = int(dispatch.get("attempts", 0)) + 1
+                dispatch.update(
+                    status="running",
+                    attempts=attempts,
+                    locked_by=worker_id,
+                    locked_until=now + timedelta(seconds=lease_seconds),
+                    started_at=dispatch.get("started_at", now),
+                    last_error=None,
+                )
+                return WorkflowDispatch(
+                    event_id=event_id,
+                    workflow_id=workflow_id,
+                    owner_subject=workflow.owner_subject,
+                    payload=dispatch.get("payload", {}),
+                    attempts=attempts,
+                )
+            return None
+
+    async def complete_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        execution: WorkflowExecution,
+        worker_id: str,
+    ) -> None:
+        now = datetime.now(UTC)
+        async with self._lock:
+            stored_dispatch = self.event_dispatches.get((dispatch.event_id, dispatch.workflow_id))
+            if stored_dispatch is None or stored_dispatch.get("locked_by") != worker_id:
+                raise WorkflowDispatchLost
+            workflow = self.workflows.get(dispatch.workflow_id)
+            if workflow is None or workflow.owner_subject != dispatch.owner_subject:
+                raise WorkflowNotFound
+            workflow.status = execution.status
+            workflow.result = execution.result
+            workflow.updated_at = now
+            self.executions[execution.workflow_id] = execution.model_copy(deep=True)
+            stored_dispatch.update(
+                status="completed" if execution.status == WorkflowStatus.COMPLETED else "failed",
+                completed_at=now,
+                locked_by=None,
+                locked_until=None,
+                last_error=execution.error,
+            )
+
+    async def renew_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        worker_id: str,
+        lease_seconds: int,
+    ) -> bool:
+        async with self._lock:
+            stored_dispatch = self.event_dispatches.get((dispatch.event_id, dispatch.workflow_id))
+            if stored_dispatch is None or stored_dispatch.get("locked_by") != worker_id:
+                return False
+            stored_dispatch["locked_until"] = datetime.now(UTC) + timedelta(seconds=lease_seconds)
+            return True
+
+    async def fail_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        worker_id: str,
+        error: str,
+        retry_at: datetime | None,
+        max_attempts: int,
+        retry: bool = True,
+        reset_workflow: bool = False,
+    ) -> None:
+        now = datetime.now(UTC)
+        async with self._lock:
+            stored_dispatch = self.event_dispatches.get((dispatch.event_id, dispatch.workflow_id))
+            if stored_dispatch is None or stored_dispatch.get("locked_by") != worker_id:
+                raise WorkflowDispatchLost
+            workflow = self.workflows.get(dispatch.workflow_id)
+            if reset_workflow and workflow is not None and workflow.status == WorkflowStatus.RUNNING:
+                workflow.status = WorkflowStatus.FAILED
+                workflow.result = {"error": error}
+                workflow.updated_at = now
+            terminal = not retry or int(stored_dispatch.get("attempts", 0)) >= max_attempts
+            stored_dispatch.update(
+                status="failed" if terminal else "pending",
+                next_attempt_at=retry_at or now,
+                completed_at=now if terminal else None,
+                locked_by=None,
+                locked_until=None,
+                last_error=error,
+            )
+
     async def recover_interrupted(self) -> int:
         async with self._lock:
+            now = datetime.now(UTC)
             recovered = 0
             for workflow in self.workflows.values():
                 if workflow.status != WorkflowStatus.RUNNING:
                     continue
+                active_dispatch = any(
+                    dispatch.get("status") == "running"
+                    and dispatch.get("locked_until") is not None
+                    and dispatch["locked_until"] > now
+                    for (event_id, workflow_id), dispatch in self.event_dispatches.items()
+                    if workflow_id == workflow.id
+                )
+                if active_dispatch:
+                    continue
                 workflow.status = WorkflowStatus.FAILED
                 workflow.result = {"error": "execution interrupted by service restart"}
-                workflow.updated_at = datetime.now(UTC)
+                workflow.updated_at = now
                 recovered += 1
+            for dispatch in self.event_dispatches.values():
+                if dispatch.get("status") != "running":
+                    continue
+                locked_until = dispatch.get("locked_until")
+                if locked_until is not None and locked_until > now:
+                    continue
+                dispatch.update(
+                    status="pending",
+                    next_attempt_at=now,
+                    locked_by=None,
+                    locked_until=None,
+                    last_error="dispatch lease reset after service restart",
+                )
             return recovered
 
     async def ping(self) -> None:
@@ -421,6 +623,241 @@ class PostgresWorkflowRepository(WorkflowRepository):
                 await connection.commit()
                 return row is not None
 
+    async def claim_event_dispatch(self, worker_id: str, lease_seconds: int) -> WorkflowDispatch | None:
+        lease_until = datetime.now(UTC) + timedelta(seconds=lease_seconds)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                while True:
+                    await cursor.execute(
+                        """
+                        SELECT dispatch.event_id, dispatch.workflow_id, workflow.owner_subject,
+                               dispatch.payload, dispatch.status, dispatch.attempts, workflow.status
+                        FROM axi_workflow.event_dispatches dispatch
+                        JOIN axi_workflow.workflows workflow ON workflow.id = dispatch.workflow_id
+                        WHERE (
+                            (dispatch.status = 'pending'
+                             AND dispatch.next_attempt_at <= now()
+                             AND workflow.status <> 'running')
+                            OR
+                            (dispatch.status = 'running'
+                             AND (dispatch.locked_until IS NULL OR dispatch.locked_until <= now()))
+                        )
+                        ORDER BY dispatch.next_attempt_at, dispatch.created_at
+                        FOR UPDATE OF dispatch, workflow SKIP LOCKED
+                        LIMIT 1
+                        """
+                    )
+                    row = await cursor.fetchone()
+                    if row is None:
+                        await connection.commit()
+                        return None
+
+                    event_id, workflow_id, owner_subject, payload, dispatch_status, attempts, workflow_status = row
+                    if dispatch_status == "running" and workflow_status in {
+                        WorkflowStatus.COMPLETED.value,
+                        WorkflowStatus.FAILED.value,
+                        WorkflowStatus.CANCELLED.value,
+                    }:
+                        await cursor.execute(
+                            """
+                            UPDATE axi_workflow.event_dispatches
+                            SET status = %s, completed_at = now(), locked_by = NULL, locked_until = NULL
+                            WHERE event_id = %s AND workflow_id = %s
+                            """,
+                            (workflow_status, event_id, workflow_id),
+                        )
+                        continue
+
+                    if dispatch_status == "running" and workflow_status == WorkflowStatus.RUNNING.value:
+                        await cursor.execute(
+                            """
+                            UPDATE axi_workflow.workflows
+                            SET status = 'failed',
+                                result = %s,
+                                updated_at = now()
+                            WHERE id = %s AND status = 'running'
+                            """,
+                            (Jsonb({"error": "workflow dispatch lease expired"}), workflow_id),
+                        )
+
+                    await cursor.execute(
+                        """
+                        UPDATE axi_workflow.event_dispatches
+                        SET status = 'running',
+                            attempts = attempts + 1,
+                            locked_by = %s,
+                            locked_until = %s,
+                            started_at = COALESCE(started_at, now()),
+                            last_error = NULL
+                        WHERE event_id = %s AND workflow_id = %s
+                        """,
+                        (worker_id, lease_until, event_id, workflow_id),
+                    )
+                    await connection.commit()
+                    return WorkflowDispatch(
+                        event_id=event_id,
+                        workflow_id=workflow_id,
+                        owner_subject=owner_subject,
+                        payload=payload,
+                        attempts=attempts + 1,
+                    )
+
+    async def complete_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        execution: WorkflowExecution,
+        worker_id: str,
+    ) -> None:
+        dispatch_status = "completed" if execution.status == WorkflowStatus.COMPLETED else "failed"
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.workflows
+                    SET status = %s, result = %s, updated_at = now()
+                    WHERE id = %s AND owner_subject = %s AND status = 'running'
+                    """,
+                    (
+                        execution.status.value,
+                        Jsonb(execution.result) if execution.result is not None else None,
+                        dispatch.workflow_id,
+                        dispatch.owner_subject,
+                    ),
+                )
+                if cursor.rowcount == 0:
+                    raise WorkflowNotFound
+                await cursor.execute(
+                    """
+                    INSERT INTO axi_workflow.executions
+                        (workflow_id, status, started_at, completed_at, steps, result, error)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (workflow_id) DO UPDATE SET
+                        status = EXCLUDED.status,
+                        started_at = EXCLUDED.started_at,
+                        completed_at = EXCLUDED.completed_at,
+                        steps = EXCLUDED.steps,
+                        result = EXCLUDED.result,
+                        error = EXCLUDED.error
+                    """,
+                    (
+                        execution.workflow_id,
+                        execution.status.value,
+                        execution.started_at,
+                        execution.completed_at,
+                        Jsonb(_json_steps(execution.steps)),
+                        Jsonb(execution.result) if execution.result is not None else None,
+                        execution.error,
+                    ),
+                )
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.event_dispatches
+                    SET status = %s,
+                        completed_at = now(),
+                        locked_by = NULL,
+                        locked_until = NULL,
+                        last_error = %s
+                    WHERE event_id = %s AND workflow_id = %s
+                      AND status = 'running' AND locked_by = %s
+                    """,
+                    (
+                        dispatch_status,
+                        execution.error,
+                        dispatch.event_id,
+                        dispatch.workflow_id,
+                        worker_id,
+                    ),
+                )
+                if cursor.rowcount == 0:
+                    raise WorkflowDispatchLost
+            await connection.commit()
+
+    async def renew_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        worker_id: str,
+        lease_seconds: int,
+    ) -> bool:
+        locked_until = datetime.now(UTC) + timedelta(seconds=lease_seconds)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.event_dispatches
+                    SET locked_until = %s
+                    WHERE event_id = %s AND workflow_id = %s
+                      AND status = 'running' AND locked_by = %s
+                    """,
+                    (locked_until, dispatch.event_id, dispatch.workflow_id, worker_id),
+                )
+                renewed = cursor.rowcount > 0
+            await connection.commit()
+        return renewed
+
+    async def fail_event_dispatch(
+        self,
+        dispatch: WorkflowDispatch,
+        worker_id: str,
+        error: str,
+        retry_at: datetime | None,
+        max_attempts: int,
+        retry: bool = True,
+        reset_workflow: bool = False,
+    ) -> None:
+        now = datetime.now(UTC)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    SELECT attempts
+                    FROM axi_workflow.event_dispatches
+                    WHERE event_id = %s AND workflow_id = %s
+                      AND status = 'running' AND locked_by = %s
+                    FOR UPDATE
+                    """,
+                    (dispatch.event_id, dispatch.workflow_id, worker_id),
+                )
+                row = await cursor.fetchone()
+                if row is None:
+                    raise WorkflowDispatchLost
+                terminal = not retry or row[0] >= max_attempts
+                if reset_workflow:
+                    await cursor.execute(
+                        """
+                        UPDATE axi_workflow.workflows
+                        SET status = 'failed',
+                            result = %s,
+                            updated_at = now()
+                        WHERE id = %s AND owner_subject = %s AND status = 'running'
+                        """,
+                        (
+                            Jsonb({"error": error}),
+                            dispatch.workflow_id,
+                            dispatch.owner_subject,
+                        ),
+                    )
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.event_dispatches
+                    SET status = %s,
+                        next_attempt_at = %s,
+                        completed_at = CASE WHEN %s THEN now() ELSE NULL END,
+                        locked_by = NULL,
+                        locked_until = NULL,
+                        last_error = %s
+                    WHERE event_id = %s AND workflow_id = %s
+                    """,
+                    (
+                        "failed" if terminal else "pending",
+                        retry_at or now,
+                        terminal,
+                        error,
+                        dispatch.event_id,
+                        dispatch.workflow_id,
+                    ),
+                )
+            await connection.commit()
+
     async def recover_interrupted(self) -> int:
         async with self.pool.connection() as connection:
             async with connection.cursor() as cursor:
@@ -431,10 +868,29 @@ class PostgresWorkflowRepository(WorkflowRepository):
                         result = %s,
                         updated_at = now()
                     WHERE status = 'running'
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM axi_workflow.event_dispatches dispatch
+                          WHERE dispatch.workflow_id = axi_workflow.workflows.id
+                            AND dispatch.status = 'running'
+                            AND dispatch.locked_until > now()
+                      )
                     """,
                     (Jsonb({"error": "execution interrupted by service restart"}),),
                 )
                 recovered = cursor.rowcount
+                await cursor.execute(
+                    """
+                    UPDATE axi_workflow.event_dispatches
+                    SET status = 'pending',
+                        next_attempt_at = now(),
+                        locked_by = NULL,
+                        locked_until = NULL,
+                        last_error = 'dispatch lease reset after service restart'
+                    WHERE status = 'running'
+                      AND (locked_until IS NULL OR locked_until <= now())
+                    """
+                )
             await connection.commit()
         return recovered
 
