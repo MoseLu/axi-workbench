@@ -104,7 +104,9 @@ func (s *MemoryStore) UpsertMember(_ context.Context, actor, tenantID, memberSub
 	existing.Role = role
 	existing.UpdatedAt = now
 	s.members[tenantID][memberSubject] = existing
-	s.appendOutbox(tenantID, "tenant.member.changed", map[string]string{"tenantId": tenantID, "subject": memberSubject, "role": string(role)})
+	s.appendOutbox(tenantID, "tenant.member.changed", map[string]string{
+		"tenantId": tenantID, "subject": memberSubject, "role": string(role), "changedBy": actor,
+	})
 	return existing, nil
 }
 
@@ -185,7 +187,9 @@ func (s *MemoryStore) CreateProject(_ context.Context, actor string, project mod
 	project.CreatedAt = now
 	project.UpdatedAt = now
 	s.projects[project.ID] = project
-	s.appendOutbox(project.TenantID, "project.created", map[string]string{"tenantId": project.TenantID, "projectId": project.ID})
+	s.appendOutbox(project.TenantID, "project.created", map[string]string{
+		"tenantId": project.TenantID, "projectId": project.ID, "name": project.Name, "createdBy": project.CreatedBy,
+	})
 	return project, nil
 }
 
@@ -226,7 +230,10 @@ func (s *MemoryStore) CreateTask(_ context.Context, actor string, task model.Tas
 		task.Status = "todo"
 	}
 	s.tasks[task.ID] = task
-	s.appendOutbox(task.TenantID, "task.created", map[string]string{"tenantId": task.TenantID, "taskId": task.ID})
+	s.appendOutbox(task.TenantID, "task.created", map[string]string{
+		"tenantId": task.TenantID, "taskId": task.ID, "projectId": task.ProjectID,
+		"title": task.Title, "createdBy": task.CreatedBy,
+	})
 	return task, nil
 }
 

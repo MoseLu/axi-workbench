@@ -157,6 +157,10 @@ func setupRouter(
 	// gateway. The adapter still checks its webhook secret; this path preserves
 	// the sole-Ingress and ClusterIP-only identity-adapter topology.
 	v1.POST("/internal/zitadel/qr/transactions/:id/complete", proxyHandler.ProxyToIdentity())
+	// Platform Core is the only caller of this route. The gateway fans the
+	// durable event out to notification and workflow consumers using their
+	// dedicated internal credentials.
+	v1.POST("/internal/events", middleware.RequireInternalToken(cfg.Services.PlatformOutboxToken), proxyHandler.ProxyToEventConsumers())
 
 	protected := v1.Group("")
 	protected.Use(middleware.RequireIdentity(identityService))

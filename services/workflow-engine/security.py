@@ -26,3 +26,15 @@ def require_gateway_identity(
             detail="verified subject required",
         )
     return subject
+
+
+def require_internal_event_token(x_axi_internal_token: str | None) -> None:
+    """Validate service-to-service event delivery without requiring a user."""
+    settings = get_settings()
+    expected = settings.internal_service_token.strip()
+    supplied = (x_axi_internal_token or "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="trusted event credential required",
+        )

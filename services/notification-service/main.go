@@ -53,6 +53,7 @@ func main() {
 		api.PUT("/read-all", notificationHandler.MarkAllRead)
 		api.PUT("/:id/read", notificationHandler.MarkRead)
 	}
+	r.POST("/internal/events", middleware.RequireInternalEvent(cfg), notificationHandler.ConsumeEvent)
 
 	port := cfg.Port
 	if port == "" {

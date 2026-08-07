@@ -59,3 +59,44 @@ def test_workflows_are_scoped_to_verified_subject() -> None:
         workflows_db.clear()
         executing_workflows.clear()
         settings.internal_service_token = original_token
+
+
+def test_platform_event_route_requires_token_and_event_headers() -> None:
+    settings = get_settings()
+    original_token = settings.internal_service_token
+    settings.internal_service_token = "workflow-test-token"
+    try:
+        with TestClient(app) as client:
+            missing = client.post(
+                "/internal/events",
+                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {}},
+                headers={"X-Axi-Event-ID": "event-1", "X-Axi-Event-Topic": "task.created"},
+            )
+            accepted = client.post(
+                "/internal/events",
+                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {}},
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Event-ID": "event-1",
+                    "X-Axi-Event-Topic": "task.created",
+                },
+            )
+            duplicate = client.post(
+                "/internal/events",
+                json={"id": "event-1", "tenantId": "tenant-1", "topic": "task.created", "payload": {}},
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Event-ID": "event-1",
+                    "X-Axi-Event-Topic": "task.created",
+                },
+            )
+        assert missing.status_code == 401
+        assert accepted.status_code == 204
+        assert duplicate.status_code == 204
+    finally:
+        from routers.workflows import get_repository
+
+        repository = get_repository()
+        if hasattr(repository, "event_inbox"):
+            repository.event_inbox.clear()
+        settings.internal_service_token = original_token

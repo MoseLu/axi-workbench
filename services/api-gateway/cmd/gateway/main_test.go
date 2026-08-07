@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -113,6 +114,66 @@ func TestGatewayRoutesZitadelQRCompletionThroughIdentityAdapter(t *testing.T) {
 	}
 }
 
+func TestGatewayFansOutPlatformEventsWithConsumerCredentials(t *testing.T) {
+	assertConsumer := func(name, token string, got *bool) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			if request.URL.Path != "/internal/events" {
+				t.Errorf("%s path = %q", name, request.URL.Path)
+			}
+			if gotToken := request.Header.Get("X-Axi-Internal-Token"); gotToken != token {
+				t.Errorf("%s token = %q, want %q", name, gotToken, token)
+			}
+			if gotID := request.Header.Get("X-Axi-Event-ID"); gotID != "event-1" {
+				t.Errorf("%s event id = %q", name, gotID)
+			}
+			*got = true
+			writer.WriteHeader(http.StatusNoContent)
+		}))
+	}
+
+	var notificationCalled, workflowCalled bool
+	notification := assertConsumer("notification", "notification-test-token", &notificationCalled)
+	defer notification.Close()
+	workflow := assertConsumer("workflow", "workflow-test-token", &workflowCalled)
+	defer workflow.Close()
+
+	cfg := testGatewayConfig("http://127.0.0.1:1", 10)
+	cfg.Services.NotificationURL = notification.URL
+	cfg.Services.WorkflowURL = workflow.URL
+	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
+	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", workflow.URL, notification.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
+	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/internal/events", strings.NewReader(`{"id":"event-1","tenantId":"tenant-1","topic":"task.created","payload":{"createdBy":"alice"}}`))
+	request.Header.Set("X-Axi-Internal-Token", "outbox-test-token")
+	request.Header.Set("X-Axi-Event-ID", "event-1")
+	request.Header.Set("X-Axi-Event-Topic", "task.created")
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("event fan-out status = %d, want %d", recorder.Code, http.StatusNoContent)
+	}
+	if !notificationCalled || !workflowCalled {
+		t.Fatalf("event consumers called notification=%v workflow=%v", notificationCalled, workflowCalled)
+	}
+}
+
+func TestGatewayRejectsUnauthenticatedPlatformEvent(t *testing.T) {
+	cfg := testGatewayConfig("http://127.0.0.1:1", 10)
+	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
+	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
+	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/internal/events", strings.NewReader(`{}`))
+	request.Header.Set("X-Axi-Internal-Token", "attacker-token")
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated event status = %d, want %d", recorder.Code, http.StatusUnauthorized)
+	}
+}
+
 func TestGatewayRewritesSpecialistPathsAndUsesDedicatedTokens(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -183,6 +244,7 @@ func testGatewayConfig(platformURL string, rateLimit int) *config.Config {
 			FileInternalToken:         "file-test-token",
 			WorkflowInternalToken:     "workflow-test-token",
 			NotificationInternalToken: "notification-test-token",
+			PlatformOutboxToken:       "outbox-test-token",
 		},
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"http://127.0.0.1:5173"},

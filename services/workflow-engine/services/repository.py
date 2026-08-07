@@ -60,6 +60,10 @@ class WorkflowRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     async def recover_interrupted(self) -> int:
         raise NotImplementedError
 
@@ -78,6 +82,7 @@ class MemoryWorkflowRepository(WorkflowRepository):
     def __init__(self) -> None:
         self.workflows: dict[UUID, Workflow] = {}
         self.executions: dict[UUID, WorkflowExecution] = {}
+        self.event_inbox: dict[str, dict[str, Any]] = {}
         self._lock = asyncio.Lock()
 
     async def list(self, subject: str) -> list[Workflow]:
@@ -143,6 +148,17 @@ class MemoryWorkflowRepository(WorkflowRepository):
             if workflow is None or workflow.owner_subject != subject or execution is None:
                 raise WorkflowNotFound
             return execution.model_copy(deep=True)
+
+    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any) -> bool:
+        async with self._lock:
+            if event_id in self.event_inbox:
+                return False
+            self.event_inbox[event_id] = {
+                "tenant_id": tenant_id,
+                "topic": topic,
+                "payload": payload,
+            }
+            return True
 
     async def recover_interrupted(self) -> int:
         async with self._lock:
@@ -358,6 +374,22 @@ class PostgresWorkflowRepository(WorkflowRepository):
         if row is None:
             raise WorkflowNotFound
         return _execution_from_row(row)
+
+    async def consume_event(self, event_id: str, tenant_id: str, topic: str, payload: Any) -> bool:
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    INSERT INTO axi_workflow.event_inbox (event_id, tenant_id, topic, payload)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (event_id) DO NOTHING
+                    RETURNING event_id
+                    """,
+                    (event_id, tenant_id, topic, Jsonb(payload)),
+                )
+                row = await cursor.fetchone()
+                await connection.commit()
+                return row is not None
 
     async def recover_interrupted(self) -> int:
         async with self.pool.connection() as connection:

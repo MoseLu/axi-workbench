@@ -49,12 +49,13 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: PLATFORM_INTERNAL_SERVICE_TOKEN
+            {{- if .Values.platformCore.outbox.workerEnabled }}
             - name: PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN
-                  optional: true
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /health

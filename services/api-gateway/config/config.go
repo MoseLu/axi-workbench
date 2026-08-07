@@ -38,6 +38,7 @@ type ServicesConfig struct {
 	NotificationURL           string
 	IdentityInternalToken     string
 	PlatformInternalToken     string
+	PlatformOutboxToken       string
 	FileInternalToken         string
 	WorkflowInternalToken     string
 	NotificationInternalToken string
@@ -97,6 +98,7 @@ func Load() (*Config, error) {
 			NotificationURL:           getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8084"),
 			IdentityInternalToken:     getEnv("GATEWAY_IDENTITY_INTERNAL_TOKEN", getEnv("IDENTITY_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			PlatformInternalToken:     getEnv("GATEWAY_PLATFORM_INTERNAL_TOKEN", getEnv("PLATFORM_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			PlatformOutboxToken:       getEnv("GATEWAY_PLATFORM_OUTBOX_TOKEN", getEnv("PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN", "axi-development-internal-token")),
 			FileInternalToken:         getEnv("GATEWAY_FILE_INTERNAL_TOKEN", getEnv("FILE_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			WorkflowInternalToken:     getEnv("GATEWAY_WORKFLOW_INTERNAL_TOKEN", getEnv("WORKFLOW_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			NotificationInternalToken: getEnv("GATEWAY_NOTIFICATION_INTERNAL_TOKEN", getEnv("NOTIFICATION_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
@@ -158,6 +160,9 @@ func (c Config) Validate() error {
 		}
 		if c.Services.PlatformInternalToken == "" || c.Services.PlatformInternalToken == "axi-development-internal-token" {
 			return fmt.Errorf("GATEWAY_PLATFORM_INTERNAL_TOKEN must be injected in production")
+		}
+		if c.Services.PlatformOutboxToken == "" || c.Services.PlatformOutboxToken == "axi-development-internal-token" {
+			return fmt.Errorf("GATEWAY_PLATFORM_OUTBOX_TOKEN must be injected in production")
 		}
 		if c.Services.FileInternalToken == "" || c.Services.FileInternalToken == "axi-development-internal-token" {
 			return fmt.Errorf("GATEWAY_FILE_INTERNAL_TOKEN must be injected in production")

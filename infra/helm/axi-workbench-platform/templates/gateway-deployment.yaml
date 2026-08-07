@@ -54,6 +54,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: GATEWAY_PLATFORM_INTERNAL_TOKEN
+            - name: GATEWAY_PLATFORM_OUTBOX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: GATEWAY_PLATFORM_OUTBOX_TOKEN
             - name: GATEWAY_FILE_INTERNAL_TOKEN
               valueFrom:
                 secretKeyRef:

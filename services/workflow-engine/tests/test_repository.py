@@ -47,3 +47,13 @@ def test_memory_repository_recovers_interrupted_workflows() -> None:
         assert recovered.result == {"error": "execution interrupted by service restart"}
 
     asyncio.run(scenario())
+
+
+def test_memory_repository_deduplicates_platform_events() -> None:
+    async def scenario() -> None:
+        repository = MemoryWorkflowRepository()
+        assert await repository.consume_event("event-1", "tenant-1", "task.created", {"id": "task-1"})
+        assert not await repository.consume_event("event-1", "tenant-1", "task.created", {"id": "task-1"})
+        assert list(repository.event_inbox) == ["event-1"]
+
+    asyncio.run(scenario())

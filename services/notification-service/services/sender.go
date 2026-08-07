@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/smtp"
@@ -20,6 +22,7 @@ import (
 
 type NotificationRepository interface {
 	CreateNotification(context.Context, *models.Notification) error
+	ConsumeEvent(context.Context, *models.OutboxEvent, *models.Notification) (bool, error)
 	ListNotifications(context.Context, string, bool) ([]*models.Notification, error)
 	MarkRead(context.Context, string, string) (*models.Notification, error)
 	MarkAllRead(context.Context, string) (int, error)
@@ -38,6 +41,7 @@ type NotificationService struct {
 	cfg          *config.Config
 	mu           sync.RWMutex
 	storage      map[string]*models.Notification
+	eventInbox   map[string]struct{}
 	repository   NotificationRepository
 	workerActive bool
 	workerWG     sync.WaitGroup
@@ -58,8 +62,9 @@ func NewNotificationService() *NotificationService {
 func NewNotificationServiceWithContext(ctx context.Context) (*NotificationService, error) {
 	cfg := config.Load()
 	service := &NotificationService{
-		cfg:     cfg,
-		storage: make(map[string]*models.Notification),
+		cfg:        cfg,
+		storage:    make(map[string]*models.Notification),
+		eventInbox: make(map[string]struct{}),
 	}
 	if cfg.DatabaseURL == "" {
 		if cfg.Environment != "production" {
@@ -78,8 +83,9 @@ func NewNotificationServiceWithContext(ctx context.Context) (*NotificationServic
 
 func newMemoryNotificationService(cfg *config.Config) *NotificationService {
 	service := &NotificationService{
-		cfg:     cfg,
-		storage: make(map[string]*models.Notification),
+		cfg:        cfg,
+		storage:    make(map[string]*models.Notification),
+		eventInbox: make(map[string]struct{}),
 	}
 	if cfg.Environment != "production" {
 		service.seedDemoInbox()
@@ -125,6 +131,43 @@ func (s *NotificationService) Ping(ctx context.Context) error {
 
 func (s *NotificationService) CreateNotification(req *models.CreateNotificationRequest) (*models.Notification, error) {
 	return s.CreateNotificationContext(context.Background(), req)
+}
+
+// ConsumeEvent persists the event ID before any notification side effect.
+// Unknown or non-user-targeted topics are still acknowledged and retained in
+// the inbox; adding a new notification mapping therefore cannot make the
+// platform outbox redeliver old events forever.
+func (s *NotificationService) ConsumeEvent(event *models.OutboxEvent) (bool, error) {
+	return s.ConsumeEventContext(context.Background(), event)
+}
+
+func (s *NotificationService) ConsumeEventContext(ctx context.Context, event *models.OutboxEvent) (bool, error) {
+	if event == nil || event.ID == "" {
+		return false, errors.New("event id is required")
+	}
+	notification := notificationForEvent(event)
+	if s.repository != nil {
+		return s.repository.ConsumeEvent(ctx, event, notification)
+	}
+
+	s.mu.Lock()
+	if s.eventInbox == nil {
+		s.eventInbox = make(map[string]struct{})
+	}
+	if _, exists := s.eventInbox[event.ID]; exists {
+		s.mu.Unlock()
+		return false, nil
+	}
+	s.eventInbox[event.ID] = struct{}{}
+	if notification != nil {
+		s.storage[notification.ID] = notification
+	}
+	workerActive := s.workerActive
+	s.mu.Unlock()
+	if notification != nil && !workerActive {
+		go s.sendNotification(notification)
+	}
+	return true, nil
 }
 
 func (s *NotificationService) CreateNotificationContext(ctx context.Context, req *models.CreateNotificationRequest) (*models.Notification, error) {
@@ -377,6 +420,73 @@ func (s *NotificationService) sendInApp(n *models.Notification) error {
 	log.Printf("[IN-APP] user=%s cat=%s subject=%s", n.UserID, n.Category, n.Subject)
 	time.Sleep(20 * time.Millisecond)
 	return nil
+}
+
+func notificationForEvent(event *models.OutboxEvent) *models.Notification {
+	var payload map[string]json.RawMessage
+	if len(event.Payload) == 0 || json.Unmarshal(event.Payload, &payload) != nil {
+		return nil
+	}
+
+	recipient := eventPayloadString(payload, "subject")
+	if recipient == "" {
+		recipient = eventPayloadString(payload, "createdBy")
+	}
+	if recipient == "" {
+		return nil
+	}
+
+	title := ""
+	content := ""
+	category := models.TabMe
+	switch event.Topic {
+	case "tenant.created":
+		title = "工作区已创建"
+		content = "Axi 工作区已完成初始化"
+	case "tenant.member.changed":
+		title = "成员权限已更新"
+		role := eventPayloadString(payload, "role")
+		content = fmt.Sprintf("你的工作区权限已更新为 %s", role)
+	case "project.created":
+		title = "项目已创建"
+		category = models.TabHome
+		name := eventPayloadString(payload, "name")
+		if name == "" {
+			name = eventPayloadString(payload, "projectId")
+		}
+		content = fmt.Sprintf("项目 %s 已创建", name)
+	case "task.created":
+		title = "任务已创建"
+		category = models.TabHome
+		titleText := eventPayloadString(payload, "title")
+		if titleText == "" {
+			titleText = eventPayloadString(payload, "taskId")
+		}
+		content = fmt.Sprintf("任务 %s 已创建", titleText)
+	default:
+		return nil
+	}
+
+	now := time.Now().UTC()
+	return &models.Notification{
+		ID:        generateID(),
+		Type:      models.NotificationTypeInApp,
+		UserID:    recipient,
+		Recipient: recipient,
+		Subject:   title,
+		Content:   content,
+		Category:  category,
+		Status:    models.NotificationStatusPending,
+		CreatedAt: now,
+	}
+}
+
+func eventPayloadString(payload map[string]json.RawMessage, key string) string {
+	var value string
+	if raw, ok := payload[key]; ok && json.Unmarshal(raw, &value) == nil {
+		return strings.TrimSpace(value)
+	}
+	return ""
 }
 
 func (s *NotificationService) seedDemoInbox() {

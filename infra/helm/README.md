@@ -33,6 +33,7 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 - `GATEWAY_REDIS_URL`
 - `GATEWAY_IDENTITY_INTERNAL_TOKEN`
 - `GATEWAY_PLATFORM_INTERNAL_TOKEN`
+- `GATEWAY_PLATFORM_OUTBOX_TOKEN`（必须与 `PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN` 相同）
 - `GATEWAY_FILE_INTERNAL_TOKEN`
 - `GATEWAY_WORKFLOW_INTERNAL_TOKEN`
 - `GATEWAY_NOTIFICATION_INTERNAL_TOKEN`
@@ -56,7 +57,7 @@ Chart 默认引用 `axi-workbench-runtime`，由 External Secrets、Sealed Secre
 - `WORKFLOW_INTERNAL_SERVICE_TOKEN`（值必须与 gateway workflow token 相同）
 - `NOTIFICATION_INTERNAL_SERVICE_TOKEN`（值必须与 gateway notification token 相同）
 
-可选键：`PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN`。
+`PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN` 在启用 Outbox worker 时必需，且必须与 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 相同。
 
 平台数据库迁移账号是唯一拥有 `BYPASSRLS` 的 Axi 平台账号，且只能注入 pre-install/pre-upgrade Job。`platform-core` Deployment 永远只得到 `axi_platform_app`。初始化开发数据库可用 [`scripts/init-db.sql`](../../scripts/init-db.sql)；生产角色/DSN 由数据库 IaC 或 DBA 预先创建。
 
@@ -84,7 +85,7 @@ helm test axi-workbench --namespace axi-workbench
 - Ingress 只暴露 `/api` 到 gateway；所有后端 Service 为 `ClusterIP`，NetworkPolicy 仅允许 gateway 访问专职服务。
 - 网关通过 ZITADEL JWKS、API audience 与所需 scope 验证 Bearer access token，并为浏览器 BFF 会话发放 HttpOnly cookie；浏览器不保存 access/refresh token，也不会把 ID Token 当作业务 API token。
 - QR 轮询只返回事务状态，审批和一次性 resume 均由内部身份边界处理，绝不返回 JWT。ZITADEL custom-login 完成请求必须打到 https://api…/api/v1/internal/zitadel/qr/transactions/{id}/complete；网关转发到 ClusterIP identity-adapter，适配器再校验 X-Axi-Zitadel-Webhook，不能绕过网关直接公开适配器。
-- Outbox 是至少一次投递：记录有五分钟租约、指数退避和第十次失败后的死信标记；内部消费者必须使用 X-Axi-Event-ID 做幂等去重。
+- Outbox 是至少一次投递：记录有五分钟租约、指数退避和第十次失败后的死信标记。启用 `platformCore.outbox.workerEnabled` 后，投递 URL 应指向 `http://<release>-axi-workbench-platform-gateway:8080/api/v1/internal/events`；Gateway 再扇出到 notification/workflow 的 `/internal/events`，两端先持久化 `X-Axi-Event-ID` 再确认，任何一个消费者失败都会让平台事件重试。
 
 生产 Web 与移动端分别构建，但都必须在各自的构建环境注入同一 VITE_API_BASE_URL=https://api… 。网关仅对 gateway.cors.allowedOrigins 的精确 HTTPS Origin 发送携带 cookie 的 CORS 响应。
 - 跨租户读写要同时被 gateway 身份注入、platform-core 成员检查和 PostgreSQL RLS 拒绝。

@@ -28,3 +28,16 @@ CREATE TABLE IF NOT EXISTS axi_workflow.executions (
     result JSONB,
     error TEXT
 );
+
+-- Platform Core delivers at least once. Persisting the event ID at the
+-- workflow boundary makes retries harmless before trigger routing is added.
+CREATE TABLE IF NOT EXISTS axi_workflow.event_inbox (
+    event_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT '',
+    topic TEXT NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    received_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS workflow_event_inbox_topic_idx
+    ON axi_workflow.event_inbox (topic, received_at DESC);

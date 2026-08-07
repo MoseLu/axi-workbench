@@ -148,7 +148,7 @@ AS $$
     );
 $$;
 
-CREATE OR REPLACE FUNCTION axi_platform.create_tenant(p_id UUID, p_name TEXT, p_slug TEXT, p_subject TEXT)
+CREATE OR REPLACE FUNCTION axi_platform.create_tenant(p_id UUID, p_name TEXT, p_slug TEXT, p_subject TEXT, p_event_id UUID)
 RETURNS TABLE (id UUID, name TEXT, slug TEXT, created_at TIMESTAMPTZ)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -159,6 +159,8 @@ BEGIN
     VALUES (p_id, p_name, p_slug, p_subject);
     INSERT INTO tenant_memberships (tenant_id, subject, role)
     VALUES (p_id, p_subject, 'owner');
+    INSERT INTO outbox_events (id, tenant_id, topic, payload)
+    VALUES (p_event_id, p_id, 'tenant.created', jsonb_build_object('tenantId', p_id::text, 'subject', p_subject));
     RETURN QUERY SELECT tenant.id, tenant.name, tenant.slug, tenant.created_at
     FROM tenants tenant WHERE tenant.id = p_id;
 END;

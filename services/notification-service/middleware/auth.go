@@ -32,6 +32,20 @@ func RequireGatewayIdentity(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
+// RequireInternalEvent accepts the platform outbox credential without a user
+// subject. Events are service-to-service facts, not browser requests.
+func RequireInternalEvent(cfg *config.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		supplied := strings.TrimSpace(c.GetHeader("X-Axi-Internal-Token"))
+		expected := strings.TrimSpace(cfg.InternalServiceToken)
+		if expected == "" || supplied == "" || subtle.ConstantTimeCompare([]byte(supplied), []byte(expected)) != 1 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "trusted event credential required"})
+			return
+		}
+		c.Next()
+	}
+}
+
 func Subject(c *gin.Context) string {
 	if value, ok := c.Get(subjectKey); ok {
 		if subject, ok := value.(string); ok {

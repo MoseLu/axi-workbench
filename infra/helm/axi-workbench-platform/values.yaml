@@ -94,8 +94,8 @@ platformCore:
       cpu: 750m
       memory: 768Mi
   outbox:
-    # A delivery URL is an explicit production contract. Keep the worker off
-    # until an idempotent internal consumer is configured for this release.
+    # Keep the worker off for a chart-only install. Production values should
+    # enable it and point deliveryURL at the gateway internal event route.
     workerEnabled: false
     pollInterval: 5s
     deliveryURL: ""

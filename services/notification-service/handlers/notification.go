@@ -41,6 +41,30 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 	c.JSON(http.StatusCreated, notification)
 }
 
+// ConsumeEvent is called only by the internal gateway event fan-out route.
+// The event ID and topic headers are checked against the JSON envelope so a
+// malformed or partially rewritten delivery cannot be acknowledged.
+func (h *NotificationHandler) ConsumeEvent(c *gin.Context) {
+	var event models.OutboxEvent
+	if err := c.ShouldBindJSON(&event); err != nil || strings.TrimSpace(event.ID) == "" || strings.TrimSpace(event.Topic) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "valid event envelope required"})
+		return
+	}
+	if headerID := strings.TrimSpace(c.GetHeader("X-Axi-Event-ID")); headerID == "" || headerID != event.ID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "event id header does not match envelope"})
+		return
+	}
+	if headerTopic := strings.TrimSpace(c.GetHeader("X-Axi-Event-Topic")); headerTopic == "" || headerTopic != event.Topic {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "event topic header does not match envelope"})
+		return
+	}
+	if _, err := h.service.ConsumeEventContext(c.Request.Context(), &event); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "event could not be persisted"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func (h *NotificationHandler) ListNotifications(c *gin.Context) {
 	userID, ok := resolveScopedUserID(c)
 	if !ok {

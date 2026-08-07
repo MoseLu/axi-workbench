@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 	"time"
@@ -59,6 +60,32 @@ func TestPostgresNotificationDeliveryLifecycle(t *testing.T) {
 	}
 	if len(claimed) != 0 {
 		t.Fatalf("delivered notification was claimed again: %#v", claimed)
+	}
+
+	event := &models.OutboxEvent{
+		ID:       "event-" + time.Now().UTC().Format("20060102150405.000000000"),
+		TenantID: "tenant-1",
+		Topic:    "task.created",
+		Payload:  json.RawMessage(`{"createdBy":"alice","title":"Ship API"}`),
+	}
+	eventNotification := &models.Notification{
+		ID:        "event-notification-" + time.Now().UTC().Format("20060102150405.000000000"),
+		Type:      models.NotificationTypeInApp,
+		UserID:    "alice",
+		Recipient: "alice",
+		Subject:   "任务已创建",
+		Content:   "任务 Ship API 已创建",
+		Category:  models.TabHome,
+		Status:    models.NotificationStatusPending,
+		CreatedAt: time.Now().UTC(),
+	}
+	accepted, err := repository.ConsumeEvent(ctx, event, eventNotification)
+	if err != nil || !accepted {
+		t.Fatalf("first event accepted=%v err=%v", accepted, err)
+	}
+	accepted, err = repository.ConsumeEvent(ctx, event, eventNotification)
+	if err != nil || accepted {
+		t.Fatalf("duplicate event accepted=%v err=%v", accepted, err)
 	}
 }
 

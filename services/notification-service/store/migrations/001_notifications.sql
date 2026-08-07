@@ -33,3 +33,18 @@ CREATE TABLE IF NOT EXISTS axi_notifications.delivery_jobs (
 
 CREATE INDEX IF NOT EXISTS notification_delivery_claim_idx
     ON axi_notifications.delivery_jobs (delivered_at, dead_lettered_at, next_attempt_at, locked_until);
+
+-- Every platform event is recorded before its optional notification side
+-- effect. This makes HTTP retries safe even when a consumer crashes after
+-- committing the first delivery.
+CREATE TABLE IF NOT EXISTS axi_notifications.event_inbox (
+    event_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT '',
+    topic TEXT NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS notification_event_inbox_topic_idx
+    ON axi_notifications.event_inbox (topic, received_at DESC);

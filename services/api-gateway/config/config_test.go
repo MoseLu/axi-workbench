@@ -21,6 +21,7 @@ func productionConfigForTest() Config {
 		Services: ServicesConfig{
 			IdentityInternalToken:     "identity-token",
 			PlatformInternalToken:     "platform-token",
+			PlatformOutboxToken:       "outbox-token",
 			FileInternalToken:         "file-token",
 			WorkflowInternalToken:     "workflow-token",
 			NotificationInternalToken: "notification-token",
@@ -59,6 +60,7 @@ func TestProductionRequiresDedicatedSpecialistCredentials(t *testing.T) {
 		{name: "file", apply: func(cfg *Config) { cfg.Services.FileInternalToken = "" }, want: "GATEWAY_FILE_INTERNAL_TOKEN"},
 		{name: "workflow", apply: func(cfg *Config) { cfg.Services.WorkflowInternalToken = "" }, want: "GATEWAY_WORKFLOW_INTERNAL_TOKEN"},
 		{name: "notification", apply: func(cfg *Config) { cfg.Services.NotificationInternalToken = "" }, want: "GATEWAY_NOTIFICATION_INTERNAL_TOKEN"},
+		{name: "outbox", apply: func(cfg *Config) { cfg.Services.PlatformOutboxToken = "" }, want: "GATEWAY_PLATFORM_OUTBOX_TOKEN"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

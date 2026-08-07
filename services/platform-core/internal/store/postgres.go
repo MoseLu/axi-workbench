@@ -44,8 +44,8 @@ func (s *PostgresStore) CreateTenant(ctx context.Context, subject, name, slug st
 	var tenant model.Tenant
 	err := s.pool.QueryRow(ctx, `
 		SELECT id::text, name, slug, created_at
-		FROM axi_platform.create_tenant($1::uuid, $2, $3, $4)`,
-		uuid.NewString(), name, slug, subject,
+		FROM axi_platform.create_tenant($1::uuid, $2, $3, $4, $5::uuid)`,
+		uuid.NewString(), name, slug, subject, uuid.NewString(),
 	).Scan(&tenant.ID, &tenant.Name, &tenant.Slug, &tenant.CreatedAt)
 	return tenant, normalizeError(err)
 }
@@ -127,7 +127,9 @@ func (s *PostgresStore) UpsertMember(ctx context.Context, actor, tenantID, membe
 		if err != nil {
 			return err
 		}
-		return s.insertOutbox(ctx, tx, tenantID, "tenant.member.changed", map[string]string{"tenantId": tenantID, "subject": memberSubject, "role": string(role)})
+		return s.insertOutbox(ctx, tx, tenantID, "tenant.member.changed", map[string]string{
+			"tenantId": tenantID, "subject": memberSubject, "role": string(role), "changedBy": actor,
+		})
 	})
 	return membership, normalizeError(err)
 }
@@ -244,7 +246,9 @@ func (s *PostgresStore) CreateProject(ctx context.Context, actor string, project
 		if err != nil {
 			return err
 		}
-		return s.insertOutbox(ctx, tx, project.TenantID, "project.created", map[string]string{"tenantId": project.TenantID, "projectId": project.ID})
+		return s.insertOutbox(ctx, tx, project.TenantID, "project.created", map[string]string{
+			"tenantId": project.TenantID, "projectId": project.ID, "name": project.Name, "createdBy": project.CreatedBy,
+		})
 	})
 	return project, normalizeError(err)
 }
@@ -302,7 +306,10 @@ func (s *PostgresStore) CreateTask(ctx context.Context, actor string, task model
 		if err != nil {
 			return err
 		}
-		return s.insertOutbox(ctx, tx, task.TenantID, "task.created", map[string]string{"tenantId": task.TenantID, "taskId": task.ID})
+		return s.insertOutbox(ctx, tx, task.TenantID, "task.created", map[string]string{
+			"tenantId": task.TenantID, "taskId": task.ID, "projectId": task.ProjectID,
+			"title": task.Title, "createdBy": task.CreatedBy,
+		})
 	})
 	return task, normalizeError(err)
 }

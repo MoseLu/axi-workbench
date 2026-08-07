@@ -48,3 +48,18 @@ func TestRequireGatewayIdentity(t *testing.T) {
 		})
 	}
 }
+
+func TestRequireInternalEventDoesNotRequireSubject(t *testing.T) {
+	router := gin.New()
+	router.POST("/internal/events", RequireInternalEvent(&config.Config{InternalServiceToken: "event-token"}), func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+
+	request := httptest.NewRequest(http.MethodPost, "/internal/events", nil)
+	request.Header.Set("X-Axi-Internal-Token", "event-token")
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("event status = %d, want %d", recorder.Code, http.StatusNoContent)
+	}
+}

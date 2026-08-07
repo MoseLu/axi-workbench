@@ -68,6 +68,46 @@ func (s *PostgresStore) CreateNotification(ctx context.Context, notification *mo
 	return tx.Commit(ctx)
 }
 
+// ConsumeEvent records an event and, when the event maps to a user-visible
+// notification, inserts that notification in the same transaction. A false
+// return means the event ID was already committed by an earlier delivery.
+func (s *PostgresStore) ConsumeEvent(ctx context.Context, event *models.OutboxEvent, notification *models.Notification) (bool, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var insertedID string
+	err = tx.QueryRow(ctx, `
+		INSERT INTO axi_notifications.event_inbox (event_id, tenant_id, topic, payload)
+		VALUES ($1, $2, $3, COALESCE($4::jsonb, '{}'::jsonb))
+		ON CONFLICT (event_id) DO NOTHING
+		RETURNING event_id`, event.ID, event.TenantID, event.Topic, event.Payload).Scan(&insertedID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	if notification != nil {
+		if err := insertNotification(ctx, tx, notification); err != nil {
+			return false, err
+		}
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE axi_notifications.event_inbox
+		SET processed_at = now()
+		WHERE event_id = $1`, event.ID); err != nil {
+		return false, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return false, err
+	}
+	return insertedID != "", nil
+}
+
 func (s *PostgresStore) ListNotifications(ctx context.Context, userID string, unreadOnly bool) ([]*models.Notification, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, type, user_id, recipient, subject, content, category, dot_only,
@@ -236,4 +276,22 @@ func scanNotification(row rowScanner) (*models.Notification, error) {
 	notification.Category = models.TabCategory(category)
 	notification.Status = models.NotificationStatus(status)
 	return &notification, nil
+}
+
+func insertNotification(ctx context.Context, tx pgx.Tx, notification *models.Notification) error {
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO axi_notifications.notifications (
+			id, type, user_id, recipient, subject, content, category, dot_only,
+			is_read, status, created_at, sent_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+		notification.ID, string(notification.Type), notification.UserID, notification.Recipient,
+		notification.Subject, notification.Content, string(notification.Category), notification.DotOnly,
+		notification.Read, string(notification.Status), notification.CreatedAt, notification.SentAt,
+	); err != nil {
+		return err
+	}
+	_, err := tx.Exec(ctx, `
+		INSERT INTO axi_notifications.delivery_jobs (notification_id)
+		VALUES ($1)`, notification.ID)
+	return err
 }

@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/epap/api-gateway/middleware"
 	"github.com/gin-gonic/gin"
@@ -77,6 +81,73 @@ func (p *ProxyHandler) ProxyToWorkflow() gin.HandlerFunc {
 
 func (p *ProxyHandler) ProxyToNotification() gin.HandlerFunc {
 	return p.createProxy(p.notificationURL, p.notificationInternalToken, "", "")
+}
+
+// ProxyToEventConsumers fans one Platform Core outbox delivery to both
+// specialist consumers. The platform worker has one delivery URL, while the
+// gateway owns the downstream service boundary and dedicated credentials.
+// A delivery succeeds only when both consumers acknowledge it.
+func (p *ProxyHandler) ProxyToEventConsumers() gin.HandlerFunc {
+	client := &http.Client{Timeout: 10 * time.Second}
+	type consumer struct {
+		name  string
+		base  string
+		token string
+	}
+	consumers := []consumer{
+		{name: "notification", base: p.notificationURL, token: p.notificationInternalToken},
+		{name: "workflow", base: p.workflowURL, token: p.workflowInternalToken},
+	}
+
+	return func(c *gin.Context) {
+		body, err := io.ReadAll(io.LimitReader(c.Request.Body, 2<<20))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid event body"})
+			return
+		}
+		failures := make([]string, 0, len(consumers))
+		for _, consumer := range consumers {
+			if err := forwardEvent(c, client, consumer.base, consumer.token, body); err != nil {
+				failures = append(failures, consumer.name)
+			}
+		}
+		if len(failures) > 0 {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "event consumer unavailable", "consumers": failures})
+			return
+		}
+		c.Status(http.StatusNoContent)
+	}
+}
+
+func forwardEvent(c *gin.Context, client *http.Client, baseURL, internalToken string, body []byte) error {
+	target, err := url.Parse(baseURL)
+	if err != nil || target.Scheme == "" || target.Host == "" {
+		return fmt.Errorf("event consumer is not configured")
+	}
+	target.Path = strings.TrimSuffix(target.Path, "/") + "/internal/events"
+	target.RawQuery = ""
+	request, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, target.String(), bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	request.Host = target.Host
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Axi-Internal-Token", internalToken)
+	for _, header := range []string{"X-Axi-Event-ID", "X-Axi-Event-Topic", "X-Axi-Delivery-Attempt", "X-Request-ID", "traceparent"} {
+		if value := c.GetHeader(header); value != "" {
+			request.Header.Set(header, value)
+		}
+	}
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	_, _ = io.Copy(io.Discard, response.Body)
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("event consumer returned HTTP %d", response.StatusCode)
+	}
+	return nil
 }
 
 func (p *ProxyHandler) createProxy(targetURL, internalToken, externalPrefix, downstreamPrefix string) gin.HandlerFunc {

@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, status
 
 from config import get_settings
 from routers.workflows import get_repository, router as workflows_router, set_repository
+from routers.events import router as events_router
 from services.repository import MemoryWorkflowRepository, PostgresWorkflowRepository
 
 # Configure logging
@@ -54,6 +55,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(workflows_router)
+app.include_router(events_router)
 
 
 @app.get("/health")

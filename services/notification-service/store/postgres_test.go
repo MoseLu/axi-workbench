@@ -11,6 +11,8 @@ func TestNotificationMigrationDefinesDurableInboxContract(t *testing.T) {
 		"notifications_user_unread_idx",
 		"CREATE TABLE IF NOT EXISTS axi_notifications.delivery_jobs",
 		"notification_delivery_claim_idx",
+		"CREATE TABLE IF NOT EXISTS axi_notifications.event_inbox",
+		"notification_event_inbox_topic_idx",
 	} {
 		if !contains(initialMigration, required) {
 			t.Fatalf("migration does not contain %q", required)
