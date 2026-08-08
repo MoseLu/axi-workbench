@@ -102,3 +102,38 @@ test("stale or unready projects become attention items without inventing progres
   assert.equal(unknown.progress.stage, "unknown");
   assert.equal(snapshot.attentionItems[0].type, "verification_stale");
 });
+
+test("failed registered tasks retain their target project in the mobile attention queue", () => {
+  const workspaceRoot = mkdtempSync(join(tmpdir(), "axi-mobile-task-attention-"));
+  const projectPath = join(workspaceRoot, "projects", "sample-app");
+  mkdirSync(projectPath, { recursive: true });
+  mkdirSync(join(workspaceRoot, ".workspace"), { recursive: true });
+  const graphPath = join(workspaceRoot, "workspace.graph.json");
+  writeFileSync(graphPath, JSON.stringify({
+    projects: {
+      "sample-app": {
+        name: "Sample App",
+        kind: "service",
+        path: projectPath,
+        provides: [],
+      },
+    },
+  }));
+
+  const snapshot = buildMobileWorkspaceSnapshot({
+    workspaceRoot,
+    graphPath,
+    agentTasks: new Map([["task-1", {
+      id: "task-1",
+      targetId: "sample-app",
+      status: "failed",
+      runtime: "registered_command",
+      summary: "命令退出码 1。",
+      updatedAt: "2026-08-09T00:00:00.000Z",
+    }]]),
+  });
+
+  const attention = snapshot.attentionItems.find((item) => item.id === "task:task-1");
+  assert.equal(attention?.projectId, "sample-app");
+  assert.equal(attention?.reasonCode, "task_execution_failed");
+});

@@ -500,7 +500,10 @@ function buildRuntimeAttention(snapshot) {
     .filter((task) => ["failed", "blocked", "rejected_rework", "policy_violation"].includes(task.status))
     .map((task) => ({
       id: `task:${task.id || task.jobId || `${task.projectId || "unknown"}:${task.status}:${task.updatedAt || now}`}`,
-      projectId: task.projectId || null,
+      // Registered mobile health checks retain their resource target in targetId.
+      // Keep that association when surfacing a failed task so mobile can put the
+      // result back under its project instead of showing an orphaned alert.
+      projectId: task.projectId || task.targetId || null,
       severity: task.status === "failed" ? "critical" : "warning",
       type: "task_attention",
       reasonCode: task.runtime === "project_diagnosis" && task.status === "failed" ? "diagnosis_failed" : "task_execution_failed",
