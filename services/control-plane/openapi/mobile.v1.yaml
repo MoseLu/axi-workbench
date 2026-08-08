@@ -455,6 +455,7 @@ components:
       required:
         - idempotencyKey
         - projectId
+        - actionId
         - actionType
       additionalProperties: false
       properties:
@@ -465,14 +466,11 @@ components:
           pattern: '^[A-Za-z0-9_-]+$'
         projectId:
           type: string
+        actionId:
+          type: string
+          description: Stable action identifier projected from the current mobile project card.
         actionType:
           type: string
-        text:
-          type: string
-          description: Optional natural-language task body (used by assessTask)
-        payload:
-          type: object
-          additionalProperties: true
     MobileApprovalDecision:
       allOf:
         - $ref: '#/components/schemas/MobileActionRequest'
@@ -562,7 +560,7 @@ components:
           type: string
     MobileProjectCard:
       type: object
-      required: [id, name, kind, status, summary, architecture, phase, preview, actions, source]
+      required: [id, name, kind, status, health, reasonCode, summary, architecture, phase, preview, actions, source]
       additionalProperties: false
       properties:
         id:
@@ -572,6 +570,11 @@ components:
         kind:
           type: string
         status:
+          type: string
+        health:
+          type: string
+          enum: [healthy, attention, blocked, stale, unknown]
+        reasonCode:
           type: string
         summary:
           type: string
@@ -634,7 +637,7 @@ components:
           type: integer
     AttentionItem:
       type: object
-      required: [id, projectId, severity, type, title, summary, updatedAt]
+      required: [id, projectId, severity, type, reasonCode, title, summary, updatedAt]
       additionalProperties: false
       properties:
         id:
@@ -646,6 +649,8 @@ components:
           type: string
           enum: [critical, warning, info]
         type:
+          type: string
+        reasonCode:
           type: string
         title:
           type: string
@@ -699,7 +704,7 @@ components:
             $ref: '#/components/schemas/ProjectConfigurationFact'
     MobileWorkspaceSnapshot:
       type: object
-      required: [generatedAt, source, summary, attentionItems, projects, runningTasks, approvals]
+      required: [generatedAt, source, summary, attentionItems, projects, runningTasks, recentTasks, approvals]
       additionalProperties: false
       properties:
         generatedAt:
@@ -721,7 +726,12 @@ components:
         runningTasks:
           type: array
           items:
-            $ref: '#/components/schemas/JobSummary'
+            $ref: '#/components/schemas/MobileRunningTask'
+        recentTasks:
+          type: array
+          description: Recently completed, failed, or cancelled managed mobile-visible tasks. These are results, not pending work.
+          items:
+            $ref: '#/components/schemas/MobileRunningTask'
         approvals:
           type: array
           items:
@@ -760,9 +770,11 @@ components:
           nullable: true
     MobileAction:
       type: object
-      required: [commandId, label, intent, autoExecutable]
+      required: [actionId, commandId, label, intent, autoExecutable, actionType, executionMode, riskLevel, summary]
       additionalProperties: false
       properties:
+        actionId:
+          type: string
         commandId:
           type: string
         label:
@@ -771,12 +783,55 @@ components:
           type: string
         autoExecutable:
           type: boolean
+        actionType:
+          type: string
+        executionMode:
+          type: string
+          enum: [immediate, requires_approval]
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        summary:
+          type: string
+    MobileRunningTask:
+      type: object
+      required: [id, projectId, status, reasonCode, summary, actionType, updatedAt]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        status:
+          type: string
+        reasonCode:
+          type: string
+        summary:
+          type: string
+        actionType:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
     ApprovalSummary:
       type: object
       required: [id, status, actionSummary, riskLevel]
       additionalProperties: false
       properties:
         id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        actionId:
+          type: string
+          nullable: true
+        actionType:
+          type: string
+          nullable: true
+        source:
           type: string
         status:
           type: string

@@ -104,6 +104,7 @@ test("OpenAPI: required schemas exist for the runtime surface", () => {
     "MobileWorkspaceSnapshot",
     "MobilePreview",
     "MobileAction",
+    "MobileRunningTask",
     "ApprovalSummary",
     "JobSummary",
     "MobileActionError",
@@ -113,11 +114,22 @@ test("OpenAPI: required schemas exist for the runtime surface", () => {
   }
 });
 
-test("OpenAPI: MobileActionRequest enforces the six-field contract", () => {
+test("OpenAPI: workspace snapshot carries recent task results separately from pending tasks", () => {
+  const snapshotBlock = spec.slice(spec.indexOf("    MobileWorkspaceSnapshot:"), spec.indexOf("    MobilePreview:"));
+  assert.match(snapshotBlock, /required: \[.*recentTasks.*\]/, "recentTasks must be required in the snapshot contract");
+  assert.match(snapshotBlock, /recentTasks:\n\s+type: array/, "recentTasks must be an array");
+  assert.match(snapshotBlock, /recentTasks:[\s\S]*?MobileRunningTask/, "recentTasks must reuse the managed task projection");
+});
+
+test("OpenAPI: MobileActionRequest requires a registered actionId and has no raw task body", () => {
   expectLinePattern(/MobileActionRequest:[^]*?required:[\s\S]*?-\s*actionType/, "MobileActionRequest.actionType required");
   expectLinePattern(/MobileActionRequest:[^]*?required:[\s\S]*?-\s*idempotencyKey/, "MobileActionRequest.idempotencyKey required");
   expectLinePattern(/MobileActionRequest:[^]*?required:[\s\S]*?-\s*projectId/, "MobileActionRequest.projectId required");
+  expectLinePattern(/MobileActionRequest:[^]*?required:[\s\S]*?-\s*actionId/, "MobileActionRequest.actionId required");
   expectLinePattern(/MobileActionRequest:[^]*?additionalProperties:\s*false/, "MobileActionRequest closed schema");
+  const requestBlock = spec.slice(spec.indexOf("    MobileActionRequest:"), spec.indexOf("    MobileApprovalDecision:"));
+  assert.doesNotMatch(requestBlock, /^\s+text:/m, "MobileActionRequest must not accept arbitrary text");
+  assert.doesNotMatch(requestBlock, /^\s+payload:/m, "MobileActionRequest must not accept arbitrary payload");
   expectLinePattern(/idempotencyKey:[\s\S]{0,400}minLength:\s*8/, "idempotencyKey minLength 8");
   expectLinePattern(/idempotencyKey:[\s\S]{0,400}pattern:\s*'\^\[A-Za-z0-9_-]\+\$'/m, "idempotencyKey pattern");
 });

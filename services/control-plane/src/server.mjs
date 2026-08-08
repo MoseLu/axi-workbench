@@ -1,12 +1,14 @@
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
 import { createControlPlane } from "./control-plane.mjs";
 
 const port = Number.parseInt(process.env.CONTROL_PLANE_PORT || "8092", 10);
-const controlPlane = createControlPlane();
-const mobileOwnerToken = process.env.AXI_MOBILE_OWNER_TOKEN || "";
-const pairingRequired = controlPlane.pairingEnabled || Boolean(controlPlane.pairing);
-
-const server = createServer(async (req, res) => {
+export function createControlPlaneHttpServer({
+  controlPlane = createControlPlane(),
+  mobileOwnerToken = process.env.AXI_MOBILE_OWNER_TOKEN || "",
+  pairingRequired = controlPlane.pairingEnabled || Boolean(controlPlane.pairing),
+} = {}) {
+  return createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", `http://${req.headers.host || "127.0.0.1"}`);
     if (req.method === "OPTIONS") {
@@ -51,7 +53,7 @@ const server = createServer(async (req, res) => {
       }
       if (req.method === "POST" && url.pathname === "/mobile/v1/pair/revoke") {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" });
-        const auth = authenticate(req, controlPlane);
+        const auth = authenticate(req, controlPlane, { pairingRequired, mobileOwnerToken });
         if (!auth.ok) return sendJson(res, 401, { error: auth.error });
         const body = await readJsonBody(req);
         const r = controlPlane.pairing.revokeDevice({ deviceId: body?.deviceId || auth.deviceId, reason: body?.reason || "owner_revoked" });
@@ -59,7 +61,7 @@ const server = createServer(async (req, res) => {
       }
 
       // Authenticated routes below this point.
-      const auth = authenticate(req, controlPlane);
+      const auth = authenticate(req, controlPlane, { pairingRequired, mobileOwnerToken });
       if (!auth.ok) return sendJson(res, 401, { error: auth.error });
 
       if (req.method === "GET" && url.pathname === "/mobile/v1/workspace") return sendJson(res, 200, controlPlane.mobileSnapshot());
@@ -70,7 +72,7 @@ const server = createServer(async (req, res) => {
       }
       if (req.method === "POST" && url.pathname === "/mobile/v1/jobs") {
         const body = await readJsonBody(req);
-        const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionType"]);
+        const fields = validateMobileProjectAction(body);
         if (!fields.ok) return sendJson(res, 400, { error: fields.error });
         const idempotency = controlPlane.idempotency;
         const cached = idempotency.check({ deviceId: auth.deviceId, key: body.idempotencyKey });
@@ -81,12 +83,17 @@ const server = createServer(async (req, res) => {
             "X-Idempotency-Replay": "true",
           });
           res.end(JSON.stringify(cached.response.body));
-          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: null, status: "replayed" });
+          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionId: body.actionId, actionType: body.actionType, approvalRef: null, status: "replayed" });
           return;
         }
-        const result = controlPlane.createJob({ ...body, deviceId: auth.deviceId, auditDeviceId: auth.deviceId });
+        const result = controlPlane.createMobileProjectAction({ ...body, deviceId: auth.deviceId, auditDeviceId: auth.deviceId });
+        if (result?.ok === false) {
+          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionId: body.actionId, actionType: body.actionType, approvalRef: null, status: "rejected" });
+          return sendJson(res, result.httpStatus || 422, { error: result.error });
+        }
         idempotency.record({ deviceId: auth.deviceId, key: body.idempotencyKey, response: { status: 202, body: result } });
-        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: null, status: "executed" });
+        const approvalRef = result?.approvalId || null;
+        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionId: body.actionId, actionType: body.actionType, approvalRef, status: approvalRef ? "pending_approval" : "executed" });
         return sendJson(res, 202, result);
       }
       const mobileCancelMatch = url.pathname.match(/^\/mobile\/v1\/jobs\/([^/]+)\/cancel$/);
@@ -116,8 +123,9 @@ const server = createServer(async (req, res) => {
       const mobileApprovalMatch = url.pathname.match(/^\/mobile\/v1\/approvals\/([^/]+)\/decision$/);
       if (req.method === "POST" && mobileApprovalMatch) {
         const body = await readJsonBody(req);
-        const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionType", "approvalRef"]);
+        const fields = validateMobileApprovalDecision(body);
         if (!fields.ok) return sendJson(res, 400, { error: fields.error });
+        if (body.approvalRef !== decodeURIComponent(mobileApprovalMatch[1])) return sendJson(res, 422, { error: "approvalRef must match the approval path" });
         const idempotency = controlPlane.idempotency;
         const cached = idempotency.check({ deviceId: auth.deviceId, key: body.idempotencyKey });
         if (cached.cached) {
@@ -127,14 +135,14 @@ const server = createServer(async (req, res) => {
             "X-Idempotency-Replay": "true",
           });
           res.end(JSON.stringify(cached.response.body));
-          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: body.approvalRef, status: "replayed" });
+          controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionId: body.actionId, actionType: body.actionType, approvalRef: body.approvalRef, status: "replayed" });
           return;
         }
         const decision = controlPlane.decideApproval({ id: decodeURIComponent(mobileApprovalMatch[1]), ...body, deviceId: auth.deviceId });
         const responseBody = decision || { error: "approval not found" };
         const status = decision ? 200 : 404;
         idempotency.record({ deviceId: auth.deviceId, key: body.idempotencyKey, response: { status, body: responseBody } });
-        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: body.actionType, approvalRef: body.approvalRef, status: decision ? "executed" : "not_found" });
+        controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionId: body.actionId, actionType: body.actionType, approvalRef: body.approvalRef, status: decision ? "executed" : "not_found" });
         return sendJson(res, status, responseBody);
       }
       return sendJson(res, 404, { error: "mobile endpoint not found" });
@@ -202,11 +210,19 @@ const server = createServer(async (req, res) => {
   } catch (error) {
     return sendJson(res, 500, { error: "control-plane error", message: error?.message || String(error) });
   }
-});
+  });
+}
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`control-plane listening on http://127.0.0.1:${port}`);
-});
+const controlPlane = createControlPlane();
+const mobileOwnerToken = process.env.AXI_MOBILE_OWNER_TOKEN || "";
+const pairingRequired = controlPlane.pairingEnabled || Boolean(controlPlane.pairing);
+const server = createControlPlaneHttpServer({ controlPlane, mobileOwnerToken, pairingRequired });
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`control-plane listening on http://127.0.0.1:${port}`);
+  });
+}
 
 function sendJson(res, statusCode, payload) {
   const body = JSON.stringify(payload);
@@ -219,7 +235,7 @@ function sendJson(res, statusCode, payload) {
   res.end(body);
 }
 
-function isPairedOwner(req) {
+function isPairedOwner(req, { pairingRequired, mobileOwnerToken }) {
   // Bootstrap fallback: when pairing is not enabled AND a static
   // owner token is configured, treat its bearer as the only valid
   // credential. When pairing is enabled (AXI_MOBILE_PAIRING_ENABLED=true
@@ -230,7 +246,7 @@ function isPairedOwner(req) {
   return authorization === `Bearer ${mobileOwnerToken}`;
 }
 
-function authenticate(req, controlPlane) {
+function authenticate(req, controlPlane, authOptions) {
   // Order: device-token (preferred) → static owner token (bootstrap only).
   if (controlPlane.pairing) {
     const authorization = req.headers.authorization || "";
@@ -240,17 +256,14 @@ function authenticate(req, controlPlane) {
     if (controlPlane.pairingEnabled) return { ok: false, error: verified.error };
     // fall through to static owner token when pairing is configured but not strictly required
   }
-  if (isPairedOwner(req)) return { ok: true, deviceId: "static-owner-token", scopes: ["owner-static"] };
+  if (isPairedOwner(req, authOptions)) return { ok: true, deviceId: "static-owner-token", scopes: ["owner-static"] };
   return { ok: false, error: "owner device pairing required" };
 }
 
 /**
- * validateMobileAction — fail-fast field presence check for the six
- * fields the mobile contract promises on every write (idempotencyKey,
- * deviceId is taken from the token; projectId, actionType,
- * approvalRef is conditional, auditEvent is the response-side
- * concern).  Returns { ok, error } so the route handler can emit a
- * 400 with a single-line message.
+ * Shared fail-fast presence check for authenticated mobile writes.
+ * A project action is later restricted to a registered projectId + actionId
+ * + actionType; the device identity always comes from the bearer token.
  */
 function validateMobileAction(body, required) {
   if (!body || typeof body !== "object") return { ok: false, error: "request body must be a JSON object" };
@@ -261,6 +274,28 @@ function validateMobileAction(body, required) {
     return false;
   });
   if (missing.length) return { ok: false, error: `missing required field(s): ${missing.join(", ")}` };
+  return { ok: true };
+}
+
+function validateMobileProjectAction(body) {
+  const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionId", "actionType"]);
+  if (!fields.ok) return fields;
+  const forbidden = ["text", "command", "cwd", "workdir", "workingDirectory", "envelope"]
+    .filter((key) => Object.hasOwn(body, key));
+  if (forbidden.length) return { ok: false, error: `mobile project actions do not accept raw execution fields: ${forbidden.join(", ")}` };
+  const allowed = new Set(["idempotencyKey", "projectId", "actionId", "actionType"]);
+  const unknown = Object.keys(body).filter((key) => !allowed.has(key));
+  if (unknown.length) return { ok: false, error: `unsupported mobile project action field(s): ${unknown.join(", ")}` };
+  return { ok: true };
+}
+
+function validateMobileApprovalDecision(body) {
+  const fields = validateMobileAction(body, ["idempotencyKey", "projectId", "actionId", "actionType", "approvalRef", "decision"]);
+  if (!fields.ok) return fields;
+  if (!["approved", "rejected"].includes(body.decision)) return { ok: false, error: "decision must be approved or rejected" };
+  const allowed = new Set(["idempotencyKey", "projectId", "actionId", "actionType", "approvalRef", "decision", "decisionText"]);
+  const unknown = Object.keys(body).filter((key) => !allowed.has(key));
+  if (unknown.length) return { ok: false, error: `unsupported mobile approval field(s): ${unknown.join(", ")}` };
   return { ok: true };
 }
 

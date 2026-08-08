@@ -106,8 +106,10 @@ function buildControlPlaneSurface({
   const idempotency = createIdempotencyService({ cacheDir });
   const runs = new Map();
   const envelopeRuns = new Map();
-  const agentTasks = new Map();
-  const approvals = new Map();
+  // 受管任务和审批在控制面私有缓存中持久化；重启后移动快照仍需能解释
+  // 刚完成的诊断，而不能把真实结果退回为空白占位。
+  const agentTasks = loadPersistedRecordMap(join(cacheDir, "agent-tasks"));
+  const approvals = loadPersistedRecordMap(join(cacheDir, "approvals"));
   const jobs = new Map();
   const jobEnvelopeIndex = new Map();
 
@@ -143,6 +145,23 @@ function buildControlPlaneSurface({
     cancelAgentTask: (id) => cancelAgentTask({ id, cacheDir, agentTasks }),
     decideApproval: null, // backfilled below — TDZ-safe bridge
     createJob: (input) => createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }),
+    createMobileProjectAction: (input, internal = {}) => createMobileProjectAction({
+      input,
+      approvedApprovalId: internal.approvedApprovalId || null,
+      workspaceRoot,
+      graphPath,
+      cacheDir,
+      jobs,
+      jobEnvelopeIndex,
+      agentTasks,
+      approvals,
+      roleAgentExecutor,
+      axiAgentTaskExecutor,
+      codexBin,
+      appServerBin,
+      heartbeatMs,
+      memoryDatabaseUrl,
+    }),
     getJob: (id) => jobs.get(id) || readJson(join(cacheDir, "jobs", id, "job.json"), null),
     getJobEvents: (id, options = {}) => readJobEvents({ cacheDir, id, afterEventId: options.afterEventId }),
     getJobArtifacts: (id) => listJobArtifacts({ cacheDir, id }),
@@ -157,6 +176,13 @@ function buildControlPlaneSurface({
     approvals,
     agentTasks,
     dispatchApprovedJob: (seed) => surface.createJob(seed),
+    dispatchApprovedMobileAction: (approval) => surface.createMobileProjectAction({
+      projectId: approval.projectId,
+      actionId: approval.actionId,
+      actionType: approval.actionType,
+      idempotencyKey: approval.idempotencyKey,
+      deviceId: approval.sourceDeviceId,
+    }, { approvedApprovalId: approval.id }),
   });
   return surface;
 }
@@ -165,7 +191,7 @@ function buildControlPlaneSurface({
  * Write one mobile_action entry into the existing audit.jsonl ledger
  * (the same file the desktop control plane already uses).  Format:
  *   { auditKind: "mobile_action", deviceId, idempotencyKey, projectId,
- *     actionType, approvalRef, status, occurredAt }
+ *     actionId, actionType, approvalRef, status, occurredAt }
  * chmod 600 on first write; existing files keep their permissions.
  */
 export function recordMobileAudit({ cacheDir, event = {} }) {
@@ -176,6 +202,7 @@ export function recordMobileAudit({ cacheDir, event = {} }) {
     deviceId: event.deviceId || null,
     idempotencyKey: event.idempotencyKey || null,
     projectId: event.projectId || null,
+    actionId: event.actionId || null,
     actionType: event.actionType || null,
     approvalRef: event.approvalRef || null,
     status: event.status || "executed",
@@ -213,7 +240,10 @@ export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE
     const previewUrl = typeof preview.url === "string" && /^https:\/\//.test(preview.url) ? preview.url : null;
     const previewMode = previewUrl && ["embedded_web", "external_web"].includes(preview.mode) ? preview.mode : "none";
     const lastVerifiedAt = mobile.lastVerifiedAt || completionEntry?.updatedAt || null;
-    const health = mobile.health || deriveMobileHealth({ resource, completion: completionEntry, lastVerifiedAt });
+    const healthState = mobile.health
+      ? { health: mobile.health, reasonCode: mobile.reasonCode || reasonCodeForHealth(mobile.health) }
+      : deriveMobileHealthState({ resource, completion: completionEntry, lastVerifiedAt });
+    const health = healthState.health;
     const progress = mobile.progress || buildMobileProgress(completionEntry);
     const capabilities = normalizedStrings(mobile.capabilities || project.provides || []);
     return {
@@ -222,6 +252,7 @@ export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE
       kind: project.kind || "project",
       status: resource?.status || project.status || "unknown",
       health,
+      reasonCode: healthState.reasonCode,
       summary: mobile.summary || project.description || (resource?.provides || []).join("，") || "尚未提供项目摘要。",
       architecture: mobile.architecture || { provides: project.provides || [], consumes: project.consumes || [], contracts: project.contracts || [] },
       phase: mobile.phase || "unknown",
@@ -237,7 +268,7 @@ export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE
         infoPageUrl: typeof mobile.infoPageUrl === "string" && /^https:\/\//.test(mobile.infoPageUrl) ? mobile.infoPageUrl : null,
         fallbackMessage: previewMode === "none" ? "该项目尚未登记受控预览；请查看项目摘要与架构信息。" : null,
       },
-      actions: (resource?.commands || []).map(({ id: commandId, label, intent, autoExecutable }) => ({ commandId, label, intent, autoExecutable: Boolean(autoExecutable) })),
+      actions: buildMobileProjectActions({ project: { id, name: project.name || id, health, reasonCode: healthState.reasonCode }, resource }),
       source: "workspace.graph",
     };
   }).sort((left, right) => left.name.localeCompare(right.name));
@@ -253,20 +284,68 @@ export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE
     stale: projects.filter((project) => project.health === "stale").length,
     unknown: projects.filter((project) => project.health === "unknown").length,
   };
+  const mobileTasks = snapshot.agentTasks
+    .map((task) => mobileRunningTask(task))
+    .sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
   return {
     generatedAt: snapshot.generatedAt,
     source: "workspace.graph",
     summary,
     attentionItems,
     projects,
-    runningTasks: snapshot.agentTasks.filter((task) => !["succeeded", "failed", "cancelled"].includes(task.status)),
-    approvals: snapshot.approvals.filter((approval) => approval.status === "pending"),
+    runningTasks: mobileTasks
+      .filter((task) => !["succeeded", "failed", "cancelled"].includes(task.status)),
+    // 已结束的受管任务不是“待处理”事项，但移动端必须能把审批闭环的真实
+    // 结果带回项目详情。只投影最近结果，不暴露命令、cwd 或原始 shell 输入。
+    recentTasks: mobileTasks
+      .filter((task) => ["succeeded", "failed", "cancelled"].includes(task.status))
+      .slice(0, 12),
+    approvals: snapshot.approvals
+      .filter((approval) => approval.status === "pending")
+      .map((approval) => mobileApproval(approval)),
   };
 }
 
 function normalizedStrings(value) {
   if (!Array.isArray(value)) return [];
   return value.filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim());
+}
+
+function mobileRunningTask(task) {
+  const status = task.status || "running";
+  const actionType = task.operation === "project_diagnosis"
+    ? "project_diagnosis"
+    : task.runtime === "registered_command" ? "project_verification" : null;
+  const reasonCode = status === "running"
+    ? "task_running"
+    : status === "failed"
+      ? actionType === "project_diagnosis" ? "diagnosis_failed" : "task_execution_failed"
+      : status === "cancelled"
+        ? "task_cancelled"
+        : actionType === "project_diagnosis" ? "diagnosis_completed" : "verification_completed";
+  return {
+    id: task.id || task.jobId || randomUUID(),
+    projectId: task.projectId || task.targetId || null,
+    status,
+    reasonCode,
+    summary: task.summary || "受管任务正在执行。",
+    actionType,
+    updatedAt: task.completedAt || task.updatedAt || task.startedAt || task.createdAt || new Date().toISOString(),
+  };
+}
+
+function mobileApproval(approval) {
+  return {
+    id: approval.id,
+    projectId: approval.projectId || null,
+    actionId: approval.actionId || null,
+    actionType: approval.actionType || null,
+    source: approval.source || "control-plane",
+    status: approval.status || "pending",
+    actionSummary: approval.actionSummary || "存在待审批事项",
+    riskLevel: approval.riskLevel || "medium",
+    createdAt: approval.createdAt || new Date().toISOString(),
+  };
 }
 
 function buildMobileProgress(completion) {
@@ -320,14 +399,24 @@ function buildMobileConfiguration({ id, project, graph, workspaceRoot }) {
   ];
 }
 
-function deriveMobileHealth({ resource, completion, lastVerifiedAt }) {
-  if (resource?.status === "missing") return "blocked";
-  if (!completion) return "unknown";
-  if (completion.stage === "blocked" || completion.stage === "failed") return "blocked";
-  if (completion.handoff?.status === "unready") return "attention";
-  if (isOlderThanDays(lastVerifiedAt, 30) || completion.handoff?.status === "stale") return "stale";
-  if (completion.confidence === "low" || completion.stage === "unassessed") return "attention";
-  return "healthy";
+function deriveMobileHealthState({ resource, completion, lastVerifiedAt }) {
+  if (resource?.status === "missing") return { health: "blocked", reasonCode: "project_unavailable" };
+  if (!completion) return { health: "unknown", reasonCode: "evidence_missing" };
+  if (completion.stage === "blocked" || completion.stage === "failed") return { health: "blocked", reasonCode: "project_blocked" };
+  if (completion.handoff?.status === "unready") return { health: "attention", reasonCode: "handoff_unready" };
+  if (isOlderThanDays(lastVerifiedAt, 30) || completion.handoff?.status === "stale") return { health: "stale", reasonCode: "evidence_stale" };
+  if (completion.confidence === "low" || completion.stage === "unassessed") return { health: "attention", reasonCode: "evidence_low_confidence" };
+  return { health: "healthy", reasonCode: "verified" };
+}
+
+function reasonCodeForHealth(health) {
+  return {
+    blocked: "project_blocked",
+    attention: "evidence_low_confidence",
+    stale: "evidence_stale",
+    unknown: "evidence_missing",
+    healthy: "verified",
+  }[health] || "evidence_missing";
 }
 
 function isOlderThanDays(value, days) {
@@ -341,14 +430,68 @@ function buildProjectAttention(project) {
   const updatedAt = project.progress?.updatedAt || project.lastVerifiedAt || new Date(0).toISOString();
   switch (project.health) {
     case "blocked":
-      return [{ id: `project:${project.id}:blocked`, projectId: project.id, severity: "critical", type: "project_blocked", title: `${project.name} 已阻塞`, summary: project.progress?.summary || project.summary, updatedAt }];
+      return [{ id: `project:${project.id}:blocked`, projectId: project.id, severity: "critical", type: "project_blocked", reasonCode: project.reasonCode, title: `${project.name} 已阻塞`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
     case "stale":
-      return [{ id: `project:${project.id}:stale`, projectId: project.id, severity: "warning", type: "verification_stale", title: `${project.name} 证据已过期`, summary: "最近验证或交接信息超过有效期。", updatedAt }];
+      return [{ id: `project:${project.id}:stale`, projectId: project.id, severity: "warning", type: "verification_stale", reasonCode: project.reasonCode, title: `${project.name} 待核验`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
     case "attention":
-      return [{ id: `project:${project.id}:attention`, projectId: project.id, severity: "warning", type: "project_attention", title: `${project.name} 需要关注`, summary: project.progress?.summary || project.summary, updatedAt }];
+      return [{ id: `project:${project.id}:attention`, projectId: project.id, severity: "warning", type: "project_attention", reasonCode: project.reasonCode, title: `${project.name} 需要关注`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
+    case "unknown":
+      return [{ id: `project:${project.id}:unknown`, projectId: project.id, severity: "info", type: "verification_needed", reasonCode: project.reasonCode, title: `${project.name} 待评估`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
     default:
       return [];
   }
+}
+
+function mobileReasonSummary(reasonCode) {
+  return {
+    project_unavailable: "项目目录当前不可用，暂不能执行受管核验。",
+    evidence_missing: "尚未记录可用的完成度证据，建议先申请只读诊断。",
+    project_blocked: "项目已报告阻塞状态，请先查看下一步或申请诊断。",
+    handoff_unready: "交接信息尚未就绪，建议复核当前进展。",
+    evidence_stale: "最近核验或交接记录已超过有效期。",
+    evidence_low_confidence: "当前证据置信度不足，建议复核后再继续。",
+    task_execution_failed: "受管任务执行失败，请查看任务结果。",
+    diagnosis_failed: "诊断未完成，请查看任务结果后再处理。",
+    approval_pending: "该操作正在等待已配对的 owner 审批。",
+  }[reasonCode] || "该工作项需要进一步核验。";
+}
+
+function buildMobileProjectActions({ project, resource }) {
+  const healthCommand = (resource?.commands || []).find(isMobileReadOnlyHealthCommand);
+  const actions = [];
+  if (healthCommand) {
+    actions.push({
+      actionId: "verify",
+      commandId: healthCommand.id,
+      label: "重新核验",
+      intent: healthCommand.intent,
+      autoExecutable: true,
+      actionType: "project_verification",
+      executionMode: "immediate",
+      riskLevel: "low",
+      summary: "运行已登记的只读核验，并记录可追溯结果。",
+    });
+  }
+  if (resource?.status === "available" && project.health !== "healthy") {
+    actions.push({
+      actionId: "diagnose",
+      commandId: `diagnose:${project.id}`,
+      label: "申请诊断",
+      intent: "project_diagnosis",
+      autoExecutable: false,
+      actionType: "project_diagnosis",
+      executionMode: "requires_approval",
+      riskLevel: "medium",
+      summary: "只读复核项目状态与证据，不修改项目文件。",
+    });
+  }
+  return actions;
+}
+
+function isMobileReadOnlyHealthCommand(command) {
+  if (!command?.autoExecutable || command.intent !== "run_health") return false;
+  const source = String(command.command || "");
+  return !/\b(?:npm|pnpm|yarn)\s+(?:install|add|remove|update|publish)\b|\b(?:gradlew|\.\/gradlew)\b[^\n;|&]*(?:\bclean\b|\bassemble\b|\binstall\b|\bpublish\b)|\b(?:git\s+(?:commit|push|pull|merge|rebase|checkout|switch|reset|clean))\b/i.test(source);
 }
 
 function buildRuntimeAttention(snapshot) {
@@ -360,8 +503,9 @@ function buildRuntimeAttention(snapshot) {
       projectId: task.projectId || null,
       severity: task.status === "failed" ? "critical" : "warning",
       type: "task_attention",
+      reasonCode: task.runtime === "project_diagnosis" && task.status === "failed" ? "diagnosis_failed" : "task_execution_failed",
       title: task.summary || task.title || "任务需要关注",
-      summary: `任务状态：${task.status}`,
+      summary: mobileReasonSummary(task.runtime === "project_diagnosis" && task.status === "failed" ? "diagnosis_failed" : "task_execution_failed"),
       updatedAt: task.updatedAt || now,
     }));
   const approvalItems = snapshot.approvals
@@ -371,8 +515,9 @@ function buildRuntimeAttention(snapshot) {
       projectId: approval.projectId || null,
       severity: "info",
       type: "approval_pending",
+      reasonCode: "approval_pending",
       title: approval.actionSummary || "存在待审批事项",
-      summary: `风险等级：${approval.riskLevel || "unknown"}`,
+      summary: mobileReasonSummary("approval_pending"),
       updatedAt: approval.createdAt || now,
     }));
   return taskItems.concat(approvalItems);
@@ -1003,7 +1148,92 @@ function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, age
   return task;
 }
 
-function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
+function createMobileProjectAction({ input = {}, approvedApprovalId = null, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
+  const rawExecutionFields = ["text", "command", "cwd", "workdir", "workingDirectory", "envelope"]
+    .filter((key) => Object.hasOwn(input, key));
+  if (rawExecutionFields.length) {
+    return { ok: false, httpStatus: 400, error: `mobile project actions do not accept raw execution fields: ${rawExecutionFields.join(", ")}` };
+  }
+  const resolved = resolveMobileProjectAction({ input, workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  if (!resolved.ok) return resolved;
+  const envelope = buildMobileProjectActionEnvelope({ input, action: resolved.action });
+  return createControlJob({
+    input: { ...input, envelope },
+    resolvedMobileAction: { ...resolved, approvedApprovalId },
+    workspaceRoot,
+    graphPath,
+    cacheDir,
+    jobs,
+    jobEnvelopeIndex,
+    agentTasks,
+    approvals,
+    roleAgentExecutor,
+    axiAgentTaskExecutor,
+    codexBin,
+    appServerBin,
+    heartbeatMs,
+    memoryDatabaseUrl,
+  });
+}
+
+function resolveMobileProjectAction({ input = {}, workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }) {
+  const projectId = String(input.projectId || "").trim();
+  const actionId = String(input.actionId || "").trim();
+  const actionType = String(input.actionType || "").trim();
+  const mobileSnapshot = buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  const project = mobileSnapshot.projects.find((item) => item.id === projectId);
+  if (!project) return { ok: false, httpStatus: 404, error: "project not found" };
+  const action = project.actions.find((item) => item.actionId === actionId);
+  if (!action) return { ok: false, httpStatus: 422, error: "unsupported mobile project action" };
+  if (action.actionType !== actionType) return { ok: false, httpStatus: 422, error: "actionType does not match registered action" };
+
+  const snapshot = buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  const resource = snapshot.resources.find((item) => item.id === projectId);
+  if (!resource || resource.status !== "available") return { ok: false, httpStatus: 422, error: "project is not available for managed action" };
+  const command = action.executionMode === "immediate"
+    ? resource.commands.find((item) => item.id === action.commandId && isMobileReadOnlyHealthCommand(item))
+    : null;
+  if (action.executionMode === "immediate" && !command) {
+    return { ok: false, httpStatus: 422, error: "registered action is no longer safe to execute" };
+  }
+  return { ok: true, project, resource, action, command };
+}
+
+function buildMobileProjectActionEnvelope({ input, action }) {
+  const idempotencyKey = String(input.idempotencyKey || "").trim();
+  return {
+    id: `mobile-action:${idempotencyKey}`,
+    channel: "axi-mobile",
+    conversationId: `mobile:${input.deviceId || "paired-owner"}`,
+    senderId: input.deviceId || "paired-owner",
+    text: action.label,
+    receivedAt: new Date().toISOString(),
+    raw: {
+      source: "mobile_project_action",
+      projectId: input.projectId,
+      actionId: action.actionId,
+      actionType: action.actionType,
+      idempotencyKey,
+    },
+  };
+}
+
+function assessProjectDiagnosis() {
+  return {
+    kind: "ops",
+    complexity: "small",
+    estimatedDuration: "sync",
+    requiresOrchestration: false,
+    requiresAudit: true,
+    requiresApproval: true,
+    requiresLibrarian: false,
+    risk: "medium",
+    summary: "项目只读诊断，需要 owner 明确审批",
+    nextUpdateSeconds: 30,
+  };
+}
+
+function createControlJob({ input, resolvedMobileAction = null, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
   const envelope = normalizeIMEnvelope(input?.envelope || input || {});
   if (jobEnvelopeIndex.has(envelope.id)) {
     const existingId = jobEnvelopeIndex.get(envelope.id);
@@ -1011,11 +1241,18 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
     return buildJobAcceptedResult(existing, latestJobEvent({ cacheDir, id: existingId }));
   }
 
-  const registeredCommand = selectReadOnlyRegisteredCommand({ text: envelope.text, workspaceRoot, graphPath });
-  const axiAgentTask = registeredCommand ? null : selectAxiAgentTask({ text: envelope.text, workspaceRoot, graphPath });
+  const registeredCommand = resolvedMobileAction?.action.executionMode === "immediate"
+    ? { targetId: resolvedMobileAction.project.id, command: resolvedMobileAction.command }
+    : selectReadOnlyRegisteredCommand({ text: envelope.text, workspaceRoot, graphPath });
+  const projectDiagnosis = resolvedMobileAction?.action.executionMode === "requires_approval"
+    ? { targetId: resolvedMobileAction.project.id, project: resolvedMobileAction.project, resource: resolvedMobileAction.resource, action: resolvedMobileAction.action }
+    : null;
+  const axiAgentTask = registeredCommand || projectDiagnosis ? null : selectAxiAgentTask({ text: envelope.text, workspaceRoot, graphPath });
   const assessment = registeredCommand
     ? assessReadOnlyRegisteredCommand()
-    : axiAgentTask
+    : projectDiagnosis
+      ? assessProjectDiagnosis()
+      : axiAgentTask
       ? assessAxiAgentTask(axiAgentTask)
       : assessTask(envelope.text);
 
@@ -1029,7 +1266,7 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
   // (jobEnvelopeIndex) is intentionally NOT populated here so a future
   // direct createJob() with the same envelope id would still be gated
   // by the approval's riskLevel rather than collapsing to a duplicate.
-  if (assessment.requiresApproval && !input?.__approvedByApproval) {
+  if (assessment.requiresApproval && !input?.__approvedByApproval && !resolvedMobileAction?.approvedApprovalId) {
     const approval = {
       id: `apr_${randomUUID()}`,
       routeKey: envelope.raw?.routeKey || envelope.channel || "mobile",
@@ -1038,9 +1275,10 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
       actionSummary: assessment.summary,
       riskLevel: assessment.risk,
       status: "pending",
-      source: "mobile_pairing",
+      source: resolvedMobileAction ? "mobile_project_action" : "mobile_pairing",
       sourceDeviceId: input?.deviceId || null,
       projectId: input?.projectId || null,
+      actionId: input?.actionId || null,
       idempotencyKey: input?.idempotencyKey || null,
       actionType: input?.actionType || null,
       createdAt: new Date().toISOString(),
@@ -1055,6 +1293,7 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
       deviceId: approval.sourceDeviceId,
       idempotencyKey: approval.idempotencyKey,
       projectId: approval.projectId,
+      actionId: approval.actionId,
       actionType: approval.actionType,
       riskLevel: approval.riskLevel,
       occurredAt: Math.floor(Date.now() / 1000),
@@ -1077,7 +1316,9 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
     metadata: {
       requestedRuntime: envelope.raw?.runtimePreference || (envelope.channel === "mosscoder" ? "codex_app" : "codex_cli"),
       workspaceRoot,
+      ...(resolvedMobileAction?.approvedApprovalId ? { approvalId: resolvedMobileAction.approvedApprovalId } : {}),
       ...(registeredCommand ? { executionMode: "registered_command", commandId: registeredCommand.command.id } : {}),
+      ...(projectDiagnosis ? { executionMode: "project_diagnosis", actionId: projectDiagnosis.action.actionId, reasonCode: projectDiagnosis.project.reasonCode } : {}),
       ...(axiAgentTask ? { executionMode: "axi_agent", operation: axiAgentTask.operation } : {}),
     },
   };
@@ -1091,7 +1332,9 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
   setImmediate(() => {
     const execution = registeredCommand
       ? runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agentTasks })
-      : axiAgentTask
+      : projectDiagnosis
+        ? runProjectDiagnosisJob({ job, projectDiagnosis, cacheDir, jobs, agentTasks })
+        : axiAgentTask
         ? runAxiAgentJob({ job, axiAgentTask, cacheDir, jobs, agentTasks, axiAgentTaskExecutor })
         : runWorkflowJob({ job, workspaceRoot, cacheDir, jobs, roleAgentExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl });
     Promise.resolve(execution).catch((error) => failJob(cacheDir, job, `workflow runtime 失败：${error?.message || String(error)}`));
@@ -1288,6 +1531,93 @@ function runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agent
 
   transitionJob(cacheDir, job, "notified", "只读巡检结果已准备给通信层回推。");
   transitionJob(cacheDir, job, "completed", "只读巡检执行完成。");
+  job.completedAt = new Date().toISOString();
+  persistJob(cacheDir, job);
+  jobs.set(job.id, job);
+  return job;
+}
+
+function runProjectDiagnosisJob({ job, projectDiagnosis, cacheDir, jobs, agentTasks }) {
+  const now = new Date().toISOString();
+  const { project, resource, action } = projectDiagnosis;
+  const diagnosis = {
+    projectId: project.id,
+    projectName: project.name,
+    health: project.health,
+    reasonCode: project.reasonCode,
+    source: "workspace.graph",
+    checkedAt: now,
+    findings: [
+      { code: project.reasonCode, summary: mobileReasonSummary(project.reasonCode) },
+      { code: "progress", summary: project.progress?.summary || "尚未提供进展摘要。" },
+      { code: "evidence", summary: `已登记 ${project.progress?.evidenceCount || 0} 条证据。` },
+    ],
+    nextStep: project.actions.some((item) => item.actionId === "verify")
+      ? "可在项目详情执行重新核验。"
+      : "请根据诊断结果补充项目证据或更新交接信息。",
+  };
+  const task = {
+    id: randomUUID(),
+    routeKey: job.routeKey,
+    runtime: "project_diagnosis",
+    requestedRuntime: "project_diagnosis",
+    operation: "project_diagnosis",
+    status: "running",
+    prompt: `对 ${project.name} 执行受控只读诊断。仅复核控制面状态和登记证据；不读取凭据、不执行 Shell、不修改项目文件。`,
+    targetId: project.id,
+    cwd: resource.path,
+    readOnly: true,
+    projectFileWrite: false,
+    writeScope: [],
+    approvalId: job.metadata?.approvalId || null,
+    summary: "正在汇总项目状态与登记证据。",
+    createdAt: now,
+    startedAt: now,
+  };
+  agentTasks.set(task.id, task);
+  job.metadata = { ...job.metadata, agentTaskId: task.id, projectFileWrite: false };
+  persistAgentTask(cacheDir, task);
+  persistJob(cacheDir, job);
+  transitionJob(cacheDir, job, "executing", `通过受管 AgentTask 对 ${project.name} 执行只读诊断。`);
+  appendJobEvent(cacheDir, job, {
+    type: "agent_run",
+    status: "executing",
+    message: "project_diagnosis 开始：仅复核控制面状态和证据。",
+    data: { taskId: task.id, projectId: project.id, actionId: action.actionId, readOnly: true, projectFileWrite: false },
+  });
+
+  task.status = "succeeded";
+  task.summary = "只读诊断完成，未修改项目文件。";
+  task.stdout = JSON.stringify(diagnosis);
+  task.completedAt = new Date().toISOString();
+  persistAgentTask(cacheDir, task);
+  persistJson(join(jobDir(cacheDir, job.id), "artifacts", "project-diagnosis.json"), {
+    taskId: task.id,
+    targetId: task.targetId,
+    runtime: task.runtime,
+    readOnly: true,
+    projectFileWrite: false,
+    diagnosis,
+    completedAt: task.completedAt,
+  });
+  const audit = {
+    id: randomUUID(),
+    jobId: job.id,
+    verdict: "pass",
+    summary: "项目只读诊断已完成，未修改项目文件。",
+    findings: [],
+    createdAt: new Date().toISOString(),
+  };
+  job.auditReport = audit;
+  persistJson(join(jobDir(cacheDir, job.id), "audit-report.json"), audit);
+  appendJobEvent(cacheDir, job, {
+    type: "audit",
+    status: "auditing",
+    message: audit.summary,
+    data: { verdict: audit.verdict, taskId: task.id, projectFileWrite: false },
+  });
+  transitionJob(cacheDir, job, "notified", "只读诊断结果已准备给移动端展示。");
+  transitionJob(cacheDir, job, "completed", "项目只读诊断完成。");
   job.completedAt = new Date().toISOString();
   persistJob(cacheDir, job);
   jobs.set(job.id, job);
@@ -1896,7 +2226,7 @@ function cancelAgentTask({ id, cacheDir, agentTasks }) {
   return task;
 }
 
-function decideApproval({ input, cacheDir, approvals, agentTasks, dispatchApprovedJob }) {
+function decideApproval({ input, cacheDir, approvals, agentTasks, dispatchApprovedJob, dispatchApprovedMobileAction }) {
   const approval = approvals.get(input.id) || readJson(join(cacheDir, "approvals", `${input.id}.json`), null);
   if (!approval) return null;
   if (approval.status !== "pending") return approval;
@@ -1914,10 +2244,21 @@ function decideApproval({ input, cacheDir, approvals, agentTasks, dispatchApprov
       persistAgentTask(cacheDir, task);
     }
   }
-  // DevHub / Axi Mobile stage-B: when a pending approval filed by the
-  // mobile gate is approved, re-run the original job creation so the
-  // control plane transitions from pending_approval to a real job.
-  // Re-entry skips the gate because input.__approvedByApproval is set.
+  // Mobile project actions are resolved afresh from the current registry.
+  // Approval replay never trusts client text, a working directory, or a shell command.
+  if (approval.status === "approved" && approval.source === "mobile_project_action" && dispatchApprovedMobileAction) {
+    const jobResult = dispatchApprovedMobileAction(approval);
+    const dispatchedId = jobResult?.job?.id || jobResult?.id;
+    if (dispatchedId) {
+      approval.dispatchedJobId = dispatchedId;
+    } else if (jobResult?.error) {
+      approval.dispatchError = jobResult.error;
+    }
+    persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+  }
+  // Legacy mobile-pairing approvals retain their historical bridge so existing
+  // non-project communication routes remain compatible.  The /mobile/v1/jobs
+  // endpoint no longer reaches this branch.
   if (approval.status === "approved" && approval.source === "mobile_pairing" && dispatchApprovedJob) {
     const seeded = {
       __approvedByApproval: approval.id,
@@ -2427,6 +2768,15 @@ function readJson(filePath, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function loadPersistedRecordMap(directory) {
+  if (!existsSync(directory)) return new Map();
+  const records = readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => readJson(join(directory, entry.name), null))
+    .filter((record) => record && typeof record.id === "string" && record.id);
+  return new Map(records.map((record) => [record.id, record]));
 }
 
 function titleFromId(id) {
