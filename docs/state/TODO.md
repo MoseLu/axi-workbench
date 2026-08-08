@@ -7,7 +7,13 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 
 - [ ] REQ-DOC-001: Keep the root documentation suite complete and current.
   - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
-  - Test: `rg -n "REQ-DOC-001|REQ-VERIFY|REQ-BOUNDARY|PRD|TDD|Milestone" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
+  - Test: `rg -n "REQ-(POSITION|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
+
+- [ ] REQ-POSITION-001 / REQ-SURFACE-001: Create a capability and route ownership inventory before the next user-facing implementation batch.
+  - Test: every existing and proposed user-facing capability follows `docs/specs/<change-id>/CAPABILITY-OWNERSHIP.md` and identifies its owning surface (Web / Mobile / Host / vertical tool), primary user, allowed action, authority source, audit/handoff association, acceptance, reviewer, and reason it is not duplicated on another surface.
+
+- [ ] REQ-SCAN-001: Separate the names and acceptance suites for the two scan flows.
+  - Test: Web "通用识别与结果处理" and Mobile "审批扫码确认" have separate permission expectations, test fixtures, audit assertions, and failure messages; Mobile's top Scan action does not silently absorb identity-login or device-pairing flows.
 
 - [ ] REQ-VERIFY-002: Keep both user-app UI contract verifiers, type-checks, tests, and builds green.
   - Test: Web: `pnpm --filter @axi/workbench type-check`, `test`, `build`, `node apps/workbench/scripts/verify-ui-contracts.mjs`; mobile: `pnpm --filter @axi/workbench-mobile type-check`, `test`, `build`, `verify:contracts`; foundation: `pnpm --filter @axi/workbench-foundation type-check` all exit 0.
@@ -21,6 +27,12 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-WORKBENCH-001: Keep exactly two formal user applications in `apps/`: Web admin and mobile.
   - Test: `apps/workbench` and `apps/workbench-mobile` both exist; `apps/web-portal` is absent or archived; PRD/TDD/CHANGELOG state that neither app is a viewport branch of the other.
 
+- [ ] REQ-WEB-001 / REQ-WEB-002: Define and implement the desktop-first Web management information architecture.
+  - Test: browser review at desktop width covers global overview, cross-project filtering, complex configuration, audit/history and batch actions without mobile navigation components; the Web UI contract verifier remains green.
+
+- [ ] REQ-MOBILE-001 / REQ-MOBILE-002: Constrain the Mobile product to auxiliary management and align navigation terminology.
+  - Test: 390px browser review shows Home / Projects / Workspace / Me as four persistent items and Scan as a top action; organization-level configuration and full audit/export are unavailable or explicitly handed off to Web; sensitive actions are pre-authorized single-object confirmations with an online server-state recheck.
+
 ## P1
 
 - [ ] REQ-VERIFY-001: Keep verification commands accurate for the real project stack.
@@ -33,7 +45,7 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
   - Test: `pnpm --filter @axi/workstation-communication-gateway test` passes and the gateway source does not import Codex, workspace index, memory tables, or project state owners.
 
 - [ ] REQ-WORKBENCH-002: Keep Web / mobile rendering boundaries clean.
-  - Test: 1440px Web smoke renders Axi Dashboard chrome at `:5173`; 390px mobile-app smoke renders the 微信式居中顶栏、加号菜单、五项绿色底栏与扫码入口 at `:5174`; both app-specific contract verifiers pass and neither app imports the other app’s implementation.
+  - Test: 1440px Web smoke renders Axi Dashboard chrome at `:5173`; 390px mobile-app smoke renders the 微信式居中顶栏、加号菜单、四个常驻导航项与顶部扫码入口 at `:5174`; both app-specific contract verifiers pass and neither app imports the other app’s implementation.
 
 - [ ] REQ-DOC-002: Keep the v2 zero-context manifest current.
   - Test: `docs/project-docs.manifest.json` parses as JSON, references only project-local files, contains no secret values, and reflects the latest entrypoints, contracts, and verification evidence.
@@ -42,10 +54,13 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
   - Test: no Axi Coder snapshot contains a hard-coded `/projects/axi-notify/...` artifact path; resolution goes through environment variables and `workspace://` contract references.
 
 - [ ] REQ-MOBILE-001: Keep the independent WeChat-style mobile app and its shared foundation auditable.
-  - Test: `apps/workbench-mobile` owns its overview/project/workspace/scan/me routes, centered header, five-tab bar, badges and scan page; `packages/workbench-foundation` lists shared session / locale keys; mobile theme switching round-trips through `axi.workbench.mobile.theme.mode` without importing Web layout code.
+  - Test: `apps/workbench-mobile` owns its Home / Projects / Workspace / Me pages, centered header, four persistent navigation items, badges and Scan action/page; `packages/workbench-foundation` lists shared session / locale keys; mobile theme switching round-trips through `axi.workbench.mobile.theme.mode` without importing Web layout code.
 
 - [ ] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
   - Test: each `docs/logs/submit/<batch-id>.md` is cited in the latest MILESTONE entry, and the linked deliverable evidence is current.
+
+- [ ] REQ-CROSS-001 / REQ-DELIVERY-001: Add cross-device continuity only after a capability has an explicit ownership record.
+  - Test: each dual-surface flow has a shared business object identifier, server-side authorization/audit evidence, a `handoff correlation id` recorded at source, target and final action, and a context-preserving handoff to Web when Mobile cannot complete it.
 
 ## P2
 
@@ -73,6 +88,16 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - **Evidence:** `docs/state/PRD.md`, `docs/state/TDD.md`, `docs/state/TODO.md`, `docs/state/MILESTONE.md`, `docs/state/CHANGELOG.md` updated on 2026-08-07.
 - **Dependencies:** `AGENTS.md`, `README.md`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `docs/project-docs.manifest.json`.
 - **Status:** Completed on 2026-08-07.
+
+### In progress — Position the workbench as a multi-surface admin system (2026-08-09)
+
+- **Problem:** The two independent applications had engineering separation, but the product contract did not clearly say which management work belongs to Web versus Mobile. Old documents also described a five-item mobile tab bar while the current implementation has four persistent navigation items plus a Scan action, and both ends used the word "scan" for different security flows.
+- **Solution:** Set Web as the complete backend-management primary surface and Mobile as the auxiliary management surface; add capability allocation, navigation facts, scan semantics, cross-device handoff and phased delivery requirements to the project PRD/TDD.
+- **Expected result:** New work is assigned to one surface before implementation, no feature is duplicated merely to achieve visual parity, and users can identify whether to use Web or Mobile for a task.
+- **Acceptance:** `REQ-POSITION-001`, `REQ-SURFACE-001`, `REQ-WEB-001/002`, `REQ-MOBILE-001/002`, `REQ-CROSS-001`, `REQ-SCAN-001` and `REQ-DELIVERY-001` appear in the PRD, TDD, TODO, Milestone and Changelog with product-specific checks.
+- **Evidence:** `docs/state/PRD.md`; `docs/specs/2026-08-09-multi-surface-admin-positioning/`.
+- **Dependencies:** `docs/architecture/source-catalog.md`, `apps/AGENTS.md`, the Web/Mobile contract verifiers, `packages/workbench-foundation`, API/schema contracts and the gateway audit boundary.
+- **Status:** Product direction defined; implementation has not started.
 
 ### Ongoing — Keep zero-context evidence fresh
 

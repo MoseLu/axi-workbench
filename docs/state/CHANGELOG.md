@@ -21,6 +21,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- Set the product contract for Axi Workbench as a multi-surface admin system: Web is the complete backend-management primary surface; Mobile is the auxiliary management surface for personal context, alerts and constrained confirmations. The PRD now separates Web's general scan/result handling from Mobile's approval scan confirmation, records the actual four persistent Mobile navigation items plus top-level Scan action, and excludes the Host and vertical tools from the user-backend information architecture. Added `REQ-POSITION-001`, `REQ-SURFACE-001`, `REQ-WEB-001`, `REQ-WEB-002`, `REQ-MOBILE-001`, `REQ-MOBILE-002`, `REQ-CROSS-001`, `REQ-SCAN-001` and `REQ-DELIVERY-001` with a capability-ownership template and product-specific verification path.
 - Added the canonical source catalog at `docs/architecture/source-catalog.md`, separating the two user workbench clients from the Host, hosted tools, vertical runtimes, nested CLI monorepo, and root pnpm workspace membership; root navigation now points to that catalog.
 - Replaced browser local token/refresh handling with HttpOnly gateway sessions; apps use relative API paths in development and an explicit HTTPS gateway origin in production, while shared locale preference synchronizes with platform-core after authentication and retains a local offline cache.
 - Reclassified `auth-service` and Spring/H2 `core-service` as migration compatibility only; the production Helm chart exposes only the Go gateway and its internal Go services.

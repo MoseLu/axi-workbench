@@ -31,7 +31,7 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 | App | Role | Notes |
 |-----|------|-------|
 | **`workbench`** (`@axi/workbench`) | Web 管理端 | 目录 `apps/workbench`；`pnpm dev:workbench`；Axi Dashboard Chrome、标签栏、面包屑、设置面板 |
-| **`workbench-mobile`** (`@axi/workbench-mobile`) | 移动端应用 | 目录 `apps/workbench-mobile`；`pnpm dev:mobile`；微信式顶栏、五项绿色底栏、角标、扫一扫与移动页面组合 |
+| **`workbench-mobile`** (`@axi/workbench-mobile`) | 移动端应用 | 目录 `apps/workbench-mobile`；`pnpm dev:mobile`；微信式顶栏、四个常驻导航项（Home / Projects / Workspace / Me）、角标、顶部扫一扫动作与移动页面组合 |
 | `devsvc-dashboard` | 本地服务 + Axi **Host** | 挂子应用，不是第二份用户门户 |
 | `axi-coder` | 编码工具 | Hosted 子应用；不是第二门户 |
 | `verification-inbox` | OTP 工具 | 垂直 |
@@ -39,7 +39,7 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 | `ollama-menu-assistant` | macOS 菜单助手 | Swift Package 垂直工具；当前不属于根 pnpm member |
 
 **禁止**：把 `workbench-mobile` 重新塞回 `workbench` 的 viewport / CSS 分支；或再建第三个重复用户门户。
-`apps/web-portal` 是已归档的旧门户；Web 与移动端仅共享认证、API、契约、语言偏好和 design tokens，不共享页面与布局实现。Axi UI 的 sidebar / topbar / tabs / breadcrumbs / settings 只属于 Web；微信式 header / 五项底栏 / 扫一扫只属于移动端。
+`apps/web-portal` 是已归档的旧门户；Web 与移动端仅共享认证、API、契约、语言偏好和 design tokens，不共享页面与布局实现。Axi UI 的 sidebar / topbar / tabs / breadcrumbs / settings 只属于 Web；微信式 header / 四个常驻导航项 / 顶部扫一扫动作只属于移动端。
 
 源码角色、主入口和根 workspace membership 的完整清单见 [`docs/architecture/source-catalog.md`](../docs/architecture/source-catalog.md)。注意：目录位于 `apps/` 不等于它是根 pnpm package，也不等于它是用户门户；Host 挂载关系以 `apps/devsvc-dashboard/config/axi-apps.json` 为准。
 

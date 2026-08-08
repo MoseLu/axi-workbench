@@ -7,7 +7,7 @@
   "kind": "pnpm multi-runtime monorepo",
   "lifecycle": "active",
   "owner": "Axi Core Projects",
-  "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane: independent Web and mobile applications plus a production Go API plane (ZITADEL, Gin gateway, identity adapter, modular platform core), shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+  "summary": "Canonical AxiomaticWorld multi-surface admin workbench: Web is the complete backend-management primary surface and Mobile is the auxiliary management surface, backed by the six-layer control plane, Go API plane, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
   "readOrder": [
     "AGENTS.md",
     "README.md",
@@ -24,12 +24,12 @@
     {
       "id": "workbench-web",
       "path": "apps/workbench/src/main.tsx",
-      "purpose": "Independent Web admin application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, and Web-only pages."
+      "purpose": "Independent Web backend-management primary application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, high-density management and Web-only pages."
     },
     {
       "id": "workbench-mobile",
       "path": "apps/workbench-mobile/src/main.tsx",
-      "purpose": "Independent WeChat-style mobile application: its own Vite entry, centered header, search/plus menu, overview/project/workspace/scan/me tab bar, badges, scan flow, login, and page composition."
+      "purpose": "Independent mobile auxiliary-management application: its own Vite entry, centered header, search/plus menu, four persistent Home/Projects/Workspace/Me navigation items, a Scan action, badges, login, and mobile page composition."
     },
     {
       "id": "workbench-foundation",
@@ -205,9 +205,8 @@
     "todo": "docs/state/TODO.md",
     "milestone": "docs/state/MILESTONE.md",
     "active": [
-      "Keep the root documentation suite current",
       "Align verification commands with the real project stack",
-      "Keep Web Axi Dashboard Chrome and WeChat-style mobile composition independent",
+      "Implement the multi-surface admin product contract: Web primary, Mobile auxiliary; reconcile capability ownership and navigation terminology while keeping the two app compositions independent",
       "Preserve ownership and cross-project boundaries",
       "Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment"
     ],
@@ -279,7 +278,7 @@
     ],
     "evidence": [
       "Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.",
-      "Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, five-tab green navigation, badges, and scan flow without Web dashboard nodes.",
+      "Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, four persistent navigation items, badges, and Scan flow without Web dashboard nodes.",
       "Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.",
       "Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template passed; required local Mailpit SMTP delivery passed; an isolated PostgreSQL migration/runtime-role integration test proved direct owner-downgrade and cross-tenant denial on 2026-08-07."
     ]
@@ -305,7 +304,7 @@
     "docs/HANDOFF.md"
   ],
   "created": "2026-06-07",
-  "updated": "2026-08-08",
-  "writer": "Codex zero-context-onboarding",
-  "source": "user-authorized zero-context onboarding plan"
+  "updated": "2026-08-09",
+  "writer": "Codex product-definition",
+  "source": "user-authorized multi-surface admin product direction"
 }

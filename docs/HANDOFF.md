@@ -4,7 +4,7 @@
 - Path: `/Volumes/code/workspace/projects/axi-workbench`
 - Owner: `Axi Core Projects`
 - Readiness: `verified`
-- Purpose: Canonical AxiomaticWorld workbench for the six-layer control plane: independent Web and mobile applications plus a production Go API plane (ZITADEL, Gin gateway, identity adapter, modular platform core), shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.
+- Purpose: Canonical AxiomaticWorld multi-surface admin workbench: Web is the complete backend-management primary surface and Mobile is the auxiliary management surface, backed by the six-layer control plane, Go API plane, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.
 
 ## 90-Second Read Order
 
@@ -16,8 +16,9 @@
 
 ## Entrypoints
 
-- `apps/workbench/src/main.tsx`: Independent Web admin application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, and Web-only pages.
-- `apps/workbench-mobile/src/main.tsx`: Independent WeChat-style mobile application: its own Vite entry, centered header, search/plus menu, overview/project/workspace/scan/me tab bar, badges, scan flow, login, and page composition.
+- `docs/architecture/source-catalog.md`: Canonical physical source topology: application roles, runtime boundaries, root workspace membership, host registration, and cleanup order.
+- `apps/workbench/src/main.tsx`: Independent Web backend-management primary application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, high-density management and Web-only pages.
+- `apps/workbench-mobile/src/main.tsx`: Independent mobile auxiliary-management application: its own Vite entry, centered header, search/plus menu, four persistent Home/Projects/Workspace/Me navigation items, a Scan action, badges, login, and mobile page composition.
 - `packages/workbench-foundation/src/index.ts`: Shared auth-session and locale-preference foundation for the independent user applications; no page or layout exports.
 - `services/api-gateway/cmd/gateway/main.go`: Production Go API plane: public Gin gateway plus sibling identity-adapter and platform-core for ZITADEL, QR/email/EPS, tenant/RBAC and RLS business modules.
 - `services/control-plane/src/server.mjs`: Software-layer control API and managed AgentTask runtime surface.
@@ -68,9 +69,8 @@
 
 - TODO: `docs/state/TODO.md`
 - Milestone: `docs/state/MILESTONE.md`
-- Active: Keep the root documentation suite current
 - Active: Align verification commands with the real project stack
-- Active: Keep Web Axi Dashboard Chrome and WeChat-style mobile composition independent
+- Active: Implement the multi-surface admin product contract: Web primary, Mobile auxiliary; reconcile capability ownership and navigation terminology while keeping the two app compositions independent
 - Active: Preserve ownership and cross-project boundaries
 - Active: Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment
 - Known failure: The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.
@@ -94,6 +94,6 @@
 - Changelog: `docs/state/CHANGELOG.md`
 - Submit log: `docs/logs/submit/20260611-124603-batch-submit.md`
 - Last verified: `2026-08-07`
-- Evidence: `Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, five-tab green navigation, badges, and scan flow without Web dashboard nodes.`, `Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.`, `Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template passed; required local Mailpit SMTP delivery passed; an isolated PostgreSQL migration/runtime-role integration test proved direct owner-downgrade and cross-tenant denial on 2026-08-07.`
+- Evidence: `Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, four persistent navigation items, badges, and Scan flow without Web dashboard nodes.`, `Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.`, `Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template passed; required local Mailpit SMTP delivery passed; an isolated PostgreSQL migration/runtime-role integration test proved direct owner-downgrade and cross-tenant denial on 2026-08-07.`
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.

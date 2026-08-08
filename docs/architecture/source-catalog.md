@@ -40,8 +40,8 @@ flowchart LR
 
 | 角色 | 路径 | 根 workspace | 主入口/启动事实 | 当前归类 |
 |---|---|---:|---|---|
-| Web 用户端 | `apps/workbench` | 是 | `apps/workbench/src/main.tsx`；`pnpm dev:workbench` | 唯一 Web 管理端；Axi Dashboard Chrome、侧栏、标签、设置等只属于这里 |
-| 移动用户端 | `apps/workbench-mobile` | 是 | `apps/workbench-mobile/src/main.tsx`；`pnpm dev:mobile` | 唯一移动管理端；独立路由、顶栏、底栏和移动页面组合 |
+| Web 用户端 | `apps/workbench` | 是 | `apps/workbench/src/main.tsx`；`pnpm dev:workbench` | 唯一 Web 后台管理主端；Axi Dashboard Chrome、侧栏、标签、设置和复杂管理只属于这里 |
+| 移动用户端 | `apps/workbench-mobile` | 是 | `apps/workbench-mobile/src/main.tsx`；`pnpm dev:mobile` | 唯一移动辅助管理端；独立路由、顶栏、4 个常驻导航项、顶部 Scan 动作和移动页面组合 |
 | Host / 运维壳 | `apps/devsvc-dashboard` | 是 | `apps/devsvc-dashboard/src/main.tsx`；`pnpm dev:dashboard`；挂载表见 `config/axi-apps.json` | 本地服务管理和 Axi 应用 Host，不是第二用户门户 |
 | Hosted 编码工具 | `apps/axi-coder` | 是 | `apps/axi-coder/src/main.tsx`；Tauri/Rust shell | 被 Host 挂载的开发工具，拥有自己的页面与原生边界 |
 | Hosted OTP 工具 | `apps/verification-inbox` | 是 | `apps/verification-inbox/src/main.tsx`；真实邮箱能力由 Tauri/Python 边界承载 | 垂直工具，不承担工作台门户职责 |

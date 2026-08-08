@@ -19,6 +19,7 @@
 | 第六章 | [06-infrastructure.md](./06-infrastructure.md) | Docker、K8s、CI/CD、监控、安全 |
 | 第七章 | [07-docs-project.md](./07-docs-project.md) | Docusaurus 文档站、API 规范、ADR |
 | 第八章 | [08-todo.md](./08-todo.md) | 完整 TODO 清单（1020 项） |
+| 现行产品定位 | [state/PRD.md](./state/PRD.md) | Web 为完整后台管理主端；移动端为辅助管理端；定义能力归属与跨端交接 |
 | 运行规约 | [rules/epap-six-layer-sop.md](./rules/epap-six-layer-sop.md) | 六层控制面 SOP、AGENT/MEMORY/SOUL/HEARTBEAT/DOCS 边界 |
 | 项目文档系统 | [rules/epap-project-doc-agent-sop.md](./rules/epap-project-doc-agent-sop.md) | 每个项目的 README/AGENTS/CHANGELOG/MILESTONE/TODO/PRD/TDD/MEMORY 接入方式 |
 | Prompt 层 | [../prompts/README.md](../prompts/README.md) | system/global/project 三层 prompt 管理 |

@@ -1,74 +1,207 @@
 # Axi Workbench PRD
 
-## Problem
+> 版本：v3 · 状态：产品定位已定，实施待启动 · 更新：2026-08-09
+>
+> 本 PRD 的详细变更规格见 [`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)。它以当前源码角色为事实基线，不把规划能力写成既有实现。
 
-`Axi Workbench` 是 AxiomaticWorld（公理世界）产品线的本地工作站控制面，也是 Axi 工作台大项目的权威 owner。它由原 Axi Workstation 控制面吸收 DevSvc Dashboard、Axi Coder、Verification Inbox、App Search、Fleet Console、Ollama Menu Assistant 和 Axi App CLI 后形成，承载 Web 门户、`IMEnvelope`、`AgentTask`、资源快照、审计、artifact 服务边界和本地工作台入口。远端仓库名称与少量 `EPAP_*`/`@epap/*` 兼容入口在迁移验证完成前保留。
+## 1. 产品决策
 
-工作台必须以单一可验证的产品形态向用户、Agent 和下游项目交付：
+**Axi Workbench 是多端后台管理系统：Web 是完整的后台管理主端；移动端是面向外出、提醒和轻操作的辅助管理端。**
 
-- 两个独立的用户工作台应用：Web 管理端 `apps/workbench` 与移动端 `apps/workbench-mobile`。
-- 本地运维 Host（`apps/devsvc-dashboard`，运维壳而非第二门户）。
-- 六层控制面（IM / Communication / Software / Base Service / Physical Service / External Capability）。
-- 共享合同包（`@axi/workstation-control-plane`、`@axi/workstation-communication-gateway`、`@axi/workstation-contracts` 等）。
-- 工作台手册化的端到端验证与反向链接体系。
+这不是把同一个页面按屏幕宽度缩放，也不是让移动端补齐整个 Web 后台。两个端服务同一套身份、业务事实和审计链路，但分别针对不同的工作场景设计。
 
-## Users
-
-- **维护者**：在 `/Volumes/code/workspace/projects/axi-workbench` 内直接修改源代码、合同或文档的工程师。
-- **Agent**：首次进入仓库的 Codex / Cursor / 自动化扫描器 / 编排器，需要稳定的 read order、ownership、跨项目边界与验证命令。
-- **下游项目 / Dashboard Apps**：通过 `@axi/workstation-*` 合同、`IMEnvelope` / `AgentTask` 协议、共享类型与 DevSvc Dashboard 接入 Axi Workbench 的能力。
-- **远程协作方（远端 agent、AI 平台、外部设备）**：通过 IM 层和 External Capability 层的合同接口访问工作台。
-- **本机运维**：通过 DevSvc Dashboard 管理本地服务、健康检查与桌面 host 挂载。
-
-## Goals
-
-1. 把六层控制面落地为可运行的代码、合同与文档，并在两个端上可被验证：Web 管理端使用 Axi Dashboard Chrome，移动端使用独立的微信式应用壳。
-2. 让 Web 与移动端保持独立的入口、路由、页面组合与布局实现；只通过明确的基础包和 API 合同共享能力。
-3. 让 root AGENTS、PRD、TDD、TODO、Milestone、INDEX、CHANGELOG、README（含 zh-CN）始终互链且反映实现现状。
-4. 让 `pnpm check:boundaries` 与 `scripts/check-workbench-boundaries.mjs` 真正阻断跨项目硬耦合（import 邻居实现、绕过合同、绕过控制面）。
-5. 让 zero-context agent 30 秒内决定「读哪个 AGENTS、跑哪条验证、申请哪个合同」。
-
-## Non-Goals
-
-- 不替代实现源码；本仓库不创造第二份业务代码。
-- 不在本仓库内 vendoring 其他 Axi 项目（`axi-notify`、`axi-pet`、`axi-agent-platform`、`axi-docs`、`axi-image-preview`、`shared/axi-ui` 等）的实现树，只能消费合同。
-- 不把 hook 当成 Axi Workbench 的运行时旁路；hook 仅用于工程治理与本仓库 docs/HANDOFF 同步。
-- 不保留第三个重复用户门户；`apps/web-portal` 已归档，但 `apps/workbench` 与 `apps/workbench-mobile` 是一对正式、多端但独立的产品应用。
-- 不为生成 AGENTS / PRD / TDD 终止会话或覆盖用户原话。
-- 不在 docs 中宣扬「下一阶段才会实现」的能力作为现状承诺。
-
-## Requirements
-
-| ID | Requirement | Acceptance Criteria |
+| 产品表面 | 定位 | 一句话职责 |
 | --- | --- | --- |
-| REQ-DOC-001 | Maintain the full root documentation suite. | `README.md`、`README.zh-CN.md`、`AGENTS.md`、`CHANGE.md`、`docs/state/CHANGELOG.md`、`docs/state/TODO.md`、`docs/state/MILESTONE.md`、`docs/state/PRD.md`、`docs/state/TDD.md`、`docs/state/VERIFICATION.md`、`INDEX.md`、`docs/project-docs.manifest.json` 全部存在且互链。 |
-| REQ-DOC-002 | Keep the v2 zero-context manifest current. | `docs/project-docs.manifest.json` 的 `readOrder`、`entrypoints`、`commands`、`environment`、`contracts`、`currentWork`、`verification` 与实现同步；fresh smoke 成功后才标记 `verified`。 |
-| REQ-VERIFY-001 | 文档运行验证命令。 | `TDD.md` 列出 workbench / control-plane / dashboard / inbox / fleet-console 的可运行验证命令或精确 blocker；`docs/HANDOFF.md` 给出默认零上下文 90 秒路径。 |
-| REQ-VERIFY-002 | 双端 UI 合同可自动验证。 | Web 的 `node apps/workbench/scripts/verify-ui-contracts.mjs` 与移动端的 `pnpm --filter @axi/workbench-mobile verify:contracts` 通过；两个应用各自的严格 TypeScript、测试和生产构建均通过。 |
-| REQ-BOUNDARY-001 | Preserve ownership boundaries. | `pnpm check:boundaries` 阻断来自邻居项目实现的 import、阻断绕过六层控制面的 control flow、阻断绕过合同直接走 `services/api-gateway`。`AGENTS.md` 与 `docs/rules/axi-workbench-boundary-sop.md` 描述规则来源。 |
-| REQ-BOUNDARY-002 | 服务合同接入。 | 新增/修改服务必须声明「入口层 / 权威事实源 / 允许访问的下游层 / 输出渲染器 / 审计产物 / 验证路径」，否则不应进入软件层。 |
-| REQ-CONTROLPLANE-001 | 软件层以 AgentTask 形式承载 Agent 执行。 | `services/control-plane` 暴露 `AgentTask` 协议；IM / 通信层不直读项目目录；外部平台调用走 `AXI_AGENT_PLATFORM_URL` 合同入口。 |
-| REQ-COMMUNICATION-001 | 通信层只做 envelope 路由。 | `services/communication-gateway` 仅做 route 绑定、配对、审批、附件引用、幂等、回执、渠道渲染；不读取工作区索引、不查询记忆表、不拥有项目状态。 |
-| REQ-WORKBENCH-001 | 双应用入口收敛。 | `apps/workbench` 是 Web 管理端，`apps/workbench-mobile` 是移动端；`apps/web-portal` 保持归档，不能再创建第三个重复门户。 |
-| REQ-WORKBENCH-002 | Web / 移动端渲染边界。 | Web 端独占 sidebar / topbar plugins / tabs / breadcrumbs / theme / settings；移动端独占微信式绝对居中 header、搜索/加号菜单、概览/项目/工作区/扫一扫/我的五项底栏、角标与扫码页。两个端不得依赖 viewport 条件在同一 React 路由树内互相渲染。 |
-| REQ-MILESTONE-001 | 跟踪交付状态。 | `docs/state/MILESTONE.md` 记录 current status、delivery checkpoints 与 exit criteria；每次 deliver 后产生新 evidence。 |
-| REQ-LOG-001 | 记录变更与提交。 | `docs/state/CHANGELOG.md` 记录用户/Operator/Downstream-Agent 可见变更；批量提交对应 `docs/logs/submit/<batch-id>.md`。 |
-| REQ-AXI-CODER-001 | Axi Coder 不再写死外部资源路径。 | Axi Coder 的 workspace 项目快照用 `workspace://` 合同引用 + 环境变量解析；移除对 Axi Notify artifact 路径的硬编码。 |
-| REQ-MOBILE-001 | 移动端是独立的微信式工作台应用。 | `@axi/workbench-mobile` 以自己的入口、路由、页面和微信式 UI 交付；只共享 `@axi/workbench-foundation` 认证 / locale、API 合同和 Axi design tokens。跨 origin SSO 由 auth-service 合同负责，前端不跨 origin 读取 localStorage。 |
+| `apps/workbench` | Web 后台主端 | 在桌面浏览器中完成复杂、全量、可审计的管理工作。 |
+| `apps/workbench-mobile` | 移动辅助管理端 | 在移动情境下接收状态、处理个人待办、完成受限确认，并把复杂工作无损交回 Web。 |
+| `apps/devsvc-dashboard` | 本地运维 Host | 启动、发现和展示本地服务/已托管工具；不是第三个用户后台。 |
+| Axi Coder、Verification Inbox、Fleet、App Search、Ollama Menu Assistant | 垂直工具或专用运行时 | 提供专项能力；不进入用户后台的一级信息架构。 |
 
-## Success Metrics
+## 2. 要解决的问题
 
-- 必需文档全部存在且 cross-link 完整，`REQg -DOC-001` 单元测试 100% 通过。
-- Web 1440px 与移动应用 390px 浏览器 smoke 均无运行时报错，仅可接受 React Router v7 future-flag warnings。
-- Web 与移动端各自的 `type-check` / `test` / `build` 和 UI 合同校验均通过；移动端的导航边界有独立单元测试。
-- `pnpm test:workstation`（control-plane + communication-gateway + workstation-contracts）通过；`pnpm --filter @axi/workstation-control-plane smoke` 输出 ≥ 35 资源、六层快照完整。
-- `pnpm check:boundaries` 退出码 0；任意新增跨项目 import 都会立即被拦截。
-- Verifier / QA agent 进入项目后能在 90 秒内确认入口 + 跑出第一条最小验证。
-- 跨项目接入：`workspace-project consumers axi-workbench` 报告下游消费者无 breaking 改动。
+目前工程上已经存在两个独立应用，但产品层缺少清晰的能力归属。结果是：
 
-## Out-of-Scope (current milestone)
+- Web 容易被按“移动端的放大版”设计，丢失后台应有的信息密度、批量处理和多任务效率。
+- 移动端容易被要求承接完整管理后台，产生过深导航、复杂表单和难以安全验收的高风险操作。
+- 同名功能容易被误当作同一条产品链路。例如 Web 的扫码是通用识别/结果处理工具；移动端扫码是经网关确认的审批动作，权限、风险和成功标准不同。
+- 物理目录中的 Host、Hosted App 和垂直工具容易被误当作“又一个后台”，干扰用户入口和信息架构判断。
 
-- 不在本 PRD 内承诺「迁移所有 `@epap/*` 出口」（保留到 `epap-schemas-compat`）。
-- 不在本 PRD 内承诺 A2A / MCP 远端桥接的统一租户。
-- 不在本 PRD 内承诺把 `axi-pet` / `axi-notify` 的渲染迁入工作台 chrome。
-- 不在本 PRD 内把 `references/*` 翻译进 docs（治理仓库负责）。
+本 PRD 通过“按任务和风险分端，而非按屏幕尺寸分端”来消除这些混淆。
+
+## 3. 目标用户与核心任务
+
+| 用户 | 主要场景 | 首选端 | 成功结果 |
+| --- | --- | --- | --- |
+| 系统管理员 / 平台 Owner | 配置租户、成员、权限、服务、工作流和审计策略 | Web | 能在一个可检索、可批量操作、可追溯的工作台完成闭环。 |
+| 项目 / 运营负责人 | 查看项目组合、分派工作、处理异常、查看全量记录 | Web | 能跨项目比较、筛选、编辑和复盘，而非在碎片卡片间切换。 |
+| 值班 / 外出执行者 | 接收告警、查看责任范围、完成审批或确认 | Mobile | 在少量步骤内知道“现在要做什么”，并安全完成本人被授权的动作。 |
+| 开发者 / 本机运维者 | 启动本地服务、进入专用工具、诊断运行状态 | DevSvc Host / 垂直工具 | 不把工具入口误认为用户后台模块。 |
+
+## 4. 产品范围与非目标
+
+### 本期范围
+
+- 固化 Web 主端与移动辅助端的用户、任务、信息架构和交接规则。
+- 为每项新管理能力建立明确归属：Web、Mobile、双端不同形态，或垂直工具。
+- 保持两个端共享同一身份、授权、API 合同、领域事实和审计记录。
+- 用可检查的产品/工程护栏，阻止 Web 重新混入移动壳或移动端重新变成完整后台。
+
+### 非目标
+
+- 不合并两个 Vite 应用，不通过 viewport 条件把移动组件塞回 Web 路由树。
+- 不把 DevSvc Dashboard、Axi Coder、Fleet、App Search 等变成用户后台模块。
+- 不在此次产品定义中迁移 `@epap/*`、`packages/ui` 或其他兼容层；它们按独立的消费者验证计划收敛。
+- 本期不承诺操作系统或外部应用级跨端深链接、推送、离线或设备生物识别能力；P3 可建设受认证保护的产品内交接入口，并在完成安全设计后交付。
+
+## 5. 能力归属矩阵
+
+| 能力域 | Web 后台主端 | 移动辅助端 | 规则 |
+| --- | --- | --- | --- |
+| 全局概览、项目组合、跨项目筛选 | 全量数据、筛选、比较、下钻、导出 | 仅显示与本人/当前职责相关的摘要与异常 | 同一领域事实，读取范围和呈现深度不同。 |
+| 项目与任务 | 创建、编辑、分派、批量调整、历史追溯 | 查看负责项目、处理分配给自己的待办、回报状态 | 移动端不承担全量项目编排。 |
+| 工作流与 Agent 管理 | 配置、编排、观察全局执行、处理异常 | 查看本人待处理节点、确认/拒绝可授权的人工作业 | 任何高风险命令都由服务端重新授权和审计。 |
+| 租户、成员、RBAC、字典与系统设置 | 完整管理能力 | 仅可查看自身身份与个人偏好 | 不在移动端开放组织级配置。 |
+| 资源、服务与物理运维 | 提供后台入口、状态汇总和审计；专用操作转入对应工具 | 仅接收责任范围内的异常和可确认动作 | 机器、设备、端口、进程、服务启停和诊断都属于专用操作，只能在对应工具完成；Fleet / DevSvc 仍是专用表面，不复制为用户后台页面。 |
+| 审计、报表、批量导入导出 | 完整查询、过滤、导出、复盘 | 不提供全量审计与批量能力 | 这是后台主端的核心价值。 |
+| 通知与待办 | 全量收件箱、规则配置和历史记录 | 个人待办、告警、快速确认和结果反馈 | 通知不是权威事实；权威状态由业务 API 返回。 |
+| 扫码 | **通用识别与结果处理**：摄像头/图片读取、展示或复制结果 | **审批扫码确认**：解析受控二维码并提交已授权批准交易 | 名称、权限、审计事件、失败提示和验收标准必须分开。 |
+| 个人设置 | 全量工作台偏好与账号相关入口 | 账户、会话、通知、展示偏好 | 个人偏好可双端同步，布局不得共享。 |
+
+## 6. Web 后台主端体验
+
+### 6.1 信息架构
+
+Web 的主导航以管理对象和控制动作组织，而不是复刻移动底栏。首期目标信息架构为：
+
+1. **总览**：跨项目、任务、Agent、资源和异常的全局态势。
+2. **项目与工作**：项目组合、任务、流程、人工作业和执行记录。
+3. **自动化与能力**：Agent、工作流、可接入能力及其运行状态。
+4. **组织与访问**：成员、角色、权限、租户和个人设置。
+5. **资源与运维入口**：服务状态、受管资源、专用工具入口及相关审计。
+6. **审计与系统配置**：全量历史、导出、规则、字典和平台级配置。
+
+具体菜单命名可在视觉设计阶段调整，但任何一级能力都必须满足“复杂管理是否只能在 Web 完成”的判断。
+
+### 6.2 交互原则
+
+- 默认面向桌面后台工作：高信息密度表格、可组合筛选、详情抽屉、多对象批量操作、键盘可达和可回溯历史。
+- 在窄屏浏览器中保持 Web 的后台语义和重要操作，不以移动底栏、移动顶部栏或扫码入口替换桌面信息架构；必要时提示用户转入移动辅助流程或使用更宽屏幕。
+- 复杂动作应有明确的作用对象、影响范围、权限提示、确认与审计回执。
+- Web 可提供“继续到移动端”的交接入口，但不能因此缩减完整后台能力。
+
+## 7. 移动辅助端体验
+
+### 7.1 任务边界
+
+移动端服务“现在需要我处理什么”，而不是“我能否在手机上管理一切”。它优先承接：
+
+- 个人待办、告警、审批、结果回执和责任范围内的状态查看。
+- 与当前项目/工作区相关的轻量浏览、状态更新和受限确认。
+- 通过受控二维码完成审批确认；身份登录或设备配对仅在独立流程中定义。
+- 账户、会话、通知和展示偏好。
+
+当任务需要多条件筛选、批量更改、复杂编辑、组织级授权或全量审计时，移动端必须清晰解释原因并将上下文交给 Web，而非在小屏中堆叠后台表单。
+
+移动端只可执行**已预先授权、单一业务对象、影响范围能在当前页完整说明**的确认。批量操作、组织级配置、权限变更、不可逆操作，或影响范围无法明确说明的操作，必须交接 Web。应用启动、重新回到前台、用户下拉刷新或提交动作后应重新获取服务端状态；通知和本地缓存仅用于提示，离线快照必须标示更新时间，不能据此执行敏感操作。
+
+### 7.2 导航基线
+
+当前产品基线是 **4 个常驻导航项 + 1 个顶部扫码动作**：
+
+| 类别 | 当前语义 | 说明 |
+| --- | --- | --- |
+| Home | 当班摘要、告警和个人待办 | 移动端的行动起点。 |
+| Projects | 本人有关的项目与状态 | 不替代 Web 的项目组合管理。 |
+| Workspace | 当前工作上下文、可处理工作项 | 本期是聚焦当前工作而非项目配置器；后续如改名为待办/工作台，须先完成信息架构决策。 |
+| Me | 身份、会话、偏好与通知设置 | 不提供组织级配置。 |
+| Scan（顶部动作） | 扫描并确认受控审批二维码 | 本期顶部 Scan 只覆盖审批确认；身份登录或设备配对需独立命名、入口和安全设计。它不是第五个底栏页签。 |
+
+任何改成“五项底栏”的设计必须先通过新的用户研究和信息架构决策，不能由旧文档误写直接驱动实现。
+
+## 8. 跨端协作与技术护栏
+
+### 8.1 共享的是事实和合同，不是页面
+
+- 两端共享 Axi Identity 的身份与授权语义、服务端 RBAC、API/Schema 合同、语言偏好和 design tokens；各端设备会话、凭据存储与失效管理独立。
+- `packages/workbench-foundation` 仅承载认证会话和语言偏好，不导出页面、路由或布局。
+- 每端的路由、页面组合、导航、布局和交互组件独立拥有；任何跨端 UI 复用先证明它不是布局/页面耦合。
+
+### 8.2 交接规则
+
+当移动端无法安全或高效完成一项任务时，应交接：任务标识、当前对象、筛选/上下文、权限失败原因（如有）和返回入口。Web 打开后应能继续同一业务对象，而不是要求用户重新寻找。每次跨端交接都要生成可追溯的 `handoff correlation id`；源端交接、目标端打开及后续最终动作均记录该标识。P3 的交接入口限定为登录后产品内流程，不要求操作系统或外部应用级深链接。
+
+跨端动作的权威结果必须以业务 API 及审计事件为准；客户端缓存、推送或扫码解析结果不能替代服务端授权或最终状态。
+
+### 8.3 安全与审计
+
+- 移动端的确认操作必须在服务端再次鉴权，并产生与 Web 同一领域模型下可追溯的审计事件和 `handoff correlation id`（若由跨端交接发起）。
+- Web 通用扫码不应默认为审批授权；移动审批扫码不应降级为仅复制文本。
+- 高影响操作应显示作用范围和结果，失败时给出可理解的回退或交接路径。
+
+## 9. 需求与验收标准
+
+### 产品需求
+
+| ID | 需求 | 验收标准 |
+| --- | --- | --- |
+| REQ-POSITION-001 | 固定主从端产品定位。 | PRD、导航文档和后续设计都将 Web 表述为完整后台主端，将移动端表述为辅助管理端；不再将两者描述为同一 SPA 的响应式分支。 |
+| REQ-SURFACE-001 | 固定产品表面边界。 | DevSvc Dashboard 被描述为 Host/运维壳；Hosted App 与垂直工具不出现在用户后台一级导航中。 |
+| REQ-WEB-001 | Web 承担完整后台管理。 | 复杂配置、全量检索、批量操作、组织/RBAC、流程编排、审计和导出有 Web 信息架构归属与验收场景。 |
+| REQ-WEB-002 | Web 保持后台交互语义。 | Web 合同校验与浏览器验收不出现移动底栏、移动顶部栏或“用手机页面替代后台”的 viewport 分支。 |
+| REQ-MOBILE-001 | 移动端只承接辅助管理。 | Mobile 的常驻导航、页面说明和验收均围绕个人待办、状态、受限确认和个人设置；不包含组织级/全量后台配置。敏感动作仅限已预先授权的单对象确认，离线快照不可用于执行。 |
+| REQ-MOBILE-002 | 固定当前移动导航事实。 | 产品文档和合同验证以 4 个常驻导航项（Home / Projects / Workspace / Me）和顶部 Scan 动作为基线；不再写“五项底栏”。 |
+| REQ-CROSS-001 | 双端共享业务事实并可交接。 | 每个双端能力定义权威数据源、端侧动作范围、服务端授权/审计和无法完成时的 Web 交接方式；跨端连续性以 `handoff correlation id` 关联源端、目标端和最终动作。 |
+| REQ-SCAN-001 | 拆分两种扫码能力。 | Web 通用识别与移动审批确认使用不同名称、权限、审计事件和验收用例；任一实现不默认继承另一端权限。顶部 Mobile Scan 仅用于审批确认，身份/配对流程须独立定义。 |
+| REQ-BOUNDARY-001 | 保持独立应用和跨项目边界。 | Web / Mobile 不互相导入页面或布局实现；共享仅走 foundation、API、schema、locale 和 tokens；`pnpm check:boundaries` 继续阻断违规耦合。 |
+| REQ-DELIVERY-001 | 建立可执行的分端能力台账。 | 每项拟交付能力在进入开发前依照 [`CAPABILITY-OWNERSHIP.md`](../specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-OWNERSHIP.md) 记录所属端、用户任务、端侧允许动作、数据/授权、审计/交接关联、验收和不支持端的交接方案；由产品 Owner 与目标端维护者复核。 |
+
+### 工程与治理护栏（保留）
+
+| ID | 要求 | 验收标准 |
+| --- | --- | --- |
+| REQ-DOC-001 | 保持根文档系统可追溯。 | PRD、TDD、TODO、Milestone、manifest、Handoff 和 Changelog 互相可追溯，且事实与实现边界一致。 |
+| REQ-VERIFY-001 | 验证命令保持真实。 | TDD 只列当前可运行的项目命令或精确 blocker；按变更表面选择最小验证。 |
+| REQ-VERIFY-002 | 两端 UI 合同独立验证。 | Web 与 Mobile 的 type-check、test、build、各自 UI contract verifier 可分别运行；共享基础变更须双端验证。 |
+| REQ-CONTROLPLANE-001 | Agent 和跨层流程仍受六层控制面约束。 | 新流程声明入口、权威事实源、允许下游、渲染、审计和验证；通信层不拥有项目状态。 |
+| REQ-COMMUNICATION-001 | 通信层只负责 envelope 路由。 | route 绑定、配对、审批、附件引用、幂等、回执与渠道渲染不越界为项目状态或 Agent 执行。 |
+| REQ-WORKBENCH-001 | 保持两个正式用户应用。 | `apps/workbench` 与 `apps/workbench-mobile` 是唯一的 Web / 移动用户端；不新增第三个重复门户。 |
+| REQ-WORKBENCH-002 | 保持两端渲染边界。 | Web 专有桌面 Dashboard Chrome，移动端专有移动壳；两端不在同一 React 路由树中以 viewport 分支互相渲染。 |
+| REQ-MILESTONE-001 | 跟踪阶段交付状态。 | 每个阶段记录目标、证据、退出条件与未解决风险。 |
+| REQ-LOG-001 | 保持可审计变更记录。 | 对用户、运维或下游 Agent 可见的变更进入 Changelog，并由提交日志提供批次证据。 |
+| REQ-AXI-CODER-001 | Axi Coder 不硬编码邻居项目资源路径。 | 项目快照通过 `workspace://` 合同和环境配置解析，不将邻居项目实现路径写入运行时。 |
+
+## 10. 路线图与退出条件
+
+| 阶段 | 目标 | 可交付物 | 退出条件 |
+| --- | --- | --- | --- |
+| P0：术语与能力盘点 | 消除端侧功能重复和过期描述 | 功能/路由归属台账；扫码语义台账；产品命名统一 | 每个现有功能有 Web / Mobile / Host / 垂直工具归属，且文档不再有五项底栏冲突。 |
+| P1：Web 主端收敛 | 形成后台级信息架构 | Web 主导航、复杂管理页面优先级、桌面交互规范 | 核心管理员任务可在桌面端闭环，不需要借用移动交互。 |
+| P2：移动辅助收敛 | 将移动端限制在高频、即时、个人化任务 | 待办、告警、审批、项目状态和安全扫码流程 | 每个移动动作有授权边界和无法继续时的 Web 交接。 |
+| P3：跨端连续性 | 让用户不丢失任务上下文 | 统一业务对象标识、登录后产品内交接入口、`handoff correlation id` 审计关联 | Web 和 Mobile 可从同一业务对象继续工作，最终状态由服务端一致返回。 |
+| P4：持续治理 | 防止重新混杂 | PRD/TDD/合同检查和设计评审清单 | 新功能在开发前完成 `REQ-DELIVERY-001` 台账，边界检查持续通过。 |
+
+## 11. 成功指标
+
+- **定位一致性**：新需求与设计评审中，100% 的用户功能明确标记所属端和不支持端交接方式。
+- **Web 完整性**：管理员高频任务（配置、查询、批量处理、审计）不要求切换到移动端才能完成。
+- **移动聚焦度**：移动端新增流程都可归类为“查看、提醒、个人待办、受限确认或扫码”，不出现完整后台配置表单。
+- **边界稳定性**：两端独立入口、布局和 UI 合同校验持续通过；无页面/路由跨端导入。
+- **安全可追溯性**：移动确认与 Web 高影响操作都能关联到同一服务端授权与审计事实。
+
+## 12. 已知风险与开放项
+
+| 风险 / 开放项 | 处理原则 |
+| --- | --- |
+| “扫码”一词继续掩盖两个不同安全模型 | 先改命名、权限说明和验收；不合并实现。 |
+| 旧文档仍称移动端为五项底栏 | 以当前 4 项常驻导航 + Scan 动作作为本期事实，后续变更需走 IA 决策。 |
+| Web 的 legacy UI / `@epap/*` 兼容层影响视觉收敛 | 作为独立迁移议题，先完成消费者验证，不与产品定位变更捆绑。 |
+| 缺少实际用户研究数据 | 本版是 Owner 方向和现有实现的产品基线；P0 应补充管理员与值班用户的任务访谈/可用性验证。 |
+| Mobile 推送、离线与设备安全能力未完全验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 |
+
+## 13. 可追溯文档
+
+- 技术与验证策略：[`docs/state/TDD.md`](./TDD.md)
+- 实施待办：[`docs/state/TODO.md`](./TODO.md)
+- 阶段状态：[`docs/state/MILESTONE.md`](./MILESTONE.md)
+- 当前源码角色：[`docs/architecture/source-catalog.md`](../architecture/source-catalog.md)
+- 变更规格：[`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)
