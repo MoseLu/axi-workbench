@@ -1,7 +1,7 @@
 import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Annotation, END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import { createPairingService } from "./pairing.mjs";
@@ -33,10 +33,15 @@ const BLOCK_PATTERNS = [
 ];
 
 export function createControlPlane(options = {}) {
+  const workspaceRoot = workspaceRootOf(options);
+  const cacheDir = options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane");
+  const pairingEnabled = Object.hasOwn(options, "pairingEnabled")
+    ? options.pairingEnabled === true
+    : process.env.AXI_MOBILE_PAIRING_ENABLED === "true";
   const deps = {
-    workspaceRoot: resolve(options.workspaceRoot || process.env.AXI_WORKSTATION_ROOT || process.env.EPAP_WORKSPACE_ROOT || DEFAULT_WORKSPACE_ROOT),
-    graphPath: options.graphPath || join(workspaceRootOf(options), "workspace.graph.json"),
-    cacheDir: options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane"),
+    workspaceRoot,
+    graphPath: options.graphPath || join(workspaceRoot, "workspace.graph.json"),
+    cacheDir,
     memoryDatabaseUrl: Object.hasOwn(options, "memoryDatabaseUrl")
       ? options.memoryDatabaseUrl
       : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL),
@@ -47,9 +52,38 @@ export function createControlPlane(options = {}) {
     heartbeatMs: options.heartbeatMs || JOB_HEARTBEAT_MS,
     codexBin: options.codexBin || process.env.CODEX_BIN || "codex",
     appServerBin: options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex",
-    pairingTokenSecret: options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "",
+    pairingEnabled,
+    pairingTokenSecret: resolveMobilePairingTokenSecret({
+      configuredSecret: options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "",
+      cacheDir,
+      pairingEnabled,
+      nodeEnv: options.nodeEnv || process.env.NODE_ENV || "development",
+    }),
   };
   return buildControlPlaneSurface(deps);
+}
+
+/**
+ * 本机开发配对密钥绝不进入源码、环境输出或移动端包。
+ * 只有显式启用移动配对且非生产环境时，才在控制面私有缓存中创建一个稳定随机值；
+ * 重启不会让已配对设备全部失效，生产仍必须从 Secret 注入 AXI_MOBILE_TOKEN_SECRET。
+ */
+export function resolveMobilePairingTokenSecret({ configuredSecret = "", cacheDir, pairingEnabled = false, nodeEnv = "development" } = {}) {
+  const explicit = typeof configuredSecret === "string" ? configuredSecret.trim() : "";
+  if (explicit) return explicit;
+  if (!pairingEnabled || nodeEnv === "production") return "";
+
+  const secretPath = join(cacheDir, "mobile-pairing-token-secret");
+  if (existsSync(secretPath)) {
+    const persisted = readFileSync(secretPath, "utf8").trim();
+    if (persisted) return persisted;
+  }
+
+  mkdirSync(cacheDir, { recursive: true, mode: 0o700 });
+  const generated = randomBytes(32).toString("hex");
+  writeFileSync(secretPath, `${generated}\n`, { mode: 0o600 });
+  chmodSync(secretPath, 0o600);
+  return generated;
 }
 
 function workspaceRootOf(options) {
@@ -64,9 +98,8 @@ function memoryDatabaseUrlOf(options) {
 function buildControlPlaneSurface({
   workspaceRoot, graphPath, cacheDir, memoryDatabaseUrl, memoryProjectReader,
   agentTaskExecutor, roleAgentExecutor, axiAgentTaskExecutor, heartbeatMs,
-  codexBin, appServerBin, pairingTokenSecret,
+  codexBin, appServerBin, pairingTokenSecret, pairingEnabled,
 }) {
-  const pairingEnabled = process.env.AXI_MOBILE_PAIRING_ENABLED === "true";
   const pairing = pairingTokenSecret
     ? createPairingService({ cacheDir, tokenSecret: pairingTokenSecret })
     : null;
