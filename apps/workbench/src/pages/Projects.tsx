@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useControlSnapshot } from '@epap/api-client';
 import { WorkbenchIcon } from '../components/WorkbenchIcon';
 import {
-  getProjectConsumers,
   getProjectGitStatus,
   getProjectResourceId,
   getProjectResourceLabel,
-  getProjectResourceSummary,
   getProjectResources,
   projectNeedsAttention,
   projectSearchText,
@@ -33,11 +31,6 @@ const Projects: React.FC = () => {
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
     [snapshot],
   );
-  const projectIds = useMemo(() => new Set(projects.map(getProjectResourceId)), [projects]);
-  const availableCount = projects.filter((project) => project.status === 'available').length;
-  const attentionCount = projects.filter(projectNeedsAttention).length;
-  const commandCount = projects.reduce((count, project) => count + project.commands.length, 0);
-  const activeTaskCount = (snapshot?.agentTasks ?? []).filter((task) => task.targetId && projectIds.has(task.targetId)).length;
 
   const visibleProjects = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
@@ -51,31 +44,7 @@ const Projects: React.FC = () => {
   const errorMessage = error instanceof Error ? error.message : '项目状态暂时无法同步。';
 
   return (
-    <main className="projects-page" aria-labelledby="projects-page-title">
-      <header className="projects-page__hero">
-        <div className="projects-page__hero-copy">
-          <span className="projects-page__eyebrow">WORKBENCH · PROJECT INDEX</span>
-          <h1 id="projects-page-title">项目</h1>
-          <p>来自控制面的已登记项目。状态、分支、依赖与受管命令均以实时快照为准。</p>
-        </div>
-        <div className="projects-page__hero-actions">
-          <span className={`projects-page__source${snapshot ? ' is-connected' : ''}`}>
-            <i aria-hidden="true" />
-            {snapshot ? '控制面已连接' : '等待控制面连接'}
-          </span>
-          <button className="projects-page__refresh" disabled={isFetching} onClick={() => void refetch()} type="button">
-            {isFetching ? '同步中…' : '刷新状态'}
-          </button>
-        </div>
-      </header>
-
-      <section className="projects-stats" aria-label="项目状态摘要">
-        <ProjectStat icon="project" label="登记项目" value={projects.length} tone="brand" />
-        <ProjectStat icon="check" label="可用" value={availableCount} tone="success" />
-        <ProjectStat icon="notification" label="需关注" value={attentionCount} tone="warning" />
-        <ProjectStat icon="workspace" label="进行任务" value={activeTaskCount} hint={`${commandCount} 个受管命令`} tone="violet" />
-      </section>
-
+    <main className="projects-page" aria-label="项目">
       <section className="projects-catalog" aria-label="项目目录">
         <div className="projects-catalog__toolbar">
           <label className="projects-search">
@@ -101,7 +70,10 @@ const Projects: React.FC = () => {
               </button>
             ))}
           </div>
-          <span className="projects-catalog__count">显示 {visibleProjects.length} / {projects.length}</span>
+          <span className="projects-catalog__count">{visibleProjects.length} 个项目</span>
+          <button className="projects-page__refresh" disabled={isFetching} onClick={() => void refetch()} type="button">
+            {isFetching ? '同步中…' : '刷新'}
+          </button>
         </div>
 
         {isLoading ? (
@@ -132,9 +104,9 @@ const Projects: React.FC = () => {
             title="没有匹配的项目"
           />
         ) : (
-          <div className="projects-grid">
+          <div className="projects-list">
             {visibleProjects.map((project) => (
-              <ProjectCard
+              <ProjectRow
                 key={getProjectResourceId(project)}
                 onOpen={() => navigate(`/admin/project/${encodeURIComponent(getProjectResourceId(project))}`)}
                 project={project}
@@ -147,76 +119,39 @@ const Projects: React.FC = () => {
   );
 };
 
-const ProjectStat: React.FC<{
-  icon: 'project' | 'check' | 'notification' | 'workspace';
-  label: string;
-  value: number;
-  hint?: string;
-  tone: 'brand' | 'success' | 'warning' | 'violet';
-}> = ({ icon, label, value, hint, tone }) => (
-  <article className={`projects-stat projects-stat--${tone}`}>
-    <span className="projects-stat__icon"><WorkbenchIcon name={icon} size={18} /></span>
-    <span className="projects-stat__copy">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {hint ? <small>{hint}</small> : null}
-    </span>
-  </article>
-);
-
-const ProjectCard: React.FC<{ project: ProjectResource; onOpen: () => void }> = ({ project, onOpen }) => {
+const ProjectRow: React.FC<{ project: ProjectResource; onOpen: () => void }> = ({ project, onOpen }) => {
   const git = getProjectGitStatus(project);
-  const consumers = getProjectConsumers(project);
   const projectId = getProjectResourceId(project);
-  const attention = projectNeedsAttention(project);
   const status = project.status === 'available' ? '可用' : project.status || '待校验';
+  const workspaceState = git.changedEntries > 0
+    ? `工作区有 ${git.changedEntries} 项改动`
+    : git.clean === false
+      ? '工作区待检查'
+      : '工作区正常';
 
   return (
     <button
-      className={`project-card${attention ? ' is-attention' : ''}`}
+      className="project-row"
       onClick={onOpen}
       type="button"
     >
-      <span className="project-card__topline">
-        <span className="project-card__mark"><WorkbenchIcon name="project" size={18} /></span>
-        <span className={`project-card__status${project.status === 'available' ? ' is-available' : ''}`}>
-          <i aria-hidden="true" />
-          {status}
-        </span>
-      </span>
-      <span className="project-card__identity">
+      <span className="project-row__mark"><WorkbenchIcon name="project" size={17} /></span>
+      <span className="project-row__identity">
         <strong>{getProjectResourceLabel(project)}</strong>
-        <small>{projectId}</small>
+        <small>{workspaceState}</small>
       </span>
-      <span className="project-card__summary">{getProjectResourceSummary(project)}</span>
-      <span className="project-card__metrics" aria-label={`${projectId} 的项目状态`}>
-        <ProjectMetric label="分支" value={git.branch || '未登记'} />
-        <ProjectMetric label="工作区" value={git.changedEntries > 0 ? `${git.changedEntries} 项改动` : git.clean === false ? '待检查' : '干净'} />
-        <ProjectMetric label="依赖" value={`${project.consumes.length} 项`} />
-        <ProjectMetric label="消费方" value={`${consumers.length} 个`} />
+      <span className={`project-row__status${project.status === 'available' ? ' is-available' : ''}`}>
+        <i aria-hidden="true" />
+        {status}
       </span>
-      <span className="project-card__capabilities">
-        {project.provides.slice(0, 3).map((capability) => <em key={capability}>{capability}</em>)}
-        {project.provides.length === 0 ? <em className="is-muted">尚未登记对外能力</em> : null}
-      </span>
-      <span className="project-card__footer">
-        <span>{project.commands.length > 0 ? `${project.commands.length} 个受管命令` : '无受管命令'}</span>
-        <span>查看详情 <WorkbenchIcon name="forward" size={14} /></span>
-      </span>
+      <WorkbenchIcon aria-label={`${projectId} 详情`} name="forward" size={15} />
     </button>
   );
 };
 
-const ProjectMetric: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <span>
-    <small>{label}</small>
-    <strong title={value}>{value}</strong>
-  </span>
-);
-
 const ProjectSkeletons: React.FC = () => (
-  <div className="projects-grid" aria-label="正在加载项目">
-    {[0, 1, 2, 3, 4, 5].map((index) => <div className="project-card project-card--skeleton" key={index} />)}
+  <div className="projects-list" aria-label="正在加载项目">
+    {[0, 1, 2, 3, 4, 5].map((index) => <div className="project-row project-row--skeleton" key={index} />)}
   </div>
 );
 
