@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { AxiResourceView, ManagedResource } from '@axi/workstation-contracts';
 
 import {
+  getApprovalRiskLabel,
   getProjectCollaborationLinks,
+  getProjectConsumerSummary,
   getProjectGitStatus,
   getProjectResourceId,
   getProjectResources,
+  getRuntimePresentation,
+  getTaskStatusLabel,
   groupWorkspaceResources,
   projectNeedsAttention,
   summarizeAgentTasks,
@@ -107,5 +111,20 @@ describe('groupWorkspaceResources', () => {
     expect(links).toHaveLength(1);
     expect(getProjectResourceId(links[0]!.project)).toBe('axi-workbench');
     expect(links[0]!.consumers).toEqual(['axi-coder', 'axi-notify']);
+  });
+
+  it('turns control-plane identifiers into Chinese display text', () => {
+    expect(getTaskStatusLabel('awaiting_approval')).toBe('等待审批');
+    expect(getTaskStatusLabel('unrecognized')).toBe('状态待确认');
+    expect(getApprovalRiskLabel('critical')).toBe('高风险');
+    expect(getProjectConsumerSummary(3)).toBe('被 3 个项目使用');
+    expect(getRuntimePresentation('codex_cli')).toEqual({
+      label: '命令行执行器',
+      summary: '用于受管任务的命令行运行环境。',
+    });
+    expect(getRuntimePresentation('custom', '自定义运行环境。')).toEqual({
+      label: '已登记运行环境',
+      summary: '自定义运行环境。',
+    });
   });
 });

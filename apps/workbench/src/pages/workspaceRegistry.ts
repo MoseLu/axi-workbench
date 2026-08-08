@@ -39,6 +39,37 @@ export type ProjectCollaborationLink = {
   consumers: string[];
 };
 
+const taskStatusLabels: Record<string, string> = {
+  queued: '等待执行',
+  running: '执行中',
+  awaiting_approval: '等待审批',
+  succeeded: '已完成',
+  failed: '执行失败',
+  cancelled: '已取消',
+};
+
+const runtimePresentation: Record<string, { label: string; summary: string }> = {
+  codex_cli: {
+    label: '命令行执行器',
+    summary: '用于受管任务的命令行运行环境。',
+  },
+  codex_app: {
+    label: '桌面应用执行器',
+    summary: '用于本地桌面会话的运行环境；不可用时会使用命令行执行器。',
+  },
+  axi_agent: {
+    label: 'Axi Agent 服务',
+    summary: '受限的 Agent 服务运行环境。',
+  },
+};
+
+const approvalRiskLabels: Record<string, string> = {
+  low: '低风险',
+  medium: '中风险',
+  high: '高风险',
+  critical: '高风险',
+};
+
 export function groupWorkspaceResources(resources: ManagedResource[]): WorkspaceResourceGroup[] {
   const knownLayers = new Set<string>(layerDefinitions.map((item) => item.layer));
   const groups: WorkspaceResourceGroup[] = layerDefinitions.map((definition) => ({
@@ -136,6 +167,28 @@ export function projectSearchText(resource: ProjectResource): string {
     ...resource.consumes,
     ...resource.contracts,
   ].filter(Boolean).join(' ').toLocaleLowerCase('zh-CN');
+}
+
+/** Translate control-plane enums before presenting them in the workbench. */
+export function getTaskStatusLabel(status: string | undefined): string {
+  return taskStatusLabels[status ?? ''] || '状态待确认';
+}
+
+/** Avoid exposing implementation ids such as `codex_cli` as UI labels. */
+export function getRuntimePresentation(kind: string, fallbackSummary?: string): { label: string; summary: string } {
+  return runtimePresentation[kind] || {
+    label: '已登记运行环境',
+    summary: fallbackSummary || '控制面已登记该运行环境。',
+  };
+}
+
+/** Keep approval state readable without turning raw enum values into UI labels. */
+export function getApprovalRiskLabel(riskLevel: string | undefined): string {
+  return approvalRiskLabels[riskLevel?.toLocaleLowerCase('en-US') ?? ''] || '需要确认';
+}
+
+export function getProjectConsumerSummary(consumerCount: number): string {
+  return consumerCount > 0 ? `被 ${consumerCount} 个项目使用` : '暂无关联项目';
 }
 
 /**
