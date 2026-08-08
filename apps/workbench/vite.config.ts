@@ -24,6 +24,13 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:8088',
         changeOrigin: true,
       },
+      // Keep the local control-plane behind the Web origin in development.
+      // Production supplies VITE_CONTROL_PLANE_BASE_URL through its gateway.
+      '/control-plane': {
+        target: process.env.VITE_CONTROL_PLANE_PROXY_TARGET || 'http://localhost:8092',
+        changeOrigin: true,
+        rewrite: (requestPath) => requestPath.replace(/^\/control-plane/u, ''),
+      },
     },
   },
 });

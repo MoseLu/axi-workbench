@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useControlSnapshot, useLegacyProjects } from '@epap/api-client';
 import type { AxiResourceView, ManagedResource, Project, ProjectStatus } from '@axi/workstation-contracts';
+import { groupWorkspaceResources } from './workspaceRegistry';
 
 const statusColors: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
   active: { bg: 'rgba(24, 144, 255, 0.15)', text: 'var(--color-info-antd)', border: 'rgba(24, 144, 255, 0.3)' },
@@ -15,7 +16,9 @@ const Projects: React.FC = () => {
   const { data: snapshot, isLoading: snapshotLoading } = useControlSnapshot();
   const { data: projectsResponse, isLoading, error } = useLegacyProjects();
 
-  const serviceProjects = snapshot?.axiResources?.project ?? (snapshot?.resources || []).filter((resource) => resource.layer === 'software');
+  const workspaceResources = snapshot?.resources || [];
+  const resourceGroups = groupWorkspaceResources(workspaceResources);
+  const serviceProjects = snapshot?.axiResources?.project ?? workspaceResources.filter((resource) => resource.layer === 'software');
   const projects: Project[] = projectsResponse?.items || [];
 
   const handleProjectClick = (projectId: string) => {
@@ -31,18 +34,31 @@ const Projects: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-bg-card)', marginBottom: 4 }}>
-            Software Layer Projects
+            Workspace Registry
           </h1>
           <p style={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.45)' }}>
-            {serviceProjects.length || projects.length} managed project{(serviceProjects.length || projects.length) !== 1 ? 's' : ''}
+            {workspaceResources.length || serviceProjects.length || projects.length} managed workspace resource{(workspaceResources.length || serviceProjects.length || projects.length) !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
-      {serviceProjects.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-          {serviceProjects.map((resource) => (
-            <ServiceProjectCard key={resource.id} resource={resource} onClick={handleProjectClick} />
+      {resourceGroups.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+          {resourceGroups.map((group) => (
+            <section key={group.layer}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'baseline', marginBottom: 12 }}>
+                <div>
+                  <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--color-bg-card)', margin: 0 }}>{group.label}</h2>
+                  <p style={{ margin: '5px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>{group.description}</p>
+                </div>
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{group.resources.length}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+                {group.resources.map((resource) => (
+                  <ServiceProjectCard key={resource.id} resource={resource} onClick={handleProjectClick} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       ) : error ? (
@@ -117,7 +133,7 @@ const ServiceProjectCard: React.FC<ServiceProjectCardProps> = ({ resource, onCli
           {resource.status}
         </span>
       </div>
-      <p style={descriptionStyle}>{resource.kind}</p>
+      <p style={descriptionStyle}>{resource.kind} · {resource.layer}</p>
       <div style={metaGridStyle}>
         <Meta label="Branch" value={git?.branch || 'n/a'} />
         <Meta label="Changes" value={String(git?.changedEntries || 0)} />
