@@ -1,97 +1,49 @@
-.wb-me {
-  --account-border: var(--axi-layout-border, var(--axi-border, rgba(255, 255, 255, .1)));
-  --account-text: var(--axi-text, #f5f7fb);
-  --account-muted: var(--axi-muted, rgba(255, 255, 255, .58));
-  display: grid;
-  gap: 0;
-  min-height: 100%;
-  padding: 4px 0 24px;
-  color: var(--account-text);
-}
-
-.wb-me__visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.wb-me__profile {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 16px;
+.wb-me-overview__profile {
+  display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 72px;
-  width: 100%;
-  border: 0;
-  border-bottom: 1px solid var(--account-border);
-  padding: 12px 8px;
-  color: inherit;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
+  min-height: 64px;
+  margin-bottom: 10px;
 }
 
-.wb-me__profile:hover,
-.wb-me__row:hover { background: color-mix(in srgb, var(--axi-primary, #4569d4) 6%, transparent); }
-
-.wb-me__profile:focus-visible,
-.wb-me__row:focus-visible {
-  outline: 2px solid var(--axi-primary, #4569d4);
-  outline-offset: -2px;
-}
-
-.wb-me__avatar {
-  display: block;
-  width: 40px;
-  height: 40px;
+.wb-me-overview__avatar {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--account-text) 8%, transparent);
   object-fit: cover;
+  background: color-mix(in srgb, var(--axi-text, #f5f7fb) 8%, transparent);
 }
 
-.wb-me__meta { display: grid; min-width: 0; gap: 4px; }
+.wb-me-overview__avatar--default {
+  display: inline-grid;
+  place-items: center;
+  color: var(--axi-muted, rgba(255, 255, 255, .58));
+}
 
-.wb-me__name,
-.wb-me__email {
+.wb-me-overview__identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.wb-me-overview__identity strong {
   overflow: hidden;
+  color: var(--axi-text, #f5f7fb);
+  font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.wb-me__name { color: var(--account-text); font-size: 14px; font-weight: 600; }
-.wb-me__email { color: var(--account-muted); font-size: 12px; }
-
-.wb-me__list { display: grid; }
-
-.wb-me__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 56px;
-  width: 100%;
-  border: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--account-border) 74%, transparent);
-  padding: 10px 8px;
-  color: var(--account-text);
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-}
-
-.wb-me__value {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--account-muted);
+.wb-me-overview__identity span {
+  overflow: hidden;
+  color: var(--axi-muted, rgba(255, 255, 255, .58));
   font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.wb-me__chevron { color: var(--account-muted); font-size: 12px; }
+.wb-me-overview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

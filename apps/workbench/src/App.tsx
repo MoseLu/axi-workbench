@@ -9,6 +9,7 @@ import {
   createAxiAntdTheme,
   useAxiTheme,
 } from '@axi/core';
+import { axiCrudLocaleContribution } from '@axi/crud';
 import { axiSettingsLocaleContribution } from '@axi/settings';
 import { axiShellLocaleContribution } from '@axi/shell';
 import MainLayout from './layouts/MainLayout';
@@ -55,7 +56,7 @@ const WorkbenchSurface: React.FC = () => {
 
   return (
     <AxiLocaleProvider
-      contributions={[axiShellLocaleContribution, axiSettingsLocaleContribution]}
+      contributions={[axiShellLocaleContribution, axiSettingsLocaleContribution, axiCrudLocaleContribution]}
       fallbackLocale="zh-CN"
       locale="zh-CN"
     >

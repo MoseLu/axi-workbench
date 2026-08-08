@@ -11,30 +11,65 @@ export type UserProfile = {
   status: string;
 };
 
+export type ProfileIdentity = {
+  email?: string;
+  id?: string;
+  name?: string;
+  status?: string;
+};
+
 const KEY = 'wb_user_profile_v1';
 
 const DEFAULT_PROFILE: UserProfile = {
-  nickname: '张三',
-  email: 'zhangsan@workbench.dev',
+  nickname: '',
+  email: '',
   phone: '',
   avatarDataUrl: '',
-  workbenchId: 'wb_zhangsan',
-  registeredAt: '2026-03-12',
-  status: '正常',
+  workbenchId: '',
+  registeredAt: '',
+  status: '',
 };
 
-export function loadProfile(): UserProfile {
+function displayName(identity?: ProfileIdentity | null): string {
+  return identity?.name?.trim() || identity?.email?.split('@')[0] || identity?.id || '用户';
+}
+
+export function profileFallbackFromIdentity(identity?: ProfileIdentity | null): Partial<UserProfile> {
+  if (!identity) return {};
+  return {
+    email: identity.email || '',
+    nickname: displayName(identity),
+    status: identity.status === 'active' ? '正常' : identity.status || '',
+    workbenchId: identity.id || '',
+  };
+}
+
+/**
+ * 使用认证会话填充未设置的资料，并把旧版写入的演示昵称和邮箱迁移出去。
+ * 用户主动保存过的值仍会优先保留。
+ */
+export function loadProfile(identity?: ProfileIdentity | null): UserProfile {
+  const fallback = profileFallbackFromIdentity(identity);
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { ...DEFAULT_PROFILE };
-    return { ...DEFAULT_PROFILE, ...JSON.parse(raw) };
+    if (!raw) return { ...DEFAULT_PROFILE, ...fallback };
+    const stored = JSON.parse(raw) as Partial<UserProfile>;
+    return {
+      ...DEFAULT_PROFILE,
+      ...fallback,
+      ...stored,
+      email: stored.email === 'zhangsan@workbench.dev' && fallback.email ? fallback.email : stored.email || fallback.email || '',
+      nickname: stored.nickname === '张三' && fallback.nickname ? fallback.nickname : stored.nickname || fallback.nickname || '用户',
+      status: stored.status === '正常' && fallback.status ? fallback.status : stored.status || fallback.status || '',
+      workbenchId: stored.workbenchId || fallback.workbenchId || '',
+    };
   } catch {
-    return { ...DEFAULT_PROFILE };
+    return { ...DEFAULT_PROFILE, ...fallback };
   }
 }
 
-export function saveProfile(patch: Partial<UserProfile>): UserProfile {
-  const next = { ...loadProfile(), ...patch };
+export function saveProfile(patch: Partial<UserProfile>, identity?: ProfileIdentity | null): UserProfile {
+  const next = { ...loadProfile(identity), ...patch };
   localStorage.setItem(KEY, JSON.stringify(next));
   window.dispatchEvent(new CustomEvent('wb-profile-changed', { detail: next }));
   return next;

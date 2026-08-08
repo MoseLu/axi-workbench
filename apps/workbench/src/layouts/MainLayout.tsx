@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { AxiLogoMark, useAxiTheme } from '@axi/core';
+import { AxiLogoMark, AxiSvgIcon, useAxiTheme } from '@axi/core';
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { axiStylePresets } from '@axi/presets';
 import { AxiAdminSettingsPanel, useAxiAdminSettings } from '@axi/settings';
@@ -25,7 +25,7 @@ import {
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
 import { workbenchDesktopNavGroups, workbenchMenuRouteMap } from '../lib/navigationRegistry';
-import avatarDefault from '../assets/avatar-me.jpg';
+import { loadProfile, type UserProfile } from '../pages/admin/me/profileStore';
 import './MainLayout.css';
 
 function resolveMenuRoute(path: string): { label: string } | undefined {
@@ -36,6 +36,7 @@ function resolveMenuRoute(path: string): { label: string } | undefined {
 const MainLayout: React.FC = () => {
   const { locale, setLocale, t } = useI18n();
   const { user, logout } = useAuth();
+  const [profile, setProfile] = useState<UserProfile>(() => loadProfile(user));
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarSearchValue, setSidebarSearchValue] = useState('');
@@ -57,7 +58,14 @@ const MainLayout: React.FC = () => {
   const tabBadges = useNavBadges(true);
   const unreadCount = tabBadges.unreadTotal;
 
-  const displayName = user?.name || t('common.user.admin') || '用户';
+  const displayName = profile.nickname || user?.name || t('common.user.admin') || '用户';
+
+  useEffect(() => {
+    const onProfileChange = () => setProfile(loadProfile(user));
+    onProfileChange();
+    window.addEventListener('wb-profile-changed', onProfileChange);
+    return () => window.removeEventListener('wb-profile-changed', onProfileChange);
+  }, [user]);
 
   const globalSearchItems = useMemo<GlobalSearchItem[]>(() => {
     const navItems = workbenchDesktopNavGroups.flatMap((group) =>
@@ -74,9 +82,9 @@ const MainLayout: React.FC = () => {
       key: `content:${hit.id}`,
       label: hit.title,
       description: hit.subtitle,
-      group: hit.kind === 'project' ? '项目' : hit.kind === 'doc' ? '文档' : '相关内容',
+      group: hit.kind === 'navigation' ? '页面' : '工具',
       path: hit.path,
-      iconName: (hit.kind === 'project' ? axiWorkbenchIconMap.project : hit.kind === 'doc' ? axiWorkbenchIconMap.file : axiWorkbenchIconMap.search) as GlobalSearchItem['iconName'],
+      iconName: (hit.kind === 'navigation' ? axiWorkbenchIconMap.menu : axiWorkbenchIconMap.search) as GlobalSearchItem['iconName'],
     }));
     return [...navItems, ...corpusItems];
   }, []);
@@ -242,7 +250,8 @@ const MainLayout: React.FC = () => {
         activeNavKey={location.pathname.startsWith('/admin/project/') ? '/admin/project' : location.pathname}
         activeTabKey={activeTab}
         avatarConfig={{
-          imageSrc: avatarDefault,
+          avatar: <AxiSvgIcon name={axiWorkbenchIconMap.account} size={16} />,
+          imageSrc: profile.avatarDataUrl || undefined,
           label: displayName,
           menuItems: [
             {
@@ -343,23 +352,25 @@ const MainLayout: React.FC = () => {
         onSelect={handleGlobalSearchSelect}
       />
 
-      <AxiAdminSettingsPanel
-        activeStylePreset={settings.stylePreset}
-        activeTheme={preset.name}
-        open={settingsOpen}
-        stylePresetOptions={stylePresetOptions}
-        themePreference={preference}
-        value={settings}
-        onChange={updateSetting}
-        onOpenChange={setSettingsOpen}
-        onStylePresetChange={(stylePreset) => updateSetting('stylePreset', stylePreset)}
-        onThemeChange={(name) => {
-          updateSetting('themeColor', '');
-          setPreset(name);
-        }}
-        onThemeColorChange={(color) => updateSetting('themeColor', color)}
-        onThemePreferenceChange={setPreference}
-      />
+      {settingsOpen ? (
+        <AxiAdminSettingsPanel
+          activeStylePreset={settings.stylePreset}
+          activeTheme={preset.name}
+          open={settingsOpen}
+          stylePresetOptions={stylePresetOptions}
+          themePreference={preference}
+          value={settings}
+          onChange={updateSetting}
+          onOpenChange={setSettingsOpen}
+          onStylePresetChange={(stylePreset) => updateSetting('stylePreset', stylePreset)}
+          onThemeChange={(name) => {
+            updateSetting('themeColor', '');
+            setPreset(name);
+          }}
+          onThemeColorChange={(color) => updateSetting('themeColor', color)}
+          onThemePreferenceChange={setPreference}
+        />
+      ) : null}
     </>
   );
 };

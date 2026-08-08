@@ -1,96 +1,60 @@
 import React, { useMemo, useState } from 'react';
+import { Empty, Input } from 'antd';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useNavigate } from 'react-router-dom';
-import { WorkbenchIcon } from '../../components/WorkbenchIcon';
-import { filterSearchCorpus, SEARCH_SECTIONS } from '../../lib/search-data';
+import { DesktopCrudFrame } from './DesktopCrudFrame';
+import { filterSearchCorpus, type SearchHit } from '../../lib/search-data';
 import './Search.css';
 
-/**
- * 全局联想搜索二级页：项目 / 文档 / 项目相关内容
- */
+/** 桌面端全局搜索：只检索已登记的真实工作台入口。 */
 const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-
   const results = useMemo(() => filterSearchCorpus(query), [query]);
-
-  const grouped = useMemo(
-    () =>
-      SEARCH_SECTIONS.map((s) => ({
-        ...s,
-        items: results.filter((h) => h.kind === s.key),
-      })).filter((s) => s.items.length > 0),
-    [results],
-  );
+  const columns: AxiTableColumn<SearchHit>[] = [
+    {
+      dataIndex: 'kind',
+      render: (kind) => kind === 'navigation' ? '页面' : '工具',
+      title: '类别',
+      width: 90,
+    },
+    { align: 'left', dataIndex: 'title', title: '名称', width: 230 },
+    { align: 'left', dataIndex: 'subtitle', title: '说明' },
+  ];
 
   return (
-    <div className="wb-search">
-      <div className="wb-search__bar">
-        <button type="button" className="wb-search__icon-btn" onClick={() => navigate(-1)} aria-label="返回">
-          <WorkbenchIcon name="back" />
-        </button>
-        <div className="wb-search__field">
-          <WorkbenchIcon name="search" className="wb-search__field-icon" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索项目、文档、相关内容"
-            enterKeyHint="search"
+    <DesktopCrudFrame
+      ariaLabel="快速搜索"
+      className="wb-search"
+      search={(
+        <Input.Search
+          allowClear
+          autoFocus
+          aria-label="搜索工作台"
+          placeholder="搜索页面和工具"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      )}
+      top={<span className="wb-crud-page__context">快速搜索</span>}
+    >
+      <AxiTableGroup
+        description={query.trim() ? `找到 ${results.length} 个匹配项` : '输入关键词后检索已登记的工作台入口'}
+        title="搜索结果"
+      >
+        {!query.trim() ? <Empty description="等待输入关键词" image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+        {query.trim() && results.length === 0 ? <Empty description={`未找到与“${query.trim()}”相关的入口`} image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+        {results.length > 0 ? (
+          <AxiTable
+            columns={columns}
+            data={results}
+            pagination={false}
+            rowKey="id"
+            onRow={(hit) => ({ onClick: () => navigate(hit.path), style: { cursor: 'pointer' } })}
           />
-          {query ? (
-            <button type="button" className="wb-search__clear" onClick={() => setQuery('')} aria-label="清除">
-              <WorkbenchIcon name="close" />
-            </button>
-          ) : null}
-        </div>
-        <button type="button" className="wb-search__cancel" onClick={() => navigate(-1)}>
-          取消
-        </button>
-      </div>
-
-      <div className="wb-search__body">
-        {!query.trim() && (
-          <div className="wb-search__hints">
-            <div className="wb-search__section-label">试试搜索</div>
-            {['Mobile', '文档', '设计', '扫一扫'].map((h) => (
-              <button key={h} type="button" className="wb-search__hint" onClick={() => setQuery(h)}>
-                {h}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {query.trim() && results.length === 0 && (
-          <div className="wb-search__empty">未找到与「{query}」相关的结果</div>
-        )}
-
-        {grouped.map((section) => (
-          <div key={section.key} className="wb-search__group">
-            <div className="wb-search__section-label">{section.label}</div>
-            <div className="wb-search__card">
-              {section.items.map((hit, i) => (
-                <button
-                  key={hit.id}
-                  type="button"
-                  className={`wb-search__row ${i < section.items.length - 1 ? 'has-divider' : ''}`}
-                  onClick={() => navigate(hit.path)}
-                >
-                  <span className="wb-search__row-icon">
-                    {hit.kind === 'project' ? <WorkbenchIcon name="folder" /> : null}
-                    {hit.kind === 'doc' ? <WorkbenchIcon name="file" /> : null}
-                    {hit.kind === 'content' ? <WorkbenchIcon name="search" /> : null}
-                  </span>
-                  <span className="wb-search__row-text">
-                    <span className="wb-search__row-title">{hit.title}</span>
-                    <span className="wb-search__row-sub">{hit.subtitle}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+        ) : null}
+      </AxiTableGroup>
+    </DesktopCrudFrame>
   );
 };
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Spin } from 'antd';
+import { Alert, Button, Empty, Spin } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import {
   announceNotificationChange,
   fetchNotifications,
@@ -8,19 +9,18 @@ import {
   markNotificationRead,
   type WorkbenchNotification,
 } from '@axi/workbench-foundation';
-import type { AxiWorkbenchIconName } from '@axi/workbench-foundation/icons';
-import { WorkbenchIcon } from '../../../components/WorkbenchIcon';
 import { useI18n } from '../../../i18n';
+import { DesktopSettingsPage } from './DesktopSettingsPage';
 import { formatNotificationTime } from './notificationPresentation';
 import './Notifications.css';
 
 const notificationQueryKey = ['axi', 'notifications'] as const;
 
-function categoryIcon(category: WorkbenchNotification['category']): AxiWorkbenchIconName {
-  if (category === 'projects') return 'project';
-  if (category === 'workspace') return 'workspace';
-  if (category === 'me') return 'account';
-  return 'home';
+function categoryLabel(category: WorkbenchNotification['category']) {
+  if (category === 'projects') return '项目';
+  if (category === 'workspace') return '工作区';
+  if (category === 'me') return '账户';
+  return '系统';
 }
 
 const Notifications: React.FC = () => {
@@ -53,83 +53,89 @@ const Notifications: React.FC = () => {
     markAllRead.reset();
     void inbox.refetch();
   };
+  const columns: AxiTableColumn<WorkbenchNotification>[] = [
+    {
+      dataIndex: 'category',
+      render: (category) => categoryLabel(category),
+      title: '类别',
+      width: 92,
+    },
+    {
+      align: 'left',
+      dataIndex: 'subject',
+      render: (_, notification) => (
+        <span className="wb-notification-center__copy">
+          <strong>{notification.subject}</strong>
+          <small>{notification.content}</small>
+        </span>
+      ),
+      title: '通知内容',
+    },
+    {
+      dataIndex: 'createdAt',
+      render: (createdAt) => formatNotificationTime(createdAt, locale),
+      title: '时间',
+      width: 160,
+    },
+    {
+      dataIndex: 'read',
+      render: (read) => read ? '已读' : '未读',
+      title: '状态',
+      width: 78,
+    },
+  ];
 
   return (
-    <section
-      className="wb-notification-center"
-      aria-busy={inbox.isFetching || markRead.isPending || markAllRead.isPending}
-      aria-labelledby="wb-notification-center-title"
-    >
-      <h1 className="wb-notification-center__visually-hidden" id="wb-notification-center-title">{t('notification.center')}</h1>
-      <header className="wb-notification-center__toolbar">
-        <div>
-          <strong>{t('notification.center')}</strong>
-          <span>{unreadCount > 0 ? `${unreadCount} ${t('notification.unread')}` : t('notification.markAllRead')}</span>
-        </div>
-        {unreadCount > 0 ? (
-          <button
-            className="wb-notification-center__action"
-            disabled={markAllRead.isPending}
-            onClick={() => markAllRead.mutate()}
-            type="button"
-          >
-            {markAllRead.isPending ? t('notification.marking') : t('notification.markAllRead')}
-          </button>
-        ) : null}
-      </header>
-
-      {inbox.isPending ? (
-        <div className="wb-notification-center__state" role="status">
-          <Spin size="small" />
-          <span>{t('notification.loading')}</span>
-        </div>
-      ) : null}
-
-      {inbox.isError || mutationError ? (
-        <div className="wb-notification-center__error" role="alert">
-          <span><WorkbenchIcon name="notification" size={16} />{t('notification.failed')}</span>
-          <button onClick={retry} type="button">{t('notification.retry')}</button>
-        </div>
-      ) : null}
-
-      {!inbox.isPending && !inbox.isError && notifications.length === 0 ? (
-        <div className="wb-notification-center__state">
-          <WorkbenchIcon name="notification" size={18} />
-          <span>{t('notification.empty')}</span>
-        </div>
-      ) : null}
-
-      {notifications.length > 0 ? (
-        <div className="wb-notification-center__list" aria-live="polite">
-          {notifications.map((notification) => {
-            const isMarking = markRead.isPending && markRead.variables === notification.id;
-            return (
-              <button
-                type="button"
-                key={notification.id}
-                className={`wb-notification-center__item ${notification.read ? 'is-read' : 'is-unread'}`}
-                disabled={notification.read || isMarking}
-                onClick={() => {
-                  if (!notification.read) markRead.mutate(notification.id);
-                }}
-                aria-label={`${notification.subject} ${notification.read ? t('notification.read') : t('notification.unread')}`}
-              >
-                <span className={`wb-notification-center__item-icon is-${notification.category}`} aria-hidden="true">
-                  <WorkbenchIcon name={categoryIcon(notification.category)} />
-                </span>
-                <span className="wb-notification-center__item-body">
-                  <span className="wb-notification-center__item-title">{notification.subject}</span>
-                  <span className="wb-notification-center__item-content">{notification.content}</span>
-                </span>
-                <time className="wb-notification-center__item-time" dateTime={notification.createdAt}>
-                  {isMarking ? t('notification.marking') : formatNotificationTime(notification.createdAt, locale)}
-                </time>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </section>
+    <DesktopSettingsPage activeKey="/admin/me/notifications" title={t('notification.center')}>
+      <section
+        aria-busy={inbox.isFetching || markRead.isPending || markAllRead.isPending}
+        className="wb-notification-center"
+      >
+        <AxiTableGroup
+          actions={unreadCount > 0 ? (
+            <Button
+              disabled={markAllRead.isPending}
+              size="small"
+              onClick={() => markAllRead.mutate()}
+            >
+              {markAllRead.isPending ? t('notification.marking') : t('notification.markAllRead')}
+            </Button>
+          ) : null}
+          description={unreadCount > 0 ? `${unreadCount} ${t('notification.unread')}` : '全部通知已处理'}
+          title={t('notification.center')}
+        >
+          {inbox.isPending ? (
+            <div className="wb-notification-center__state" role="status"><Spin size="small" /><span>{t('notification.loading')}</span></div>
+          ) : null}
+          {inbox.isError || mutationError ? (
+            <Alert
+              action={<Button size="small" type="link" onClick={retry}>{t('notification.retry')}</Button>}
+              message={t('notification.failed')}
+              showIcon
+              type="warning"
+            />
+          ) : null}
+          {!inbox.isPending && !inbox.isError && notifications.length === 0 ? (
+            <Empty description={t('notification.empty')} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          ) : null}
+          {notifications.length > 0 ? (
+            <AxiTable
+              columns={columns}
+              data={notifications}
+              pagination={false}
+              rowClassName={(notification) => notification.read ? 'wb-notification-center__row is-read' : 'wb-notification-center__row is-unread'}
+              rowKey="id"
+              onRow={(notification) => ({
+                onClick: () => {
+                  if (!notification.read && !markRead.isPending) markRead.mutate(notification.id);
+                },
+                style: { cursor: notification.read ? 'default' : 'pointer' },
+              })}
+            />
+          ) : null}
+        </AxiTableGroup>
+      </section>
+    </DesktopSettingsPage>
   );
 };
 

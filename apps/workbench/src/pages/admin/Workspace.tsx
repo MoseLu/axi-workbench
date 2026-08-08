@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
+import { Alert, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
-import { WorkbenchIcon } from '../../components/WorkbenchIcon';
 import {
   getApprovalRiskLabel,
   getProjectResourceId,
@@ -10,8 +11,34 @@ import {
   getRuntimePresentation,
   getTaskStatusLabel,
 } from '../workspaceRegistry';
+import { DesktopCrudFrame } from './DesktopCrudFrame';
 import './Workspace.css';
 
+type TaskRow = {
+  createdAt?: Date | string;
+  id: string;
+  runtime: string;
+  status: string;
+  summary: string;
+  targetId?: string;
+  targetLabel?: string;
+};
+
+type ApprovalRow = {
+  createdAt?: Date | string;
+  id: string;
+  risk: string;
+  summary: string;
+};
+
+type RuntimeRow = {
+  available: string;
+  key: string;
+  name: string;
+  summary: string;
+};
+
+/** 软件层工作区：以可筛读的任务、审批和运行环境表格取代移动端纵向信息流。 */
 const Workspace: React.FC = () => {
   const navigate = useNavigate();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
@@ -23,101 +50,108 @@ const Workspace: React.FC = () => {
     () => new Map(projects.map((project) => [getProjectResourceId(project), getProjectResourceLabel(project)])),
     [projects],
   );
-  const tasks = snapshot?.agentTasks ?? [];
-  const pendingApprovals = (snapshot?.approvals ?? []).filter((approval) => approval.status === 'pending');
-  const errorMessage = error instanceof Error ? error.message : '控制面暂时无法同步。';
+  const taskRows = useMemo<TaskRow[]>(
+    () => (snapshot?.agentTasks ?? []).map((task) => ({
+      createdAt: task.createdAt,
+      id: task.id,
+      runtime: task.runtime,
+      status: getTaskStatusLabel(task.status),
+      summary: task.summary || '受管任务（暂无摘要）',
+      targetId: task.targetId,
+      targetLabel: task.targetId ? projectNames.get(task.targetId) : undefined,
+    })),
+    [projectNames, snapshot?.agentTasks],
+  );
+  const approvalRows = useMemo<ApprovalRow[]>(
+    () => (snapshot?.approvals ?? [])
+      .filter((approval) => approval.status === 'pending')
+      .map((approval) => ({
+        createdAt: approval.createdAt,
+        id: approval.id,
+        risk: getApprovalRiskLabel(approval.riskLevel),
+        summary: approval.actionSummary,
+      })),
+    [snapshot?.approvals],
+  );
+  const runtimeRows = useMemo<RuntimeRow[]>(
+    () => (snapshot?.runtimes ?? []).map((runtime) => {
+      const presentation = getRuntimePresentation(runtime.kind, runtime.summary);
+      return {
+        available: runtime.available ? '可用' : '降级',
+        key: runtime.kind,
+        name: presentation.label,
+        summary: presentation.summary,
+      };
+    }),
+    [snapshot?.runtimes],
+  );
+  const errorMessage = '控制面暂时不可用，请稍后刷新。';
+
+  const taskColumns: AxiTableColumn<TaskRow>[] = [
+    { dataIndex: 'summary', title: '任务' },
+    { dataIndex: 'status', title: '状态', width: 110 },
+    { dataIndex: 'runtime', title: '运行环境', width: 150 },
+    {
+      dataIndex: 'targetLabel',
+      render: (value, row) => value && row.targetId
+        ? <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.targetId!)}`)}>{value}</Button>
+        : '—',
+      title: '关联项目',
+      width: 180,
+    },
+    { dataIndex: 'createdAt', render: (value) => formatTime(value), title: '创建时间', width: 150 },
+  ];
+  const approvalColumns: AxiTableColumn<ApprovalRow>[] = [
+    { dataIndex: 'summary', title: '待审批事项' },
+    { dataIndex: 'risk', title: '风险级别', width: 110 },
+    { dataIndex: 'createdAt', render: (value) => formatTime(value), title: '创建时间', width: 150 },
+  ];
+  const runtimeColumns: AxiTableColumn<RuntimeRow>[] = [
+    { dataIndex: 'name', title: '运行环境', width: 180 },
+    { dataIndex: 'available', title: '状态', width: 100 },
+    { dataIndex: 'summary', title: '说明' },
+  ];
 
   return (
-    <main className="workspace-live" aria-label="工作区">
-      <h1 className="workspace-live__visually-hidden">工作区</h1>
-      <section className="workspace-live__toolbar" aria-label="工作区工具">
-        <strong>工作区状态</strong>
-        <span>{tasks.length} 项任务</span>
-        <button disabled={isFetching} onClick={() => void refetch()} type="button">{isFetching ? '同步中…' : '刷新'}</button>
-      </section>
-
-      {error ? <div className="workspace-live__alert" role="status"><WorkbenchIcon name="notification" size={16} />{errorMessage}</div> : null}
-
-      {isLoading ? <WorkspaceSkeleton /> : (
-        <div className="workspace-live__sections" aria-label="工作区实时状态">
-          <section className="workspace-live__section" aria-label="受管任务">
-            <SectionHeader count={tasks.length} title="受管任务" />
-            {tasks.length > 0 ? (
-              <div className="workspace-live__task-list">
-                {tasks.map((task) => {
-                  const targetLabel = task.targetId ? projectNames.get(task.targetId) : undefined;
-                  return (
-                    <article className="workspace-live__task" key={task.id}>
-                      <span className={`workspace-live__task-state is-${task.status}`} aria-hidden="true" />
-                      <div className="workspace-live__task-copy">
-                        <strong>{task.summary || '受管任务（暂无摘要）'}</strong>
-                        <small>{getTaskStatusLabel(task.status)} · {formatTaskTime(task.createdAt)}</small>
-                      </div>
-                      {task.targetId && targetLabel ? (
-                        <button onClick={() => navigate(`/admin/project/${encodeURIComponent(task.targetId!)}`)} type="button">{targetLabel}<WorkbenchIcon name="forward" size={13} /></button>
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </div>
-            ) : <EmptyPanel icon="workspace" text="当前没有受管任务。" />}
-          </section>
-
-          <section className="workspace-live__section" aria-label="待处理审批">
-            <SectionHeader count={pendingApprovals.length} title="待处理审批" />
-            {pendingApprovals.length > 0 ? (
-              <div className="workspace-live__approval-list">
-                {pendingApprovals.map((approval) => (
-                  <article className="workspace-live__approval" key={approval.id}>
-                    <span>{getApprovalRiskLabel(approval.riskLevel)}</span>
-                    <div><strong>{approval.actionSummary}</strong><small>{formatTaskTime(approval.createdAt)}</small></div>
-                  </article>
-                ))}
-              </div>
-            ) : <EmptyPanel icon="check" text="当前没有待处理审批。" />}
-          </section>
-
-          <section className="workspace-live__section" aria-label="运行环境">
-            <SectionHeader count={(snapshot?.runtimes ?? []).length} title="运行环境" />
-            {(snapshot?.runtimes ?? []).length > 0 ? (
-              <div className="workspace-live__runtime-list">
-                {snapshot!.runtimes.map((runtime) => {
-                  const presentation = getRuntimePresentation(runtime.kind, runtime.summary);
-                  return (
-                    <article className="workspace-live__runtime" key={runtime.kind}>
-                      <span className={`workspace-live__runtime-state${runtime.available ? ' is-available' : ''}`}><i aria-hidden="true" />{runtime.available ? '可用' : '降级'}</span>
-                      <div><strong>{presentation.label}</strong><small>{presentation.summary}</small></div>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : <EmptyPanel icon="laptop" text="当前快照未登记运行环境。" />}
-          </section>
-        </div>
+    <DesktopCrudFrame
+      ariaLabel="工作区"
+      className="workspace-crud"
+      toolbar={(
+        <Button disabled={isFetching} size="small" onClick={() => void refetch()}>
+          {isFetching ? '同步中…' : '刷新状态'}
+        </Button>
       )}
-    </main>
+    >
+      {error ? <Alert message={errorMessage} showIcon type="warning" /> : null}
+      <div className="workspace-crud__grid">
+        <AxiTableGroup
+          className="workspace-crud__tasks"
+          description={isLoading ? '正在同步控制面快照…' : `共 ${taskRows.length} 项受管任务`}
+          title="受管任务"
+        >
+          <AxiTable columns={taskColumns} data={taskRows} pagination={false} rowKey="id" />
+        </AxiTableGroup>
+        <AxiTableGroup description={isLoading ? '正在同步控制面快照…' : `共 ${approvalRows.length} 项待处理审批`} title="待处理审批">
+          <AxiTable columns={approvalColumns} data={approvalRows} pagination={false} rowKey="id" />
+        </AxiTableGroup>
+        <AxiTableGroup description={isLoading ? '正在同步控制面快照…' : `共 ${runtimeRows.length} 个已登记环境`} title="运行环境">
+          <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
+        </AxiTableGroup>
+      </div>
+    </DesktopCrudFrame>
   );
 };
 
-const SectionHeader: React.FC<{ count: number; title: string }> = ({ count, title }) => (
-  <header className="workspace-live__section-header"><h2>{title}</h2><span>{count} 项</span></header>
-);
-
-const EmptyPanel: React.FC<{ icon: 'workspace' | 'check' | 'laptop'; text: string }> = ({ icon, text }) => (
-  <div className="workspace-live__empty"><WorkbenchIcon name={icon} size={18} /><span>{text}</span></div>
-);
-
-const WorkspaceSkeleton: React.FC = () => (
-  <section className="workspace-live__skeleton-list" aria-label="正在加载工作区状态">
-    {[0, 1, 2, 3, 4, 5].map((index) => <div className="workspace-live__skeleton" key={index} />)}
-  </section>
-);
-
-function formatTaskTime(value: Date | string | undefined): string {
+function formatTime(value: Date | string | undefined): string {
   if (!value) return '时间未知';
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '时间未知';
-  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+  return new Intl.DateTimeFormat('zh-CN', {
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'numeric',
+  }).format(date);
 }
 
 export default Workspace;

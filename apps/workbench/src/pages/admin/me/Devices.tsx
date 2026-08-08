@@ -1,46 +1,20 @@
 import React from 'react';
-import { WorkbenchIcon } from '../../../components/WorkbenchIcon';
-import type { AxiWorkbenchIconName } from '@axi/workbench-foundation/icons';
-import { MeGroup, MeNavRow, MeSubPage } from './MeSubChrome';
+import { Empty } from 'antd';
+import { AxiTableGroup } from '@axi/crud';
+import { DesktopSettingsPage } from './DesktopSettingsPage';
 
-type Device = {
-  name: string;
-  meta: string;
-  current: boolean;
-  icon: AxiWorkbenchIconName;
-};
-
-const devices = [
-  { name: '本机 · M2012K10C', meta: 'Android · 刚刚活跃', current: true, icon: 'mobile' },
-  { name: 'MacBook Pro', meta: 'macOS · 2 小时前', current: false, icon: 'laptop' },
-  { name: 'iPad mini', meta: 'iPadOS · 昨天', current: false, icon: 'tablet' },
-] satisfies readonly Device[];
-
+/**
+ * 设备会话尚未接入身份服务时，不展示伪造设备或不可用的“下线”操作。
+ */
 const Devices: React.FC = () => (
-  <MeSubPage title="设备管理">
-    <MeGroup>
-      {devices.map((d, i) => (
-        <div key={d.name} className={`wb-me-sub__device ${i < devices.length - 1 ? 'has-divider' : ''}`}>
-          <WorkbenchIcon name={d.icon} className="wb-me-sub__device-icon" />
-          <div className="wb-me-sub__device-meta">
-            <div className="wb-me-sub__device-name">
-              {d.name}
-              {d.current ? <span className="wb-me-sub__device-tag">本机</span> : null}
-            </div>
-            <div className="wb-me-sub__device-sub">{d.meta}</div>
-          </div>
-          {!d.current ? (
-            <button type="button" className="wb-me-sub__offline">
-              下线
-            </button>
-          ) : null}
-        </div>
-      ))}
-    </MeGroup>
-    <MeGroup>
-      <MeNavRow label="下线全部其他设备" onClick={() => undefined} />
-    </MeGroup>
-  </MeSubPage>
+  <DesktopSettingsPage activeKey="/admin/me/devices" title="设备管理">
+    <AxiTableGroup title="登录设备">
+      <Empty
+        description="当前环境尚未接入设备会话数据"
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+      />
+    </AxiTableGroup>
+  </DesktopSettingsPage>
 );
 
 export default Devices;

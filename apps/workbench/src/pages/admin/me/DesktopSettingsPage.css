@@ -1,0 +1,91 @@
+.wb-settings-page {
+  min-height: 100%;
+  padding: 12px 14px 24px;
+}
+
+.wb-settings-page__layout,
+.wb-settings-page__workspace {
+  min-height: min(680px, calc(100vh - 156px));
+}
+
+.wb-settings-page__layout > .axi-crud-row--pagination {
+  display: none;
+}
+
+.wb-settings-page__workspace {
+  padding: 0;
+  overflow: hidden;
+}
+
+.wb-settings-page__workspace .axi-filter-group__filters {
+  padding: 12px;
+  border-right: 1px solid var(--axi-layout-border, var(--axi-border));
+  background: color-mix(in srgb, var(--axi-layout-surface-strong, var(--axi-bg-page)) 72%, transparent);
+}
+
+.wb-settings-page__workspace .axi-master-list {
+  gap: 10px;
+}
+
+.wb-settings-page__workspace .axi-master-list__header {
+  min-height: 30px;
+  padding: 0 2px 8px;
+}
+
+.wb-settings-page__workspace .axi-master-list__header strong {
+  color: var(--axi-text, #f5f7fb);
+  font-size: 13px;
+}
+
+.wb-settings-page__workspace .axi-master-list__item {
+  min-height: 48px;
+  padding: 8px 10px;
+}
+
+.wb-settings-page__content {
+  min-width: 0;
+  padding: 14px;
+}
+
+.wb-settings-page__header {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wb-settings-page__header h1 {
+  margin: 0;
+  color: var(--axi-text, #f5f7fb);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.wb-settings-page__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-settings-page__body {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.wb-settings-page .axi-table-group {
+  border-radius: 6px;
+}
+
+.wb-settings-page .ant-descriptions-item-label {
+  color: var(--axi-muted, rgba(255, 255, 255, .58));
+  font-size: 12px;
+}
+
+.wb-settings-page .ant-descriptions-item-content {
+  color: var(--axi-text, #f5f7fb);
+}

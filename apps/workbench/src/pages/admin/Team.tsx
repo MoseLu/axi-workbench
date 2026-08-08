@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
+import { Alert, Button, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
-import { WorkbenchIcon } from '../../components/WorkbenchIcon';
 import {
   getProjectCollaborationLinks,
   getProjectConsumerSummary,
@@ -9,8 +10,16 @@ import {
   getProjectResourceLabel,
   getProjectResources,
 } from '../workspaceRegistry';
+import { DesktopCrudFrame } from './DesktopCrudFrame';
 import './Team.css';
 
+type CollaborationRow = {
+  id: string;
+  label: string;
+  relationship: string;
+};
+
+/** 团队页只呈现已登记项目协作关系；成员目录尚未接入时不伪造成员列表。 */
 const Team: React.FC = () => {
   const navigate = useNavigate();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
@@ -18,60 +27,60 @@ const Team: React.FC = () => {
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
     [snapshot],
   );
-  const collaborationLinks = useMemo(() => getProjectCollaborationLinks(projects), [projects]);
-  const errorMessage = error instanceof Error ? error.message : '控制面暂时无法同步。';
+  const rows = useMemo<CollaborationRow[]>(
+    () => getProjectCollaborationLinks(projects).map((link) => ({
+      id: getProjectResourceId(link.project),
+      label: getProjectResourceLabel(link.project),
+      relationship: getProjectConsumerSummary(link.consumers.length),
+    })),
+    [projects],
+  );
+  const errorMessage = '控制面暂时不可用，请稍后刷新。';
+  const columns: AxiTableColumn<CollaborationRow>[] = [
+    { dataIndex: 'label', title: '项目', width: 320 },
+    { dataIndex: 'relationship', title: '协作关系' },
+    {
+      align: 'right',
+      key: 'action',
+      render: (_, row) => <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}>查看项目</Button>,
+      title: '操作',
+      width: 110,
+    },
+  ];
 
   return (
-    <main className="team-live" aria-label="团队">
-      <h1 className="team-live__visually-hidden">团队</h1>
-      <section className="team-live__toolbar" aria-label="团队工具">
-        <strong>项目协作</strong>
-        <span>{collaborationLinks.length} 个关联项目</span>
-        <div>
-          <button className="team-live__directory" onClick={() => navigate('/admin/project')} type="button">项目目录</button>
-          <button disabled={isFetching} onClick={() => void refetch()} type="button">{isFetching ? '同步中…' : '刷新'}</button>
-        </div>
-      </section>
-
-      {error ? <div className="team-live__alert" role="status"><WorkbenchIcon name="notification" size={16} />{errorMessage}</div> : null}
-
-      {isLoading ? <TeamSkeleton /> : (
-        <section className="team-live__relationships" aria-label="已登记协作关系">
-          {collaborationLinks.length > 0 ? (
-            <div className="team-live__relationship-list">
-              {collaborationLinks.map((link) => {
-                const projectId = getProjectResourceId(link.project);
-                const projectLabel = getProjectResourceLabel(link.project);
-                return (
-                  <button
-                    className="team-live__relationship"
-                    key={projectId}
-                    onClick={() => navigate(`/admin/project/${encodeURIComponent(projectId)}`)}
-                    type="button"
-                  >
-                    <span className="team-live__relationship-mark"><WorkbenchIcon name="project" size={16} /></span>
-                    <span className="team-live__relationship-copy"><strong>{projectLabel}</strong><small>{getProjectConsumerSummary(link.consumers.length)}</small></span>
-                    <WorkbenchIcon aria-label={`${projectLabel} 详情`} name="forward" size={14} />
-                  </button>
-                );
-              })}
-            </div>
-          ) : <EmptyPanel icon="team" text="当前图谱中还没有声明项目协作关系。" />}
-          <p className="team-live__source-note"><WorkbenchIcon name="notification" size={16} />成员目录尚未接入控制面，因此这里只显示已登记项目之间的协作关系。</p>
-        </section>
+    <DesktopCrudFrame
+      ariaLabel="团队"
+      className="team-crud"
+      toolbar={(
+        <Space size={6}>
+          <Button size="small" onClick={() => navigate('/admin/project')}>项目目录</Button>
+          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? '同步中…' : '刷新状态'}</Button>
+        </Space>
       )}
-    </main>
+    >
+      {error ? <Alert message={errorMessage} showIcon type="warning" /> : null}
+      <AxiTableGroup
+        description={isLoading
+          ? '正在同步控制面快照…'
+          : rows.length > 0
+            ? `已登记 ${rows.length} 个项目协作关系`
+            : '成员目录尚未接入控制面，当前没有可呈现的协作关系。'}
+        title="项目协作"
+      >
+        <AxiTable
+          columns={columns}
+          data={rows}
+          pagination={false}
+          rowKey="id"
+          onRow={(row) => ({
+            onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+            style: { cursor: 'pointer' },
+          })}
+        />
+      </AxiTableGroup>
+    </DesktopCrudFrame>
   );
 };
-
-const EmptyPanel: React.FC<{ icon: 'team'; text: string }> = ({ icon, text }) => (
-  <div className="team-live__empty"><WorkbenchIcon name={icon} size={18} /><span>{text}</span></div>
-);
-
-const TeamSkeleton: React.FC = () => (
-  <section className="team-live__relationship-list" aria-label="正在加载协作关系">
-    {[0, 1, 2, 3, 4].map((index) => <div className="team-live__skeleton" key={index} />)}
-  </section>
-);
 
 export default Team;

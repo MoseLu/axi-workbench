@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/crud": "link:../../../../shared/axi-ui/packages/crud",
     "@axi/presets": "link:../../../../shared/axi-ui/packages/presets",
     "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",
     "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
@@ -23,7 +24,7 @@
     "@epap/ui": "workspace:*",
     "@epap/utils": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
-    "antd": "5.12.0",
+    "antd": "6.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
