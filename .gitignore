@@ -46,6 +46,9 @@ Thumbs.db
 # Turbo
 .turbo/
 .omx/
+.superpowers/
+.workbuddy/
+docs/superpowers/
 
 # pnpm
 .pnpm-store/
