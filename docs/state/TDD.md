@@ -7,7 +7,7 @@
 - Stack signals: Node ≥ 18, pnpm ≥ 8, TypeScript, Vite, Turborepo, Go, Java Spring Boot, Python FastAPI, LangChain, Qdrant, RAG.
 - Six-layer control plane is enforced by `docs/rules/epap-six-layer-sop.md`. The TDD treats those boundaries as load-bearing and writes tests around them.
 - Top-level layout:
-  - `apps/`: 混合产品表面 — `workbench`（Web 后台主端）、`workbench-mobile`（移动辅助端）、`devsvc-dashboard`（Host/运维壳）以及若干 Hosted / 垂直工具；目录数量不等于用户门户数量。
+  - `apps/`: 混合产品表面 — `workbench`（Web 管理控制中心）、`workbench-mobile`（Mobile 角色执行/辅助管理端）、`devsvc-dashboard`（Host/运维壳）以及若干 Hosted / 垂直工具；目录数量不等于用户门户数量。
   - `services/`: 8 services — `api-gateway`, `auth-service`, `core-service`, `file-service`, `notification-service`, `communication-gateway`, `control-plane`, `workflow-engine`.
   - `packages/`: `api-client`, `axi-rag`, `schemas`, `epap-schemas-compat` (`@epap/schemas` migration shim), `types`, `ui` (legacy), `utils`, `workbench-foundation` (shared session / locale only).
   - `tools/axi-app-cli/`: independent sub-monorepo, governed by its own `AGENTS.md`.
@@ -56,12 +56,14 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 
 | PRD requirement | 静态/自动验证 | 产品验收（实施对应阶段时） |
 | --- | --- | --- |
-| REQ-POSITION-001 / REQ-SURFACE-001 | 运行文档追溯检查；核对 PRD、source catalog、apps guidance 与 Host 注册表的产品角色一致。 | 管理员能从产品说明区分 Web、Mobile、Host 与垂直工具，不把 Host 当用户后台。 |
+| REQ-POSITION-001 / REQ-ARCH-001 / REQ-SURFACE-001 | 运行文档追溯检查；核对 PRD、source catalog、apps guidance 与 Host 注册表的产品角色一致。 | 管理员能从产品说明区分 Web 控制中心、Mobile 角色执行端、Host/垂直工具和共享底座，不把 Host 当用户后台。 |
+| REQ-ACTION-001 | 审查新能力对应的 `CAPABILITY-OWNERSHIP.md` 是否包含角色、A/B/C/D 等级、允许表面、动作政策和交接。 | 通过评审的能力能解释为何该动作留在 Web、由 Mobile 闭环或进入专业工具；C/D 级不因 viewport 而绕过边界。 |
+| REQ-REFERENCE-001 | 检查 `MARKET-REFERENCE.md` 是否保留官方来源、研究日期、可迁移推导与非推导边界。 | 产品评审能分辨“外部产品形态参照”与“Workbench 当前实现/需求”，不把竞品功能清单作为承诺。 |
 | REQ-WEB-001 / REQ-WEB-002 | `node apps/workbench/scripts/verify-ui-contracts.mjs`；Web type-check/test/build。 | 在桌面宽度审查全局导航、筛选/批量/审计等管理任务；不得出现移动底栏或移动壳替代后台结构。 |
-| REQ-MOBILE-001 / REQ-MOBILE-002 | `pnpm --filter @axi/workbench-mobile verify:contracts`；Mobile type-check/test/build。 | 在 390px 审查 Home / Projects / Workspace / Me 四个常驻导航项与顶部 Scan 动作；不出现组织级管理表单，敏感操作只允许已预授权单对象确认且在线复核服务端状态。 |
-| REQ-CROSS-001 | 共享 foundation 改动时运行 `pnpm --filter @axi/workbench-foundation type-check` 与双端验证；合同/边界改动运行 `pnpm check:boundaries`。 | 每个双端工作流确认服务端权威状态、授权/审计事件、Web 交接上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`。 |
+| REQ-MOBILE-001 / REQ-MOBILE-002 | `pnpm --filter @axi/workbench-mobile verify:contracts`；Mobile type-check/test/build。 | 在 390px 审查 Home / Projects / Workspace / Me 四个常驻导航项与顶部 Scan 动作；Mobile 写操作只有在 B 级动作政策允许时才出现，并在线复核服务端状态；不出现 C 级组织管理表单。 |
+| REQ-CROSS-001 | 共享 foundation 改动时运行 `pnpm --filter @axi/workbench-foundation type-check` 与双端验证；合同/边界改动运行 `pnpm check:boundaries`。 | 每个双端工作流确认服务端权威状态、动作政策、授权/审计事件、Web 交接上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`。 |
 | REQ-SCAN-001 | 为 Web 通用识别与移动审批确认分别保留合同/单元/E2E 用例；禁止共用模糊断言。 | 验证 Web 扫码可读取与处理结果，移动顶部 Scan 只在已授权审批交易中提交确认；身份/配对流程有独立入口，且两个失败提示可区分。 |
-| REQ-DELIVERY-001 | 评审每项新能力的台账是否按 `CAPABILITY-OWNERSHIP.md` 记录端归属、用户任务、允许动作、数据授权、审计/交接关联、验收和复核。 | 未完成并复核台账的能力不得进入开发验收。 |
+| REQ-DELIVERY-001 | 评审每项新能力的台账是否按 `CAPABILITY-OWNERSHIP.md` 记录角色、动作等级、端归属、允许动作、动作政策、数据授权、审计/交接关联、验收和复核。 | 未完成并复核台账的能力不得进入开发验收。 |
 
 ## Verification Commands
 
@@ -125,7 +127,7 @@ for f in README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md \
          docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md; do
   test -f "/Volumes/code/workspace/projects/axi-workbench/$f" || { echo "MISSING $f"; exit 1; }
 done
-rg -n "REQ-(POSITION|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" \
+rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" \
   docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md
 ```
 
@@ -143,6 +145,8 @@ rg -n "REQ-(POSITION|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|
 - A route or layout from one app is imported into the other, reintroducing a responsive single-SPA architecture through the back door.
 - 文档将 Mobile 的 4 个常驻导航项 + Scan 动作误写为“五项底栏”，使旧术语重新驱动实现。
 - Web 通用识别扫码与移动审批扫码被使用同一名称、权限或测试断言，造成越权或误操作。
+- 将公开竞品的界面、功能清单或未公开内部实现误写为 Workbench 的能力承诺，导致错误的产品路线。
+- 仅因“操作重要”就一律禁止 Mobile，或仅因“手机能做”就把 C/D 级治理/专业操作移入 Mobile，绕过动作政策。
 - React Router v7 future-flag warnings hide genuine console errors; tests must distinguish them.
 
 ## Test Strategy
@@ -155,5 +159,5 @@ rg -n "REQ-(POSITION|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|
 - Capture every batch in `docs/logs/submit/<batch-id>.md` and link it from `docs/state/CHANGELOG.md`.
 - Keep `pnpm --filter @axi/workstation-control-plane smoke` exit-code 0 and ≥ 35 resources across six layers; treat smoke regression as a P0 incident.
 - Web and mobile browser smoke must be regenerated whenever either application shell, its mobile navigation, shared foundation, or shared Axi tokens change.
-- 产品定位文档变更必须运行文档追溯检查、JSON/链接检查，并由独立读者按“谁在什么端完成什么任务”“扫码有什么差异”“Mobile 有几个常驻导航项”三个问题复核。
+- 产品定位文档变更必须运行文档追溯检查、JSON/链接检查，并由独立读者按“谁在什么表面完成什么任务”“为什么该动作是 A/B/C/D 级”“扫码有什么差异”“Mobile 有几个常驻导航项”四个问题复核。
 - A failing boundary SOP or six-layer SOP is treated as P0 and blocks merge regardless of green tests.

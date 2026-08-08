@@ -7,14 +7,15 @@ independent mobile app (`apps/workbench-mobile`), desktop host shell (`apps/devs
 `services/control-plane` + `services/communication-gateway`, and the v2 zero-context manifest
 lives at `docs/project-docs.manifest.json`. PRD/TDD/TODO have been refreshed to track every
 `REQ-*` against a concrete verification command. Product direction is now explicit: Web is the
-complete backend-management primary surface; Mobile is the auxiliary management surface for
-personal context, alerts and constrained actions.
+complete backend-management control center; Mobile is the auxiliary, role-execution surface for
+personal context, alerts and policy-approved single-object actions. Professional/physical work stays
+in its dedicated tools.
 
 ## Milestone 0: Multi-surface Product Positioning
 
 - Status: Defined — implementation not started
-- Evidence: `docs/state/PRD.md` defines `REQ-POSITION-001`, `REQ-SURFACE-001`, `REQ-WEB-001`, `REQ-WEB-002`, `REQ-MOBILE-001`, `REQ-MOBILE-002`, `REQ-CROSS-001`, `REQ-SCAN-001` and `REQ-DELIVERY-001`: Web/Mobile/Host/vertical-tool roles, the capability allocation matrix, distinct scan semantics, the current four-item Mobile navigation baseline, and the P0–P4 delivery path. `docs/specs/2026-08-09-multi-surface-admin-positioning/` captures the decision, design, task boundary and capability-ownership template.
-- Exit criteria: an ownership inventory classifies every current user-facing capability; Web desktop information architecture and Mobile auxiliary flows have separately reviewed acceptance scenarios; each dual-surface flow has server-side authorization/audit and a context-preserving handoff rule.
+- Evidence: `docs/state/PRD.md` defines `REQ-POSITION-001`, `REQ-ARCH-001`, `REQ-ACTION-001`, `REQ-REFERENCE-001`, `REQ-SURFACE-001`, `REQ-WEB-001`, `REQ-WEB-002`, `REQ-MOBILE-001`, `REQ-MOBILE-002`, `REQ-CROSS-001`, `REQ-SCAN-001` and `REQ-DELIVERY-001`: Web control-center, Mobile role-execution and professional-tool roles; A/B/C/D action policy; distinct scan semantics; the current four-item Mobile navigation baseline; and the P0–P5 delivery path. `docs/specs/2026-08-09-multi-surface-admin-positioning/MARKET-REFERENCE.md` records bounded official public-product references, while the change directory captures design, task boundary and capability/action-policy template.
+- Exit criteria: a full, auditable inventory (not only the baseline examples in `CAPABILITY-OWNERSHIP.md`) classifies every current user-facing capability by role, execution surface Owner and action level; Web control-center and Mobile execution flows have separately reviewed acceptance scenarios; each dual-surface flow has server-side action policy, authorization/audit and a context-preserving handoff rule.
 
 ## Milestone 1: Documentation Baseline
 

@@ -7,7 +7,7 @@
   "kind": "pnpm multi-runtime monorepo",
   "lifecycle": "active",
   "owner": "Axi Core Projects",
-  "summary": "Canonical AxiomaticWorld multi-surface admin workbench: Web is the complete backend-management primary surface and Mobile is the auxiliary management surface, backed by the six-layer control plane, Go API plane, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+  "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
   "readOrder": [
     "AGENTS.md",
     "README.md",
@@ -24,12 +24,12 @@
     {
       "id": "workbench-web",
       "path": "apps/workbench/src/main.tsx",
-      "purpose": "Independent Web backend-management primary application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, high-density management and Web-only pages."
+      "purpose": "Independent Web management-control-center application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, high-density cross-object management, governance and Web-only pages."
     },
     {
       "id": "workbench-mobile",
       "path": "apps/workbench-mobile/src/main.tsx",
-      "purpose": "Independent mobile auxiliary-management application: its own Vite entry, centered header, search/plus menu, four persistent Home/Projects/Workspace/Me navigation items, a Scan action, badges, login, and mobile page composition."
+      "purpose": "Independent Mobile role-execution auxiliary application: its own Vite entry, centered header, search/plus menu, four persistent Home/Projects/Workspace/Me navigation items, a Scan action, badges, login, and policy-bounded mobile page composition."
     },
     {
       "id": "workbench-foundation",
@@ -206,7 +206,7 @@
     "milestone": "docs/state/MILESTONE.md",
     "active": [
       "Align verification commands with the real project stack",
-      "Implement the multi-surface admin product contract: Web primary, Mobile auxiliary; reconcile capability ownership and navigation terminology while keeping the two app compositions independent",
+      "Implement the role-oriented multi-surface product contract: Web control center, Mobile role execution and professional tools; reconcile capability/action-policy ownership and navigation terminology while keeping the two app compositions independent",
       "Preserve ownership and cross-project boundaries",
       "Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment"
     ],
@@ -300,11 +300,12 @@
     "README.md",
     "INDEX.md",
     "docs/architecture/source-catalog.md",
+    "docs/specs/2026-08-09-multi-surface-admin-positioning/MARKET-REFERENCE.md",
     "CHANGE.md",
     "docs/HANDOFF.md"
   ],
   "created": "2026-06-07",
   "updated": "2026-08-09",
-  "writer": "Codex product-definition",
-  "source": "user-authorized multi-surface admin product direction"
+  "writer": "Codex product-definition with public multi-end reference calibration",
+  "source": "user-authorized multi-surface admin product direction, calibrated against bounded official public multi-end product references"
 }

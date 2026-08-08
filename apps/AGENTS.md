@@ -30,8 +30,8 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 
 | App | Role | Notes |
 |-----|------|-------|
-| **`workbench`** (`@axi/workbench`) | Web 管理端 | 目录 `apps/workbench`；`pnpm dev:workbench`；Axi Dashboard Chrome、标签栏、面包屑、设置面板 |
-| **`workbench-mobile`** (`@axi/workbench-mobile`) | 移动端应用 | 目录 `apps/workbench-mobile`；`pnpm dev:mobile`；微信式顶栏、四个常驻导航项（Home / Projects / Workspace / Me）、角标、顶部扫一扫动作与移动页面组合 |
+| **`workbench`** (`@axi/workbench`) | Web 管理控制中心 | 目录 `apps/workbench`；`pnpm dev:workbench`；Axi Dashboard Chrome、标签栏、面包屑、设置面板与 C 级管理/治理工作 |
+| **`workbench-mobile`** (`@axi/workbench-mobile`) | Mobile 角色执行/辅助端 | 目录 `apps/workbench-mobile`；`pnpm dev:mobile`；微信式顶栏、四个常驻导航项（Home / Projects / Workspace / Me）、角标、顶部扫一扫动作与 A/B 级移动任务组合 |
 | `devsvc-dashboard` | 本地服务 + Axi **Host** | 挂子应用，不是第二份用户门户 |
 | `axi-coder` | 编码工具 | Hosted 子应用；不是第二门户 |
 | `verification-inbox` | OTP 工具 | 垂直 |
@@ -41,13 +41,15 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 **禁止**：把 `workbench-mobile` 重新塞回 `workbench` 的 viewport / CSS 分支；或再建第三个重复用户门户。
 `apps/web-portal` 是已归档的旧门户；Web 与移动端仅共享认证、API、契约、语言偏好和 design tokens，不共享页面与布局实现。Axi UI 的 sidebar / topbar / tabs / breadcrumbs / settings 只属于 Web；微信式 header / 四个常驻导航项 / 顶部扫一扫动作只属于移动端。
 
+用户能力必须先按 [`docs/state/PRD.md`](../docs/state/PRD.md) 的 A/B/C/D 动作等级和动作政策归属：Mobile 只承接 A 级观察/提醒与政策允许的 B 级单对象执行；C 级治理留在 Web，D 级专业/物理操作留在专用工具。
+
 源码角色、主入口和根 workspace membership 的完整清单见 [`docs/architecture/source-catalog.md`](../docs/architecture/source-catalog.md)。注意：目录位于 `apps/` 不等于它是根 pnpm package，也不等于它是用户门户；Host 挂载关系以 `apps/devsvc-dashboard/config/axi-apps.json` 为准。
 
 ### 启动
 
 ```bash
-pnpm dev:workbench          # Web 管理端（5173）
-pnpm dev:mobile             # 移动端应用（5174）
+pnpm dev:workbench          # Web 管理控制中心（5173）
+pnpm dev:mobile             # Mobile 角色执行端（5174）
 pnpm dev:dashboard          # 本地 Host（运维）
 pnpm dev:coder              # 编码工具（可选）
 ```

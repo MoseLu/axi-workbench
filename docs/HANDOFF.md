@@ -4,7 +4,7 @@
 - Path: `/Volumes/code/workspace/projects/axi-workbench`
 - Owner: `Axi Core Projects`
 - Readiness: `verified`
-- Purpose: Canonical AxiomaticWorld multi-surface admin workbench: Web is the complete backend-management primary surface and Mobile is the auxiliary management surface, backed by the six-layer control plane, Go API plane, shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.
+- Purpose: Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.
 
 ## 90-Second Read Order
 
@@ -17,8 +17,8 @@
 ## Entrypoints
 
 - `docs/architecture/source-catalog.md`: Canonical physical source topology: application roles, runtime boundaries, root workspace membership, host registration, and cleanup order.
-- `apps/workbench/src/main.tsx`: Independent Web backend-management primary application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, high-density management and Web-only pages.
-- `apps/workbench-mobile/src/main.tsx`: Independent mobile auxiliary-management application: its own Vite entry, centered header, search/plus menu, four persistent Home/Projects/Workspace/Me navigation items, a Scan action, badges, login, and mobile page composition.
+- `apps/workbench/src/main.tsx`: Independent Web management-control-center application: Axi Dashboard Chrome, sidebar, topbar plugins, tabs, breadcrumbs, settings, high-density cross-object management, governance and Web-only pages.
+- `apps/workbench-mobile/src/main.tsx`: Independent Mobile role-execution auxiliary application: its own Vite entry, centered header, search/plus menu, four persistent Home/Projects/Workspace/Me navigation items, a Scan action, badges, login, and policy-bounded mobile page composition.
 - `packages/workbench-foundation/src/index.ts`: Shared auth-session and locale-preference foundation for the independent user applications; no page or layout exports.
 - `services/api-gateway/cmd/gateway/main.go`: Production Go API plane: public Gin gateway plus sibling identity-adapter and platform-core for ZITADEL, QR/email/EPS, tenant/RBAC and RLS business modules.
 - `services/control-plane/src/server.mjs`: Software-layer control API and managed AgentTask runtime surface.
@@ -70,7 +70,7 @@
 - TODO: `docs/state/TODO.md`
 - Milestone: `docs/state/MILESTONE.md`
 - Active: Align verification commands with the real project stack
-- Active: Implement the multi-surface admin product contract: Web primary, Mobile auxiliary; reconcile capability ownership and navigation terminology while keeping the two app compositions independent
+- Active: Implement the role-oriented multi-surface product contract: Web control center, Mobile role execution and professional tools; reconcile capability/action-policy ownership and navigation terminology while keeping the two app compositions independent
 - Active: Preserve ownership and cross-project boundaries
 - Active: Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment
 - Known failure: The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.

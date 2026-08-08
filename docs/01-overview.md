@@ -111,11 +111,11 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 
 用户后台按应用而非视口拆分：
 
-- **桌面 Web（主端）**：`apps/workbench` 是独立的 Axi Dashboard 完整后台管理端，负责复杂配置、全量查询、批量操作、流程编排和审计；拥有侧边栏、顶栏插件、标签栏、面包屑、主题切换和设置面板。
-- **移动端（辅助端）**：`apps/workbench-mobile` 是独立的移动辅助管理应用，负责个人待办、状态、受限确认、扫码审批和个人设置；它不导入 Web Dashboard 壳，也不承担组织级/全量后台配置。当前基线为 Home / Projects / Workspace / Me 四个常驻导航项，加一个顶部 Scan 动作。
-- **共享层**：只共享 Axi Identity 会话协议、相对 API 合同、语言偏好和设计令牌。两个应用不共享页面、路由或布局组件。
+- **桌面 Web（控制中心）**：`apps/workbench` 是独立的 Axi Dashboard 完整后台管理端，负责 C 级复杂配置、全量查询、批量操作、流程编排和审计；拥有侧边栏、顶栏插件、标签栏、面包屑、主题切换和设置面板。
+- **移动端（角色执行/辅助端）**：`apps/workbench-mobile` 是独立的移动辅助管理应用，负责 A 级个人待办/状态和经动作政策允许的 B 级单对象确认、扫码审批与个人设置；它不导入 Web Dashboard 壳，也不承担 C 级组织/全量后台配置。当前基线为 Home / Projects / Workspace / Me 四个常驻导航项，加一个顶部 Scan 动作。
+- **共享层**：只共享 Axi Identity 会话协议、相对 API/Schema 合同、语言偏好、设计令牌、服务端动作政策和审计事实。两个应用不共享页面、路由或布局组件。
 - **扫码语义**：Web 扫码用于通用识别与结果处理；移动端扫码用于受控审批确认。二者的权限、审计和验收不能合并。
-- **Host 与垂直工具**：`apps/devsvc-dashboard` 是本地运维 Host；Axi Coder、Fleet、App Search 等为专用工具，不属于用户后台一级信息架构。
+- **Host 与垂直工具**：`apps/devsvc-dashboard` 是本地运维 Host；Axi Coder、Fleet、App Search 等为 D 级专用工具，不属于用户后台一级信息架构。
 
 完整的产品任务分工、跨端交接与阶段路线以 [`docs/state/PRD.md`](./state/PRD.md) 为准。
 

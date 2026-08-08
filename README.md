@@ -22,7 +22,7 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 
 ## 生产后端演进（2026-08）
 
-用户应用是两个独立部署的客户端：**Web 是完整的后台管理主端，移动端是面向待办、告警和受限确认的辅助管理端**。两端拥有各自的 UI、路由和交互；共享的仅是 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。详细的产品任务分工见 [`docs/state/PRD.md`](docs/state/PRD.md)。
+用户应用是两个独立部署的客户端：**Web 是完整的后台管理控制中心，移动端是面向待办、告警和受控单对象执行的角色化辅助管理端**。再高专业度或物理操作保留在 DevSvc/Fleet 等专用工具中。两端拥有各自的 UI、路由和交互；共享的仅是 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。详细的产品架构、动作分级和公开案例参照见 [`docs/state/PRD.md`](docs/state/PRD.md)。
 
 - `api-gateway`（Go + Gin）是唯一业务 API 入口，使用 ZITADEL JWKS、HttpOnly 会话、Redis 限流、追踪关联和无请求体审计日志。
 - `identity-adapter`（Go + Gin）承接邮件验证、扫码登录事务和 EPS 身份映射；短期二维码事务在 Redis，长期验证/映射数据在 PostgreSQL。
