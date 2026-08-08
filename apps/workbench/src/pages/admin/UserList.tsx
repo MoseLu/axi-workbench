@@ -6,9 +6,7 @@ import avatarDefault from '../../assets/avatar-me.jpg';
 import { loadProfile, type UserProfile } from './me/profileStore';
 import './Me.css';
 
-/**
- * 我的 — 入口列表；资料来自本地 profile，点资料栏进入可编辑页。
- */
+/** 个人中心入口：资料只读取本地 profile，不展示无来源的在线或设备状态。 */
 const UserList: React.FC = () => {
   const navigate = useNavigate();
   const { preference } = useAxiTheme();
@@ -24,39 +22,23 @@ const UserList: React.FC = () => {
   const themeLabel = preference === 'dark' ? '深色' : preference === 'light' ? '浅色' : '跟随系统';
 
   return (
-    <div className="wb-me">
+    <main className="wb-me" aria-labelledby="wb-me-title">
+      <h1 className="wb-me__visually-hidden" id="wb-me-title">个人中心</h1>
       <button type="button" className="wb-me__profile" onClick={() => navigate('/admin/me/account')}>
         <img className="wb-me__avatar" src={avatarSrc} alt="头像" />
-        <div className="wb-me__meta">
-          <div className="wb-me__name">{profile.nickname}</div>
-          <div className="wb-me__email">{profile.email}</div>
-          <div className="wb-me__status">
-            <span className="wb-me__status-dot" />
-            <span>在线</span>
-          </div>
-        </div>
+        <span className="wb-me__meta">
+          <span className="wb-me__name">{profile.nickname}</span>
+          <span className="wb-me__email">{profile.email}</span>
+        </span>
         <WorkbenchIcon name="forward" className="wb-me__chevron" />
       </button>
 
-      <div className="wb-me__group">
-        {[
-          { label: '设备管理', path: '/admin/me/devices' },
-          { label: '通知中心', path: '/admin/me/notifications' },
-        ].map((item, i, arr) => (
-          <button
-            key={item.path}
-            type="button"
-            className={`wb-me__row ${i < arr.length - 1 ? 'has-divider' : ''}`}
-            onClick={() => navigate(item.path)}
-          >
-            <span>{item.label}</span>
-            <WorkbenchIcon name="forward" className="wb-me__chevron" />
-          </button>
-        ))}
-      </div>
-
-      <div className="wb-me__group">
-        <button type="button" className="wb-me__row has-divider" onClick={() => navigate('/admin/me/theme')}>
+      <section className="wb-me__list" aria-label="账号设置">
+        <button type="button" className="wb-me__row" onClick={() => navigate('/admin/me/notifications')}>
+          <span>通知中心</span>
+          <WorkbenchIcon name="forward" className="wb-me__chevron" />
+        </button>
+        <button type="button" className="wb-me__row" onClick={() => navigate('/admin/me/theme')}>
           <span>主题外观</span>
           <span className="wb-me__value">
             {themeLabel}
@@ -67,8 +49,8 @@ const UserList: React.FC = () => {
           <span>设置</span>
           <WorkbenchIcon name="forward" className="wb-me__chevron" />
         </button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

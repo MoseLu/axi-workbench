@@ -1,117 +1,97 @@
 .wb-me {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 0 24px;
-  margin: 0;
-  background: var(--color-bg-page);
+  --account-border: var(--axi-layout-border, var(--axi-border, rgba(255, 255, 255, .1)));
+  --account-text: var(--axi-text, #f5f7fb);
+  --account-muted: var(--axi-muted, rgba(255, 255, 255, .58));
+  display: grid;
+  gap: 0;
   min-height: 100%;
+  padding: 4px 0 24px;
+  color: var(--account-text);
 }
 
-/* 个人信息栏：全宽贴顶；safe-area 只垫一次，上下 8px 贴内容（不叠双重空白） */
+.wb-me__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .wb-me__profile {
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 16px;
   align-items: center;
   gap: 12px;
+  min-height: 72px;
   width: 100%;
-  padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px;
-  background: var(--color-bg-card);
-  border: none;
-  border-radius: 0;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
-  box-sizing: border-box;
-  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--account-border);
+  padding: 12px 8px;
+  color: inherit;
+  background: transparent;
   cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
-/* 正方形头像 */
+.wb-me__profile:hover,
+.wb-me__row:hover { background: color-mix(in srgb, var(--axi-primary, #4569d4) 6%, transparent); }
+
+.wb-me__profile:focus-visible,
+.wb-me__row:focus-visible {
+  outline: 2px solid var(--axi-primary, #4569d4);
+  outline-offset: -2px;
+}
+
 .wb-me__avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 8px;
-  object-fit: cover;
-  flex-shrink: 0;
   display: block;
-  background: var(--color-bg-subtle);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--account-text) 8%, transparent);
+  object-fit: cover;
 }
 
-.wb-me__meta {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+.wb-me__meta { display: grid; min-width: 0; gap: 4px; }
 
-.wb-me__name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-ink-strong);
-  line-height: 1.25;
-}
-
+.wb-me__name,
 .wb-me__email {
-  margin-top: 2px;
-  font-size: 12px;
-  color: var(--color-ink-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.wb-me__status {
-  margin-top: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--color-ink-muted);
-}
+.wb-me__name { color: var(--account-text); font-size: 14px; font-weight: 600; }
+.wb-me__email { color: var(--account-muted); font-size: 12px; }
 
-.wb-me__status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-success);
-  flex-shrink: 0;
-}
+.wb-me__list { display: grid; }
 
-.wb-me__group {
-  background: var(--color-bg-card);
-  border-radius: 0;
-  overflow: hidden;
-}
-
-/* 功能栏略增高 */
 .wb-me__row {
-  width: 100%;
-  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px;
-  border: none;
+  min-height: 56px;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--account-border) 74%, transparent);
+  padding: 10px 8px;
+  color: var(--account-text);
   background: transparent;
-  font-size: 16px;
-  color: var(--color-ink-strong);
-  text-align: left;
   cursor: pointer;
-}
-
-.wb-me__row.has-divider {
-  border-bottom: 0.5px solid var(--color-divider);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
 }
 
 .wb-me__value {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-ink-muted);
-  font-size: 14px;
-}
-
-.wb-me__chevron {
-  color: var(--color-chevron);
+  color: var(--account-muted);
   font-size: 12px;
 }
+
+.wb-me__chevron { color: var(--account-muted); font-size: 12px; }
