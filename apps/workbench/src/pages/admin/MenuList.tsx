@@ -1,49 +1,39 @@
 import React from 'react';
-import { Card, Table, Tag, Space, Button, Switch } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { WorkbenchIcon } from '../../components/WorkbenchIcon';
+import { getRegisteredDesktopRoutes } from '../../lib/navigationRegistry';
+import './MenuList.css';
 
 const MenuList: React.FC = () => {
-  const dataSource = [
-    { key: '1', name: '仪表盘', path: '/admin/dashboard', icon: 'DashboardOutlined', type: 'menu', order: 1, status: true },
-    { key: '2', name: '项目管理', path: '/admin/project', icon: 'ProjectOutlined', type: 'menu', order: 2, status: true },
-    { key: '3', name: '任务管理', path: '/admin/task', icon: 'FileTextOutlined', type: 'menu', order: 3, status: true },
-    { key: '4', name: '团队管理', path: '/admin/team', icon: 'TeamOutlined', type: 'menu', order: 4, status: true },
-    { key: '5', name: '菜单列表', path: '/admin/settings/menu', icon: 'MenuOutlined', type: 'submenu', order: 1, status: true },
-    { key: '6', name: '用户列表', path: '/admin/settings/user', icon: 'UserOutlined', type: 'submenu', order: 2, status: false },
-    { key: '7', name: '角色列表', path: '/admin/settings/role', icon: 'UnorderedListOutlined', type: 'submenu', order: 3, status: true },
-  ];
-
-  const columns = [
-    { title: '名称', dataIndex: 'name', key: 'name' },
-    { title: '路径', dataIndex: 'path', key: 'path' },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: string) => <Tag color={type === 'menu' ? 'blue' : 'purple'}>{type === 'menu' ? '菜单' : '子菜单'}</Tag>,
-    },
-    { title: '排序', dataIndex: 'order', key: 'order', sorter: (a: any, b: any) => a.order - b.order },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: boolean) => <Switch defaultChecked={status} size="small" />,
-    },
-  ];
+  const navigate = useNavigate();
+  const routes = getRegisteredDesktopRoutes();
 
   return (
-    <div style={{ padding: 16 }}>
-      <Card
-        title="菜单列表"
-        extra={
-          <Space>
-            <Button type="primary" icon={<WorkbenchIcon name="add" />} size="small">新增菜单</Button>
-          </Space>
-        }
-      >
-        <Table dataSource={dataSource} columns={columns} pagination={{ pageSize: 10 }} size="middle" />
-      </Card>
-    </div>
+    <main className="menu-registry" aria-labelledby="menu-registry-title">
+      <header className="menu-registry__hero">
+        <div>
+          <span className="menu-registry__eyebrow">WORKBENCH · NAVIGATION REGISTRY</span>
+          <h1 id="menu-registry-title">菜单配置</h1>
+          <p>这里读取当前 Web 壳已注册的导航项；没有未保存的样例菜单或不可用的开关。</p>
+        </div>
+        <span className="menu-registry__count"><WorkbenchIcon name="menu" size={16} />{routes.length} 个已注册入口</span>
+      </header>
+
+      <section className="menu-registry__panel" aria-label="已注册的导航菜单">
+        <header className="menu-registry__panel-header"><h2><WorkbenchIcon name="folder" size={16} />桌面导航</h2><span>点击任意条目打开对应页面</span></header>
+        <div className="menu-registry__list">
+          {routes.map((route) => (
+            <button className="menu-registry__row" key={route.path} onClick={() => navigate(route.path)} type="button">
+              <span className="menu-registry__row-icon"><WorkbenchIcon name="menu" size={16} /></span>
+              <span className="menu-registry__row-copy"><strong>{route.label}</strong><small>{route.path}</small></span>
+              <span className="menu-registry__group">{route.groupLabel} · {route.order}</span>
+              <span className="menu-registry__status"><i aria-hidden="true" />已注册</span>
+              <WorkbenchIcon name="forward" size={14} />
+            </button>
+          ))}
+        </div>
+      </section>
+    </main>
   );
 };
 

@@ -1,118 +1,160 @@
-import React from 'react';
-import { Row, Col, Card, Statistic, Progress, Tag, Space, Typography } from 'antd';
-import { WorkbenchIcon } from '../../components/WorkbenchIcon';
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useControlSnapshot } from '@epap/api-client';
 import type { AxiWorkbenchIconName } from '@axi/workbench-foundation/icons';
-import { useI18n } from '../../i18n';
+import { WorkbenchIcon } from '../../components/WorkbenchIcon';
+import {
+  getProjectGitStatus,
+  getProjectResourceId,
+  getProjectResourceLabel,
+  getProjectResources,
+  projectNeedsAttention,
+  summarizeAgentTasks,
+  type ProjectResource,
+} from '../workspaceRegistry';
 import './Dashboard.css';
 
-const { Title, Text } = Typography;
-
-type MetricCard = {
-  key: string;
-  title: string;
-  value: number | string;
-  icon: AxiWorkbenchIconName;
-  trend: number;
-  color: string;
-  suffix?: string;
-};
-
-const metricCards = [
-  { key: 'projects', title: '进行中项目', value: 12, icon: 'project', trend: 2, color: 'var(--color-brand)' },
-  { key: 'tasks', title: '今日待办', value: 5, icon: 'workspace', trend: -1, color: 'var(--palette-orange-500)' },
-  { key: 'uploads', title: '已下载资料', value: 23, icon: 'upload', trend: 8, color: 'var(--color-success-alt)' },
-  { key: 'storage', title: '存储用量', value: '8.2 GB', icon: 'database', trend: 0, color: 'var(--palette-purple-500)', suffix: ' / 50 GB' },
-] satisfies readonly MetricCard[];
-
-const recentProjects = [
-  { id: 'p1', name: '项目 A · Mobile Redesign', progress: 80, meta: '2 小时前 · 5 个成员', color: 'var(--color-brand)' },
-  { id: 'p2', name: '项目 B · 文档重构', progress: 45, meta: '昨天 · 3 个成员', color: 'var(--palette-orange-500)' },
-  { id: 'p3', name: '项目 C · 性能优化', progress: 25, meta: '3 天前 · 4 个成员', color: 'var(--color-success-alt)' },
-];
-
-const upcomingTasks = [
-  { id: 't1', title: '完成 A 模块 review', priority: 'P0', due: '今天 18:00' },
-  { id: 't2', title: '提交 8 月规划文档', priority: 'P1', due: '明天' },
-  { id: 't3', title: '更新团队周报', priority: 'P2', due: '周五' },
-];
-
 const Dashboard: React.FC = () => {
-  const { t } = useI18n();
+  const navigate = useNavigate();
+  const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
+  const projects = useMemo(
+    () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
+    [snapshot],
+  );
+  const taskSummary = summarizeAgentTasks(snapshot?.agentTasks ?? []);
+  const attentionCount = projects.filter(projectNeedsAttention).length;
+  const availableRuntimeCount = (snapshot?.runtimes ?? []).filter((runtime) => runtime.available).length;
+  const recentProjects = projects.slice(0, 5);
+  const recentTasks = (snapshot?.agentTasks ?? []).slice(0, 4);
+  const errorMessage = error instanceof Error ? error.message : '控制面暂时无法同步。';
 
   return (
-    <div className="dashboard-page">
-      {/* Metric cards — 无欢迎语、无左右外边距 */}
-      <Row gutter={[0, 0]} style={{ marginBottom: 12 }}>
-        {metricCards.map(card => (
-          <Col xs={24} sm={12} md={6} key={card.key}>
-            <Card size="small" bordered>
-              <div className="metric-card">
-                <div className="metric-card__icon" style={{ background: `${card.color}22`, color: card.color }}>
-                  <WorkbenchIcon name={card.icon} />
-                </div>
-                <div className="metric-card__body">
-                  <Text type="secondary" style={{ fontSize: 12 }}>{card.title}</Text>
-                  <div className="metric-card__value">
-                    <span className="metric-card__number">{card.value}</span>
-                    {card.suffix && <span className="metric-card__suffix">{card.suffix}</span>}
-                  </div>
-                  {card.trend !== 0 && (
-                    <span className={`metric-card__trend ${card.trend > 0 ? 'is-up' : 'is-down'}`}>
-                      <WorkbenchIcon name={card.trend > 0 ? 'trendUp' : 'trendDown'} size={13} />
-                      {Math.abs(card.trend)} 较上周
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+    <main className="dashboard-live" aria-labelledby="dashboard-live-title">
+      <header className="dashboard-live__hero">
+        <div>
+          <span className="dashboard-live__eyebrow">WORKBENCH · LIVE OVERVIEW</span>
+          <h1 id="dashboard-live-title">概览</h1>
+          <p>项目、任务和运行环境均来自控制面实时快照，不展示演示数据。</p>
+        </div>
+        <div className="dashboard-live__actions">
+          <span className={`dashboard-live__connection${snapshot ? ' is-connected' : ''}`}><i aria-hidden="true" />{snapshot ? '控制面已连接' : '等待控制面连接'}</span>
+          <button disabled={isFetching} onClick={() => void refetch()} type="button">{isFetching ? '同步中…' : '刷新状态'}</button>
+        </div>
+      </header>
 
-      {/* Two-column: projects + tasks */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={14}>
-          <Card title="最近项目" extra={<a>查看全部</a>} bordered>
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              {recentProjects.map(p => (
-                <div key={p.id} className="project-row">
-                  <div className="project-row__avatar" style={{ background: `${p.color}22`, color: p.color }}>
-                    {p.name[0]}
-                  </div>
-                  <div className="project-row__body">
-                    <div className="project-row__name">{p.name}</div>
-                    <Progress
-                      percent={p.progress}
-                      size="small"
-                      strokeColor={p.color}
-                      trailColor={`${p.color}22`}
-                      format={(v) => <span style={{ fontSize: 11 }}>{v}%</span>}
-                    />
-                    <Text type="secondary" style={{ fontSize: 12 }}>{p.meta}</Text>
-                  </div>
-                </div>
-              ))}
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} lg={10}>
-          <Card title="即将到期" extra={<a>查看全部</a>} bordered>
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              {upcomingTasks.map(tk => (
-                <div key={tk.id} className="task-row">
-                  <div className="task-row__main">
-                    <div className="task-row__title">{tk.title}</div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{tk.due}</Text>
-                  </div>
-                  <Tag color={tk.priority === 'P0' ? 'red' : tk.priority === 'P1' ? 'orange' : 'blue'}>{tk.priority}</Tag>
-                </div>
-              ))}
-            </Space>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+      {error ? <div className="dashboard-live__alert" role="status"><WorkbenchIcon name="notification" size={16} />{errorMessage}</div> : null}
+
+      <section className="dashboard-live__metrics" aria-label="工作台状态摘要">
+        <Metric icon="project" label="登记项目" value={projects.length} tone="brand" />
+        <Metric icon="notification" label="需关注" value={attentionCount} tone="warning" />
+        <Metric icon="workspace" label="进行任务" value={taskSummary.active} hint={taskSummary.needsAttention ? `${taskSummary.needsAttention} 项需处理` : undefined} tone="violet" />
+        <Metric icon="check" label="可用运行环境" value={availableRuntimeCount} hint={`${snapshot?.runtimes.length ?? 0} 个已登记`} tone="success" />
+      </section>
+
+      {isLoading ? <DashboardSkeleton /> : (
+        <section className="dashboard-live__grid" aria-label="工作台实时数据">
+          <section className="dashboard-live__panel dashboard-live__panel--projects">
+            <PanelHeader actionLabel="项目目录" icon="project" onAction={() => navigate('/admin/project')} title="项目动态" />
+            {recentProjects.length > 0 ? (
+              <div className="dashboard-live__project-list">
+                {recentProjects.map((project) => (
+                  <ProjectRow
+                    key={getProjectResourceId(project)}
+                    onOpen={() => navigate(`/admin/project/${encodeURIComponent(getProjectResourceId(project))}`)}
+                    project={project}
+                  />
+                ))}
+              </div>
+            ) : <EmptyPanel icon="project" text="控制面中还没有已登记项目。" />}
+          </section>
+
+          <section className="dashboard-live__panel dashboard-live__panel--tasks">
+            <PanelHeader actionLabel="工作区" icon="workspace" onAction={() => navigate('/admin/task')} title="受管任务" />
+            {recentTasks.length > 0 ? (
+              <div className="dashboard-live__task-list">
+                {recentTasks.map((task) => (
+                  <article className="dashboard-live__task" key={task.id}>
+                    <span className={`dashboard-live__task-dot is-${task.status}`} aria-hidden="true" />
+                    <div>
+                      <strong>{task.summary || '受管任务（暂无摘要）'}</strong>
+                      <small>{task.runtime} · {task.status} · {formatTaskTime(task.createdAt)}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : <EmptyPanel icon="workspace" text="当前没有受管任务。" />}
+          </section>
+
+          <section className="dashboard-live__panel dashboard-live__panel--runtime">
+            <PanelHeader actionLabel="协作网络" icon="team" onAction={() => navigate('/admin/team')} title="运行环境" />
+            {(snapshot?.runtimes ?? []).length > 0 ? (
+              <div className="dashboard-live__runtime-list">
+                {snapshot!.runtimes.slice(0, 6).map((runtime) => (
+                  <article className="dashboard-live__runtime" key={runtime.kind}>
+                    <span className={`dashboard-live__runtime-status${runtime.available ? ' is-available' : ''}`}><i aria-hidden="true" />{runtime.available ? '可用' : '降级'}</span>
+                    <strong>{runtime.kind}</strong>
+                    <small>{runtime.summary || runtime.fallbackKind || '已登记运行环境'}</small>
+                  </article>
+                ))}
+              </div>
+            ) : <EmptyPanel icon="check" text="当前快照未登记运行环境。" />}
+          </section>
+        </section>
+      )}
+    </main>
   );
 };
+
+const Metric: React.FC<{
+  icon: AxiWorkbenchIconName;
+  label: string;
+  value: number;
+  hint?: string;
+  tone: 'brand' | 'success' | 'warning' | 'violet';
+}> = ({ icon, label, value, hint, tone }) => (
+  <article className={`dashboard-live__metric dashboard-live__metric--${tone}`}>
+    <span><WorkbenchIcon name={icon} size={18} /></span>
+    <div><small>{label}</small><strong>{value}</strong>{hint ? <em>{hint}</em> : null}</div>
+  </article>
+);
+
+const PanelHeader: React.FC<{ actionLabel: string; icon: AxiWorkbenchIconName; onAction: () => void; title: string }> = ({ actionLabel, icon, onAction, title }) => (
+  <header className="dashboard-live__panel-header">
+    <h2><WorkbenchIcon name={icon} size={16} />{title}</h2>
+    <button onClick={onAction} type="button">{actionLabel}<WorkbenchIcon name="forward" size={13} /></button>
+  </header>
+);
+
+const ProjectRow: React.FC<{ onOpen: () => void; project: ProjectResource }> = ({ onOpen, project }) => {
+  const git = getProjectGitStatus(project);
+  const attention = projectNeedsAttention(project);
+  const projectId = getProjectResourceId(project);
+
+  return (
+    <button className="dashboard-live__project" onClick={onOpen} type="button">
+      <span className={`dashboard-live__project-mark${attention ? ' is-attention' : ''}`}><WorkbenchIcon name="project" size={16} /></span>
+      <span className="dashboard-live__project-copy"><strong>{getProjectResourceLabel(project)}</strong><small>{projectId} · {git.branch || '未登记分支'}</small></span>
+      <span className="dashboard-live__project-state">{git.changedEntries > 0 ? `${git.changedEntries} 项改动` : project.status === 'available' ? '可用' : project.status || '待校验'}</span>
+      <WorkbenchIcon name="forward" size={14} />
+    </button>
+  );
+};
+
+const EmptyPanel: React.FC<{ icon: AxiWorkbenchIconName; text: string }> = ({ icon, text }) => (
+  <div className="dashboard-live__empty"><WorkbenchIcon name={icon} size={18} /><span>{text}</span></div>
+);
+
+const DashboardSkeleton: React.FC = () => (
+  <section className="dashboard-live__grid" aria-label="正在加载控制面快照">
+    {[0, 1, 2].map((index) => <div className="dashboard-live__skeleton" key={index} />)}
+  </section>
+);
+
+function formatTaskTime(value: Date | string | undefined): string {
+  if (!value) return '时间未知';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '时间未知';
+  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+}
 
 export default Dashboard;

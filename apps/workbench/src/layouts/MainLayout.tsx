@@ -6,7 +6,6 @@ import { axiStylePresets } from '@axi/presets';
 import { AxiAdminSettingsPanel, useAxiAdminSettings } from '@axi/settings';
 import {
   AxiDashboardShell,
-  type AxiDashboardNavGroup,
 } from '@axi/shell';
 import type { TabItem } from '../lib/tabs';
 import GlobalSearchDialog, { type GlobalSearchItem } from '../components/Layout/GlobalSearchDialog';
@@ -25,50 +24,14 @@ import {
   closeAll,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
-import { WorkbenchIcon } from '../components/WorkbenchIcon';
+import { workbenchDesktopNavGroups, workbenchMenuRouteMap } from '../lib/navigationRegistry';
+import avatarDefault from '../assets/avatar-me.jpg';
 import './MainLayout.css';
 
-const menuRouteMap: Record<string, { label: string }> = {
-  '/admin/dashboard': { label: '概览' },
-  '/admin/project': { label: '项目' },
-  '/admin/task': { label: '工作区' },
-  '/admin/team': { label: '团队' },
-  '/admin/scan': { label: '扫一扫' },
-  '/admin/me': { label: '我的' },
-  '/admin/settings/menu': { label: '菜单列表' },
-  '/admin/settings/user': { label: '我的' },
-  '/admin/settings/role': { label: '角色列表' },
-};
-
-/**
- * Web 管理端专属导航。移动端由独立的 @axi/workbench-mobile 应用拥有自己的
- * 信息架构、页面组合和底部导航，不导入本树。
- */
-const desktopNavGroups: AxiDashboardNavGroup[] = [
-  {
-    key: 'workbench',
-    label: '工作台',
-    iconName: axiWorkbenchIconMap.overview,
-    children: [
-      { key: '/admin/dashboard', label: '概览', iconName: axiWorkbenchIconMap.overview },
-      { key: '/admin/project', label: '项目', iconName: axiWorkbenchIconMap.project },
-      { key: '/admin/task', label: '工作区', iconName: axiWorkbenchIconMap.workspace },
-      { key: '/admin/team', label: '团队', iconName: axiWorkbenchIconMap.team },
-      { key: '/admin/scan', label: '扫一扫', iconName: axiWorkbenchIconMap.scan },
-    ],
-  },
-  {
-    key: 'account',
-    label: '账号与设置',
-    iconName: axiWorkbenchIconMap.settings,
-    children: [
-      { key: '/admin/me', label: '个人中心', iconName: axiWorkbenchIconMap.account },
-      { key: '/admin/me/notifications', label: '通知中心', iconName: axiWorkbenchIconMap.notification },
-      { key: '/admin/settings/menu', label: '菜单配置', iconName: axiWorkbenchIconMap.menu },
-      { key: '/admin/settings/role', label: '角色权限', iconName: axiWorkbenchIconMap.roles },
-    ],
-  },
-];
+function resolveMenuRoute(path: string): { label: string } | undefined {
+  if (path.startsWith('/admin/project/')) return { label: '项目详情' };
+  return workbenchMenuRouteMap[path];
+}
 
 const MainLayout: React.FC = () => {
   const { locale, setLocale, t } = useI18n();
@@ -97,7 +60,7 @@ const MainLayout: React.FC = () => {
   const displayName = user?.name || t('common.user.admin') || '用户';
 
   const globalSearchItems = useMemo<GlobalSearchItem[]>(() => {
-    const navItems = desktopNavGroups.flatMap((group) =>
+    const navItems = workbenchDesktopNavGroups.flatMap((group) =>
       group.children.map((item) => ({
         key: `nav:${item.key}`,
         label: String(item.label),
@@ -165,7 +128,7 @@ const MainLayout: React.FC = () => {
 
   useEffect(() => {
     const path = location.pathname;
-    const routeInfo = menuRouteMap[path];
+    const routeInfo = resolveMenuRoute(path);
     if (!routeInfo) {
       setActiveTab(path);
       return;
@@ -235,8 +198,8 @@ const MainLayout: React.FC = () => {
 
   const visibleDesktopNavGroups = useMemo(() => {
     const keyword = sidebarSearchValue.trim().toLowerCase();
-    if (!keyword) return desktopNavGroups;
-    return desktopNavGroups
+    if (!keyword) return workbenchDesktopNavGroups;
+    return workbenchDesktopNavGroups
       .map((group) => ({
         ...group,
         children: group.children.filter((item) => String(item.label).toLowerCase().includes(keyword)),
@@ -276,10 +239,10 @@ const MainLayout: React.FC = () => {
   return (
     <>
       <AxiDashboardShell
-        activeNavKey={location.pathname}
+        activeNavKey={location.pathname.startsWith('/admin/project/') ? '/admin/project' : location.pathname}
         activeTabKey={activeTab}
         avatarConfig={{
-          avatar: <WorkbenchIcon name="account" size={16} />,
+          imageSrc: avatarDefault,
           label: displayName,
           menuItems: [
             {

@@ -186,6 +186,14 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     return [{ label: '概览', isActive: true }];
   }
 
+  if (trimmed.startsWith('/admin/project/')) {
+    return [
+      { label: WORKBENCH_PARENT.label, icon: hint(WORKBENCH_PARENT.icon), path: WORKBENCH_PARENT.path },
+      { label: '项目', icon: hint('project'), path: '/admin/project' },
+      { label: '项目详情', icon: hint('project'), isActive: true },
+    ];
+  }
+
   const found = resolveRoute(trimmed);
   if (!found) {
     return [];

@@ -1,198 +1,238 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useControlSnapshot, useLegacyProjects } from '@epap/api-client';
-import type { AxiResourceView, ManagedResource, Project, ProjectStatus } from '@axi/workstation-contracts';
-import { groupWorkspaceResources } from './workspaceRegistry';
+import { useControlSnapshot } from '@epap/api-client';
+import { WorkbenchIcon } from '../components/WorkbenchIcon';
+import {
+  getProjectConsumers,
+  getProjectGitStatus,
+  getProjectResourceId,
+  getProjectResourceLabel,
+  getProjectResourceSummary,
+  getProjectResources,
+  projectNeedsAttention,
+  projectSearchText,
+  type ProjectResource,
+} from './workspaceRegistry';
+import './Projects.css';
 
-const statusColors: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
-  active: { bg: 'rgba(24, 144, 255, 0.15)', text: 'var(--color-info-antd)', border: 'rgba(24, 144, 255, 0.3)' },
-  archived: { bg: 'rgba(255, 255, 255, 0.05)', text: 'rgba(255, 255, 255, 0.45)', border: 'rgba(255, 255, 255, 0.1)' },
-  draft: { bg: 'rgba(255, 255, 255, 0.05)', text: 'rgba(255, 255, 255, 0.65)', border: 'rgba(255, 255, 255, 0.1)' },
-  completed: { bg: 'rgba(82, 196, 26, 0.15)', text: 'var(--color-chart-2)', border: 'rgba(82, 196, 26, 0.3)' },
-};
+type ProjectFilter = 'all' | 'available' | 'attention';
+
+const projectFilters: Array<{ id: ProjectFilter; label: string }> = [
+  { id: 'all', label: '全部' },
+  { id: 'available', label: '可用' },
+  { id: 'attention', label: '需关注' },
+];
 
 const Projects: React.FC = () => {
   const navigate = useNavigate();
-  const { data: snapshot, isLoading: snapshotLoading } = useControlSnapshot();
-  const { data: projectsResponse, isLoading, error } = useLegacyProjects();
+  const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
+  const [filter, setFilter] = useState<ProjectFilter>('all');
+  const [query, setQuery] = useState('');
 
-  const workspaceResources = snapshot?.resources || [];
-  const resourceGroups = groupWorkspaceResources(workspaceResources);
-  const serviceProjects = snapshot?.axiResources?.project ?? workspaceResources.filter((resource) => resource.layer === 'software');
-  const projects: Project[] = projectsResponse?.items || [];
+  const projects = useMemo(
+    () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
+    [snapshot],
+  );
+  const projectIds = useMemo(() => new Set(projects.map(getProjectResourceId)), [projects]);
+  const availableCount = projects.filter((project) => project.status === 'available').length;
+  const attentionCount = projects.filter(projectNeedsAttention).length;
+  const commandCount = projects.reduce((count, project) => count + project.commands.length, 0);
+  const activeTaskCount = (snapshot?.agentTasks ?? []).filter((task) => task.targetId && projectIds.has(task.targetId)).length;
 
-  const handleProjectClick = (projectId: string) => {
-    navigate(`/projects/${encodeURIComponent(projectId)}`);
-  };
+  const visibleProjects = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
+    return projects.filter((project) => {
+      if (filter === 'available' && project.status !== 'available') return false;
+      if (filter === 'attention' && !projectNeedsAttention(project)) return false;
+      return !normalizedQuery || projectSearchText(project).includes(normalizedQuery);
+    });
+  }, [filter, projects, query]);
 
-  if (snapshotLoading && isLoading) {
-    return <PageMessage>Loading projects...</PageMessage>;
-  }
+  const errorMessage = error instanceof Error ? error.message : '项目状态暂时无法同步。';
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-bg-card)', marginBottom: 4 }}>
-            Workspace Registry
-          </h1>
-          <p style={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.45)' }}>
-            {workspaceResources.length || serviceProjects.length || projects.length} managed workspace resource{(workspaceResources.length || serviceProjects.length || projects.length) !== 1 ? 's' : ''}
-          </p>
+    <main className="projects-page" aria-labelledby="projects-page-title">
+      <header className="projects-page__hero">
+        <div className="projects-page__hero-copy">
+          <span className="projects-page__eyebrow">WORKBENCH · PROJECT INDEX</span>
+          <h1 id="projects-page-title">项目</h1>
+          <p>来自控制面的已登记项目。状态、分支、依赖与受管命令均以实时快照为准。</p>
         </div>
-      </div>
+        <div className="projects-page__hero-actions">
+          <span className={`projects-page__source${snapshot ? ' is-connected' : ''}`}>
+            <i aria-hidden="true" />
+            {snapshot ? '控制面已连接' : '等待控制面连接'}
+          </span>
+          <button className="projects-page__refresh" disabled={isFetching} onClick={() => void refetch()} type="button">
+            {isFetching ? '同步中…' : '刷新状态'}
+          </button>
+        </div>
+      </header>
 
-      {resourceGroups.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-          {resourceGroups.map((group) => (
-            <section key={group.layer}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'baseline', marginBottom: 12 }}>
-                <div>
-                  <h2 style={{ fontSize: 17, fontWeight: 600, color: 'var(--color-bg-card)', margin: 0 }}>{group.label}</h2>
-                  <p style={{ margin: '5px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>{group.description}</p>
-                </div>
-                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>{group.resources.length}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-                {group.resources.map((resource) => (
-                  <ServiceProjectCard key={resource.id} resource={resource} onClick={handleProjectClick} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      ) : error ? (
-        <PageMessage>Control plane and legacy project API are not reachable.</PageMessage>
-      ) : projects.length === 0 ? (
-        <PageMessage>No software-layer projects discovered.</PageMessage>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-          {projects.map((project) => {
-            const statusStyle = statusColors[project.status];
-            return (
-              <div
-                key={project.id}
-                onClick={() => handleProjectClick(project.id)}
-                style={cardStyle}
+      <section className="projects-stats" aria-label="项目状态摘要">
+        <ProjectStat icon="project" label="登记项目" value={projects.length} tone="brand" />
+        <ProjectStat icon="check" label="可用" value={availableCount} tone="success" />
+        <ProjectStat icon="notification" label="需关注" value={attentionCount} tone="warning" />
+        <ProjectStat icon="workspace" label="进行任务" value={activeTaskCount} hint={`${commandCount} 个受管命令`} tone="violet" />
+      </section>
+
+      <section className="projects-catalog" aria-label="项目目录">
+        <div className="projects-catalog__toolbar">
+          <label className="projects-search">
+            <WorkbenchIcon name="search" size={16} />
+            <input
+              aria-label="搜索项目"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="搜索项目 ID、名称或能力"
+              type="search"
+              value={query}
+            />
+          </label>
+          <div className="projects-filter" aria-label="项目状态筛选">
+            {projectFilters.map((item) => (
+              <button
+                aria-pressed={filter === item.id}
+                className={filter === item.id ? 'is-active' : undefined}
+                key={item.id}
+                onClick={() => setFilter(item.id)}
+                type="button"
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <h3 style={cardTitleStyle}>{project.name}</h3>
-                  <span style={{
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    borderRadius: 4,
-                    background: statusStyle.bg,
-                    color: statusStyle.text,
-                    border: `1px solid ${statusStyle.border}`,
-                    textTransform: 'capitalize',
-                    marginLeft: 12,
-                    flexShrink: 0,
-                  }}>
-                    {project.status}
-                  </span>
-                </div>
-                {project.description && (
-                  <p style={descriptionStyle}>{project.description}</p>
-                )}
-              </div>
-            );
-          })}
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <span className="projects-catalog__count">显示 {visibleProjects.length} / {projects.length}</span>
         </div>
-      )}
-    </div>
+
+        {isLoading ? (
+          <ProjectSkeletons />
+        ) : error && projects.length === 0 ? (
+          <StatePanel
+            actionLabel="重新连接"
+            description={errorMessage}
+            icon="notification"
+            onAction={() => void refetch()}
+            title="控制面暂不可用"
+          />
+        ) : projects.length === 0 ? (
+          <StatePanel
+            description="控制面已响应，但当前没有登记的软件层项目。项目接入工作区图谱后会自动出现在这里。"
+            icon="project"
+            title="暂无登记项目"
+          />
+        ) : visibleProjects.length === 0 ? (
+          <StatePanel
+            description="换一个关键词或状态筛选条件，继续查找已登记的项目。"
+            icon="search"
+            onAction={() => {
+              setFilter('all');
+              setQuery('');
+            }}
+            actionLabel="清除筛选"
+            title="没有匹配的项目"
+          />
+        ) : (
+          <div className="projects-grid">
+            {visibleProjects.map((project) => (
+              <ProjectCard
+                key={getProjectResourceId(project)}
+                onOpen={() => navigate(`/admin/project/${encodeURIComponent(getProjectResourceId(project))}`)}
+                project={project}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
   );
 };
 
-type ServiceProjectResource = ManagedResource | AxiResourceView;
+const ProjectStat: React.FC<{
+  icon: 'project' | 'check' | 'notification' | 'workspace';
+  label: string;
+  value: number;
+  hint?: string;
+  tone: 'brand' | 'success' | 'warning' | 'violet';
+}> = ({ icon, label, value, hint, tone }) => (
+  <article className={`projects-stat projects-stat--${tone}`}>
+    <span className="projects-stat__icon"><WorkbenchIcon name={icon} size={18} /></span>
+    <span className="projects-stat__copy">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {hint ? <small>{hint}</small> : null}
+    </span>
+  </article>
+);
 
-interface ServiceProjectCardProps {
-  resource: ServiceProjectResource;
-  onClick: (projectId: string) => void;
-}
-
-const ServiceProjectCard: React.FC<ServiceProjectCardProps> = ({ resource, onClick }) => {
-  const git = resource.metadata?.git as { branch?: string; changedEntries?: number; clean?: boolean } | null | undefined;
-  const consumers = resource.metadata?.consumers as string[] | undefined;
-  const projectId = 'resourceId' in resource && resource.resourceId ? resource.resourceId : resource.id;
+const ProjectCard: React.FC<{ project: ProjectResource; onOpen: () => void }> = ({ project, onOpen }) => {
+  const git = getProjectGitStatus(project);
+  const consumers = getProjectConsumers(project);
+  const projectId = getProjectResourceId(project);
+  const attention = projectNeedsAttention(project);
+  const status = project.status === 'available' ? '可用' : project.status || '待校验';
 
   return (
-    <div onClick={() => onClick(projectId)} style={cardStyle}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-        <h3 style={cardTitleStyle}>{projectId}</h3>
-        <span style={{
-          padding: '4px 10px',
-          fontSize: 12,
-          fontWeight: 500,
-          borderRadius: 4,
-          background: resource.status === 'available' ? 'rgba(82,196,26,0.14)' : 'rgba(250,173,20,0.14)',
-          color: resource.status === 'available' ? 'var(--color-chart-2)' : 'var(--color-chart-3)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          flexShrink: 0,
-        }}>
-          {resource.status}
+    <button
+      className={`project-card${attention ? ' is-attention' : ''}`}
+      onClick={onOpen}
+      type="button"
+    >
+      <span className="project-card__topline">
+        <span className="project-card__mark"><WorkbenchIcon name="project" size={18} /></span>
+        <span className={`project-card__status${project.status === 'available' ? ' is-available' : ''}`}>
+          <i aria-hidden="true" />
+          {status}
         </span>
-      </div>
-      <p style={descriptionStyle}>{resource.kind} · {resource.layer}</p>
-      <div style={metaGridStyle}>
-        <Meta label="Branch" value={git?.branch || 'n/a'} />
-        <Meta label="Changes" value={String(git?.changedEntries || 0)} />
-        <Meta label="Consumes" value={String(resource.consumes.length)} />
-        <Meta label="Consumers" value={String(consumers?.length || 0)} />
-      </div>
-      {resource.provides.length > 0 && (
-        <div style={{ marginTop: 14, color: 'rgba(255,255,255,0.52)', fontSize: 12, lineHeight: 1.5 }}>
-          {resource.provides.slice(0, 4).join(', ')}
-        </div>
-      )}
-    </div>
+      </span>
+      <span className="project-card__identity">
+        <strong>{getProjectResourceLabel(project)}</strong>
+        <small>{projectId}</small>
+      </span>
+      <span className="project-card__summary">{getProjectResourceSummary(project)}</span>
+      <span className="project-card__metrics" aria-label={`${projectId} 的项目状态`}>
+        <ProjectMetric label="分支" value={git.branch || '未登记'} />
+        <ProjectMetric label="工作区" value={git.changedEntries > 0 ? `${git.changedEntries} 项改动` : git.clean === false ? '待检查' : '干净'} />
+        <ProjectMetric label="依赖" value={`${project.consumes.length} 项`} />
+        <ProjectMetric label="消费方" value={`${consumers.length} 个`} />
+      </span>
+      <span className="project-card__capabilities">
+        {project.provides.slice(0, 3).map((capability) => <em key={capability}>{capability}</em>)}
+        {project.provides.length === 0 ? <em className="is-muted">尚未登记对外能力</em> : null}
+      </span>
+      <span className="project-card__footer">
+        <span>{project.commands.length > 0 ? `${project.commands.length} 个受管命令` : '无受管命令'}</span>
+        <span>查看详情 <WorkbenchIcon name="forward" size={14} /></span>
+      </span>
+    </button>
   );
 };
 
-const Meta: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div>
-    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{label}</div>
-    <div style={{ marginTop: 2, fontSize: 13, color: 'rgba(255,255,255,0.72)', overflowWrap: 'anywhere' }}>{value}</div>
+const ProjectMetric: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <span>
+    <small>{label}</small>
+    <strong title={value}>{value}</strong>
+  </span>
+);
+
+const ProjectSkeletons: React.FC = () => (
+  <div className="projects-grid" aria-label="正在加载项目">
+    {[0, 1, 2, 3, 4, 5].map((index) => <div className="project-card project-card--skeleton" key={index} />)}
   </div>
 );
 
-const PageMessage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ padding: 48, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>
-    {children}
+const StatePanel: React.FC<{
+  actionLabel?: string;
+  description: string;
+  icon: 'notification' | 'project' | 'search';
+  onAction?: () => void;
+  title: string;
+}> = ({ actionLabel, description, icon, onAction, title }) => (
+  <div className="projects-state-panel">
+    <span><WorkbenchIcon name={icon} size={22} /></span>
+    <h2>{title}</h2>
+    <p>{description}</p>
+    {actionLabel && onAction ? <button onClick={onAction} type="button">{actionLabel}</button> : null}
   </div>
 );
-
-const cardStyle: React.CSSProperties = {
-  padding: 20,
-  background: 'rgba(255, 255, 255, 0.03)',
-  borderRadius: 8,
-  border: '1px solid rgba(255, 255, 255, 0.06)',
-  cursor: 'pointer',
-};
-
-const cardTitleStyle: React.CSSProperties = {
-  fontSize: 16,
-  fontWeight: 600,
-  color: 'var(--color-bg-card)',
-  margin: 0,
-  flex: 1,
-  overflowWrap: 'anywhere',
-};
-
-const descriptionStyle: React.CSSProperties = {
-  fontSize: 13,
-  color: 'rgba(255, 255, 255, 0.55)',
-  lineHeight: 1.5,
-  margin: 0,
-};
-
-const metaGridStyle: React.CSSProperties = {
-  marginTop: 16,
-  paddingTop: 12,
-  borderTop: '1px solid rgba(255,255,255,0.06)',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-  gap: 10,
-};
 
 export default Projects;

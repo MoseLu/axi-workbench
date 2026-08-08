@@ -47,6 +47,13 @@ describe('resolveBreadcrumbs', () => {
     });
   });
 
+  it('keeps the project catalog in the breadcrumb chain for project detail routes', () => {
+    const chain = stripIcons(resolveBreadcrumbs('/admin/project/axi-workbench'));
+    expect(chain.map((item) => item.label)).toEqual(['工作台', '项目', '项目详情']);
+    expect(chain[1]?.path).toBe('/admin/project');
+    expect(chain[2]?.isActive).toBe(true);
+  });
+
   it('inserts the parent group for task routes', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/task'));
     expect(chain.map((c) => c.label)).toEqual(['工作台', '工作区']);

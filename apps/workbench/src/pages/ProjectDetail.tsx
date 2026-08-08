@@ -1,250 +1,218 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useControlQuery, useControlSnapshot, useLegacyProject, useRunControlCommand } from '@epap/api-client';
-import type { AgentTask, ManagedCommand, ManagedResource, ProjectStatus } from '@axi/workstation-contracts';
-
-const projectStatusColors: Record<ProjectStatus, { bg: string; text: string; border: string }> = {
-  active: { bg: 'rgba(24, 144, 255, 0.15)', text: 'var(--color-info-antd)', border: 'rgba(24, 144, 255, 0.3)' },
-  archived: { bg: 'rgba(255, 255, 255, 0.05)', text: 'rgba(255, 255, 255, 0.45)', border: 'rgba(255, 255, 255, 0.1)' },
-  draft: { bg: 'rgba(255, 255, 255, 0.05)', text: 'rgba(255, 255, 255, 0.65)', border: 'rgba(255, 255, 255, 0.1)' },
-  completed: { bg: 'rgba(82, 196, 26, 0.15)', text: 'var(--color-chart-2)', border: 'rgba(82, 196, 26, 0.3)' },
-};
+import { useControlSnapshot } from '@epap/api-client';
+import { WorkbenchIcon } from '../components/WorkbenchIcon';
+import {
+  getProjectConsumers,
+  getProjectGitStatus,
+  getProjectResourceId,
+  getProjectResourceLabel,
+  getProjectResourceSummary,
+  getProjectResources,
+  projectNeedsAttention,
+  type ProjectResource,
+} from './workspaceRegistry';
+import './ProjectDetail.css';
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const projectId = decodeURIComponent(id || '');
   const navigate = useNavigate();
-  const { data: snapshot } = useControlSnapshot();
-  const { data: project, isLoading: projectLoading, error: projectError } = useLegacyProject(projectId);
-  const runCommand = useRunControlCommand();
-  const controlQuery = useControlQuery();
-  const [lastSummary, setLastSummary] = useState('');
+  const projectId = decodeURIComponent(id || '');
+  const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
+  const projects = useMemo(
+    () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
+    [snapshot],
+  );
+  const project = projects.find((item) => getProjectResourceId(item) === projectId);
+  const agentTasks = (snapshot?.agentTasks ?? []).filter((task) => task.targetId === projectId);
 
-  const resource = (snapshot?.resources || []).find((item) => item.id === projectId);
-  const agentTasks = (snapshot?.agentTasks || []).filter((task) => task.targetId === projectId);
+  if (isLoading) return <ProjectDetailSkeleton />;
 
-  const handleRunCommand = async (command: ManagedCommand) => {
-    const run = await runCommand.mutateAsync(command.id);
-    setLastSummary(run.summary);
-  };
-
-  const handleAskDependency = async () => {
-    const run = await controlQuery.mutateAsync({ text: `解释 ${projectId} 依赖谁`, dryRun: true });
-    setLastSummary(run.summary);
-  };
-
-  if (resource) {
+  if (error && !project) {
     return (
-      <ServiceResourceDetail
-        resource={resource}
-        onBack={() => navigate('/projects')}
-        onRunCommand={handleRunCommand}
-        onAskDependency={handleAskDependency}
-        lastSummary={lastSummary}
-        agentTasks={agentTasks}
+      <ProjectDetailState
+        actionLabel="重新连接"
+        description={error instanceof Error ? error.message : '项目状态暂时无法同步。'}
+        icon="notification"
+        onAction={() => void refetch()}
+        onBack={() => navigate('/admin/project')}
+        title="控制面暂不可用"
       />
     );
   }
 
-  if (projectLoading) {
-    return <PageMessage>Loading project...</PageMessage>;
-  }
-
-  if (projectError || !project) {
+  if (!project) {
     return (
-      <div style={{ padding: 24 }}>
-        <BackButton onClick={() => navigate('/projects')} />
-        <PageMessage>Failed to load project. The project may not exist.</PageMessage>
-      </div>
+      <ProjectDetailState
+        description="该项目未出现在最新控制面快照中。它可能尚未接入工作区图谱，或已被移除。"
+        icon="project"
+        onBack={() => navigate('/admin/project')}
+        title="未找到该项目"
+      />
     );
   }
 
-  const projectStatusStyle = projectStatusColors[project.status];
-
   return (
-    <div style={{ padding: 24 }}>
-      <BackButton onClick={() => navigate('/projects')} />
-      <section style={panelStyle}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-bg-card)', margin: 0 }}>
-            {project.name}
-          </h1>
-          <span style={{
-            padding: '4px 12px',
-            fontSize: 12,
-            fontWeight: 500,
-            borderRadius: 4,
-            background: projectStatusStyle.bg,
-            color: projectStatusStyle.text,
-            border: `1px solid ${projectStatusStyle.border}`,
-            textTransform: 'capitalize',
-          }}>
-            {project.status}
-          </span>
-        </div>
-        {project.description && (
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, margin: 0 }}>
-            {project.description}
-          </p>
-        )}
-      </section>
-    </div>
+    <ProjectDetailView
+      agentTasks={agentTasks}
+      isFetching={isFetching}
+      onBack={() => navigate('/admin/project')}
+      onRefresh={() => void refetch()}
+      project={project}
+    />
   );
 };
 
-interface ServiceResourceDetailProps {
-  resource: ManagedResource;
+const ProjectDetailView: React.FC<{
+  agentTasks: Array<{ id: string; runtime: string; status: string; summary?: string; prompt?: string; createdAt?: Date | string }>;
+  isFetching: boolean;
   onBack: () => void;
-  onRunCommand: (command: ManagedCommand) => void;
-  onAskDependency: () => void;
-  lastSummary: string;
-  agentTasks: AgentTask[];
-}
-
-const ServiceResourceDetail: React.FC<ServiceResourceDetailProps> = ({
-  resource,
-  onBack,
-  onRunCommand,
-  onAskDependency,
-  lastSummary,
-  agentTasks,
-}) => {
-  const git = resource.metadata?.git as { branch?: string; changedEntries?: number; clean?: boolean } | null | undefined;
-  const consumers = resource.metadata?.consumers as string[] | undefined;
+  onRefresh: () => void;
+  project: ProjectResource;
+}> = ({ agentTasks, isFetching, onBack, onRefresh, project }) => {
+  const projectId = getProjectResourceId(project);
+  const git = getProjectGitStatus(project);
+  const consumers = getProjectConsumers(project);
+  const attention = projectNeedsAttention(project);
+  const status = project.status === 'available' ? '可用' : project.status || '待校验';
 
   return (
-    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <BackButton onClick={onBack} />
-      <section style={panelStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24, color: 'var(--color-bg-card)' }}>{resource.id}</h1>
-            <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.52)', fontSize: 13 }}>
-              {resource.kind} · {resource.layer}
+    <main className="project-detail" aria-labelledby="project-detail-title">
+      <div className="project-detail__nav">
+        <button onClick={onBack} type="button"><WorkbenchIcon name="back" size={15} /> 返回项目</button>
+        <button className="project-detail__refresh" disabled={isFetching} onClick={onRefresh} type="button">
+          {isFetching ? '同步中…' : '刷新状态'}
+        </button>
+      </div>
+
+      <header className={`project-detail__hero${attention ? ' is-attention' : ''}`}>
+        <span className="project-detail__mark"><WorkbenchIcon name="project" size={23} /></span>
+        <div className="project-detail__heading">
+          <div className="project-detail__heading-line">
+            <h1 id="project-detail-title">{getProjectResourceLabel(project)}</h1>
+            <span className={`project-detail__status${project.status === 'available' ? ' is-available' : ''}`}><i aria-hidden="true" />{status}</span>
+          </div>
+          <code>{projectId}</code>
+          <p>{getProjectResourceSummary(project)}</p>
+        </div>
+        <dl className="project-detail__headline-stats">
+          <DetailMetric label="受管命令" value={`${project.commands.length}`} />
+          <DetailMetric label="关联任务" value={`${agentTasks.length}`} />
+          <DetailMetric label="依赖项目" value={`${project.consumes.length}`} />
+        </dl>
+      </header>
+
+      <div className="project-detail__grid">
+        <section className="project-detail__panel project-detail__panel--workspace">
+          <PanelTitle icon="workspace" title="工作区状态" />
+          <dl className="project-detail__facts">
+            <DetailFact label="资源类型" value={project.kind} />
+            <DetailFact label="所属层级" value={project.layer || 'software'} />
+            <DetailFact label="当前分支" value={git.branch || '未登记'} />
+            <DetailFact label="工作区改动" value={git.changedEntries > 0 ? `${git.changedEntries} 项` : git.clean === false ? '待检查' : '干净'} />
+            <DetailFact label="资源路径" value={project.path || '未登记'} wide />
+          </dl>
+        </section>
+
+        <section className="project-detail__panel">
+          <PanelTitle icon="settings" title="依赖与消费关系" />
+          <DetailTagGroup emptyLabel="暂无下游消费方" label="消费方" values={consumers} />
+          <DetailTagGroup emptyLabel="暂无上游依赖" label="依赖" values={project.consumes} />
+          <DetailTagGroup emptyLabel="暂无契约记录" label="契约" values={project.contracts} />
+        </section>
+
+        <section className="project-detail__panel">
+          <PanelTitle icon="check" title="已提供能力" />
+          <DetailTagGroup emptyLabel="暂无对外能力记录" label="能力" values={project.provides} prominent />
+          <div className="project-detail__command-summary">
+            <span><WorkbenchIcon name="workspace" size={15} /></span>
+            <p>
+              <strong>{project.commands.length} 个受管命令</strong>
+              <small>命令仅由控制面调度，本页展示项目状态，不直接执行工作区操作。</small>
             </p>
           </div>
-          <span style={{ color: resource.status === 'available' ? 'var(--color-chart-2)' : 'var(--color-chart-3)', fontSize: 13 }}>
-            {resource.status}
-          </span>
-        </div>
-        <div style={metaGridStyle}>
-          <Meta label="Path" value={resource.path || 'n/a'} />
-          <Meta label="Branch" value={git?.branch || 'n/a'} />
-          <Meta label="Changes" value={String(git?.changedEntries || 0)} />
-          <Meta label="Consumers" value={(consumers || []).join(', ') || 'none'} />
-        </div>
-      </section>
+        </section>
 
-      <section style={panelStyle}>
-        <h2 style={sectionTitleStyle}>Contracts and Capabilities</h2>
-        <InfoList title="Provides" items={resource.provides} />
-        <InfoList title="Consumes" items={resource.consumes} />
-        <InfoList title="Contracts" items={resource.contracts} />
-      </section>
-
-      <section style={panelStyle}>
-        <h2 style={sectionTitleStyle}>Managed Commands</h2>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {resource.commands.map((command) => (
-            <button key={command.id} onClick={() => onRunCommand(command)} style={buttonStyle}>
-              {command.intent === 'run_health' ? 'Run health' : 'Run verify'}
-            </button>
-          ))}
-          <button onClick={onAskDependency} style={buttonStyle}>
-            Explain dependencies
-          </button>
-          {resource.commands.length === 0 && (
-            <span style={{ color: 'rgba(255,255,255,0.42)', fontSize: 13 }}>No registered health or verify command.</span>
-          )}
-        </div>
-        {lastSummary && (
-          <div style={{ marginTop: 14, color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 1.6 }}>
-            {lastSummary}
-          </div>
-        )}
-      </section>
-
-      <section style={panelStyle}>
-        <h2 style={sectionTitleStyle}>Recent Agent Tasks</h2>
-        {agentTasks.length ? agentTasks.slice(0, 5).map((task) => (
-          <div key={task.id} style={{ marginTop: 10, padding: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6 }}>
-            <div style={{ color: 'var(--color-bg-card)', fontSize: 13 }}>{task.runtime} · {task.status}</div>
-            <div style={{ marginTop: 5, color: 'rgba(255,255,255,0.52)', fontSize: 12, overflowWrap: 'anywhere' }}>
-              {task.summary || task.prompt}
+        <section className="project-detail__panel project-detail__panel--tasks">
+          <PanelTitle icon="notification" title="关联任务" />
+          {agentTasks.length > 0 ? (
+            <div className="project-detail__tasks">
+              {agentTasks.slice(0, 6).map((task) => (
+                <article key={task.id}>
+                  <span className={`project-detail__task-status is-${task.status}`} />
+                  <div>
+                    <strong>{task.summary || task.prompt || '受管任务'}</strong>
+                    <small>{task.runtime} · {task.status}{task.createdAt ? ` · ${formatTaskTime(task.createdAt)}` : ''}</small>
+                  </div>
+                </article>
+              ))}
             </div>
-          </div>
-        )) : (
-          <span style={{ color: 'rgba(255,255,255,0.42)', fontSize: 13 }}>No agent task has targeted this project yet.</span>
-        )}
-      </section>
-    </div>
+          ) : (
+            <div className="project-detail__empty">
+              <WorkbenchIcon name="workspace" size={18} />
+              <span>当前没有关联到此项目的受管任务。</span>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 };
 
-const InfoList: React.FC<{ title: string; items: string[] }> = ({ title, items }) => (
-  <div style={{ marginTop: 12 }}>
-    <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 12, marginBottom: 6 }}>{title}</div>
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-      {items.length > 0 ? items.map((item) => (
-        <span key={item} style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, color: 'rgba(255,255,255,0.68)', fontSize: 12 }}>
-          {item}
-        </span>
-      )) : (
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>none</span>
-      )}
+const PanelTitle: React.FC<{ icon: 'workspace' | 'settings' | 'check' | 'notification'; title: string }> = ({ icon, title }) => (
+  <h2 className="project-detail__panel-title"><WorkbenchIcon name={icon} size={16} />{title}</h2>
+);
+
+const DetailMetric: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div><dt>{label}</dt><dd>{value}</dd></div>
+);
+
+const DetailFact: React.FC<{ label: string; value: string; wide?: boolean }> = ({ label, value, wide }) => (
+  <div className={wide ? 'is-wide' : undefined}><dt>{label}</dt><dd title={value}>{value}</dd></div>
+);
+
+const DetailTagGroup: React.FC<{ emptyLabel: string; label: string; prominent?: boolean; values: string[] }> = ({ emptyLabel, label, prominent = false, values }) => (
+  <div className={`project-detail__tag-group${prominent ? ' is-prominent' : ''}`}>
+    <span>{label}</span>
+    <div>
+      {values.length > 0 ? values.map((value) => <em key={value} title={value}>{value}</em>) : <small>{emptyLabel}</small>}
     </div>
   </div>
 );
 
-const Meta: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div>
-    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{label}</div>
-    <div style={{ marginTop: 3, fontSize: 13, color: 'rgba(255,255,255,0.72)', overflowWrap: 'anywhere' }}>{value}</div>
-  </div>
+const ProjectDetailState: React.FC<{
+  actionLabel?: string;
+  description: string;
+  icon: 'notification' | 'project';
+  onAction?: () => void;
+  onBack: () => void;
+  title: string;
+}> = ({ actionLabel, description, icon, onAction, onBack, title }) => (
+  <main className="project-detail project-detail--state">
+    <button className="project-detail__back-plain" onClick={onBack} type="button"><WorkbenchIcon name="back" size={15} /> 返回项目</button>
+    <section className="project-detail__state-panel">
+      <span><WorkbenchIcon name={icon} size={22} /></span>
+      <h1>{title}</h1>
+      <p>{description}</p>
+      {actionLabel && onAction ? <button onClick={onAction} type="button">{actionLabel}</button> : null}
+    </section>
+  </main>
 );
 
-const BackButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button onClick={onClick} style={{ alignSelf: 'flex-start', padding: '8px 14px', fontSize: 13, color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, cursor: 'pointer' }}>
-    Back to Projects
-  </button>
-);
-
-const PageMessage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ padding: 24 }}>
-    <div style={{ padding: 48, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>
-      {children}
+const ProjectDetailSkeleton: React.FC = () => (
+  <main className="project-detail" aria-label="正在加载项目详情">
+    <div className="project-detail__skeleton project-detail__skeleton--nav" />
+    <div className="project-detail__skeleton project-detail__skeleton--hero" />
+    <div className="project-detail__skeleton-grid">
+      {[0, 1, 2, 3].map((index) => <div className="project-detail__skeleton" key={index} />)}
     </div>
-  </div>
+  </main>
 );
 
-const panelStyle: React.CSSProperties = {
-  padding: 22,
-  background: 'rgba(255,255,255,0.025)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 8,
-};
-
-const metaGridStyle: React.CSSProperties = {
-  marginTop: 18,
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-  gap: 14,
-};
-
-const sectionTitleStyle: React.CSSProperties = {
-  margin: 0,
-  color: 'var(--color-bg-card)',
-  fontSize: 16,
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: '8px 11px',
-  color: 'var(--color-info-soft)',
-  background: 'rgba(65,101,215,0.12)',
-  border: '1px solid rgba(65,101,215,0.45)',
-  borderRadius: 6,
-  cursor: 'pointer',
-  fontSize: 13,
-};
+function formatTaskTime(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '时间未知';
+  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+}
 
 export default ProjectDetail;
