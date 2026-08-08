@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Button } from 'antd';
+import { Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
@@ -11,6 +11,7 @@ import {
   summarizeAgentTasks,
 } from '../workspaceRegistry';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
+import { ControlPlaneState } from './ControlPlaneState';
 import './Dashboard.css';
 
 type ProjectRow = {
@@ -81,8 +82,6 @@ const Dashboard: React.FC = () => {
     [snapshot?.runtimes],
   );
   const taskSummary = summarizeAgentTasks(snapshot?.agentTasks ?? []);
-  const errorMessage = '控制面暂时不可用，请稍后刷新。';
-
   const projectColumns: AxiTableColumn<ProjectRow>[] = [
     { dataIndex: 'label', title: '项目', width: 260 },
     { dataIndex: 'state', title: '状态', width: 100 },
@@ -111,33 +110,41 @@ const Dashboard: React.FC = () => {
         </Button>
       )}
     >
-      {error ? <Alert message={errorMessage} showIcon type="warning" /> : null}
-      <div className="dashboard-crud__grid">
-        <AxiTableGroup
-          className="dashboard-crud__projects"
-          description={isLoading ? '正在同步控制面快照…' : `已登记 ${projectRows.length} 个项目`}
-          title="项目"
-        >
-          <AxiTable
-            columns={projectColumns}
-            data={projectRows}
-            pagination={false}
-            rowKey="id"
-            onRow={(row) => ({
-              onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-              style: { cursor: 'pointer' },
-            })}
-          />
-        </AxiTableGroup>
+      {error ? (
+        <ControlPlaneState
+          description="当前无法连接控制面；项目、受管任务和运行环境会在连接恢复后显示。"
+          title="概览数据暂不可用"
+        />
+      ) : isLoading ? (
+        <ControlPlaneState description="正在从控制面读取概览数据。" loading title="正在同步概览" />
+      ) : (
+        <div className="dashboard-crud__grid">
+          <AxiTableGroup
+            className="dashboard-crud__projects"
+            description={`已登记 ${projectRows.length} 个项目`}
+            title="项目"
+          >
+            <AxiTable
+              columns={projectColumns}
+              data={projectRows}
+              pagination={false}
+              rowKey="id"
+              onRow={(row) => ({
+                onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                style: { cursor: 'pointer' },
+              })}
+            />
+          </AxiTableGroup>
 
-        <AxiTableGroup description={isLoading ? '正在同步控制面快照…' : `${taskSummary.active} 项正在处理`} title="受管任务">
-          <AxiTable columns={taskColumns} data={taskRows} pagination={false} rowKey="id" />
-        </AxiTableGroup>
+          <AxiTableGroup description={`${taskSummary.active} 项正在处理`} title="受管任务">
+            <AxiTable columns={taskColumns} data={taskRows} pagination={false} rowKey="id" />
+          </AxiTableGroup>
 
-        <AxiTableGroup description={isLoading ? '正在同步控制面快照…' : `${runtimeRows.length} 个已登记环境`} title="运行环境">
-          <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
-        </AxiTableGroup>
-      </div>
+          <AxiTableGroup description={`${runtimeRows.length} 个已登记环境`} title="运行环境">
+            <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
+          </AxiTableGroup>
+        </div>
+      )}
     </DesktopCrudFrame>
   );
 };

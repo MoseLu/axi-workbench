@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Button, Descriptions, Empty, Space } from 'antd';
+import { Button, Descriptions, Empty, Space } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
@@ -12,6 +12,7 @@ import {
   getProjectResources,
   type ProjectResource,
 } from './workspaceRegistry';
+import { ControlPlaneState } from './admin/ControlPlaneState';
 import { DesktopCrudFrame } from './admin/DesktopCrudFrame';
 import './ProjectDetail.css';
 
@@ -45,7 +46,6 @@ const ProjectDetail: React.FC = () => {
     [snapshot],
   );
   const project = projects.find((item) => getProjectResourceId(item) === projectId);
-  const errorMessage = '项目数据暂时不可用，请稍后刷新。';
 
   return (
     <DesktopCrudFrame
@@ -58,14 +58,20 @@ const ProjectDetail: React.FC = () => {
         </Space>
       )}
     >
-      {error ? <Alert message={errorMessage} showIcon type="warning" /> : null}
-      {isLoading ? <AxiTableGroup description="正在同步控制面快照…" title="项目详情"><Empty description="正在加载" /></AxiTableGroup> : null}
-      {!isLoading && !project ? (
+      {error ? (
+        <ControlPlaneState
+          description="当前无法连接控制面；项目详情会在连接恢复后显示。"
+          title="项目详情暂不可用"
+        />
+      ) : isLoading ? (
+        <ControlPlaneState description="正在从控制面读取项目详情。" loading title="正在同步项目详情" />
+      ) : !project ? (
         <AxiTableGroup description="该项目未出现在最新控制面快照中。" title="未找到项目">
           <Empty description="没有可呈现的项目数据" />
         </AxiTableGroup>
-      ) : null}
-      {!isLoading && project ? <ProjectDetailContent project={project} projects={projects} snapshot={snapshot} /> : null}
+      ) : (
+        <ProjectDetailContent project={project} projects={projects} snapshot={snapshot} />
+      )}
     </DesktopCrudFrame>
   );
 };

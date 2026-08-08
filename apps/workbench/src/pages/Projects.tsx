@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Button, Input, Segmented, Space } from 'antd';
+import { Button, Input, Segmented, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
@@ -13,6 +13,7 @@ import {
   type ProjectResource,
 } from './workspaceRegistry';
 import { DesktopCrudFrame } from './admin/DesktopCrudFrame';
+import { ControlPlaneState } from './admin/ControlPlaneState';
 import './Projects.css';
 
 type ProjectFilter = 'all' | 'available' | 'attention';
@@ -49,7 +50,6 @@ const Projects: React.FC = () => {
     () => visibleProjects.map((project) => toProjectRow(project)),
     [visibleProjects],
   );
-  const errorMessage = '项目数据暂时不可用，请稍后刷新。';
   const columns: AxiTableColumn<ProjectRow>[] = [
     { dataIndex: 'label', title: '项目', width: 300 },
     { dataIndex: 'state', title: '状态', width: 110 },
@@ -89,22 +89,27 @@ const Projects: React.FC = () => {
         </Space>
       )}
     >
-      {error ? <Alert message={errorMessage} showIcon type="warning" /> : null}
-      <AxiTableGroup
-        description={isLoading ? '正在同步控制面快照…' : `显示 ${rows.length} 个已登记项目`}
-        title="项目目录"
-      >
-        <AxiTable
-          columns={columns}
-          data={rows}
-          pagination={false}
-          rowKey="id"
-          onRow={(row) => ({
-            onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-            style: { cursor: 'pointer' },
-          })}
+      {error ? (
+        <ControlPlaneState
+          description="当前无法连接控制面；已登记项目会在连接恢复后显示。"
+          title="项目目录暂不可用"
         />
-      </AxiTableGroup>
+      ) : isLoading ? (
+        <ControlPlaneState description="正在从控制面读取项目目录。" loading title="正在同步项目" />
+      ) : (
+        <AxiTableGroup description={`显示 ${rows.length} 个已登记项目`} title="项目目录">
+          <AxiTable
+            columns={columns}
+            data={rows}
+            pagination={false}
+            rowKey="id"
+            onRow={(row) => ({
+              onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+              style: { cursor: 'pointer' },
+            })}
+          />
+        </AxiTableGroup>
+      )}
     </DesktopCrudFrame>
   );
 };

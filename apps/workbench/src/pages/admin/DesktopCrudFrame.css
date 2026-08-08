@@ -45,3 +45,31 @@
 .wb-crud-page .ant-btn-link {
   padding-inline: 4px;
 }
+
+.wb-control-plane-state {
+  display: grid;
+  min-height: min(420px, calc(100vh - 200px));
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px;
+  color: var(--axi-muted, rgba(255, 255, 255, .58));
+  text-align: center;
+}
+
+.wb-control-plane-state .ant-empty {
+  margin: 0;
+}
+
+.wb-control-plane-state strong {
+  color: var(--axi-text, #f5f7fb);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wb-control-plane-state p {
+  max-width: 360px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}

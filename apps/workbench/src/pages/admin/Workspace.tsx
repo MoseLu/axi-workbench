@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Button } from 'antd';
+import { Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
@@ -12,6 +12,7 @@ import {
   getTaskStatusLabel,
 } from '../workspaceRegistry';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
+import { ControlPlaneState } from './ControlPlaneState';
 import './Workspace.css';
 
 type TaskRow = {
@@ -85,8 +86,6 @@ const Workspace: React.FC = () => {
     }),
     [snapshot?.runtimes],
   );
-  const errorMessage = '控制面暂时不可用，请稍后刷新。';
-
   const taskColumns: AxiTableColumn<TaskRow>[] = [
     { dataIndex: 'summary', title: '任务' },
     { dataIndex: 'status', title: '状态', width: 110 },
@@ -122,22 +121,30 @@ const Workspace: React.FC = () => {
         </Button>
       )}
     >
-      {error ? <Alert message={errorMessage} showIcon type="warning" /> : null}
-      <div className="workspace-crud__grid">
-        <AxiTableGroup
-          className="workspace-crud__tasks"
-          description={isLoading ? '正在同步控制面快照…' : `共 ${taskRows.length} 项受管任务`}
-          title="受管任务"
-        >
-          <AxiTable columns={taskColumns} data={taskRows} pagination={false} rowKey="id" />
-        </AxiTableGroup>
-        <AxiTableGroup description={isLoading ? '正在同步控制面快照…' : `共 ${approvalRows.length} 项待处理审批`} title="待处理审批">
-          <AxiTable columns={approvalColumns} data={approvalRows} pagination={false} rowKey="id" />
-        </AxiTableGroup>
-        <AxiTableGroup description={isLoading ? '正在同步控制面快照…' : `共 ${runtimeRows.length} 个已登记环境`} title="运行环境">
-          <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
-        </AxiTableGroup>
-      </div>
+      {error ? (
+        <ControlPlaneState
+          description="当前无法连接控制面；受管任务、待处理审批和运行环境会在连接恢复后显示。"
+          title="工作区暂不可用"
+        />
+      ) : isLoading ? (
+        <ControlPlaneState description="正在从控制面读取工作区数据。" loading title="正在同步工作区" />
+      ) : (
+        <div className="workspace-crud__grid">
+          <AxiTableGroup
+            className="workspace-crud__tasks"
+            description={`共 ${taskRows.length} 项受管任务`}
+            title="受管任务"
+          >
+            <AxiTable columns={taskColumns} data={taskRows} pagination={false} rowKey="id" />
+          </AxiTableGroup>
+          <AxiTableGroup description={`共 ${approvalRows.length} 项待处理审批`} title="待处理审批">
+            <AxiTable columns={approvalColumns} data={approvalRows} pagination={false} rowKey="id" />
+          </AxiTableGroup>
+          <AxiTableGroup description={`共 ${runtimeRows.length} 个已登记环境`} title="运行环境">
+            <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
+          </AxiTableGroup>
+        </div>
+      )}
     </DesktopCrudFrame>
   );
 };
