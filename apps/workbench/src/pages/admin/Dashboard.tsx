@@ -95,20 +95,19 @@ const Dashboard: React.FC = () => {
       <DesktopCrudFrame
         ariaLabel="概览"
         className="dashboard-crud"
-        filters={!showError && !showLoading ? (
-          <Select
-            aria-label="项目状态筛选"
-            options={[
-              { label: '全部项目', value: 'all' },
-              { label: '可用', value: 'available' },
-              { label: '待校验', value: 'attention' },
-            ]}
-            value={stateFilter}
-            onChange={(value) => setStateFilter(value as typeof stateFilter)}
-          />
-        ) : undefined}
         search={!showError && !showLoading ? (
-          <div className="wb-crud-search-cluster">
+          <div className="wb-crud-query-cluster">
+            <Select
+              aria-label="项目状态筛选"
+              options={[
+                { label: '全部项目', value: 'all' },
+                { label: '可用', value: 'available' },
+                { label: '待校验', value: 'attention' },
+              ]}
+              style={{ width: 140 }}
+              value={stateFilter}
+              onChange={(value) => setStateFilter(value as typeof stateFilter)}
+            />
             <Input
               allowClear
               aria-label="搜索项目"
@@ -129,9 +128,6 @@ const Dashboard: React.FC = () => {
             <Button disabled={isFetching} onClick={() => void refetch()}>
               {isFetching ? '同步中…' : '刷新'}
             </Button>
-            <Button type="link" onClick={() => navigate('/admin/task')}>查看工作项</Button>
-            <Button type="link" onClick={() => navigate('/admin/operations')}>查看运行状态</Button>
-            <span className="wb-crud-page__readonly-hint">只读控制面投影</span>
           </div>
         )}
       >
