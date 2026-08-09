@@ -31,7 +31,7 @@
 .app-process__scroller {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--axi-space-1, 2px);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -47,7 +47,7 @@
   height: 24px;
   padding: 0 var(--axi-space-2-5, 10px);
   border-radius: var(--axi-radius-sm, 4px);
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   color: var(--mpms-text-secondary, #52525b);
   cursor: pointer;
   transition: color 0.15s, background-color 0.15s;

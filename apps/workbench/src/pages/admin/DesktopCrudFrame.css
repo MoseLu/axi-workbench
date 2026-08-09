@@ -1,6 +1,6 @@
 .wb-crud-page {
   min-height: 100%;
-  padding: var(--axi-space-3, 12px) 14px 20px;
+  padding: var(--axi-space-3, 12px) var(--axi-space-3, 14px) var(--axi-space-5, 20px);
   color: var(--axi-text, #f5f7fb);
 }
 
@@ -66,7 +66,7 @@
 .wb-crud-page .axi-crud-layout__toolbar .ant-btn {
   height: 32px;
   padding-inline: 14px;
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
 }
 
 .wb-crud-page .axi-crud-layout__toolbar .ant-select {
@@ -145,7 +145,7 @@
   height: 28px;
   padding: 0 var(--axi-space-2-5, 10px);
   border-radius: var(--axi-radius-sm, 4px);
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   line-height: 26px;
   border: 1px solid var(--axi-layout-border, rgba(255, 255, 255, 0.12));
   background: transparent;
@@ -183,7 +183,7 @@
   align-content: center;
   justify-items: center;
   gap: var(--axi-space-2, 8px);
-  padding: 28px;
+  padding: var(--axi-space-6, 28px);
   color: var(--axi-muted, rgba(255, 255, 255, .58));
   text-align: center;
 }
@@ -194,13 +194,13 @@
 
 .wb-control-plane-state strong {
   color: var(--axi-text, #f5f7fb);
-  font-size: 15px;
+  font-size: var(--axi-font-size-sm, 15px);
   font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 .wb-control-plane-state p {
   max-width: 360px;
   margin: 0;
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   line-height: 1.6;
 }

@@ -15,7 +15,7 @@
   box-sizing: border-box;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 21px;
-  font-weight: 650;
+  font-weight: var(--axi-font-weight-semibold, 650);
   line-height: 1;
   outline: none;
   text-align: center;

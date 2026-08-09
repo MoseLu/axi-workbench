@@ -81,7 +81,7 @@
 
 /* 子菜单保持层级字号，但选中背景仍铺满整行 */
 .sidebar__menu .mpms-menu__sub .mpms-menu__item {
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
 }
 
 /* 菜单图标与文字在固定行高中垂直居中 */

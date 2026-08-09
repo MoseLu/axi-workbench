@@ -12,7 +12,7 @@
 .app-breadcrumb__nav {
   display: flex;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   overflow: hidden;
   white-space: nowrap;
 }
@@ -28,34 +28,34 @@
 .app-breadcrumb__item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--axi-space-2, 5px);
   height: 22px;
   padding: 0 var(--axi-space-1, 4px);
   border: none;
   border-radius: var(--axi-radius-sm, 4px);
   background: transparent;
   color: var(--mpms-text-secondary, #52525b);
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   transition: color 0.15s, background-color 0.15s;
   cursor: default;
 }
 
 button.app-breadcrumb__item {
   font: inherit;
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   outline: none;
 }
 
 .app-breadcrumb__icon {
   display: inline-flex;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   color: var(--mpms-text-secondary, #52525b);
   transition: color 0.15s;
 }
 
 .app-breadcrumb__label {
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
 }
 
 /* Active (last) item — 品牌色 */

@@ -99,7 +99,7 @@ body {
   margin: 0;
   overflow: hidden;
   color: var(--wb-ink);
-  font-size: 17px;
+  font-size: var(--axi-font-size-md, 17px);
   font-weight: var(--axi-font-weight-semibold, 600);
   letter-spacing: -0.2px;
   text-align: center;
@@ -196,11 +196,11 @@ body {
   justify-content: center;
   width: 100%;
   gap: var(--axi-space-2-5, 10px);
-  padding: var(--axi-space-3, 12px) 14px;
+  padding: var(--axi-space-3, 12px) var(--axi-space-3, 14px);
   border: 0;
   color: var(--wb-surface);
   background: transparent;
-  font-size: 15px;
+  font-size: var(--axi-font-size-sm, 15px);
   font-weight: var(--axi-font-weight-medium, 500);
   cursor: pointer;
 }
@@ -304,7 +304,7 @@ body {
 .axi-mobile-page {
   width: 100%;
   margin: 0;
-  padding: var(--axi-space-3, 12px) 0 24px;
+  padding: var(--axi-space-3, 12px) 0 var(--axi-space-5, 24px);
   color: var(--wb-ink);
   background: var(--wb-page);
 }
@@ -321,7 +321,7 @@ body {
 .axi-mobile-overview-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
+  gap: var(--axi-space-1, 1px);
   border-top: 0.5px solid var(--wb-divider);
   border-bottom: 0.5px solid var(--wb-divider);
   background: var(--wb-divider);
@@ -331,7 +331,7 @@ body {
   display: grid;
   min-height: 92px;
   align-content: center;
-  gap: 7px;
+  gap: var(--axi-space-2, 7px);
   padding: 15px var(--axi-space-4, 16px);
   background: var(--wb-surface);
 }
@@ -347,7 +347,7 @@ body {
 .axi-mobile-section-heading--split button { color: var(--wb-ink-muted); }
 
 .axi-mobile-action-grid {
-  gap: 1px;
+  gap: var(--axi-space-1, 1px);
   margin: 0;
   background: var(--wb-divider);
 }
@@ -466,7 +466,7 @@ body {
   min-height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
-  padding: calc(38px + env(safe-area-inset-top, 0px)) 24px 32px;
+  padding: calc(38px + env(safe-area-inset-top, 0px)) var(--axi-space-5, 24px) var(--axi-space-6, 32px);
   color: var(--wb-ink);
   background: var(--wb-page);
 }

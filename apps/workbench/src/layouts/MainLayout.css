@@ -159,7 +159,7 @@
   /* 历史 WorkBench 面包屑：独立卡片项 + 中间竖向分隔符。 */
   height: 39px;
   min-height: 39px;
-  padding: 5px var(--space-2_5);
+  padding: var(--axi-space-2, 5px) var(--space-2_5);
   background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
   border-bottom-color: var(--workbench-chrome-border);
 }
@@ -215,14 +215,14 @@
 .workbench-axi-shell .axi-breadcrumb-separator {
   margin-inline: var(--space-2);
   color: var(--axi-muted);
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   opacity: 0.4;
 }
 .workbench-floating-tool-panel {
   display: grid;
   gap: 6px;
   min-width: 190px;
-  padding: 14px var(--axi-space-4, 16px);
+  padding: var(--axi-space-3, 14px) var(--axi-space-4, 16px);
   color: var(--axi-text, #1f2937);
   background: var(--axi-bg-surface, #fff);
   border: 1px solid var(--axi-border, rgba(15, 23, 42, .12));

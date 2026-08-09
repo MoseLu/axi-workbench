@@ -11,7 +11,7 @@
 
 .wb-notification-center__copy {
   display: grid;
-  gap: 3px;
+  gap: var(--axi-space-1, 3px);
   min-width: 0;
   text-align: left;
 }

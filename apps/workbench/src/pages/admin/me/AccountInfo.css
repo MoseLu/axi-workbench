@@ -35,7 +35,7 @@
 
 .wb-account__identity strong {
   color: var(--axi-text, #f5f7fb);
-  font-size: 15px;
+  font-size: var(--axi-font-size-sm, 15px);
 }
 
 .wb-account__identity span {
@@ -46,7 +46,7 @@
 .wb-account__value {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--axi-space-1, 2px);
   min-width: 0;
 }
 
@@ -54,7 +54,7 @@
   display: grid;
   gap: var(--axi-space-2, 8px);
   color: var(--axi-text, #f5f7fb);
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
 }
 
 .wb-account__edit-field small {

@@ -23,13 +23,13 @@
 .wb-me-overview__identity {
   display: grid;
   min-width: 0;
-  gap: 3px;
+  gap: var(--axi-space-1, 3px);
 }
 
 .wb-me-overview__identity strong {
   overflow: hidden;
   color: var(--axi-text, #f5f7fb);
-  font-size: 15px;
+  font-size: var(--axi-font-size-sm, 15px);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

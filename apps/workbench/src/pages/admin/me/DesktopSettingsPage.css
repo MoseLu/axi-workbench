@@ -1,6 +1,6 @@
 .wb-settings-page {
   min-height: 100%;
-  padding: var(--axi-space-3, 12px) 14px 24px;
+  padding: var(--axi-space-3, 12px) var(--axi-space-3, 14px) var(--axi-space-5, 24px);
 }
 
 .wb-settings-page__layout,
@@ -29,12 +29,12 @@
 
 .wb-settings-page__workspace .axi-master-list__header {
   min-height: 30px;
-  padding: 0 2px var(--axi-space-2, 8px);
+  padding: 0 var(--axi-space-1, 2px) var(--axi-space-2, 8px);
 }
 
 .wb-settings-page__workspace .axi-master-list__header strong {
   color: var(--axi-text, #f5f7fb);
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
 }
 
 .wb-settings-page__workspace .axi-master-list__item {
@@ -44,7 +44,7 @@
 
 .wb-settings-page__content {
   min-width: 0;
-  padding: 14px;
+  padding: var(--axi-space-3, 14px);
 }
 
 .wb-settings-page__header {
@@ -59,7 +59,7 @@
 .wb-settings-page__header h1 {
   margin: 0;
   color: var(--axi-text, #f5f7fb);
-  font-size: 15px;
+  font-size: var(--axi-font-size-sm, 15px);
   font-weight: var(--axi-font-weight-semibold, 600);
   line-height: 1.4;
 }

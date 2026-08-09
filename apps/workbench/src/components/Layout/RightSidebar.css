@@ -79,7 +79,7 @@
 }
 
 .right-sidebar__section-title {
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   font-weight: var(--axi-font-weight-semibold, 600);
   color: var(--mpms-text-primary, var(--color-text-el-primary));
   margin-bottom: var(--axi-space-3, 12px);
@@ -154,7 +154,7 @@
   justify-content: space-between;
   padding: var(--axi-space-2-5, 10px) 0;
   border-bottom: 1px solid var(--mpms-border-color, var(--color-border-light));
-  font-size: 13px;
+  font-size: var(--axi-font-size-sm, 13px);
   color: var(--mpms-text-primary, var(--color-text-el-primary));
 }
 
