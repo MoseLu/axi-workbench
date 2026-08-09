@@ -24,6 +24,7 @@ import MenuList from './pages/admin/MenuList';
 import UserList from './pages/admin/UserList';
 import RoleList from './pages/admin/RoleList';
 import Scan from './pages/admin/Scan';
+import Handoff from './pages/admin/Handoff';
 import Search from './pages/admin/Search';
 import AccountInfo from './pages/admin/me/AccountInfo';
 import Devices from './pages/admin/me/Devices';
@@ -81,6 +82,7 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/team" element={<Team />} />
                     {/* 扫一扫：壳内 Tab，选中态保留在底栏 */}
                     <Route path="admin/scan" element={<Scan />} />
+                    <Route path="admin/handoff/:id" element={<Handoff />} />
                     {/* 全局联想搜索二级页 */}
                     <Route path="admin/search" element={<Search />} />
                     {/* 我的：入口 + 二级页 */}

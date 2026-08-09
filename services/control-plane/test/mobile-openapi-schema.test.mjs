@@ -28,6 +28,23 @@ function expectLinePattern(re, label) {
   assert.match(spec, re, label || `pattern not found: ${re}`);
 }
 
+function readSubSection(label) {
+  const lines = spec.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.trim() === `${label}:`);
+  if (start < 0) return null;
+  const startIndent = lines[start].match(/^ */)[0].length;
+  const block = [];
+  for (let index = start; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line.trim() && index > start) {
+      const indent = line.match(/^ */)[0].length;
+      if (indent <= startIndent) break;
+    }
+    block.push(line);
+  }
+  return block.join("\n");
+}
+
 test("OpenAPI: declares openapi 3.0.x", () => {
   expectLinePattern(/^openapi:\s*['"]?3\.0\./m, "openapi version");
 });
@@ -48,6 +65,8 @@ test("OpenAPI: every documented /mobile/v1/* path appears in paths", () => {
     "/mobile/v1/jobs",
     "/mobile/v1/jobs/{id}/cancel",
     "/mobile/v1/approvals/{id}/decision",
+    "/mobile/v1/approval-scans/resolve",
+    "/mobile/v1/approval-scans/{scanId}/decision",
   ];
   for (const route of routes) {
     expectContains(route, `path ${route}`);
@@ -64,6 +83,8 @@ test("OpenAPI: every documented route has a post/get operation block", () => {
     "/mobile/v1/jobs",
     "/mobile/v1/jobs/{id}/cancel",
     "/mobile/v1/approvals/{id}/decision",
+    "/mobile/v1/approval-scans/resolve",
+    "/mobile/v1/approval-scans/{scanId}/decision",
   ];
   for (const route of postRoutes) {
     expectContains(`${route}:\n    post:`, `POST operation ${route}`);
@@ -95,7 +116,13 @@ test("OpenAPI: required schemas exist for the runtime surface", () => {
     "RevokeRequest",
     "RevokeResponse",
     "MobileActionRequest",
+    "LegacyMobileApprovalDecision",
+    "ApprovalScanResolveRequest",
+    "ApprovalScanObject",
+    "ApprovalScanPreview",
     "MobileApprovalDecision",
+    "HandoffContext",
+    "ApprovalScanDecisionResponse",
     "MobileJobAccepted",
     "MobileJobPendingApproval",
     "MobileJobCancelResponse",
@@ -127,7 +154,7 @@ test("OpenAPI: MobileActionRequest requires a registered actionId and has no raw
   expectLinePattern(/MobileActionRequest:[^]*?required:[\s\S]*?-\s*projectId/, "MobileActionRequest.projectId required");
   expectLinePattern(/MobileActionRequest:[^]*?required:[\s\S]*?-\s*actionId/, "MobileActionRequest.actionId required");
   expectLinePattern(/MobileActionRequest:[^]*?additionalProperties:\s*false/, "MobileActionRequest closed schema");
-  const requestBlock = spec.slice(spec.indexOf("    MobileActionRequest:"), spec.indexOf("    MobileApprovalDecision:"));
+  const requestBlock = spec.slice(spec.indexOf("    MobileActionRequest:"), spec.indexOf("    LegacyMobileApprovalDecision:"));
   assert.doesNotMatch(requestBlock, /^\s+text:/m, "MobileActionRequest must not accept arbitrary text");
   assert.doesNotMatch(requestBlock, /^\s+payload:/m, "MobileActionRequest must not accept arbitrary payload");
   expectLinePattern(/idempotencyKey:[\s\S]{0,400}minLength:\s*8/, "idempotencyKey minLength 8");
@@ -150,29 +177,13 @@ test("OpenAPI: PairStartResponse pattern matches the runtime 6-digit code", () =
   expectContains("pattern: '^[0-9]{6}$'", "PairStartResponse code pattern");
 });
 
-test("OpenAPI: idempotency key shape is consistent between request and decision schemas", () => {
-  function readSubSection(label) {
-    const lines = spec.split(/\r?\n/);
-    const start = lines.findIndex((l) => l.trim() === `${label}:`);
-    if (start < 0) return null;
-    const startIndent = lines[start].match(/^ */)[0].length;
-    const block = [];
-    for (let i = start; i < lines.length; i += 1) {
-      const line = lines[i];
-      if (line.trim() && i > start) {
-        const indent = line.match(/^ */)[0].length;
-        if (indent <= startIndent) break;
-      }
-      block.push(line);
-    }
-    return block.join("\n");
-  }
+test("OpenAPI: approval-scan decision accepts only decision, idempotency and correlation", () => {
   const req = readSubSection("MobileActionRequest");
-  // MobileApprovalDecision composes MobileActionRequest via allOf; pull
-  // the referenced block too so we can compare shape end-to-end.
   const dec = readSubSection("MobileApprovalDecision");
   assert.ok(req && dec, "could not locate MobileActionRequest or MobileApprovalDecision");
-  const composed = dec.includes("$ref: '#/components/schemas/MobileActionRequest'") ? dec + "\n" + req : dec;
+  assert.match(dec, /required: \[decision, idempotencyKey, handoffCorrelationId\]/, "scan decision required fields");
+  assert.match(dec, /additionalProperties: false/, "scan decision closed schema");
+  assert.doesNotMatch(dec, /projectId|actionId|approvalId|approvalRef/, "scan decision must derive business identifiers server-side");
   const patFrom = (s) => s.match(/idempotencyKey:[\s\S]*?pattern:\s*'([^']+)'/);
   const lenFrom = (s) => {
     const min = s.match(/idempotencyKey:[\s\S]*?minLength:\s*(\d+)/);
@@ -180,10 +191,21 @@ test("OpenAPI: idempotency key shape is consistent between request and decision 
     return min && max ? `${min[1]}-${max[1]}` : null;
   };
   const rpat = patFrom(req);
-  const dpat = patFrom(composed);
-  assert.ok(rpat && dpat, `pattern missing in req=${!!rpat} dec/composed=${!!dpat}`);
+  const dpat = patFrom(dec);
+  assert.ok(rpat && dpat, `pattern missing in req=${!!rpat} dec=${!!dpat}`);
   assert.equal(rpat[1], dpat[1], "idempotencyKey pattern mismatch");
-  assert.equal(lenFrom(req), lenFrom(composed), "idempotencyKey length mismatch");
+  assert.notEqual(lenFrom(req), null, "mobile action idempotency length missing");
+  assert.equal(lenFrom(dec), "8-200", "scan decision idempotency length mismatch");
+});
+
+test("OpenAPI: approval scan URI and preview keep domain identifiers off the QR payload", () => {
+  const resolve = readSubSection("ApprovalScanResolveRequest");
+  const preview = readSubSection("ApprovalScanPreview");
+  assert.ok(resolve && preview, "approval scan schemas must be declared");
+  assert.match(resolve, /scanToken:/);
+  assert.doesNotMatch(resolve, /projectId|actionId|approvalId/);
+  assert.match(preview, /handoffCorrelationId:/);
+  assert.match(preview, /availableDecisions:/);
 });
 
 test("OpenAPI: spec references the canonical schema path in its info.description", () => {

@@ -13,6 +13,7 @@ import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import ScanPage from './pages/ScanPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import WebLoginConfirmPage from './pages/WebLoginConfirmPage';
 import RequireSession from './components/RequireSession';
 
 const queryClient = new QueryClient({
@@ -32,6 +33,7 @@ const MobileSurface: React.FC = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/login/confirm-web" element={<RequireSession><WebLoginConfirmPage /></RequireSession>} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/" element={<RequireSession><MobileShell /></RequireSession>}>
               <Route index element={<Navigate to="home" replace />} />

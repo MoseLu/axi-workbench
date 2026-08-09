@@ -18,7 +18,14 @@ const mobileIcons = read('src/components/MobileIcons.tsx');
 const login = read('src/pages/LoginPage.tsx');
 const navigation = read('src/lib/navigation.ts');
 const scan = read('src/pages/ScanPage.tsx');
+const loginConfirm = read('src/pages/WebLoginConfirmPage.tsx');
+const approvalScan = read('src/lib/approvalScan.ts');
 const qrLogin = read('src/lib/qrLogin.ts');
+const mobileControl = read('src/lib/mobileControl.ts');
+const home = read('src/pages/HomePage.tsx');
+const projects = read('src/pages/ProjectsPage.tsx');
+const workspace = read('src/pages/FocusPage.tsx');
+const search = read('src/pages/SearchPage.tsx');
 const packageJson = read('package.json');
 const mobileStyles = read('src/styles/wechat-mobile.css');
 
@@ -39,9 +46,23 @@ requireMatch(login, /login\.emailCode/, 'mobile login must offer the QQ Mail ver
 forbidMatch(login, /password/i, 'mobile login must not reintroduce a password flow');
 requireMatch(header, /MobileIcon className="wb-mobile-topbar__plus" name="plus"/, 'mobile header must render the shared plus glyph inside its mobile-only circular affordance');
 requireMatch(mobileStyles, /\.wb-mobile-topbar__plus svg[\s\S]*width:\s*10px/, 'mobile plus affordance must size the shared SVG inside its mobile-only circle');
-requireMatch(scan, /parseQRApprovalPayload[\s\S]*qrApprovalEndpoint/, 'scan must parse the opaque Axi approval URI before requesting approval');
-requireMatch(scan, /credentials:\s*'include'/, 'scan approval must use the verified mobile session cookie');
+requireMatch(scan, /parseApprovalScanPayload[\s\S]*resolveMobileApprovalScan/, 'top-level Scan must resolve an opaque domain approval URI through the control plane');
+requireMatch(approvalScan, /axi:\/\/approval/, 'domain approval QR must use its own opaque URI scheme');
+forbidMatch(approvalScan, /ticket|projectId|actionId/, 'domain approval URI must not carry identity tickets or business object fields');
+requireMatch(loginConfirm, /parseQRApprovalPayload[\s\S]*qrApprovalEndpoint/, 'web login confirmation must retain the isolated OIDC QR transaction flow');
+requireMatch(loginConfirm, /credentials:\s*'include'/, 'OIDC login confirmation must use the verified mobile session cookie');
 requireMatch(qrLogin, /ticket remains in local function scope/, 'QR ticket handling must remain in transient memory');
+for (const [name, page] of [['Home', home], ['Projects', projects], ['Workspace', workspace]]) {
+  requireMatch(page, /useMobileWorkspaceQuery/, `${name} must render the authenticated control-plane projection`);
+  requireMatch(page, /MobileProjectionState/, `${name} must render a truthful pairing/permission/service state`);
+}
+requireMatch(workspace, /runMobileProjectAction/, 'workspace actions must submit a registered server-side action');
+forbidMatch(workspace, /setTasks|toggleTask|task\.done|localStorage|sessionStorage/, 'workspace must not turn local task state into a completed action');
+forbidMatch(`${home}\n${projects}\n${workspace}`, /DEMO_|mock(?:Project|Task|Data)|staticProjects/, 'mobile projection pages must not restore hard-coded business data');
+requireMatch(search, /useMobileWorkspaceQuery[\s\S]*MobileProjectionState/, 'mobile search must query the same authenticated projection');
+forbidMatch(search, /const corpus\s*=\s*\[|storyGraph|navigationReview|syncStatus/, 'mobile search must not restore static showcase results');
+requireMatch(mobileControl, /resolveGatewayURL\(`\/api\/v1\/mobile/, 'mobile control calls must use the API Gateway boundary');
+forbidMatch(mobileControl, /localhost:8092|CONTROL_PLANE_URL|localStorage|sessionStorage/, 'mobile must not call or persist control-plane credentials directly');
 
 forbidMatch(app, /from ['"]@axi\/shell['"]|<AxiDashboardShell/, 'mobile app must not import the Web admin dashboard shell');
 forbidMatch(shell, /<AxiDashboardShell|<AxiBreadcrumb|<AxiTabBar/, 'mobile shell must not inherit Web admin chrome');
@@ -49,6 +70,6 @@ forbidMatch(header, /AxiMark|AxiBreadcrumb|AxiTabBar/, 'mobile header must not i
 forbidMatch(`${app}\n${shell}\n${header}\n${tabBar}`, /(?:\.\.\/)+workbench\//, 'mobile app must not import implementation code from the Web app');
 forbidMatch(`${mobileIcons}\n${header}\n${tabBar}`, /<svg|<path|<circle|<rect/, 'mobile must not maintain a parallel hand-drawn icon set');
 forbidMatch(mobileStyles, /\.wb-mobile-topbar__plus::before|\.wb-mobile-topbar__plus::after/, 'mobile plus affordance must not redraw the shared glyph with CSS pseudo-elements');
-forbidMatch(scan, /(?:localStorage|sessionStorage|console\.(?:log|debug|info))/, 'scan must not persist or log QR approval credentials');
+forbidMatch(`${scan}\n${loginConfirm}`, /(?:localStorage|sessionStorage|console\.(?:log|debug|info))/, 'scan flows must not persist or log QR credentials');
 
 console.log('Workbench Mobile UI contracts: PASS');

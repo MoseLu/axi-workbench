@@ -1,42 +1,39 @@
-import { useState } from 'react';
 import { MobileIcon } from '../components/MobileIcons';
-import { useMobileI18n } from '../i18n';
-
-const projects = [
-  { name: 'Axi WorkBench', updated: '30 分钟前', progress: 72, members: 5, tone: 'blue', active: true },
-  { name: 'Story Graph', updated: '2 小时前', progress: 48, members: 3, tone: 'violet', active: true },
-  { name: 'Axi Pet', updated: '昨天', progress: 30, members: 4, tone: 'amber', active: true },
-  { name: 'Research Lab', updated: '8 月 3 日', progress: 84, members: 2, tone: 'mint', active: false },
-];
+import { MobileProjectionState, formatProjectionTime } from '../components/MobileProjectionState';
+import { useMobileDeviceSession, useMobileWorkspaceQuery } from '../lib/mobileControl';
 
 export default function ProjectsPage() {
-  const [activeOnly, setActiveOnly] = useState(true);
-  const { t } = useMobileI18n();
-  const visibleProjects = projects.filter((project) => !activeOnly || project.active);
+  const session = useMobileDeviceSession();
+  const workspace = useMobileWorkspaceQuery();
+  const snapshot = workspace.data;
 
   return (
     <section className="axi-mobile-page">
-      <div className="axi-mobile-page-intro">
-        <h1>{t('page.projects')}</h1>
-        <p>{t('projects.subtitle')}</p>
+      <div className="axi-mobile-page-intro axi-mobile-page-intro--with-action">
+        <div><h1>项目</h1><p>仅显示控制面向本设备投影的项目状态。</p></div>
+        {snapshot ? <button type="button" onClick={() => void workspace.refetch()}>刷新</button> : null}
       </div>
-      <div className="axi-mobile-filter-row" role="tablist" aria-label={t('page.projects')}>
-        <button type="button" className={activeOnly ? 'is-active' : ''} onClick={() => setActiveOnly(true)}>{t('projects.active')}</button>
-        <button type="button" className={!activeOnly ? 'is-active' : ''} onClick={() => setActiveOnly(false)}>{t('projects.paused')}</button>
-      </div>
-      <div className="axi-mobile-card-list axi-mobile-card-list--spaced">
-        {visibleProjects.map((project) => (
-          <article className="axi-mobile-project-card axi-mobile-project-card--full" key={project.name}>
-            <span className={`axi-mobile-project-card__mark is-${project.tone}`}>{project.name.slice(0, 1)}</span>
-            <span className="axi-mobile-project-card__body">
-              <strong>{project.name}</strong>
-              <small>{project.updated} · {project.members} {t('projects.members')}</small>
-              <span className="axi-mobile-project-card__progress"><i style={{ width: `${project.progress}%` }} /></span>
-            </span>
-            <span className="axi-mobile-project-card__aside"><b>{project.progress}%</b><MobileIcon name="arrow-right" size={17} /></span>
-          </article>
-        ))}
-      </div>
+      <MobileProjectionState session={session} isLoading={workspace.isPending} error={workspace.error} onRefresh={() => void workspace.refetch()} />
+      {snapshot ? (
+        <>
+          <p className="axi-mobile-projection-meta">更新于 {formatProjectionTime(snapshot.generatedAt)}</p>
+          {snapshot.projects.length ? (
+            <div className="axi-mobile-card-list axi-mobile-card-list--spaced">
+              {snapshot.projects.map((project) => (
+                <article className="axi-mobile-project-card axi-mobile-project-card--full" key={project.id}>
+                  <span className="axi-mobile-project-card__mark is-blue">{project.name.slice(0, 1)}</span>
+                  <span className="axi-mobile-project-card__body">
+                    <strong>{project.name}</strong>
+                    <small>{project.progress.summary}</small>
+                    <small>最近核验：{formatProjectionTime(project.lastVerifiedAt)}</small>
+                  </span>
+                  <span className="axi-mobile-project-card__aside"><b>{project.health}</b><MobileIcon name="arrow-right" size={17} /></span>
+                </article>
+              ))}
+            </div>
+          ) : <div className="axi-mobile-empty-card">暂无可见项目；这不是样例数据。</div>}
+        </>
+      ) : null}
     </section>
   );
 }

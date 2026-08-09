@@ -25,6 +25,8 @@ func productionConfigForTest() Config {
 			FileInternalToken:         "file-token",
 			WorkflowInternalToken:     "workflow-token",
 			NotificationInternalToken: "notification-token",
+			ControlPlaneURL:           "http://control-plane.internal:8092",
+			ControlPlaneInternalToken: "control-plane-token",
 		},
 		CORS: CORSConfig{AllowedOrigins: []string{"https://web.axi.example.com"}},
 	}

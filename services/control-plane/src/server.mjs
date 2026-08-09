@@ -7,6 +7,7 @@ export function createControlPlaneHttpServer({
   controlPlane = createControlPlane(),
   mobileOwnerToken = process.env.AXI_MOBILE_OWNER_TOKEN || "",
   pairingRequired = controlPlane.pairingEnabled || Boolean(controlPlane.pairing),
+  gatewayInternalToken = process.env.AXI_GATEWAY_CONTROL_PLANE_TOKEN || "axi-development-internal-token",
 } = {}) {
   return createServer(async (req, res) => {
   try {
@@ -19,6 +20,41 @@ export function createControlPlaneHttpServer({
     }
     if (req.method === "GET" && url.pathname === "/snapshot") {
       return sendJson(res, 200, controlPlane.snapshot());
+    }
+    if (url.pathname.startsWith("/internal/web/v1/handoffs/")) {
+      if (!gatewayInternalToken || req.headers["x-axi-internal-token"] !== gatewayInternalToken) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" });
+      }
+      const subject = String(req.headers["x-axi-subject"] || "").trim();
+      if (!subject) return sendJson(res, 401, { error: "verified web identity required" });
+      const handoffMatch = url.pathname.match(/^\/internal\/web\/v1\/handoffs\/([^/]+)$/);
+      if (!handoffMatch) return sendJson(res, 404, { error: "handoff endpoint not found" });
+      const handoffID = decodeURIComponent(handoffMatch[1]);
+      if (req.method === "GET") {
+        const handoff = controlPlane.openHandoff(handoffID, subject);
+        return sendJson(res, handoff ? 200 : 404, handoff || { error: "handoff not found" });
+      }
+      if (req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (!body || typeof body.outcome !== "string" || !body.outcome.trim() || Object.keys(body).some((key) => key !== "outcome")) {
+          return sendJson(res, 400, { error: "handoff completion accepts only a non-empty outcome" });
+        }
+        const handoff = controlPlane.completeHandoff(handoffID, subject, body.outcome.trim());
+        return sendJson(res, handoff ? 200 : 404, handoff || { error: "handoff not found" });
+      }
+      return sendJson(res, 405, { error: "method not allowed" });
+    }
+    // Mobile public traffic reaches this process only through API Gateway.
+    // Gateway changes /api/v1/mobile/* to /internal/mobile/v1/* and injects
+    // its internal credential.  The historical /mobile/v1/* route remains
+    // usable only by an internal caller during migration/tests; browser code
+    // must never target the Control Plane port directly.
+    const isGatewayMobileRoute = url.pathname.startsWith("/internal/mobile/v1/");
+    if (isGatewayMobileRoute) {
+      if (!gatewayInternalToken || req.headers["x-axi-internal-token"] !== gatewayInternalToken) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" });
+      }
+      url.pathname = url.pathname.replace(/^\/internal\/mobile\/v1/u, "/mobile/v1");
     }
     if (url.pathname.startsWith("/mobile/v1/")) {
       // Pairing endpoints are unauthenticated by design — the caller is
@@ -65,6 +101,40 @@ export function createControlPlaneHttpServer({
       if (!auth.ok) return sendJson(res, 401, { error: auth.error });
 
       if (req.method === "GET" && url.pathname === "/mobile/v1/workspace") return sendJson(res, 200, controlPlane.mobileSnapshot());
+      if (req.method === "POST" && url.pathname === "/mobile/v1/approval-scans/resolve") {
+        const body = await readJsonBody(req);
+        if (!body || typeof body.scanToken !== "string" || Object.keys(body).some((key) => key !== "scanToken")) {
+          return sendJson(res, 400, { error: "approval scan resolve accepts only scanToken" });
+        }
+        const preview = controlPlane.resolveApprovalScan(body.scanToken);
+        if (!preview.ok) return sendJson(res, preview.httpStatus || 422, { error: preview.error });
+        controlPlane.recordMobileAudit({ auditKind: "approval_scan_previewed", deviceId: auth.deviceId, approvalRef: preview.approvalId, handoffCorrelationId: preview.handoffCorrelationId, status: "previewed" });
+        return sendJson(res, 200, preview);
+      }
+      const mobileApprovalScanDecisionMatch = url.pathname.match(/^\/mobile\/v1\/approval-scans\/([^/]+)\/decision$/);
+      if (req.method === "POST" && mobileApprovalScanDecisionMatch) {
+        const body = await readJsonBody(req);
+        const fields = validateMobileApprovalScanDecision(body);
+        if (!fields.ok) return sendJson(res, 400, { error: fields.error });
+        const scanId = decodeURIComponent(mobileApprovalScanDecisionMatch[1]);
+        const idempotency = controlPlane.idempotency;
+        const cached = idempotency.check({ deviceId: auth.deviceId, key: body.idempotencyKey });
+        if (cached.cached) {
+          res.writeHead(cached.response.status, {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "X-Idempotency-Replay": "true",
+          });
+          res.end(JSON.stringify(cached.response.body));
+          controlPlane.recordMobileAudit({ auditKind: "approval_scan_replayed", deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, handoffCorrelationId: body.handoffCorrelationId, status: "replayed" });
+          return;
+        }
+        const result = controlPlane.decideApprovalScan({ scanId, decision: body.decision, idempotencyKey: body.idempotencyKey, handoffCorrelationId: body.handoffCorrelationId, deviceId: auth.deviceId });
+        const status = result.ok ? (result.status === "handed_off" ? 202 : 200) : (result.httpStatus || 422);
+        const responseBody = result.ok ? result : { error: result.error };
+        idempotency.record({ deviceId: auth.deviceId, key: body.idempotencyKey, response: { status, body: responseBody } });
+        return sendJson(res, status, responseBody);
+      }
       const mobileProjectMatch = url.pathname.match(/^\/mobile\/v1\/projects\/([^/]+)$/);
       if (req.method === "GET" && mobileProjectMatch) {
         const project = controlPlane.mobileProject(decodeURIComponent(mobileProjectMatch[1]));
@@ -296,6 +366,16 @@ function validateMobileApprovalDecision(body) {
   const allowed = new Set(["idempotencyKey", "projectId", "actionId", "actionType", "approvalRef", "decision", "decisionText"]);
   const unknown = Object.keys(body).filter((key) => !allowed.has(key));
   if (unknown.length) return { ok: false, error: `unsupported mobile approval field(s): ${unknown.join(", ")}` };
+  return { ok: true };
+}
+
+function validateMobileApprovalScanDecision(body) {
+  const fields = validateMobileAction(body, ["idempotencyKey", "decision", "handoffCorrelationId"]);
+  if (!fields.ok) return fields;
+  if (!["approved", "rejected", "handoff"].includes(body.decision)) return { ok: false, error: "decision must be approved, rejected, or handoff" };
+  const allowed = new Set(["idempotencyKey", "decision", "handoffCorrelationId"]);
+  const unknown = Object.keys(body).filter((key) => !allowed.has(key));
+  if (unknown.length) return { ok: false, error: `approval scan decision accepts only decision, idempotencyKey, handoffCorrelationId; unsupported: ${unknown.join(", ")}` };
   return { ok: true };
 }
 

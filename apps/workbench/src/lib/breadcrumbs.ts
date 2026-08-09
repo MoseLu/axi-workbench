@@ -83,7 +83,7 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
   '/admin/project': { label: '项目', icon: 'project', parents: [WORKBENCH_PARENT] },
   '/admin/task': { label: '工作区', icon: 'workspace', parents: [WORKBENCH_PARENT] },
   '/admin/team': { label: '团队', icon: 'team', parents: [WORKBENCH_PARENT] },
-  '/admin/scan': { label: '扫一扫', icon: 'scan', parents: [WORKBENCH_PARENT] },
+  '/admin/scan': { label: '通用识别', icon: 'scan', parents: [WORKBENCH_PARENT] },
   '/admin/search': { label: '搜索', icon: 'search', parents: [WORKBENCH_PARENT] },
   '/admin/me': {
     label: '个人中心',

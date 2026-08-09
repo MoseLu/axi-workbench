@@ -28,6 +28,29 @@ Local six-layer project control plane for IM-driven status queries and safe regi
 - `POST /commands/:id/run`
 - `GET /runs/:id`
 
+### Mobile action and cross-surface contract
+
+Browser and mobile clients do not call this process directly. API Gateway is
+the public ingress: it maps `/api/v1/mobile/*` to the internal
+`/internal/mobile/v1/*` route and adds its service credential; paired-device
+bearers are verified here only after that boundary. The Gateway also maps
+authenticated Web `/api/v1/handoffs/:id` requests to
+`/internal/web/v1/handoffs/:id` and supplies the verified Web subject.
+
+- `POST /mobile/v1/approval-scans/resolve` accepts only an opaque `scanToken`
+  from `axi://approval/scan_*` and returns the current object, impact, risk,
+  state, permitted decision(s), expiry and `handoffCorrelationId`.
+- `POST /mobile/v1/approval-scans/:scanId/decision` accepts only `decision`,
+  `idempotencyKey` and `handoffCorrelationId`. It derives every business
+  object from the stored scan; a C/D decision creates a Web handoff rather
+  than executing on Mobile.
+- The historical `/mobile/v1/approvals/:id/decision` route is migration-only;
+  new clients must use the scan route above.
+
+OIDC web-login confirmation remains an Identity transaction under the
+Gateway's `/api/v1/auth/qr/transactions/:id/approve`; it is not a Control
+Plane domain approval and never accepts an `axi://approval/*` URI.
+
 ## Strict Communication Contract
 
 Axi Workstation follows the strict six-layer model:

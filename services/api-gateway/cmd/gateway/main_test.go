@@ -227,6 +227,74 @@ func TestGatewayRewritesSpecialistPathsAndUsesDedicatedTokens(t *testing.T) {
 	}
 }
 
+func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.T) {
+	downstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/internal/mobile/v1/workspace":
+			if got := request.Header.Get("Authorization"); got != "Bearer device-short-lived-token" {
+				t.Errorf("mobile device bearer = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+				t.Errorf("mobile internal token = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Subject"); got != "" {
+				t.Errorf("untrusted mobile subject was forwarded: %q", got)
+			}
+		case "/internal/web/v1/handoffs/handoff-1":
+			if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
+				t.Errorf("web handoff subject = %q", got)
+			}
+			if got := request.Header.Get("Authorization"); got != "" {
+				t.Errorf("browser bearer leaked to handoff backend: %q", got)
+			}
+		default:
+			t.Errorf("unexpected control-plane path = %q", request.URL.Path)
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(writer, `{}`)
+	}))
+	defer downstream.Close()
+
+	cfg := testGatewayConfig(downstream.URL, 10)
+	cfg.Services.ControlPlaneURL = downstream.URL
+	cfg.Services.ControlPlaneInternalToken = "control-plane-test-token"
+	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
+	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
+	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	gateway := httptest.NewServer(router)
+	defer gateway.Close()
+
+	mobile, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/mobile/workspace", nil)
+	if err != nil {
+		t.Fatalf("create mobile request: %v", err)
+	}
+	mobile.Header.Set("Authorization", "Bearer device-short-lived-token")
+	mobile.Header.Set("X-Axi-Subject", "attacker")
+	mobileResponse, err := gateway.Client().Do(mobile)
+	if err != nil {
+		t.Fatalf("call mobile proxy: %v", err)
+	}
+	mobileResponse.Body.Close()
+	if mobileResponse.StatusCode != http.StatusOK {
+		t.Fatalf("mobile proxy status = %d", mobileResponse.StatusCode)
+	}
+
+	handoff, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/handoffs/handoff-1", nil)
+	if err != nil {
+		t.Fatalf("create handoff request: %v", err)
+	}
+	handoff.Header.Set("X-Axi-Development-Subject", "zitadel-alice")
+	handoff.Header.Set("Authorization", "Bearer attacker-token")
+	handoffResponse, err := gateway.Client().Do(handoff)
+	if err != nil {
+		t.Fatalf("call handoff proxy: %v", err)
+	}
+	handoffResponse.Body.Close()
+	if handoffResponse.StatusCode != http.StatusOK {
+		t.Fatalf("handoff proxy status = %d", handoffResponse.StatusCode)
+	}
+}
+
 func testGatewayConfig(platformURL string, rateLimit int) *config.Config {
 	return &config.Config{
 		Environment: "development",
@@ -245,6 +313,8 @@ func testGatewayConfig(platformURL string, rateLimit int) *config.Config {
 			WorkflowInternalToken:     "workflow-test-token",
 			NotificationInternalToken: "notification-test-token",
 			PlatformOutboxToken:       "outbox-test-token",
+			ControlPlaneURL:           platformURL,
+			ControlPlaneInternalToken: "control-plane-test-token",
 		},
 		CORS: config.CORSConfig{
 			AllowedOrigins: []string{"http://127.0.0.1:5173"},

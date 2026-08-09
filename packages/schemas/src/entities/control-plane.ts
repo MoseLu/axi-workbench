@@ -119,6 +119,64 @@ export const ApprovalRequestSchema = z.object({
   decidedAt: z.coerce.date().optional(),
 })
 
+// Mobile approval scans intentionally carry only an opaque scan id.  The
+// preview below is returned after the Control Plane has reloaded the object,
+// checked the paired device, and evaluated current policy.  It is shared so
+// Web handoff and Mobile never disagree on the cross-surface contract.
+export const ApprovalScanObjectSchema = z.object({
+  type: z.literal("approval"),
+  id: z.string().min(1),
+  projectId: z.string().min(1).nullable(),
+  actionId: z.string().min(1).nullable(),
+  actionType: z.string().min(1).nullable(),
+})
+
+export const ApprovalScanPreviewSchema = z.object({
+  ok: z.literal(true),
+  scanId: z.string().min(1),
+  approvalId: z.string().min(1),
+  object: ApprovalScanObjectSchema,
+  impact: z.string().min(1),
+  riskLevel: z.enum(["low", "medium", "high", "destructive"]),
+  currentStatus: z.literal("pending"),
+  availableDecisions: z.array(z.enum(["approved", "rejected", "handoff"])).min(1),
+  expiresAt: z.coerce.date(),
+  handoffCorrelationId: z.string().min(1),
+})
+
+// The client is deliberately unable to provide a project, action, approval,
+// or object id.  The server derives each one from the scan record.
+export const MobileApprovalDecisionSchema = z.object({
+  decision: z.enum(["approved", "rejected", "handoff"]),
+  idempotencyKey: z.string().min(8).max(200),
+  handoffCorrelationId: z.string().min(1).max(200),
+}).strict()
+
+export const HandoffContextSchema = z.object({
+  id: z.string().min(1),
+  handoffCorrelationId: z.string().min(1),
+  sourceSurface: z.enum(["mobile", "web"]),
+  targetSurface: z.enum(["mobile", "web", "specialist"]),
+  status: z.enum(["pending", "opened", "completed", "rejected"]),
+  approvalId: z.string().min(1).nullable(),
+  object: ApprovalScanObjectSchema,
+  impact: z.string().min(1),
+  riskLevel: z.enum(["low", "medium", "high", "destructive"]),
+  createdAt: z.coerce.date(),
+  openedAt: z.coerce.date().optional(),
+  openedBy: z.string().min(1).optional(),
+  completedAt: z.coerce.date().optional(),
+  finalAction: z.object({
+    outcome: z.string().min(1),
+    performedBy: z.string().min(1),
+    occurredAt: z.coerce.date(),
+  }).optional(),
+})
+
+export type ApprovalScanPreview = z.infer<typeof ApprovalScanPreviewSchema>
+export type MobileApprovalDecision = z.infer<typeof MobileApprovalDecisionSchema>
+export type HandoffContext = z.infer<typeof HandoffContextSchema>
+
 export const AgentTaskSchema = z.object({
   id: z.string().min(1),
   routeKey: z.string().optional(),

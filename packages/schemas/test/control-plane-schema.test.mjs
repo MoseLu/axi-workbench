@@ -11,6 +11,9 @@ test("control-plane schema exposes Chat-Codex-inspired communication entities", 
     "RouteBindingSchema",
     "PairingChallengeSchema",
     "ApprovalRequestSchema",
+    "ApprovalScanPreviewSchema",
+    "MobileApprovalDecisionSchema",
+    "HandoffContextSchema",
     "AttachmentRefSchema",
     "AgentTaskSchema",
     "AgentRuntimeSchema",
@@ -30,6 +33,13 @@ test("control-plane schema exposes Chat-Codex-inspired communication entities", 
   ]) {
     assert.match(source, new RegExp(token));
   }
+});
+
+test("mobile approval contracts derive business object fields from an opaque scan", () => {
+  assert.match(source, /MobileApprovalDecisionSchema[\s\S]*\.strict\(\)/);
+  assert.match(source, /decision: z\.enum\(\["approved", "rejected", "handoff"\]\)/);
+  assert.doesNotMatch(source.match(/export const MobileApprovalDecisionSchema[\s\S]*?\n\}\)\.strict\(\)/)?.[0] ?? "", /projectId|actionId|approvalId/);
+  assert.match(source, /handoffCorrelationId/);
 });
 
 test("agent runtime schema exposes managed command and Axi Agent execution alongside Codex runtimes", () => {

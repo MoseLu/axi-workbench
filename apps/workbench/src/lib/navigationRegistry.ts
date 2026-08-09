@@ -8,15 +8,31 @@ import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
  */
 export const workbenchDesktopNavGroups: AxiDashboardNavGroup[] = [
   {
-    key: 'workbench',
-    label: '工作台',
+    key: 'overview',
+    label: '概览',
     iconName: axiWorkbenchIconMap.overview,
     children: [
       { key: '/admin/dashboard', label: '概览', iconName: axiWorkbenchIconMap.overview },
+    ],
+  },
+  {
+    key: 'work',
+    label: '项目与工作',
+    iconName: axiWorkbenchIconMap.project,
+    children: [
       { key: '/admin/project', label: '项目', iconName: axiWorkbenchIconMap.project },
       { key: '/admin/task', label: '工作区', iconName: axiWorkbenchIconMap.workspace },
+      { key: '/admin/scan', label: '通用识别', iconName: axiWorkbenchIconMap.scan },
+    ],
+  },
+  {
+    key: 'organization',
+    label: '组织与访问',
+    iconName: axiWorkbenchIconMap.team,
+    children: [
       { key: '/admin/team', label: '团队', iconName: axiWorkbenchIconMap.team },
-      { key: '/admin/scan', label: '扫一扫', iconName: axiWorkbenchIconMap.scan },
+      { key: '/admin/settings/menu', label: '菜单配置', iconName: axiWorkbenchIconMap.menu },
+      { key: '/admin/settings/role', label: '角色权限', iconName: axiWorkbenchIconMap.roles },
     ],
   },
   {
@@ -26,8 +42,6 @@ export const workbenchDesktopNavGroups: AxiDashboardNavGroup[] = [
     children: [
       { key: '/admin/me', label: '个人中心', iconName: axiWorkbenchIconMap.account },
       { key: '/admin/me/notifications', label: '通知中心', iconName: axiWorkbenchIconMap.notification },
-      { key: '/admin/settings/menu', label: '菜单配置', iconName: axiWorkbenchIconMap.menu },
-      { key: '/admin/settings/role', label: '角色权限', iconName: axiWorkbenchIconMap.roles },
     ],
   },
 ];
@@ -37,7 +51,8 @@ export const workbenchMenuRouteMap: Record<string, { label: string }> = {
   '/admin/project': { label: '项目' },
   '/admin/task': { label: '工作区' },
   '/admin/team': { label: '团队' },
-  '/admin/scan': { label: '扫一扫' },
+  '/admin/scan': { label: '通用识别' },
+  '/admin/handoff': { label: '跨端续办' },
   '/admin/me': { label: '我的' },
   '/admin/settings/menu': { label: '菜单列表' },
   '/admin/settings/user': { label: '我的' },

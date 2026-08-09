@@ -8,12 +8,12 @@ describe('navigationRegistry', () => {
       '/admin/dashboard',
       '/admin/project',
       '/admin/task',
-      '/admin/team',
       '/admin/scan',
-      '/admin/me',
-      '/admin/me/notifications',
+      '/admin/team',
       '/admin/settings/menu',
       '/admin/settings/role',
+      '/admin/me',
+      '/admin/me/notifications',
     ]);
   });
 

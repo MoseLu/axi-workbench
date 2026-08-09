@@ -26,6 +26,7 @@ export default function LoginPage() {
         <button type="button" disabled={isLoading} onClick={() => beginLogin(destination)}>
           {isLoading ? t('login.loading') : t('login.emailCode')}
         </button>
+        <a className="axi-mobile-login__link" href="/login/confirm-web">已登录？确认网页登录</a>
       </section>
     </main>
   );

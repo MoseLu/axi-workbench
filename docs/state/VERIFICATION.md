@@ -1,6 +1,6 @@
 # Axi Workbench Verification
 
-## 2026-08-07 Web / mobile application split
+## 2026-08-09 Web / mobile application split and PRD remediation
 
 The user workbench is two independently runnable applications with an explicit ownership boundary:
 
@@ -25,11 +25,12 @@ pnpm check:boundaries
 
 ### Browser evidence
 
-- In the Codex built-in browser, `:5173/admin/me` rendered `.axi-sidebar`, `.axi-topbar`, `.axi-tabbar`, and `.axi-breadcrumb-bar`; neither `.wb-mobile-shell` nor `.axi-mobile-tabbar` existed in the Web DOM.
-- In the Codex built-in browser, `:5174/home` rendered `.axi-mobile-app`, `.wb-mobile-topbar`, and `.wb-bottom-nav`, with exactly five labels (`概览 / 项目 / 工作区 / 扫一扫 / 我的`) and no Web dashboard or breadcrumb nodes. The centered topbar opened its plus menu, and selecting `扫一扫` navigated to `/scan` with the mobile scan frame and active scan tab; console errors were empty.
-- Production builds passed for both applications. The Web build retains its pre-existing large-chunk advisory; the mobile build has the same non-blocking Rollup advisory.
+- At 1440px in the Codex browser, `:5173/admin/settings/role` rendered the desktop Axi Dashboard shell with grouped sidebar entries `概览 / 项目与工作 / 组织与访问 / 账号与设置`; no Mobile topbar or bottom navigation existed. With the Control Plane unavailable, the page rendered one explicit “权限状态暂时无法同步” fact state and did not fabricate role counts or rows.
+- At 1440px, `:5173/admin/scan` rendered “通用识别与结果处理”. Its accessible description says that it can recognize, display, copy or transfer a result and “不产生审批授权”; no domain-approval or login-confirm action is present.
+- At a 390×844 mobile emulation, the unauthenticated Mobile workspace rendered “需要设备配对” rather than a static project sample or an endless loading state. Its persistent navigation contains only Home / Projects / Workspace / Me. The top “更多” menu exposes “扫一扫”, whose page is “审批扫码” and explicitly says it is not for web-login confirmation. `verify:contracts` separately asserts the four persistent items, the top Scan action, authenticated projection pages, and the independent Identity confirmation route; the request-timeout unit test covers an authenticated unavailable gateway becoming an explicit unavailable state.
+- The desktop browser logged the expected Control Plane 502 while the UI converted it to its explicit unavailable state. Chrome also reported one existing shared `@axi/shell` menu-search input without an `id` or `name`; that dependency is outside this repository's ownership. The recognition file input changed in this batch has both fields.
 
-The production build still reports the existing non-blocking large-chunk advisory for the dashboard bundle.
+`node apps/workbench/scripts/verify-ui-contracts.mjs` remains blocked in this dirty checkout by the user-owned `packages/workbench-foundation/src/icons.ts` change from `logout: 'admin-logout'` to `logout: 'exit'`; its immutable baseline expects the former and this batch does not alter that file. The production build result for this remediation batch is recorded with its command output in the delivery commit; any existing non-blocking Rollup advisory remains distinct from functional acceptance.
 
 ## 2026-08 Go API plane
 

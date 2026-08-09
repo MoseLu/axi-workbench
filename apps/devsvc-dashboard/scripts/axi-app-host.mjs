@@ -15,6 +15,12 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       capabilities: ["web", "ops", "dashboard"],
       cwd: path.join(workspaceRoot, "projects", "axi-workbench", "infra", "fleet-console", "dashboard"),
       defaultRoute: "/dashboard",
+      executionBoundary: {
+        owner: "Fleet Console（物理服务层）",
+        authorization: "Fleet 自身授权与高风险确认",
+        audit: "Fleet 操作审计",
+        fallback: "服务不可用时仅显示状态，不在 Host 复刻执行按钮"
+      },
       healthPath: "/",
       icon: "database",
       menuGroups: [
@@ -49,6 +55,12 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       capabilities: ["web", "workbench"],
       cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-coder"),
       defaultRoute: "/overview",
+      executionBoundary: {
+        owner: "Axi Coder（受管开发运行时）",
+        authorization: "Coder 任务政策与运行时授权",
+        audit: "Coder 任务、工具与产物审计",
+        fallback: "不可用时保留受控入口与错误状态，不由 Host 执行任务"
+      },
       healthPath: "/",
       icon: "workbench",
       menuGroups: [
@@ -91,6 +103,12 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       capabilities: ["web", "accounts", "verification-inbox"],
       cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "verification-inbox"),
       defaultRoute: "/",
+      executionBoundary: {
+        owner: "Verification Inbox / 原生邮件桥接",
+        authorization: "收件箱自身账号与邮件访问授权",
+        audit: "验证读取与操作审计",
+        fallback: "原生桥接不可用时仅报告不可用，不把邮件动作复制到 Host"
+      },
       healthPath: "/",
       icon: "auth",
       menuGroups: [
@@ -252,6 +270,7 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
       capabilities: app.capabilities || [],
       defaultRoute: app.defaultRoute,
       frameRoute: frameRoute(app),
+      executionBoundary: app.executionBoundary || null,
       hostedMode: true,
       icon: app.icon,
       menuGroups: app.menuGroups || [],

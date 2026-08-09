@@ -110,6 +110,8 @@ function buildControlPlaneSurface({
   // 刚完成的诊断，而不能把真实结果退回为空白占位。
   const agentTasks = loadPersistedRecordMap(join(cacheDir, "agent-tasks"));
   const approvals = loadPersistedRecordMap(join(cacheDir, "approvals"));
+  const approvalScans = loadPersistedRecordMap(join(cacheDir, "approval-scans"));
+  const handoffs = loadPersistedRecordMap(join(cacheDir, "handoffs"));
   const jobs = new Map();
   const jobEnvelopeIndex = new Map();
 
@@ -123,6 +125,11 @@ function buildControlPlaneSurface({
     snapshot: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileSnapshot: () => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileProject: (id) => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }).projects.find((project) => project.id === id) || null,
+    createApprovalScan: (input) => createApprovalScan({ input, cacheDir, approvals, approvalScans }),
+    resolveApprovalScan: (scanToken) => resolveApprovalScan({ scanToken, cacheDir, approvals, approvalScans }),
+    getHandoff: (id) => handoffs.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null),
+    openHandoff: (id, subject) => openHandoff({ id, subject, cacheDir, handoffs }),
+    completeHandoff: (id, subject, outcome) => completeHandoff({ id, subject, outcome, cacheDir, handoffs }),
     query: (input) => handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin }),
     handleCommunicationMessage: (input, messageOptions = {}) => handleCommunicationMessage({
       input,
@@ -184,27 +191,37 @@ function buildControlPlaneSurface({
       deviceId: approval.sourceDeviceId,
     }, { approvedApprovalId: approval.id }),
   });
+  surface.decideApprovalScan = (input) => decideApprovalScan({
+    input,
+    cacheDir,
+    approvalScans,
+    handoffs,
+    resolveApproval: surface.decideApproval,
+    recordAudit: surface.recordMobileAudit,
+  });
   return surface;
 }
 
 /**
  * Write one mobile_action entry into the existing audit.jsonl ledger
  * (the same file the desktop control plane already uses).  Format:
- *   { auditKind: "mobile_action", deviceId, idempotencyKey, projectId,
- *     actionId, actionType, approvalRef, status, occurredAt }
+ *   { auditKind, deviceId, idempotencyKey, projectId, actionId, actionType,
+ *     approvalRef, handoffCorrelationId, handoffId, status, occurredAt }
  * chmod 600 on first write; existing files keep their permissions.
  */
 export function recordMobileAudit({ cacheDir, event = {} }) {
   if (!cacheDir) return { ok: false, error: "cacheDir required" };
   const path = join(cacheDir, "audit.jsonl");
   const payload = {
-    auditKind: "mobile_action",
+    auditKind: event.auditKind || "mobile_action",
     deviceId: event.deviceId || null,
     idempotencyKey: event.idempotencyKey || null,
     projectId: event.projectId || null,
     actionId: event.actionId || null,
     actionType: event.actionType || null,
     approvalRef: event.approvalRef || null,
+    handoffCorrelationId: event.handoffCorrelationId || null,
+    handoffId: event.handoffId || null,
     status: event.status || "executed",
     occurredAt: Math.floor(Date.now() / 1000),
   };
@@ -215,6 +232,159 @@ export function recordMobileAudit({ cacheDir, event = {} }) {
   }
   appendFileSync(path, JSON.stringify(payload) + "\n");
   return { ok: true };
+}
+
+/**
+ * Create a short-lived opaque approval scan record.  The URI contains only a
+ * random record id; the approval object, impact, and permitted decisions stay
+ * server-side and are resolved again when the mobile device scans it.
+ *
+ * This is intentionally a Control Plane operation, not a browser API.  A
+ * Web surface may later render the returned URI, but cannot manufacture a
+ * project/action pair in the QR payload.
+ */
+export function createApprovalScan({ input = {}, cacheDir, approvals, approvalScans }) {
+  const approvalId = String(input.approvalId || "").trim();
+  const approval = approvals?.get(approvalId) || readJson(join(cacheDir, "approvals", `${approvalId}.json`), null);
+  if (!approval) return { ok: false, httpStatus: 404, error: "approval not found" };
+  if (approval.status !== "pending") return { ok: false, httpStatus: 409, error: "approval is no longer pending" };
+  const requestedExpiry = Date.parse(String(input.expiresAt || ""));
+  const expiresAt = Number.isFinite(requestedExpiry) && requestedExpiry > Date.now()
+    ? new Date(requestedExpiry).toISOString()
+    : new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  // The source approval's policy is authoritative.  A caller creating a QR
+  // record cannot lower a C/D approval into a Mobile-confirmable B action.
+  const actionLevel = approvalActionLevel(approval);
+  const scan = {
+    id: `scan_${randomUUID()}`,
+    approvalId: approval.id,
+    status: "active",
+    actionLevel,
+    object: {
+      type: "approval",
+      id: approval.id,
+      projectId: approval.projectId || null,
+      actionId: approval.actionId || null,
+      actionType: approval.actionType || null,
+    },
+    impact: approval.actionSummary || "受控动作等待确认。",
+    riskLevel: approval.riskLevel || "medium",
+    availableDecisions: actionLevel === "B" ? ["approved", "rejected"] : ["handoff", "rejected"],
+    expiresAt,
+    createdAt: new Date().toISOString(),
+  };
+  approvalScans?.set(scan.id, scan);
+  persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+  recordMobileAudit({ cacheDir, event: { auditKind: "approval_scan_created", approvalRef: approval.id, status: "created" } });
+  return { ok: true, scanId: scan.id, uri: `axi://approval/${scan.id}`, expiresAt: scan.expiresAt };
+}
+
+export function resolveApprovalScan({ scanToken, cacheDir, approvals, approvalScans }) {
+  const scanId = String(scanToken || "").trim();
+  if (!/^scan_[A-Za-z0-9_-]{8,}$/.test(scanId)) return { ok: false, httpStatus: 400, error: "invalid approval scan token" };
+  const scan = approvalScans?.get(scanId) || readJson(join(cacheDir, "approval-scans", `${scanId}.json`), null);
+  if (!scan) return { ok: false, httpStatus: 404, error: "approval scan not found" };
+  if (scan.status !== "active") return { ok: false, httpStatus: 409, error: "approval scan is no longer active" };
+  if (Date.parse(scan.expiresAt) <= Date.now()) {
+    scan.status = "expired";
+    approvalScans?.set(scan.id, scan);
+    persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+    return { ok: false, httpStatus: 410, error: "approval scan expired" };
+  }
+  const approval = approvals?.get(scan.approvalId) || readJson(join(cacheDir, "approvals", `${scan.approvalId}.json`), null);
+  if (!approval || approval.status !== "pending") return { ok: false, httpStatus: 409, error: "approval state changed" };
+  return {
+    ok: true,
+    scanId: scan.id,
+    approvalId: approval.id,
+    object: scan.object,
+    impact: scan.impact,
+    riskLevel: scan.riskLevel,
+    currentStatus: approval.status,
+    availableDecisions: scan.availableDecisions,
+    expiresAt: scan.expiresAt,
+    handoffCorrelationId: `handoff:${scan.id}`,
+  };
+}
+
+function decideApprovalScan({ input = {}, cacheDir, approvalScans, handoffs, resolveApproval, recordAudit }) {
+  // The persisted approval is the authority after a process restart; clients
+  // never supply its project, action, or object identifiers.
+  const scan = approvalScans?.get(input.scanId) || readJson(join(cacheDir, "approval-scans", `${input.scanId}.json`), null);
+  const approval = scan ? readJson(join(cacheDir, "approvals", `${scan.approvalId}.json`), null) : null;
+  if (!scan || !approval) return { ok: false, httpStatus: 404, error: "approval scan not found" };
+  if (scan.status !== "active" || Date.parse(scan.expiresAt) <= Date.now() || approval.status !== "pending") {
+    return { ok: false, httpStatus: 409, error: "approval state changed or expired" };
+  }
+  if (!scan.availableDecisions.includes(input.decision)) return { ok: false, httpStatus: 422, error: "decision is not allowed for this approval scan" };
+  const correlationId = `handoff:${scan.id}`;
+  if (input.handoffCorrelationId !== correlationId) {
+    return { ok: false, httpStatus: 422, error: "handoff correlation does not match the approval scan" };
+  }
+  if (input.decision === "handoff") {
+    const handoff = {
+      id: `handoff_${randomUUID()}`,
+      handoffCorrelationId: correlationId,
+      sourceSurface: "mobile",
+      targetSurface: "web",
+      status: "pending",
+      approvalId: approval.id,
+      object: scan.object,
+      impact: scan.impact,
+      riskLevel: scan.riskLevel,
+      createdAt: new Date().toISOString(),
+    };
+    handoffs?.set(handoff.id, handoff);
+    persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+    scan.status = "handed_off";
+    scan.handoffId = handoff.id;
+    approvalScans?.set(scan.id, scan);
+    persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+    recordAudit({ auditKind: "handoff_created", deviceId: input.deviceId, idempotencyKey: input.idempotencyKey, approvalRef: approval.id, handoffCorrelationId: correlationId, handoffId: handoff.id, status: "handed_off" });
+    return { ok: true, status: "handed_off", handoff };
+  }
+  const result = resolveApproval({ id: approval.id, decision: input.decision });
+  if (!result) return { ok: false, httpStatus: 404, error: "approval not found" };
+  scan.status = "decided";
+  scan.decidedAt = new Date().toISOString();
+  approvalScans?.set(scan.id, scan);
+  persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+  recordAudit({ auditKind: "approval_scan_decided", deviceId: input.deviceId, idempotencyKey: input.idempotencyKey, approvalRef: approval.id, handoffCorrelationId: correlationId, status: result.status });
+  return { ok: true, status: result.status, approval: result, handoffCorrelationId: correlationId };
+}
+
+function openHandoff({ id, subject, cacheDir, handoffs }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.status === "pending") {
+    handoff.status = "opened";
+    handoff.openedAt = new Date().toISOString();
+    handoff.openedBy = subject;
+    handoffs?.set(handoff.id, handoff);
+    persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_opened", approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "opened" } });
+  }
+  return handoff;
+}
+
+function completeHandoff({ id, subject, outcome, cacheDir, handoffs }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (!["pending", "opened"].includes(handoff.status)) return handoff;
+  handoff.status = "completed";
+  handoff.completedAt = new Date().toISOString();
+  handoff.finalAction = { outcome, performedBy: subject, occurredAt: handoff.completedAt };
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_completed", approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "completed" } });
+  return handoff;
+}
+
+function approvalActionLevel(approval) {
+  if (["B", "C", "D"].includes(approval?.actionLevel)) return approval.actionLevel;
+  if (approval?.riskLevel === "destructive") return "D";
+  if (approval?.riskLevel === "high") return "C";
+  return "B";
 }
 
 /**
@@ -467,6 +637,7 @@ function buildMobileProjectActions({ project, resource }) {
       intent: healthCommand.intent,
       autoExecutable: true,
       actionType: "project_verification",
+      actionLevel: "B",
       executionMode: "immediate",
       riskLevel: "low",
       summary: "运行已登记的只读核验，并记录可追溯结果。",
@@ -480,6 +651,7 @@ function buildMobileProjectActions({ project, resource }) {
       intent: "project_diagnosis",
       autoExecutable: false,
       actionType: "project_diagnosis",
+      actionLevel: "B",
       executionMode: "requires_approval",
       riskLevel: "medium",
       summary: "只读复核项目状态与证据，不修改项目文件。",
@@ -1284,6 +1456,7 @@ function createControlJob({ input, resolvedMobileAction = null, workspaceRoot, g
       actionId: input?.actionId || null,
       idempotencyKey: input?.idempotencyKey || null,
       actionType: input?.actionType || null,
+      actionLevel: resolvedMobileAction?.action.actionLevel || approvalActionLevel({ riskLevel: assessment.risk }),
       createdAt: new Date().toISOString(),
       envelopeId: envelope.id,
       envelopeText: envelope.text,

@@ -162,11 +162,20 @@ func setupRouter(
 	// dedicated internal credentials.
 	v1.POST("/internal/events", middleware.RequireInternalToken(cfg.Services.PlatformOutboxToken), proxyHandler.ProxyToEventConsumers())
 
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
 	protected := v1.Group("")
 	protected.Use(middleware.RequireIdentity(identityService))
 	protected.POST("/auth/qr/transactions/:id/approve", proxyHandler.ProxyToIdentity())
 	protected.GET("/auth/eps/links/:provider", proxyHandler.ProxyToIdentity())
 	protected.PUT("/auth/eps/links/:provider", proxyHandler.ProxyToIdentity())
+	protected.GET("/handoffs/:id", mobileControl.ProxyWebHandoff())
+	protected.POST("/handoffs/:id", mobileControl.ProxyWebHandoff())
+
+	// Device-paired Mobile traffic carries a short-lived Control Plane bearer,
+	// rather than a browser OIDC credential.  It remains behind this Gateway;
+	// the downstream verifies the device token after this proxy strips spoofed
+	// internal headers and attaches the Gateway credential.
+	v1.Any("/mobile/*path", mobileControl.Proxy())
 
 	// Platform Core routes are tenant-aware. The tenant ID comes from the path;
 	// Platform Core also checks membership and RLS, so a forged client header

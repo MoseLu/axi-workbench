@@ -14,10 +14,18 @@ export type HostedAppMenuGroup = {
   children: HostedAppMenuItem[];
 };
 
+export type HostedExecutionBoundary = {
+  owner: string;
+  authorization: string;
+  audit: string;
+  fallback: string;
+};
+
 export type HostedApp = {
   appId: string;
   capabilities: string[];
   defaultRoute: string;
+  executionBoundary?: HostedExecutionBoundary;
   frameRoute: string;
   hostedMode: boolean;
   icon?: string;

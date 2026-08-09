@@ -13,7 +13,7 @@ function getBarcodeDetector() {
   return (window as Window & { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
 }
 
-/** Web 扫码页：桌面取景区 + 工具栏，并在浏览器支持时直接识别二维码。 */
+/** Web 通用识别工具：仅识别、展示和复制结果，不承担审批授权。 */
 const Scan: React.FC = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -157,7 +157,7 @@ const Scan: React.FC = () => {
 
   return (
     <DesktopCrudFrame
-      ariaLabel="扫码"
+      ariaLabel="通用识别与结果处理"
       className="wb-scan"
       toolbar={(
         <Space size={8}>
@@ -167,12 +167,14 @@ const Scan: React.FC = () => {
           <Button size="small" onClick={() => navigate('/admin/dashboard')}>关闭</Button>
         </Space>
       )}
-      top={<span className="wb-crud-page__context">扫码</span>}
+      top={<span className="wb-crud-page__context">通用识别</span>}
     >
       <input
         ref={fileRef}
         accept="image/*"
         hidden
+        id="axi-general-recognition-file"
+        name="generalRecognitionFile"
         type="file"
         onChange={(event) => {
           void pickImage(event.target.files?.[0]);
@@ -180,12 +182,12 @@ const Scan: React.FC = () => {
         }}
       />
       {error ? <Alert className="wb-scan__alert" message={error} showIcon type="warning" /> : null}
-      {result ? <Alert action={<Button size="small" type="link" onClick={() => void copyResult()}>复制</Button>} className="wb-scan__alert" description={result} message="已识别二维码" showIcon type="success" /> : null}
-      <AxiTableGroup description={detectorAvailable ? '已启用浏览器二维码识别' : '当前浏览器仅支持摄像头预览'} title="摄像头预览">
+      {result ? <Alert action={<Button size="small" type="link" onClick={() => void copyResult()}>复制</Button>} className="wb-scan__alert" description={result} message="已识别结果" showIcon type="success" /> : null}
+      <AxiTableGroup description={detectorAvailable ? '可识别二维码并展示、复制或转交结果；不产生审批授权。' : '当前浏览器仅支持摄像头预览；不产生审批授权。'} title="通用识别取景区">
         <div className="wb-scan__stage">
           <video autoPlay className="wb-scan__video" muted playsInline ref={videoRef} />
           {opening ? <div className="wb-scan__loading">正在打开摄像头…</div> : null}
-          {!opening && !ready && !error ? <div className="wb-scan__loading">点击“打开摄像头”开始扫码</div> : null}
+          {!opening && !ready && !error ? <div className="wb-scan__loading">点击“打开摄像头”开始识别</div> : null}
           <div aria-hidden className="wb-scan__mask">
             <div className="wb-scan__frame">
               <span className="wb-scan__corner tl" />
@@ -195,7 +197,7 @@ const Scan: React.FC = () => {
               <div className="wb-scan__line" />
             </div>
           </div>
-          <p className="wb-scan__hint">将二维码放入取景区</p>
+          <p className="wb-scan__hint">将待识别二维码放入取景区</p>
         </div>
       </AxiTableGroup>
     </DesktopCrudFrame>

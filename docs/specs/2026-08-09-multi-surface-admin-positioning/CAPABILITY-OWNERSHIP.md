@@ -25,9 +25,9 @@
 | 验收与回退 | 自动检查、浏览器/设备场景、失败提示、状态刷新与回退路径。 |
 | 状态与复核 | Draft / Approved / Implemented；复核角色、日期和证据链接。 |
 
-## 当前产品基线
+## 当前产品基线与已复核盘点
 
-> 这是一份规则与代表性能力的基线，**不是**现有页面/API 的穷举盘点。P0 完成前，必须另建可审阅的当前能力盘点，逐项映射到本模板的任务角色、动作等级、执行表面 Owner 和动作政策；本表不能单独作为 P0 退出证据。
+> 下表仍是规则与代表性能力的基线；当前 Web、Mobile 路由、按钮/写操作和专业入口的全量可审阅盘点已经记录在 [`CAPABILITY-INVENTORY.json`](./CAPABILITY-INVENTORY.json) 与 [`CAPABILITY-INVENTORY.md`](./CAPABILITY-INVENTORY.md)。它是 P0 的退出证据，并由 `pnpm check:capabilities` 在每次边界检查中复核。
 
 | 能力 | 动作等级与执行表面 Owner | 允许动作与边界 | 不支持端 / 交接 |
 | --- | --- | --- | --- |

@@ -6,6 +6,10 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
+- Added the machine-checked multi-surface capability inventory and `pnpm check:capabilities` admission gate. It requires every current/new user capability to state its allowed actions, data source/status, A/B/C/D level, Owner, server authorization/revalidation, idempotency, audit, handoff and unsupported surface.
+- Added server-resolved domain approval scan contracts (`ApprovalScanPreview`, `MobileApprovalDecision`, `HandoffContext`), API-Gateway-only Mobile ingress, correlation-bound Web handoff continuation, schema/OpenAPI coverage, and audit/idempotency/revocation test coverage.
+- Added DevSvc Hosted App execution-boundary metadata for Fleet, Coder and Verification Inbox so Host discovery exposes Owner, authorization, audit and fallback without duplicating D-level execution.
+
 - Added ADR-0001 and the Go production API plane: ZITADEL-oriented Gin `api-gateway`, `identity-adapter`, modular `platform-core`, Dockerfiles, local role bootstrap, Helm chart, migration jobs, NetworkPolicy, PDB and ZITADEL values example.
 - Added server-side Authorization Code + PKCE session handling, JWKS validation, Redis rate limiting, Redis-backed one-time QR transactions, SMTP verification adapters, EPS identity-link records, tenant/RBAC/preferences/dictionaries/projects/tasks/outbox modules and PostgreSQL RLS integration coverage.
 - Added OTLP/HTTP trace export in gateway, identity-adapter and platform-core; an empty endpoint remains offline/no-op for local development while W3C trace context continues across services.
@@ -20,6 +24,10 @@ All notable local changes to Axi Workbench are tracked here.
 - Linked every `REQ-*` row to the corresponding commands and tests captured in `docs/state/TODO.md` and `docs/state/TDD.md`.
 
 ### Changed
+
+- Replaced Mobile Home, Projects, Workspace and search showcase data with authenticated Control Plane projections. Unpaired, unauthorized and unavailable states now stay explicit rather than rendering static substitutes; Mobile keeps four persistent navigation items and the top Scan action.
+- Reorganized Web navigation into Overview, Projects & Work, Organization & Access, and Account & Settings. `/admin/scan` is now named “通用识别与结果处理” and only recognizes, displays, copies or transfers a result; it never grants login or approval authority.
+- Moved one-time OIDC QR confirmation to the separately named Mobile login-flow entry “确认网页登录”. The top Scan accepts only opaque `axi://approval/scan_*` domain approvals and sends only a decision, idempotency key and bound handoff correlation id.
 
 - Reframed the multi-surface product contract from a simple Web/Mobile split into a role-oriented “control center / role-execution mobile / professional tool” architecture, grounded in bounded official public-product-shape research for 千牛、美团商家版、携程 eBooking and 飞猪商家中心. Added `REQ-ARCH-001`, `REQ-ACTION-001` and `REQ-REFERENCE-001`; all new user capabilities now require an A/B/C/D action policy, a target surface, service-side authorization/revalidation, audit and a fallback handoff. The research explicitly records observations, links and non-inferences rather than treating competitor features or internal architecture as Workbench facts.
 - Set the product contract for Axi Workbench as a multi-surface admin system: Web is the complete backend-management primary surface; Mobile is the auxiliary management surface for personal context, alerts and constrained confirmations. The PRD now separates Web's general scan/result handling from Mobile's approval scan confirmation, records the actual four persistent Mobile navigation items plus top-level Scan action, and excludes the Host and vertical tools from the user-backend information architecture. Added `REQ-POSITION-001`, `REQ-SURFACE-001`, `REQ-WEB-001`, `REQ-WEB-002`, `REQ-MOBILE-001`, `REQ-MOBILE-002`, `REQ-CROSS-001`, `REQ-SCAN-001` and `REQ-DELIVERY-001` with a capability-ownership template and product-specific verification path.

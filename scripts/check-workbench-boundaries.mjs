@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { validateCapabilityInventory } from "./verify-capability-inventory.mjs";
 
 const repoRoot = path.resolve(new URL("..", import.meta.url).pathname);
 
@@ -56,6 +57,12 @@ const communicationGatewayForbidden = [
 ];
 
 const violations = [];
+
+try {
+  validateCapabilityInventory();
+} catch (error) {
+  violations.push(error instanceof Error ? error.message : String(error));
+}
 
 for (const packageJson of walk(repoRoot).filter((file) => path.basename(file) === "package.json")) {
   inspectPackage(packageJson);

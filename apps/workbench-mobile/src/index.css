@@ -167,11 +167,6 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-search-result > svg { color: var(--mobile-muted); }
 .axi-mobile-empty-search { display: grid; justify-items: center; gap: 9px; padding: 45px 10px; border: 1px dashed var(--mobile-border); border-radius: 17px; color: var(--mobile-muted); font-size: 13px; }
 
-.axi-mobile-tabbar { z-index: 5; display: grid; grid-template-columns: repeat(5, 1fr); min-height: calc(64px + env(safe-area-inset-bottom, 0px)); padding: 7px 7px env(safe-area-inset-bottom, 0px); border-top: 1px solid var(--mobile-border); background: color-mix(in srgb, var(--mobile-canvas) 92%, transparent); backdrop-filter: blur(20px); }
-.axi-mobile-tabbar__item { display: grid; justify-items: center; align-content: center; gap: 4px; min-width: 0; padding: 0; border: 0; color: var(--mobile-muted); background: transparent; font-size: 10px; line-height: 1; cursor: pointer; }
-.axi-mobile-tabbar__item.is-active { color: var(--mobile-primary); }
-.axi-mobile-tabbar__icon { position: relative; display: inline-flex; }
-.axi-mobile-tabbar__badge { position: absolute; top: -7px; right: -10px; display: inline-flex; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 3px; border: 1.5px solid var(--mobile-canvas); border-radius: 999px; color: #fff; background: #ed5b69; font-size: 9px; font-weight: 700; }
 
 .axi-mobile-login { min-height: 100dvh; max-width: 560px; margin: 0 auto; padding: calc(34px + env(safe-area-inset-top, 0px)) 24px 32px; color: var(--axi-text, #f4f7fb); background: radial-gradient(circle at 90% 10%, rgba(91, 140, 255, .24), transparent 31%), var(--axi-bg-page, #0b1018); }
 .axi-mobile-login__brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 720; letter-spacing: -.25px; }

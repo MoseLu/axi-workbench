@@ -30,6 +30,7 @@ import './MainLayout.css';
 
 function resolveMenuRoute(path: string): { label: string } | undefined {
   if (path.startsWith('/admin/project/')) return { label: '项目详情' };
+  if (path.startsWith('/admin/handoff/')) return { label: '跨端续办' };
   return workbenchMenuRouteMap[path];
 }
 

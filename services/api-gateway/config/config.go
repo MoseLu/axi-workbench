@@ -36,12 +36,14 @@ type ServicesConfig struct {
 	FileServiceURL            string
 	WorkflowURL               string
 	NotificationURL           string
+	ControlPlaneURL           string
 	IdentityInternalToken     string
 	PlatformInternalToken     string
 	PlatformOutboxToken       string
 	FileInternalToken         string
 	WorkflowInternalToken     string
 	NotificationInternalToken string
+	ControlPlaneInternalToken string
 }
 
 type IdentityConfig struct {
@@ -96,12 +98,14 @@ func Load() (*Config, error) {
 			FileServiceURL:            getEnv("FILE_SERVICE_URL", "http://localhost:3003"),
 			WorkflowURL:               getEnv("WORKFLOW_SERVICE_URL", "http://localhost:3004"),
 			NotificationURL:           getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8084"),
+			ControlPlaneURL:           getEnv("CONTROL_PLANE_URL", "http://localhost:8092"),
 			IdentityInternalToken:     getEnv("GATEWAY_IDENTITY_INTERNAL_TOKEN", getEnv("IDENTITY_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			PlatformInternalToken:     getEnv("GATEWAY_PLATFORM_INTERNAL_TOKEN", getEnv("PLATFORM_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			PlatformOutboxToken:       getEnv("GATEWAY_PLATFORM_OUTBOX_TOKEN", getEnv("PLATFORM_OUTBOX_DELIVERY_AUTH_TOKEN", "axi-development-internal-token")),
 			FileInternalToken:         getEnv("GATEWAY_FILE_INTERNAL_TOKEN", getEnv("FILE_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			WorkflowInternalToken:     getEnv("GATEWAY_WORKFLOW_INTERNAL_TOKEN", getEnv("WORKFLOW_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 			NotificationInternalToken: getEnv("GATEWAY_NOTIFICATION_INTERNAL_TOKEN", getEnv("NOTIFICATION_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
+			ControlPlaneInternalToken: getEnv("GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN", getEnv("CONTROL_PLANE_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 		},
 		Identity: IdentityConfig{
 			IssuerURL:                 strings.TrimSuffix(os.Getenv("OIDC_ISSUER_URL"), "/"),
@@ -172,6 +176,12 @@ func (c Config) Validate() error {
 		}
 		if c.Services.NotificationInternalToken == "" || c.Services.NotificationInternalToken == "axi-development-internal-token" {
 			return fmt.Errorf("GATEWAY_NOTIFICATION_INTERNAL_TOKEN must be injected in production")
+		}
+		if c.Services.ControlPlaneURL == "" {
+			return fmt.Errorf("CONTROL_PLANE_URL must be configured in production")
+		}
+		if c.Services.ControlPlaneInternalToken == "" || c.Services.ControlPlaneInternalToken == "axi-development-internal-token" {
+			return fmt.Errorf("GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN must be injected in production")
 		}
 		if err := validateProductionOrigins(c.CORS.AllowedOrigins); err != nil {
 			return err

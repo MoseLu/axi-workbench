@@ -4,11 +4,17 @@ info:
   version: 1.0.0
   description: |
     DevHub / Axi Mobile stage-B machine-readable contract for the mobile
-    client. Every mobile write path accepts a uniform six-field contract
+    client. Project actions use a uniform six-field contract
     (idempotencyKey, projectId, actionType, plus deviceId from the bearer
     token, auditEvent on the response side, and approvalRef when the route
-    is the approvals-decision endpoint). Destructive actions return
+    is the legacy approvals-decision endpoint). Destructive actions return
     202 with `status: pending_approval` so a paired device does not retry.
+
+    Approval QR scans deliberately use a separate two-step contract: an
+    opaque `axi://approval/scan_*` URI is resolved by the server first, then
+    the client submits only a decision, idempotency key, and the server-bound
+    handoff correlation id. Project, action, and approval identifiers never
+    come from the scanner client.
 
     This spec is intentionally hand-written so we do not introduce a
     zod-to-json-schema dependency just to render the contract. The
@@ -25,6 +31,8 @@ tags:
     description: Read-only workspace projection endpoints
   - name: jobs
     description: Mobile job creation, cancellation, and approval bridging
+  - name: approvals
+    description: Server-resolved domain approval scans and cross-surface handoff
 paths:
   /mobile/v1/pair/start:
     post:
@@ -245,8 +253,10 @@ paths:
   /mobile/v1/approvals/{id}/decision:
     post:
       tags: [jobs]
-      summary: Approve or reject a pending mobile approval
-      operationId: decideMobileApproval
+      summary: Legacy direct approval decision (migration only)
+      description: New mobile clients must use the server-resolved approval-scan routes instead.
+      operationId: decideLegacyMobileApproval
+      deprecated: true
       security:
         - bearerAuth: []
       parameters:
@@ -260,7 +270,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MobileApprovalDecision'
+              $ref: '#/components/schemas/LegacyMobileApprovalDecision'
       responses:
         '200':
           description: Decision applied
@@ -274,6 +284,79 @@ paths:
           $ref: '#/components/responses/NotFound'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/approval-scans/resolve:
+    post:
+      tags: [approvals]
+      summary: Resolve an opaque domain approval scan on the server
+      operationId: resolveMobileApprovalScan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalScanResolveRequest'
+      responses:
+        '200':
+          description: Current policy-approved preview for explicit user confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalScanPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Approval state changed after the QR code was issued
+        '410':
+          description: Approval scan expired
+  /mobile/v1/approval-scans/{scanId}/decision:
+    post:
+      tags: [approvals]
+      summary: Submit an explicit decision for a server-resolved approval scan
+      operationId: decideMobileApprovalScan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: scanId
+          required: true
+          schema:
+            type: string
+            pattern: '^scan_[A-Za-z0-9_-]{8,}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileApprovalDecision'
+      responses:
+        '200':
+          description: Domain approval decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalScanDecisionResponse'
+        '202':
+          description: C/D decision was handed off to Web rather than executed on Mobile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalScanDecisionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Scan expired or approval state changed before submission
+        '422':
+          description: Decision or handoff correlation is not valid for this scan
 components:
   securitySchemes:
     bearerAuth:
@@ -471,7 +554,7 @@ components:
           description: Stable action identifier projected from the current mobile project card.
         actionType:
           type: string
-    MobileApprovalDecision:
+    LegacyMobileApprovalDecision:
       allOf:
         - $ref: '#/components/schemas/MobileActionRequest'
         - type: object
@@ -488,6 +571,156 @@ components:
               description: |
                 The approvalId of the pending approval; must equal the
                 path parameter.
+    ApprovalScanResolveRequest:
+      type: object
+      required: [scanToken]
+      additionalProperties: false
+      properties:
+        scanToken:
+          type: string
+          pattern: '^scan_[A-Za-z0-9_-]{8,}$'
+          description: Opaque token extracted from axi://approval/scan_*; never a project or approval id.
+    ApprovalScanObject:
+      type: object
+      required: [type, id, projectId, actionId, actionType]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum: [approval]
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        actionId:
+          type: string
+          nullable: true
+        actionType:
+          type: string
+          nullable: true
+    ApprovalScanPreview:
+      type: object
+      required: [ok, scanId, approvalId, object, impact, riskLevel, currentStatus, availableDecisions, expiresAt, handoffCorrelationId]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        scanId:
+          type: string
+          pattern: '^scan_[A-Za-z0-9_-]{8,}$'
+        approvalId:
+          type: string
+        object:
+          $ref: '#/components/schemas/ApprovalScanObject'
+        impact:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        currentStatus:
+          type: string
+          enum: [pending]
+        availableDecisions:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [approved, rejected, handoff]
+        expiresAt:
+          type: string
+          format: date-time
+        handoffCorrelationId:
+          type: string
+          pattern: '^handoff:scan_[A-Za-z0-9_-]{8,}$'
+    MobileApprovalDecision:
+      type: object
+      required: [decision, idempotencyKey, handoffCorrelationId]
+      additionalProperties: false
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected, handoff]
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 200
+          pattern: '^[A-Za-z0-9_-]+$'
+        handoffCorrelationId:
+          type: string
+          pattern: '^handoff:scan_[A-Za-z0-9_-]{8,}$'
+          description: Must equal the correlation identifier returned by this scan preview.
+    HandoffContext:
+      type: object
+      required: [id, handoffCorrelationId, sourceSurface, targetSurface, status, approvalId, object, impact, riskLevel, createdAt]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: '^handoff_[A-Za-z0-9-]{36}$'
+        handoffCorrelationId:
+          type: string
+        sourceSurface:
+          type: string
+          enum: [mobile, web]
+        targetSurface:
+          type: string
+          enum: [mobile, web, specialist]
+        status:
+          type: string
+          enum: [pending, opened, completed, rejected]
+        approvalId:
+          type: string
+          nullable: true
+        object:
+          $ref: '#/components/schemas/ApprovalScanObject'
+        impact:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        createdAt:
+          type: string
+          format: date-time
+        openedAt:
+          type: string
+          format: date-time
+        openedBy:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        finalAction:
+          type: object
+          required: [outcome, performedBy, occurredAt]
+          additionalProperties: false
+          properties:
+            outcome:
+              type: string
+            performedBy:
+              type: string
+            occurredAt:
+              type: string
+              format: date-time
+    ApprovalScanDecisionResponse:
+      type: object
+      required: [ok, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        status:
+          type: string
+          enum: [approved, rejected, handed_off]
+        handoffCorrelationId:
+          type: string
+        handoff:
+          $ref: '#/components/schemas/HandoffContext'
+        approval:
+          type: object
+          additionalProperties: true
     MobileJobAccepted:
       type: object
       required: [ignored, accepted, job]

@@ -13,9 +13,9 @@ in its dedicated tools.
 
 ## Milestone 0: Multi-surface Product Positioning
 
-- Status: Defined — implementation not started
-- Evidence: `docs/state/PRD.md` defines `REQ-POSITION-001`, `REQ-ARCH-001`, `REQ-ACTION-001`, `REQ-REFERENCE-001`, `REQ-SURFACE-001`, `REQ-WEB-001`, `REQ-WEB-002`, `REQ-MOBILE-001`, `REQ-MOBILE-002`, `REQ-CROSS-001`, `REQ-SCAN-001` and `REQ-DELIVERY-001`: Web control-center, Mobile role-execution and professional-tool roles; A/B/C/D action policy; distinct scan semantics; the current four-item Mobile navigation baseline; and the P0–P5 delivery path. `docs/specs/2026-08-09-multi-surface-admin-positioning/MARKET-REFERENCE.md` records bounded official public-product references, while the change directory captures design, task boundary and capability/action-policy template.
-- Exit criteria: a full, auditable inventory (not only the baseline examples in `CAPABILITY-OWNERSHIP.md`) classifies every current user-facing capability by role, execution surface Owner and action level; Web control-center and Mobile execution flows have separately reviewed acceptance scenarios; each dual-surface flow has server-side action policy, authorization/audit and a context-preserving handoff rule.
+- Status: Delivered — P0–P5 implemented on 2026-08-09
+- Evidence: `CAPABILITY-INVENTORY.json` records 17 current Web/Mobile/Host capability groups and is enforced by `pnpm check:capabilities`; Web navigation is grouped by control object and its recognition tool is explicitly non-authorizing; Mobile projects, workspace and search consume the authenticated Control Plane projection and never fall back to static business data; `ApprovalScanPreview` / `MobileApprovalDecision` / `HandoffContext` contracts, Gateway proxying, Control Plane audit tests and `/admin/handoff/:id` implement C/D continuation; DevSvc hosted specialist entries declare Owner, authorization, audit and fallback.
+- Exit criteria: Met for this batch. New user-facing work now updates the machine-checked inventory and retains separate Web/Mobile browser acceptance, Gateway/Control Plane policy tests, and host execution-boundary metadata.
 
 ## Milestone 1: Documentation Baseline
 
@@ -26,13 +26,13 @@ in its dedicated tools.
 ## Milestone 2: Verification Alignment
 
 - Status: In progress
-- Evidence: Web and mobile application type-check / test / build / contract-verifier lanes are maintained separately; `packages/workbench-foundation` owns the shared session and locale boundary; `pnpm --filter @axi/workstation-control-plane smoke` continues to exit 0 with ≥ 35 resources across six layers (last verified 2026-06-11).
+- Evidence: P0–P5 now have concrete type, unit, API, schema, gateway, host, contract, boundary and browser checks; the 2026-08-09 delivery records 1440px Web and 390px Mobile browser observations in `VERIFICATION.md`. `packages/workbench-foundation` still owns only shared session and locale behavior.
 - Exit criteria: every P0/P1 TODO item has at least one concrete test command line, and each REQ has both an `Acceptance Criteria` row in `PRD.md` and a matching test in `TDD.md` / `TODO.md`.
 
 ## Milestone 3: Operational Handoff
 
 - Status: In progress
-- Evidence: `docs/HANDOFF.md` 90-second read order uses AGENTS → README → six-layer SOP → boundary SOP → PRD; the v2 manifest points to a fresh smoke; CHANGELOG records the 2026-08-07 PRD/TDD/TODO refresh.
+- Evidence: `docs/HANDOFF.md` 90-second read order uses AGENTS → README → six-layer SOP → boundary SOP → PRD; `CHANGELOG.md` records the multi-surface implementation and `VERIFICATION.md` contains refreshed browser evidence. A Mobile-to-Web handoff now persists source, target and final action under one correlation id.
 - Exit criteria: CHANGELOG records the doc refresh, `docs/state/VERIFICATION.md` carries the latest browser evidence, and there is no "next milestone" line in production contracts.
 
 ## Milestone 4: Six-Layer Discipline

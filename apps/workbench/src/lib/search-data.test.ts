@@ -3,6 +3,7 @@ import { filterSearchCorpus, SEARCH_CORPUS } from './search-data';
 
 describe('filterSearchCorpus', () => {
   it('matches source-backed navigation titles and descriptions case-insensitively', () => {
+    expect(filterSearchCorpus('通用识别').map((hit) => hit.id)).toEqual(['scan']);
     expect(filterSearchCorpus('扫码').map((hit) => hit.id)).toEqual(['scan']);
     expect(filterSearchCorpus('工作台').map((hit) => hit.id)).toEqual(['dashboard', 'notifications']);
   });

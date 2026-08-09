@@ -43,6 +43,7 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | Workstation control plane | `services/control-plane` | `pnpm --filter @axi/workstation-control-plane test`, `pnpm --filter @axi/workstation-control-plane smoke` |
 | Communication gateway | `services/communication-gateway` | `pnpm --filter @axi/workstation-communication-gateway test` |
 | Workstation contracts | `packages/schemas` | `pnpm --filter @axi/workstation-contracts test` |
+| 能力台账准入 | `docs/specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-INVENTORY.json` | `pnpm check:capabilities`；`pnpm check:boundaries` 会重复执行该门禁 |
 | Desktop host | `apps/devsvc-dashboard` | `pnpm --dir apps/devsvc-dashboard typecheck` |
 | Axi Coder | `apps/axi-coder` | `pnpm --dir apps/axi-coder typecheck` |
 | Verification Inbox | `apps/verification-inbox` | `npm --prefix apps/verification-inbox run typecheck` |
@@ -57,13 +58,13 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | PRD requirement | 静态/自动验证 | 产品验收（实施对应阶段时） |
 | --- | --- | --- |
 | REQ-POSITION-001 / REQ-ARCH-001 / REQ-SURFACE-001 | 运行文档追溯检查；核对 PRD、source catalog、apps guidance 与 Host 注册表的产品角色一致。 | 管理员能从产品说明区分 Web 控制中心、Mobile 角色执行端、Host/垂直工具和共享底座，不把 Host 当用户后台。 |
-| REQ-ACTION-001 | 审查新能力对应的 `CAPABILITY-OWNERSHIP.md` 是否包含角色、A/B/C/D 等级、允许表面、动作政策和交接。 | 通过评审的能力能解释为何该动作留在 Web、由 Mobile 闭环或进入专业工具；C/D 级不因 viewport 而绕过边界。 |
+| REQ-ACTION-001 | `pnpm check:capabilities` 检查当前台账的允许动作、角色、A/B/C/D、Owner、授权、重验、幂等、审计、交接与不支持端。 | 通过评审的能力能解释为何该动作留在 Web、由 Mobile 闭环或进入专业工具；C/D 级不因 viewport 而绕过边界。 |
 | REQ-REFERENCE-001 | 检查 `MARKET-REFERENCE.md` 是否保留官方来源、研究日期、可迁移推导与非推导边界。 | 产品评审能分辨“外部产品形态参照”与“Workbench 当前实现/需求”，不把竞品功能清单作为承诺。 |
 | REQ-WEB-001 / REQ-WEB-002 | `node apps/workbench/scripts/verify-ui-contracts.mjs`；Web type-check/test/build。 | 在桌面宽度审查全局导航、筛选/批量/审计等管理任务；不得出现移动底栏或移动壳替代后台结构。 |
 | REQ-MOBILE-001 / REQ-MOBILE-002 | `pnpm --filter @axi/workbench-mobile verify:contracts`；Mobile type-check/test/build。 | 在 390px 审查 Home / Projects / Workspace / Me 四个常驻导航项与顶部 Scan 动作；Mobile 写操作只有在 B 级动作政策允许时才出现，并在线复核服务端状态；不出现 C 级组织管理表单。 |
-| REQ-CROSS-001 | 共享 foundation 改动时运行 `pnpm --filter @axi/workbench-foundation type-check` 与双端验证；合同/边界改动运行 `pnpm check:boundaries`。 | 每个双端工作流确认服务端权威状态、动作政策、授权/审计事件、Web 交接上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`。 |
-| REQ-SCAN-001 | 为 Web 通用识别与移动审批确认分别保留合同/单元/E2E 用例；禁止共用模糊断言。 | 验证 Web 扫码可读取与处理结果，移动顶部 Scan 只在已授权审批交易中提交确认；身份/配对流程有独立入口，且两个失败提示可区分。 |
-| REQ-DELIVERY-001 | 评审每项新能力的台账是否按 `CAPABILITY-OWNERSHIP.md` 记录角色、动作等级、端归属、允许动作、动作政策、数据授权、审计/交接关联、验收和复核。 | 未完成并复核台账的能力不得进入开发验收。 |
+| REQ-CROSS-001 | 运行 schemas、Control Plane、Gateway 与 `pnpm check:boundaries`；Control Plane 测试覆盖过期/越权字段、关联标识不匹配、幂等重放、C/D 交接和 Web 最终化。 | 每个双端工作流确认服务端权威状态、动作政策、授权/审计事件、Web 交接上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`。 |
+| REQ-SCAN-001 | Web 通用识别、Mobile 领域审批扫码和 Identity 网页登录确认分别有路由/合同/单元测试；禁止共用模糊断言。 | 验证 Web 仅识别、展示、复制或转交结果；Mobile 顶部 Scan 只接受 `axi://approval/scan_*`，Identity 登录确认只从独立入口完成。 |
+| REQ-DELIVERY-001 | `pnpm check:capabilities` 与 `pnpm check:boundaries` 必须通过；评审每项新能力的台账。 | 未完成并复核台账的能力不得进入开发验收。 |
 
 ## Verification Commands
 
@@ -75,6 +76,7 @@ pnpm install
 
 # 2) Workspace graph + boundaries
 node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate
+pnpm check:capabilities
 pnpm check:boundaries
 
 # 3) Whole-repo default checks

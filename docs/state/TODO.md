@@ -9,13 +9,13 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
   - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
   - Test: `rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
 
-- [ ] REQ-POSITION-001 / REQ-ARCH-001 / REQ-ACTION-001 / REQ-SURFACE-001: Create a capability, route and action-policy ownership inventory before the next user-facing implementation batch.
+- [x] REQ-POSITION-001 / REQ-ARCH-001 / REQ-ACTION-001 / REQ-SURFACE-001: Create a capability, route and action-policy ownership inventory before the next user-facing implementation batch.
   - Test: every existing and proposed user-facing capability follows `docs/specs/<change-id>/CAPABILITY-OWNERSHIP.md` and identifies its task role, A/B/C/D action level, execution-surface Owner (Web control center / Mobile role execution / actual vertical tool), any separate Host/discovery entry, allowed action, server-side policy/authority, audit/handoff association, acceptance, reviewer, and reason it is not duplicated on another surface.
 
 - [ ] REQ-REFERENCE-001: Keep external multi-end references bounded and traceable during design review.
   - Test: `MARKET-REFERENCE.md` links each public observation to an official source, labels the product inference, and states what the source does not prove about Workbench or the reference product's internal implementation.
 
-- [ ] REQ-SCAN-001: Separate the names and acceptance suites for the two scan flows.
+- [x] REQ-SCAN-001: Separate the names and acceptance suites for the two scan flows.
   - Test: Web "通用识别与结果处理" and Mobile "审批扫码确认" have separate permission expectations, test fixtures, audit assertions, and failure messages; Mobile's top Scan action does not silently absorb identity-login or device-pairing flows.
 
 - [ ] REQ-VERIFY-002: Keep both user-app UI contract verifiers, type-checks, tests, and builds green.
@@ -24,16 +24,16 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-CONTROLPLANE-001: Keep the control-plane smoke and six-layer snapshot green.
   - Test: `pnpm --filter @axi/workstation-control-plane smoke` exits 0 and reports ≥ 35 resources across the six layers.
 
-- [ ] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
+- [x] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
   - Test: `pnpm check:boundaries` exits 0; `docs/rules/axi-workbench-boundary-sop.md` and `scripts/check-workbench-boundaries.mjs` remain in sync; `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` reports ok.
 
-- [ ] REQ-WORKBENCH-001: Keep exactly two formal user applications in `apps/`: Web admin and mobile.
+- [x] REQ-WORKBENCH-001: Keep exactly two formal user applications in `apps/`: Web admin and mobile.
   - Test: `apps/workbench` and `apps/workbench-mobile` both exist; `apps/web-portal` is absent or archived; PRD/TDD/CHANGELOG state that neither app is a viewport branch of the other.
 
-- [ ] REQ-WEB-001 / REQ-WEB-002: Define and implement the desktop-first Web management information architecture.
+- [x] REQ-WEB-001 / REQ-WEB-002: Define and implement the desktop-first Web management information architecture.
   - Test: browser review at desktop width covers global overview, cross-project filtering, complex configuration, audit/history and batch actions without mobile navigation components; the Web UI contract verifier remains green.
 
-- [ ] REQ-MOBILE-001 / REQ-MOBILE-002: Make Mobile a bounded role-execution surface and align navigation terminology.
+- [x] REQ-MOBILE-001 / REQ-MOBILE-002: Make Mobile a bounded role-execution surface and align navigation terminology.
   - Test: 390px browser review shows Home / Projects / Workspace / Me as four persistent items and Scan as a top action; C-level organization configuration and full audit/export are unavailable or explicitly handed off to Web; every Mobile write action is a policy-approved B-level single-object action with online server-state recheck.
 
 ## P1
@@ -62,7 +62,7 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
   - Test: each `docs/logs/submit/<batch-id>.md` is cited in the latest MILESTONE entry, and the linked deliverable evidence is current.
 
-- [ ] REQ-CROSS-001 / REQ-DELIVERY-001: Add cross-device continuity only after a capability has an explicit ownership and action-policy record.
+- [x] REQ-CROSS-001 / REQ-DELIVERY-001: Add cross-device continuity only after a capability has an explicit ownership and action-policy record.
   - Test: each dual-surface flow has a shared business object identifier, action-level/authority declaration, server-side authorization/audit evidence, a `handoff correlation id` recorded at source, target and final action, and a context-preserving handoff to Web when Mobile cannot complete it.
 
 ## P2

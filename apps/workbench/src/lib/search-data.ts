@@ -22,7 +22,7 @@ export const SEARCH_CORPUS: SearchHit[] = [
   { id: 'notifications', kind: 'utility', title: '通知中心', subtitle: '工作台提醒', path: '/admin/me/notifications' },
   { id: 'menu', kind: 'utility', title: '菜单配置', subtitle: '导航入口管理', path: '/admin/settings/menu' },
   { id: 'roles', kind: 'utility', title: '角色权限', subtitle: '权限事实源', path: '/admin/settings/role' },
-  { id: 'scan', kind: 'utility', title: '扫码', subtitle: '摄像头与二维码识别', path: '/admin/scan' },
+  { id: 'scan', kind: 'utility', title: '通用识别', subtitle: '摄像头、二维码识别与结果处理（支持扫码）', path: '/admin/scan' },
 ];
 
 export const SEARCH_SECTIONS: { key: SearchHitKind; label: string }[] = [

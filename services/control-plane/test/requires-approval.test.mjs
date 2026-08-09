@@ -201,3 +201,81 @@ test("mobile HTTP diagnosis follows pending approval, approval dispatch, and rej
     await close(server);
   }
 });
+
+test("mobile approval scan resolves server-side, rejects forged fields, and hands C-level work to Web", async () => {
+  const { cacheDir, controlPlane, server } = createFixture();
+  await boot(server);
+  try {
+    const owner = await pairedOwner(server);
+    const initial = await fetchJson(server, "POST", "/mobile/v1/jobs", {
+      headers: owner.headers,
+      body: { idempotencyKey: "mobile_http_scan_00001", projectId: "sample-app", actionId: "diagnose", actionType: "project_diagnosis" },
+    });
+    // The mobile caller cannot choose an action level. Persist the higher level
+    // on the approval record as the server-side policy source of truth.
+    const approval = controlPlane.snapshot().approvals.find((item) => item.id === initial.body.approvalId);
+    approval.actionLevel = "C";
+    writeFileSync(join(cacheDir, "approvals", `${initial.body.approvalId}.json`), JSON.stringify(approval));
+    const created = controlPlane.createApprovalScan({ approvalId: initial.body.approvalId });
+    assert.equal(created.ok, true);
+
+    const malformedResolve = await fetchJson(server, "POST", "/mobile/v1/approval-scans/resolve", {
+      headers: owner.headers,
+      body: { scanToken: created.scanId, projectId: "forged" },
+    });
+    assert.equal(malformedResolve.status, 400);
+
+    const preview = await fetchJson(server, "POST", "/mobile/v1/approval-scans/resolve", {
+      headers: owner.headers,
+      body: { scanToken: created.scanId },
+    });
+    assert.equal(preview.status, 200);
+    assert.deepEqual(preview.body.availableDecisions, ["handoff", "rejected"]);
+
+    const forgedDecision = await fetchJson(server, "POST", `/mobile/v1/approval-scans/${created.scanId}/decision`, {
+      headers: owner.headers,
+      body: {
+        decision: "handoff",
+        idempotencyKey: "mobile_http_scan_forged",
+        handoffCorrelationId: preview.body.handoffCorrelationId,
+        projectId: "forged",
+      },
+    });
+    assert.equal(forgedDecision.status, 400);
+
+    const mismatchedCorrelation = await fetchJson(server, "POST", `/mobile/v1/approval-scans/${created.scanId}/decision`, {
+      headers: owner.headers,
+      body: { decision: "handoff", idempotencyKey: "mobile_http_scan_wrong1", handoffCorrelationId: "handoff:scan_wrong" },
+    });
+    assert.equal(mismatchedCorrelation.status, 422);
+
+    const request = { decision: "handoff", idempotencyKey: "mobile_http_scan_handoff", handoffCorrelationId: preview.body.handoffCorrelationId };
+    const handedOff = await fetchJson(server, "POST", `/mobile/v1/approval-scans/${created.scanId}/decision`, { headers: owner.headers, body: request });
+    assert.equal(handedOff.status, 202);
+    assert.equal(handedOff.body.handoff.handoffCorrelationId, preview.body.handoffCorrelationId);
+    const replay = await fetchJson(server, "POST", `/mobile/v1/approval-scans/${created.scanId}/decision`, { headers: owner.headers, body: request });
+    assert.equal(replay.status, 202);
+    assert.equal(replay.headers["x-idempotency-replay"], "true");
+
+    const internalHeaders = {
+      "X-Axi-Internal-Token": "axi-development-internal-token",
+      "X-Axi-Subject": "owner@example.test",
+    };
+    const opened = await fetchJson(server, "GET", `/internal/web/v1/handoffs/${handedOff.body.handoff.id}`, { headers: internalHeaders });
+    assert.equal(opened.status, 200);
+    assert.equal(opened.body.status, "opened");
+    const completed = await fetchJson(server, "POST", `/internal/web/v1/handoffs/${handedOff.body.handoff.id}`, {
+      headers: internalHeaders,
+      body: { outcome: "completed_in_web_control_center" },
+    });
+    assert.equal(completed.status, 200);
+    assert.equal(completed.body.status, "completed");
+    assert.equal(completed.body.handoffCorrelationId, preview.body.handoffCorrelationId);
+
+    const audit = readAudit(cacheDir);
+    assert.ok(audit.some((event) => event.auditKind === "handoff_created" && event.handoffCorrelationId === preview.body.handoffCorrelationId));
+    assert.ok(audit.some((event) => event.auditKind === "handoff_completed" && event.handoffCorrelationId === preview.body.handoffCorrelationId));
+  } finally {
+    await close(server);
+  }
+});
