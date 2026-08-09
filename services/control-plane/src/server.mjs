@@ -146,6 +146,14 @@ export function createControlPlaneHttpServer({
       url.pathname = url.pathname.replace(/^\/internal\/web\/v1/u, "");
       gatewayWebAuth = true;
     }
+    // The gateway exposes the control-plane snapshot at
+    // `/api/v1/control-plane/snapshot` and rewrites it to the internal web
+    // prefix above.  Handle the rewritten path before the mobile/core
+    // dispatchers; otherwise it falls through to the core 404 despite having
+    // already passed the gateway identity and internal-token checks.
+    if (gatewayWebAuth && req.method === "GET" && url.pathname === "/snapshot") {
+      return sendJson(res, 200, controlPlane.snapshot(), url);
+    }
     // Mobile public traffic reaches this process only through API Gateway.
     // Gateway changes /api/v1/mobile/* to /internal/mobile/v1/* and injects
     // its internal credential.  The historical /mobile/v1/* route remains

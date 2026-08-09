@@ -138,6 +138,31 @@ test("core HTTP accepts /snapshot with the configured coreApiToken bearer", asyn
   assert.ok(body.axiResources || body.resources, "snapshot shape");
 });
 
+test("internal gateway web route accepts /snapshot with its service identity", async () => {
+  const { server } = fixture();
+  const r = await invokeServer(server, {
+    method: "GET",
+    url: "/internal/web/v1/snapshot",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+  });
+  assert.equal(r.status, 200, `expected 200, got ${r.status}: ${r.body}`);
+  const body = JSON.parse(r.body);
+  assert.ok(body.axiResources || body.resources, "snapshot shape");
+});
+
+test("internal gateway web snapshot still rejects missing service identity", async () => {
+  const { server } = fixture();
+  const r = await invokeServer(server, {
+    method: "GET",
+    url: "/internal/web/v1/snapshot",
+    headers: { "x-axi-internal-token": "axi-development-internal-token" },
+  });
+  assert.equal(r.status, 401);
+});
+
 test("core HTTP does not emit Access-Control-Allow-Origin: * for arbitrary origin", async () => {
   const { server } = fixture();
   const r = await invokeServer(server, {

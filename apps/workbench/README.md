@@ -19,7 +19,23 @@ pnpm install   # 首次
 pnpm dev:workbench
 ```
 
-API 代理默认指向 `localhost:8088`（见 `vite.config.ts`）。需登录时先起 api-gateway / auth-service。
+API 代理默认指向 `localhost:8088`（见 `vite.config.ts`）。邮箱登录依赖
+identity-adapter；概览页还依赖 platform-core 与 control-plane。
+
+本地完整登录与概览链路需要同时运行以下服务（各开一个终端）：
+
+```bash
+make dev-identity       # 邮箱验证码与会话身份适配器（8081）
+make dev-platform       # 偏好、租户与项目数据（8082；无数据库时使用内存存储）
+make dev-control-plane  # 工作区快照与调度控制面（8092）
+make dev-gateway        # 浏览器 API 入口（8088；从 .env 的 SMTP_USERNAME 识别本地 owner）
+pnpm dev:workbench      # Web（5173）
+```
+
+`make dev-gateway` 会静默读取仓库根 `.env`。邮箱验证码登录是个人工作台的
+owner-only 能力：`EMAIL_LOGIN_OWNER_EMAIL` 为空时在本地开发脚本中回退到
+`SMTP_USERNAME`，并使用 `EMAIL_LOGIN_SUBJECT`（默认 `audit-user`）作为稳定主体；
+生产环境仍必须显式注入这两个变量。
 
 ## 与其它 apps 的关系
 

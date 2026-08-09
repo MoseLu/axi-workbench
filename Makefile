@@ -1,4 +1,4 @@
-.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
+.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
 
 help:
 	@echo "EPAP - Enterprise Project Automation Platform"
@@ -58,15 +58,19 @@ docker-up:
 docker-down:
 	docker-compose down
 
-# Backend services
+# Backend services. The dev-run scripts load the repository .env without
+# printing secrets and apply the local ports/defaults used by Workbench.
 dev-gateway:
-	cd services/api-gateway && go run cmd/gateway/main.go
+	./services/api-gateway/scripts/dev-run.sh
 
 dev-identity:
-	cd services/identity-adapter && go run ./cmd/identity-adapter
+	./services/identity-adapter/scripts/dev-run.sh
 
 dev-platform:
-	cd services/platform-core && go run ./cmd/platform-core
+	./services/platform-core/scripts/dev-run.sh
+
+dev-control-plane:
+	./services/control-plane/scripts/dev-run.sh
 
 dev-auth:
 	cd services/auth-service && go run cmd/authserver/main.go
