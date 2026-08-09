@@ -4,15 +4,15 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--mpms-sidebar-bg, #ffffff);
-  color: var(--mpms-sidebar-text-primary, #191919);
+  background: var(--axi-layout-sidebar-bg, #ffffff);
+  color: var(--axi-layout-sidebar-text, #191919);
 }
 
 /* Logo 区域：与浅色 chrome 一致 */
 .sidebar .mpms-logo {
-  border-bottom: 1px solid var(--mpms-border-color, rgba(0, 0, 0, 0.06));
+  border-bottom: 1px solid var(--axi-layout-border, rgba(0, 0, 0, 0.06));
   flex-shrink: 0;
-  color: var(--mpms-sidebar-text-primary, #191919);
+  color: var(--axi-layout-sidebar-text, #191919);
   font-weight: var(--axi-font-weight-bold, 700);
   font-size: var(--axi-font-size-md, 16px);
   letter-spacing: 0;
@@ -22,7 +22,7 @@
 
 .sidebar .mpms-logo__text,
 .sidebar .mpms-logo__icon {
-  color: var(--mpms-sidebar-text-primary, #191919);
+  color: var(--axi-layout-sidebar-text, #191919);
 }
 
 /* ========== Menu Scroll Area ========== */
@@ -31,7 +31,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--axi-space-2, 8px) 0 16px;
-  background: var(--mpms-sidebar-bg, #ffffff);
+  background: var(--axi-layout-sidebar-bg, #ffffff);
 }
 
 .sidebar__menu::-webkit-scrollbar {
@@ -59,24 +59,24 @@
   padding-bottom: 0;
   padding-left: calc(20px + (var(--mpms-menu-level, 0) * var(--axi-space-4, 16px)));
   border-radius: 0;
-  color: var(--mpms-sidebar-text-secondary, #52525b);
+  color: var(--axi-nav-text-muted, #52525b);
   font-size: var(--axi-font-size-sm, 14px);
   transition: color 0.15s, background-color 0.15s;
 }
 
 .sidebar__menu .mpms-menu__item:hover {
-  background: var(--mpms-sidebar-hover-bg, rgba(0, 0, 0, 0.04));
-  color: var(--mpms-sidebar-text-primary, #191919);
+  background: var(--axi-nav-surface-hover, rgba(0, 0, 0, 0.04));
+  color: var(--axi-layout-sidebar-text, #191919);
 }
 
 .sidebar__menu .mpms-menu__item.is-active {
   background: var(--color-brand-subtle, rgba(65, 101, 215, 0.12));
-  color: var(--mpms-primary-color, #4165d7);
+  color: var(--axi-primary, #4165d7);
   font-weight: var(--axi-font-weight-medium, 500);
 }
 
 .sidebar__menu .mpms-menu__item.is-active .mpms-menu__item-icon {
-  color: var(--mpms-primary-color, #4165d7);
+  color: var(--axi-primary, #4165d7);
 }
 
 /* 子菜单保持层级字号，但选中背景仍铺满整行 */

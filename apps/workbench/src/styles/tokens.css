@@ -201,22 +201,4 @@
   --color-navy: var(--palette-navy);
 
   /* Legacy aliases kept only for page-level compatibility during migration. */
-  --mpms-layout-bg: var(--axi-layout-canvas, var(--color-bg-page));
-  --mpms-sidebar-bg: var(--axi-layout-sidebar-bg, var(--axi-bg-sidebar, var(--color-bg-card)));
-  --mpms-header-bg: var(--axi-layout-chrome-bg, var(--color-bg-card));
-  --mpms-topbar-bg: var(--axi-layout-chrome-bg, var(--color-bg-card));
-  --mpms-tabbar-bg: var(--axi-layout-chrome-bg, var(--color-bg-card));
-  --mpms-content-bg: var(--axi-layout-surface, var(--color-bg-page));
-  --mpms-content-elevated: var(--axi-bg-elevated, var(--color-bg-card));
-  --mpms-right-sidebar-bg: var(--axi-bg-surface, var(--color-bg-card));
-  --mpms-border-color: var(--axi-layout-border, var(--color-divider));
-  --mpms-topbar-border-color: var(--axi-layout-border, var(--color-divider));
-  --mpms-primary-color: var(--axi-primary, var(--color-brand));
-  --mpms-text-primary: var(--axi-text, var(--color-ink-strong));
-  --mpms-text-secondary: var(--axi-text-secondary, var(--color-ink-muted));
-  --mpms-text-tertiary: var(--axi-text-muted, var(--color-placeholder));
-  --mpms-hover-bg: var(--axi-layout-hover, var(--color-bg-subtle));
-  --mpms-sidebar-text-primary: var(--axi-layout-sidebar-text, var(--color-ink-strong));
-  --mpms-sidebar-text-secondary: var(--axi-nav-text-muted, var(--color-ink-muted));
-  --mpms-sidebar-hover-bg: var(--axi-nav-surface-hover, var(--color-bg-subtle));
 }

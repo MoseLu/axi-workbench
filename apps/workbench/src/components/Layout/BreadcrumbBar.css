@@ -4,7 +4,7 @@
   align-items: center;
   height: 34px;
   padding: 0 var(--axi-space-4, 16px);
-  background: var(--mpms-tabbar-bg, #ffffff);
+  background: var(--axi-layout-chrome-bg, #ffffff);
   flex-shrink: 0;
   user-select: none;
 }
@@ -19,7 +19,7 @@
 
 /* Separator */
 .app-breadcrumb__sep {
-  color: var(--mpms-text-tertiary, rgba(0, 0, 0, 0.32));
+  color: var(--axi-text-muted, rgba(0, 0, 0, 0.32));
   margin: 0 var(--axi-space-2, 8px);
   font-size: var(--axi-font-size-xs, 12px);
 }
@@ -34,7 +34,7 @@
   border: none;
   border-radius: var(--axi-radius-sm, 4px);
   background: transparent;
-  color: var(--mpms-text-secondary, #52525b);
+  color: var(--axi-text-secondary, #52525b);
   font-size: var(--axi-font-size-sm, 13px);
   transition: color 0.15s, background-color 0.15s;
   cursor: default;
@@ -50,7 +50,7 @@ button.app-breadcrumb__item {
   display: inline-flex;
   align-items: center;
   font-size: var(--axi-font-size-sm, 13px);
-  color: var(--mpms-text-secondary, #52525b);
+  color: var(--axi-text-secondary, #52525b);
   transition: color 0.15s;
 }
 
@@ -61,28 +61,28 @@ button.app-breadcrumb__item {
 /* Active (last) item — 品牌色 */
 .app-breadcrumb__item.is-active {
   background: transparent;
-  color: var(--mpms-text-primary, #191919);
+  color: var(--axi-text, #191919);
   font-weight: var(--axi-font-weight-medium, 500);
 }
 
 .app-breadcrumb__item.is-active .app-breadcrumb__icon {
-  color: var(--mpms-primary-color, #4165d7);
+  color: var(--axi-primary, #4165d7);
 }
 
 /* Clickable intermediate items */
 .app-breadcrumb__item.is-clickable {
   cursor: pointer;
   background: transparent;
-  color: var(--mpms-text-secondary, #52525b);
+  color: var(--axi-text-secondary, #52525b);
 }
 
 .app-breadcrumb__item.is-clickable:hover {
-  color: var(--mpms-primary-color, #4165d7);
-  background: var(--mpms-hover-bg, rgba(0, 0, 0, 0.04));
+  color: var(--axi-primary, #4165d7);
+  background: var(--axi-layout-hover, rgba(0, 0, 0, 0.04));
 }
 
 .app-breadcrumb__item.is-clickable:focus-visible {
-  outline: 2px solid var(--mpms-primary-color, #4165d7);
+  outline: 2px solid var(--axi-primary, #4165d7);
   outline-offset: 2px;
 }
 
