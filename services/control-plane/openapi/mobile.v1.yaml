@@ -122,6 +122,41 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '503':
           $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/auth/owner-token:
+    post:
+      tags: [pairing]
+      summary: Upgrade a paired device to owner scope using owner proof
+      operationId: issueOwnerToken
+      description: |
+        Out-of-band upgrade path for a trusted paired device to obtain a JWT
+        carrying the `owner` scope. The caller must present the
+        `X-Axi-Owner-Token` header and a freshly signed nonce carrying a
+        valid `ownerProof` computed as HMAC-SHA256(ownerApprovalSecret, nonce).
+        This is the only legal way a mobile bearer can carry the `owner`
+        scope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnerTokenRequest'
+      responses:
+        '200':
+          description: Owner access token issued (TTL 1h)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Owner token header missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileActionError'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
   /mobile/v1/pair/revoke:
     post:
       tags: [pairing]
@@ -438,7 +473,7 @@ components:
           description: Unix epoch seconds (5-minute TTL by default)
     PairConfirmRequest:
       type: object
-      required: [pairingId, code]
+      required: [pairingId, code, ownerApprovalToken]
       additionalProperties: false
       properties:
         pairingId:
@@ -446,6 +481,15 @@ components:
         code:
           type: string
           pattern: '^[0-9]{6}$'
+        ownerApprovalToken:
+          type: string
+          description: |
+            HMAC-SHA256(AXI_OWNER_PAIR_APPROVAL_SECRET, `${pairingId}:${code}`)
+            returned by the owner's side-channel.  Without this token the
+            pairing cannot activate a device; the 6-digit code is treated
+            as a low-entropy shared secret only, never as the sole proof.
+          minLength: 64
+          maxLength: 64
     PairConfirmResponse:
       type: object
       required: [ok, deviceId, status, nonce]
@@ -475,12 +519,15 @@ components:
           type: string
         signatureHex:
           type: string
-          minLength: 64
-          maxLength: 64
-        scopes:
-          type: array
-          items:
-            type: string
+          description: |
+            Ed25519 signature of `nonce` produced with the device private
+            key whose public counterpart was registered during
+            /pair/start.  The previous HMAC-based signature scheme was
+            forgeable because the public key was a symmetric secret; the
+            runtime now requires real Ed25519 SPKI (RFC 8410 §3, OID
+            1.3.101.112).  Length is 128 lowercase hex chars.
+          minLength: 128
+          maxLength: 128
     TokenResponse:
       type: object
       required: [ok, accessToken, expiresAt]
@@ -512,6 +559,47 @@ components:
       properties:
         deviceId:
           type: string
+    OwnerTokenRequest:
+      type: object
+      required: [deviceId, nonceId, nonce, signatureHex, ownerProof]
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+        nonceId:
+          type: string
+        nonce:
+          type: string
+        signatureHex:
+          type: string
+          description: |
+            Ed25519 signature of `nonce` produced with the device private
+            key whose public counterpart was registered during /pair/start.
+          minLength: 128
+          maxLength: 128
+        ownerProof:
+          type: string
+          description: |
+            HMAC-SHA256(ownerApprovalSecret, nonce).  Proves the caller
+            possesses the shared owner-approval secret.  64 lowercase
+            hex chars.
+          minLength: 64
+          maxLength: 64
+
+    OwnerTokenResponse:
+      type: object
+      required: [ok, accessToken, expiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        accessToken:
+          type: string
+          description: HS256 JWT carrying the `owner` scope
+        expiresAt:
+          type: integer
+
     RevokeRequest:
       type: object
       additionalProperties: false
