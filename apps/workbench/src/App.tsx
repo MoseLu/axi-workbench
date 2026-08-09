@@ -22,7 +22,6 @@ import Team from './pages/admin/Team';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import MenuList from './pages/admin/MenuList';
-import UserList from './pages/admin/UserList';
 import RoleList from './pages/admin/RoleList';
 import Handoff from './pages/admin/Handoff';
 import Search from './pages/admin/Search';
@@ -30,7 +29,6 @@ import AccountInfo from './pages/admin/me/AccountInfo';
 import Devices from './pages/admin/me/Devices';
 import Notifications from './pages/admin/me/Notifications';
 import Theme from './pages/admin/me/Theme';
-import MeSettings from './pages/admin/me/Settings';
 import AuthCallback from './pages/AuthCallback';
 import RequireSession from './components/Auth/RequireSession';
 import { AuthProvider } from './contexts/AuthContext';
@@ -87,12 +85,15 @@ const WorkbenchSurface: React.FC = () => {
                     {/* 全局联想搜索二级页 */}
                     <Route path="admin/search" element={<Search />} />
                     {/* 我的：入口 + 二级页 */}
-                    <Route path="admin/me" element={<UserList />} />
-                    <Route path="admin/me/account" element={<AccountInfo />} />
+                    {/* Cool Admin personal center is the canonical account form. */}
+                    <Route path="admin/me" element={<AccountInfo />} />
+                    {/* Preserve old account bookmarks without a second account page. */}
+                    <Route path="admin/me/account" element={<Navigate to="/admin/me" replace />} />
                     <Route path="admin/me/devices" element={<Devices />} />
                     <Route path="admin/me/notifications" element={<Notifications />} />
                     <Route path="admin/me/theme" element={<Theme />} />
-                    <Route path="admin/me/settings" element={<MeSettings />} />
+                    {/* Retired settings table: preserve old bookmarks without rendering a duplicate settings page. */}
+                    <Route path="admin/me/settings" element={<Navigate to="/admin/me/theme" replace />} />
                     <Route path="admin/settings/menu" element={<MenuList />} />
                     <Route path="admin/settings/user" element={<Navigate to="/admin/me" replace />} />
                     <Route path="admin/settings/role" element={<RoleList />} />

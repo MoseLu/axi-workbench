@@ -34,6 +34,7 @@ const AccountInfo: React.FC = () => {
       setAvatarDataUrl(next.avatarDataUrl);
     };
 
+    onChange();
     window.addEventListener('wb-profile-changed', onChange);
     return () => window.removeEventListener('wb-profile-changed', onChange);
   }, [user]);
@@ -92,7 +93,11 @@ const AccountInfo: React.FC = () => {
             </div>
           </Form.Item>
 
-          <Form.Item label={t('account.nickname.label')} required>
+          <Form.Item
+            label={t('account.nickname.label')}
+            required
+            rules={[{ message: t('account.nickname.required'), required: true }]}
+          >
             <Input
               autoComplete="nickname"
               placeholder={t('account.nickname.placeholder')}

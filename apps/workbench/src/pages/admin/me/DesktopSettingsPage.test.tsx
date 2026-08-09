@@ -7,8 +7,8 @@ import { DesktopSettingsPage } from './DesktopSettingsPage';
 describe('DesktopSettingsPage', () => {
   it('uses the desktop CRUD split workspace instead of the retired mobile subpage chrome', () => {
     const markup = renderToStaticMarkup(
-      <StaticRouter location="/admin/me/account">
-        <DesktopSettingsPage activeKey="/admin/me/account" title="账号资料">
+      <StaticRouter location="/admin/me/theme">
+        <DesktopSettingsPage activeKey="/admin/me/theme" title="主题外观">
           <div>内容</div>
         </DesktopSettingsPage>
       </StaticRouter>,

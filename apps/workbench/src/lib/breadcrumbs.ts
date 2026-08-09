@@ -102,12 +102,6 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
     icon: 'account',
     parents: [ACCOUNT_PARENT],
   },
-  '/admin/me/account': {
-    label: '账号信息',
-    labelKey: 'nav.crumb.accountInfo',
-    icon: 'account',
-    parents: [ACCOUNT_PARENT, PROFILE_PARENT],
-  },
   '/admin/me/devices': {
     label: '设备管理',
     labelKey: 'nav.crumb.devices',
@@ -123,12 +117,6 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
   '/admin/me/theme': {
     label: '主题外观',
     labelKey: 'nav.crumb.theme',
-    icon: 'settings',
-    parents: [ACCOUNT_PARENT, PROFILE_PARENT],
-  },
-  '/admin/me/settings': {
-    label: '设置',
-    labelKey: 'common.settings.title',
     icon: 'settings',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },

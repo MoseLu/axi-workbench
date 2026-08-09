@@ -372,6 +372,7 @@ const MainLayout: React.FC = () => {
         activeTabKey={activeTab}
         avatarConfig={{
           avatar: <AxiSvgIcon name={axiWorkbenchIconMap.account} size={16} />,
+          description: profile.email,
           imageSrc: resolveAvatarSrc(profile.avatarDataUrl),
           label: displayName,
           menuItems: [
