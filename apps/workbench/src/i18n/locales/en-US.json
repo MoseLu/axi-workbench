@@ -46,5 +46,17 @@
   "notification.category.me": "Account",
   "notification.status.pending": "Pending",
   "notification.status.sent": "Delivered",
-  "notification.status.failed": "Failed"
+  "notification.status.failed": "Failed",
+  "tabbar.nav.back": "Back",
+  "tabbar.nav.reload": "Reload",
+  "tabbar.nav.home": "Home",
+  "tabbar.menu.tooltip": "Tab actions",
+  "tabbar.menu.pin": "Pin tab",
+  "tabbar.menu.unpin": "Unpin tab",
+  "tabbar.menu.closeLeft": "Close left",
+  "tabbar.menu.closeRight": "Close right",
+  "tabbar.menu.closeOther": "Close others",
+  "tabbar.menu.closeAll": "Close all",
+  "tabbar.fullscreen.enter": "Fullscreen content",
+  "tabbar.fullscreen.exit": "Exit fullscreen"
 }

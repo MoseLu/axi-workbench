@@ -46,5 +46,17 @@
   "notification.category.me": "个人",
   "notification.status.pending": "待发送",
   "notification.status.sent": "已送达",
-  "notification.status.failed": "发送失败"
+  "notification.status.failed": "发送失败",
+  "tabbar.nav.back": "后退",
+  "tabbar.nav.reload": "刷新",
+  "tabbar.nav.home": "首页",
+  "tabbar.menu.tooltip": "标签操作",
+  "tabbar.menu.pin": "固定标签",
+  "tabbar.menu.unpin": "取消固定",
+  "tabbar.menu.closeLeft": "关闭左侧",
+  "tabbar.menu.closeRight": "关闭右侧",
+  "tabbar.menu.closeOther": "关闭其他",
+  "tabbar.menu.closeAll": "关闭全部",
+  "tabbar.fullscreen.enter": "内容全屏",
+  "tabbar.fullscreen.exit": "退出全屏"
 }

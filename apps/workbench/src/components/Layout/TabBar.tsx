@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import Icon from '../Icon';
 import { IconButton } from '@epap/ui';
 import type { TabItem } from '@epap/ui';
+import { useI18n } from '../../i18n';
 import './TabBar.css';
 
 interface TabBarProps {
@@ -36,6 +37,7 @@ const TabBar: React.FC<TabBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   // Close menu on outside click
   React.useEffect(() => {
@@ -58,17 +60,17 @@ const TabBar: React.FC<TabBarProps> = ({
       <div className="app-process__op">
         <IconButton
           icon={<Icon name="navigation-back" size={16} />}
-          tooltip="后退"
+          tooltip={t('tabbar.nav.back')}
           onClick={() => onNavigate('back')}
         />
         <IconButton
           icon={<Icon name="actions-refresh" size={16} />}
-          tooltip="刷新"
+          tooltip={t('tabbar.nav.reload')}
           onClick={() => onNavigate('reload')}
         />
         <IconButton
           icon={<Icon name="navigation-home" size={16} />}
-          tooltip="首页"
+          tooltip={t('tabbar.nav.home')}
           onClick={() => onNavigate('home')}
         />
       </div>
@@ -106,7 +108,7 @@ const TabBar: React.FC<TabBarProps> = ({
         <div className="app-process__dropdown-wrap" ref={menuRef}>
           <IconButton
             icon={<Icon name="navigation-tabbar-menu" size={16} />}
-            tooltip="标签操作"
+            tooltip={t('tabbar.menu.tooltip')}
             onClick={() => setMenuOpen(!menuOpen)}
           />
           {menuOpen && (
@@ -116,35 +118,35 @@ const TabBar: React.FC<TabBarProps> = ({
                 onClick={() => { onTogglePin(activeTab); setMenuOpen(false); }}
               >
                 <Icon name="actions-pin" size={14} />
-                <span>{isPinned ? '取消固定' : '固定标签'}</span>
+                <span>{isPinned ? t('tabbar.menu.unpin') : t('tabbar.menu.pin')}</span>
               </div>
               <div
                 className="app-process__dropdown-item"
                 onClick={() => { onCloseLeft(); setMenuOpen(false); }}
               >
                 <Icon name="navigation-left" size={14} />
-                <span>关闭左侧</span>
+                <span>{t('tabbar.menu.closeLeft')}</span>
               </div>
               <div
                 className="app-process__dropdown-item"
                 onClick={() => { onCloseRight(); setMenuOpen(false); }}
               >
                 <Icon name="navigation-right" size={14} />
-                <span>关闭右侧</span>
+                <span>{t('tabbar.menu.closeRight')}</span>
               </div>
               <div
                 className="app-process__dropdown-item"
                 onClick={() => { onCloseOther(); setMenuOpen(false); }}
               >
                 <Icon name="actions-close" size={14} />
-                <span>关闭其他</span>
+                <span>{t('tabbar.menu.closeOther')}</span>
               </div>
               <div
                 className="app-process__dropdown-item"
                 onClick={() => { onCloseAll(); setMenuOpen(false); }}
               >
                 <Icon name="actions-close-border" size={14} />
-                <span>关闭全部</span>
+                <span>{t('tabbar.menu.closeAll')}</span>
               </div>
             </div>
           )}
@@ -153,7 +155,7 @@ const TabBar: React.FC<TabBarProps> = ({
         {/* Fullscreen toggle */}
         <IconButton
           icon={<Icon name={isFullscreen ? 'actions-screen-normal' : 'actions-screen-full'} size={16} />}
-          tooltip={isFullscreen ? '退出全屏' : '内容全屏'}
+          tooltip={isFullscreen ? t('tabbar.fullscreen.exit') : t('tabbar.fullscreen.enter')}
           onClick={onToggleFullscreen}
         />
       </div>
