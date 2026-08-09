@@ -72,7 +72,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
       alignItems: 'center',
       justifyContent: 'center',
       height: '100vh',
-      background: '#0d1117',
+      background: 'var(--axi-bg-page, #0d1117)',
       fontFamily: 'system-ui, sans-serif',
       color: 'white',
     }}>
@@ -88,7 +88,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
       <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px', color: 'white' }}>
         Axi Docs Display
       </h1>
-      <p style={{ color: '#64748b', fontSize: 14, margin: '0 0 36px' }}>
+      <p style={{ color: 'var(--axi-text-muted, #64748b)', fontSize: 14, margin: '0 0 36px' }}>
         请输入中控端分配的设备编号登录
       </p>
 
@@ -104,7 +104,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
       >
         {/* 设备编号 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>
+          <label style={{ fontSize: 13, color: 'var(--axi-text-muted, #94a3b8)', fontWeight: 500 }}>
             设备编号
           </label>
           <input
@@ -129,7 +129,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
 
          {/* 密码 */}
          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-           <label style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>
+           <label style={{ fontSize: 13, color: 'var(--axi-text-muted, #94a3b8)', fontWeight: 500 }}>
              密码
            </label>
            <input
@@ -142,7 +142,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
                padding: '12px 16px',
                fontSize: 16,
                borderRadius: 8,
-               border: `1px solid ${error ? '#ef4444' : 'rgba(255,255,255,0.15)'}`,
+               border: `1px solid ${error ? 'var(--axi-danger, #ef4444)' : 'rgba(255,255,255,0.15)'}`,
                background: 'rgba(255,255,255,0.06)',
                color: 'white',
                outline: 'none',
@@ -173,7 +173,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
             fontWeight: 600,
             borderRadius: 8,
             border: 'none',
-            background: loading ? 'rgba(59,130,246,0.5)' : '#3b82f6',
+            background: loading ? 'rgba(59,130,246,0.5)' : 'var(--axi-primary-hover, #3b82f6)',
             color: 'white',
             cursor: loading ? 'not-allowed' : 'pointer',
             transition: 'background 0.2s',
@@ -200,7 +200,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
         </button>
       </form>
 
-      <p style={{ marginTop: 32, fontSize: 12, color: '#475569', textAlign: 'center', lineHeight: 1.6 }}>
+      <p style={{ marginTop: 32, fontSize: 12, color: 'var(--axi-text-secondary, #475569)', textAlign: 'center', lineHeight: 1.6 }}>
         设备编号和密码由中控端管理员分配；若三轮自动回退都未命中，可进入连接设置手动输入后端地址
       </p>
     </div>

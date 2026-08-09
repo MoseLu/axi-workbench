@@ -241,7 +241,7 @@
   background:
     radial-gradient(circle at 12% 10%, rgba(29, 78, 216, 0.12), transparent 45%),
     radial-gradient(circle at 90% 5%, rgba(14, 165, 165, 0.12), transparent 40%),
-    linear-gradient(180deg, #f8f7f4 0%, #eef1f6 100%);
+    linear-gradient(180deg, var(--axi-bg-elevated, #f8f7f4) 0%, var(--axi-bg-elevated, #eef1f6) 100%);
 }
 
 .side-nav {

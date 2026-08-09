@@ -216,7 +216,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
   return (
     <div style={{
       height: '100vh',
-      background: '#0d1117',
+      background: 'var(--axi-bg-page, #0d1117)',
       color: 'white',
       fontFamily: 'system-ui, sans-serif',
       display: 'flex',
@@ -268,7 +268,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
           gap: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, color: '#94a3b8' }}>当前后端</span>
+            <span style={{ fontSize: 13, color: 'var(--axi-text-muted, #94a3b8)' }}>当前后端</span>
             <StatusBadge
               phase={backendDiscovery.phase}
               autoResolved={backendDiscovery.autoResolved}
@@ -291,7 +291,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
             flexDirection: 'column',
             gap: 10,
           }}>
-            <span style={{ fontSize: 13, color: '#f59e0b' }}>自动回退均未命中，请手动输入后端地址</span>
+            <span style={{ fontSize: 13, color: 'var(--axi-warning, #f59e0b)' }}>自动回退均未命中，请手动输入后端地址</span>
             <input
               type="text"
               value={inputValue}
@@ -372,13 +372,13 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
             display: 'grid',
             gap: 6,
             fontSize: 12,
-            color: '#64748b',
+            color: 'var(--axi-text-muted, #64748b)',
           }}>
             {savedManualUrl && (
-              <div>手动地址: <span style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{savedManualUrl}</span></div>
+              <div>手动地址: <span style={{ fontFamily: 'monospace', color: 'var(--axi-text-muted, #94a3b8)' }}>{savedManualUrl}</span></div>
             )}
             {lastSuccessfulUrl && (
-              <div>最近成功: <span style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{lastSuccessfulUrl}</span></div>
+              <div>最近成功: <span style={{ fontFamily: 'monospace', color: 'var(--axi-text-muted, #94a3b8)' }}>{lastSuccessfulUrl}</span></div>
             )}
           </div>
         )}

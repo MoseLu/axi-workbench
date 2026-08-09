@@ -99,8 +99,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-project-card__mark, .axi-mobile-message__mark, .axi-mobile-search-result__mark { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 39px; height: 39px; border-radius: 13px; color: var(--axi-text-inverse, #fff); font-size: 14px; font-weight: var(--axi-font-weight-bold, 750); }
 .is-blue { background: linear-gradient(140deg, var(--axi-primary, #6c9bff), var(--axi-primary, #406be9)); }
 .is-violet { background: linear-gradient(140deg, var(--axi-accent-magenta, #b28cff), var(--axi-accent-magenta, #7654dd)); }
-.is-amber { background: linear-gradient(140deg, #f1b85d, #d88a35); }
-.is-mint { background: linear-gradient(140deg, #69d3b1, #2a9a7c); }
+.is-amber { background: linear-gradient(140deg, var(--axi-warning, #f1b85d), var(--axi-warning, #d88a35)); }
+.is-mint { background: linear-gradient(140deg, var(--axi-success, #69d3b1), var(--axi-success, #2a9a7c)); }
 .axi-mobile-project-card__body { display: grid; flex: 1; min-width: 0; gap: 4px; }
 .axi-mobile-project-card__body strong, .axi-mobile-search-result strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: var(--axi-font-weight-semibold, 650); }
 .axi-mobile-project-card__body small, .axi-mobile-search-result small { overflow: hidden; color: var(--mobile-muted); text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }

@@ -93,11 +93,11 @@ export default function DisplayImageGrid({ results, onSelect }: Props) {
                 {r.job_name || r.pdf_name || '—'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#94a3b8' }}>
+                <span style={{ fontSize: 13, color: 'var(--axi-text-muted, #94a3b8)' }}>
                   共 {r.totalPages} 页
                 </span>
                 {r.category && (
-                  <span style={{ fontSize: 11, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
+                  <span style={{ fontSize: 11, color: 'var(--axi-text-muted, #64748b)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
                     {r.category}
                   </span>
                 )}

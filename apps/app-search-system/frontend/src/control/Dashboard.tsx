@@ -30,7 +30,7 @@ function ToastContainer() {
         <div key={t.id} style={{
           padding: '10px 18px', borderRadius: 8, fontSize: 14, fontWeight: 500,
           color: 'white', boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-          background: t.type === 'success' ? '#22c55e' : t.type === 'error' ? '#ef4444' : '#3b82f6',
+          background: t.type === 'success' ? 'var(--axi-success, #22c55e)' : t.type === 'error' ? 'var(--axi-danger, #ef4444)' : 'var(--axi-primary-hover, #3b82f6)',
         }}>{t.message}</div>
       ))}
     </div>
@@ -578,7 +578,7 @@ export default function Dashboard() {
           <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', flexShrink: 0 }}>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
               已选 <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{selectedUuids.size}</span> 台
-              （已连接 <span style={{ color: '#22c55e', fontWeight: 600 }}>{selectedConnectedCount}</span> / 共 {totalConnected} 台）
+              （已连接 <span style={{ color: 'var(--axi-success, #22c55e)', fontWeight: 600 }}>{selectedConnectedCount}</span> / 共 {totalConnected} 台）
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               {groups.length} 个产线
@@ -907,7 +907,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {pushLog.map(entry => (
                   <div key={entry.id} style={{ display: 'flex', gap: 8, fontSize: 11, padding: '2px 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ color: entry.ok ? 'var(--accent)' : '#ef4444', fontWeight: 600, minWidth: 60 }}>{entry.action}</span>
+                    <span style={{ color: entry.ok ? 'var(--accent)' : 'var(--axi-danger, #ef4444)', fontWeight: 600, minWidth: 60 }}>{entry.action}</span>
                     <span style={{ color: 'var(--text-secondary)', flex: 1 }}>{entry.target} · {entry.result}</span>
                     <span style={{ color: 'var(--text-secondary)' }}>{entry.time}</span>
                   </div>

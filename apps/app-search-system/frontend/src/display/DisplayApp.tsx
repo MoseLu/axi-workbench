@@ -76,7 +76,7 @@ const IconClipboard = ({ size = 48 }: { size?: number }) => (
   </svg>
 );
 const IconPdf = () => (
-  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#94a3b8" strokeWidth="1.5">
+  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="var(--axi-text-muted, #94a3b8)" strokeWidth="1.5">
     <rect x="6" y="2" width="22" height="30" rx="3"/>
     <path d="M6 8h22M12 14h10M12 20h8" strokeLinecap="round"/>
     <path d="M28 24l6 6v8a2 2 0 01-2 2H10a2 2 0 01-2-2V8a2 2 0 012-2h16" strokeLinecap="round"/>
@@ -536,7 +536,7 @@ function DisplayContent() {
         style={{
           position: 'fixed', top: 0, left: 0,
           width: '100vw', height: '100vh',
-          background: '#000',
+          background: 'var(--axi-text, #000)',
           cursor: 'pointer', zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
@@ -554,7 +554,7 @@ function DisplayContent() {
             background: 'rgba(0,0,0,0.7)', zIndex: 10, flexDirection: 'column', gap: 12,
           }}>
             <div style={{ color: 'white', fontSize: 18 }}>正在加载 SOP...</div>
-            <div style={{ color: '#64748b', fontSize: 13 }}>{currentJob}</div>
+            <div style={{ color: 'var(--axi-text-muted, #64748b)', fontSize: 13 }}>{currentJob}</div>
           </div>
         )}
         <iframe
@@ -591,7 +591,7 @@ function DisplayContent() {
         style={{
           position: 'fixed', top: 0, left: 0,
           width: '100vw', height: '100vh',
-          background: '#000', cursor: 'pointer', zIndex: 9999,
+          background: 'var(--axi-text, #000)', cursor: 'pointer', zIndex: 9999,
           userSelect: 'none',
           overflow: 'hidden',
           overscrollBehavior: 'none',
@@ -717,7 +717,7 @@ function DisplayContent() {
     const shouldShowRecentHistory = !query.trim() || (!loading && results.length === 0);
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'system-ui, sans-serif', background: '#0d1117' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'system-ui, sans-serif', background: 'var(--axi-bg-page, #0d1117)' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '12px 24px',
@@ -784,7 +784,7 @@ function DisplayContent() {
               }}>
                 <div>
                   <div style={{ color: 'white', fontSize: 18, fontWeight: 700 }}>最近查看</div>
-                  <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>
+                  <div style={{ color: 'var(--axi-text-muted, #64748b)', fontSize: 13, marginTop: 4 }}>
                     直接重开之前显示过的 SOP，不用重新搜索
                   </div>
                 </div>
@@ -877,7 +877,7 @@ function DisplayContent() {
                           {entry.jobName || entry.pdfName || '未命名 SOP'}
                         </div>
                         <div style={{
-                          color: '#94a3b8',
+                          color: 'var(--axi-text-muted, #94a3b8)',
                           fontSize: 12,
                           minHeight: 18,
                           marginBottom: 10,
@@ -891,7 +891,7 @@ function DisplayContent() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          color: '#64748b',
+                          color: 'var(--axi-text-muted, #64748b)',
                           fontSize: 12,
                         }}>
                           <span>{formatHistoryTime(entry.viewedAt)}</span>
@@ -909,9 +909,9 @@ function DisplayContent() {
 
           {results.length > 0 ? (
             <>
-              <div style={{ color: '#64748b', marginBottom: 20, fontSize: 14 }}>
-                找到 <strong style={{ color: '#94a3b8' }}>{results.length}</strong> 个页面，
-                按 PDF 合并为 <strong style={{ color: '#94a3b8' }}>
+              <div style={{ color: 'var(--axi-text-muted, #64748b)', marginBottom: 20, fontSize: 14 }}>
+                找到 <strong style={{ color: 'var(--axi-text-muted, #94a3b8)' }}>{results.length}</strong> 个页面，
+                按 PDF 合并为 <strong style={{ color: 'var(--axi-text-muted, #94a3b8)' }}>
                   {[...new Set(results.map(r => r.pdf_path || r.image_path))].length}
                 </strong> 个 SOP
               </div>
@@ -923,7 +923,7 @@ function DisplayContent() {
           ) : !loading && query ? (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              height: '60vh', color: '#94a3b8', textAlign: 'center',
+              height: '60vh', color: 'var(--axi-text-muted, #94a3b8)', textAlign: 'center',
             }}>
               <div style={{ opacity: 0.4, marginBottom: 16 }}><IconClipboard /></div>
               <p style={{ fontSize: 16 }}>未找到匹配结果</p>
@@ -932,7 +932,7 @@ function DisplayContent() {
           ) : (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              height: '60vh', color: '#94a3b8', textAlign: 'center',
+              height: '60vh', color: 'var(--axi-text-muted, #94a3b8)', textAlign: 'center',
             }}>
               <div style={{ opacity: 0.4, marginBottom: 16 }}><IconClipboard /></div>
               <p style={{ fontSize: 16 }}>输入关键词搜索 SOP</p>
@@ -960,7 +960,7 @@ function DisplayContent() {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', height: '100vh',
-        background: '#0d1117', color: 'white', fontFamily: 'system-ui, sans-serif',
+        background: 'var(--axi-bg-page, #0d1117)', color: 'white', fontFamily: 'system-ui, sans-serif',
       }}>
         {/* 顶部导航栏 */}
         <div style={{
@@ -990,11 +990,11 @@ function DisplayContent() {
           {pushHistoryEntries.length === 0 ? (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', height: '60vh', color: '#64748b',
+              justifyContent: 'center', height: '60vh', color: 'var(--axi-text-muted, #64748b)',
             }}>
               <IconPush />
               <div style={{ fontSize: 16, marginTop: 16 }}>暂无推送历史</div>
-              <div style={{ fontSize: 13, marginTop: 8, color: '#475569' }}>
+              <div style={{ fontSize: 13, marginTop: 8, color: 'var(--axi-text-secondary, #475569)' }}>
                 中控端推送的 SOP 会显示在这里
               </div>
             </div>
@@ -1004,7 +1004,7 @@ function DisplayContent() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 marginBottom: 16,
               }}>
-                <div style={{ fontSize: 15, color: '#94a3b8' }}>
+                <div style={{ fontSize: 15, color: 'var(--axi-text-muted, #94a3b8)' }}>
                   共 {pushHistoryEntries.length} 条推送记录
                 </div>
               </div>
@@ -1060,7 +1060,7 @@ function DisplayContent() {
                         </div>
                         {metaText && (
                           <div style={{
-                            fontSize: 12, color: '#94a3b8', marginBottom: 6,
+                            fontSize: 12, color: 'var(--axi-text-muted, #94a3b8)', marginBottom: 6,
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
                             {metaText}
@@ -1068,7 +1068,7 @@ function DisplayContent() {
                         )}
                         <div style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          color: '#64748b', fontSize: 12,
+                          color: 'var(--axi-text-muted, #64748b)', fontSize: 12,
                         }}>
                           <span>{formatHistoryTime(entry.viewedAt)}</span>
                           <span style={{
@@ -1096,7 +1096,7 @@ function DisplayContent() {
     <div style={{
       display: 'flex', flexDirection: 'column',
       height: '100vh',
-      background: '#0d1117',
+      background: 'var(--axi-bg-page, #0d1117)',
       color: 'white', fontFamily: 'system-ui, sans-serif',
     }}>
       <div style={{
@@ -1111,7 +1111,7 @@ function DisplayContent() {
               padding: '6px 14px',
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8, fontSize: 12, color: '#94a3b8',
+              borderRadius: 8, fontSize: 12, color: 'var(--axi-text-muted, #94a3b8)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontFamily: 'monospace', color: '#fbbf24' }}>{loginData.deviceNumber}</span>
@@ -1122,12 +1122,12 @@ function DisplayContent() {
                     <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.15)' }} />
                     <span style={{
                       width: 8, height: 8, borderRadius: '50%',
-                      background: !backendBaseURL ? '#ef4444' : !connected ? '#f59e0b' : '#22c55e',
+                      background: !backendBaseURL ? 'var(--axi-danger, #ef4444)' : !connected ? 'var(--axi-warning, #f59e0b)' : 'var(--axi-success, #22c55e)',
                       flexShrink: 0,
                     }} />
                   </>
                 )}
-                <span style={{ fontFamily: 'monospace', color: '#94a3b8', fontSize: 11 }}>{backendInfoText}</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--axi-text-muted, #94a3b8)', fontSize: 11 }}>{backendInfoText}</span>
               </div>
               {apiError && !connected && (
                 <div style={{ fontSize: 11, color: '#fca5a5' }}>
@@ -1212,7 +1212,7 @@ function DisplayContent() {
             }}
             style={{
               padding: '4px 16px',
-              background: '#22c55e', color: 'white',
+              background: 'var(--axi-success, #22c55e)', color: 'white',
               border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer',
             }}
           >
@@ -1244,7 +1244,7 @@ function DisplayContent() {
           style={{ width: 400, height: 'auto', marginBottom: 28, opacity: 0.9 }}
         />
         <h1 style={{ fontSize: 28, fontWeight: 700, margin: '0 0 12px', color: 'white' }}>Axi Docs Display</h1>
-        <p style={{ color: '#94a3b8', marginBottom: 28, fontSize: 15 }}>
+        <p style={{ color: 'var(--axi-text-muted, #94a3b8)', marginBottom: 28, fontSize: 15 }}>
           等待中控端推送指令，或手动搜索浏览
         </p>
 
@@ -1283,7 +1283,7 @@ function DisplayContent() {
             <IconPush /> 推送历史
             <span style={{
               padding: '2px 8px',
-              background: '#22c55e', color: 'white',
+              background: 'var(--axi-success, #22c55e)', color: 'white',
               borderRadius: 10, fontSize: 12,
             }}>
               {recentHistory.filter(e => e.source === 'push').length}

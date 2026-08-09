@@ -359,7 +359,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
           position: 'fixed', top: 60, right: 24, zIndex: 9999,
           padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 500,
           color: 'white', maxWidth: 360,
-          background: toastMsg.type === 'success' ? '#22c55e' : '#ef4444',
+          background: toastMsg.type === 'success' ? 'var(--axi-success, #22c55e)' : 'var(--axi-danger, #ef4444)',
           boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
         }}>
           {toastMsg.text}
@@ -407,7 +407,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
 
         <button
           onClick={() => { setBatchPwdDialogOpen(true); setBatchPwd(''); }}
-          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 6, color: '#f59e0b', fontWeight: 600 }}>
+          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 6, color: 'var(--axi-warning, #f59e0b)', fontWeight: 600 }}>
           统一修改密码
         </button>
 
@@ -499,7 +499,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
                       showToast('创建设备失败: ' + (e as Error).message, 'error');
                     }
                   }}
-                  style={{ padding: '6px 16px', fontSize: 13, background: '#3b82f6', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
+                  style={{ padding: '6px 16px', fontSize: 13, background: 'var(--axi-primary-hover, #3b82f6)', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
                   创建
                 </button>
               </div>
@@ -564,7 +564,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
                 </button>
                 <button
                   onClick={() => void handleBatchCreate()}
-                  style={{ padding: '6px 16px', fontSize: 13, background: '#10b981', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
+                  style={{ padding: '6px 16px', fontSize: 13, background: 'var(--axi-success, #10b981)', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
                   批量创建
                 </button>
               </div>
@@ -611,7 +611,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
                       void fetchAll();
                     } catch (e) { void showToast('修改失败: ' + (e as Error).message, 'error'); }
                   }}
-                  style={{ padding: '6px 16px', fontSize: 13, background: '#f59e0b', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
+                  style={{ padding: '6px 16px', fontSize: 13, background: 'var(--axi-warning, #f59e0b)', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
                   确认修改
                 </button>
               </div>
@@ -654,7 +654,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => void handleCopyInstallSheet()}
-                style={{ padding: '6px 16px', fontSize: 13, background: '#3b82f6', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
+                style={{ padding: '6px 16px', fontSize: 13, background: 'var(--axi-primary-hover, #3b82f6)', border: 'none', borderRadius: 6, cursor: 'pointer', color: 'white', fontWeight: 600 }}>
                 复制清单
               </button>
               <button
@@ -748,9 +748,9 @@ export default function DeviceManagement({ maximized = false }: Props) {
                   </td>
                   <td style={{ padding: '6px 10px', textAlign: 'center', borderTop: 'none', border: '1px solid var(--border)' }}>
                     {(d.uuid || '').startsWith('pending:') ? (
-                      <span style={{ fontSize: 12, color: '#94a3b8' }}>待绑定</span>
+                      <span style={{ fontSize: 12, color: 'var(--axi-text-muted, #94a3b8)' }}>待绑定</span>
                     ) : (
-                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#64748b' }} title={d.uuid}>{d.uuid.slice(0, 12)}…</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--axi-text-muted, #64748b)' }} title={d.uuid}>{d.uuid.slice(0, 12)}…</span>
                     )}
                   </td>
                   <td style={{ padding: '6px 10px', textAlign: 'center', borderTop: 'none', border: '1px solid var(--border)' }}>
@@ -785,7 +785,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: 4, justifyContent: 'center', alignItems: 'center' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: 12, color: d.device_password ? '#f59e0b' : 'var(--text-secondary)' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: 12, color: d.device_password ? 'var(--axi-warning, #f59e0b)' : 'var(--text-secondary)' }}>
                           {d.device_password || '—'}
                         </span>
                         {maximized && (

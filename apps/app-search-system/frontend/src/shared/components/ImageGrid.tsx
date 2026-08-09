@@ -168,7 +168,7 @@ export default function ImageGrid({ results, onSelect, selectable, selected, pre
                 cursor: 'pointer',
                 borderRadius: 4,
                 overflow: 'hidden',
-                border: idx === viewerPageIdx ? '2px solid var(--accent, #3b82f6)' : '2px solid transparent',
+                border: idx === viewerPageIdx ? '2px solid var(--accent, var(--axi-primary-hover, #3b82f6))' : '2px solid transparent',
                 opacity: idx === viewerPageIdx ? 1 : 0.5,
                 transition: 'opacity 0.2s, border 0.2s',
                 flexShrink: 0,
@@ -204,7 +204,7 @@ export default function ImageGrid({ results, onSelect, selectable, selected, pre
               onClick={() => onSelect?.(r)}
               onDoubleClick={() => previewOnSelect && openViewer(r)}
               style={{
-                border: selectable && isSelected ? '3px solid var(--accent, #3b82f6)' : '2px solid var(--border)',
+                border: selectable && isSelected ? '3px solid var(--accent, var(--axi-primary-hover, #3b82f6))' : '2px solid var(--border)',
                 borderRadius: 10, overflow: 'hidden', cursor: onSelect ? 'pointer' : 'default',
                 position: 'relative', transition: 'all 0.2s',
                 background: 'var(--bg-tertiary)',
@@ -237,7 +237,7 @@ export default function ImageGrid({ results, onSelect, selectable, selected, pre
                     {r.total_pages !== undefined ? `共 ${r.total_pages} 页` : ''}
                   </span>
                   {r.similarity !== undefined && (
-                    <span style={{ fontSize: 11, color: 'var(--accent, #3b82f6)', fontWeight: 600 }}>
+                    <span style={{ fontSize: 11, color: 'var(--accent, var(--axi-primary-hover, #3b82f6))', fontWeight: 600 }}>
                       {(r.similarity * 100).toFixed(0)}%
                     </span>
                   )}
@@ -252,7 +252,7 @@ export default function ImageGrid({ results, onSelect, selectable, selected, pre
               {isSelected && (
                 <div style={{
                   position: 'absolute', top: 8, right: 8,
-                  background: 'var(--accent, #3b82f6)', color: 'white',
+                  background: 'var(--accent, var(--axi-primary-hover, #3b82f6))', color: 'white',
                   borderRadius: '50%', width: 22, height: 22,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 12, fontWeight: 700,
