@@ -1,11 +1,12 @@
 .wb-crud-page {
   min-height: 100%;
-  padding: 12px 14px 24px;
+  padding: 12px 14px 20px;
   color: var(--axi-text, #f5f7fb);
 }
 
 .wb-crud-page__layout {
   min-height: 100%;
+  gap: 12px;
 }
 
 .wb-crud-page__layout .axi-crud-layout__body > * {
@@ -20,8 +21,19 @@
   gap: 10px;
 }
 
-.wb-crud-page__layout > .axi-crud-row--pagination {
+/* 无 footer 时隐藏空分页行；有 footer 时展示 Cool Admin 底栏 */
+.wb-crud-page__layout > .axi-crud-row--pagination:not(:has(.wb-crud-page__footer, :not(:empty))) {
   display: none;
+}
+
+.wb-crud-page__layout > .axi-crud-row--pagination:has(.axi-crud-layout__footer:empty) {
+  display: none;
+}
+
+.wb-crud-page__layout .axi-crud-layout__footer:not(:empty) {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
 }
 
 .wb-crud-page__context {
@@ -30,19 +42,123 @@
   font-weight: 600;
 }
 
+/* —— Cool Admin 密度：工具栏 —— */
+.wb-crud-page .axi-crud-layout__toolbar {
+  min-height: 40px;
+  gap: 10px;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar-start,
+.wb-crud-page .axi-crud-layout__toolbar-end,
+.wb-crud-page .axi-crud-layout__action-group,
+.wb-crud-page .axi-crud-layout__filter-fields,
+.wb-crud-page .axi-crud-layout__filter-actions {
+  gap: 8px;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-btn {
+  height: 32px;
+  padding-inline: 14px;
+  font-size: 13px;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-select {
+  min-width: 140px;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-input-affix-wrapper,
+.wb-crud-page .axi-crud-layout__toolbar .ant-input {
+  width: 220px;
+  height: 32px;
+}
+
+.wb-crud-action-cluster,
+.wb-crud-search-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-crud-search-cluster .ant-input-affix-wrapper,
+.wb-crud-search-cluster .ant-input {
+  width: 220px;
+}
+
+.wb-crud-page__readonly-hint {
+  color: var(--axi-muted, rgba(255, 255, 255, 0.5));
+  font-size: 12px;
+  line-height: 32px;
+  white-space: nowrap;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
+  height: 32px;
+}
+
+/* —— 表格组 —— */
 .wb-crud-page .axi-table-group,
 .wb-crud-page .axi-filter-group {
   border-color: var(--axi-layout-border, var(--axi-border));
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--axi-layout-surface, var(--axi-bg-surface));
+  overflow: hidden;
 }
 
 .wb-crud-page .axi-table-group__header,
 .wb-crud-page .axi-filter-group__header {
-  min-height: 36px;
+  min-height: 40px;
+  padding-inline: 12px;
+}
+
+.wb-crud-page .axi-table-group__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wb-crud-page .axi-table-group__description {
+  font-size: 12px;
+}
+
+/* 行操作：编辑 / 删除 双按钮密度 */
+.wb-crud-page .axi-table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wb-crud-page .axi-table-action {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 26px;
+  border: 1px solid var(--axi-layout-border, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--axi-text, #f5f7fb);
+  cursor: pointer;
+}
+
+.wb-crud-page .axi-table-action.is-tone-primary {
+  color: var(--axi-color-primary, #3b82f6);
+  border-color: color-mix(in srgb, var(--axi-color-primary, #3b82f6) 45%, transparent);
+}
+
+.wb-crud-page .axi-table-action.is-tone-danger {
+  color: var(--axi-color-danger, #f87171);
+  border-color: color-mix(in srgb, var(--axi-color-danger, #f87171) 40%, transparent);
 }
 
 .wb-crud-page .ant-btn-link {
+  padding-inline: 4px;
+}
+
+/* 表格内分页贴 Cool Admin：右对齐、共 N 条 */
+.wb-crud-page .ant-pagination {
+  margin: 12px 12px 4px !important;
+  justify-content: flex-end;
+}
+
+.wb-crud-page .ant-table-wrapper .ant-table-pagination {
   padding-inline: 4px;
 }
 

@@ -110,12 +110,15 @@ const Dashboard: React.FC = () => {
         </Button>
       )}
     >
-      {error ? (
+      {error && !snapshot ? (
         <ControlPlaneState
-          description="当前无法连接控制面；项目、受管任务和运行环境会在连接恢复后显示。"
+          actionLabel="重新连接"
+          actionLoading={isFetching}
+          description="当前无法连接控制面（默认 http://127.0.0.1:8092）。请确认 control-plane 已启动后点击重新连接。"
           title="概览数据暂不可用"
+          onAction={() => void refetch()}
         />
-      ) : isLoading ? (
+      ) : isLoading && !snapshot ? (
         <ControlPlaneState description="正在从控制面读取概览数据。" loading title="正在同步概览" />
       ) : (
         <div className="dashboard-crud__grid">

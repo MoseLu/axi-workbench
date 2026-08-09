@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Descriptions } from 'antd';
-import { AxiSvgIcon, useAxiTheme } from '@axi/core';
+import { useAxiTheme } from '@axi/core';
 import { AxiTableGroup } from '@axi/crud';
-import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { DesktopSettingsPage } from './me/DesktopSettingsPage';
-import { loadProfile, type UserProfile } from './me/profileStore';
+import { loadProfile, resolveAvatarSrc, type UserProfile } from './me/profileStore';
 import './Me.css';
 
 /** 桌面端个人中心：资料只读取本地 profile，不展示无来源的在线或设备状态。 */
@@ -32,13 +31,11 @@ const UserList: React.FC = () => {
     >
       <AxiTableGroup title="账户资料">
         <div className="wb-me-overview__profile">
-          {profile.avatarDataUrl ? (
-            <img className="wb-me-overview__avatar" src={profile.avatarDataUrl} alt="头像" />
-          ) : (
-            <span aria-label="默认头像" className="wb-me-overview__avatar wb-me-overview__avatar--default">
-              <AxiSvgIcon name={axiWorkbenchIconMap.account} size={22} />
-            </span>
-          )}
+          <img
+            alt="头像"
+            className={`wb-me-overview__avatar${profile.avatarDataUrl ? '' : ' wb-me-overview__avatar--default'}`}
+            src={resolveAvatarSrc(profile.avatarDataUrl)}
+          />
           <div className="wb-me-overview__identity">
             <strong>{profile.nickname}</strong>
             <span>{profile.email}</span>

@@ -13,6 +13,7 @@ const members = [
 ];
 
 vi.mock('@epap/api-client', () => ({
+  useCreateTenant: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useSaveTenantMember: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useTenantMembers: () => ({
     data: members,
@@ -26,6 +27,7 @@ vi.mock('@epap/api-client', () => ({
     isError: false,
     isFetching: false,
     isLoading: false,
+    refetch: vi.fn(async () => ({ data: [], error: null })),
   }),
 }));
 
@@ -63,7 +65,10 @@ describe('RoleList', () => {
     expect(markup).toContain('data-axi="crud-table"');
     expect(markup).toContain('data-axi="upsert"');
     expect(markup).toContain('alice@example.com');
-    expect(markup).toContain('添加成员');
+    // antd 两字按钮中间会插入空格（刷 新 / 新 增 / 搜 索）
+    expect(markup.replace(/\s/g, '')).toContain('刷新');
+    expect(markup.replace(/\s/g, '')).toContain('新增');
+    expect(markup.replace(/\s/g, '')).toContain('搜索');
     expect(markup).not.toContain('当前会话');
     expect(markup).not.toContain('由控制面审批快照提供');
   });

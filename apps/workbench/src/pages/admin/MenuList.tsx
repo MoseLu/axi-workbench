@@ -67,24 +67,38 @@ const MenuList: React.FC = () => {
         ariaLabel="导航入口"
         className="menu-registry"
         search={(
-          <Input
-            allowClear
-            aria-label="搜索菜单"
-            placeholder="搜索菜单名称、分组或路由"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+          <div className="wb-crud-search-cluster">
+            <Input
+              allowClear
+              aria-label="搜索菜单"
+              placeholder="搜索菜单名称、分组或路由"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              onPressEnter={() => undefined}
+            />
+          </div>
+        )}
+        top={(
+          <div className="wb-crud-action-cluster">
+            <span className="wb-crud-page__readonly-hint">只读目录 · 无权威写接口</span>
+          </div>
         )}
       >
         <AxiTableGroup
-          description="入口来自已登记的桌面导航。当前没有权威菜单写接口，因此本页只提供检索、表格偏好和跳转。"
+          description={`显示 ${filteredRows.length} / ${rows.length} 条已登记入口。支持检索、表格偏好与跳转，不提供新增/删除。`}
           title="导航入口"
         >
           <AxiCrudTable
             columns={menuColumns}
             data={filteredRows}
             operationButtons={operationButtons}
-            pagination={false}
+            pagination={{
+              defaultPageSize: 20,
+              hideOnSinglePage: false,
+              pageSizeOptions: ['10', '20', '50'],
+              showSizeChanger: true,
+              showTotal: (total) => `共 ${total} 条`,
+            }}
             rowKey="id"
             rowSelection={false}
             storageKey="axi-workbench:desktop-navigation"

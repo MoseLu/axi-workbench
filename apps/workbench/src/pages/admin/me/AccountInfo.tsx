@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Descriptions, Input, Space, message, type InputRef } from 'antd';
-import { AxiSvgIcon } from '@axi/core';
 import { AxiDialog, AxiTableGroup } from '@axi/crud';
-import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
   loadProfile,
   phoneDisplay,
   readFileAsDataUrl,
+  resolveAvatarSrc,
   saveProfile,
   type UserProfile,
 } from './profileStore';
@@ -111,13 +110,11 @@ const AccountInfo: React.FC = () => {
 
       <AxiTableGroup title="个人资料">
         <div className="wb-account__identity">
-          {profile.avatarDataUrl ? (
-            <img alt="头像" className="wb-account__avatar" src={profile.avatarDataUrl} />
-          ) : (
-            <span aria-label="默认头像" className="wb-account__avatar wb-account__avatar--default">
-              <AxiSvgIcon name={axiWorkbenchIconMap.account} size={24} />
-            </span>
-          )}
+          <img
+            alt="头像"
+            className={`wb-account__avatar${profile.avatarDataUrl ? '' : ' wb-account__avatar--default'}`}
+            src={resolveAvatarSrc(profile.avatarDataUrl)}
+          />
           <div>
             <strong>{profile.nickname}</strong>
             <span>{profile.email}</span>

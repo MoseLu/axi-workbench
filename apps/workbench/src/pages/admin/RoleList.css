@@ -6,3 +6,12 @@
 .authority-status__alert {
   margin: 0;
 }
+
+/* 角色样板页：表格充满内容区，贴近 Cool Admin 数据页 */
+.authority-status .axi-table-group {
+  min-height: min(520px, calc(100vh - 240px));
+}
+
+.authority-status .axi-table-group .ant-table-wrapper {
+  padding-bottom: 4px;
+}

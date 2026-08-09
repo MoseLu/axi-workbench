@@ -1,10 +1,12 @@
 /** 浏览器端个人信息本地存储（localStorage） */
 
+import defaultAvatarSrc from '../../../assets/avatar-me.jpg';
+
 export type UserProfile = {
   nickname: string;
   email: string;
   phone: string;
-  /** data URL 或空 */
+  /** 用户自定义 data URL；空则 UI 使用 DEFAULT_AVATAR_SRC */
   avatarDataUrl: string;
   workbenchId: string;
   registeredAt: string;
@@ -19,6 +21,18 @@ export type ProfileIdentity = {
 };
 
 const KEY = 'wb_user_profile_v1';
+
+/** 产品默认头像（侧栏 / 个人中心 / 账号页统一回退） */
+export const DEFAULT_AVATAR_SRC: string = defaultAvatarSrc;
+
+/**
+ * 解析展示用头像地址：优先用户上传的 data URL，否则回退默认头像。
+ * 不把默认图写入 localStorage，避免与用户清空自定义头像语义混淆。
+ */
+export function resolveAvatarSrc(avatarDataUrl?: string | null): string {
+  const custom = avatarDataUrl?.trim();
+  return custom || DEFAULT_AVATAR_SRC;
+}
 
 const DEFAULT_PROFILE: UserProfile = {
   nickname: '',

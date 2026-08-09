@@ -1,26 +1,76 @@
 import React from 'react';
 import { AxiCrudLayout } from '@axi/crud';
+import type { AxiCrudAction } from '@axi/crud';
 import './DesktopCrudFrame.css';
 
 type DesktopCrudFrameProps = {
+  /** 主区域无障碍标签。 */
   ariaLabel: string;
+  /**
+   * Cool Admin 风格左侧主操作：刷新 / 新增 / 删除 等。
+   * 也可用 `actions` 结构化声明。
+   */
+  toolbar?: React.ReactNode;
+  /** 结构化主操作按钮（渲染在工具栏左侧）。 */
+  actions?: AxiCrudAction[];
+  /** 批量操作区（依赖行选择时展示）。 */
+  bulkActions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /** 筛选字段：组织、类型、状态下拉等。 */
+  filters?: React.ReactNode;
+  /** 底部分页条；不传时使用表格内置分页。 */
+  footer?: React.ReactNode;
+  /** 查询动作：搜索 / 重置。 */
+  queryActions?: React.ReactNode;
+  /** 关键字搜索输入（工具栏右侧）。 */
   search?: React.ReactNode;
-  toolbar?: React.ReactNode;
+  selectionCount?: number;
+  selectionLabel?: React.ReactNode;
+  /** 自定义左侧前置内容（租户切换等）。 */
   top?: React.ReactNode;
 };
 
 /**
- * Web 管理端的通用数据页骨架。
+ * Web 管理端 Cool Admin 风格数据页骨架。
  *
- * 页面只提供 CRUD 工具栏和内容承载区；具体领域内容仍由各路由负责，避免
- * 把移动端的全宽列表样式复制到桌面页面。
+ * 布局约定（对齐 cl-crud）：
+ * - 左：主操作（刷新 / 新增 / 删除）
+ * - 中：筛选字段
+ * - 右：搜索 + 查询按钮
+ * - 中部：表格
+ * - 底：分页（可选）
  */
-export function DesktopCrudFrame({ ariaLabel, children, className = '', search, toolbar, top }: DesktopCrudFrameProps) {
+export function DesktopCrudFrame({
+  actions,
+  ariaLabel,
+  bulkActions,
+  children,
+  className = '',
+  filters,
+  footer,
+  queryActions,
+  search,
+  selectionCount,
+  selectionLabel,
+  toolbar,
+  top,
+}: DesktopCrudFrameProps) {
   return (
     <main aria-label={ariaLabel} className={`wb-crud-page ${className}`.trim()}>
-      <AxiCrudLayout className="wb-crud-page__layout" search={search} toolbar={toolbar} top={top}>
+      <AxiCrudLayout
+        actions={actions}
+        bulkActions={bulkActions}
+        className="wb-crud-page__layout"
+        filters={filters}
+        footer={footer}
+        queryActions={queryActions}
+        search={search}
+        selectionCount={selectionCount}
+        selectionLabel={selectionLabel}
+        toolbar={toolbar}
+        top={top}
+      >
         {children}
       </AxiCrudLayout>
     </main>

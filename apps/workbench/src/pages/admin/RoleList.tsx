@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Input, Select, Space, message } from 'antd';
+import { Button, Input, Select, message } from 'antd';
 import {
   AxiCrud,
   AxiCrudTable,
@@ -11,6 +11,7 @@ import {
   type CrudService,
 } from '@axi/crud';
 import {
+  useCreateTenant,
   useSaveTenantMember,
   useTenantMembers,
   useTenants,
@@ -19,6 +20,7 @@ import {
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';
 import {
+  desktopCrudPagination,
   filterTenantMembers,
   formatTenantMemberTime,
   tenantRoleOptions,
@@ -53,13 +55,14 @@ const memberFormItems: AxiFormItem<TenantMemberRow>[] = [
 ];
 
 const memberColumns: AxiTableColumn<TenantMemberRow>[] = [
+  { alwaysVisible: true, title: '', type: 'selection', width: 48 },
   { alwaysVisible: true, title: '序号', type: 'index', width: 64 },
-  { align: 'left', dataIndex: 'subject', title: '成员标识', width: 300 },
+  { align: 'left', dataIndex: 'subject', title: '成员标识', width: 280 },
   {
     dataIndex: 'role',
     dict: tenantRoleOptions,
     title: '角色',
-    width: 130,
+    width: 120,
   },
   {
     dataIndex: 'updatedAt',
@@ -67,18 +70,22 @@ const memberColumns: AxiTableColumn<TenantMemberRow>[] = [
     title: '更新时间',
     width: 176,
   },
-  { alwaysVisible: true, title: '操作', type: 'op', width: 88 },
+  { alwaysVisible: true, title: '操作', type: 'op', width: 100 },
 ];
 
 /**
- * Web 的 C 级组织访问入口：列表由 Platform Core 投影，新增和编辑均通过
- * Gateway 进入服务端授权、重验和审计链路。没有租户或服务不可用时不展示样例角色。
+ * Web C 级组织访问入口（Cool Admin cl-crud 编排样板）：
+ * 左工具栏刷新/新增 · 中筛选 · 右搜索 · 表格分页 · Upsert 弹窗。
+ * 列表来自 Platform Core；写入经 Gateway 鉴权审计。无删除 API 故不暴露批量删除。
  */
 const RoleList: React.FC = () => {
   const crudRef = useRef<AxiCrudRef<TenantMemberRow>>(null);
   const [tenantId, setTenantId] = useState('');
+  const [roleFilter, setRoleFilter] = useState<TenantRole | ''>('');
+  const [keywordDraft, setKeywordDraft] = useState('');
   const [keyword, setKeyword] = useState('');
   const tenantsQuery = useTenants();
+  const createTenant = useCreateTenant();
   const tenants = tenantsQuery.data ?? [];
   const selectedTenantId = tenantId && tenants.some((tenant) => tenant.id === tenantId)
     ? tenantId
@@ -96,8 +103,8 @@ const RoleList: React.FC = () => {
     [membersQuery.data],
   );
   const visibleRows = useMemo(
-    () => filterTenantMembers(memberRows, keyword),
-    [keyword, memberRows],
+    () => filterTenantMembers(memberRows, { keyword, role: roleFilter }),
+    [keyword, memberRows, roleFilter],
   );
   const service = useMemo<CrudService<TenantMemberRow>>(() => ({
     page: async () => {
@@ -123,67 +130,135 @@ const RoleList: React.FC = () => {
   }), [membersQuery, saveMember, selectedTenantId]);
 
   const refresh = () => {
-    void crudRef.current?.refresh().catch(() => {
+    void tenantsQuery.refetch().then(() => {
+      if (!selectedTenantId) return;
+      return crudRef.current?.refresh();
+    }).catch(() => {
       message.error('成员目录暂时无法刷新，请检查平台服务和当前权限。');
     });
   };
+
+  const runSearch = () => {
+    setKeyword(keywordDraft);
+  };
+
+  const bootstrapTenant = async () => {
+    const slugBase = 'axi-workbench';
+    const slug = `${slugBase}-${Date.now().toString(36).slice(-4)}`;
+    try {
+      const tenant = await createTenant.mutateAsync({
+        name: 'Axi Workbench',
+        slug,
+      });
+      setTenantId(tenant.id);
+      message.success(`已创建组织「${tenant.name}」`);
+    } catch {
+      message.error('创建组织失败。请确认 Platform Core（:8082）与 API Gateway 会话可用。');
+    }
+  };
+
   const tenantOptions = tenants.map((tenant) => ({ label: tenant.name, value: tenant.id }));
-  const platformUnavailable = tenantsQuery.isError;
-  const membersUnavailable = Boolean(selectedTenantId) && membersQuery.isError;
-  const loading = tenantsQuery.isLoading || (Boolean(selectedTenantId) && membersQuery.isLoading);
-  const hasTenantDirectory = !platformUnavailable && !tenantsQuery.isLoading && tenants.length > 0;
+  const platformUnavailable = tenantsQuery.isError && !tenantsQuery.data;
+  const membersUnavailable = Boolean(selectedTenantId) && membersQuery.isError && !membersQuery.data;
+  const loading = (tenantsQuery.isLoading && !tenantsQuery.data)
+    || (Boolean(selectedTenantId) && membersQuery.isLoading && !membersQuery.data);
+  const hasTenantDirectory = !platformUnavailable && !loading && tenants.length > 0;
   const canListMembers = hasTenantDirectory && Boolean(selectedTenantId) && !membersUnavailable && !membersQuery.isLoading;
 
   return (
     <AxiCrud
       dataSource={memberRows}
       key={selectedTenantId || 'no-tenant'}
-      permission={{ add: Boolean(selectedTenantId), page: Boolean(selectedTenantId), update: Boolean(selectedTenantId) }}
+      permission={{
+        add: Boolean(selectedTenantId),
+        delete: false,
+        page: Boolean(selectedTenantId),
+        update: Boolean(selectedTenantId),
+      }}
       ref={crudRef}
       service={service}
     >
       <DesktopCrudFrame
         ariaLabel="成员与角色"
         className="authority-status"
-        search={canListMembers ? (
-          <Input
-            allowClear
-            aria-label="搜索成员或角色"
-            placeholder="搜索成员或角色"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-        ) : undefined}
-        toolbar={hasTenantDirectory ? (
-          <Space size={6} wrap>
+        filters={hasTenantDirectory ? (
+          <>
             <Select
               aria-label="选择组织"
               loading={tenantsQuery.isFetching}
               options={tenantOptions}
               placeholder="选择组织"
+              style={{ minWidth: 160 }}
               value={selectedTenantId || undefined}
               onChange={setTenantId}
             />
-            <Button disabled={!selectedTenantId || membersQuery.isFetching} size="small" onClick={refresh}>
-              {membersQuery.isFetching ? '同步中…' : '刷新'}
+            {canListMembers ? (
+              <Select
+                allowClear
+                aria-label="按角色筛选"
+                options={tenantRoleOptions}
+                placeholder="角色"
+                style={{ minWidth: 120 }}
+                value={roleFilter || undefined}
+                onChange={(value) => setRoleFilter((value as TenantRole | undefined) ?? '')}
+              />
+            ) : null}
+          </>
+        ) : undefined}
+        search={canListMembers ? (
+          <div className="wb-crud-search-cluster">
+            <Input
+              allowClear
+              aria-label="搜索成员或角色"
+              placeholder="搜索成员标识、角色"
+              value={keywordDraft}
+              onChange={(event) => setKeywordDraft(event.target.value)}
+              onClear={() => {
+                setKeywordDraft('');
+                setKeyword('');
+              }}
+              onPressEnter={runSearch}
+            />
+            <Button type="primary" onClick={runSearch}>搜索</Button>
+          </div>
+        ) : undefined}
+        top={(
+          <div className="wb-crud-action-cluster">
+            <Button
+              disabled={tenantsQuery.isFetching || membersQuery.isFetching}
+              loading={tenantsQuery.isFetching || membersQuery.isFetching}
+              onClick={refresh}
+            >
+              刷新
             </Button>
             {canListMembers ? (
               <Button
                 disabled={saveMember.isPending}
-                size="small"
                 type="primary"
                 onClick={() => crudRef.current?.rowAdd()}
               >
-                添加成员
+                新增
               </Button>
             ) : null}
-          </Space>
-        ) : undefined}
+            {!platformUnavailable && !loading && !selectedTenantId ? (
+              <Button
+                loading={createTenant.isPending}
+                type="primary"
+                onClick={() => void bootstrapTenant()}
+              >
+                创建组织
+              </Button>
+            ) : null}
+          </div>
+        )}
       >
         {platformUnavailable ? (
           <ControlPlaneState
-            description="无法从 Platform Core 获取当前主体可管理的组织；未显示静态角色或本地样例。"
+            actionLabel="重新连接"
+            actionLoading={tenantsQuery.isFetching}
+            description="无法连接 Platform Core（默认 http://127.0.0.1:8082，经 Gateway :8088 代理）。请执行 pnpm --filter @axi/platform-core dev 后点击重新连接。"
             title="组织访问数据暂不可用"
+            onAction={() => void tenantsQuery.refetch()}
           />
         ) : loading ? (
           <ControlPlaneState
@@ -193,30 +268,44 @@ const RoleList: React.FC = () => {
           />
         ) : membersUnavailable ? (
           <ControlPlaneState
+            actionLabel="重试"
+            actionLoading={membersQuery.isFetching}
             description="组织已选定，但成员目录读取失败；请检查当前组织权限或平台服务状态。"
             title="成员目录暂不可用"
+            onAction={() => void membersQuery.refetch()}
           />
         ) : !selectedTenantId ? (
           <ControlPlaneState
-            description="当前主体尚未加入可管理的组织，因此没有可编辑的成员或角色。"
+            actionLabel="创建组织"
+            actionLoading={createTenant.isPending}
+            description="当前登录主体还没有可管理的组织。可创建默认组织「Axi Workbench」，你将自动成为所有者。"
             title="没有可管理的组织"
+            onAction={() => void bootstrapTenant()}
           />
         ) : (
           <AxiTableGroup
-            description={memberRows.length
-              ? '成员与角色来自 Platform Core；保存操作由服务端重新鉴权并写入审计。'
-              : '该组织当前没有成员记录。可通过“添加成员”写入已授权的身份主体。'}
+            description={
+              visibleRows.length
+                ? `显示 ${visibleRows.length} / ${memberRows.length} 条 · 保存由服务端鉴权并审计`
+                : memberRows.length
+                  ? '当前筛选条件下没有匹配成员。'
+                  : '该组织尚无成员。点击「新增」写入已授权的身份主体。'
+            }
             title="成员与角色"
           >
             <AxiCrudTable
               columns={memberColumns}
               data={visibleRows}
               operationButtons={['edit']}
-              pagination={false}
+              pagination={desktopCrudPagination(visibleRows.length)}
               rowKey="subject"
-              rowSelection={false}
+              rowSelection="multiple"
               storageKey="axi-workbench:tenant-members"
-              toolbar={{ layout: ['size', 'columns', 'style'], storageKey: 'axi-workbench:tenant-members', visible: true }}
+              toolbar={{
+                layout: ['size', 'columns', 'style'],
+                storageKey: 'axi-workbench:tenant-members',
+                visible: true,
+              }}
             />
           </AxiTableGroup>
         )}

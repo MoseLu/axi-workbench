@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { loadProfile, profileFallbackFromIdentity } from './profileStore';
+import {
+  DEFAULT_AVATAR_SRC,
+  loadProfile,
+  profileFallbackFromIdentity,
+  resolveAvatarSrc,
+} from './profileStore';
 
 const profileStorageKey = 'wb_user_profile_v1';
 
@@ -77,5 +82,13 @@ describe('profileStore', () => {
       nickname: '成员甲',
       status: '正常',
     });
+  });
+
+  it('falls back to the product default avatar when no custom image is set', () => {
+    expect(DEFAULT_AVATAR_SRC).toBeTruthy();
+    expect(resolveAvatarSrc('')).toBe(DEFAULT_AVATAR_SRC);
+    expect(resolveAvatarSrc(null)).toBe(DEFAULT_AVATAR_SRC);
+    expect(resolveAvatarSrc('   ')).toBe(DEFAULT_AVATAR_SRC);
+    expect(resolveAvatarSrc('data:image/png;base64,abc')).toBe('data:image/png;base64,abc');
   });
 });

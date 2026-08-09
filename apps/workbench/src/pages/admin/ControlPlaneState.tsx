@@ -1,9 +1,13 @@
 import React from 'react';
-import { Empty, Spin } from 'antd';
+import { Button, Empty, Spin } from 'antd';
 
 type ControlPlaneStateProps = {
   description: string;
   loading?: boolean;
+  /** 可选主操作，例如「重试连接」。 */
+  actionLabel?: string;
+  onAction?: () => void;
+  actionLoading?: boolean;
   title: string;
 };
 
@@ -14,8 +18,11 @@ type ControlPlaneStateProps = {
  * 各页面仍渲染自身的真实表格与数据。
  */
 export function ControlPlaneState({
+  actionLabel,
+  actionLoading = false,
   description,
   loading = false,
+  onAction,
   title,
 }: ControlPlaneStateProps) {
   return (
@@ -23,6 +30,11 @@ export function ControlPlaneState({
       {loading ? <Spin size="small" /> : <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />}
       <strong>{title}</strong>
       <p>{description}</p>
+      {actionLabel && onAction ? (
+        <Button loading={actionLoading} type="primary" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      ) : null}
     </section>
   );
 }

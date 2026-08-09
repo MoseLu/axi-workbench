@@ -25,7 +25,7 @@ export const axiWorkbenchIconMap = {
   home: 'home',
   language: 'lang',
   laptop: 'admin-laptop',
-  logout: 'admin-logout',
+  logout: 'exit',
   menu: 'admin-menu',
   message: 'msg',
   mobile: 'admin-mobile',
