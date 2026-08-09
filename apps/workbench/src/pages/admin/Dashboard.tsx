@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   AxiCrud,
   AxiCrudTable,
+  AxiTableGroup,
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
@@ -142,18 +143,20 @@ const Dashboard: React.FC = () => {
         ) : showLoading ? (
           <ControlPlaneState description="正在从控制面读取概览数据。" loading title="正在同步概览" />
         ) : (
-          <AxiCrudTable
-            columns={projectColumns}
-            data={filteredProjectRows}
-            operationButtons={projectOperationButtons}
-            pagination={desktopCrudPagination(filteredProjectRows.length)}
-            rowKey="id"
-            rowSelection={false}
-            onRow={(row) => ({
-              onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-              style: { cursor: 'pointer' },
-            })}
-          />
+          <AxiTableGroup className="dashboard-crud__table">
+            <AxiCrudTable
+              columns={projectColumns}
+              data={filteredProjectRows}
+              operationButtons={projectOperationButtons}
+              pagination={desktopCrudPagination(filteredProjectRows.length)}
+              rowKey="id"
+              rowSelection={false}
+              onRow={(row) => ({
+                onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                style: { cursor: 'pointer' },
+              })}
+            />
+          </AxiTableGroup>
         )}
       </DesktopCrudFrame>
     </AxiCrud>
