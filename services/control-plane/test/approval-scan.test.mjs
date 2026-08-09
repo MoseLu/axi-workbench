@@ -18,7 +18,7 @@ function fixture() {
   writeFileSync(join(workspaceRoot, ".workspace", "project-completion.json"), JSON.stringify({ projects: [{
     id: "sample", stage: "building", confidence: "low", summary: "need evidence", updatedAt: new Date().toISOString(), evidence: [], remaining: [], handoff: { status: "ready" },
   }] }));
-  return { cacheDir, controlPlane: createControlPlane({ workspaceRoot, cacheDir, graphPath, pairingTokenSecret: "approval-scan-test-secret" }) };
+  return { cacheDir, controlPlane: createControlPlane({ workspaceRoot, cacheDir, graphPath, pairingTokenSecret: "approval-scan-test-secret", ownerApprovalSecret: "approval-scan-owner-secret" }) };
 }
 
 function pendingApproval(controlPlane, key) {

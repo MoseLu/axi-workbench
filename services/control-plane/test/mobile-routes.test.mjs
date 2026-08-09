@@ -4,8 +4,8 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, request as httpRequest } from "node:http";
+import { createPrivateKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
 import { createControlPlane } from "../src/control-plane.mjs";
-import { createHmac } from "node:crypto";
 
 /* We don't actually spin up the real server.mjs (it would call
  * process.env at module load).  Instead we re-derive the HTTP handler
@@ -20,10 +20,29 @@ function freshCacheDir() {
 }
 
 const TEST_SECRET = "test-secret-32bytes-please-rotate-me";
-const TEST_PUBKEY = "f".repeat(64);
+const OWNER_APPROVAL_SECRET = "test-owner-approval-rotate-me-32bytes";
 
-function signNonce(publicKeyHex, nonce) {
-  return createHmac("sha256", publicKeyHex).update(nonce).digest("hex");
+function freshKey() {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+  const publicKeyHex = publicKey.export({ type: "spki", format: "der" }).subarray(-32).toString("hex");
+  const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
+  return { publicKeyHex, privateKey: createPrivateKey(privateKeyPem) };
+}
+
+function signNonce(privateKey, nonce) {
+  return cryptoSign(null, Buffer.from(nonce, "utf8"), privateKey).toString("hex");
+}
+
+/** Burn a single-use nonce so subsequent token issuance needs a fresh
+ * auth/nonce call. */
+function pairing_consume_nonce(controlPlane, deviceId, privateKey) {
+  const nonceEntry = controlPlane.pairing.requestAuthNonce({ deviceId });
+  controlPlane.pairing.verifyNonceSignature({
+    deviceId,
+    nonceId: nonceEntry.nonceId,
+    nonce: nonceEntry.nonce,
+    signatureHex: signNonce(privateKey, nonceEntry.nonce),
+  });
 }
 
 function buildServer(controlPlane, opts = {}) {
@@ -130,7 +149,8 @@ test("mobile v1: pair/confirm/auth/workspace end-to-end", async () => {
       },
     },
   }));
-  const controlPlane = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const { publicKeyHex, privateKey } = freshKey();
+  const controlPlane = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET, ownerApprovalSecret: OWNER_APPROVAL_SECRET });
   const server = buildServer(controlPlane);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
 
@@ -141,29 +161,29 @@ test("mobile v1: pair/confirm/auth/workspace end-to-end", async () => {
 
     // 2. pair/start
     const start = await fetchJson(server, "POST", "/mobile/v1/pair/start", {
-      body: { publicKeyHex: TEST_PUBKEY, deviceName: "ci-android" },
+      body: { publicKeyHex, deviceName: "ci-android" },
     });
     assert.equal(start.status, 200);
     assert.equal(start.body.ok, true);
     assert.match(start.body.code, /^[0-9]{6}$/);
 
-    // 3. pair/confirm
+    // 3. pair/confirm — ownerApprovalToken gates activation.
+    const ownerApprovalToken = controlPlane.pairing.getOwnerApprovalToken(start.body.pairingId, start.body.code);
     const confirm = await fetchJson(server, "POST", "/mobile/v1/pair/confirm", {
-      body: { pairingId: start.body.pairingId, code: start.body.code },
+      body: { pairingId: start.body.pairingId, code: start.body.code, ownerApprovalToken },
     });
     assert.equal(confirm.status, 200);
     assert.equal(confirm.body.ok, true);
     const deviceId = confirm.body.deviceId;
 
-    // 4. sign the nonce and call auth/token
-    const sig = signNonce(TEST_PUBKEY, confirm.body.nonce.nonce);
+    // 4. sign the nonce with the Ed25519 private key and call auth/token.
+    const sig = signNonce(privateKey, confirm.body.nonce.nonce);
     const token = await fetchJson(server, "POST", "/mobile/v1/auth/token", {
       body: {
         deviceId,
         nonceId: confirm.body.nonce.nonceId,
         nonce: confirm.body.nonce.nonce,
         signatureHex: sig,
-        scopes: ["mobile"],
       },
     });
     assert.equal(token.status, 200);
@@ -187,7 +207,7 @@ test("mobile v1: pair/confirm/auth/workspace end-to-end", async () => {
         deviceId,
         nonceId: refreshedNonce.body.nonceId,
         nonce: refreshedNonce.body.nonce,
-        signatureHex: signNonce(TEST_PUBKEY, refreshedNonce.body.nonce),
+        signatureHex: signNonce(privateKey, refreshedNonce.body.nonce),
       },
     });
     assert.equal(refreshedToken.status, 200);
@@ -200,12 +220,16 @@ test("mobile v1: bearer token from a revoked device gets 401", async () => {
   const cacheDir = freshCacheDir();
   const graphPath = join(cacheDir, "workspace.graph.json");
   writeFileSync(graphPath, JSON.stringify({ projects: {} }));
-  const controlPlane = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
+  const { publicKeyHex, privateKey } = freshKey();
+  const controlPlane = createControlPlane({ workspaceRoot: cacheDir, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET, ownerApprovalSecret: OWNER_APPROVAL_SECRET });
   const server = buildServer(controlPlane);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   try {
-    const start = await fetchJson(server, "POST", "/mobile/v1/pair/start", { body: { publicKeyHex: TEST_PUBKEY } });
-    const confirm = await fetchJson(server, "POST", "/mobile/v1/pair/confirm", { body: { pairingId: start.body.pairingId, code: start.body.code } });
+    const start = await fetchJson(server, "POST", "/mobile/v1/pair/start", { body: { publicKeyHex } });
+    const ownerApprovalToken = controlPlane.pairing.getOwnerApprovalToken(start.body.pairingId, start.body.code);
+    const confirm = await fetchJson(server, "POST", "/mobile/v1/pair/confirm", { body: { pairingId: start.body.pairingId, code: start.body.code, ownerApprovalToken } });
+    // Burn the initial nonce so issueAccessToken has a clean slate.
+    pairing_consume_nonce(controlPlane, confirm.body.deviceId, privateKey);
     const token = controlPlane.pairing.issueAccessToken({ deviceId: confirm.body.deviceId });
     controlPlane.pairing.revokeDevice({ deviceId: confirm.body.deviceId });
     const ws = await fetchJson(server, "GET", "/mobile/v1/workspace", { headers: { Authorization: `Bearer ${token.accessToken}` } });

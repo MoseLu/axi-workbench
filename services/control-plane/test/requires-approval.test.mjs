@@ -3,13 +3,24 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHmac } from "node:crypto";
+import { createPrivateKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
 import { request as httpRequest } from "node:http";
 import { createControlPlane } from "../src/control-plane.mjs";
 import { createControlPlaneHttpServer } from "../src/server.mjs";
 
 const TEST_SECRET = "mobile-project-approval-test-secret";
-const TEST_PUBKEY = "9".repeat(64);
+const OWNER_APPROVAL_SECRET = "mobile-project-approval-owner-secret";
+
+function freshKey() {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+  const publicKeyHex = publicKey.export({ type: "spki", format: "der" }).subarray(-32).toString("hex");
+  const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
+  return { publicKeyHex, privateKey: createPrivateKey(privateKeyPem) };
+}
+
+function signNonce(privateKey, nonce) {
+  return cryptoSign(null, Buffer.from(nonce, "utf8"), privateKey).toString("hex");
+}
 
 function createFixture() {
   const workspaceRoot = mkdtempSync(join(tmpdir(), "axi-mobile-approval-http-"));
@@ -40,8 +51,8 @@ function createFixture() {
       handoff: { status: "ready" },
     }],
   }));
-  const controlPlane = createControlPlane({ workspaceRoot, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET });
-  return { cacheDir, controlPlane, server: createControlPlaneHttpServer({ controlPlane }) };
+  const controlPlane = createControlPlane({ workspaceRoot, cacheDir, graphPath, pairingTokenSecret: TEST_SECRET, ownerApprovalSecret: OWNER_APPROVAL_SECRET });
+  return { cacheDir, controlPlane, server: createControlPlaneHttpServer({ controlPlane, coreApiToken: "test-core-api-token", ownerApprovalSecret: OWNER_APPROVAL_SECRET }) };
 }
 
 function fetchJson(server, method, pathname, { body, headers } = {}) {
@@ -75,19 +86,28 @@ async function close(server) {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
 
-async function pairedOwner(server) {
-  const start = await fetchJson(server, "POST", "/mobile/v1/pair/start", { body: { publicKeyHex: TEST_PUBKEY } });
-  const confirm = await fetchJson(server, "POST", "/mobile/v1/pair/confirm", { body: { pairingId: start.body.pairingId, code: start.body.code } });
-  const signatureHex = createHmac("sha256", TEST_PUBKEY).update(confirm.body.nonce.nonce).digest("hex");
-  const token = await fetchJson(server, "POST", "/mobile/v1/auth/token", {
+async function pairedOwner(server, controlPlane) {
+  const { publicKeyHex, privateKey } = freshKey();
+  const start = await fetchJson(server, "POST", "/mobile/v1/pair/start", { body: { publicKeyHex } });
+  const ownerApprovalToken = controlPlane.pairing.getOwnerApprovalToken(start.body.pairingId, start.body.code);
+  const confirm = await fetchJson(server, "POST", "/mobile/v1/pair/confirm", {
+    body: { pairingId: start.body.pairingId, code: start.body.code, ownerApprovalToken },
+  });
+  // Owner-elevate via the new /auth/owner-token route (X-Axi-Owner-Token header).
+  const nonceResp = await fetchJson(server, "POST", "/mobile/v1/auth/nonce", { body: { deviceId: confirm.body.deviceId } });
+  const ownerProof = controlPlane.pairing.getOwnerApprovalToken("owner-elevation", nonceResp.body.nonce);
+  const elevated = await fetchJson(server, "POST", "/mobile/v1/auth/owner-token", {
+    headers: { "X-Axi-Owner-Token": OWNER_APPROVAL_SECRET },
     body: {
       deviceId: confirm.body.deviceId,
-      nonceId: confirm.body.nonce.nonceId,
-      nonce: confirm.body.nonce.nonce,
-      signatureHex,
+      nonceId: nonceResp.body.nonceId,
+      nonce: nonceResp.body.nonce,
+      signatureHex: signNonce(privateKey, nonceResp.body.nonce),
+      ownerProof,
     },
   });
-  return { deviceId: confirm.body.deviceId, headers: { Authorization: `Bearer ${token.body.accessToken}` } };
+  assert.equal(elevated.status, 200, `owner-token upgrade failed: ${JSON.stringify(elevated.body)}`);
+  return { deviceId: confirm.body.deviceId, headers: { Authorization: `Bearer ${elevated.body.accessToken}` } };
 }
 
 function readAudit(cacheDir) {
@@ -100,10 +120,10 @@ async function settle() {
 }
 
 test("mobile HTTP rejects raw text, commands, and forged actions before any job is created", async () => {
-  const { server } = createFixture();
+  const { controlPlane, server } = createFixture();
   await boot(server);
   try {
-    const owner = await pairedOwner(server);
+    const owner = await pairedOwner(server, controlPlane);
     const raw = await fetchJson(server, "POST", "/mobile/v1/jobs", {
       headers: owner.headers,
       body: { idempotencyKey: "mobile_http_raw_input01", projectId: "sample-app", actionId: "verify", actionType: "project_verification", text: "rm -rf /tmp/nope" },
@@ -126,7 +146,7 @@ test("mobile HTTP verification is idempotent and audited from the registered act
   const { cacheDir, controlPlane, server } = createFixture();
   await boot(server);
   try {
-    const owner = await pairedOwner(server);
+    const owner = await pairedOwner(server, controlPlane);
     const body = { idempotencyKey: "mobile_http_verify_001", projectId: "sample-app", actionId: "verify", actionType: "project_verification" };
     const first = await fetchJson(server, "POST", "/mobile/v1/jobs", { headers: owner.headers, body });
     assert.equal(first.status, 202);
@@ -150,7 +170,7 @@ test("mobile HTTP diagnosis follows pending approval, approval dispatch, and rej
   const { controlPlane, server } = createFixture();
   await boot(server);
   try {
-    const owner = await pairedOwner(server);
+    const owner = await pairedOwner(server, controlPlane);
     const initial = await fetchJson(server, "POST", "/mobile/v1/jobs", {
       headers: owner.headers,
       body: { idempotencyKey: "mobile_http_diag_00001", projectId: "sample-app", actionId: "diagnose", actionType: "project_diagnosis" },
@@ -206,7 +226,7 @@ test("mobile approval scan resolves server-side, rejects forged fields, and hand
   const { cacheDir, controlPlane, server } = createFixture();
   await boot(server);
   try {
-    const owner = await pairedOwner(server);
+    const owner = await pairedOwner(server, controlPlane);
     const initial = await fetchJson(server, "POST", "/mobile/v1/jobs", {
       headers: owner.headers,
       body: { idempotencyKey: "mobile_http_scan_00001", projectId: "sample-app", actionId: "diagnose", actionType: "project_diagnosis" },

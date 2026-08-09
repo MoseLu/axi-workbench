@@ -53,6 +53,7 @@ export function createControlPlane(options = {}) {
     codexBin: options.codexBin || process.env.CODEX_BIN || "codex",
     appServerBin: options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex",
     pairingEnabled,
+    ownerApprovalSecret: options.ownerApprovalSecret || process.env.AXI_OWNER_PAIR_APPROVAL_SECRET || "",
     pairingTokenSecret: resolveMobilePairingTokenSecret({
       configuredSecret: options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "",
       cacheDir,
@@ -98,10 +99,14 @@ function memoryDatabaseUrlOf(options) {
 function buildControlPlaneSurface({
   workspaceRoot, graphPath, cacheDir, memoryDatabaseUrl, memoryProjectReader,
   agentTaskExecutor, roleAgentExecutor, axiAgentTaskExecutor, heartbeatMs,
-  codexBin, appServerBin, pairingTokenSecret, pairingEnabled,
+  codexBin, appServerBin, ownerApprovalSecret, pairingTokenSecret, pairingEnabled,
 }) {
   const pairing = pairingTokenSecret
-    ? createPairingService({ cacheDir, tokenSecret: pairingTokenSecret })
+    ? createPairingService({
+        cacheDir,
+        tokenSecret: pairingTokenSecret,
+        ownerApprovalSecret: ownerApprovalSecret || "",
+      })
     : null;
   const idempotency = createIdempotencyService({ cacheDir });
   const runs = new Map();
