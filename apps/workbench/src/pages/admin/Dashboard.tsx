@@ -149,12 +149,6 @@ const Dashboard: React.FC = () => {
             pagination={desktopCrudPagination(filteredProjectRows.length)}
             rowKey="id"
             rowSelection={false}
-            storageKey="axi-workbench:dashboard-projects"
-            toolbar={{
-              layout: ['size', 'columns', 'style'],
-              storageKey: 'axi-workbench:dashboard-projects',
-              visible: true,
-            }}
             onRow={(row) => ({
               onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
               style: { cursor: 'pointer' },
