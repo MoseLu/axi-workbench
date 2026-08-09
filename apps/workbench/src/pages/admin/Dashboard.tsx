@@ -9,6 +9,7 @@ import {
   type AxiTableOpButton,
 } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
+import { useI18n } from '../../i18n';
 import {
   getProjectGitStatus,
   getProjectResourceId,
@@ -28,9 +29,19 @@ type ProjectRow = {
   workspace: string;
 };
 
+type DashboardCopy = {
+  branchUnregistered: string;
+  stateAvailable: string;
+  stateUnknown: string;
+  workspaceChanges: string;
+  workspacePending: string;
+  workspaceClean: string;
+};
+
 /** 工作台概览只显示控制面快照中的可操作数据，不再用统计卡模拟桌面首页。 */
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
   const [keywordDraft, setKeywordDraft] = React.useState('');
   const [keyword, setKeyword] = React.useState('');
@@ -39,52 +50,60 @@ const Dashboard: React.FC = () => {
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
     [snapshot],
   );
+  const copy: DashboardCopy = {
+    branchUnregistered: t('projects.branch.unregistered'),
+    stateAvailable: t('projects.state.available'),
+    stateUnknown: t('projects.state.unknown'),
+    workspaceChanges: t('projects.workspace.changes'),
+    workspacePending: t('projects.workspace.pending'),
+    workspaceClean: t('projects.workspace.clean'),
+  };
   const projectRows = useMemo<ProjectRow[]>(
     () => projects.map((project) => {
       const git = getProjectGitStatus(project);
       return {
-        branch: git.branch || '未登记',
+        branch: git.branch || copy.branchUnregistered,
         id: getProjectResourceId(project),
         label: getProjectResourceLabel(project),
-        state: project.status === 'available' ? '可用' : project.status || '待校验',
+        state: project.status === 'available' ? copy.stateAvailable : project.status || copy.stateUnknown,
         workspace: git.changedEntries > 0
-          ? `有 ${git.changedEntries} 项改动`
+          ? copy.workspaceChanges.replace('{value}', `${git.changedEntries}`)
           : git.clean === false
-            ? '待检查'
-            : '正常',
+            ? copy.workspacePending
+            : copy.workspaceClean,
       };
     }),
-    [projects],
+    [copy, projects],
   );
   const filteredProjectRows = useMemo(
-    () => filterProjectRows(projectRows, { keyword, state: stateFilter }),
-    [keyword, projectRows, stateFilter],
+    () => filterProjectRows(projectRows, { keyword, state: stateFilter, availableState: copy.stateAvailable }),
+    [copy.stateAvailable, keyword, projectRows, stateFilter],
   );
   const projectColumns: AxiTableColumn<ProjectRow>[] = [
-    { alwaysVisible: true, title: '序号', type: 'index', width: 64 },
-    { align: 'left', dataIndex: 'label', title: '项目', width: 280 },
+    { alwaysVisible: true, title: t('projects.column.index'), type: 'index', width: 64 },
+    { align: 'left', dataIndex: 'label', title: t('projects.column.label'), width: 280 },
     {
       dataIndex: 'state',
       dict: [
-        { color: 'green', label: '可用', value: '可用' },
-        { color: 'orange', label: '待校验', value: '待校验' },
+        { color: 'green', label: copy.stateAvailable, value: copy.stateAvailable },
+        { color: 'orange', label: copy.stateUnknown, value: copy.stateUnknown },
       ],
-      title: '状态',
+      title: t('operations.column.status'),
       width: 110,
     },
-    { dataIndex: 'workspace', title: '工作区状态', width: 160 },
-    { align: 'left', dataIndex: 'branch', title: '分支', width: 180 },
-    { alwaysVisible: true, title: '操作', type: 'op', width: 92 },
+    { dataIndex: 'workspace', title: t('projects.column.workspace'), width: 160 },
+    { align: 'left', dataIndex: 'branch', title: t('projects.column.branch'), width: 180 },
+    { alwaysVisible: true, title: t('projects.column.actionHeader'), type: 'op', width: 92 },
   ];
   const projectOperationButtons = useMemo<AxiTableOpButton<ProjectRow>[]>(
     () => [{
       key: 'open',
-      label: '查看',
+      label: t('dashboard.view'),
       tone: 'primary',
       type: 'link',
       onClick: ({ row }) => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
     }],
-    [navigate],
+    [navigate, t],
   );
 
   const runSearch = () => setKeyword(keywordDraft.trim());
@@ -94,16 +113,16 @@ const Dashboard: React.FC = () => {
   return (
     <AxiCrud dataSource={filteredProjectRows} permission={{ extraFields: { page: true, list: true, info: true, add: false, update: false, delete: false } }}>
       <DesktopCrudFrame
-        ariaLabel="概览"
+        ariaLabel={t('dashboard.title')}
         className="dashboard-crud"
         search={!showError && !showLoading ? (
           <div className="wb-crud-query-cluster">
             <Select
-              aria-label="项目状态筛选"
+              aria-label={t('dashboard.filter.ariaLabel')}
               options={[
-                { label: '全部项目', value: 'all' },
-                { label: '可用', value: 'available' },
-                { label: '待校验', value: 'attention' },
+                { label: t('dashboard.filter.all'), value: 'all' },
+                { label: copy.stateAvailable, value: 'available' },
+                { label: copy.stateUnknown, value: 'attention' },
               ]}
               style={{ width: 140 }}
               value={stateFilter}
@@ -111,8 +130,8 @@ const Dashboard: React.FC = () => {
             />
             <Input
               allowClear
-              aria-label="搜索项目"
-              placeholder="搜索项目、分支或工作区状态"
+              aria-label={t('dashboard.search.ariaLabel')}
+              placeholder={t('dashboard.search.placeholder')}
               value={keywordDraft}
               onChange={(event) => setKeywordDraft(event.target.value)}
               onClear={() => {
@@ -121,27 +140,27 @@ const Dashboard: React.FC = () => {
               }}
               onPressEnter={runSearch}
             />
-            <Button type="primary" onClick={runSearch}>搜索</Button>
+            <Button type="primary" onClick={runSearch}>{t('common.search')}</Button>
           </div>
         ) : undefined}
         top={(
           <div className="wb-crud-action-cluster">
             <Button disabled={isFetching} onClick={() => void refetch()}>
-              {isFetching ? '同步中…' : '刷新'}
+              {isFetching ? t('dashboard.refreshing') : t('dashboard.refresh')}
             </Button>
           </div>
         )}
       >
         {showError ? (
           <ControlPlaneState
-            actionLabel="重新连接"
+            actionLabel={t('dashboard.error.retry')}
             actionLoading={isFetching}
-            description="当前无法连接控制面（默认 http://127.0.0.1:8092）。请确认 control-plane 已启动后点击重新连接。"
-            title="概览数据暂不可用"
+            description={t('dashboard.error.description')}
+            title={t('dashboard.error.title')}
             onAction={() => void refetch()}
           />
         ) : showLoading ? (
-          <ControlPlaneState description="正在从控制面读取概览数据。" loading title="正在同步概览" />
+          <ControlPlaneState description={t('dashboard.loading.description')} loading title={t('dashboard.loading.title')} />
         ) : (
           <AxiTableGroup className="dashboard-crud__table">
             <AxiCrudTable
@@ -165,12 +184,12 @@ const Dashboard: React.FC = () => {
 
 function filterProjectRows(
   rows: ProjectRow[],
-  options: { keyword: string; state: 'all' | 'available' | 'attention' },
+  options: { keyword: string; state: 'all' | 'available' | 'attention'; availableState: string },
 ): ProjectRow[] {
   const normalized = options.keyword.trim().toLocaleLowerCase('zh-CN');
   return rows.filter((row) => {
-    if (options.state === 'available' && row.state !== '可用') return false;
-    if (options.state === 'attention' && row.state === '可用') return false;
+    if (options.state === 'available' && row.state !== options.availableState) return false;
+    if (options.state === 'attention' && row.state === options.availableState) return false;
     if (!normalized) return true;
     return [row.label, row.branch, row.state, row.workspace]
       .join(' ')

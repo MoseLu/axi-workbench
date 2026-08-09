@@ -301,5 +301,18 @@
   "authority.noTenant.title": "没有可管理的组织",
   "authority.noTenant.description": "当前登录主体还没有可管理的组织。可创建默认组织「Axi Workbench」，你将自动成为所有者。",
   "authority.save.failed": "成员角色未保存。请确认当前组织权限后重试。",
-  "authority.refresh.failed": "成员目录暂时无法刷新，请检查平台服务和当前权限。"
+  "authority.refresh.failed": "成员目录暂时无法刷新，请检查平台服务和当前权限。",
+  "dashboard.title": "概览",
+  "dashboard.view": "查看",
+  "dashboard.refresh": "刷新",
+  "dashboard.refreshing": "同步中…",
+  "dashboard.filter.ariaLabel": "项目状态筛选",
+  "dashboard.filter.all": "全部项目",
+  "dashboard.search.ariaLabel": "搜索项目",
+  "dashboard.search.placeholder": "搜索项目、分支或工作区状态",
+  "dashboard.error.title": "概览数据暂不可用",
+  "dashboard.error.description": "当前无法连接控制面（默认 http://127.0.0.1:8092）。请确认 control-plane 已启动后点击重新连接。",
+  "dashboard.error.retry": "重新连接",
+  "dashboard.loading.title": "正在同步概览",
+  "dashboard.loading.description": "正在从控制面读取概览数据。"
 }

@@ -301,5 +301,18 @@
   "authority.noTenant.title": "No manageable organization",
   "authority.noTenant.description": "The current subject has no manageable organization yet. Create the default organization 'Axi Workbench' to become its owner.",
   "authority.save.failed": "Member role was not saved. Verify the current organization permissions and try again.",
-  "authority.refresh.failed": "The member directory could not be refreshed. Check the platform service and your permissions."
+  "authority.refresh.failed": "The member directory could not be refreshed. Check the platform service and your permissions.",
+  "dashboard.title": "Overview",
+  "dashboard.view": "View",
+  "dashboard.refresh": "Refresh",
+  "dashboard.refreshing": "Refreshing…",
+  "dashboard.filter.ariaLabel": "Filter projects by state",
+  "dashboard.filter.all": "All projects",
+  "dashboard.search.ariaLabel": "Search projects",
+  "dashboard.search.placeholder": "Search project, branch or workspace state",
+  "dashboard.error.title": "Overview data unavailable",
+  "dashboard.error.description": "Cannot reach the control plane (default http://127.0.0.1:8092). Make sure control-plane is running, then click Reconnect.",
+  "dashboard.error.retry": "Reconnect",
+  "dashboard.loading.title": "Syncing overview",
+  "dashboard.loading.description": "Reading the overview data from the control plane."
 }
