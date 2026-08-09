@@ -15,6 +15,13 @@
   width: 100%;
 }
 
+/* loading / 空态不参与 body 的高度拉伸；按自身 min-height 撑开，才能在内部 grid 里居中 */
+.wb-crud-page__layout .axi-crud-layout__body > .wb-control-plane-state {
+  flex: 0 0 auto;
+  align-self: center;
+  width: auto;
+}
+
 .wb-crud-page__layout .axi-crud-layout__body {
   flex-direction: column;
   align-items: stretch;
@@ -73,14 +80,22 @@
 }
 
 .wb-crud-action-cluster,
-.wb-crud-search-cluster {
+.wb-crud-search-cluster,
+.wb-crud-query-cluster {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
+.wb-crud-query-cluster .ant-select {
+  flex: 0 0 140px;
+  width: 140px;
+}
+
 .wb-crud-search-cluster .ant-input-affix-wrapper,
-.wb-crud-search-cluster .ant-input {
+.wb-crud-search-cluster .ant-input,
+.wb-crud-query-cluster .ant-input-affix-wrapper,
+.wb-crud-query-cluster .ant-input {
   width: 220px;
 }
 
