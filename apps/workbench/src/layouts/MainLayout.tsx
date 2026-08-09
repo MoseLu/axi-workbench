@@ -6,7 +6,10 @@ import { axiStylePresets } from '@axi/presets';
 import { AxiAdminSettingsPanel, useAxiAdminSettings } from '@axi/settings';
 import {
   AxiDashboardShell,
+  AxiFloatingToolDock,
+  createAxiShellPlugins,
 } from '@axi/shell';
+import { AxiPluginProvider } from '@axi/core';
 import type { TabItem } from '../lib/tabs';
 import GlobalSearchDialog, { type GlobalSearchItem } from '../components/Layout/GlobalSearchDialog';
 import { useI18n } from '../i18n';
@@ -25,13 +28,39 @@ import {
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
 import { workbenchDesktopNavGroups, workbenchMenuRouteMap } from '../lib/navigationRegistry';
-import { loadProfile, type UserProfile } from '../pages/admin/me/profileStore';
+import { loadProfile, resolveAvatarSrc, type UserProfile } from '../pages/admin/me/profileStore';
 import './MainLayout.css';
 
 function resolveMenuRoute(path: string): { label: string } | undefined {
   if (path.startsWith('/admin/project/')) return { label: '项目详情' };
   if (path.startsWith('/admin/handoff/')) return { label: '跨端续办' };
   return workbenchMenuRouteMap[path];
+}
+
+const TABS_STORAGE_KEY = 'axi.workbench.tabs.v1';
+
+function loadPersistedTabs(): { tabs: TabItem[]; activeTab: string } {
+  if (typeof window === 'undefined') return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
+  try {
+    const raw = window.localStorage.getItem(TABS_STORAGE_KEY);
+    if (!raw) return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
+    const value = JSON.parse(raw) as { tabs?: unknown; activeTab?: unknown };
+    if (!Array.isArray(value.tabs)) return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
+    const tabs = value.tabs.filter((tab): tab is TabItem => {
+      if (!tab || typeof tab !== 'object') return false;
+      const candidate = tab as Partial<TabItem>;
+      return typeof candidate.key === 'string' && candidate.key.startsWith('/')
+        && typeof candidate.path === 'string' && candidate.path.startsWith('/')
+        && typeof candidate.label === 'string';
+    });
+    const normalized = tabs.some((tab) => tab.key === HOME_TAB.key) ? tabs : [HOME_TAB, ...tabs];
+    const activeTab = typeof value.activeTab === 'string' && normalized.some((tab) => tab.key === value.activeTab)
+      ? value.activeTab
+      : HOME_TAB.key;
+    return { tabs: normalized, activeTab };
+  } catch {
+    return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
+  }
 }
 
 const MainLayout: React.FC = () => {
@@ -42,13 +71,14 @@ const MainLayout: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarSearchValue, setSidebarSearchValue] = useState('');
   const [contentFullscreen, setContentFullscreen] = useState(false);
-  const [tabs, setTabs] = useState<TabItem[]>([HOME_TAB]);
-  const [activeTab, setActiveTab] = useState<string>(HOME_TAB.key);
+  const persistedTabs = useMemo(loadPersistedTabs, []);
+  const [tabs, setTabs] = useState<TabItem[]>(persistedTabs.tabs);
+  const [activeTab, setActiveTab] = useState<string>(persistedTabs.activeTab);
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const { mode, preference, preset, setPreference, setPreset, toggleMode } = useAxiTheme();
+  const { preference, preset, setPreference, setPreset } = useAxiTheme();
   const { settings, updateSetting } = useAxiAdminSettings({
     applyToDocument: true,
     storageKey: 'axi.workbench.admin-settings',
@@ -58,6 +88,14 @@ const MainLayout: React.FC = () => {
   // Web 顶栏通知角标。
   const tabBadges = useNavBadges(true);
   const unreadCount = tabBadges.unreadTotal;
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TABS_STORAGE_KEY, JSON.stringify({ tabs, activeTab }));
+    } catch {
+      // Private browsing/storage-disabled environments still retain tabs in memory.
+    }
+  }, [activeTab, tabs]);
 
   const displayName = profile.nickname || user?.name || t('common.user.admin') || '用户';
 
@@ -142,17 +180,15 @@ const MainLayout: React.FC = () => {
       setActiveTab(path);
       return;
     }
-    let nextActive: string | null = null;
     setTabs((prev) => {
       const result = openTab(prev, {
         key: path,
         label: routeInfo.label,
         path,
       });
-      nextActive = result.nextActive;
       return result.tabs;
     });
-    if (nextActive !== null) setActiveTab(nextActive);
+    setActiveTab(path);
   }, [location.pathname]);
 
   const handleTabChange = useCallback(
@@ -244,15 +280,80 @@ const MainLayout: React.FC = () => {
     [],
   );
 
+  const floatingTools = useMemo(() => (
+    <AxiFloatingToolDock
+      label="Workbench 快捷工具"
+      triggerLabel="打开快捷工具"
+      closeLabel="关闭快捷工具"
+      brandIcon={<AxiLogoMark size={14} />}
+      triggerIcon={<AxiSvgIcon name={axiWorkbenchIconMap.menu} size={16} />}
+      openTriggerIcon={<AxiSvgIcon name={axiWorkbenchIconMap.close} size={16} />}
+      items={[
+        {
+          key: 'search',
+          label: '快速搜索',
+          icon: <AxiSvgIcon name={axiWorkbenchIconMap.search} size={16} />,
+          onClick: openGlobalSearch,
+        },
+        {
+          key: 'notifications',
+          label: '通知中心',
+          icon: <AxiSvgIcon name={axiWorkbenchIconMap.notification} size={16} />,
+          onClick: () => navigate('/admin/me/notifications'),
+        },
+        {
+          key: 'github',
+          label: 'GitHub',
+          href: 'https://github.com/axiomaticworld/axi-workbench',
+          target: '_blank' as const,
+          icon: <AxiSvgIcon name={axiWorkbenchIconMap.github} size={16} />,
+        },
+      ]}
+      renderPanel={(item) => (
+        <div className="workbench-floating-tool-panel">
+          <strong>{item?.label ?? '快捷工具'}</strong>
+          <span>当前工作区快捷入口</span>
+        </div>
+      )}
+    />
+  ), [navigate, openGlobalSearch]);
+
+  const shellPlugins = useMemo(() => createAxiShellPlugins({
+    github: {
+      href: 'https://github.com/axiomaticworld/axi-workbench',
+      target: '_blank',
+      label: 'GitHub',
+    },
+    notification: {
+      count: unreadCount || undefined,
+      label: '通知',
+      name: 'notice',
+      tone: 'danger',
+      onClick: () => navigate('/admin/me/notifications'),
+    },
+    locale: {
+      value: locale,
+      items: [
+        { key: 'zh-CN', label: '中文' },
+        { key: 'en-US', label: 'English' },
+      ],
+      onChange: (value) => setLocale(value as 'zh-CN' | 'en-US'),
+    },
+    theme: {
+      value: preference,
+      onChange: setPreference,
+    },
+  }), [locale, navigate, preference, setLocale, setPreference, unreadCount]);
+
   /* ---------- Web: shared Axi admin chrome ---------- */
   return (
-    <>
+    <AxiPluginProvider plugins={shellPlugins}>
       <AxiDashboardShell
         activeNavKey={location.pathname.startsWith('/admin/project/') ? '/admin/project' : location.pathname}
         activeTabKey={activeTab}
         avatarConfig={{
           avatar: <AxiSvgIcon name={axiWorkbenchIconMap.account} size={16} />,
-          imageSrc: profile.avatarDataUrl || undefined,
+          imageSrc: resolveAvatarSrc(profile.avatarDataUrl),
           label: displayName,
           menuItems: [
             {
@@ -282,7 +383,8 @@ const MainLayout: React.FC = () => {
         className="workbench-axi-shell"
         contentClassName="workbench-axi-content"
         contentFullscreen={contentFullscreen}
-        githubHref="https://github.com/axiomaticworld/axi-workbench"
+        floatingTools={floatingTools}
+        githubHref={undefined}
         globalSearchLabel="快速搜索"
         globalSearchShortcut="⌘ K"
         navGroups={visibleDesktopNavGroups}
@@ -310,28 +412,11 @@ const MainLayout: React.FC = () => {
         sidebarSearchValue={sidebarSearchValue}
         tabs={settings.multiTab ? desktopTabs : []}
         topbarActions={{
-          notice: {
-            badge: unreadCount || undefined,
-            badgeTone: 'danger',
-            iconName: axiWorkbenchIconMap.notification,
-            key: 'notice',
-            label: '通知',
-            onClick: () => navigate('/admin/me/notifications'),
-          },
+          notice: false,
           // 没有独立即时通讯领域时，不渲染会误导到通知中心的消息入口。
           message: false,
-          language: {
-            iconName: axiWorkbenchIconMap.language,
-            key: 'language',
-            label: locale === 'zh-CN' ? '切换为 English' : '切换为中文',
-            onClick: () => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN'),
-          },
-          theme: {
-            iconName: mode === 'dark' ? axiWorkbenchIconMap.sun : axiWorkbenchIconMap.moon,
-            key: 'theme',
-            label: mode === 'dark' ? '切换亮色模式' : '切换暗色模式',
-            onClick: (event) => toggleMode(event.currentTarget),
-          },
+          language: false,
+          theme: false,
           settings: {
             iconName: axiWorkbenchIconMap.settings,
             key: 'settings',
@@ -372,7 +457,7 @@ const MainLayout: React.FC = () => {
           onThemePreferenceChange={setPreference}
         />
       ) : null}
-    </>
+    </AxiPluginProvider>
   );
 };
 

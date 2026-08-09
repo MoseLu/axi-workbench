@@ -10,6 +10,22 @@ type GatewaySessionResponse = {
   };
 };
 
+type RequestEmailCodeResponse = {
+  challengeId?: string;
+  expiresAt?: string;
+};
+
+type LoginEmailConfirmResponse = {
+  authenticated: boolean;
+  user?: {
+    subject: string;
+    email?: string;
+    name?: string;
+  };
+};
+
+const EMAIL_LOGIN_PURPOSE = 'login';
+
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -18,6 +34,8 @@ export interface AuthContextType {
   beginLogin: (returnTo?: string) => void;
   refreshSession: () => Promise<boolean>;
   logout: () => Promise<void>;
+  requestEmailCode: (email: string) => Promise<{ challengeId: string; expiresAt: string }>;
+  confirmEmailCode: (challengeId: string, token: string) => Promise<boolean>;
 }
 
 export interface AuthProviderProps {
@@ -27,7 +45,43 @@ export interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {};
-const gatewayBaseURL = (metaEnv.VITE_API_BASE_URL || '').replace(/\/$/, '');
+
+function isLoopbackHostname(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
+}
+
+/**
+ * Keeps browser-session cookies first-party during local development.
+ *
+ * Vite serves the Workbench through 127.0.0.1:5173 while a developer may
+ * configure the gateway as localhost:8088. Those are different schemeful
+ * sites, so modern browsers can reject the gateway's session cookie after a
+ * successful email-code confirmation. Falling back to Vite's same-origin
+ * /api proxy prevents that host mismatch without changing deployed URLs.
+ */
+export function normalizeGatewayBaseURL(configuredBaseURL: string, browserOrigin?: string): string {
+  const baseURL = configuredBaseURL.replace(/\/$/, '');
+  if (!baseURL || !browserOrigin) return baseURL;
+
+  try {
+    const gatewayURL = new URL(baseURL);
+    const pageURL = new URL(browserOrigin);
+    const isMismatchedLoopbackPair = gatewayURL.protocol === pageURL.protocol
+      && isLoopbackHostname(gatewayURL.hostname)
+      && isLoopbackHostname(pageURL.hostname)
+      && gatewayURL.hostname !== pageURL.hostname;
+    return isMismatchedLoopbackPair ? '' : baseURL;
+  } catch {
+    // An invalid configured URL should retain the existing request behavior
+    // and surface through fetch rather than failing module initialization.
+    return baseURL;
+  }
+}
+
+const gatewayBaseURL = normalizeGatewayBaseURL(
+  metaEnv.VITE_API_BASE_URL || '',
+  typeof window === 'undefined' ? undefined : window.location.origin,
+);
 
 /** Resolve a gateway path for either a same-origin local app or a deployed client. */
 export function resolveGatewayURL(path: string): string {
@@ -56,6 +110,23 @@ function defaultCallbackURL(): string {
 function safeLocalPath(value: string | undefined): string {
   if (!value || !value.startsWith('/') || value.startsWith('//')) return '/';
   return value;
+}
+
+async function readErrorDetail(response: Response): Promise<string> {
+  try {
+    const data = (await response.clone().json()) as { error?: string; detail?: string };
+    if (data?.error && data?.detail) return `${data.error}: ${data.detail}`;
+    if (data?.error) return data.error;
+    if (data?.detail) return data.detail;
+  } catch {
+    // ignore — fall back to text body
+  }
+  try {
+    const text = (await response.text()).trim();
+    return text;
+  } catch {
+    return '';
+  }
 }
 
 /**
@@ -106,6 +177,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     window.location.assign(resolveGatewayURL(`/api/v1/auth/oidc/start?return_to=${encodeURIComponent(defaultCallbackURL())}`));
   }, []);
 
+  const requestEmailCode = useCallback(async (email: string): Promise<{ challengeId: string; expiresAt: string }> => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      const message = '请输入邮箱地址';
+      setError(message);
+      throw new Error(message);
+    }
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await fetch(resolveGatewayURL('/api/v1/auth/email-verifications'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ email: trimmed, purpose: EMAIL_LOGIN_PURPOSE }),
+      });
+      if (!response.ok) {
+        const detail = await readErrorDetail(response);
+        throw new Error(detail || `发送验证码失败 (HTTP ${response.status})`);
+      }
+      const body = (await response.json().catch(() => ({}))) as RequestEmailCodeResponse;
+      if (!body.challengeId) throw new Error('验证码挑战未创建，请稍后重试');
+      return { challengeId: body.challengeId, expiresAt: body.expiresAt ?? '' };
+    } catch (caught: unknown) {
+      const message = caught instanceof Error ? caught.message : '无法发送验证码';
+      setError(message);
+      throw caught instanceof Error ? caught : new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const confirmEmailCode = useCallback(async (challengeId: string, token: string): Promise<boolean> => {
+    const challenge = challengeId.trim();
+    const trimmed = token.trim();
+    if (!challenge || !/^\d{6}$/.test(trimmed)) {
+      const message = '请输入有效的验证码';
+      setError(message);
+      return false;
+    }
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await fetch(resolveGatewayURL('/api/v1/auth/login/email/confirm'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ challengeId: challenge, token: trimmed }),
+      });
+      if (!response.ok) {
+        const detail = await readErrorDetail(response);
+        throw new Error(detail || `验证码无效或已过期 (HTTP ${response.status})`);
+      }
+      const body = (await response.json().catch(() => null)) as LoginEmailConfirmResponse | null;
+      if (!body || body.authenticated !== true) {
+        throw new Error('身份适配器未确认会话');
+      }
+      // Refresh the session cookie into the React state so the protected routes unlock.
+      const authenticated = await refreshSession();
+      if (!authenticated) throw new Error('会话未建立，请重新验证验证码');
+      return authenticated;
+    } catch (caught: unknown) {
+      const message = caught instanceof Error ? caught.message : '验证失败';
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [refreshSession]);
+
   const logout = useCallback(async () => {
     try {
       await fetch(resolveGatewayURL('/api/v1/auth/logout'), {
@@ -128,8 +275,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     error,
     beginLogin,
     refreshSession,
+    requestEmailCode,
+    confirmEmailCode,
     logout,
-  }), [beginLogin, error, isLoading, logout, refreshSession, user]);
+  }), [beginLogin, confirmEmailCode, error, isLoading, logout, refreshSession, requestEmailCode, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

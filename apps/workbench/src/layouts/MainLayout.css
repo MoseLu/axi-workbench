@@ -218,3 +218,19 @@
   font-size: 13px;
   opacity: 0.4;
 }
+.workbench-floating-tool-panel {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+  padding: 14px 16px;
+  color: var(--axi-text, #1f2937);
+  background: var(--axi-bg-surface, #fff);
+  border: 1px solid var(--axi-border, rgba(15, 23, 42, .12));
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .16);
+  font-size: 12px;
+}
+
+.workbench-floating-tool-panel span {
+  color: var(--axi-muted, #64748b);
+}

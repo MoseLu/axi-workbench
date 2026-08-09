@@ -10,7 +10,16 @@ export const platformQueryKeys = {
   tasks: (tenantId: string) => ['platform', 'tenants', tenantId, 'tasks'] as const,
 };
 
-export const useTenants = () => useQuery({ queryKey: platformQueryKeys.tenants, queryFn: platformApi.listTenants });
+export const useTenants = () => useQuery({
+  queryKey: platformQueryKeys.tenants,
+  queryFn: platformApi.listTenants,
+  // Platform Core is a local process in dev; brief restarts should recover without a hard empty state.
+  retry: 2,
+  retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+  refetchOnWindowFocus: true,
+  refetchOnReconnect: true,
+  staleTime: 10_000,
+});
 
 export const useCreateTenant = () => {
   const queryClient = useQueryClient();

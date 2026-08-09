@@ -43,6 +43,11 @@ requireMatch(packageJson, /"@axi\/workbench-foundation"/, 'mobile app must consu
 requireMatch(mobileIcons, /AxiSvgIcon[\s\S]*resolveAxiWorkbenchIcon/, 'mobile icons must resolve to the shared Axi SVG registry');
 requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared four-color Axi mark');
 requireMatch(login, /login\.emailCode/, 'mobile login must offer the QQ Mail verification entry');
+requireMatch(login, /requestEmailCode/, 'mobile login must request a server-side email challenge');
+requireMatch(login, /confirmEmailCode/, 'mobile login must confirm the server-side email challenge');
+requireMatch(login, /challengeId/, 'mobile login must retain the opaque challenge identifier');
+requireMatch(login, /one-time-code/, 'mobile login must expose Android one-time-code autofill');
+forbidMatch(login, /beginLogin/, 'mobile email-code entry must not silently redirect into OIDC');
 forbidMatch(login, /password/i, 'mobile login must not reintroduce a password flow');
 requireMatch(header, /MobileIcon className="wb-mobile-topbar__plus" name="plus"/, 'mobile header must render the shared plus glyph inside its mobile-only circular affordance');
 requireMatch(mobileStyles, /\.wb-mobile-topbar__plus svg[\s\S]*width:\s*10px/, 'mobile plus affordance must size the shared SVG inside its mobile-only circle');

@@ -331,6 +331,13 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .wb-global-search,
+  .wb-global-search__dialog {
+    animation: none;
+  }
+}
+
 @media (max-width: 640px) {
   .wb-global-search {
     align-items: flex-start;

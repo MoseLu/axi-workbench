@@ -1,21 +1,158 @@
-import React, { useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AxiLogoMark } from '@axi/core';
 import { useAuth } from '../contexts/AuthContext';
+import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
+import { createOneTimeCode, oneTimeCodeValue, type OneTimeCode } from '../lib/oneTimeCode';
+
+type Phase = 'email' | 'code' | 'verifying';
+
+const RESEND_COOLDOWN_SECONDS = 60;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Web 管理端的登录入口。邮箱验证、密码、扫码审批都由 Axi Identity 的
- * ZITADEL 登录流程完成；本页不收集密码，也不处理二维码换取 JWT。
+ * 邮箱验证码登录入口。
+ *
+ * 流程：浏览器输入邮箱 → gateway 转发到 identity-adapter 生成 token
+ * → dev 模式落到 identity-adapter 日志 → 浏览器粘贴 token
+ * → gateway /api/v1/auth/login/email/confirm 完成校验并写入 HttpOnly session cookie
+ * → 后续受保护路由通过 /api/v1/auth/session 拉取当前会话。
  */
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { beginLogin, isAuthenticated, isLoading, error } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading: sessionLoading,
+    error: sessionError,
+    requestEmailCode,
+    confirmEmailCode,
+  } = useAuth();
   const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/admin/dashboard';
 
+  const [phase, setPhase] = useState<Phase>('email');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState<OneTimeCode | string>(() => createOneTimeCode());
+  const [sentTo, setSentTo] = useState('');
+  const [challengeId, setChallengeId] = useState('');
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
+  // 跟踪成功提交后的导航动作，避免在 navigate 后再触发 setState。
+  const didNavigateRef = useRef(false);
+
+  // 已有有效会话则直接跳走。
   useEffect(() => {
-    if (isAuthenticated) navigate(next, { replace: true });
+    if (isAuthenticated && !didNavigateRef.current) {
+      didNavigateRef.current = true;
+      navigate(next, { replace: true });
+    }
   }, [isAuthenticated, navigate, next]);
+
+  // 倒计时。
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldown]);
+
+  // 进入 code 步骤时自动聚焦输入框。
+  useEffect(() => {
+    if (phase === 'code') codeInputRef.current?.focus();
+  }, [phase]);
+
+  const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting || sessionLoading) return;
+    const trimmed = email.trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(trimmed)) {
+      setError('请输入合法的邮箱地址');
+      return;
+    }
+    setError(null);
+    setHint(null);
+    setSubmitting(true);
+    try {
+      const result = await requestEmailCode(trimmed);
+      setSentTo(trimmed);
+      setChallengeId(result.challengeId);
+      setExpiresAt(result.expiresAt || null);
+      setCode(createOneTimeCode());
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setPhase('code');
+      setHint('验证码已发送到您的邮箱，请查收（QQ 邮箱可能在「垃圾邮件」中）。');
+    } catch (caught: unknown) {
+      const message = caught instanceof Error ? caught.message : '无法发送验证码';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleVerifyCode = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting) return;
+    const trimmed = oneTimeCodeValue(code);
+    if (!trimmed) {
+      setError('请输入邮件中的验证码');
+      return;
+    }
+    if (!/^\d{6}$/.test(trimmed)) {
+      setError('验证码必须是 6 位数字');
+      return;
+    }
+    setError(null);
+    setHint(null);
+    setPhase('verifying');
+    setSubmitting(true);
+    try {
+      const ok = await confirmEmailCode(challengeId, trimmed);
+      if (ok) {
+        // AuthProvider refreshes the HttpOnly session and updates
+        // isAuthenticated. Let the effect above navigate only after that
+        // state has committed; navigating here can briefly render a protected
+        // route with stale unauthenticated state and bounce back to /login.
+        return;
+      }
+      setError('验证码无效或已过期，请检查后重试。');
+      setPhase('code');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (cooldown > 0 || submitting || !sentTo) return;
+    setError(null);
+    setHint(null);
+    setSubmitting(true);
+    try {
+      const result = await requestEmailCode(sentTo);
+      setChallengeId(result.challengeId);
+      setExpiresAt(result.expiresAt || null);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setCode(createOneTimeCode());
+      setHint('已重新发送验证码。');
+    } catch (caught: unknown) {
+      const message = caught instanceof Error ? caught.message : '重新发送失败';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleChangeEmail = () => {
+    setPhase('email');
+    setCode(createOneTimeCode());
+    setChallengeId('');
+    setError(null);
+    setHint(null);
+  };
 
   const shell: React.CSSProperties = {
     minHeight: '100vh',
@@ -34,6 +171,39 @@ const Login: React.FC = () => {
     border: '1px solid rgba(255, 255, 255, 0.06)',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
   };
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 14px',
+    fontSize: 14,
+    color: 'var(--axi-text, #f8fafc)',
+    background: 'rgba(255, 255, 255, 0.04)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: 8,
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+  const primaryButton: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 18px',
+    fontSize: 14,
+    fontWeight: 600,
+    color: 'var(--axi-text-inverse, #fff)',
+    background: 'var(--axi-primary)',
+    border: 'none',
+    borderRadius: 8,
+    cursor: 'pointer',
+  };
+  const linkButton: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--axi-primary)',
+    cursor: 'pointer',
+    fontSize: 13,
+    padding: 0,
+  };
+
+  const localError = error;
+  const banner = localError || (sessionError && phase === 'verifying' ? sessionError : null);
 
   return (
     <main style={shell}>
@@ -46,41 +216,151 @@ const Login: React.FC = () => {
             </h1>
           </div>
           <p style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(255, 255, 255, 0.54)', margin: 0 }}>
-            在 Axi Identity 中完成邮箱验证、密码登录或扫码审批。
+            {phase === 'code' || phase === 'verifying'
+              ? '已向邮箱发送一次性验证码，输入后即可登录。'
+              : '输入邮箱后，我们会发送一个一次性验证码用于登录。'}
           </p>
         </div>
 
-        {error && (
-          <div style={{ padding: '12px 16px', background: 'rgba(255, 77, 79, 0.1)', border: '1px solid rgba(255, 77, 79, 0.3)', borderRadius: 8, color: 'var(--color-chart-4)', fontSize: 13, marginBottom: 20 }}>
-            无法恢复会话：{error}
+        {banner && (
+          <div
+            role="alert"
+            style={{
+              padding: '12px 16px',
+              background: 'rgba(255, 77, 79, 0.1)',
+              border: '1px solid rgba(255, 77, 79, 0.3)',
+              borderRadius: 8,
+              color: 'var(--color-chart-4)',
+              fontSize: 13,
+              marginBottom: 20,
+              wordBreak: 'break-word',
+            }}
+          >
+            {banner}
           </div>
         )}
 
-        <button
-          type="button"
-          disabled={isLoading}
-          onClick={() => beginLogin(next)}
-          style={{
-            width: '100%',
-            padding: '14px 24px',
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--axi-text-inverse, #fff)',
-            background: isLoading ? 'color-mix(in srgb, var(--axi-primary) 60%, transparent)' : 'var(--axi-primary)',
-            border: 'none',
-            borderRadius: 8,
-            cursor: isLoading ? 'wait' : 'pointer',
-          }}
-        >
-          {isLoading ? '正在检查会话…' : '使用 Axi 账户继续'}
-        </button>
+        {hint && !banner && (
+          <div
+            style={{
+              padding: '10px 14px',
+              background: 'rgba(64, 169, 255, 0.08)',
+              border: '1px solid rgba(64, 169, 255, 0.28)',
+              borderRadius: 8,
+              color: 'rgba(180, 220, 255, 0.92)',
+              fontSize: 12,
+              marginBottom: 18,
+              lineHeight: 1.6,
+            }}
+          >
+            {hint}
+          </div>
+        )}
 
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'rgba(255, 255, 255, 0.5)' }}>
-          需要新建账户？{' '}
-          <Link to="/register" style={{ color: 'var(--axi-primary)', textDecoration: 'none', fontWeight: 500 }}>
-            前往 Axi Identity 注册
-          </Link>
-        </p>
+        {phase === 'email' && (
+          <form onSubmit={handleRequestCode} noValidate>
+            <label
+              htmlFor="axi-login-email"
+              style={{ display: 'block', fontSize: 12, color: 'rgba(255, 255, 255, 0.6)', marginBottom: 6 }}
+            >
+              邮箱
+            </label>
+            <input
+              id="axi-login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@axi.workbench.dev"
+              disabled={submitting}
+              style={{ ...inputStyle, marginBottom: 16 }}
+            />
+            <button
+              type="submit"
+              disabled={submitting || sessionLoading || !email.trim()}
+              style={{
+                ...primaryButton,
+                opacity: submitting || sessionLoading || !email.trim() ? 0.6 : 1,
+                cursor: submitting || sessionLoading || !email.trim() ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {submitting ? '正在发送…' : '获取验证码'}
+            </button>
+          </form>
+        )}
+
+        {(phase === 'code' || phase === 'verifying') && (
+          <form onSubmit={handleVerifyCode} noValidate>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 6,
+                fontSize: 12,
+                color: 'rgba(255, 255, 255, 0.6)',
+              }}
+            >
+              <span id="axi-login-code-label">验证码</span>
+              <button type="button" onClick={handleChangeEmail} style={linkButton}>
+                换一个邮箱
+              </button>
+            </div>
+            <OneTimeCodeInput
+              ariaLabelledBy="axi-login-code-label"
+              disabled={submitting}
+              firstInputRef={codeInputRef}
+              value={code}
+              onChange={setCode}
+            />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: 12,
+                color: 'rgba(255, 255, 255, 0.55)',
+                marginBottom: 16,
+              }}
+            >
+              <span>
+                已发送至{' '}
+                <strong style={{ color: 'var(--axi-text, #f8fafc)' }}>{sentTo}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={cooldown > 0 || submitting}
+                style={{
+                  ...linkButton,
+                  color: cooldown > 0 ? 'rgba(255, 255, 255, 0.4)' : 'var(--axi-primary)',
+                  cursor: cooldown > 0 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {cooldown > 0 ? `${cooldown}s 后可重新发送` : '重新发送验证码'}
+              </button>
+            </div>
+            {expiresAt && (
+              <p style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)', margin: '0 0 16px' }}>
+                验证码将在 {new Date(expiresAt).toLocaleString()} 前有效。
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={submitting || oneTimeCodeValue(code).length !== 6}
+              style={{
+                ...primaryButton,
+                opacity: submitting || oneTimeCodeValue(code).length !== 6 ? 0.6 : 1,
+                cursor: submitting || oneTimeCodeValue(code).length !== 6 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {phase === 'verifying' || submitting ? '正在验证…' : '登录'}
+            </button>
+          </form>
+        )}
+
       </section>
     </main>
   );

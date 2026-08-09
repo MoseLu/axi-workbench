@@ -6,7 +6,10 @@ const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | und
 // HTTPS gateway origin in production. No browser-side access or refresh token
 // is used.
 const API_BASE_URL = metaEnv.VITE_API_BASE_URL || ""
-const CONTROL_PLANE_BASE_URL = metaEnv.VITE_CONTROL_PLANE_BASE_URL || "http://localhost:8092"
+// Browser consumers must reach the control plane through the authenticated
+// Gateway. Directly exposing localhost:8092 would bypass the session boundary
+// and makes cookie/CORS behavior dependent on the user's browser.
+const CONTROL_PLANE_BASE_URL = metaEnv.VITE_CONTROL_PLANE_BASE_URL || "/api/v1/control-plane"
 
 export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
   const client = axios.create({
@@ -34,5 +37,5 @@ export const apiClient = createApiClient()
 
 export const controlPlaneClient = createApiClient({
   baseURL: CONTROL_PLANE_BASE_URL,
-  withCredentials: false,
+  withCredentials: true,
 })

@@ -477,6 +477,14 @@ body {
 .axi-mobile-login__copy h1 { color: var(--wb-ink); font-size: 29px; line-height: 1.25; letter-spacing: -0.65px; }
 .axi-mobile-login__copy small { display: block; margin-top: 13px; color: var(--wb-ink-muted); font-size: 13px; line-height: 1.55; }
 .axi-mobile-login__form { margin-top: 36px; }
+.axi-mobile-login__form form { display: grid; gap: 12px; }
+.axi-mobile-login__form form > button { min-height: 46px; border: 0; border-radius: 7px; color: #fff; background: var(--wb-success); font-size: 14px; font-weight: 600; cursor: pointer; }
+.axi-mobile-login__form form > button:disabled { cursor: wait; opacity: .62; }
+.axi-mobile-login__form input { box-sizing: border-box; }
+.axi-mobile-login__hint { margin: 0; color: var(--wb-ink-muted); font-size: 12px; line-height: 1.45; }
+.axi-mobile-login__code-actions { display: flex; justify-content: space-between; gap: 12px; }
+.axi-mobile-login__code-actions .axi-mobile-login__secondary { min-height: 34px; padding: 0; border: 0; background: transparent; font-size: 12px; cursor: pointer; }
+.axi-mobile-login__code-actions .axi-mobile-login__secondary:disabled { cursor: wait; opacity: .55; }
 .axi-mobile-login__form > button { border-radius: 7px; background: var(--wb-success); box-shadow: none; }
 .axi-mobile-login__error { color: var(--wb-badge); }
 .axi-mobile-login__link, .axi-mobile-login__file { display: block; color: var(--wb-success); font-size: 13px; text-align: center; cursor: pointer; }

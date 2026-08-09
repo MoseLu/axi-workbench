@@ -50,6 +50,8 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
   onSelect,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -76,11 +78,14 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
   useEffect(() => {
     if (!open) return;
     setActiveIndex(0);
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => inputRef.current?.focus());
     return () => {
       document.body.style.overflow = previousOverflow;
+      previousFocusRef.current?.focus({ preventScroll: true });
+      previousFocusRef.current = null;
     };
   }, [open]);
 
@@ -116,6 +121,23 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
     }
   };
 
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+    ) ?? []);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   let flatIndex = 0;
 
   return createPortal(
@@ -124,9 +146,11 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
     }}>
       <section
         className="wb-global-search__dialog"
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="wb-global-search-title"
+        onKeyDown={handleDialogKeyDown}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="wb-global-search__header">

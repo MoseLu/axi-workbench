@@ -54,6 +54,12 @@ export const useControlSnapshot = (options?: AxiosRequestConfig) => {
       controlPlaneClient
         .get<ControlSnapshot>("/snapshot", options)
         .then((res) => res.data),
+    // Control plane is a local process; brief restarts should recover without a hard empty state.
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10_000,
   })
 }
 
