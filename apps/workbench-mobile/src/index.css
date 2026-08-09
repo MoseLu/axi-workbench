@@ -73,7 +73,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-home__progress { position: relative; z-index: 1; margin-top: 27px; }
 .axi-mobile-home__progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: var(--mobile-muted); font-size: 12px; }
 .axi-mobile-home__progress-row strong { color: var(--mobile-text); font-size: 13px; }
-.axi-mobile-progress-track, .axi-mobile-project-card__progress { display: block; overflow: hidden; height: 5px; border-radius: 999px; background: color-mix(in srgb, var(--mobile-text) 10%, transparent); }
+.axi-mobile-progress-track, .axi-mobile-project-card__progress { display: block; overflow: hidden; height: 5px; border-radius: var(--axi-radius-full, 999px); background: color-mix(in srgb, var(--mobile-text) 10%, transparent); }
 .axi-mobile-progress-track i, .axi-mobile-project-card__progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mobile-primary), var(--axi-primary-hover, #81a2ff)); }
 .axi-mobile-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 11px; }
 .axi-mobile-stat-card { display: grid; grid-template-columns: 1fr auto; gap: 3px; min-height: 92px; padding: 15px; border: 1px solid var(--mobile-border); border-radius: 17px; background: var(--mobile-surface-soft); }

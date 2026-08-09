@@ -51,15 +51,15 @@
 }
 
 .window-control.close {
-  background: #ff5f57;
+  background: var(--axi-danger, #ff5f57);
 }
 
 .window-control.minimize {
-  background: #ffbd2e;
+  background: var(--axi-warning, #ffbd2e);
 }
 
 .window-control.zoom {
-  background: #28c840;
+  background: var(--axi-success, #28c840);
 }
 
 .window-control:focus-visible {
@@ -137,7 +137,7 @@
 
 .window-zoom-tile:hover,
 .window-zoom-tile.active {
-  background: #1677ff;
+  background: var(--axi-primary, #1677ff);
 }
 
 .zoom-icon {
