@@ -33,7 +33,7 @@
  */
 
 import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHmac, createPublicKey, randomBytes, randomInt, randomUUID, verify as cryptoVerify, timingSafeEqual } from "node:crypto";
 import { dirname, join } from "node:path";
 
 const DEFAULT_CODE_TTL_SECONDS = 300;          // 5 minutes
@@ -46,6 +46,53 @@ const DEVICES_DIRNAME = "devices";
 const NONCES_DIRNAME = "nonces";
 const PAIR_CODES_FILE = "pairing-codes.jsonl";
 const TOKENS_FILE = "access-tokens.jsonl";
+
+/* ─── Ed25519 raw → SPKI helpers (RFC 8410 §3, OID 1.3.101.112) ──────────
+ *
+ * The wire format for `publicKeyHex` is a 64-char lowercase hex string
+ * encoding the raw 32-byte Ed25519 public key.  Internally Node's
+ * `verify()` only accepts SubjectPublicKeyInfo (SPKI) DER; we wrap the
+ * raw key with the standard 12-byte Ed25519 SPKI header before parsing.
+ */
+const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+const RAW_PUBLIC_KEY_LENGTH = 32;
+const RAW_PUBLIC_KEY_HEX_LENGTH = RAW_PUBLIC_KEY_LENGTH * 2;
+
+function rawPublicKeyHexToSpki(publicKeyHex) {
+  const raw = Buffer.from(publicKeyHex, "hex");
+  if (raw.length !== RAW_PUBLIC_KEY_LENGTH) return null;
+  return Buffer.concat([ED25519_SPKI_PREFIX, raw]);
+}
+
+function parseEd25519PublicKey(publicKeyHex) {
+  const spki = rawPublicKeyHexToSpki(publicKeyHex);
+  if (!spki) return null;
+  try {
+    return createPublicKey({ key: spki, format: "der", type: "spki" });
+  } catch {
+    return null;
+  }
+}
+
+/* Owner out-of-band approval: when AXI_OWNER_PAIR_APPROVAL_SECRET is
+ * set, /mobile/v1/pair/confirm requires a body field `ownerApprovalToken`
+ * that equals HMAC-SHA256(secret, pairingId + ":" + code).  This is a
+ * short string the owner pastes from a side-channel (terminal, vault)
+ * at confirm time — it is impossible to forge without the secret and
+ * cannot be derived from the 6-digit code alone.  Personal-use project
+ * level: an env var is acceptable as a clearly documented out-of-band
+ * channel; tests configure it explicitly via createPairingService. */
+function computeOwnerApprovalToken(secret, pairingId, code) {
+  return createHmac("sha256", secret).update(`${pairingId}:${code}`).digest("hex");
+}
+function verifyOwnerApprovalToken(secret, pairingId, code, token) {
+  if (typeof token !== "string" || !token) return false;
+  const expected = computeOwnerApprovalToken(secret, pairingId, code);
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(token.toLowerCase(), "hex");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 /**
  * Ensure that a path exists and is chmod 600 (owner-only).  Used for
@@ -123,16 +170,15 @@ function verifyHs256(token, secret) {
 /* ─── Pair-code generation (6 digit, monotonic-ish, no leading zeros trap) ─ */
 
 function randomPairCode() {
-  // 6 digits, leading zeros allowed (we always pad to 6 chars below).
-  let code = "";
-  for (let i = 0; i < PAIR_CODE_LENGTH; i += 1) {
-    code += Math.floor(Math.random() * 10).toString(10);
-  }
-  return code;
+  // 6 digits, leading zeros allowed. Use a CSPRNG: the code is a pairing
+  // factor and must not be predictable from Math.random state.
+  return randomInt(0, 10 ** PAIR_CODE_LENGTH).toString(10).padStart(PAIR_CODE_LENGTH, "0");
 }
 
 function isValidHexPublicKey(value) {
-  return typeof value === "string" && /^[0-9a-f]{64}$/i.test(value);
+  if (typeof value !== "string" || !/^[0-9a-f]{64}$/i.test(value)) return false;
+  // Reject malformed keys that pass the regex but cannot be parsed as Ed25519 SPKI.
+  return parseEd25519PublicKey(value.toLowerCase()) !== null;
 }
 
 function fingerprintPublicKey(publicKeyHex) {
@@ -144,6 +190,7 @@ function fingerprintPublicKey(publicKeyHex) {
 export function createPairingService({
   cacheDir,
   tokenSecret,
+  ownerApprovalSecret = "",
   codeTtlSeconds = DEFAULT_CODE_TTL_SECONDS,
   tokenTtlSeconds = DEFAULT_TOKEN_TTL_SECONDS,
   nonceTtlSeconds = DEFAULT_NONCE_TTL_SECONDS,
@@ -151,6 +198,11 @@ export function createPairingService({
 } = {}) {
   if (!cacheDir) throw new Error("createPairingService: cacheDir is required");
   if (!tokenSecret) throw new Error("createPairingService: tokenSecret is required");
+  // ownerApprovalSecret is required to make confirmPair operational.  When
+  // missing, confirmPair fails closed with an explicit "owner approval
+  // secret not configured" error instead of letting anyone with the
+  // 6-digit code activate a device.  Tests configure it explicitly.
+  ownerApprovalSecret = typeof ownerApprovalSecret === "string" ? ownerApprovalSecret : "";
 
   const devicesDir = join(cacheDir, DEVICES_DIRNAME);
   const noncesDir = join(cacheDir, NONCES_DIRNAME);
@@ -198,10 +250,26 @@ export function createPairingService({
     return { ok: true, pairingId, code, codeExpiresAt: entry.expiresAt };
   }
 
-  /* confirmPair — exchange code for a registered deviceId. */
-  function confirmPair({ pairingId, code } = {}) {
+  /* confirmPair — exchange code for a registered deviceId.
+   *
+   * Security model: the 6-digit code is a low-entropy shared secret
+   * that pairs the device request with the owner's side-channel.  By
+   * itself the code cannot activate a device — the caller must also
+   * present an `ownerApprovalToken` equal to
+   * HMAC-SHA256(ownerApprovalSecret, pairingId + ":" + code).  The
+   * secret is held out-of-band by the owner (env var or vault) and is
+   * never returned by /pair/start or any other unauthenticated path.
+   * When `ownerApprovalSecret` is empty the function fails closed.
+   */
+  function confirmPair({ pairingId, code, ownerApprovalToken } = {}) {
     if (typeof pairingId !== "string" || typeof code !== "string") {
       return { ok: false, error: "pairingId and code are required" };
+    }
+    if (!ownerApprovalSecret) {
+      return { ok: false, error: "owner approval secret not configured; pairing is owner-gated" };
+    }
+    if (!verifyOwnerApprovalToken(ownerApprovalSecret, pairingId, code, ownerApprovalToken)) {
+      return { ok: false, error: "owner approval token missing or invalid" };
     }
     const entries = readJsonl(pairCodesPath);
     const now = nowSeconds();
@@ -256,13 +324,21 @@ export function createPairingService({
     return { ok: true, nonceId, nonce, expiresAt: nonceEntry.expiresAt };
   }
 
-  /* verifyNonceSignature — HMAC-SHA256(pubkeyHex, nonce) returned as hex. */
+  /* verifyNonceSignature — Ed25519 verify(signature, nonce, pubkey).
+   *
+   * The device's `publicKeyHex` is a real Ed25519 SPKI (raw 32 bytes
+   * encoded as 64 hex chars).  Only the holder of the corresponding
+   * private key can sign the nonce; the previous HMAC-based design was
+   * forgeable because the publicKeyHex value was self-asserted by the
+   * pairing caller.  See services/control-plane/test/pairing-ed25519.test.mjs
+   * for the positive/negative sign + verify contract.
+   */
   function verifyNonceSignature({ deviceId, nonceId, nonce, signatureHex } = {}) {
     const device = readDevice(deviceId);
     if (!device) return { ok: false, error: "device not found" };
     if (device.status !== "active") return { ok: false, error: `device ${device.status}` };
-    if (typeof signatureHex !== "string" || !/^[0-9a-f]{64}$/i.test(signatureHex)) {
-      return { ok: false, error: "signatureHex must be a 64-char hex string" };
+    if (typeof signatureHex !== "string" || !/^[0-9a-f]{128}$/i.test(signatureHex)) {
+      return { ok: false, error: "signatureHex must be a 128-char Ed25519 signature hex string" };
     }
     if (typeof nonce !== "string" || typeof nonceId !== "string") {
       return { ok: false, error: "nonce and nonceId are required" };
@@ -275,10 +351,15 @@ export function createPairingService({
     if (nonceEntry.nonce !== nonce) return { ok: false, error: "nonce mismatch" };
     if (nonceEntry.deviceId !== deviceId) return { ok: false, error: "nonce/device mismatch" };
 
-    const expected = createHmac("sha256", device.publicKeyHex).update(nonce).digest("hex");
-    const a = Buffer.from(expected, "hex");
-    const b = Buffer.from(signatureHex.toLowerCase(), "hex");
-    if (a.length !== b.length || !timingSafeEqual(a, b)) return { ok: false, error: "signature mismatch" };
+    const publicKey = parseEd25519PublicKey(device.publicKeyHex);
+    if (!publicKey) return { ok: false, error: "device public key is not a valid Ed25519 key" };
+    let signatureValid = false;
+    try {
+      signatureValid = cryptoVerify(null, Buffer.from(nonce, "utf8"), publicKey, Buffer.from(signatureHex, "hex"));
+    } catch {
+      signatureValid = false;
+    }
+    if (!signatureValid) return { ok: false, error: "signature mismatch" };
 
     nonceEntry.consumed = true;
     nonceEntry.consumedAt = nowSeconds();
@@ -286,23 +367,33 @@ export function createPairingService({
     return { ok: true, device };
   }
 
-  /* exchangeNonceForAccessToken — prove possession of the device key before minting a token. */
-  function exchangeNonceForAccessToken({ deviceId, nonceId, nonce, signatureHex, scopes = [] } = {}) {
+  /* exchangeNonceForAccessToken — prove possession of the device key before minting a token.
+   *
+   * Scopes are derived server-side only: an elevate=true grant (issued
+   * via the out-of-band owner channel) yields "owner"; otherwise the
+   * device gets the least-privilege "mobile" scope.  Caller-supplied
+   * scopes are intentionally ignored. */
+  function exchangeNonceForAccessToken({ deviceId, nonceId, nonce, signatureHex, elevate = false } = {}) {
     const verified = verifyNonceSignature({ deviceId, nonceId, nonce, signatureHex });
     if (!verified.ok) return verified;
-    return issueAccessToken({ deviceId, scopes });
+    return issueAccessToken({ deviceId, elevate });
   }
 
-  /* issueAccessToken — mint a 1h HS256 access token for an active device. */
-  function issueAccessToken({ deviceId, scopes = [] } = {}) {
+  /* issueAccessToken — mint a 1h HS256 access token for an active device.
+   *
+   * Scopes are derived ONLY from server-side policy (`elevate`
+   * boolean).  Caller-supplied scopes are never honoured here — that
+   * was the previous scope escalation bug. */
+  function issueAccessToken({ deviceId, elevate = false } = {}) {
     const device = readDevice(deviceId);
     if (!device) return { ok: false, error: "device not found" };
     if (device.status !== "active") return { ok: false, error: `device ${device.status}` };
 
     const now = nowSeconds();
+    const grantedScopes = elevate ? ["owner"] : ["mobile"];
     const token = signHs256({
       sub: deviceId,
-      scopes: Array.isArray(scopes) ? scopes : [],
+      scopes: grantedScopes,
       iat: now,
       exp: now + tokenTtlSeconds,
     }, tokenSecret);
@@ -312,12 +403,12 @@ export function createPairingService({
       tokenJti: token.split(".")[2],
       issuedAt: now,
       expiresAt: now + tokenTtlSeconds,
-      scopes: Array.isArray(scopes) ? scopes : [],
+      scopes: grantedScopes,
     });
 
     device.lastSeenAt = now;
     writeDevice(device);
-    return { ok: true, accessToken: token, expiresAt: now + tokenTtlSeconds };
+    return { ok: true, accessToken: token, expiresAt: now + tokenTtlSeconds, scopes: grantedScopes };
   }
 
   /* verifyAccessToken — used by the HTTP middleware for /mobile/v1/* routes. */
@@ -356,6 +447,41 @@ export function createPairingService({
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  /* issueOwnerAccessToken — out-of-band upgrade path for trusted devices.
+   *
+   * This is the only way a paired device can obtain a JWT with the
+   * `owner` scope: the caller proves possession of the
+   * ownerApprovalSecret (the same secret that gates pair/confirm) by
+   * presenting a freshly signed nonce whose body carries an
+   * `ownerProof` equal to HMAC-SHA256(ownerApprovalSecret, nonce).
+   * The nonce must still match a server-issued nonce for the device.
+   * This keeps "owner" reach strictly inside the owner's side-channel.
+   */
+  function issueOwnerAccessToken({ deviceId, nonceId, nonce, signatureHex, ownerProof } = {}) {
+    if (!ownerApprovalSecret) {
+      return { ok: false, error: "owner approval secret not configured" };
+    }
+    const verified = verifyNonceSignature({ deviceId, nonceId, nonce, signatureHex });
+    if (!verified.ok) return verified;
+    if (!verifyOwnerApprovalToken(ownerApprovalSecret, "owner-elevation", nonce, ownerProof)) {
+      return { ok: false, error: "owner proof missing or invalid" };
+    }
+    return issueAccessToken({ deviceId, elevate: true });
+  }
+
+  /* computeOwnerApprovalToken — exported so tests and the
+   * `pairingOwnerProof` HTTP route can compute the value the owner
+   * pastes from a side-channel.  Returns null when the secret is
+   * unconfigured. */
+  function getOwnerApprovalToken(pairingId, code) {
+    if (!ownerApprovalSecret) return null;
+    return computeOwnerApprovalToken(ownerApprovalSecret, pairingId, code);
+  }
+
+  function hasOwnerApproval() {
+    return Boolean(ownerApprovalSecret);
+  }
+
   /* Audit append — wraps the standard appendJsonl for the audit file. */
   function audit(event) {
     appendJsonl(join(cacheDir, "audit.jsonl"), { auditKind: "mobile_pairing", ...event, occurredAt: nowSeconds() });
@@ -368,7 +494,10 @@ export function createPairingService({
     verifyNonceSignature,
     exchangeNonceForAccessToken,
     issueAccessToken,
+    issueOwnerAccessToken,
     verifyAccessToken,
+    getOwnerApprovalToken,
+    hasOwnerApproval,
     revokeDevice,
     listDevices,
     audit,
@@ -383,6 +512,9 @@ export function createPairingService({
       devicesDir,
       pairCodesPath,
       tokensPath,
+      computeOwnerApprovalToken,
+      parseEd25519PublicKey,
+      rawPublicKeyHexToSpki,
     },
   };
 }
