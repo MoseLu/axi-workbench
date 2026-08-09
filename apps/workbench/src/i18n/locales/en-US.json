@@ -118,5 +118,20 @@
   "tabbar.menu.closeOther": "Close others",
   "tabbar.menu.closeAll": "Close all",
   "tabbar.fullscreen.enter": "Fullscreen content",
-  "tabbar.fullscreen.exit": "Exit fullscreen"
+  "tabbar.fullscreen.exit": "Exit fullscreen",
+  "account.title": "Basic Information",
+  "account.avatar.label": "Avatar",
+  "account.avatar.alt": "Avatar",
+  "account.avatar.pick": "Choose avatar",
+  "account.avatar.fileAriaLabel": "Choose avatar file",
+  "account.avatar.invalidType": "Please choose an image file",
+  "account.avatar.readFailed": "Failed to read avatar",
+  "account.nickname.label": "Nickname",
+  "account.nickname.placeholder": "Enter your nickname",
+  "account.nickname.required": "Nickname cannot be empty",
+  "account.email.label": "Login email",
+  "account.email.hint": "Login email is bound by the identity service; email-code is currently the only login method.",
+  "account.email.unbound": "Unbound",
+  "account.submit": "Save changes",
+  "account.saveSuccess": "Saved successfully"
 }

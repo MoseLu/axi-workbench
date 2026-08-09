@@ -1,179 +1,118 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Descriptions, Input, Space, message, type InputRef } from 'antd';
-import { AxiDialog, AxiTableGroup } from '@axi/crud';
+import { Button, Form, Input, message } from 'antd';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useI18n } from '../../../i18n';
 import {
   loadProfile,
-  phoneDisplay,
   readFileAsDataUrl,
   resolveAvatarSrc,
   saveProfile,
   type UserProfile,
 } from './profileStore';
-import { DesktopSettingsPage } from './DesktopSettingsPage';
 import './AccountInfo.css';
 
-type EditField = 'nickname' | 'email' | 'phone';
-
-const editMeta: Record<
-  EditField,
-  { label: string; placeholder: string; inputMode: React.HTMLAttributes<HTMLInputElement>['inputMode'] }
-> = {
-  nickname: { label: '昵称', placeholder: '请输入昵称', inputMode: 'text' },
-  email: { label: '邮箱', placeholder: 'name@example.com', inputMode: 'email' },
-  phone: { label: '手机号', placeholder: '请输入手机号', inputMode: 'tel' },
-};
-
+/**
+ * Cool Admin-style personal information form.
+ *
+ * Authentication is email-code based in Workbench, so the login email is
+ * intentionally read-only here. Editable fields are Workbench profile
+ * presentation data and are persisted through the existing profile store.
+ */
 const AccountInfo: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [profile, setProfile] = useState<UserProfile>(() => loadProfile(user));
-  const [editField, setEditField] = useState<EditField | null>(null);
-  const [draft, setDraft] = useState('');
-  const [editError, setEditError] = useState<string | null>(null);
+  const [nickname, setNickname] = useState(profile.nickname);
+  const [avatarDataUrl, setAvatarDataUrl] = useState(profile.avatarDataUrl);
   const fileRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<InputRef>(null);
 
   useEffect(() => {
-    const onChange = () => setProfile(loadProfile(user));
+    const onChange = () => {
+      const next = loadProfile(user);
+      setProfile(next);
+      setNickname(next.nickname);
+      setAvatarDataUrl(next.avatarDataUrl);
+    };
+
     window.addEventListener('wb-profile-changed', onChange);
     return () => window.removeEventListener('wb-profile-changed', onChange);
   }, [user]);
 
-  useEffect(() => {
-    if (!editField) return;
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
-    return () => window.clearTimeout(timer);
-  }, [editField]);
-
-  const openEdit = (field: EditField) => {
-    setDraft(field === 'phone' ? profile.phone : profile[field]);
-    setEditError(null);
-    setEditField(field);
-  };
-
-  const closeEdit = () => {
-    setEditError(null);
-    setEditField(null);
-  };
-
-  const saveEdit = () => {
-    if (!editField) return;
-    const value = draft.trim();
-    if (editField === 'nickname' && !value) {
-      setEditError('昵称不能为空');
-      return;
-    }
-    if (editField === 'email' && value && (!value.includes('@') || !value.includes('.'))) {
-      setEditError('请输入有效邮箱');
-      return;
-    }
-    if (editField === 'phone' && value && value.length < 6) {
-      setEditError('手机号格式不正确');
-      return;
-    }
-    setProfile(saveProfile({ [editField]: value }, user));
-    message.success('资料已更新');
-    closeEdit();
-  };
-
   const onPickAvatar = async (file?: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      message.error('请选择图片文件');
+      message.error(t('account.avatar.invalidType'));
       return;
     }
+
     try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setProfile(saveProfile({ avatarDataUrl: dataUrl }, user));
-      message.success('头像已更新');
+      setAvatarDataUrl(await readFileAsDataUrl(file));
     } catch {
-      message.error('头像读取失败');
+      message.error(t('account.avatar.readFailed'));
     }
   };
 
-  const editing = editField ? editMeta[editField] : null;
-  const initialValue = editField ? (editField === 'phone' ? profile.phone : profile[editField]) : '';
-  const canSave = Boolean(editField && draft !== initialValue && (editField !== 'nickname' || draft.trim().length > 0));
+  const save = () => {
+    const nextNickname = nickname.trim();
+    if (!nextNickname) {
+      message.error(t('account.nickname.required'));
+      return;
+    }
+
+    const next = saveProfile({ nickname: nextNickname, avatarDataUrl }, user);
+    setProfile(next);
+    setNickname(next.nickname);
+    setAvatarDataUrl(next.avatarDataUrl);
+    message.success(t('account.saveSuccess'));
+  };
 
   return (
-    <DesktopSettingsPage activeKey="/admin/me/account" title="账号资料">
-      <input
-        ref={fileRef}
-        accept="image/*"
-        style={{ display: 'none' }}
-        type="file"
-        onChange={(event) => {
-          void onPickAvatar(event.target.files?.[0]);
-          event.target.value = '';
-        }}
-      />
+    <main aria-labelledby="wb-account-page-title" className="wb-account-page">
+      <section className="wb-account-page__panel">
+        <h1 id="wb-account-page-title">{t('account.title')}</h1>
 
-      <AxiTableGroup title="个人资料">
-        <div className="wb-account__identity">
-          <img
-            alt="头像"
-            className={`wb-account__avatar${profile.avatarDataUrl ? '' : ' wb-account__avatar--default'}`}
-            src={resolveAvatarSrc(profile.avatarDataUrl)}
-          />
-          <div>
-            <strong>{profile.nickname}</strong>
-            <span>{profile.email}</span>
-          </div>
-          <Button size="small" onClick={() => fileRef.current?.click()}>更新头像</Button>
-        </div>
-        <Descriptions column={2} colon={false} size="small">
-          <Descriptions.Item label="昵称">
-            <span className="wb-account__value">{profile.nickname}<Button size="small" type="link" onClick={() => openEdit('nickname')}>修改</Button></span>
-          </Descriptions.Item>
-          <Descriptions.Item label="邮箱">
-            <span className="wb-account__value">{profile.email}<Button size="small" type="link" onClick={() => openEdit('email')}>修改</Button></span>
-          </Descriptions.Item>
-          <Descriptions.Item label="手机号">
-            <span className="wb-account__value">{phoneDisplay(profile.phone)}<Button size="small" type="link" onClick={() => openEdit('phone')}>修改</Button></span>
-          </Descriptions.Item>
-        </Descriptions>
-      </AxiTableGroup>
+        <Form className="wb-account-page__form" layout="vertical" onFinish={save}>
+          <Form.Item label={t('account.avatar.label')}>
+            <div className="wb-account-page__avatar-field">
+              <img alt={t('account.avatar.alt')} className="wb-account-page__avatar" src={resolveAvatarSrc(avatarDataUrl)} />
+              <Button type="default" onClick={() => fileRef.current?.click()}>
+                {t('account.avatar.pick')}
+              </Button>
+              <input
+                ref={fileRef}
+                accept="image/*"
+                aria-label={t('account.avatar.fileAriaLabel')}
+                className="wb-account-page__file-input"
+                type="file"
+                onChange={(event) => {
+                  void onPickAvatar(event.target.files?.[0]);
+                  event.target.value = '';
+                }}
+              />
+            </div>
+          </Form.Item>
 
-      <AxiTableGroup title="账户状态">
-        <Descriptions column={1} colon={false} size="small">
-          <Descriptions.Item label="账号状态">{profile.status || '已登录'}</Descriptions.Item>
-        </Descriptions>
-      </AxiTableGroup>
-
-      <AxiDialog
-        closeLabel="关闭"
-        controls={['close']}
-        footer={(
-          <Space>
-            <Button onClick={closeEdit}>取消</Button>
-            <Button disabled={!canSave} type="primary" onClick={saveEdit}>保存</Button>
-          </Space>
-        )}
-        open={Boolean(editing)}
-        title={editing ? `修改${editing.label}` : ''}
-        width={460}
-        onClose={closeEdit}
-      >
-        {editing ? (
-          <label className="wb-account__edit-field" htmlFor="wb-account-edit-input">
-            <span>{editing.label}</span>
+          <Form.Item label={t('account.nickname.label')} required>
             <Input
-              id="wb-account-edit-input"
-              ref={inputRef}
-              inputMode={editing.inputMode}
-              placeholder={editing.placeholder}
-              status={editError ? 'error' : undefined}
-              value={draft}
-              onChange={(event) => {
-                setDraft(event.target.value);
-                setEditError(null);
-              }}
+              autoComplete="nickname"
+              placeholder={t('account.nickname.placeholder')}
+              value={nickname}
+              onChange={(event) => setNickname(event.target.value)}
             />
-            {editError ? <small role="alert">{editError}</small> : null}
-          </label>
-        ) : null}
-      </AxiDialog>
-    </DesktopSettingsPage>
+          </Form.Item>
+
+          <Form.Item extra={t('account.email.hint')} label={t('account.email.label')}>
+            <Input autoComplete="email" readOnly value={profile.email || t('account.email.unbound')} />
+          </Form.Item>
+
+          <Form.Item>
+            <Button htmlType="submit" type="primary">
+              {t('account.submit')}
+            </Button>
+          </Form.Item>
+        </Form>
+      </section>
+    </main>
   );
 };
 

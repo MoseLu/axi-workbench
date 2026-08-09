@@ -118,5 +118,20 @@
   "tabbar.menu.closeOther": "关闭其他",
   "tabbar.menu.closeAll": "关闭全部",
   "tabbar.fullscreen.enter": "内容全屏",
-  "tabbar.fullscreen.exit": "退出全屏"
+  "tabbar.fullscreen.exit": "退出全屏",
+  "account.title": "基本信息",
+  "account.avatar.label": "头像",
+  "account.avatar.alt": "头像",
+  "account.avatar.pick": "选择头像",
+  "account.avatar.fileAriaLabel": "选择头像文件",
+  "account.avatar.invalidType": "请选择图片文件",
+  "account.avatar.readFailed": "头像读取失败",
+  "account.nickname.label": "昵称",
+  "account.nickname.placeholder": "请填写昵称",
+  "account.nickname.required": "昵称不能为空",
+  "account.email.label": "登录邮箱",
+  "account.email.hint": "登录邮箱由身份服务绑定，邮箱验证码是当前唯一登录方式。",
+  "account.email.unbound": "未绑定",
+  "account.submit": "保存修改",
+  "account.saveSuccess": "修改成功"
 }
