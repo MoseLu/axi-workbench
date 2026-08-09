@@ -20,7 +20,7 @@
   color: var(--axi-text, #1f2937);
   background: var(--axi-layout-surface, #ffffff);
   border: 1px solid var(--axi-layout-border, rgba(15, 23, 42, 0.16));
-  border-radius: 10px;
+  border-radius: var(--axi-radius-xl, 10px);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26), 0 4px 18px rgba(0, 0, 0, 0.12);
   animation: wb-global-search-dialog-in 160ms ease-out;
 }
@@ -28,8 +28,8 @@
 .wb-global-search__header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 16px 12px;
+  gap: var(--axi-space-2-5, 10px);
+  padding: var(--axi-space-4, 16px) 16px 12px;
   border-bottom: 1px solid var(--axi-layout-border, rgba(15, 23, 42, 0.12));
 }
 
@@ -39,8 +39,8 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px;
+  gap: var(--axi-space-2-5, 10px);
+  padding: 0 var(--axi-space-3, 12px);
   background: var(--axi-layout-surface-strong, rgba(15, 23, 42, 0.05));
   border: 1px solid var(--axi-layout-control-border, var(--axi-layout-border, rgba(15, 23, 42, 0.16)));
   border-radius: 7px;
@@ -84,7 +84,7 @@
   color: var(--axi-muted, #64748b);
   background: var(--axi-layout-chrome-bg, rgba(15, 23, 42, 0.06));
   border: 1px solid var(--axi-layout-border, rgba(15, 23, 42, 0.14));
-  border-radius: 4px;
+  border-radius: var(--axi-radius-sm, 4px);
   font-family: inherit;
   font-size: 11px;
   line-height: 1;
@@ -112,7 +112,7 @@
   width: 24px;
   height: 24px;
   padding: 0;
-  border-radius: 4px;
+  border-radius: var(--axi-radius-sm, 4px);
 }
 
 .wb-global-search__clear:hover,
@@ -123,21 +123,21 @@
 
 .wb-global-search__close {
   height: 36px;
-  padding: 0 2px 0 8px;
+  padding: 0 2px 0 var(--axi-space-2, 8px);
 }
 
 .wb-global-search__body {
   min-height: 0;
   overflow: auto;
-  padding: 14px 12px 12px;
+  padding: 14px var(--axi-space-3, 12px) 12px;
 }
 
 .wb-global-search__meta {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  padding: 0 8px 10px;
+  gap: var(--axi-space-3, 12px);
+  padding: 0 var(--axi-space-2, 8px) 10px;
 }
 
 .wb-global-search__title {
@@ -153,7 +153,7 @@
 }
 
 .wb-global-search__count {
-  margin-left: 8px;
+  margin-left: var(--axi-space-2, 8px);
 }
 
 .wb-global-search__hint {
@@ -161,11 +161,11 @@
 }
 
 .wb-global-search__group + .wb-global-search__group {
-  margin-top: 12px;
+  margin-top: var(--axi-space-3, 12px);
 }
 
 .wb-global-search__group-label {
-  padding: 0 8px 5px;
+  padding: 0 var(--axi-space-2, 8px) 5px;
   color: var(--axi-muted, #64748b);
   font-size: 11px;
   font-weight: 650;
@@ -183,7 +183,7 @@
   text-align: left;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
 }
@@ -207,7 +207,7 @@
   flex: 0 0 auto;
   color: var(--axi-primary, #3b66d9);
   background: color-mix(in srgb, var(--axi-primary, #3b66d9) 11%, transparent);
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
 }
 
 .wb-global-search__result-copy {
@@ -267,7 +267,7 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
   color: var(--axi-muted, #64748b);
   font-size: 12px;
 }
@@ -295,8 +295,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 0 16px;
+  gap: var(--axi-space-3, 12px);
+  padding: 0 var(--axi-space-4, 16px);
   color: var(--axi-muted, #64748b);
   background: var(--axi-layout-chrome-bg, rgba(15, 23, 42, 0.035));
   border-top: 1px solid var(--axi-layout-border, rgba(15, 23, 42, 0.12));
@@ -306,13 +306,13 @@
 .wb-global-search__keys {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
 }
 
 .wb-global-search__keys span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--axi-space-1, 4px);
   white-space: nowrap;
 }
 
@@ -341,7 +341,7 @@
 @media (max-width: 640px) {
   .wb-global-search {
     align-items: flex-start;
-    padding: 16px;
+    padding: var(--axi-space-4, 16px);
   }
 
   .wb-global-search__dialog {

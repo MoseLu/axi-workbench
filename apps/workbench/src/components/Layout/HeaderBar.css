@@ -16,7 +16,7 @@
   width: 26px;
   height: 26px;
   border: 1px solid var(--mpms-topbar-border-color);
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
   background: var(--mpms-topbar-bg);
   color: var(--mpms-text-primary);
   font-size: 14px;
@@ -29,8 +29,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 8px 0 4px;
-  border-radius: 4px;
+  padding: 0 var(--axi-space-2, 8px) 0 4px;
+  border-radius: var(--axi-radius-sm, 4px);
   cursor: pointer;
   height: 28px;
 }

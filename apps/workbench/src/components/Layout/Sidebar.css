@@ -17,7 +17,7 @@
   font-size: 16px;
   letter-spacing: 0;
   height: 48px;
-  padding: 0 16px;
+  padding: 0 var(--axi-space-4, 16px);
 }
 
 .sidebar .mpms-logo__text,
@@ -30,7 +30,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 0 16px;
+  padding: var(--axi-space-2, 8px) 0 16px;
   background: var(--mpms-sidebar-bg, #ffffff);
 }
 
@@ -57,7 +57,7 @@
   padding-top: 0;
   padding-right: 20px;
   padding-bottom: 0;
-  padding-left: calc(20px + (var(--mpms-menu-level, 0) * 16px));
+  padding-left: calc(20px + (var(--mpms-menu-level, 0) * var(--axi-space-4, 16px)));
   border-radius: 0;
   color: var(--mpms-sidebar-text-secondary, #52525b);
   font-size: 14px;
