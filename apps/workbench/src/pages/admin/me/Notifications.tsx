@@ -16,11 +16,14 @@ import './Notifications.css';
 
 const notificationQueryKey = ['axi', 'notifications'] as const;
 
-function categoryLabel(category: WorkbenchNotification['category']) {
-  if (category === 'projects') return '项目';
-  if (category === 'workspace') return '工作区';
-  if (category === 'me') return '账户';
-  return '系统';
+function categoryLabel(
+  category: WorkbenchNotification['category'],
+  t: (key: string, fallback?: string) => string,
+) {
+  if (category === 'projects') return t('notification.category.projects');
+  if (category === 'workspace') return t('notification.category.workspace');
+  if (category === 'me') return t('notification.category.me');
+  return t('notification.category.home');
 }
 
 const Notifications: React.FC = () => {
@@ -56,8 +59,8 @@ const Notifications: React.FC = () => {
   const columns: AxiTableColumn<WorkbenchNotification>[] = [
     {
       dataIndex: 'category',
-      render: (category) => categoryLabel(category),
-      title: '类别',
+      render: (category) => categoryLabel(category, t),
+      title: t('notification.column.category'),
       width: 92,
     },
     {
@@ -69,18 +72,18 @@ const Notifications: React.FC = () => {
           <small>{notification.content}</small>
         </span>
       ),
-      title: '通知内容',
+      title: t('notification.column.subject'),
     },
     {
       dataIndex: 'createdAt',
       render: (createdAt) => formatNotificationTime(createdAt, locale),
-      title: '时间',
+      title: t('notification.column.time'),
       width: 160,
     },
     {
       dataIndex: 'read',
-      render: (read) => read ? '已读' : '未读',
-      title: '状态',
+      render: (read) => read ? t('notification.read') : t('notification.unread'),
+      title: t('notification.column.status'),
       width: 78,
     },
   ];
@@ -101,7 +104,7 @@ const Notifications: React.FC = () => {
               {markAllRead.isPending ? t('notification.marking') : t('notification.markAllRead')}
             </Button>
           ) : null}
-          description={unreadCount > 0 ? `${unreadCount} ${t('notification.unread')}` : '全部通知已处理'}
+          description={unreadCount > 0 ? `${unreadCount} ${t('notification.unread')}` : t('notification.allRead')}
           title={t('notification.center')}
         >
           {inbox.isPending ? (
