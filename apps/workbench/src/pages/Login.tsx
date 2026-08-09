@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AxiLogoMark } from '@axi/core';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../i18n';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
 import { createOneTimeCode, oneTimeCodeValue, type OneTimeCode } from '../lib/oneTimeCode';
 
@@ -21,6 +22,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useI18n();
   const {
     isAuthenticated,
     isLoading: sessionLoading,
@@ -71,7 +73,7 @@ const Login: React.FC = () => {
     if (submitting || sessionLoading) return;
     const trimmed = email.trim().toLowerCase();
     if (!EMAIL_PATTERN.test(trimmed)) {
-      setError('请输入合法的邮箱地址');
+      setError(t('auth.login.invalidEmail'));
       return;
     }
     setError(null);
@@ -85,9 +87,9 @@ const Login: React.FC = () => {
       setCode(createOneTimeCode());
       setCooldown(RESEND_COOLDOWN_SECONDS);
       setPhase('code');
-      setHint('验证码已发送到您的邮箱，请查收（QQ 邮箱可能在「垃圾邮件」中）。');
+      setHint(t('auth.login.codeSentHint'));
     } catch (caught: unknown) {
-      const message = caught instanceof Error ? caught.message : '无法发送验证码';
+      const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
       setError(message);
     } finally {
       setSubmitting(false);
@@ -99,11 +101,11 @@ const Login: React.FC = () => {
     if (submitting) return;
     const trimmed = oneTimeCodeValue(code);
     if (!trimmed) {
-      setError('请输入邮件中的验证码');
+      setError(t('auth.login.codeRequired'));
       return;
     }
     if (!/^\d{6}$/.test(trimmed)) {
-      setError('验证码必须是 6 位数字');
+      setError(t('auth.login.codeLength'));
       return;
     }
     setError(null);
@@ -119,7 +121,7 @@ const Login: React.FC = () => {
         // route with stale unauthenticated state and bounce back to /login.
         return;
       }
-      setError('验证码无效或已过期，请检查后重试。');
+      setError(t('auth.login.codeInvalid'));
       setPhase('code');
     } finally {
       setSubmitting(false);
@@ -137,9 +139,9 @@ const Login: React.FC = () => {
       setExpiresAt(result.expiresAt || null);
       setCooldown(RESEND_COOLDOWN_SECONDS);
       setCode(createOneTimeCode());
-      setHint('已重新发送验证码。');
+      setHint(t('auth.login.resentHint'));
     } catch (caught: unknown) {
-      const message = caught instanceof Error ? caught.message : '重新发送失败';
+      const message = caught instanceof Error ? caught.message : t('auth.login.resendFailed');
       setError(message);
     } finally {
       setSubmitting(false);
@@ -217,8 +219,8 @@ const Login: React.FC = () => {
           </div>
           <p style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(255, 255, 255, 0.54)', margin: 0 }}>
             {phase === 'code' || phase === 'verifying'
-              ? '已向邮箱发送一次性验证码，输入后即可登录。'
-              : '输入邮箱后，我们会发送一个一次性验证码用于登录。'}
+              ? t('auth.login.subtitle.code')
+              : t('auth.login.subtitle.email')}
           </p>
         </div>
 
@@ -263,7 +265,7 @@ const Login: React.FC = () => {
               htmlFor="axi-login-email"
               style={{ display: 'block', fontSize: 12, color: 'rgba(255, 255, 255, 0.6)', marginBottom: 6 }}
             >
-              邮箱
+              {t('auth.email')}
             </label>
             <input
               id="axi-login-email"
@@ -286,7 +288,7 @@ const Login: React.FC = () => {
                 cursor: submitting || sessionLoading || !email.trim() ? 'not-allowed' : 'pointer',
               }}
             >
-              {submitting ? '正在发送…' : '获取验证码'}
+              {submitting ? t('auth.login.sending') : t('auth.login.requestCode')}
             </button>
           </form>
         )}
@@ -303,9 +305,9 @@ const Login: React.FC = () => {
                 color: 'rgba(255, 255, 255, 0.6)',
               }}
             >
-              <span id="axi-login-code-label">验证码</span>
+              <span id="axi-login-code-label">{t('auth.login.codeLabel')}</span>
               <button type="button" onClick={handleChangeEmail} style={linkButton}>
-                换一个邮箱
+                {t('auth.login.changeEmail')}
               </button>
             </div>
             <OneTimeCodeInput
@@ -326,7 +328,7 @@ const Login: React.FC = () => {
               }}
             >
               <span>
-                已发送至{' '}
+                {t('auth.login.sentTo')}{' '}
                 <strong style={{ color: 'var(--axi-text, #f8fafc)' }}>{sentTo}</strong>
               </span>
               <button
@@ -339,12 +341,12 @@ const Login: React.FC = () => {
                   cursor: cooldown > 0 ? 'not-allowed' : 'pointer',
                 }}
               >
-                {cooldown > 0 ? `${cooldown}s 后可重新发送` : '重新发送验证码'}
+                {cooldown > 0 ? `${cooldown}${t('auth.login.resendCooldown')}` : t('auth.login.resend')}
               </button>
             </div>
             {expiresAt && (
               <p style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)', margin: '0 0 16px' }}>
-                验证码将在 {new Date(expiresAt).toLocaleString()} 前有效。
+                {t('auth.login.expiresPrefix')}{new Date(expiresAt).toLocaleString()}{t('auth.login.expiresSuffix')}
               </p>
             )}
             <button
@@ -356,7 +358,7 @@ const Login: React.FC = () => {
                 cursor: submitting || oneTimeCodeValue(code).length !== 6 ? 'not-allowed' : 'pointer',
               }}
             >
-              {phase === 'verifying' || submitting ? '正在验证…' : '登录'}
+              {phase === 'verifying' || submitting ? t('auth.login.verifying') : t('auth.signin')}
             </button>
           </form>
         )}
