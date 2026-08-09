@@ -53,9 +53,8 @@ export const workbenchMenuRouteMap: Record<string, { label: string }> = {
   '/admin/task': { label: '工作项' },
   '/admin/team': { label: '团队' },
   '/admin/handoff': { label: '跨端续办' },
-  '/admin/me': { label: '我的' },
+  '/admin/me': { label: '个人中心' },
   '/admin/settings/menu': { label: '菜单列表' },
-  '/admin/settings/user': { label: '我的' },
   '/admin/settings/role': { label: '角色列表' },
 };
 
