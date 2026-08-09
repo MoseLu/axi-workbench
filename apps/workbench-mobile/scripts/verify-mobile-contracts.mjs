@@ -67,6 +67,9 @@ forbidMatch(`${home}\n${projects}\n${workspace}`, /DEMO_|mock(?:Project|Task|Dat
 requireMatch(search, /useMobileWorkspaceQuery[\s\S]*MobileProjectionState/, 'mobile search must query the same authenticated projection');
 forbidMatch(search, /const corpus\s*=\s*\[|storyGraph|navigationReview|syncStatus/, 'mobile search must not restore static showcase results');
 requireMatch(mobileControl, /resolveGatewayURL\(`\/api\/v1\/mobile/, 'mobile control calls must use the API Gateway boundary');
+requireMatch(mobileControl, /Ed25519/, 'mobile device pairing must use the server-compatible Ed25519 key proof');
+requireMatch(mobileControl, /control-plane\/mobile\/pair-approval/, 'mobile pairing must obtain owner approval through the authenticated Web session');
+requireMatch(mobileControl, /ownerApprovalToken/, 'mobile pairing confirmation must carry the owner approval token');
 forbidMatch(mobileControl, /localhost:8092|CONTROL_PLANE_URL|localStorage|sessionStorage/, 'mobile must not call or persist control-plane credentials directly');
 
 forbidMatch(app, /from ['"]@axi\/shell['"]|<AxiDashboardShell/, 'mobile app must not import the Web admin dashboard shell');

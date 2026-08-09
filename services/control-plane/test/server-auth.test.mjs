@@ -294,3 +294,42 @@ test("internal gateway handoff route still requires the gateway internal token",
   const body = JSON.parse(r.body);
   assert.match(body.error, /gateway internal/i);
 });
+
+test("authenticated web owner can mint a pairing approval token through the internal gateway route", async () => {
+  const { server, controlPlane } = fixture();
+  const { publicKeyHex } = freshKey();
+  const start = controlPlane.pairing.startPair({ publicKeyHex, deviceName: "web-approval-test" });
+  const r = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair-approval",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: { pairingId: start.pairingId, code: start.code },
+  });
+  assert.equal(r.status, 200, `expected 200, got ${r.status}: ${r.body}`);
+  const body = JSON.parse(r.body);
+  assert.equal(body.ownerApprovalToken, controlPlane.pairing.getOwnerApprovalToken(start.pairingId, start.code));
+});
+
+test("pairing approval route rejects spoofed or incomplete internal requests", async () => {
+  const { server } = fixture();
+  const missingSubject = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair-approval",
+    headers: { "x-axi-internal-token": "axi-development-internal-token" },
+    body: { pairingId: "pair_x", code: "123456" },
+  });
+  assert.equal(missingSubject.status, 401);
+  const incomplete = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair-approval",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: { pairingId: "pair_x" },
+  });
+  assert.equal(incomplete.status, 400);
+});

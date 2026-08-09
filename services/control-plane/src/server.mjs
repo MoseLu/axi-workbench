@@ -120,6 +120,21 @@ export function createControlPlaneHttpServer({
       }
       return sendJson(res, 405, { error: "method not allowed" });
     }
+    if (req.method === "POST" && url.pathname === "/internal/web/v1/mobile/pair-approval") {
+      if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+      }
+      const subject = String(req.headers["x-axi-subject"] || "").trim();
+      if (!subject) return sendJson(res, 401, { error: "verified web identity required" }, url);
+      if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+      const body = await readJsonBody(req);
+      if (!body || typeof body.pairingId !== "string" || typeof body.code !== "string" || Object.keys(body).some((key) => !["pairingId", "code"].includes(key))) {
+        return sendJson(res, 400, { error: "pairingId and code are required" }, url);
+      }
+      const ownerApprovalToken = controlPlane.pairing.getOwnerApprovalToken(body.pairingId.trim(), body.code.trim());
+      if (!ownerApprovalToken) return sendJson(res, 503, { error: "owner approval secret not configured" }, url);
+      return sendJson(res, 200, { ownerApprovalToken }, url);
+    }
     let gatewayWebAuth = false;
     if (url.pathname.startsWith("/internal/web/v1/")) {
       if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {

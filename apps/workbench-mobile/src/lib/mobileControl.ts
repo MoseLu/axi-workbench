@@ -55,7 +55,7 @@ export class MobileControlError extends Error {
 }
 
 type ActiveSession = MobileDeviceSession & { accessToken: string };
-type PendingPairing = { deviceSecret: string; pairingId: string; expiresAt: number | null };
+type PendingPairing = { privateKey: CryptoKey; publicKeyHex: string; pairingId: string; expiresAt: number | null };
 
 let activeSession: ActiveSession | null = null;
 let pendingPairing: PendingPairing | null = null;
@@ -129,43 +129,82 @@ async function mobileFetch<T>(path: string, init: RequestInit = {}, { requiresDe
   return payload as T;
 }
 
-function randomHex(bytes = 32): string {
-  const value = new Uint8Array(bytes);
-  crypto.getRandomValues(value);
-  return Array.from(value, (part) => part.toString(16).padStart(2, '0')).join('');
+function bytesToHex(value: ArrayBuffer): string {
+  return Array.from(new Uint8Array(value), (part) => part.toString(16).padStart(2, '0')).join('');
 }
 
-function hexBytes(value: string): Uint8Array {
-  const result = new Uint8Array(value.length / 2);
-  for (let index = 0; index < result.length; index += 1) result[index] = Number.parseInt(value.slice(index * 2, index * 2 + 2), 16);
-  return result;
+async function generateDeviceKeyPair(): Promise<{ privateKey: CryptoKey; publicKeyHex: string }> {
+  if (!globalThis.crypto?.subtle) throw new MobileControlError('device_key_algorithm_unavailable', 503);
+  try {
+    const keyPair = await globalThis.crypto.subtle.generateKey(
+      { name: 'Ed25519' } as AlgorithmIdentifier,
+      true,
+      ['sign', 'verify'],
+    ) as CryptoKeyPair;
+    const publicKey = await globalThis.crypto.subtle.exportKey('raw', keyPair.publicKey);
+    return { privateKey: keyPair.privateKey, publicKeyHex: bytesToHex(publicKey) };
+  } catch {
+    throw new MobileControlError('device_key_algorithm_unavailable', 503);
+  }
 }
 
-async function signNonce(deviceSecret: string, nonce: string): Promise<string> {
-  const key = await crypto.subtle.importKey('raw', hexBytes(deviceSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(nonce));
-  return Array.from(new Uint8Array(signature), (part) => part.toString(16).padStart(2, '0')).join('');
+async function signNonce(privateKey: CryptoKey, nonce: string): Promise<string> {
+  if (!globalThis.crypto?.subtle) throw new MobileControlError('device_key_algorithm_unavailable', 503);
+  try {
+    const signature = await globalThis.crypto.subtle.sign(
+      { name: 'Ed25519' } as AlgorithmIdentifier,
+      privateKey,
+      new TextEncoder().encode(nonce),
+    );
+    return bytesToHex(signature);
+  } catch {
+    throw new MobileControlError('device_key_algorithm_unavailable', 503);
+  }
 }
 
-/** Starts pairing but never stores the device key or returned access token. */
+async function requestOwnerPairApproval(pairingId: string, code: string): Promise<string> {
+  const request = withRequestTimeout();
+  try {
+    const response = await fetch(resolveGatewayURL('/api/v1/control-plane/mobile/pair-approval'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pairingId, code: code.trim() }),
+      signal: request.signal,
+    });
+    const payload = await response.json().catch(() => ({})) as { ownerApprovalToken?: string; error?: string };
+    if (!response.ok || !payload.ownerApprovalToken) {
+      throw new MobileControlError(String(payload.error || `pairing_approval_failed_${response.status}`), response.status);
+    }
+    return payload.ownerApprovalToken;
+  } catch (error) {
+    if (error instanceof MobileControlError) throw error;
+    throw new MobileControlError('service_unavailable', 503);
+  } finally {
+    request.dispose();
+  }
+}
+
+/** Starts pairing and keeps the Ed25519 private key in memory only. */
 export async function startMobileDevicePairing(deviceName = 'Axi Workbench Mobile'): Promise<{ pairingId: string; expiresAt: number | null }> {
-  const deviceSecret = randomHex();
+  const keyPair = await generateDeviceKeyPair();
   const response = await mobileFetch<{ pairingId: string; codeExpiresAt?: number }>('/pair/start', {
     method: 'POST',
-    body: JSON.stringify({ publicKeyHex: deviceSecret, deviceName, clientInfo: { surface: 'workbench-mobile' } }),
+    body: JSON.stringify({ publicKeyHex: keyPair.publicKeyHex, deviceName, clientInfo: { surface: 'workbench-mobile' } }),
   }, { requiresDevice: false });
-  pendingPairing = { deviceSecret, pairingId: response.pairingId, expiresAt: response.codeExpiresAt ?? null };
+  pendingPairing = { ...keyPair, pairingId: response.pairingId, expiresAt: response.codeExpiresAt ?? null };
   return { pairingId: response.pairingId, expiresAt: response.codeExpiresAt ?? null };
 }
 
-/** Completes a user-confirmed pairing and keeps its one-hour token in memory only. */
+/** Completes pairing after the authenticated owner session approves the code. */
 export async function confirmMobileDevicePairing(code: string): Promise<MobileDeviceSession> {
   if (!pendingPairing) throw new MobileControlError('pairing_not_started');
+  const ownerApprovalToken = await requestOwnerPairApproval(pendingPairing.pairingId, code);
   const confirmed = await mobileFetch<{ deviceId: string; nonce: { nonceId: string; nonce: string } }>('/pair/confirm', {
     method: 'POST',
-    body: JSON.stringify({ pairingId: pendingPairing.pairingId, code: code.trim() }),
+    body: JSON.stringify({ pairingId: pendingPairing.pairingId, code: code.trim(), ownerApprovalToken }),
   }, { requiresDevice: false });
-  const signatureHex = await signNonce(pendingPairing.deviceSecret, confirmed.nonce.nonce);
+  const signatureHex = await signNonce(pendingPairing.privateKey, confirmed.nonce.nonce);
   const token = await mobileFetch<{ accessToken: string; expiresAt: number }>('/auth/token', {
     method: 'POST',
     body: JSON.stringify({ deviceId: confirmed.deviceId, nonceId: confirmed.nonce.nonceId, nonce: confirmed.nonce.nonce, signatureHex }),
