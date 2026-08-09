@@ -133,5 +133,16 @@
   "account.email.hint": "Login email is bound by the identity service; email-code is currently the only login method.",
   "account.email.unbound": "Unbound",
   "account.submit": "Save changes",
-  "account.saveSuccess": "Saved successfully"
+  "account.saveSuccess": "Saved successfully",
+  "account.devices.title": "Devices",
+  "account.devices.group": "Signed-in devices",
+  "account.devices.empty": "Device session data is not wired up yet",
+  "account.theme.title": "Theme",
+  "account.theme.group": "Display preference",
+  "account.theme.mode.system": "Follow system",
+  "account.theme.mode.system.desc": "Match the system appearance",
+  "account.theme.mode.light": "Light",
+  "account.theme.mode.light.desc": "Always use the light interface",
+  "account.theme.mode.dark": "Dark",
+  "account.theme.mode.dark.desc": "Always use the dark interface"
 }

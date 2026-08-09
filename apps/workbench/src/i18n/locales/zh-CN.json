@@ -133,5 +133,16 @@
   "account.email.hint": "登录邮箱由身份服务绑定，邮箱验证码是当前唯一登录方式。",
   "account.email.unbound": "未绑定",
   "account.submit": "保存修改",
-  "account.saveSuccess": "修改成功"
+  "account.saveSuccess": "修改成功",
+  "account.devices.title": "设备管理",
+  "account.devices.group": "登录设备",
+  "account.devices.empty": "当前环境尚未接入设备会话数据",
+  "account.theme.title": "主题外观",
+  "account.theme.group": "显示偏好",
+  "account.theme.mode.system": "跟随系统",
+  "account.theme.mode.system.desc": "与系统外观保持一致",
+  "account.theme.mode.light": "浅色",
+  "account.theme.mode.light.desc": "始终使用浅色界面",
+  "account.theme.mode.dark": "深色",
+  "account.theme.mode.dark.desc": "始终使用深色界面"
 }
