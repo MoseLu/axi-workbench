@@ -391,7 +391,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
             });
             setCreateDialogOpen(true);
           }}
-          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)', borderRadius: 6, color: '#60a5fa', fontWeight: 600 }}>
+          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'color-mix(in srgb, var(--axi-primary, #3b82f6) 15%, transparent)', border: '1px solid rgba(59,130,246,0.4)', borderRadius: 6, color: 'var(--axi-primary, #60a5fa)', fontWeight: 600 }}>
           新增设备
         </button>
 
@@ -401,7 +401,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
             setBatchCreateText('');
             setBatchCreateDialogOpen(true);
           }}
-          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 6, color: '#34d399', fontWeight: 600 }}>
+          style={{ padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: 'color-mix(in srgb, var(--axi-success, #10b981) 15%, transparent)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 6, color: 'var(--axi-success, #34d399)', fontWeight: 600 }}>
           批量生成
         </button>
 
@@ -539,7 +539,7 @@ export default function DeviceManagement({ maximized = false }: Props) {
               />
               <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--bg-primary)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 {batchPreview.error ? (
-                  <span style={{ color: '#f87171' }}>{batchPreview.error}</span>
+                  <span style={{ color: 'var(--axi-danger, #f87171)' }}>{batchPreview.error}</span>
                 ) : batchPreview.total > 0 ? (
                   <span>
                     将创建 <strong style={{ color: 'var(--text-primary)' }}>{batchPreview.total}</strong> 台设备。

@@ -176,7 +176,7 @@ export default function ImageGrid({ results, onSelect, selectable, selected, pre
               <img
                 src={getImgSrc(p.image_path || p.image_url || '')}
                 alt=""
-                style={{ width: 48, height: 64, objectFit: 'cover', display: 'block', background: '#333' }}
+                style={{ width: 48, height: 64, objectFit: 'cover', display: 'block', background: 'var(--axi-text-secondary, #333)' }}
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>

@@ -87,7 +87,7 @@ function StatusBadge({ phase, autoResolved, source }: {
     : phase === 'probing'
       ? 'rgba(59,130,246,0.15)'
       : 'rgba(248,113,113,0.15)';
-  const color = autoResolved ? '#4ade80' : phase === 'probing' ? '#93c5fd' : '#fca5a5';
+  const color = autoResolved ? 'var(--axi-success, #4ade80)' : phase === 'probing' ? 'var(--axi-primary, #93c5fd)' : 'var(--axi-danger, #fca5a5)';
   const text = autoResolved
     ? `已连接 · ${getSourceLabel(source)}`
     : phase === 'probing'
@@ -208,9 +208,9 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
         : feedbackTone === 'error' ? '1px solid rgba(239,68,68,0.35)'
           : '1px solid rgba(255,255,255,0.08)',
     color:
-      feedbackTone === 'success' ? '#bbf7d0'
-        : feedbackTone === 'error' ? '#fecaca'
-          : '#e2e8f0',
+      feedbackTone === 'success' ? 'var(--axi-success-bg, #bbf7d0)'
+        : feedbackTone === 'error' ? 'var(--axi-danger-bg, #fecaca)'
+          : 'var(--axi-text, #e2e8f0)',
   } : null;
 
   return (
@@ -275,7 +275,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
               source={backendDiscovery.source}
             />
           </div>
-          <div style={{ fontFamily: 'monospace', fontSize: 14, color: '#f8fafc' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 14, color: 'var(--axi-text, #f8fafc)' }}>
             {backendAddress || '—'}
           </div>
         </div>
@@ -350,7 +350,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
                   borderRadius: 8,
                   border: '1px solid rgba(248,113,113,0.45)',
                   background: 'rgba(248,113,113,0.14)',
-                  color: '#fecaca',
+                  color: 'var(--axi-danger-bg, #fecaca)',
                   cursor: saving ? 'not-allowed' : 'pointer',
                   fontSize: 13,
                 }}

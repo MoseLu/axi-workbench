@@ -721,7 +721,7 @@ function DisplayContent() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '12px 24px',
-          background: '#1e293b', flexShrink: 0,
+          background: 'var(--axi-text, #1e293b)', flexShrink: 0,
         }}>
           <button
             onClick={() => setMode('idle')}
@@ -794,7 +794,7 @@ function DisplayContent() {
                   style={{
                     padding: '8px 14px',
                     background: 'rgba(255,255,255,0.06)',
-                    color: '#cbd5e1',
+                    color: 'var(--axi-text-secondary, #cbd5e1)',
                     border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 8,
                     cursor: 'pointer',
@@ -830,7 +830,7 @@ function DisplayContent() {
                       <div style={{
                         position: 'relative',
                         aspectRatio: '3 / 4',
-                        background: '#111827',
+                        background: 'var(--axi-text, #111827)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -965,7 +965,7 @@ function DisplayContent() {
         {/* 顶部导航栏 */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
-          padding: '12px 24px', background: '#1e293b', flexShrink: 0,
+          padding: '12px 24px', background: 'var(--axi-text, #1e293b)', flexShrink: 0,
         }}>
           <button
             onClick={() => setMode('idle')}
@@ -1074,7 +1074,7 @@ function DisplayContent() {
                           <span style={{
                             padding: '2px 8px',
                             background: 'rgba(34,197,94,0.15)',
-                            color: '#4ade80',
+                            color: 'var(--axi-success, #4ade80)',
                             borderRadius: 4, fontSize: 11,
                           }}>
                             推送
@@ -1114,11 +1114,11 @@ function DisplayContent() {
               borderRadius: 8, fontSize: 12, color: 'var(--axi-text-muted, #94a3b8)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontFamily: 'monospace', color: '#fbbf24' }}>{loginData.deviceNumber}</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--axi-warning, #fbbf24)' }}>{loginData.deviceNumber}</span>
                 {localIP && (
                   <>
                     <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.15)' }} />
-                    <span style={{ fontFamily: 'monospace', color: '#e2e8f0' }}>{localIP}</span>
+                    <span style={{ fontFamily: 'monospace', color: 'var(--axi-text, #e2e8f0)' }}>{localIP}</span>
                     <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.15)' }} />
                     <span style={{
                       width: 8, height: 8, borderRadius: '50%',
@@ -1130,7 +1130,7 @@ function DisplayContent() {
                 <span style={{ fontFamily: 'monospace', color: 'var(--axi-text-muted, #94a3b8)', fontSize: 11 }}>{backendInfoText}</span>
               </div>
               {apiError && !connected && (
-                <div style={{ fontSize: 11, color: '#fca5a5' }}>
+                <div style={{ fontSize: 11, color: 'var(--axi-danger, #fca5a5)' }}>
                   {apiError}
                 </div>
               )}
@@ -1142,7 +1142,7 @@ function DisplayContent() {
             style={{
               display: 'flex', alignItems: 'center', gap: 4,
               padding: '4px 12px',
-              background: 'rgba(255,255,255,0.08)', color: '#e2e8f0',
+              background: 'rgba(255,255,255,0.08)', color: 'var(--axi-text, #e2e8f0)',
               border: '1px solid rgba(255,255,255,0.14)', borderRadius: 6,
               fontSize: 12, cursor: 'pointer',
             }}
@@ -1157,7 +1157,7 @@ function DisplayContent() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 padding: '4px 12px',
-                background: 'rgba(239,68,68,0.2)', color: '#fca5a5',
+                background: 'rgba(239,68,68,0.2)', color: 'var(--axi-danger, #fca5a5)',
                 border: '1px solid rgba(239,68,68,0.4)', borderRadius: 6,
                 fontSize: 12, cursor: 'pointer',
               }}
@@ -1173,7 +1173,7 @@ function DisplayContent() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 padding: '4px 12px',
-                background: 'rgba(239,68,68,0.2)', color: '#fca5a5',
+                background: 'rgba(239,68,68,0.2)', color: 'var(--axi-danger, #fca5a5)',
                 border: '1px solid rgba(239,68,68,0.4)', borderRadius: 6,
                 fontSize: 12, cursor: 'pointer',
               }}
@@ -1191,7 +1191,7 @@ function DisplayContent() {
           padding: '8px 24px', flexShrink: 0,
           background: 'rgba(34,197,94,0.15)',
           borderBottom: '1px solid rgba(34,197,94,0.3)',
-          color: '#86efac', fontSize: 13,
+          color: 'var(--axi-success, #86efac)', fontSize: 13,
         }}>
           <span style={{ flex: 1 }}>
             发现新版本 <strong>{pendingUpdate.displayVersion || pendingUpdate.version}</strong>
@@ -1223,7 +1223,7 @@ function DisplayContent() {
             onClick={() => setPendingUpdate(null)}
             style={{
               padding: '4px 8px',
-              background: 'transparent', color: '#86efac',
+              background: 'transparent', color: 'var(--axi-success, #86efac)',
               border: '1px solid rgba(134,239,172,0.4)', borderRadius: 6,
               fontSize: 12, cursor: 'pointer',
             }}
@@ -1273,7 +1273,7 @@ function DisplayContent() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               padding: '14px 40px', minWidth: 240,
               background: 'rgba(34,197,94,0.1)',
-              color: '#4ade80',
+              color: 'var(--axi-success, #4ade80)',
               border: '1px solid rgba(34,197,94,0.3)',
               borderRadius: 12, fontSize: 16, cursor: 'pointer',
               marginBottom: 16,

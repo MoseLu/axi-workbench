@@ -157,7 +157,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
             background: 'rgba(239,68,68,0.15)',
             border: '1px solid rgba(239,68,68,0.4)',
             borderRadius: 8,
-            color: '#fca5a5',
+            color: 'var(--axi-danger, #fca5a5)',
             fontSize: 13,
           }}>
             {error}
@@ -192,7 +192,7 @@ export default function LoginPage({ onLogin, onOpenSettings }: LoginPageProps) {
             borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.18)',
             background: 'rgba(255,255,255,0.06)',
-            color: '#cbd5e1',
+            color: 'var(--axi-text-secondary, #cbd5e1)',
             cursor: 'pointer',
           }}
         >
