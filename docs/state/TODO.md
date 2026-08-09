@@ -15,8 +15,8 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [ ] REQ-REFERENCE-001: Keep external multi-end references bounded and traceable during design review.
   - Test: `MARKET-REFERENCE.md` links each public observation to an official source, labels the product inference, and states what the source does not prove about Workbench or the reference product's internal implementation.
 
-- [x] REQ-SCAN-001: Separate the names and acceptance suites for the two scan flows.
-  - Test: Web "通用识别与结果处理" and Mobile "审批扫码确认" have separate permission expectations, test fixtures, audit assertions, and failure messages; Mobile's top Scan action does not silently absorb identity-login or device-pairing flows.
+- [x] REQ-SCAN-001: Keep only controlled mobile/identity scan flows and exclude a generic Web scanner.
+  - Test: Mobile "审批扫码确认" and Identity "确认网页登录" have separate permission expectations, URI/API contracts, audit assertions and failure messages; the top Scan action does not silently absorb identity-login or device-pairing flows, and the Web verifier rejects a generic scanner or navigation entry.
 
 - [ ] REQ-VERIFY-002: Keep both user-app UI contract verifiers, type-checks, tests, and builds green.
   - Test: Web: `pnpm --filter @axi/workbench type-check`, `test`, `build`, `node apps/workbench/scripts/verify-ui-contracts.mjs`; mobile: `pnpm --filter @axi/workbench-mobile type-check`, `test`, `build`, `verify:contracts`; foundation: `pnpm --filter @axi/workbench-foundation type-check` all exit 0.

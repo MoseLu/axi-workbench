@@ -14,7 +14,7 @@ in its dedicated tools.
 ## Milestone 0: Multi-surface Product Positioning
 
 - Status: Delivered — P0–P5 implemented on 2026-08-09
-- Evidence: `CAPABILITY-INVENTORY.json` records 17 current Web/Mobile/Host capability groups and is enforced by `pnpm check:capabilities`; Web navigation is grouped by control object and its recognition tool is explicitly non-authorizing; Mobile projects, workspace and search consume the authenticated Control Plane projection and never fall back to static business data; `ApprovalScanPreview` / `MobileApprovalDecision` / `HandoffContext` contracts, Gateway proxying, Control Plane audit tests and `/admin/handoff/:id` implement C/D continuation; DevSvc hosted specialist entries declare Owner, authorization, audit and fallback.
+- Evidence: `CAPABILITY-INVENTORY.json` records 17 current Web/Mobile/Host capability groups and is enforced by `pnpm check:capabilities`; Web navigation is grouped by control object, its `运行状态` and `工作项` surfaces consume the Control Plane projection, and generic desktop scanning is excluded; Mobile projects, workspace and search consume the authenticated Control Plane projection and never fall back to static business data; `ApprovalScanPreview` / `MobileApprovalDecision` / `HandoffContext` contracts, Gateway proxying, Control Plane audit tests and `/admin/handoff/:id` implement C/D continuation; DevSvc hosted specialist entries declare Owner, authorization, audit and fallback.
 - Exit criteria: Met for this batch. New user-facing work now updates the machine-checked inventory and retains separate Web/Mobile browser acceptance, Gateway/Control Plane policy tests, and host execution-boundary metadata.
 
 ## Milestone 1: Documentation Baseline
@@ -26,7 +26,7 @@ in its dedicated tools.
 ## Milestone 2: Verification Alignment
 
 - Status: In progress
-- Evidence: P0–P5 now have concrete type, unit, API, schema, gateway, host, contract, boundary and browser checks; the 2026-08-09 delivery records 1440px Web and 390px Mobile browser observations in `VERIFICATION.md`. `packages/workbench-foundation` still owns only shared session and locale behavior.
+- Evidence: P0–P5 now have concrete type, unit, API, schema, gateway, host, contract, boundary and browser checks; the latest 2026-08-09 delivery records a signed-in 1280×720 desktop Web browser observation and a 390px Mobile observation in `VERIFICATION.md`. `packages/workbench-foundation` still owns only shared session and locale behavior.
 - Exit criteria: every P0/P1 TODO item has at least one concrete test command line, and each REQ has both an `Acceptance Criteria` row in `PRD.md` and a matching test in `TDD.md` / `TODO.md`.
 
 ## Milestone 3: Operational Handoff

@@ -20,15 +20,15 @@ const stripIcons = (items: ReturnType<typeof resolveBreadcrumbs>) =>
   items.map(({ icon: _icon, ...rest }) => rest);
 
 describe('resolveBreadcrumbs', () => {
-  it('root path collapses to a single active "概览" item', () => {
+  it('root path collapses to a single active "工作台概览" item', () => {
     expect(stripIcons(resolveBreadcrumbs('/'))).toEqual([
-      { label: '概览', isActive: true },
+      { label: '工作台概览', isActive: true },
     ]);
     expect(stripIcons(resolveBreadcrumbs(''))).toEqual([
-      { label: '概览', isActive: true },
+      { label: '工作台概览', isActive: true },
     ]);
     expect(stripIcons(resolveBreadcrumbs('/admin/dashboard'))).toEqual([
-      { label: '概览', isActive: true },
+      { label: '工作台概览', isActive: true },
     ]);
   });
 
@@ -38,10 +38,10 @@ describe('resolveBreadcrumbs', () => {
 
   it('builds the workbench hierarchy before the current project item', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/project'));
-    expect(chain.map((item) => item.label)).toEqual(['工作台', '项目']);
+    expect(chain.map((item) => item.label)).toEqual(['工作台', '项目组合']);
     expect(chain[0]?.path).toBe('/admin/dashboard');
     expect(chain[1]).toEqual({
-      label: '项目',
+      label: '项目组合',
       path: '/admin/project',
       isActive: true,
     });
@@ -49,14 +49,14 @@ describe('resolveBreadcrumbs', () => {
 
   it('keeps the project catalog in the breadcrumb chain for project detail routes', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/project/axi-workbench'));
-    expect(chain.map((item) => item.label)).toEqual(['工作台', '项目', '项目详情']);
+    expect(chain.map((item) => item.label)).toEqual(['工作台', '项目组合', '项目详情']);
     expect(chain[1]?.path).toBe('/admin/project');
     expect(chain[2]?.isActive).toBe(true);
   });
 
   it('inserts the parent group for task routes', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/task'));
-    expect(chain.map((c) => c.label)).toEqual(['工作台', '工作区']);
+    expect(chain.map((c) => c.label)).toEqual(['工作台', '工作项']);
     expect(chain[0]?.path).toBe('/admin/dashboard');
     expect(chain[1]?.path).toBe('/admin/task');
     expect(chain[1]?.isActive).toBe(true);

@@ -5,9 +5,9 @@
 | 范围 | 当前事实 | 动作等级 / Owner | 关键边界 |
 | --- | --- | --- | --- |
 | Web 登录与会话 | Gateway 转发 Identity 邮箱验证码与 HttpOnly 会话 | B / Identity + Workbench Web | 未配置的 OIDC 不能作为可用入口 |
-| Web 概览、项目、工作区、团队 | 读取 Control Plane 投影；不可用时只显示明确不可用状态 | A / Workbench Web | 不伪造零值统计、样例项目或空表 |
+| Web 概览、运行状态、项目组合、工作项、团队 | 读取 Control Plane 投影；不可用时只显示明确不可用状态 | A / Workbench Web | 跨项目观察、筛选和续办；不伪造零值统计、样例项目或空表 |
 | Web 账号与设置 | 通过 Gateway 调用 Identity、Notification、Platform Core | C / Workbench Web | 服务端重新鉴权；Mobile 不复制组织配置、批量和全量审计 |
-| Web 通用识别 | 识别、展示、复制或转交二维码结果 | A / Workbench Web | 绝不确认登录或领域审批 |
+| Web 运行状态 | 跨项目查看项目健康、运行环境与需要处理事项 | A / Workbench Web | 不提供通用摄像头扫码；登录确认和领域审批仍各自留在受控移动/身份流程 |
 | Web 搜索与交接续办 | 注册路由搜索；Gateway 读取/最终化服务端交接 | A/C / Workbench Web + Control Plane | 交接关联标识贯穿 Mobile、Web 与最终动作 |
 | Mobile 登录、概览、项目、工作区、搜索 | Identity 会话与 Gateway 转发的已配对设备工作区投影 | A/B / Workbench Mobile | 显示更新时间、刷新、配对/权限/服务错误；搜索不再使用静态结果 |
 | Mobile 已登记项目核验 | Control Plane 从当前注册表解析动作后执行 | B / Mobile + Control Plane | 客户端不能提交命令、cwd 或自报项目动作；幂等与审计必需 |

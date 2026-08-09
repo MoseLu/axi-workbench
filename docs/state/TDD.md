@@ -63,7 +63,7 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | REQ-WEB-001 / REQ-WEB-002 | `node apps/workbench/scripts/verify-ui-contracts.mjs`；Web type-check/test/build。 | 在桌面宽度审查全局导航、筛选/批量/审计等管理任务；不得出现移动底栏或移动壳替代后台结构。 |
 | REQ-MOBILE-001 / REQ-MOBILE-002 | `pnpm --filter @axi/workbench-mobile verify:contracts`；Mobile type-check/test/build。 | 在 390px 审查 Home / Projects / Workspace / Me 四个常驻导航项与顶部 Scan 动作；Mobile 写操作只有在 B 级动作政策允许时才出现，并在线复核服务端状态；不出现 C 级组织管理表单。 |
 | REQ-CROSS-001 | 运行 schemas、Control Plane、Gateway 与 `pnpm check:boundaries`；Control Plane 测试覆盖过期/越权字段、关联标识不匹配、幂等重放、C/D 交接和 Web 最终化。 | 每个双端工作流确认服务端权威状态、动作政策、授权/审计事件、Web 交接上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`。 |
-| REQ-SCAN-001 | Web 通用识别、Mobile 领域审批扫码和 Identity 网页登录确认分别有路由/合同/单元测试；禁止共用模糊断言。 | 验证 Web 仅识别、展示、复制或转交结果；Mobile 顶部 Scan 只接受 `axi://approval/scan_*`，Identity 登录确认只从独立入口完成。 |
+| REQ-SCAN-001 | Mobile 领域审批扫码和 Identity 网页登录确认分别有路由/合同/单元测试；Web 合同验证禁止通用扫码实现或导航入口。 | 验证 Mobile 顶部 Scan 只接受 `axi://approval/scan_*`，Identity 登录确认只从独立入口完成；Web 只允许历史 URL 安全回到控制中心，不能识别、展示或授权通用二维码。 |
 | REQ-DELIVERY-001 | `pnpm check:capabilities` 与 `pnpm check:boundaries` 必须通过；评审每项新能力的台账。 | 未完成并复核台账的能力不得进入开发验收。 |
 
 ## Verification Commands
@@ -146,7 +146,7 @@ rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVER
 - Six-layer SOP is bypassed: control-plane direct file IO, communication-gateway calling Codex, IM adapter reading project tree.
 - A route or layout from one app is imported into the other, reintroducing a responsive single-SPA architecture through the back door.
 - 文档将 Mobile 的 4 个常驻导航项 + Scan 动作误写为“五项底栏”，使旧术语重新驱动实现。
-- Web 通用识别扫码与移动审批扫码被使用同一名称、权限或测试断言，造成越权或误操作。
+- Web 出现通用扫码，或 Mobile 审批扫码与 Identity 网页登录确认使用同一名称、权限或测试断言，造成越权或误操作。
 - 将公开竞品的界面、功能清单或未公开内部实现误写为 Workbench 的能力承诺，导致错误的产品路线。
 - 仅因“操作重要”就一律禁止 Mobile，或仅因“手机能做”就把 C/D 级治理/专业操作移入 Mobile，绕过动作政策。
 - React Router v7 future-flag warnings hide genuine console errors; tests must distinguish them.

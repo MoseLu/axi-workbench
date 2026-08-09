@@ -11,24 +11,30 @@ interface SidebarProps {
   activeKey: string;
 }
 
-/** Desktop sidebar — same IA as mobile bottom tabs + secondary settings */
+/** 旧版桌面侧栏：沿用当前控制中心的信息架构，不复制移动端导航。 */
 const menuData: MenuItem[] = [
   {
     key: '/admin/dashboard',
     icon: <WorkbenchIcon name="overview" />,
-    label: '概览',
+    label: '工作台概览',
     path: '/admin/dashboard',
+  },
+  {
+    key: '/admin/operations',
+    icon: <WorkbenchIcon name="laptop" />,
+    label: '运行状态',
+    path: '/admin/operations',
   },
   {
     key: '/admin/project',
     icon: <WorkbenchIcon name="project" />,
-    label: '项目',
+    label: '项目组合',
     path: '/admin/project',
   },
   {
     key: '/admin/task',
     icon: <WorkbenchIcon name="workspace" />,
-    label: '工作区',
+    label: '工作项',
     path: '/admin/task',
   },
   {
@@ -36,12 +42,6 @@ const menuData: MenuItem[] = [
     icon: <WorkbenchIcon name="team" />,
     label: '团队',
     path: '/admin/team',
-  },
-  {
-    key: '/admin/scan',
-    icon: <WorkbenchIcon name="scan" size={16} />,
-    label: '扫一扫',
-    path: '/admin/scan',
   },
   {
     key: 'settings',

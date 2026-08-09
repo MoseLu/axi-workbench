@@ -6,9 +6,9 @@ describe('navigationRegistry', () => {
   it('exposes the same real routes used by the desktop shell', () => {
     expect(getRegisteredDesktopRoutes().map((item) => item.path)).toEqual([
       '/admin/dashboard',
+      '/admin/operations',
       '/admin/project',
       '/admin/task',
-      '/admin/scan',
       '/admin/team',
       '/admin/settings/menu',
       '/admin/settings/role',

@@ -33,7 +33,7 @@ flowchart TB
 
 1. Web 与 Mobile 保持独立入口、路由、页面和布局；仅共享认证会话、API/Schema、语言偏好与 design tokens。
 2. 每项能力必须有动作政策：角色、动作等级、允许表面、服务端状态/授权、确认、幂等、审计、交接与失败回退。
-3. Web 扫码是“通用识别与结果处理”；Mobile 扫码是“已授权审批确认”。两者不得共用模糊命名、默认权限或验收断言。
+3. Web 不提供通用扫码；Mobile 顶部 Scan 是“已授权审批确认”，Identity 网页登录确认是独立登录流程。两条扫码流程不得共用模糊命名、默认权限或验收断言。
 4. Mobile 的 Home / Projects / Workspace / Me 是四个常驻导航项；Scan 是顶部动作，不是第五项底栏。
 5. Host/专业工具可被发现和审计，但不进入用户后台的一级信息架构；Host 不能代替实际执行工具成为 D 级动作 Owner，D 级操作不复制为通用按钮。
 6. 实施先完成能力台账和动作政策，再做页面；禁止以目录迁移、响应式分支或功能平铺制造“统一”。
@@ -41,6 +41,7 @@ flowchart TB
 ## 文档落点
 
 - `MARKET-REFERENCE.md`：公开案例、来源、可迁移推导和排除边界。
+- `DESKTOP-WORKBENCH-RESEARCH.md`：桌面工作台公开案例复核、实际 Web 信息架构和通用扫码排除项。
 - `docs/state/PRD.md`：用户可读的产品架构、需求、路线图和风险。
 - `CAPABILITY-OWNERSHIP.md`：后续每项能力必须复用的归属与动作政策字段。
 - `docs/state/TDD.md`：新的 REQ-* 验证矩阵。

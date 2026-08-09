@@ -301,11 +301,12 @@
     "INDEX.md",
     "docs/architecture/source-catalog.md",
     "docs/specs/2026-08-09-multi-surface-admin-positioning/MARKET-REFERENCE.md",
+    "docs/specs/2026-08-09-multi-surface-admin-positioning/DESKTOP-WORKBENCH-RESEARCH.md",
     "CHANGE.md",
     "docs/HANDOFF.md"
   ],
   "created": "2026-06-07",
   "updated": "2026-08-09",
-  "writer": "Codex product-definition with public multi-end reference calibration",
-  "source": "user-authorized multi-surface admin product direction, calibrated against bounded official public multi-end product references"
+  "writer": "Codex product-definition with public multi-end and desktop-workbench reference calibration",
+  "source": "user-authorized multi-surface admin product direction, calibrated against bounded official public multi-end and desktop-workbench product references"
 }

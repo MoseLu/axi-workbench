@@ -79,11 +79,11 @@ const PROFILE_PARENT: BreadcrumbNode = {
 };
 
 export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
-  '/admin/dashboard': { label: '概览', icon: 'overview' },
-  '/admin/project': { label: '项目', icon: 'project', parents: [WORKBENCH_PARENT] },
-  '/admin/task': { label: '工作区', icon: 'workspace', parents: [WORKBENCH_PARENT] },
+  '/admin/dashboard': { label: '工作台概览', icon: 'overview' },
+  '/admin/operations': { label: '运行状态', icon: 'laptop', parents: [WORKBENCH_PARENT] },
+  '/admin/project': { label: '项目组合', icon: 'project', parents: [WORKBENCH_PARENT] },
+  '/admin/task': { label: '工作项', icon: 'workspace', parents: [WORKBENCH_PARENT] },
   '/admin/team': { label: '团队', icon: 'team', parents: [WORKBENCH_PARENT] },
-  '/admin/scan': { label: '通用识别', icon: 'scan', parents: [WORKBENCH_PARENT] },
   '/admin/search': { label: '搜索', icon: 'search', parents: [WORKBENCH_PARENT] },
   '/admin/me': {
     label: '个人中心',
@@ -174,7 +174,7 @@ function resolveRoute(pathname: string): { path: string; route: BreadcrumbRoute 
  *
  * Rules:
  *  - Root path (`/`, `''`) and `/admin/dashboard` collapse to a single
- *    "概览" item (current).
+ *    "工作台概览" item (current).
  *  - If the pathname is unknown, returns an empty chain rather than inventing
  *    a synthetic 首页 node.
  *  - Otherwise: ordered ancestors → current registered entry.
@@ -183,13 +183,13 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const trimmed = pathname || '/';
 
   if (trimmed === '/' || trimmed === '/admin/dashboard' || trimmed === '') {
-    return [{ label: '概览', isActive: true }];
+    return [{ label: '工作台概览', isActive: true }];
   }
 
   if (trimmed.startsWith('/admin/project/')) {
     return [
       { label: WORKBENCH_PARENT.label, icon: hint(WORKBENCH_PARENT.icon), path: WORKBENCH_PARENT.path },
-      { label: '项目', icon: hint('project'), path: '/admin/project' },
+      { label: '项目组合', icon: hint('project'), path: '/admin/project' },
       { label: '项目详情', icon: hint('project'), isActive: true },
     ];
   }

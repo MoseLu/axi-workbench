@@ -12,6 +12,7 @@ const forbidMatch = (text, pattern, message) => {
 
 const layout = read('apps/workbench/src/layouts/MainLayout.tsx');
 const breadcrumbs = read('apps/workbench/src/lib/breadcrumbs.ts');
+const navigation = read('apps/workbench/src/lib/navigationRegistry.ts');
 const app = read('apps/workbench/src/App.tsx');
 const main = read('apps/workbench/src/main.tsx');
 const webShellCss = read('apps/workbench/src/layouts/MainLayout.css');
@@ -33,7 +34,7 @@ function readSourceTree(relativeDir) {
 
 const webSource = readSourceTree('apps/workbench/src');
 
-requireMatch(breadcrumbs, /return \[\{ label: ['"]概览['"]/, 'dashboard breadcrumb must contain the current menu item');
+requireMatch(breadcrumbs, /return \[\{ label: ['"]工作台概览['"]/, 'dashboard breadcrumb must contain the current menu item');
 forbidMatch(
   breadcrumbs,
   /(?:chain\.push|return)\(?(?:\{ label: )?['"]首页['"]/,
@@ -58,6 +59,14 @@ forbidMatch(breadcrumbs, /ICON_HINTS|icon: 'admin-/, 'breadcrumbs must store pro
 forbidMatch(webSource, /from ['"]@ant-design\/icons['"]/, 'Web source must not bypass the shared Axi icon registry');
 forbidMatch(webPackage, /"@ant-design\/icons"/, 'Web package must not retain a direct Ant icon dependency');
 forbidMatch(webSource, /MobileTopBar|MobileBottomNav|ScanIcon/, 'Web application must not retain a second mobile navigation shell');
+forbidMatch(webSource, /BarcodeDetector|getUserMedia|通用识别/, 'Web must not provide a generic camera scanner without a governed business action');
+requireMatch(navigation, /['"]\/admin\/operations['"]/, 'desktop navigation must expose a cross-project operations surface');
+forbidMatch(navigation, /['"]\/admin\/scan['"]/, 'desktop navigation must not expose the retired generic scanner');
+requireMatch(
+  app,
+  /path="admin\/scan"\s+element=\{<Navigate to="\/admin\/dashboard" replace\s*\/>\}/,
+  'legacy scan URL must safely return to the desktop control center',
+);
 forbidMatch(login, /Axi 工作台/, 'Web login must keep the product wordmark in one language instead of mixing Chinese and English');
 requireMatch(app, /AxiThemeProvider/, 'theme runtime must be mounted at the app boundary');
 requireMatch(

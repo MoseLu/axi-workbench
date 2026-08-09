@@ -16,6 +16,7 @@ import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/admin/Dashboard';
+import Operations from './pages/admin/Operations';
 import Workspace from './pages/admin/Workspace';
 import Team from './pages/admin/Team';
 import Projects from './pages/Projects';
@@ -23,7 +24,6 @@ import ProjectDetail from './pages/ProjectDetail';
 import MenuList from './pages/admin/MenuList';
 import UserList from './pages/admin/UserList';
 import RoleList from './pages/admin/RoleList';
-import Scan from './pages/admin/Scan';
 import Handoff from './pages/admin/Handoff';
 import Search from './pages/admin/Search';
 import AccountInfo from './pages/admin/me/AccountInfo';
@@ -76,12 +76,13 @@ const WorkbenchSurface: React.FC = () => {
                   <Route path="/" element={<RequireSession><MainLayout /></RequireSession>}>
                     <Route index element={<Navigate to="admin/dashboard" replace />} />
                     <Route path="admin/dashboard" element={<Dashboard />} />
+                    <Route path="admin/operations" element={<Operations />} />
                     <Route path="admin/project" element={<Projects />} />
                     <Route path="admin/project/:id" element={<ProjectDetail />} />
                     <Route path="admin/task" element={<Workspace />} />
                     <Route path="admin/team" element={<Team />} />
-                    {/* 扫一扫：壳内 Tab，选中态保留在底栏 */}
-                    <Route path="admin/scan" element={<Scan />} />
+                    {/* 历史扫码链接不再打开桌面摄像头工具，回到控制中心。 */}
+                    <Route path="admin/scan" element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="admin/handoff/:id" element={<Handoff />} />
                     {/* 全局联想搜索二级页 */}
                     <Route path="admin/search" element={<Search />} />

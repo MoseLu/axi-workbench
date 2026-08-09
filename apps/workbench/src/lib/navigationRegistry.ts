@@ -12,7 +12,8 @@ export const workbenchDesktopNavGroups: AxiDashboardNavGroup[] = [
     label: '概览',
     iconName: axiWorkbenchIconMap.overview,
     children: [
-      { key: '/admin/dashboard', label: '概览', iconName: axiWorkbenchIconMap.overview },
+      { key: '/admin/dashboard', label: '工作台概览', iconName: axiWorkbenchIconMap.overview },
+      { key: '/admin/operations', label: '运行状态', iconName: axiWorkbenchIconMap.laptop },
     ],
   },
   {
@@ -20,9 +21,8 @@ export const workbenchDesktopNavGroups: AxiDashboardNavGroup[] = [
     label: '项目与工作',
     iconName: axiWorkbenchIconMap.project,
     children: [
-      { key: '/admin/project', label: '项目', iconName: axiWorkbenchIconMap.project },
-      { key: '/admin/task', label: '工作区', iconName: axiWorkbenchIconMap.workspace },
-      { key: '/admin/scan', label: '通用识别', iconName: axiWorkbenchIconMap.scan },
+      { key: '/admin/project', label: '项目组合', iconName: axiWorkbenchIconMap.project },
+      { key: '/admin/task', label: '工作项', iconName: axiWorkbenchIconMap.workspace },
     ],
   },
   {
@@ -47,11 +47,11 @@ export const workbenchDesktopNavGroups: AxiDashboardNavGroup[] = [
 ];
 
 export const workbenchMenuRouteMap: Record<string, { label: string }> = {
-  '/admin/dashboard': { label: '概览' },
-  '/admin/project': { label: '项目' },
-  '/admin/task': { label: '工作区' },
+  '/admin/dashboard': { label: '工作台概览' },
+  '/admin/operations': { label: '运行状态' },
+  '/admin/project': { label: '项目组合' },
+  '/admin/task': { label: '工作项' },
   '/admin/team': { label: '团队' },
-  '/admin/scan': { label: '通用识别' },
   '/admin/handoff': { label: '跨端续办' },
   '/admin/me': { label: '我的' },
   '/admin/settings/menu': { label: '菜单列表' },
