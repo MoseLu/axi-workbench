@@ -8,6 +8,7 @@ import {
   AxiDashboardShell,
   AxiFloatingToolDock,
   createAxiShellPlugins,
+  type AxiDashboardNavGroup,
 } from '@axi/shell';
 import { AxiPluginProvider } from '@axi/core';
 import type { TabItem } from '../lib/tabs';
@@ -15,7 +16,7 @@ import GlobalSearchDialog, { type GlobalSearchItem } from '../components/Layout/
 import { useI18n } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
 import { resolveBreadcrumbs } from '../lib/breadcrumbs';
-import { SEARCH_CORPUS } from '../lib/search-data';
+import { SEARCH_CORPUS, SEARCH_SECTIONS } from '../lib/search-data';
 import {
   HOME_TAB,
   openTab,
@@ -27,13 +28,21 @@ import {
   closeAll,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
-import { workbenchDesktopNavGroups, workbenchMenuRouteMap } from '../lib/navigationRegistry';
+import {
+  workbenchDesktopNavGroupsWithKeys,
+  workbenchMenuRouteMap,
+} from '../lib/navigationRegistry';
 import { loadProfile, resolveAvatarSrc, type UserProfile } from '../pages/admin/me/profileStore';
 import './MainLayout.css';
 
-function resolveMenuRoute(path: string): { label: string } | undefined {
-  if (path.startsWith('/admin/project/')) return { label: '项目详情' };
-  if (path.startsWith('/admin/handoff/')) return { label: '跨端续办' };
+const ROUTE_PREFIX_LABEL_KEYS: Array<{ prefix: string; labelKey: string }> = [
+  { prefix: '/admin/project/', labelKey: 'nav.projectDetail' },
+  { prefix: '/admin/handoff/', labelKey: 'nav.handoff' },
+];
+
+function resolveMenuRoute(path: string): { labelKey: string } | undefined {
+  const prefixEntry = ROUTE_PREFIX_LABEL_KEYS.find((entry) => path.startsWith(entry.prefix));
+  if (prefixEntry) return { labelKey: prefixEntry.labelKey };
   return workbenchMenuRouteMap[path];
 }
 
@@ -107,26 +116,26 @@ const MainLayout: React.FC = () => {
   }, [user]);
 
   const globalSearchItems = useMemo<GlobalSearchItem[]>(() => {
-    const navItems = workbenchDesktopNavGroups.flatMap((group) =>
+    const navItems = workbenchDesktopNavGroupsWithKeys.flatMap((group) =>
       group.children.map((item) => ({
         key: `nav:${item.key}`,
-        label: String(item.label),
-        description: '打开后台页面',
-        group: String(group.label),
+        label: t(item.labelKey),
+        description: t('common.search.description'),
+        group: t(group.labelKey),
         path: item.key,
-        iconName: item.iconName ?? axiWorkbenchIconMap.menu,
+        iconName: (item.iconName ?? axiWorkbenchIconMap.menu) as GlobalSearchItem['iconName'],
       })),
     );
     const corpusItems = SEARCH_CORPUS.map((hit) => ({
       key: `content:${hit.id}`,
-      label: hit.title,
-      description: hit.subtitle,
-      group: hit.kind === 'navigation' ? '页面' : '工具',
+      label: t(hit.titleKey),
+      description: t(hit.subtitleKey),
+      group: t(SEARCH_SECTIONS.find((section) => section.key === hit.kind)?.labelKey ?? 'search.section.utility'),
       path: hit.path,
       iconName: (hit.kind === 'navigation' ? axiWorkbenchIconMap.menu : axiWorkbenchIconMap.search) as GlobalSearchItem['iconName'],
     }));
     return [...navItems, ...corpusItems];
-  }, []);
+  }, [t]);
 
   const recentSearchItems = useMemo(() => {
     const preferredPaths = [
@@ -183,13 +192,13 @@ const MainLayout: React.FC = () => {
     setTabs((prev) => {
       const result = openTab(prev, {
         key: path,
-        label: routeInfo.label,
+        label: t(routeInfo.labelKey),
         path,
       });
       return result.tabs;
     });
     setActiveTab(path);
-  }, [location.pathname]);
+  }, [location.pathname, t]);
 
   const handleTabChange = useCallback(
     (key: string) => {
@@ -241,27 +250,37 @@ const MainLayout: React.FC = () => {
     });
   }, [navigate]);
 
-  const visibleDesktopNavGroups = useMemo(() => {
+  const visibleDesktopNavGroups = useMemo<AxiDashboardNavGroup[]>(() => {
     const keyword = sidebarSearchValue.trim().toLowerCase();
-    if (!keyword) return workbenchDesktopNavGroups;
-    return workbenchDesktopNavGroups
-      .map((group) => ({
-        ...group,
-        children: group.children.filter((item) => String(item.label).toLowerCase().includes(keyword)),
-      }))
-      .filter((group) => group.children.length > 0);
-  }, [sidebarSearchValue]);
+    const localized = workbenchDesktopNavGroupsWithKeys.map((group) => ({
+      ...group,
+      label: t(group.labelKey),
+      children: group.children.map((item) => ({
+        ...item,
+        label: t(item.labelKey),
+      })),
+    }));
+    const filtered = keyword
+      ? localized
+          .map((group) => ({
+            ...group,
+            children: group.children.filter((item) => String(item.label).toLowerCase().includes(keyword)),
+          }))
+          .filter((group) => group.children.length > 0)
+      : localized;
+    return filtered as unknown as AxiDashboardNavGroup[];
+  }, [sidebarSearchValue, t]);
 
   const desktopBreadcrumbs = useMemo(
     () => resolveBreadcrumbs(location.pathname).map((item, index) => ({
       key: `${item.label}-${index}`,
-      label: item.label,
+      label: item.labelKey ? t(item.labelKey) : item.label,
       icon: item.icon,
       current: item.isActive,
       href: item.isActive ? undefined : item.path,
       onClick: item.path && !item.isActive ? () => navigate(item.path!) : undefined,
     })),
-    [location.pathname, navigate],
+    [location.pathname, navigate, t],
   );
 
   const desktopTabs = useMemo(
@@ -282,22 +301,22 @@ const MainLayout: React.FC = () => {
 
   const floatingTools = useMemo(() => (
     <AxiFloatingToolDock
-      label="Workbench 快捷工具"
-      triggerLabel="打开快捷工具"
-      closeLabel="关闭快捷工具"
+      label={t('layout.floatingTools.label')}
+      triggerLabel={t('layout.floatingTools.open')}
+      closeLabel={t('layout.floatingTools.close')}
       brandIcon={<AxiLogoMark size={14} />}
       triggerIcon={<AxiSvgIcon name={axiWorkbenchIconMap.menu} size={16} />}
       openTriggerIcon={<AxiSvgIcon name={axiWorkbenchIconMap.close} size={16} />}
       items={[
         {
           key: 'search',
-          label: '快速搜索',
+          label: t('layout.floatingTools.search'),
           icon: <AxiSvgIcon name={axiWorkbenchIconMap.search} size={16} />,
           onClick: openGlobalSearch,
         },
         {
           key: 'notifications',
-          label: '通知中心',
+          label: t('nav.crumb.notifications'),
           icon: <AxiSvgIcon name={axiWorkbenchIconMap.notification} size={16} />,
           onClick: () => navigate('/admin/me/notifications'),
         },
@@ -311,12 +330,12 @@ const MainLayout: React.FC = () => {
       ]}
       renderPanel={(item) => (
         <div className="workbench-floating-tool-panel">
-          <strong>{item?.label ?? '快捷工具'}</strong>
-          <span>当前工作区快捷入口</span>
+          <strong>{item?.label ?? t('layout.floatingTools.fallback')}</strong>
+          <span>{t('layout.floatingTools.panelHint')}</span>
         </div>
       )}
     />
-  ), [navigate, openGlobalSearch]);
+  ), [navigate, openGlobalSearch, t]);
 
   const shellPlugins = useMemo(() => createAxiShellPlugins({
     github: {
@@ -326,7 +345,7 @@ const MainLayout: React.FC = () => {
     },
     notification: {
       count: unreadCount || undefined,
-      label: '通知',
+      label: t('layout.topbar.notifications'),
       name: 'notice',
       tone: 'danger',
       onClick: () => navigate('/admin/me/notifications'),
@@ -334,8 +353,8 @@ const MainLayout: React.FC = () => {
     locale: {
       value: locale,
       items: [
-        { key: 'zh-CN', label: '中文' },
-        { key: 'en-US', label: 'English' },
+        { key: 'zh-CN', label: t('layout.locale.zh-CN') },
+        { key: 'en-US', label: t('layout.locale.en-US') },
       ],
       onChange: (value) => setLocale(value as 'zh-CN' | 'en-US'),
     },
@@ -343,7 +362,7 @@ const MainLayout: React.FC = () => {
       value: preference,
       onChange: setPreference,
     },
-  }), [locale, navigate, preference, setLocale, setPreference, unreadCount]);
+  }), [locale, navigate, preference, setLocale, setPreference, t, unreadCount]);
 
   /* ---------- Web: shared Axi admin chrome ---------- */
   return (
@@ -358,13 +377,13 @@ const MainLayout: React.FC = () => {
           menuItems: [
             {
               key: 'profile',
-              label: '个人中心',
+              label: t('nav.crumb.profile'),
               iconName: axiWorkbenchIconMap.account,
               onClick: () => navigate('/admin/me'),
             },
             {
               key: 'logout',
-              label: '退出登录',
+              label: t('layout.avatar.logout'),
               iconName: axiWorkbenchIconMap.logout,
               onClick: () => {
                 logout();
@@ -379,13 +398,13 @@ const MainLayout: React.FC = () => {
           title: 'Axi WorkBench',
         }}
         breadcrumbs={settings.breadcrumb ? desktopBreadcrumbs : []}
-        breadcrumbLabel="页面位置"
+        breadcrumbLabel={t('layout.breadcrumbLabel')}
         className="workbench-axi-shell"
         contentClassName="workbench-axi-content"
         contentFullscreen={contentFullscreen}
         floatingTools={floatingTools}
         githubHref={undefined}
-        globalSearchLabel="快速搜索"
+        globalSearchLabel={t('layout.floatingTools.search')}
         globalSearchShortcut="⌘ K"
         navGroups={visibleDesktopNavGroups}
         onBack={() => window.history.back()}
@@ -408,7 +427,7 @@ const MainLayout: React.FC = () => {
         pageProps={{ fluid: true, padded: true }}
         preferences={settings}
         sidebarCollapsed={collapsed}
-        sidebarSearchPlaceholder="搜索菜单"
+        sidebarSearchPlaceholder={t('common.search.placeholder')}
         sidebarSearchValue={sidebarSearchValue}
         tabs={settings.multiTab ? desktopTabs : []}
         topbarActions={{
@@ -420,7 +439,7 @@ const MainLayout: React.FC = () => {
           settings: {
             iconName: axiWorkbenchIconMap.settings,
             key: 'settings',
-            label: '系统设置',
+            label: t('common.settings.title'),
             onClick: () => setSettingsOpen(true),
           },
         }}
