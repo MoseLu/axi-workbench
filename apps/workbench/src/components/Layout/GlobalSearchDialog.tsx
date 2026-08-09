@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AxiSvgIcon, type AxiIconName } from '@axi/core';
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
+import { useI18n } from '../../i18n';
 import './GlobalSearchDialog.css';
 
 export type GlobalSearchItem = {
@@ -54,6 +55,7 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const rowRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { t } = useI18n();
 
   const filteredItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -161,20 +163,20 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
               value={query}
               onChange={(event) => onChange(event.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="搜索页面、项目、文档或内容"
-              aria-label="全局搜索"
+              placeholder={t('search.placeholder')}
+              aria-label={t('search.ariaLabel')}
               autoComplete="off"
               spellCheck={false}
             />
             {query ? (
-              <button type="button" className="wb-global-search__clear" onClick={() => onChange('')} aria-label="清除搜索">
+              <button type="button" className="wb-global-search__clear" onClick={() => onChange('')} aria-label={t('search.clear')}>
                 <AxiSvgIcon name={axiWorkbenchIconMap.close} size={14} />
               </button>
             ) : (
               <kbd className="wb-global-search__enter-key">Enter</kbd>
             )}
           </div>
-          <button type="button" className="wb-global-search__close" onClick={onClose} aria-label="关闭全局搜索">
+          <button type="button" className="wb-global-search__close" onClick={onClose} aria-label={t('search.close')}>
             <AxiSvgIcon name={axiWorkbenchIconMap.close} size={16} />
             <kbd>Esc</kbd>
           </button>
@@ -184,15 +186,15 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
           <div className="wb-global-search__meta">
             <div>
               <span id="wb-global-search-title" className="wb-global-search__title">
-                {query.trim() ? '匹配到的结果' : '最近访问与快捷入口'}
+                {query.trim() ? t('search.matchedTitle') : t('search.recentTitle')}
               </span>
-              <span className="wb-global-search__count">{filteredItems.length} 项</span>
+              <span className="wb-global-search__count">{t('search.count', `${filteredItems.length} 项`)}</span>
             </div>
-            <span className="wb-global-search__hint">输入关键词开始搜索</span>
+            <span className="wb-global-search__hint">{t('search.hint')}</span>
           </div>
 
           {groupedItems.length > 0 ? (
-            <div className="wb-global-search__results" role="listbox" aria-label="搜索结果">
+            <div className="wb-global-search__results" role="listbox" aria-label={t('search.resultsLabel')}>
               {groupedItems.map((group) => (
                 <div className="wb-global-search__group" key={group.label}>
                   <div className="wb-global-search__group-label">{group.label}</div>
@@ -233,17 +235,17 @@ const GlobalSearchDialog: React.FC<GlobalSearchDialogProps> = ({
           ) : (
             <div className="wb-global-search__empty">
               <span className="wb-global-search__empty-icon"><AxiSvgIcon name={axiWorkbenchIconMap.search} size={22} /></span>
-              <strong>没有找到匹配结果</strong>
-              <span>试试搜索“项目”、“文档”或“设计”</span>
+              <strong>{t('search.emptyTitle')}</strong>
+              <span>{t('search.emptyHint')}</span>
             </div>
           )}
         </div>
 
         <footer className="wb-global-search__footer">
           <div className="wb-global-search__keys">
-            <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
-            <span><kbd>Enter</kbd> 打开</span>
-            <span><kbd>Esc</kbd> 关闭</span>
+            <span><kbd>↑</kbd><kbd>↓</kbd> {t('search.footer.navigate')}</span>
+            <span><kbd>Enter</kbd> {t('search.footer.open')}</span>
+            <span><kbd>Esc</kbd> {t('search.footer.close')}</span>
           </div>
         </footer>
       </section>

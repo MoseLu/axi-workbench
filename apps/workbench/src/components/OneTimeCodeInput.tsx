@@ -6,6 +6,7 @@ import {
   toOneTimeCodeSlots,
   type OneTimeCode,
 } from '../lib/oneTimeCode';
+import { useI18n } from '../i18n';
 import './OneTimeCodeInput.css';
 
 interface OneTimeCodeInputProps {
@@ -25,6 +26,7 @@ export const OneTimeCodeInput: React.FC<OneTimeCodeInputProps> = ({
 }) => {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const slots = toOneTimeCodeSlots(value);
+  const { t } = useI18n();
 
   const focusSlot = (index: number) => {
     window.requestAnimationFrame(() => inputRefs.current[index]?.focus());
@@ -39,7 +41,7 @@ export const OneTimeCodeInput: React.FC<OneTimeCodeInputProps> = ({
   };
 
   return (
-    <div className="axi-one-time-code" aria-label="六位数字验证码" aria-labelledby={ariaLabelledBy} role="group">
+    <div className="axi-one-time-code" aria-label={t('auth.otp.ariaLabel')} aria-labelledby={ariaLabelledBy} role="group">
       {slots.map((slot, index) => (
         <input
           key={index}
@@ -47,7 +49,7 @@ export const OneTimeCodeInput: React.FC<OneTimeCodeInputProps> = ({
             inputRefs.current[index] = node;
             if (index === 0 && firstInputRef) firstInputRef.current = node;
           }}
-          aria-label={`验证码第 ${index + 1} 位`}
+          aria-label={t('auth.otp.slotPrefix') + (index + 1) + t('auth.otp.slotSuffix')}
           autoComplete={index === 0 ? 'one-time-code' : 'off'}
           className="axi-one-time-code__input"
           disabled={disabled}
