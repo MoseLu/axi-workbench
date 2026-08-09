@@ -12,7 +12,7 @@ Web 管理端的列表、筛选、行操作和编辑弹窗，采用 Cool Admin V
 | [`cl-upsert` 的新增/编辑流程](https://github.com/cool-team-official/cool-admin-vue/blob/8.x/src/modules/base/views/menu/index.vue) | `AxiUpsert`（当前由 `@axi/crud` 直接导出）负责新增/编辑表单 | 只有真实服务端写入接口才显示编辑入口；不为只读投影伪造弹窗。 |
 | toolbar + search + row operations 的组合 | `DesktopCrudFrame` 承载工具栏，领域页通过 `AxiCrud` 绑定真实 API | 不复制 Cool Admin 的领域服务、权限命名或批量删除能力。 |
 
-首个落地面是 `/admin/settings/role`：它以 `GET /api/v1/tenants/:tenantID/members` 读取当前主体可管理的组织成员，并通过 `PUT /api/v1/tenants/:tenantID/members/:memberSubject` 新增或更新角色。Gateway 注入已验证主体，Platform Core 重新做成员授权并记录 `tenant.member.changed` 审计；服务不可用时只显示明确状态，不保留静态“权限事实”行。
+可写落地面是 `/admin/settings/role`：它以 `GET /api/v1/tenants/:tenantID/members` 读取当前主体可管理的组织成员，并通过 `PUT /api/v1/tenants/:tenantID/members/:memberSubject` 新增或更新角色。Gateway 注入已验证主体，Platform Core 重新做成员授权并记录 `tenant.member.changed` 审计；服务不可用时只显示明确状态，不保留静态“权限事实”行。`/admin/settings/menu` 同样使用 `AxiCrud` 与 `AxiCrudTable` 渲染已登记导航，但没有权威菜单写接口，所以明确保持为只读，不能为了视觉完整度添加假 Upsert。
 
 ## 公开证据
 
