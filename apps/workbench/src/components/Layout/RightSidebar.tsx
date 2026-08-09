@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n';
 import { WorkbenchIcon } from '../WorkbenchIcon';
 import './RightSidebar.css';
 
@@ -7,26 +8,27 @@ interface RightSidebarProps {
   onClose: () => void;
 }
 
-const themes = [
-  { key: 'dark', label: '暗黑', color: 'var(--color-content-dark)' },
-  { key: 'light', label: '亮色', color: 'var(--color-bg-card)' },
-  { key: 'blue', label: '深蓝', color: 'var(--color-navy)' },
-];
-
-const primaryColors = [
-  'var(--color-chart-1)',
-  'var(--color-info-antd)',
-  'var(--palette-purple-500)',
-  'var(--color-chart-5)',
-  'var(--color-chart-2)',
-  'var(--color-chart-3)',
-  'var(--color-danger)',
-  'var(--color-chart-6)',
-];
-
 const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
+  const { t } = useI18n();
   const [currentTheme, setCurrentTheme] = React.useState('dark');
   const [currentColor, setCurrentColor] = React.useState('var(--color-chart-1)');
+
+  const themes = [
+    { key: 'dark', label: t('common.theme.dark'), color: 'var(--color-content-dark)' },
+    { key: 'light', label: t('common.theme.light'), color: 'var(--color-bg-card)' },
+    { key: 'blue', label: t('common.theme.blue'), color: 'var(--color-navy)' },
+  ];
+
+  const primaryColors = [
+    'var(--color-chart-1)',
+    'var(--color-info-antd)',
+    'var(--palette-purple-500)',
+    'var(--color-chart-5)',
+    'var(--color-chart-2)',
+    'var(--color-chart-3)',
+    'var(--color-danger)',
+    'var(--color-chart-6)',
+  ];
 
   return (
     <>
@@ -36,8 +38,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
       {/* Panel */}
       <div className={`right-sidebar ${visible ? 'is-visible' : ''}`}>
         <div className="right-sidebar__header">
-          <span className="right-sidebar__title">系统设置</span>
-          <button className="right-sidebar__close" onClick={onClose}>
+          <span className="right-sidebar__title">{t('common.settings.title')}</span>
+          <button className="right-sidebar__close" onClick={onClose} aria-label={t('common.settings.close')}>
             <WorkbenchIcon name="close" />
           </button>
         </div>
@@ -45,7 +47,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
         <div className="right-sidebar__body">
           {/* Theme */}
           <div className="right-sidebar__section">
-            <div className="right-sidebar__section-title">主题模式</div>
+            <div className="right-sidebar__section-title">{t('common.theme.mode')}</div>
             <div className="right-sidebar__themes">
               {themes.map(theme => (
                 <div
@@ -67,7 +69,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
 
           {/* Primary Color */}
           <div className="right-sidebar__section">
-            <div className="right-sidebar__section-title">主题颜色</div>
+            <div className="right-sidebar__section-title">{t('common.theme.color')}</div>
             <div className="right-sidebar__colors">
               {primaryColors.map(color => (
                 <div
@@ -84,18 +86,18 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ visible, onClose }) => {
 
           {/* Layout */}
           <div className="right-sidebar__section">
-            <div className="right-sidebar__section-title">界面设置</div>
+            <div className="right-sidebar__section-title">{t('common.layout.settings')}</div>
             <div className="right-sidebar__setting-row">
-              <span>侧边栏宽度</span>
+              <span>{t('common.sidebar.width')}</span>
               <span className="right-sidebar__setting-value">220px</span>
             </div>
             <div className="right-sidebar__setting-row">
-              <span>标签栏</span>
-              <span className="right-sidebar__setting-value">显示</span>
+              <span>{t('common.tabbar')}</span>
+              <span className="right-sidebar__setting-value">{t('common.show')}</span>
             </div>
             <div className="right-sidebar__setting-row">
-              <span>面包屑</span>
-              <span className="right-sidebar__setting-value">显示</span>
+              <span>{t('common.breadcrumb')}</span>
+              <span className="right-sidebar__setting-value">{t('common.show')}</span>
             </div>
           </div>
         </div>

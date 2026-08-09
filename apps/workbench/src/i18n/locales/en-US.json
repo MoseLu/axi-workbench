@@ -22,6 +22,7 @@
   "common.show": "Show",
   "common.user.admin": "Admin",
   "common.settings.title": "Settings",
+  "common.settings.close": "Close settings panel",
   "auth.login": "Login",
   "auth.register": "Register",
   "auth.email": "Email",
