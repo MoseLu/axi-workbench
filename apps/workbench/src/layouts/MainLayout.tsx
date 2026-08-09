@@ -310,7 +310,7 @@ const MainLayout: React.FC = () => {
       items={[
         {
           key: 'search',
-          label: t('layout.floatingTools.search'),
+          label: t('layout.globalSearch.label'),
           icon: <AxiSvgIcon name={axiWorkbenchIconMap.search} size={16} />,
           onClick: openGlobalSearch,
         },
@@ -405,7 +405,7 @@ const MainLayout: React.FC = () => {
         contentFullscreen={contentFullscreen}
         floatingTools={floatingTools}
         githubHref={undefined}
-        globalSearchLabel={t('layout.floatingTools.search')}
+        globalSearchLabel={t('layout.globalSearch.label')}
         globalSearchShortcut="⌘ K"
         navGroups={visibleDesktopNavGroups}
         onBack={() => window.history.back()}
