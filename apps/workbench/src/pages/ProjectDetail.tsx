@@ -3,6 +3,7 @@ import { Button, Descriptions, Empty, Space } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
+import { useI18n } from '../i18n';
 import {
   getProjectConsumers,
   getProjectGitStatus,
@@ -39,6 +40,7 @@ type TaskRow = {
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { locale, t } = useI18n();
   const projectId = decodeURIComponent(id || '');
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
   const projects = useMemo(
@@ -49,51 +51,59 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <DesktopCrudFrame
-      ariaLabel="项目详情"
+      ariaLabel={t('projectDetail.title')}
       className="project-detail-crud"
       toolbar={(
         <Space size={6}>
-          <Button size="small" onClick={() => navigate('/admin/project')}>返回项目</Button>
-          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? '同步中…' : '刷新状态'}</Button>
+          <Button size="small" onClick={() => navigate('/admin/project')}>{t('projectDetail.back')}</Button>
+          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? t('projectDetail.refreshing') : t('projectDetail.refresh')}</Button>
         </Space>
       )}
     >
       {error ? (
         <ControlPlaneState
-          description="当前无法连接控制面；项目详情会在连接恢复后显示。"
-          title="项目详情暂不可用"
+          description={t('projectDetail.error.description')}
+          title={t('projectDetail.error.title')}
         />
       ) : isLoading ? (
-        <ControlPlaneState description="正在从控制面读取项目详情。" loading title="正在同步项目详情" />
+        <ControlPlaneState description={t('projectDetail.loading.description')} loading title={t('projectDetail.loading.title')} />
       ) : !project ? (
-        <AxiTableGroup description="该项目未出现在最新控制面快照中。" title="未找到项目">
-          <Empty description="没有可呈现的项目数据" />
+        <AxiTableGroup description={t('projectDetail.notFound.description')} title={t('projectDetail.notFound.title')}>
+          <Empty description={t('projectDetail.notFound.empty')} />
         </AxiTableGroup>
       ) : (
-        <ProjectDetailContent project={project} projects={projects} snapshot={snapshot} />
+        <ProjectDetailContent locale={locale} project={project} projects={projects} snapshot={snapshot} />
       )}
     </DesktopCrudFrame>
   );
 };
 
 const ProjectDetailContent: React.FC<{
+  locale: string;
   project: ProjectResource;
   projects: ProjectResource[];
   snapshot: ReturnType<typeof useControlSnapshot>['data'];
-}> = ({ project, projects, snapshot }) => {
+}> = ({ locale, project, projects, snapshot }) => {
+  const { t } = useI18n();
   const projectId = getProjectResourceId(project);
   const git = getProjectGitStatus(project);
   const labelById = useMemo(
     () => new Map(projects.map((item) => [getProjectResourceId(item), getProjectResourceLabel(item)])),
     [projects],
   );
+  const availableState = t('projects.state.available');
+  const unknownState = t('projects.state.unknown');
+  const unregisteredBranch = t('projects.branch.unregistered');
+  const workspaceChanges = t('projects.workspace.changes');
+  const workspacePending = t('projects.workspace.pending');
+  const workspaceClean = t('projects.workspace.clean');
   const relationships = useMemo<RelationshipRow[]>(
     () => [
-      ...project.consumes.map((value) => ({ direction: '依赖项目', key: `consume:${value}`, label: labelById.get(value) || value })),
-      ...getProjectConsumers(project).map((value) => ({ direction: '消费项目', key: `consumer:${value}`, label: labelById.get(value) || value })),
-      ...project.contracts.map((value) => ({ direction: '关联契约', key: `contract:${value}`, label: value })),
+      ...project.consumes.map((value) => ({ direction: t('projectDetail.relationship.consume'), key: `consume:${value}`, label: labelById.get(value) || value })),
+      ...getProjectConsumers(project).map((value) => ({ direction: t('projectDetail.relationship.consumer'), key: `consumer:${value}`, label: labelById.get(value) || value })),
+      ...project.contracts.map((value) => ({ direction: t('projectDetail.relationship.contract'), key: `contract:${value}`, label: value })),
     ],
-    [labelById, project],
+    [labelById, project, t],
   );
   const capabilities = useMemo<CapabilityRow[]>(
     () => project.provides.map((value) => ({ key: value, label: value })),
@@ -107,59 +117,69 @@ const ProjectDetailContent: React.FC<{
         id: task.id,
         runtime: task.runtime,
         status: task.status,
-        summary: task.summary || task.prompt || '受管任务（暂无摘要）',
+        summary: task.summary || task.prompt || t('operations.attention.fallbackSummary'),
       })),
-    [projectId, snapshot?.agentTasks],
+    [projectId, snapshot?.agentTasks, t],
   );
   const relationshipColumns: AxiTableColumn<RelationshipRow>[] = [
-    { dataIndex: 'direction', title: '关系', width: 130 },
-    { dataIndex: 'label', title: '项目或契约' },
+    { dataIndex: 'direction', title: t('projectDetail.column.relationship'), width: 130 },
+    { dataIndex: 'label', title: t('projectDetail.column.peer') },
   ];
-  const capabilityColumns: AxiTableColumn<CapabilityRow>[] = [{ dataIndex: 'label', title: '已提供能力' }];
+  const capabilityColumns: AxiTableColumn<CapabilityRow>[] = [{ dataIndex: 'label', title: t('projectDetail.column.capability') }];
   const taskColumns: AxiTableColumn<TaskRow>[] = [
-    { dataIndex: 'summary', title: '任务' },
-    { dataIndex: 'status', title: '状态', width: 110 },
-    { dataIndex: 'runtime', title: '运行环境', width: 150 },
-    { dataIndex: 'createdAt', render: (value) => formatTime(value), title: '创建时间', width: 150 },
+    { dataIndex: 'summary', title: t('workspace.column.task') },
+    { dataIndex: 'status', title: t('operations.column.status'), width: 110 },
+    { dataIndex: 'runtime', title: t('workspace.column.runtime'), width: 150 },
+    { dataIndex: 'createdAt', render: (value) => formatTime(value, locale, t('workspace.time.unknown')), title: t('workspace.column.createdAt'), width: 150 },
   ];
   const workspaceState = git.changedEntries > 0
-    ? `有 ${git.changedEntries} 项改动`
+    ? workspaceChanges.replace('{value}', `${git.changedEntries}`)
     : git.clean === false
-      ? '待检查'
-      : '正常';
+      ? workspacePending
+      : workspaceClean;
+  const commandsCount = `${project.commands.length}${t('projectDetail.commandsUnit')}`;
 
   return (
     <>
       <AxiTableGroup description={getProjectResourceSummary(project)} title={getProjectResourceLabel(project)}>
         <Descriptions column={2} colon={false} size="small">
-          <Descriptions.Item label="项目状态">{project.status === 'available' ? '可用' : project.status || '待校验'}</Descriptions.Item>
-          <Descriptions.Item label="工作区状态">{workspaceState}</Descriptions.Item>
-          <Descriptions.Item label="当前分支">{git.branch || '未登记'}</Descriptions.Item>
-          <Descriptions.Item label="受管命令">{project.commands.length} 项</Descriptions.Item>
+          <Descriptions.Item label={t('projectDetail.descriptions.state')}>{project.status === 'available' ? availableState : project.status || unknownState}</Descriptions.Item>
+          <Descriptions.Item label={t('projectDetail.descriptions.workspace')}>{workspaceState}</Descriptions.Item>
+          <Descriptions.Item label={t('projectDetail.descriptions.branch')}>{git.branch || unregisteredBranch}</Descriptions.Item>
+          <Descriptions.Item label={t('projectDetail.descriptions.commands')}>{commandsCount}</Descriptions.Item>
         </Descriptions>
       </AxiTableGroup>
 
       <div className="project-detail-crud__grid">
-        <AxiTableGroup description={relationships.length ? `共 ${relationships.length} 条已登记关系` : '暂无已登记关系'} title="依赖与协作">
+        <AxiTableGroup
+          description={relationships.length ? `${relationships.length}${t('projectDetail.relationships.count')}` : t('projectDetail.relationships.empty')}
+          title={t('projectDetail.relationships.title')}
+        >
           <AxiTable columns={relationshipColumns} data={relationships} pagination={false} rowKey="key" />
         </AxiTableGroup>
-        <AxiTableGroup description={capabilities.length ? `共 ${capabilities.length} 项已提供能力` : '暂无已登记能力'} title="已提供能力">
+        <AxiTableGroup
+          description={capabilities.length ? `${capabilities.length}${t('projectDetail.capabilities.count')}` : t('projectDetail.capabilities.empty')}
+          title={t('projectDetail.capabilities.title')}
+        >
           <AxiTable columns={capabilityColumns} data={capabilities} pagination={false} rowKey="key" />
         </AxiTableGroup>
       </div>
 
-      <AxiTableGroup description={tasks.length ? `共 ${tasks.length} 项关联任务` : '当前没有关联任务'} title="关联任务">
+      <AxiTableGroup
+        description={tasks.length ? `${tasks.length}${t('projectDetail.tasks.count')}` : t('projectDetail.tasks.empty')}
+        title={t('projectDetail.tasks.title')}
+      >
         <AxiTable columns={taskColumns} data={tasks} pagination={false} rowKey="id" />
       </AxiTableGroup>
     </>
   );
 };
 
-function formatTime(value: Date | string | undefined): string {
-  if (!value) return '时间未知';
+function formatTime(value: Date | string | undefined, locale: string, unknownText: string): string {
+  if (!value) return unknownText;
   const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '时间未知';
-  return new Intl.DateTimeFormat('zh-CN', {
+  if (Number.isNaN(date.getTime())) return unknownText;
+  return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
