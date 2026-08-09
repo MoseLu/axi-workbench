@@ -15,7 +15,7 @@
   left: 22px;
   z-index: 1500;
   display: flex;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
   -webkit-app-region: no-drag;
   user-select: none;
 }
@@ -74,7 +74,7 @@
   width: 238px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
-  padding: 12px;
+  padding: var(--axi-space-3, 12px);
   background: rgba(42, 42, 44, 0.86);
   color: rgba(255, 255, 255, 0.9);
   box-shadow:
@@ -112,7 +112,7 @@
 .window-zoom-section-title {
   margin-bottom: 10px;
   color: rgba(255, 255, 255, 0.42);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
 }
 
@@ -127,7 +127,7 @@
   width: 40px;
   height: 34px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   background: transparent;
   display: flex;
   align-items: center;
@@ -204,7 +204,7 @@
 
 .window-zoom-divider {
   height: 1px;
-  margin: 13px 0 10px;
+  margin: 13px 0 var(--axi-space-2-5, 10px);
   background: rgba(255, 255, 255, 0.14);
 }
 
@@ -212,14 +212,14 @@
   width: 100%;
   height: 30px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   padding: 0 6px;
   background: transparent;
   color: rgba(255, 255, 255, 0.92);
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: var(--axi-space-2, 8px);
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   cursor: default;
   text-align: left;
@@ -344,7 +344,7 @@
 }
 
 .nav-glyph {
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   line-height: 1;
 }
@@ -365,10 +365,10 @@
   transform: translateX(-8px) translateY(-50%);
   background: var(--text-primary);
   color: var(--bg-primary);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 6px var(--axi-space-2-5, 10px);
+  border-radius: var(--axi-radius-lg, 8px);
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-medium, 500);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -388,7 +388,7 @@
   min-width: 0;
   height: 100vh;
   overflow: hidden;
-  padding: 76px 16px 32px 0;
+  padding: 76px var(--axi-space-4, 16px) 32px 0;
 }
 
 .main-content {

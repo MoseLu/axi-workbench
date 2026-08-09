@@ -3,15 +3,15 @@
   min-width: 58px;
   border-radius: 12px;
   border: 1px solid rgba(29, 78, 216, 0.28);
-  padding: 0 12px;
+  padding: 0 var(--axi-space-3, 12px);
   background: var(--primary);
   color: white;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-bold, 700);
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
@@ -118,7 +118,7 @@
 .account-table th,
 .account-table td {
   border-bottom: 1px solid var(--border-light);
-  padding: 10px 12px;
+  padding: var(--axi-space-2-5, 10px) var(--axi-space-3, 12px);
   text-align: center;
   vertical-align: middle;
   font-size: 13px;
@@ -127,7 +127,7 @@
 .account-table th {
   background: rgba(248, 250, 252, 0.92);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   backdrop-filter: blur(12px);
 }
@@ -257,8 +257,8 @@
   min-height: 30px;
   margin: 0 auto;
   border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 0 8px;
+  border-radius: var(--axi-radius-xl, 10px);
+  padding: 0 var(--axi-space-2, 8px);
   background: transparent;
   color: var(--text-primary);
   display: flex;
@@ -281,7 +281,7 @@
 
 .copy-text.mono {
   font-family: var(--font-mono);
-  font-weight: 700;
+  font-weight: var(--axi-font-weight-bold, 700);
 }
 
 .empty-table-state {
@@ -299,16 +299,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 10px 14px;
+  gap: var(--axi-space-4, 16px);
+  padding: var(--axi-space-2-5, 10px) 14px;
   backdrop-filter: blur(12px);
 }
 
 .pagination-summary,
 .page-indicator {
   color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-bold, 700);
   white-space: nowrap;
 }
 
@@ -320,7 +320,7 @@
 }
 
 .pagination-controls {
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
   min-width: 0;
 }
 
@@ -335,7 +335,7 @@
 }
 
 .page-size-select {
-  padding: 0 8px;
+  padding: 0 var(--axi-space-2, 8px);
 }
 
 .page-size-select select {
@@ -344,14 +344,14 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-bold, 700);
 }
 
 .pagination-btn {
   justify-content: center;
-  padding: 0 10px;
-  font-size: 12px;
+  padding: 0 var(--axi-space-2-5, 10px);
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   cursor: pointer;
 }
@@ -426,7 +426,7 @@
   width: 32px;
   height: 32px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--axi-radius-xl, 10px);
   background: transparent;
   color: var(--text-muted);
   display: flex;
@@ -467,7 +467,7 @@
   width: 100%;
   margin: 24px 0 0;
   display: grid;
-  gap: 10px;
+  gap: var(--axi-space-2-5, 10px);
 }
 
 .profile-fields div {
@@ -479,12 +479,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--axi-space-4, 16px);
 }
 
 .profile-fields dt {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
 }
 
@@ -497,8 +497,8 @@
 
 .profile-value {
   border: 0;
-  border-radius: 10px;
-  padding: 5px 8px;
+  border-radius: var(--axi-radius-xl, 10px);
+  padding: 5px var(--axi-space-2, 8px);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -516,7 +516,7 @@
   z-index: 1400;
   max-width: 520px;
   min-height: 42px;
-  padding: 10px 14px;
+  padding: var(--axi-space-2-5, 10px) 14px;
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.92);
@@ -525,7 +525,7 @@
   align-items: center;
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(16px);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   animation: notification-in 0.18s ease both;
 }
@@ -576,7 +576,7 @@
 
   .account-table th,
   .account-table td {
-    padding: 9px 10px;
+    padding: 9px var(--axi-space-2-5, 10px);
   }
 
   .copy-text {
@@ -594,10 +594,10 @@
   .account-pagination {
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: var(--axi-space-2-5, 10px);
     overflow-x: auto;
     scrollbar-width: none;
-    padding: 10px 14px;
+    padding: var(--axi-space-2-5, 10px) 14px;
   }
 
   .account-pagination::-webkit-scrollbar {

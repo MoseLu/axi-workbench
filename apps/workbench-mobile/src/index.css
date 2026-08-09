@@ -40,7 +40,7 @@ button { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   justify-content: space-between;
   min-height: calc(58px + env(safe-area-inset-top, 0px));
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 18px var(--axi-space-2-5, 10px);
   border-bottom: 1px solid var(--mobile-border);
   background: color-mix(in srgb, var(--mobile-canvas) 88%, transparent);
   backdrop-filter: blur(18px);
@@ -67,7 +67,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-home { padding-top: 20px; }
 .axi-mobile-home__hero { position: relative; overflow: hidden; padding: 23px; border: 1px solid color-mix(in srgb, var(--mobile-primary) 34%, var(--mobile-border)); border-radius: 22px; background: linear-gradient(145deg, color-mix(in srgb, var(--mobile-primary) 20%, var(--mobile-surface)), var(--mobile-surface)); }
 .axi-mobile-home__hero::after { content: ''; position: absolute; width: 144px; height: 144px; top: -77px; right: -45px; border: 1px solid color-mix(in srgb, var(--mobile-primary) 55%, transparent); border-radius: 50%; box-shadow: 0 0 0 25px color-mix(in srgb, var(--mobile-primary) 7%, transparent), 0 0 0 51px color-mix(in srgb, var(--mobile-primary) 4%, transparent); }
-.axi-mobile-home__hero p { position: relative; z-index: 1; margin: 0 0 10px; color: color-mix(in srgb, var(--mobile-text) 64%, transparent); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.axi-mobile-home__hero p { position: relative; z-index: 1; margin: 0 0 10px; color: color-mix(in srgb, var(--mobile-text) 64%, transparent); font-size: 12px; font-weight: var(--axi-font-weight-semibold, 600); letter-spacing: .04em; }
 .axi-mobile-home__hero h1 { position: relative; z-index: 1; margin: 0; font-size: 26px; line-height: 1.1; letter-spacing: -.7px; }
 .axi-mobile-home__hero > span { position: relative; z-index: 1; display: block; max-width: 260px; margin-top: 10px; color: var(--mobile-muted); font-size: 13px; line-height: 1.5; }
 .axi-mobile-home__progress { position: relative; z-index: 1; margin-top: 27px; }
@@ -120,7 +120,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-task { width: 100%; display: flex; align-items: center; gap: 11px; padding: 14px 13px; border: 1px solid var(--mobile-border); border-radius: 16px; color: var(--mobile-text); background: var(--mobile-surface-soft); text-align: left; cursor: pointer; transition: transform .14s ease; }
 .axi-mobile-task__check { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 22px; height: 22px; border: 1.5px solid color-mix(in srgb, var(--mobile-muted) 70%, transparent); border-radius: 8px; color: transparent; }
 .axi-mobile-task__body { display: grid; flex: 1; min-width: 0; gap: 4px; }
-.axi-mobile-task__body strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.axi-mobile-task__body strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: var(--axi-font-weight-semibold, 600); }
 .axi-mobile-task__body small { color: var(--mobile-muted); font-size: 11px; }
 .axi-mobile-task.is-done { opacity: .6; }
 .axi-mobile-task.is-done .axi-mobile-task__check { border-color: var(--mobile-primary); color: var(--axi-text-inverse, #fff); background: var(--mobile-primary); }
@@ -129,13 +129,13 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-priority.is-high { color: var(--axi-danger, #ff969e); background: color-mix(in srgb, var(--axi-danger, #e95a68) 16%, transparent); }
 .axi-mobile-priority.is-normal { color: var(--mobile-muted); background: color-mix(in srgb, var(--mobile-muted) 10%, transparent); }
 .axi-mobile-empty-card { display: inline-flex; align-items: center; gap: 7px; padding: 12px 14px; border: 1px dashed var(--mobile-border); border-radius: 13px; color: var(--mobile-muted); }
-.axi-mobile-empty-card span { color: var(--mobile-text); font-weight: 700; }
+.axi-mobile-empty-card span { color: var(--mobile-text); font-weight: var(--axi-font-weight-bold, 700); }
 .axi-mobile-empty-card small { font-size: 12px; }
 
 .axi-mobile-inbox-list { display: grid; margin: 0 -18px; border-top: 1px solid var(--mobile-border); }
 .axi-mobile-message { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border: 0; border-bottom: 1px solid var(--mobile-border); color: var(--mobile-text); background: transparent; text-align: left; cursor: pointer; }
 .axi-mobile-message__body { display: grid; flex: 1; min-width: 0; gap: 4px; }
-.axi-mobile-message__body strong { font-size: 14px; font-weight: 600; }
+.axi-mobile-message__body strong { font-size: 14px; font-weight: var(--axi-font-weight-semibold, 600); }
 .axi-mobile-message__body small { overflow: hidden; color: var(--mobile-muted); text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .axi-mobile-message__time { display: grid; justify-items: end; align-self: stretch; color: var(--mobile-muted); font-size: 11px; }
 .axi-mobile-message__time i { width: 6px; height: 6px; border-radius: 50%; background: var(--axi-danger, #eb5a69); }
@@ -143,13 +143,13 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .axi-mobile-profile { padding-top: 19px; }
 .axi-mobile-profile-card { display: flex; align-items: center; gap: 13px; padding: 17px; border: 1px solid var(--mobile-border); border-radius: 20px; background: var(--mobile-surface); }
-.axi-mobile-profile-card__avatar { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 16px; color: var(--axi-text-inverse, #fff); background: linear-gradient(135deg, #6596ff, #6148cd); font-size: 19px; font-weight: 700; }
+.axi-mobile-profile-card__avatar { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 16px; color: var(--axi-text-inverse, #fff); background: linear-gradient(135deg, #6596ff, #6148cd); font-size: 19px; font-weight: var(--axi-font-weight-bold, 700); }
 .axi-mobile-profile-card__identity { display: grid; flex: 1; min-width: 0; gap: 4px; }
 .axi-mobile-profile-card__identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
 .axi-mobile-profile-card__identity small { overflow: hidden; color: var(--mobile-muted); text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .axi-mobile-profile-card > svg { color: var(--mobile-muted); }
 .axi-mobile-setting-group { overflow: hidden; margin-top: 25px; border: 1px solid var(--mobile-border); border-radius: 18px; background: var(--mobile-surface-soft); }
-.axi-mobile-setting-group > p { margin: 0; padding: 12px 14px 7px; color: var(--mobile-muted); font-size: 11px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+.axi-mobile-setting-group > p { margin: 0; padding: 12px 14px 7px; color: var(--mobile-muted); font-size: 11px; font-weight: var(--axi-font-weight-semibold, 600); letter-spacing: .03em; text-transform: uppercase; }
 .axi-mobile-setting-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 53px; padding: 10px 14px; border: 0; border-top: 1px solid var(--mobile-border); color: var(--mobile-text); background: transparent; text-align: left; cursor: pointer; }
 .axi-mobile-setting-row__icon { display: inline-flex; align-items: center; justify-content: center; width: 29px; height: 29px; border-radius: 9px; color: var(--mobile-primary); background: var(--mobile-primary-soft); }
 .axi-mobile-setting-row > span:not(.axi-mobile-setting-row__icon) { flex: 1; font-size: 13px; }
@@ -177,7 +177,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .axi-mobile-login__form label { display: grid; gap: 8px; color: var(--axi-muted, #94a1b4); font-size: 12px; }
 .axi-mobile-login__form input { width: 100%; height: 48px; padding: 0 13px; border: 1px solid color-mix(in srgb, var(--axi-border, #2b3648) 86%, transparent); border-radius: 13px; outline: 0; color: var(--axi-text, #f4f7fb); background: color-mix(in srgb, var(--axi-bg-surface, #151c29) 82%, transparent); }
 .axi-mobile-login__form input:focus { border-color: var(--axi-primary, #5b8cff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--axi-primary, #5b8cff) 14%, transparent); }
-.axi-mobile-login__form > button { height: 50px; margin-top: 7px; border: 0; border-radius: 14px; color: var(--axi-text-inverse, #fff); background: var(--axi-primary, #5b8cff); font-size: 14px; font-weight: 700; cursor: pointer; }
+.axi-mobile-login__form > button { height: 50px; margin-top: 7px; border: 0; border-radius: 14px; color: var(--axi-text-inverse, #fff); background: var(--axi-primary, #5b8cff); font-size: 14px; font-weight: var(--axi-font-weight-bold, 700); cursor: pointer; }
 .axi-mobile-login__form > button:disabled { cursor: wait; opacity: .62; }
 .axi-mobile-login__error { margin: -5px 0 0; color: var(--axi-danger, #ff98a1); font-size: 12px; line-height: 1.4; }
 
