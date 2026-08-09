@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Empty, Input } from 'antd';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../../i18n';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { filterSearchCorpus, type SearchHit } from '../../lib/search-data';
 import './Search.css';
@@ -9,41 +10,46 @@ import './Search.css';
 /** 桌面端全局搜索：只检索已登记的真实工作台入口。 */
 const SearchPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const results = useMemo(() => filterSearchCorpus(query), [query]);
+  const kindLabels = {
+    navigation: t('search.section.navigation'),
+    utility: t('search.section.utility'),
+  };
   const columns: AxiTableColumn<SearchHit>[] = [
     {
       dataIndex: 'kind',
-      render: (kind) => kind === 'navigation' ? '页面' : '工具',
-      title: '类别',
+      render: (kind) => kindLabels[kind as keyof typeof kindLabels] ?? kind,
+      title: t('search.column.kind'),
       width: 90,
     },
-    { align: 'left', dataIndex: 'title', title: '名称', width: 230 },
-    { align: 'left', dataIndex: 'subtitle', title: '说明' },
+    { align: 'left', dataIndex: 'title', title: t('search.column.title'), width: 230 },
+    { align: 'left', dataIndex: 'subtitle', title: t('search.column.subtitle') },
   ];
 
   return (
     <DesktopCrudFrame
-      ariaLabel="快速搜索"
+      ariaLabel={t('search.title')}
       className="wb-search"
       search={(
         <Input.Search
           allowClear
           autoFocus
-          aria-label="搜索工作台"
-          placeholder="搜索页面和工具"
+          aria-label={t('search.input.ariaLabel')}
+          placeholder={t('search.input.placeholder')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
       )}
-      top={<span className="wb-crud-page__context">快速搜索</span>}
+      top={<span className="wb-crud-page__context">{t('search.title')}</span>}
     >
       <AxiTableGroup
-        description={query.trim() ? `找到 ${results.length} 个匹配项` : '输入关键词后检索已登记的工作台入口'}
-        title="搜索结果"
+        description={query.trim() ? t('search.results.count', `${results.length}`) : t('search.results.idle')}
+        title={t('search.results.title')}
       >
-        {!query.trim() ? <Empty description="等待输入关键词" image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
-        {query.trim() && results.length === 0 ? <Empty description={`未找到与“${query.trim()}”相关的入口`} image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+        {!query.trim() ? <Empty description={t('search.results.waiting')} image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+        {query.trim() && results.length === 0 ? <Empty description={t('search.results.empty', query.trim())} image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
         {results.length > 0 ? (
           <AxiTable
             columns={columns}

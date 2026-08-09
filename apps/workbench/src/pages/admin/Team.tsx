@@ -3,6 +3,7 @@ import { Button, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
+import { useI18n } from '../../i18n';
 import {
   getProjectCollaborationLinks,
   getProjectConsumerSummary,
@@ -23,6 +24,7 @@ type CollaborationRow = {
 /** 团队页只呈现已登记项目协作关系；成员目录尚未接入时不伪造成员列表。 */
 const Team: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
   const projects = useMemo(
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
@@ -37,41 +39,41 @@ const Team: React.FC = () => {
     [projects],
   );
   const columns: AxiTableColumn<CollaborationRow>[] = [
-    { dataIndex: 'label', title: '项目', width: 320 },
-    { dataIndex: 'relationship', title: '协作关系' },
+    { dataIndex: 'label', title: t('projects.column.label'), width: 320 },
+    { dataIndex: 'relationship', title: t('team.column.relationship') },
     {
       align: 'right',
       key: 'action',
-      render: (_, row) => <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}>查看项目</Button>,
-      title: '操作',
+      render: (_, row) => <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}>{t('team.viewProject')}</Button>,
+      title: t('projects.column.actionHeader'),
       width: 110,
     },
   ];
 
   return (
     <DesktopCrudFrame
-      ariaLabel="团队"
+      ariaLabel={t('team.title')}
       className="team-crud"
       toolbar={(
         <Space size={6}>
-          <Button size="small" onClick={() => navigate('/admin/project')}>项目目录</Button>
-          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? '同步中…' : '刷新状态'}</Button>
+          <Button size="small" onClick={() => navigate('/admin/project')}>{t('team.projectsLink')}</Button>
+          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? t('team.refreshing') : t('team.refresh')}</Button>
         </Space>
       )}
     >
       {error ? (
         <ControlPlaneState
-          description="当前无法连接控制面；已登记项目之间的协作关系会在连接恢复后显示。"
-          title="协作关系暂不可用"
+          description={t('team.error.description')}
+          title={t('team.error.title')}
         />
       ) : isLoading ? (
-        <ControlPlaneState description="正在从控制面读取协作关系。" loading title="正在同步团队数据" />
+        <ControlPlaneState description={t('team.loading.description')} loading title={t('team.loading.title')} />
       ) : (
         <AxiTableGroup
           description={rows.length > 0
-            ? `已登记 ${rows.length} 个项目协作关系`
-            : '成员目录尚未接入控制面，当前没有可呈现的协作关系。'}
-          title="项目协作"
+            ? t('team.count', `${rows.length}`)
+            : t('team.empty')}
+          title={t('team.collaboration.title')}
         >
           <AxiTable
             columns={columns}

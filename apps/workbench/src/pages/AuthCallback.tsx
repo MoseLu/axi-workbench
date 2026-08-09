@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../i18n';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const { refreshSession } = useAuth();
-  const [message, setMessage] = useState('正在建立安全会话…');
+  const { t } = useI18n();
+  const [message, setMessage] = useState(t('auth.callback.establishing'));
 
   useEffect(() => {
     let active = true;
@@ -17,12 +19,12 @@ export default function AuthCallback() {
       if (authenticated) {
         navigate(destination, { replace: true });
       } else {
-        setMessage('未能建立会话，正在返回登录页…');
+        setMessage(t('auth.callback.failed'));
         window.setTimeout(() => navigate('/login', { replace: true }), 700);
       }
     });
     return () => { active = false; };
-  }, [navigate, refreshSession]);
+  }, [navigate, refreshSession, t]);
 
   return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>{message}</main>;
 }

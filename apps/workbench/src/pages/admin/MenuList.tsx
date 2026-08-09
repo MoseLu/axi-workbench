@@ -8,6 +8,7 @@ import {
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
+import { useI18n } from '../../i18n';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { getRegisteredDesktopRoutes } from '../../lib/navigationRegistry';
 import './MenuList.css';
@@ -19,14 +20,6 @@ export type MenuRow = Record<string, unknown> & {
   label: string;
   path: string;
 };
-
-const menuColumns: AxiTableColumn<MenuRow>[] = [
-  { alwaysVisible: true, title: '序号', type: 'index', width: 64 },
-  { align: 'left', dataIndex: 'label', title: '菜单名称', width: 240 },
-  { align: 'left', dataIndex: 'group', title: '所属分组', width: 180 },
-  { align: 'left', dataIndex: 'path', title: '路由地址', width: 280 },
-  { alwaysVisible: true, title: '操作', type: 'op', width: 88 },
-];
 
 export function buildMenuRows(): MenuRow[] {
   return getRegisteredDesktopRoutes().map((route) => ({
@@ -47,31 +40,39 @@ export function filterMenuRows(rows: MenuRow[], keyword: string): MenuRow[] {
 
 const MenuList: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [keyword, setKeyword] = useState('');
   const rows = useMemo(buildMenuRows, []);
   const filteredRows = useMemo(() => filterMenuRows(rows, keyword), [keyword, rows]);
+  const menuColumns: AxiTableColumn<MenuRow>[] = useMemo(() => [
+    { alwaysVisible: true, title: t('projects.column.index'), type: 'index', width: 64 },
+    { align: 'left', dataIndex: 'label', title: t('menuList.column.label'), width: 240 },
+    { align: 'left', dataIndex: 'group', title: t('menuList.column.group'), width: 180 },
+    { align: 'left', dataIndex: 'path', title: t('menuList.column.path'), width: 280 },
+    { alwaysVisible: true, title: t('projects.column.actionHeader'), type: 'op', width: 88 },
+  ], [t]);
   const operationButtons = useMemo<AxiTableOpButton<MenuRow>[]>(
     () => [{
       key: 'open',
-      label: '打开',
+      label: t('menuList.open'),
       tone: 'primary',
       type: 'link',
       onClick: ({ row }) => navigate(row.path),
     }],
-    [navigate],
+    [navigate, t],
   );
 
   return (
     <AxiCrud dataSource={rows} permission={{ page: true }}>
       <DesktopCrudFrame
-        ariaLabel="导航入口"
+        ariaLabel={t('menuList.title')}
         className="menu-registry"
         search={(
           <div className="wb-crud-search-cluster">
             <Input
               allowClear
-              aria-label="搜索菜单"
-              placeholder="搜索菜单名称、分组或路由"
+              aria-label={t('menuList.search.ariaLabel')}
+              placeholder={t('menuList.search.placeholder')}
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               onPressEnter={() => undefined}
@@ -80,13 +81,13 @@ const MenuList: React.FC = () => {
         )}
         top={(
           <div className="wb-crud-action-cluster">
-            <span className="wb-crud-page__readonly-hint">只读目录 · 无权威写接口</span>
+            <span className="wb-crud-page__readonly-hint">{t('menuList.readonlyHint')}</span>
           </div>
         )}
       >
         <AxiTableGroup
-          description={`显示 ${filteredRows.length} / ${rows.length} 条已登记入口。支持检索、表格偏好与跳转，不提供新增/删除。`}
-          title="导航入口"
+          description={t('menuList.count', `${filteredRows.length}/${rows.length}`)}
+          title={t('menuList.title')}
         >
           <AxiCrudTable
             columns={menuColumns}
@@ -97,7 +98,7 @@ const MenuList: React.FC = () => {
               hideOnSinglePage: false,
               pageSizeOptions: ['10', '20', '50'],
               showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 条`,
+              showTotal: (total) => t('menuList.total', `${total}`),
             }}
             rowKey="id"
             rowSelection={false}
