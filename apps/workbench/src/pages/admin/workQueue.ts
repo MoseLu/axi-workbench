@@ -18,11 +18,11 @@ export type ApprovalRow = {
   summary: string;
 };
 
-export const workQueueFilters: Array<{ label: string; value: WorkQueueFilter }> = [
-  { label: '全部', value: 'all' },
-  { label: '处理中', value: 'active' },
-  { label: '需处理', value: 'attention' },
-  { label: '已结束', value: 'completed' },
+export const workQueueFilters: Array<{ label: string; labelKey: string; value: WorkQueueFilter }> = [
+  { label: '全部', labelKey: 'workspace.filter.all', value: 'all' },
+  { label: '处理中', labelKey: 'workspace.filter.active', value: 'active' },
+  { label: '需处理', labelKey: 'workspace.filter.attention', value: 'attention' },
+  { label: '已结束', labelKey: 'workspace.filter.completed', value: 'completed' },
 ];
 
 /** Filter only rows derived from the current Control Plane snapshot. */

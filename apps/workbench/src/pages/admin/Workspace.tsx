@@ -3,6 +3,7 @@ import { Button, Input, Segmented, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
+import { useI18n } from '../../i18n';
 import {
   getApprovalRiskLabel,
   getProjectResourceId,
@@ -33,6 +34,7 @@ type RuntimeRow = {
 /** 软件层工作区：以可筛读的任务、审批和运行环境表格取代移动端纵向信息流。 */
 const Workspace: React.FC = () => {
   const navigate = useNavigate();
+  const { locale, t } = useI18n();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
   const [filter, setFilter] = useState<WorkQueueFilter>('all');
   const [query, setQuery] = useState('');
@@ -44,6 +46,10 @@ const Workspace: React.FC = () => {
     () => new Map(projects.map((project) => [getProjectResourceId(project), getProjectResourceLabel(project)])),
     [projects],
   );
+  const fallbackTaskSummary = t('workspace.task.fallbackSummary');
+  const runtimeAvailable = t('workspace.runtime.available');
+  const runtimeDegraded = t('workspace.runtime.degraded');
+  const unknownTime = t('workspace.time.unknown');
   const taskRows = useMemo<TaskRow[]>(
     () => (snapshot?.agentTasks ?? []).map((task) => ({
       createdAt: task.createdAt,
@@ -51,11 +57,11 @@ const Workspace: React.FC = () => {
       runtime: task.runtime,
       status: getTaskStatusLabel(task.status),
       statusKey: task.status,
-      summary: task.summary || '受管任务（暂无摘要）',
+      summary: task.summary || fallbackTaskSummary,
       targetId: task.targetId,
       targetLabel: task.targetId ? projectNames.get(task.targetId) : undefined,
     })),
-    [projectNames, snapshot?.agentTasks],
+    [fallbackTaskSummary, projectNames, snapshot?.agentTasks],
   );
   const approvalRows = useMemo<ApprovalRow[]>(
     () => (snapshot?.approvals ?? [])
@@ -72,13 +78,13 @@ const Workspace: React.FC = () => {
     () => (snapshot?.runtimes ?? []).map((runtime) => {
       const presentation = getRuntimePresentation(runtime.kind, runtime.summary);
       return {
-        available: runtime.available ? '可用' : '降级',
+        available: runtime.available ? runtimeAvailable : runtimeDegraded,
         key: runtime.kind,
         name: presentation.label,
         summary: presentation.summary,
       };
     }),
-    [snapshot?.runtimes],
+    [runtimeAvailable, runtimeDegraded, snapshot?.runtimes],
   );
   const visibleTaskRows = useMemo(
     () => filterTaskRows(taskRows, filter, query),
@@ -89,39 +95,39 @@ const Workspace: React.FC = () => {
     [approvalRows, query],
   );
   const taskColumns: AxiTableColumn<TaskRow>[] = [
-    { dataIndex: 'summary', title: '任务' },
-    { dataIndex: 'status', title: '状态', width: 110 },
-    { dataIndex: 'runtime', title: '运行环境', width: 150 },
+    { dataIndex: 'summary', title: t('workspace.column.task') },
+    { dataIndex: 'status', title: t('workspace.column.status'), width: 110 },
+    { dataIndex: 'runtime', title: t('workspace.column.runtime'), width: 150 },
     {
       dataIndex: 'targetLabel',
       render: (value, row) => value && row.targetId
         ? <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.targetId!)}`)}>{value}</Button>
         : '—',
-      title: '关联项目',
+      title: t('workspace.column.target'),
       width: 180,
     },
-    { dataIndex: 'createdAt', render: (value) => formatTime(value), title: '创建时间', width: 150 },
+    { dataIndex: 'createdAt', render: (value) => formatTime(value, locale, unknownTime), title: t('workspace.column.createdAt'), width: 150 },
   ];
   const approvalColumns: AxiTableColumn<ApprovalRow>[] = [
-    { dataIndex: 'summary', title: '待审批事项' },
-    { dataIndex: 'risk', title: '风险级别', width: 110 },
-    { dataIndex: 'createdAt', render: (value) => formatTime(value), title: '创建时间', width: 150 },
+    { dataIndex: 'summary', title: t('workspace.column.approval') },
+    { dataIndex: 'risk', title: t('workspace.column.risk'), width: 110 },
+    { dataIndex: 'createdAt', render: (value) => formatTime(value, locale, unknownTime), title: t('workspace.column.createdAt'), width: 150 },
   ];
   const runtimeColumns: AxiTableColumn<RuntimeRow>[] = [
-    { dataIndex: 'name', title: '运行环境', width: 180 },
-    { dataIndex: 'available', title: '状态', width: 100 },
-    { dataIndex: 'summary', title: '说明' },
+    { dataIndex: 'name', title: t('workspace.column.runtime'), width: 180 },
+    { dataIndex: 'available', title: t('workspace.column.status'), width: 100 },
+    { dataIndex: 'summary', title: t('workspace.column.summary') },
   ];
 
   return (
     <DesktopCrudFrame
-      ariaLabel="工作项"
+      ariaLabel={t('workspace.title')}
       className="workspace-crud"
       search={(
         <Input
           allowClear
-          aria-label="搜索工作项"
-          placeholder="搜索任务、项目或审批事项"
+          aria-label={t('workspace.search.ariaLabel')}
+          placeholder={t('workspace.search.placeholder')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -129,37 +135,46 @@ const Workspace: React.FC = () => {
       toolbar={(
         <Space size={8}>
           <Segmented<WorkQueueFilter>
-            options={workQueueFilters}
+            options={workQueueFilters.map((entry) => ({
+              label: t(entry.labelKey),
+              value: entry.value,
+            }))}
             size="small"
             value={filter}
             onChange={(value) => setFilter(value)}
           />
           <Button disabled={isFetching} size="small" onClick={() => void refetch()}>
-            {isFetching ? '同步中…' : '刷新状态'}
+            {isFetching ? t('workspace.refreshing') : t('workspace.refresh')}
           </Button>
         </Space>
       )}
     >
       {error ? (
         <ControlPlaneState
-          description="当前无法连接控制面；受管任务、待处理审批和运行环境会在连接恢复后显示。"
-          title="工作项暂不可用"
+          description={t('workspace.error.description')}
+          title={t('workspace.error.title')}
         />
       ) : isLoading ? (
-        <ControlPlaneState description="正在从控制面读取工作项数据。" loading title="正在同步工作项" />
+        <ControlPlaneState description={t('workspace.loading.description')} loading title={t('workspace.loading.title')} />
       ) : (
         <div className="workspace-crud__grid">
           <AxiTableGroup
             className="workspace-crud__tasks"
-            description={`显示 ${visibleTaskRows.length} 项受管工作项`}
-            title="受管工作项"
+            description={`${visibleTaskRows.length}${t('workspace.tasks.count')}`}
+            title={t('workspace.tasks.title')}
           >
             <AxiTable columns={taskColumns} data={visibleTaskRows} pagination={false} rowKey="id" />
           </AxiTableGroup>
-          <AxiTableGroup description={`显示 ${visibleApprovalRows.length} 项待处理审批`} title="待处理审批">
+          <AxiTableGroup
+            description={`${visibleApprovalRows.length}${t('workspace.approvals.count')}`}
+            title={t('workspace.approvals.title')}
+          >
             <AxiTable columns={approvalColumns} data={visibleApprovalRows} pagination={false} rowKey="id" />
           </AxiTableGroup>
-          <AxiTableGroup description={`共 ${runtimeRows.length} 个已登记环境`} title="关联运行环境">
+          <AxiTableGroup
+            description={`${runtimeRows.length}${t('workspace.runtimes.count')}`}
+            title={t('workspace.runtimes.title')}
+          >
             <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
           </AxiTableGroup>
         </div>
@@ -168,11 +183,11 @@ const Workspace: React.FC = () => {
   );
 };
 
-function formatTime(value: Date | string | undefined): string {
-  if (!value) return '时间未知';
+function formatTime(value: Date | string | undefined, locale: string, unknownText: string): string {
+  if (!value) return unknownText;
   const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '时间未知';
-  return new Intl.DateTimeFormat('zh-CN', {
+  if (Number.isNaN(date.getTime())) return unknownText;
+  return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
