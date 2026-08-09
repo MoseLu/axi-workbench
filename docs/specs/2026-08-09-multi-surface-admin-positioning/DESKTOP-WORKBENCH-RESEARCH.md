@@ -2,6 +2,18 @@
 
 调研日期：2026-08-09。此文档只记录产品形态的外部证据和对 Axi Workbench 的有限推导；它不把外部平台的功能、数据或内部实现宣称为本项目事实。
 
+## CRUD 组件实现参考
+
+Web 管理端的列表、筛选、行操作和编辑弹窗，采用 Cool Admin Vue 8.x 的**交互编排**作为实现参考，而不是复制其领域模型、Vue 源码或菜单结构：
+
+| Cool Admin 参考 | Axi Workbench 对应实现 | 本次边界 |
+| --- | --- | --- |
+| [`cl-crud` + `cl-table` 的角色列表](https://github.com/cool-team-official/cool-admin-vue/blob/8.x/src/modules/base/views/role.vue) | `AxiCrud` + `AxiCrudTable` 负责数据、刷新、行操作和表格偏好 | Web 只接入有权威数据源的管理对象。 |
+| [`cl-upsert` 的新增/编辑流程](https://github.com/cool-team-official/cool-admin-vue/blob/8.x/src/modules/base/views/menu/index.vue) | `AxiUpsert`（当前由 `@axi/crud` 直接导出）负责新增/编辑表单 | 只有真实服务端写入接口才显示编辑入口；不为只读投影伪造弹窗。 |
+| toolbar + search + row operations 的组合 | `DesktopCrudFrame` 承载工具栏，领域页通过 `AxiCrud` 绑定真实 API | 不复制 Cool Admin 的领域服务、权限命名或批量删除能力。 |
+
+首个落地面是 `/admin/settings/role`：它以 `GET /api/v1/tenants/:tenantID/members` 读取当前主体可管理的组织成员，并通过 `PUT /api/v1/tenants/:tenantID/members/:memberSubject` 新增或更新角色。Gateway 注入已验证主体，Platform Core 重新做成员授权并记录 `tenant.member.changed` 审计；服务不可用时只显示明确状态，不保留静态“权限事实”行。
+
 ## 公开证据
 
 | 官方来源 | 可观察到的产品形态 | 对 Workbench 的有限设计输入 | 不作的推导 |

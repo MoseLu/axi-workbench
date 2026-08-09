@@ -21,6 +21,7 @@
 - [x] P4 / REQ-SURFACE-001：治理专业工具入口、授权与审计，避免 D 级操作进入通用后台。
 - [x] P5 / REQ-DELIVERY-001：将能力台账和动作政策评审设为所有用户能力开发的准入条件。
 - [x] P1 修正：从 Web 导航、搜索和实现中移除通用摄像头扫码；新增由真实 Control Plane 快照驱动的“运行状态”，将“工作区”收敛为可检索、可筛选的“工作项”队列。
+- [x] P1 CRUD 实现校正：以 Cool Admin Vue 8.x 的 CRUD 编排为参考，在 `/admin/settings/role` 使用本项目 `AxiCrud`、`AxiCrudTable` 与 `AxiUpsert` 连接 Platform Core 的真实租户成员角色读写；无权威写入能力的投影页不展示伪新增/编辑操作。
 
 ## 验收边界
 
