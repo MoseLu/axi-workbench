@@ -77,6 +77,29 @@ func TestGatewayRateLimitAppliesBeforePublicRoutes(t *testing.T) {
 	}
 }
 
+func TestGatewayRateLimitDoesNotTrustUnconfiguredForwardedFor(t *testing.T) {
+	cfg := testGatewayConfig("http://127.0.0.1:1", 1)
+	cfg.Server.TrustedProxies = nil
+	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
+	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
+	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(1, nil), setupLogger("disabled"))
+
+	first := httptest.NewRequest(http.MethodGet, "/health", nil)
+	first.Header.Set("X-Forwarded-For", "198.51.100.10")
+	firstResponse := httptest.NewRecorder()
+	router.ServeHTTP(firstResponse, first)
+	if firstResponse.Code != http.StatusOK {
+		t.Fatalf("first forwarded health request = %d", firstResponse.Code)
+	}
+	second := httptest.NewRequest(http.MethodGet, "/health", nil)
+	second.Header.Set("X-Forwarded-For", "198.51.100.11")
+	secondResponse := httptest.NewRecorder()
+	router.ServeHTTP(secondResponse, second)
+	if secondResponse.Code != http.StatusTooManyRequests {
+		t.Fatalf("spoofed forwarded health request = %d, want %d", secondResponse.Code, http.StatusTooManyRequests)
+	}
+}
+
 func TestGatewayRoutesZitadelQRCompletionThroughIdentityAdapter(t *testing.T) {
 	downstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path != "/api/v1/internal/zitadel/qr/transactions/transaction-1/complete" {
@@ -247,6 +270,16 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 			if got := request.Header.Get("Authorization"); got != "" {
 				t.Errorf("browser bearer leaked to handoff backend: %q", got)
 			}
+		case "/internal/web/v1/snapshot":
+			if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
+				t.Errorf("web control subject = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+				t.Errorf("web control internal token = %q", got)
+			}
+			if got := request.Header.Get("Authorization"); got != "" {
+				t.Errorf("browser bearer leaked to control plane: %q", got)
+			}
 		default:
 			t.Errorf("unexpected control-plane path = %q", request.URL.Path)
 		}
@@ -292,6 +325,21 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 	handoffResponse.Body.Close()
 	if handoffResponse.StatusCode != http.StatusOK {
 		t.Fatalf("handoff proxy status = %d", handoffResponse.StatusCode)
+	}
+
+	control, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/control-plane/snapshot", nil)
+	if err != nil {
+		t.Fatalf("create web control request: %v", err)
+	}
+	control.Header.Set("X-Axi-Development-Subject", "zitadel-alice")
+	control.Header.Set("Authorization", "Bearer attacker-token")
+	controlResponse, err := gateway.Client().Do(control)
+	if err != nil {
+		t.Fatalf("call web control proxy: %v", err)
+	}
+	controlResponse.Body.Close()
+	if controlResponse.StatusCode != http.StatusOK {
+		t.Fatalf("web control proxy status = %d", controlResponse.StatusCode)
 	}
 }
 

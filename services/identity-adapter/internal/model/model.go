@@ -37,13 +37,16 @@ func (t QRTransaction) EffectiveStatus(now time.Time) QRStatus {
 }
 
 type EmailVerification struct {
-	ID         string
-	Email      string
-	Purpose    string
-	TokenHash  string
-	ExpiresAt  time.Time
-	ConsumedAt *time.Time
-	CreatedAt  time.Time
+	ID          string
+	ChallengeID string
+	Email       string
+	Purpose     string
+	TokenHash   string
+	Attempts    int
+	MaxAttempts int
+	ExpiresAt   time.Time
+	ConsumedAt  *time.Time
+	CreatedAt   time.Time
 }
 
 type EPSIdentityLink struct {

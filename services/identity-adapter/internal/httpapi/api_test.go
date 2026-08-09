@@ -16,6 +16,7 @@ import (
 	"github.com/axi-workbench/identity-adapter/internal/email"
 	"github.com/axi-workbench/identity-adapter/internal/store"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type captureSender struct {
@@ -125,22 +126,73 @@ func TestEmailVerificationIsSingleUse(t *testing.T) {
 
 	request := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications", map[string]string{
 		"email":   "team@axi.test",
-		"purpose": "signup",
+		"purpose": "login",
 	}, nil)
 	if request.Code != http.StatusAccepted || len(sender.messages) != 1 {
 		t.Fatalf("email request = %d, messages=%d", request.Code, len(sender.messages))
 	}
-	match := regexp.MustCompile(`token for signup: ([^\s]+)`).FindStringSubmatch(sender.messages[0].Text)
+	match := regexp.MustCompile(`(?m)^[ \t]*([0-9]{6})[ \t]*$`).FindStringSubmatch(sender.messages[0].Text)
 	if len(match) != 2 {
 		t.Fatalf("could not extract test verification token from message")
 	}
-	confirm := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/confirm", map[string]string{"token": match[1]}, nil)
+	if !strings.Contains(sender.messages[0].HTML, `src="cid:axi-workbench-logo@axi.local"`) {
+		t.Fatal("verification HTML did not reference the approved inline Axi logo")
+	}
+	if len(sender.messages[0].InlineAssets) != 1 || sender.messages[0].InlineAssets[0].ContentID != "axi-workbench-logo@axi.local" {
+		t.Fatalf("verification message did not include the official logo asset: %#v", sender.messages[0].InlineAssets)
+	}
+	var requested struct {
+		ChallengeID string `json:"challengeId"`
+	}
+	decodeJSON(t, request, &requested)
+	if requested.ChallengeID == "" {
+		t.Fatal("email request did not return challengeId")
+	}
+	confirm := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/confirm", map[string]string{"challengeId": requested.ChallengeID, "purpose": "login", "token": match[1]}, nil)
 	if confirm.Code != http.StatusOK {
 		t.Fatalf("confirm email = %d, body=%s", confirm.Code, confirm.Body.String())
 	}
-	replay := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/confirm", map[string]string{"token": match[1]}, nil)
+	replay := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/confirm", map[string]string{"challengeId": requested.ChallengeID, "purpose": "login", "token": match[1]}, nil)
 	if replay.Code != http.StatusConflict {
 		t.Fatalf("replayed email token = %d, want %d", replay.Code, http.StatusConflict)
+	}
+}
+
+func TestEmailVerificationBindsChallengePurposeAndAttemptBudget(t *testing.T) {
+	current := time.Date(2026, 8, 7, 1, 0, 0, 0, time.UTC)
+	sender := &captureSender{}
+	router := newTestRouter(&current, sender)
+
+	request := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications", map[string]string{
+		"email":   "owner@axi.test",
+		"purpose": "login",
+	}, nil)
+	var response struct {
+		ChallengeID string `json:"challengeId"`
+	}
+	decodeJSON(t, request, &response)
+	if response.ChallengeID == "" {
+		t.Fatal("missing challenge id")
+	}
+
+	wrongPurpose := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/confirm", map[string]string{
+		"challengeId": response.ChallengeID,
+		"purpose":     "signup",
+		"token":       "000000",
+	}, nil)
+	if wrongPurpose.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong-purpose confirmation = %d, want %d", wrongPurpose.Code, http.StatusUnauthorized)
+	}
+	wrongChallenge := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/confirm", map[string]string{
+		"challengeId": uuid.NewString(),
+		"purpose":     "login",
+		"token":       "000000",
+	}, nil)
+	if wrongChallenge.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong-challenge confirmation = %d, want %d", wrongChallenge.Code, http.StatusUnauthorized)
+	}
+	if strings.Contains(strings.ToLower(wrongPurpose.Body.String()), "owner@axi.test") {
+		t.Fatal("invalid verification response leaked the owner email")
 	}
 }
 

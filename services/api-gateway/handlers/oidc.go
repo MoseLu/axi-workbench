@@ -1,8 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"regexp"
+	"strings"
+	"time"
 
 	"github.com/epap/api-gateway/identity"
 	"github.com/gin-gonic/gin"
@@ -69,4 +76,84 @@ func Logout(service *identity.Service) gin.HandlerFunc {
 		service.ClearCookie(c.Writer)
 		c.Status(http.StatusNoContent)
 	}
+}
+
+// EmailLoginConfirm verifies a one-time email token through the identity-adapter
+// and, on success, issues a browser session for the verified email address.
+// The identity-adapter's /email-verifications/confirm endpoint already
+// enforces single-use + TTL, so the gateway only needs to add session
+// issuance on top.
+func EmailLoginConfirm(service *identity.Service, identityAdapterURL string) gin.HandlerFunc {
+	client := &http.Client{Timeout: 10 * time.Second}
+	return func(c *gin.Context) {
+		var req struct {
+			ChallengeID string `json:"challengeId" binding:"required"`
+			Token       string `json:"token" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.ChallengeID) == "" || !emailCodePattern.MatchString(strings.TrimSpace(req.Token)) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "challengeId and a six-digit verification token are required"})
+			return
+		}
+		verifiedEmail, verifyErr := verifyEmailToken(c.Request.Context(), client, identityAdapterURL, strings.TrimSpace(req.ChallengeID), strings.TrimSpace(req.Token))
+		if verifyErr != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "verification failed"})
+			return
+		}
+		sessionID, err := service.IssueEmailSession(c.Request.Context(), verifiedEmail)
+		if err != nil {
+			if errors.Is(err, identity.ErrUnauthorized) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "email is not an approved owner identity"})
+				return
+			}
+			if errors.Is(err, identity.ErrUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "email login is not configured"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not issue session"})
+			return
+		}
+		service.SetCookie(c.Writer, sessionID)
+		principal, err := service.EmailLoginPrincipal(verifiedEmail)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "email is not an approved owner identity"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"authenticated": true,
+			"user":          principal,
+		})
+	}
+}
+
+var emailCodePattern = regexp.MustCompile(`^\d{6}$`)
+
+func verifyEmailToken(ctx context.Context, client *http.Client, baseURL, challengeID, token string) (string, error) {
+	body, _ := json.Marshal(map[string]string{"challengeId": challengeID, "purpose": "login", "token": token})
+	url := strings.TrimRight(baseURL, "/") + "/api/v1/auth/email-verifications/confirm"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New(strings.TrimSpace(string(raw)))
+	}
+	var out struct {
+		Email    string `json:"email"`
+		Purpose  string `json:"purpose"`
+		Verified bool   `json:"verified"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return "", err
+	}
+	if !out.Verified || out.Email == "" || out.Purpose != "login" {
+		return "", errors.New("identity-adapter did not confirm email")
+	}
+	return out.Email, nil
 }

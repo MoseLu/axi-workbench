@@ -109,3 +109,28 @@ func TestAccessTokenScopesMustContainEveryRequiredScope(t *testing.T) {
 		t.Fatal("missing API scope was accepted")
 	}
 }
+
+func TestEmailLoginPrincipalIsFixedOwnerAndCanonicalSubject(t *testing.T) {
+	service := NewForTest(config.IdentityConfig{
+		SessionTTL:           time.Hour,
+		EmailLoginOwnerEmail: "owner@example.com",
+		EmailLoginSubject:    "owner-subject",
+	}, NewMemoryRecordStore(nil), nil, nil)
+	principal, err := service.EmailLoginPrincipal(" OWNER@example.com ")
+	if err != nil || principal.Subject != "owner-subject" || principal.Email != "owner@example.com" {
+		t.Fatalf("owner principal = %#v, %v", principal, err)
+	}
+	if _, err := service.EmailLoginPrincipal("other@example.com"); err != ErrUnauthorized {
+		t.Fatalf("non-owner email error = %v, want %v", err, ErrUnauthorized)
+	}
+	if _, err := service.EmailLoginPrincipal("owner@example.com"); err != nil {
+		t.Fatalf("configured owner rejected: %v", err)
+	}
+}
+
+func TestEmailLoginPrincipalFailsClosedWhenNotConfigured(t *testing.T) {
+	service := NewForTest(config.IdentityConfig{SessionTTL: time.Hour}, NewMemoryRecordStore(nil), nil, nil)
+	if _, err := service.EmailLoginPrincipal("owner@example.com"); err != ErrUnavailable {
+		t.Fatalf("unconfigured email login error = %v, want %v", err, ErrUnavailable)
+	}
+}

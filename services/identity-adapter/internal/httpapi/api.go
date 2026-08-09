@@ -1,10 +1,12 @@
 package httpapi
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -28,6 +30,7 @@ import (
 var (
 	pkceChallengePattern = regexp.MustCompile(`^[A-Za-z0-9._~-]{43,128}$`)
 	purposePattern       = regexp.MustCompile(`^[a-z][a-z-]{1,63}$`)
+	numericCodePattern   = regexp.MustCompile(`^\d{6}$`)
 )
 
 type API struct {
@@ -302,52 +305,82 @@ func (a *API) requestEmailVerification(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid email or verification purpose"})
 		return
 	}
-	token, err := opaqueToken()
+	if request.Purpose == "login" && a.config.OwnerEmail != "" && emailAddress != strings.ToLower(strings.TrimSpace(a.config.OwnerEmail)) {
+		// Keep the public response shape stable without delivering credentials to
+		// arbitrary addresses. The gateway will reject confirmation because this
+		// decoy challenge is never persisted.
+		now := a.now().UTC()
+		c.JSON(http.StatusAccepted, gin.H{"challengeId": uuid.NewString(), "expiresAt": now.Add(a.config.EmailVerificationTTL)})
+		return
+	}
+	code, err := numericCode(6)
 	if err != nil {
 		a.internalError(c, "create email verification credential", err)
 		return
 	}
 	now := a.now().UTC()
+	challengeID := uuid.NewString()
+	maxAttempts := a.config.EmailVerificationMaxAttempts
+	if maxAttempts <= 0 {
+		maxAttempts = 5
+	}
 	verification := model.EmailVerification{
-		ID:        uuid.NewString(),
-		Email:     emailAddress,
-		Purpose:   request.Purpose,
-		TokenHash: hashSecret(token),
-		ExpiresAt: now.Add(a.config.EmailVerificationTTL),
-		CreatedAt: now,
+		ID:          uuid.NewString(),
+		ChallengeID: challengeID,
+		Email:       emailAddress,
+		Purpose:     request.Purpose,
+		TokenHash:   a.hashVerificationSecret(code),
+		MaxAttempts: maxAttempts,
+		ExpiresAt:   now.Add(a.config.EmailVerificationTTL),
+		CreatedAt:   now,
 	}
 	if err := a.store.CreateEmailVerification(c.Request.Context(), verification); err != nil {
 		a.internalError(c, "persist email verification", err)
 		return
 	}
 	if err := a.sender.Send(email.Message{
-		To:      verification.Email,
-		Subject: "Axi Workbench verification",
-		Text: fmt.Sprintf(
-			"Use this one-time verification token for %s: %s\n\nIt expires at %s. Do not share it.",
-			verification.Purpose, token, verification.ExpiresAt.Format(time.RFC3339),
-		),
+		To:           verification.Email,
+		Subject:      "Axi Workbench verification",
+		Text:         email.RenderVerificationCodeText(email.VerificationCodeParams{Purpose: verification.Purpose, Code: code, ExpiresAt: verification.ExpiresAt}),
+		HTML:         email.RenderVerificationCodeHTML(email.VerificationCodeParams{Purpose: verification.Purpose, Code: code, ExpiresAt: verification.ExpiresAt}),
+		InlineAssets: []email.InlineAsset{email.BrandLogoInlineAsset()},
 	}); err != nil {
 		a.internalError(c, "deliver email verification", err)
 		return
 	}
 	a.audit(c, "email.verification.requested", "purpose", verification.Purpose)
-	c.JSON(http.StatusAccepted, gin.H{"expiresAt": verification.ExpiresAt})
+	c.JSON(http.StatusAccepted, gin.H{"challengeId": verification.ChallengeID, "expiresAt": verification.ExpiresAt})
 }
 
 type confirmEmailVerification struct {
-	Token string `json:"token" binding:"required"`
+	ChallengeID string `json:"challengeId" binding:"required"`
+	Token       string `json:"token" binding:"required"`
+	Purpose     string `json:"purpose" binding:"required"`
 }
 
 func (a *API) confirmEmailVerification(c *gin.Context) {
 	var request confirmEmailVerification
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "verification token is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "challengeId, purpose and a six-digit verification token are required"})
 		return
 	}
-	verification, err := a.store.ConsumeEmailVerification(c.Request.Context(), hashSecret(request.Token))
+	request.ChallengeID = strings.TrimSpace(request.ChallengeID)
+	request.Token = strings.TrimSpace(request.Token)
+	request.Purpose = strings.TrimSpace(request.Purpose)
+	if request.ChallengeID == "" || request.Purpose == "" || !numericCodePattern.MatchString(request.Token) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "challengeId, purpose and a six-digit verification token are required"})
+		return
+	}
+	verification, err := a.store.ConsumeEmailVerification(c.Request.Context(), request.ChallengeID, a.hashVerificationSecret(request.Token), request.Purpose)
 	if err != nil {
-		a.domainError(c, err)
+		switch err {
+		case store.ErrNotFound, store.ErrExpired, store.ErrInvalidCredential:
+			// Do not reveal whether a challenge, email, or expiry state exists.
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "verification failed"})
+			return
+		default:
+			a.domainError(c, err)
+		}
 		return
 	}
 	a.audit(c, "email.verification.confirmed", "purpose", verification.Purpose)
@@ -425,6 +458,10 @@ func (a *API) domainError(c *gin.Context, err error) {
 		c.JSON(http.StatusGone, gin.H{"error": "identity credential has expired"})
 	case err == store.ErrAlreadyConsumed:
 		c.JSON(http.StatusConflict, gin.H{"error": "identity credential has already been consumed"})
+	case err == store.ErrInvalidCredential:
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "verification token is invalid"})
+	case err == store.ErrTooManyAttempts:
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "verification attempts exceeded"})
 	case err == store.ErrInvalidState:
 		c.JSON(http.StatusConflict, gin.H{"error": "identity transaction is not in the expected state"})
 	default:
@@ -464,9 +501,39 @@ func opaqueToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(bytes), nil
 }
 
+// numericCode generates a zero-padded decimal verification code (e.g. "042918")
+// for human-typed email confirmations. Modulo bias is negligible at <10 digits.
+func numericCode(digits int) (string, error) {
+	if digits <= 0 || digits > 9 {
+		return "", fmt.Errorf("numericCode: digits must be in 1..9, got %d", digits)
+	}
+	max := uint64(1)
+	for i := 0; i < digits; i++ {
+		max *= 10
+	}
+	// Rejection sampling is overkill here: 1M possibilities for 6 digits is fine
+	// to keep the bias to <1 ppm. For 9 digits the worst-case bias is ~0.0001%.
+	buf := make([]byte, 8)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	value := binary.BigEndian.Uint64(buf) % max
+	return fmt.Sprintf("%0*d", digits, value), nil
+}
+
 func hashSecret(value string) string {
 	digest := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(digest[:])
+}
+
+func (a *API) hashVerificationSecret(value string) string {
+	pepper := a.config.EmailVerificationPepper
+	if pepper == "" {
+		pepper = "axi-development-email-pepper"
+	}
+	digest := hmac.New(sha256.New, []byte(pepper))
+	_, _ = digest.Write([]byte(value))
+	return hex.EncodeToString(digest.Sum(nil))
 }
 
 func constantTimeEqual(left, right string) bool {

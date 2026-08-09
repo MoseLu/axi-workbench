@@ -100,35 +100,70 @@ func (s *PostgresStore) ConsumeQRResume(ctx context.Context, id, resumeTokenHash
 
 func (s *PostgresStore) CreateEmailVerification(ctx context.Context, verification model.EmailVerification) error {
 	_, err := s.pool.Exec(ctx, `
-		INSERT INTO axi_identity.email_verifications (id, email, purpose, token_hash, expires_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
-		verification.ID, verification.Email, verification.Purpose, verification.TokenHash,
-		verification.ExpiresAt, verification.CreatedAt,
+		INSERT INTO axi_identity.email_verifications (id, challenge_id, email, purpose, token_hash, attempts, max_attempts, expires_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		verification.ID, verification.ChallengeID, verification.Email, verification.Purpose, verification.TokenHash,
+		verification.Attempts, verification.MaxAttempts, verification.ExpiresAt, verification.CreatedAt,
 	)
 	return err
 }
 
-func (s *PostgresStore) ConsumeEmailVerification(ctx context.Context, tokenHash string) (model.EmailVerification, error) {
+func (s *PostgresStore) ConsumeEmailVerification(ctx context.Context, challengeID, tokenHash, purpose string) (model.EmailVerification, error) {
 	var verification model.EmailVerification
 	var consumedAt *time.Time
-	err := s.pool.QueryRow(ctx, `
-		UPDATE axi_identity.email_verifications
-		SET consumed_at = now()
-		WHERE token_hash = $1
-		  AND consumed_at IS NULL
-		  AND expires_at > now()
-		RETURNING id, email, purpose, token_hash, expires_at, consumed_at, created_at`, tokenHash,
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return model.EmailVerification{}, err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	err = tx.QueryRow(ctx, `
+		SELECT id, challenge_id, email, purpose, token_hash, attempts, max_attempts,
+		       expires_at, consumed_at, created_at
+		FROM axi_identity.email_verifications
+		WHERE challenge_id = $1
+		FOR UPDATE`, challengeID,
 	).Scan(
-		&verification.ID, &verification.Email, &verification.Purpose, &verification.TokenHash,
+		&verification.ID, &verification.ChallengeID, &verification.Email, &verification.Purpose,
+		&verification.TokenHash, &verification.Attempts, &verification.MaxAttempts,
 		&verification.ExpiresAt, &consumedAt, &verification.CreatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return model.EmailVerification{}, ErrInvalidState
+		return model.EmailVerification{}, ErrNotFound
 	}
 	if err != nil {
 		return model.EmailVerification{}, err
 	}
 	verification.ConsumedAt = consumedAt
+	if verification.ConsumedAt != nil {
+		return model.EmailVerification{}, ErrAlreadyConsumed
+	}
+	if !verification.ExpiresAt.After(time.Now().UTC()) {
+		return model.EmailVerification{}, ErrExpired
+	}
+	if verification.MaxAttempts > 0 && verification.Attempts >= verification.MaxAttempts {
+		return model.EmailVerification{}, ErrTooManyAttempts
+	}
+	if verification.Purpose != purpose || verification.TokenHash != tokenHash {
+		verification.Attempts++
+		if _, updateErr := tx.Exec(ctx, `UPDATE axi_identity.email_verifications SET attempts = $2 WHERE challenge_id = $1`, challengeID, verification.Attempts); updateErr != nil {
+			return model.EmailVerification{}, updateErr
+		}
+		if commitErr := tx.Commit(ctx); commitErr != nil {
+			return model.EmailVerification{}, commitErr
+		}
+		if verification.MaxAttempts > 0 && verification.Attempts >= verification.MaxAttempts {
+			return model.EmailVerification{}, ErrTooManyAttempts
+		}
+		return model.EmailVerification{}, ErrInvalidCredential
+	}
+	if _, err := tx.Exec(ctx, `UPDATE axi_identity.email_verifications SET consumed_at = now() WHERE challenge_id = $1`, challengeID); err != nil {
+		return model.EmailVerification{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return model.EmailVerification{}, err
+	}
+	now := time.Now().UTC()
+	verification.ConsumedAt = &now
 	return verification, nil
 }
 

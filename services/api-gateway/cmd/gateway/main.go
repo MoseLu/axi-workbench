@@ -124,6 +124,12 @@ func setupRouter(
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.New()
+	// Gin otherwise trusts arbitrary X-Forwarded-For values. Keep the default
+	// fail-closed for a private deployment; only explicitly configured ingress
+	// networks may influence ClientIP-based rate limiting.
+	if err := router.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
+		panic("gateway trusted proxies: " + err.Error())
+	}
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestID())
 	router.Use(middleware.TraceContext())
@@ -153,6 +159,10 @@ func setupRouter(
 	auth.POST("/qr/transactions/:id/resume", proxyHandler.ProxyToIdentity())
 	auth.POST("/email-verifications", proxyHandler.ProxyToIdentity())
 	auth.POST("/email-verifications/confirm", proxyHandler.ProxyToIdentity())
+	// Login-with-email: confirm the one-time token through the identity-adapter
+	// and issue a browser session. Replaces the OIDC code-exchange step for
+	// environments that use SMTP delivery instead of an external IdP.
+	auth.POST("/login/email/confirm", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
 	// ZITADEL custom-login completes a QR transaction through the public
 	// gateway. The adapter still checks its webhook secret; this path preserves
 	// the sole-Ingress and ClusterIP-only identity-adapter topology.
@@ -170,6 +180,9 @@ func setupRouter(
 	protected.PUT("/auth/eps/links/:provider", proxyHandler.ProxyToIdentity())
 	protected.GET("/handoffs/:id", mobileControl.ProxyWebHandoff())
 	protected.POST("/handoffs/:id", mobileControl.ProxyWebHandoff())
+	// Web control-plane calls stay same-origin and carry the browser session;
+	// the proxy injects the service credential and verified subject.
+	protected.Any("/control-plane/*path", mobileControl.ProxyWebControl())
 
 	// Device-paired Mobile traffic carries a short-lived Control Plane bearer,
 	// rather than a browser OIDC credential.  It remains behind this Gateway;

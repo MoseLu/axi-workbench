@@ -24,9 +24,10 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port         string
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
+	Port           string
+	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
+	TrustedProxies []string
 }
 
 type ServicesConfig struct {
@@ -58,6 +59,8 @@ type IdentityConfig struct {
 	SessionCookieDomain       string
 	SessionCookieSecure       bool
 	SessionTTL                time.Duration
+	EmailLoginOwnerEmail      string
+	EmailLoginSubject         string
 	RedisURL                  string
 	DevelopmentHeaderAuth     bool
 }
@@ -87,9 +90,10 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Environment: environment,
 		Server: ServerConfig{
-			Port:         getEnv("GATEWAY_PORT", getEnv("PORT", "8080")),
-			ReadTimeout:  getDurationEnv("READ_TIMEOUT", 30*time.Second),
-			WriteTimeout: getDurationEnv("WRITE_TIMEOUT", 30*time.Second),
+			Port:           getEnv("GATEWAY_PORT", getEnv("PORT", "8080")),
+			ReadTimeout:    getDurationEnv("READ_TIMEOUT", 30*time.Second),
+			WriteTimeout:   getDurationEnv("WRITE_TIMEOUT", 30*time.Second),
+			TrustedProxies: getEnvSlice("TRUSTED_PROXIES", nil),
 		},
 		Services: ServicesConfig{
 			IdentityAdapterURL:        getEnv("IDENTITY_ADAPTER_URL", "http://localhost:8081"),
@@ -119,6 +123,8 @@ func Load() (*Config, error) {
 			SessionCookieDomain:       os.Getenv("SESSION_COOKIE_DOMAIN"),
 			SessionCookieSecure:       getBoolEnv("SESSION_COOKIE_SECURE", environment == "production"),
 			SessionTTL:                getDurationEnv("SESSION_TTL", 8*time.Hour),
+			EmailLoginOwnerEmail:      strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_LOGIN_OWNER_EMAIL"))),
+			EmailLoginSubject:         strings.TrimSpace(os.Getenv("EMAIL_LOGIN_SUBJECT")),
 			RedisURL:                  redisURL,
 			DevelopmentHeaderAuth:     getBoolEnv("GATEWAY_ALLOW_DEVELOPMENT_HEADER_AUTH", false),
 		},
@@ -158,6 +164,12 @@ func (c Config) Validate() error {
 		}
 		if c.Identity.DevelopmentHeaderAuth {
 			return fmt.Errorf("GATEWAY_ALLOW_DEVELOPMENT_HEADER_AUTH is forbidden in production")
+		}
+		if !c.Identity.SessionCookieSecure {
+			return fmt.Errorf("SESSION_COOKIE_SECURE must be true in production")
+		}
+		if c.Identity.EmailLoginOwnerEmail == "" || c.Identity.EmailLoginSubject == "" {
+			return fmt.Errorf("EMAIL_LOGIN_OWNER_EMAIL and EMAIL_LOGIN_SUBJECT are required in production")
 		}
 		if c.Services.IdentityInternalToken == "" || c.Services.IdentityInternalToken == "axi-development-internal-token" {
 			return fmt.Errorf("GATEWAY_IDENTITY_INTERNAL_TOKEN must be injected in production")

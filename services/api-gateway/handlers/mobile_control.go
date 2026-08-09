@@ -99,3 +99,42 @@ func (p *MobileControlProxy) ProxyWebHandoff() gin.HandlerFunc {
 		proxy.ServeHTTP(c.Writer, request)
 	}
 }
+
+// ProxyWebControl exposes the browser control-plane read/write API only after
+// the Gateway has established an HttpOnly session. The browser never receives
+// the control-plane internal credential and cannot spoof the subject header.
+func (p *MobileControlProxy) ProxyWebControl() gin.HandlerFunc {
+	if p.target == nil || p.internalToken == "" {
+		return func(c *gin.Context) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "control plane is not configured"})
+		}
+	}
+	proxy := httputil.NewSingleHostReverseProxy(p.target)
+	originalDirector := proxy.Director
+	proxy.Director = func(request *http.Request) {
+		originalDirector(request)
+		request.Host = p.target.Host
+		request.URL.Path = "/internal/web/v1" + strings.TrimPrefix(request.URL.Path, "/api/v1/control-plane")
+		request.URL.RawPath = ""
+	}
+	proxy.ErrorHandler = func(writer http.ResponseWriter, _ *http.Request, _ error) {
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusBadGateway)
+		_, _ = writer.Write([]byte(`{"error":"control plane unavailable"}`))
+	}
+	return func(c *gin.Context) {
+		request := c.Request.Clone(c.Request.Context())
+		stripUntrustedInternalHeaders(request.Header)
+		principal, ok := middleware.PrincipalFromContext(c)
+		if !ok || principal.Subject == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "verified identity required"})
+			return
+		}
+		request.Header.Set("X-Axi-Subject", principal.Subject)
+		if principal.Email != "" {
+			request.Header.Set("X-Axi-Email", principal.Email)
+		}
+		request.Header.Set("X-Axi-Internal-Token", p.internalToken)
+		proxy.ServeHTTP(c.Writer, request)
+	}
+}

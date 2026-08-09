@@ -246,6 +246,55 @@ func opaqueValue() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(bytes), nil
 }
 
+// EmailLoginPrincipal maps the single personal-owner email factor to the
+// configured canonical subject. It deliberately refuses arbitrary email
+// addresses when EMAIL_LOGIN_OWNER_EMAIL is configured; email OTP is a factor
+// for the owner, not an account-creation mechanism.
+func (s *Service) EmailLoginPrincipal(email string) (Principal, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" {
+		return Principal{}, errors.New("email is required")
+	}
+	owner := strings.TrimSpace(strings.ToLower(s.config.EmailLoginOwnerEmail))
+	if owner == "" {
+		return Principal{}, ErrUnavailable
+	}
+	if email != owner {
+		return Principal{}, ErrUnauthorized
+	}
+	subject := strings.TrimSpace(s.config.EmailLoginSubject)
+	if subject == "" {
+		return Principal{}, ErrUnavailable
+	}
+	return Principal{Subject: subject, Email: email}, nil
+}
+
+// IssueEmailSession creates a browser session for a verified owner email
+// address. The caller is responsible for proving email ownership through the
+// identity-adapter challenge endpoint before invoking this method.
+func (s *Service) IssueEmailSession(ctx context.Context, email string) (string, error) {
+	principal, err := s.EmailLoginPrincipal(email)
+	if err != nil {
+		return "", err
+	}
+	sessionID, err := opaqueValue()
+	if err != nil {
+		return "", fmt.Errorf("generate session id: %w", err)
+	}
+	session := browserSession{
+		Principal: principal,
+		ExpiresAt: s.now().Add(s.config.SessionTTL),
+	}
+	encoded, err := json.Marshal(session)
+	if err != nil {
+		return "", fmt.Errorf("encode session: %w", err)
+	}
+	if err := s.records.Set(ctx, sessionKey(sessionID), encoded, s.config.SessionTTL); err != nil {
+		return "", fmt.Errorf("persist session: %w", err)
+	}
+	return sessionID, nil
+}
+
 type actualOIDCClient struct {
 	config                    oauth2.Config
 	idTokenVerifier           *oidc.IDTokenVerifier

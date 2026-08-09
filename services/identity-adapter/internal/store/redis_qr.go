@@ -127,8 +127,8 @@ func (s *RedisQRStore) CreateEmailVerification(ctx context.Context, verification
 	return s.durable.CreateEmailVerification(ctx, verification)
 }
 
-func (s *RedisQRStore) ConsumeEmailVerification(ctx context.Context, tokenHash string) (model.EmailVerification, error) {
-	return s.durable.ConsumeEmailVerification(ctx, tokenHash)
+func (s *RedisQRStore) ConsumeEmailVerification(ctx context.Context, challengeID, tokenHash, purpose string) (model.EmailVerification, error) {
+	return s.durable.ConsumeEmailVerification(ctx, challengeID, tokenHash, purpose)
 }
 
 func (s *RedisQRStore) UpsertEPSIdentityLink(ctx context.Context, link model.EPSIdentityLink) (model.EPSIdentityLink, error) {

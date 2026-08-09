@@ -54,6 +54,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secrets.existingSecret }}
                   key: IDENTITY_INTERNAL_SERVICE_TOKEN
+            - name: IDENTITY_EMAIL_VERIFICATION_PEPPER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: IDENTITY_EMAIL_VERIFICATION_PEPPER
             - name: ZITADEL_WEBHOOK_SECRET
               valueFrom:
                 secretKeyRef:

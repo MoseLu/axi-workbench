@@ -25,10 +25,14 @@ data:
   SESSION_COOKIE_DOMAIN: {{ .Values.gateway.session.cookieDomain | quote }}
   SESSION_COOKIE_SECURE: "true"
   SESSION_TTL: {{ .Values.gateway.session.ttl | quote }}
+  EMAIL_LOGIN_OWNER_EMAIL: {{ .Values.gateway.emailLogin.ownerEmail | quote }}
+  EMAIL_LOGIN_SUBJECT: {{ .Values.gateway.emailLogin.subject | quote }}
   IDENTITY_ADAPTER_PORT: "8081"
   IDENTITY_PUBLIC_BASE_URL: {{ .Values.gateway.publicBaseURL | quote }}
   IDENTITY_QR_TRANSACTION_TTL: {{ .Values.identityAdapter.qrTransactionTTL | quote }}
   IDENTITY_EMAIL_VERIFICATION_TTL: {{ .Values.identityAdapter.emailVerificationTTL | quote }}
+  IDENTITY_EMAIL_VERIFICATION_MAX_ATTEMPTS: {{ .Values.identityAdapter.emailVerificationMaxAttempts | quote }}
+  IDENTITY_OWNER_EMAIL: {{ .Values.identityAdapter.ownerEmail | quote }}
   IDENTITY_EMAIL_DELIVERY: smtp
   ZITADEL_CUSTOM_LOGIN_URL: {{ .Values.identityAdapter.zitadelCustomLoginURL | quote }}
   PLATFORM_CORE_PORT: "8082"

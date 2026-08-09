@@ -57,6 +57,9 @@ gateway:
     cookieName: axi_session
     cookieDomain: ""
     ttl: 8h
+  emailLogin:
+    ownerEmail: ""
+    subject: ""
   rateLimitPerMinute: 120
 
 identityAdapter:
@@ -76,6 +79,8 @@ identityAdapter:
       memory: 512Mi
   qrTransactionTTL: 2m
   emailVerificationTTL: 15m
+  emailVerificationMaxAttempts: 5
+  ownerEmail: ""
   zitadelCustomLoginURL: https://id.axi.example.com/ui/v2/login
 
 platformCore:

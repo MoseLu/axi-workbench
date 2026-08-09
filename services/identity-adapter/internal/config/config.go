@@ -10,25 +10,28 @@ import (
 // Config contains the identity boundary configuration. Secrets are injected by
 // the runtime and are deliberately not represented in application files.
 type Config struct {
-	Environment           string
-	Port                  string
-	DatabaseURL           string
-	RedisURL              string
-	InternalServiceToken  string
-	ZitadelWebhookSecret  string
-	ZitadelCustomLoginURL string
-	PublicBaseURL         string
-	AllowedRedirectURIs   []string
-	QRTransactionTTL      time.Duration
-	EmailVerificationTTL  time.Duration
-	EmailDelivery         string
-	SMTPHost              string
-	SMTPPort              string
-	SMTPUsername          string
-	SMTPPassword          string
-	SMTPFrom              string
-	SMTPAllowInsecure     bool
-	OTLPTracesEndpoint    string
+	Environment                  string
+	Port                         string
+	DatabaseURL                  string
+	RedisURL                     string
+	InternalServiceToken         string
+	ZitadelWebhookSecret         string
+	ZitadelCustomLoginURL        string
+	PublicBaseURL                string
+	AllowedRedirectURIs          []string
+	QRTransactionTTL             time.Duration
+	EmailVerificationTTL         time.Duration
+	EmailVerificationMaxAttempts int
+	EmailVerificationPepper      string
+	OwnerEmail                   string
+	EmailDelivery                string
+	SMTPHost                     string
+	SMTPPort                     string
+	SMTPUsername                 string
+	SMTPPassword                 string
+	SMTPFrom                     string
+	SMTPAllowInsecure            bool
+	OTLPTracesEndpoint           string
 }
 
 func Load() (Config, error) {
@@ -64,16 +67,19 @@ func load(validateRuntime bool) (Config, error) {
 				"http://localhost:5174/auth/callback",
 			}),
 		),
-		QRTransactionTTL:     getDuration("IDENTITY_QR_TRANSACTION_TTL", 2*time.Minute),
-		EmailVerificationTTL: getDuration("IDENTITY_EMAIL_VERIFICATION_TTL", 15*time.Minute),
-		EmailDelivery:        strings.ToLower(getEnv("IDENTITY_EMAIL_DELIVERY", "log")),
-		SMTPHost:             os.Getenv("SMTP_HOST"),
-		SMTPPort:             getEnv("SMTP_PORT", "587"),
-		SMTPUsername:         os.Getenv("SMTP_USERNAME"),
-		SMTPPassword:         os.Getenv("SMTP_PASSWORD"),
-		SMTPFrom:             os.Getenv("SMTP_FROM"),
-		SMTPAllowInsecure:    getBool("SMTP_ALLOW_INSECURE", false),
-		OTLPTracesEndpoint:   strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
+		QRTransactionTTL:             getDuration("IDENTITY_QR_TRANSACTION_TTL", 2*time.Minute),
+		EmailVerificationTTL:         getDuration("IDENTITY_EMAIL_VERIFICATION_TTL", 15*time.Minute),
+		EmailVerificationMaxAttempts: getInt("IDENTITY_EMAIL_VERIFICATION_MAX_ATTEMPTS", 5),
+		EmailVerificationPepper:      getEnv("IDENTITY_EMAIL_VERIFICATION_PEPPER", "axi-development-email-pepper"),
+		OwnerEmail:                   strings.ToLower(strings.TrimSpace(os.Getenv("IDENTITY_OWNER_EMAIL"))),
+		EmailDelivery:                strings.ToLower(getEnv("IDENTITY_EMAIL_DELIVERY", "log")),
+		SMTPHost:                     os.Getenv("SMTP_HOST"),
+		SMTPPort:                     getEnv("SMTP_PORT", "587"),
+		SMTPUsername:                 os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:                 os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:                     os.Getenv("SMTP_FROM"),
+		SMTPAllowInsecure:            getBool("SMTP_ALLOW_INSECURE", false),
+		OTLPTracesEndpoint:           strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
 	}
 
 	if err := cfg.validate(validateRuntime); err != nil {
@@ -88,7 +94,13 @@ func (c Config) validate(validateRuntime bool) error {
 	if c.QRTransactionTTL <= 0 || c.EmailVerificationTTL <= 0 {
 		return fmt.Errorf("identity TTL values must be positive")
 	}
+	if c.EmailVerificationMaxAttempts < 0 || c.EmailVerificationMaxAttempts > 20 {
+		return fmt.Errorf("identity email verification attempts must be between 1 and 20")
+	}
 	if c.Environment == "production" {
+		if c.EmailVerificationMaxAttempts == 0 {
+			return fmt.Errorf("IDENTITY_EMAIL_VERIFICATION_MAX_ATTEMPTS must be positive in production")
+		}
 		if c.DatabaseURL == "" {
 			return fmt.Errorf("IDENTITY_DATABASE_URL is required in production")
 		}
@@ -100,6 +112,12 @@ func (c Config) validate(validateRuntime bool) error {
 		}
 		if c.InternalServiceToken == "" || c.InternalServiceToken == "axi-development-internal-token" {
 			return fmt.Errorf("IDENTITY_INTERNAL_SERVICE_TOKEN must be injected in production")
+		}
+		if c.EmailVerificationPepper == "" || c.EmailVerificationPepper == "axi-development-email-pepper" {
+			return fmt.Errorf("IDENTITY_EMAIL_VERIFICATION_PEPPER must be injected in production")
+		}
+		if c.OwnerEmail == "" {
+			return fmt.Errorf("IDENTITY_OWNER_EMAIL must be configured in production")
 		}
 		if c.ZitadelWebhookSecret == "" || c.ZitadelWebhookSecret == "axi-development-zitadel-webhook" {
 			return fmt.Errorf("ZITADEL_WEBHOOK_SECRET must be injected in production")
@@ -169,4 +187,16 @@ func getBool(key string, fallback bool) bool {
 		return fallback
 	}
 	return value == "1" || strings.EqualFold(value, "true") || strings.EqualFold(value, "yes")
+}
+
+func getInt(key string, fallback int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	var parsed int
+	if _, err := fmt.Sscanf(value, "%d", &parsed); err != nil {
+		return fallback
+	}
+	return parsed
 }

@@ -111,14 +111,14 @@ func (s *MemoryStore) ConsumeQRResume(_ context.Context, id, resumeTokenHash str
 func (s *MemoryStore) CreateEmailVerification(_ context.Context, verification model.EmailVerification) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.emails[verification.TokenHash] = verification
+	s.emails[verification.ChallengeID] = verification
 	return nil
 }
 
-func (s *MemoryStore) ConsumeEmailVerification(_ context.Context, tokenHash string) (model.EmailVerification, error) {
+func (s *MemoryStore) ConsumeEmailVerification(_ context.Context, challengeID, tokenHash, purpose string) (model.EmailVerification, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	verification, ok := s.emails[tokenHash]
+	verification, ok := s.emails[challengeID]
 	if !ok {
 		return model.EmailVerification{}, ErrNotFound
 	}
@@ -128,9 +128,20 @@ func (s *MemoryStore) ConsumeEmailVerification(_ context.Context, tokenHash stri
 	if s.now().After(verification.ExpiresAt) {
 		return model.EmailVerification{}, ErrExpired
 	}
+	if verification.MaxAttempts > 0 && verification.Attempts >= verification.MaxAttempts {
+		return model.EmailVerification{}, ErrTooManyAttempts
+	}
+	if verification.Purpose != purpose || verification.TokenHash != tokenHash {
+		verification.Attempts++
+		s.emails[challengeID] = verification
+		if verification.MaxAttempts > 0 && verification.Attempts >= verification.MaxAttempts {
+			return model.EmailVerification{}, ErrTooManyAttempts
+		}
+		return model.EmailVerification{}, ErrInvalidCredential
+	}
 	now := s.now()
 	verification.ConsumedAt = &now
-	s.emails[tokenHash] = verification
+	s.emails[challengeID] = verification
 	return verification, nil
 }
 
