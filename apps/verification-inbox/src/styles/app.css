@@ -26,11 +26,11 @@
 
 .receive-btn.auth-btn {
   border-color: rgba(21, 128, 61, 0.28);
-  background: #15803d;
+  background: var(--axi-success, #15803d);
 }
 
 .receive-btn.auth-btn:hover:not(:disabled) {
-  background: #166534;
+  background: var(--axi-success, #166534);
 }
 
 .receive-btn:disabled {
@@ -189,12 +189,12 @@
 
 .cockpit-pill {
   background: rgba(14, 165, 233, 0.12);
-  color: #0369a1;
+  color: var(--axi-primary, #0369a1);
 }
 
 .note-pill {
   background: rgba(16, 185, 129, 0.12);
-  color: #047857;
+  color: var(--axi-success, #047857);
 }
 
 .source-pill {
@@ -215,37 +215,37 @@
 
 .source-imap {
   background: rgba(29, 78, 216, 0.12);
-  color: #1d4ed8;
+  color: var(--axi-primary, #1d4ed8);
 }
 
 .source-otp {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: var(--axi-success, #15803d);
 }
 
 .source-pool {
   background: rgba(100, 116, 139, 0.12);
-  color: #475569;
+  color: var(--axi-text-secondary, #475569);
 }
 
 .status-pill.is-info {
   background: rgba(100, 116, 139, 0.12);
-  color: #475569;
+  color: var(--axi-text-secondary, #475569);
 }
 
 .status-pill.is-ok {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: var(--axi-success, #15803d);
 }
 
 .status-pill.is-warn {
   background: rgba(245, 158, 11, 0.14);
-  color: #b45309;
+  color: var(--axi-warning, #b45309);
 }
 
 .status-pill.is-bad {
   background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
+  color: var(--axi-danger, #dc2626);
 }
 
 .account-table td > * {
@@ -533,13 +533,13 @@
 .app-notification.is-success {
   border-color: rgba(34, 197, 94, 0.24);
   background: rgba(240, 253, 244, 0.94);
-  color: #15803d;
+  color: var(--axi-success, #15803d);
 }
 
 .app-notification.is-error {
   border-color: rgba(239, 68, 68, 0.24);
   background: rgba(254, 242, 242, 0.94);
-  color: #dc2626;
+  color: var(--axi-danger, #dc2626);
 }
 
 .app-notification.is-info {
