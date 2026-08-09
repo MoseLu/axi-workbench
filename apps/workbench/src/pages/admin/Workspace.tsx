@@ -13,27 +13,15 @@ import {
 } from '../workspaceRegistry';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';
+import {
+  filterApprovalRows,
+  filterTaskRows,
+  workQueueFilters,
+  type ApprovalRow,
+  type TaskRow,
+  type WorkQueueFilter,
+} from './workQueue';
 import './Workspace.css';
-
-export type WorkQueueFilter = 'all' | 'active' | 'attention' | 'completed';
-
-export type TaskRow = {
-  createdAt?: Date | string;
-  id: string;
-  runtime: string;
-  status: string;
-  statusKey: string;
-  summary: string;
-  targetId?: string;
-  targetLabel?: string;
-};
-
-export type ApprovalRow = {
-  createdAt?: Date | string;
-  id: string;
-  risk: string;
-  summary: string;
-};
 
 type RuntimeRow = {
   available: string;
@@ -41,13 +29,6 @@ type RuntimeRow = {
   name: string;
   summary: string;
 };
-
-const workQueueFilters: Array<{ label: string; value: WorkQueueFilter }> = [
-  { label: '全部', value: 'all' },
-  { label: '处理中', value: 'active' },
-  { label: '需处理', value: 'attention' },
-  { label: '已结束', value: 'completed' },
-];
 
 /** 软件层工作区：以可筛读的任务、审批和运行环境表格取代移动端纵向信息流。 */
 const Workspace: React.FC = () => {
@@ -186,32 +167,6 @@ const Workspace: React.FC = () => {
     </DesktopCrudFrame>
   );
 };
-
-export function filterTaskRows(rows: TaskRow[], filter: WorkQueueFilter, query: string): TaskRow[] {
-  const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
-  return rows.filter((row) => {
-    const terminal = row.statusKey === 'succeeded' || row.statusKey === 'failed' || row.statusKey === 'cancelled';
-    const needsAttention = row.statusKey === 'awaiting_approval' || row.statusKey === 'failed';
-    if (filter === 'active' && terminal) return false;
-    if (filter === 'attention' && !needsAttention) return false;
-    if (filter === 'completed' && !terminal) return false;
-    if (!normalizedQuery) return true;
-    return [row.id, row.runtime, row.status, row.summary, row.targetId, row.targetLabel]
-      .filter(Boolean)
-      .join(' ')
-      .toLocaleLowerCase('zh-CN')
-      .includes(normalizedQuery);
-  });
-}
-
-export function filterApprovalRows(rows: ApprovalRow[], query: string): ApprovalRow[] {
-  const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
-  if (!normalizedQuery) return rows;
-  return rows.filter((row) => [row.id, row.risk, row.summary]
-    .join(' ')
-    .toLocaleLowerCase('zh-CN')
-    .includes(normalizedQuery));
-}
 
 function formatTime(value: Date | string | undefined): string {
   if (!value) return '时间未知';

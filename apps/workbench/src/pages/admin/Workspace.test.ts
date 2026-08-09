@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { filterApprovalRows, filterTaskRows, type ApprovalRow, type TaskRow } from './Workspace';
+import { filterApprovalRows, filterTaskRows, type ApprovalRow, type TaskRow } from './workQueue';
 
 const tasks: TaskRow[] = [
   {
