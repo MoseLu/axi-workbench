@@ -1,12 +1,5 @@
-.dashboard-crud__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  align-items: start;
-}
-
 .dashboard-crud__projects {
-  grid-column: 1 / -1;
+  width: 100%;
 }
 
 .dashboard-crud .axi-table-group {
@@ -21,14 +14,4 @@
 .dashboard-crud .axi-crud-table,
 .dashboard-crud .axi-table-wrapper {
   width: 100%;
-}
-
-@media (max-width: 900px) {
-  .dashboard-crud__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dashboard-crud__projects {
-    grid-column: auto;
-  }
 }

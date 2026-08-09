@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   AxiCrud,
   AxiCrudTable,
-  AxiTable,
   AxiTableGroup,
   type AxiTableColumn,
   type AxiTableOpButton,
@@ -28,21 +27,6 @@ type ProjectRow = {
   label: string;
   state: string;
   workspace: string;
-};
-
-type TaskRow = {
-  createdAt?: Date | string;
-  id: string;
-  runtime: string;
-  status: string;
-  summary: string;
-};
-
-type RuntimeRow = {
-  available: string;
-  key: string;
-  kind: string;
-  summary: string;
 };
 
 /** 工作台概览只显示控制面快照中的可操作数据，不再用统计卡模拟桌面首页。 */
@@ -77,26 +61,8 @@ const Dashboard: React.FC = () => {
     () => filterProjectRows(projectRows, { keyword, state: stateFilter }),
     [keyword, projectRows, stateFilter],
   );
-  const taskRows = useMemo<TaskRow[]>(
-    () => (snapshot?.agentTasks ?? []).map((task) => ({
-      createdAt: task.createdAt,
-      id: task.id,
-      runtime: task.runtime,
-      status: task.status,
-      summary: task.summary || '受管任务（暂无摘要）',
-    })),
-    [snapshot?.agentTasks],
-  );
-  const runtimeRows = useMemo<RuntimeRow[]>(
-    () => (snapshot?.runtimes ?? []).map((runtime) => ({
-      available: runtime.available ? '可用' : '降级',
-      key: runtime.kind,
-      kind: runtime.kind,
-      summary: runtime.summary || runtime.fallbackKind || '已登记运行环境',
-    })),
-    [snapshot?.runtimes],
-  );
   const taskSummary = summarizeAgentTasks(snapshot?.agentTasks ?? []);
+  const runtimeCount = snapshot?.runtimes?.length ?? 0;
   const projectColumns: AxiTableColumn<ProjectRow>[] = [
     { alwaysVisible: true, title: '序号', type: 'index', width: 64 },
     { align: 'left', dataIndex: 'label', title: '项目', width: 280 },
@@ -112,17 +78,6 @@ const Dashboard: React.FC = () => {
     { dataIndex: 'workspace', title: '工作区状态', width: 160 },
     { align: 'left', dataIndex: 'branch', title: '分支', width: 180 },
     { alwaysVisible: true, title: '操作', type: 'op', width: 92 },
-  ];
-  const taskColumns: AxiTableColumn<TaskRow>[] = [
-    { dataIndex: 'summary', title: '任务' },
-    { dataIndex: 'status', title: '状态', width: 100 },
-    { dataIndex: 'runtime', title: '运行环境', width: 150 },
-    { dataIndex: 'createdAt', render: (value) => formatTaskTime(value), title: '创建时间', width: 150 },
-  ];
-  const runtimeColumns: AxiTableColumn<RuntimeRow>[] = [
-    { dataIndex: 'kind', title: '运行环境', width: 180 },
-    { dataIndex: 'available', title: '状态', width: 100 },
-    { dataIndex: 'summary', title: '说明' },
   ];
   const projectOperationButtons = useMemo<AxiTableOpButton<ProjectRow>[]>(
     () => [{
@@ -144,7 +99,7 @@ const Dashboard: React.FC = () => {
       <DesktopCrudFrame
         ariaLabel="概览"
         className="dashboard-crud"
-        description="统一查看已登记项目的健康状态、工作区变更和当前分支。"
+        description={`统一查看已登记项目的健康状态、工作区变更和当前分支。受管任务 ${taskSummary.active} 项处理中，运行环境 ${runtimeCount} 个；详情请进入对应页面。`}
         filters={!showError && !showLoading ? (
           <Select
             aria-label="项目状态筛选"
@@ -180,6 +135,8 @@ const Dashboard: React.FC = () => {
             <Button disabled={isFetching} onClick={() => void refetch()}>
               {isFetching ? '同步中…' : '刷新'}
             </Button>
+            <Button type="link" onClick={() => navigate('/admin/task')}>查看工作项</Button>
+            <Button type="link" onClick={() => navigate('/admin/operations')}>查看运行状态</Button>
             <span className="wb-crud-page__readonly-hint">只读控制面投影</span>
           </div>
         )}
@@ -195,40 +152,30 @@ const Dashboard: React.FC = () => {
         ) : showLoading ? (
           <ControlPlaneState description="正在从控制面读取概览数据。" loading title="正在同步概览" />
         ) : (
-          <div className="dashboard-crud__grid">
-            <AxiTableGroup
-              className="dashboard-crud__projects"
-              description={`显示 ${filteredProjectRows.length} / ${projectRows.length} 个已登记项目`}
-              title="项目"
-            >
-              <AxiCrudTable
-                columns={projectColumns}
-                data={filteredProjectRows}
-                operationButtons={projectOperationButtons}
-                pagination={desktopCrudPagination(filteredProjectRows.length)}
-                rowKey="id"
-                rowSelection={false}
-                storageKey="axi-workbench:dashboard-projects"
-                toolbar={{
-                  layout: ['size', 'columns', 'style'],
-                  storageKey: 'axi-workbench:dashboard-projects',
-                  visible: true,
-                }}
-                onRow={(row) => ({
-                  onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                  style: { cursor: 'pointer' },
-                })}
-              />
-            </AxiTableGroup>
-
-            <AxiTableGroup description={`${taskSummary.active} 项正在处理`} title="受管任务">
-              <AxiTable columns={taskColumns} data={taskRows} pagination={false} rowKey="id" />
-            </AxiTableGroup>
-
-            <AxiTableGroup description={`${runtimeRows.length} 个已登记环境`} title="运行环境">
-              <AxiTable columns={runtimeColumns} data={runtimeRows} pagination={false} rowKey="key" />
-            </AxiTableGroup>
-          </div>
+          <AxiTableGroup
+            className="dashboard-crud__projects"
+            description={`显示 ${filteredProjectRows.length} / ${projectRows.length} 个已登记项目`}
+            title="项目"
+          >
+            <AxiCrudTable
+              columns={projectColumns}
+              data={filteredProjectRows}
+              operationButtons={projectOperationButtons}
+              pagination={desktopCrudPagination(filteredProjectRows.length)}
+              rowKey="id"
+              rowSelection={false}
+              storageKey="axi-workbench:dashboard-projects"
+              toolbar={{
+                layout: ['size', 'columns', 'style'],
+                storageKey: 'axi-workbench:dashboard-projects',
+                visible: true,
+              }}
+              onRow={(row) => ({
+                onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                style: { cursor: 'pointer' },
+              })}
+            />
+          </AxiTableGroup>
         )}
       </DesktopCrudFrame>
     </AxiCrud>
@@ -249,18 +196,6 @@ function filterProjectRows(
       .toLocaleLowerCase('zh-CN')
       .includes(normalized);
   });
-}
-
-function formatTaskTime(value: Date | string | undefined): string {
-  if (!value) return '时间未知';
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '时间未知';
-  return new Intl.DateTimeFormat('zh-CN', {
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: 'numeric',
-  }).format(date);
 }
 
 export default Dashboard;
