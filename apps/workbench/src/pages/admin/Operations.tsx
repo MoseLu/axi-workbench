@@ -3,6 +3,7 @@ import { Button, Input, Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useControlSnapshot } from '@epap/api-client';
+import { useI18n } from '../../i18n';
 import {
   getApprovalRiskLabel,
   getProjectGitStatus,
@@ -46,15 +47,26 @@ type RuntimeRow = {
 
 type ProjectFilter = 'all' | 'attention' | 'ok';
 
-const projectStateOptions = [
-  { color: 'red', label: '需关注', value: '需关注' },
-  { color: 'green', label: '正常', value: '正常' },
-];
-
-const runtimeStateOptions = [
-  { color: 'green', label: '可用', value: '可用' },
-  { color: 'default', label: '不可用', value: '不可用' },
-];
+type OperationsCopy = {
+  attentionKindTask: string;
+  attentionKindApproval: string;
+  attentionPriorityFailed: string;
+  attentionPriorityPending: string;
+  attentionStatusPending: string;
+  attentionFallbackSummary: string;
+  projectBranchUnregistered: string;
+  projectStateAttention: string;
+  projectStateHealthy: string;
+  projectWorkspaceChanges: string;
+  projectWorkspacePending: string;
+  projectWorkspaceClean: string;
+  runtimeAvailable: string;
+  runtimeUnavailable: string;
+  projectFilterAll: string;
+  projectFilterAttention: string;
+  projectFilterOk: string;
+  unknownTime: string;
+};
 
 /**
  * Desktop-only operations view. It aggregates the real control-plane snapshot
@@ -62,6 +74,7 @@ const runtimeStateOptions = [
  */
 const Operations: React.FC = () => {
   const navigate = useNavigate();
+  const { locale, t } = useI18n();
   const { data: snapshot, isFetching, isLoading, isError, refetch } = useControlSnapshot();
   const [keywordDraft, setKeywordDraft] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -75,59 +88,87 @@ const Operations: React.FC = () => {
     () => new Map(projects.map((project) => [getProjectResourceId(project), getProjectResourceLabel(project)])),
     [projects],
   );
+  const copy: OperationsCopy = {
+    attentionKindTask: t('operations.attention.kind.task'),
+    attentionKindApproval: t('operations.attention.kind.approval'),
+    attentionPriorityFailed: t('operations.attention.priority.failed'),
+    attentionPriorityPending: t('operations.attention.priority.pending'),
+    attentionStatusPending: t('operations.attention.status.pending'),
+    attentionFallbackSummary: t('operations.attention.fallbackSummary'),
+    projectBranchUnregistered: t('projects.branch.unregistered'),
+    projectStateAttention: t('operations.project.state.attention'),
+    projectStateHealthy: t('operations.project.state.healthy'),
+    projectWorkspaceChanges: t('projects.workspace.changes'),
+    projectWorkspacePending: t('projects.workspace.pending'),
+    projectWorkspaceClean: t('projects.workspace.clean'),
+    runtimeAvailable: t('workspace.runtime.available'),
+    runtimeUnavailable: t('operations.runtime.unavailable'),
+    projectFilterAll: t('operations.filter.all'),
+    projectFilterAttention: t('operations.filter.attention'),
+    projectFilterOk: t('operations.filter.ok'),
+    unknownTime: t('workspace.time.unknown'),
+  };
+  const projectStateOptions = [
+    { color: 'red', label: copy.projectStateAttention, value: copy.projectStateAttention },
+    { color: 'green', label: copy.projectStateHealthy, value: copy.projectStateHealthy },
+  ];
+  const runtimeStateOptions = [
+    { color: 'green', label: copy.runtimeAvailable, value: copy.runtimeAvailable },
+    { color: 'default', label: copy.runtimeUnavailable, value: copy.runtimeUnavailable },
+  ];
   const attentionRows = useMemo<AttentionRow[]>(() => {
     const tasks = (snapshot?.agentTasks ?? [])
       .filter((task) => task.status === 'awaiting_approval' || task.status === 'failed')
       .map((task) => ({
         createdAt: task.createdAt,
         id: `task:${task.id}`,
-        kind: '受管任务',
-        priority: task.status === 'failed' ? '需要处理' : '等待决定',
+        kind: copy.attentionKindTask,
+        priority: task.status === 'failed' ? copy.attentionPriorityFailed : copy.attentionPriorityPending,
         projectId: task.targetId,
         projectLabel: task.targetId ? projectNames.get(task.targetId) : undefined,
         status: getTaskStatusLabel(task.status),
-        summary: task.summary || task.prompt || '受管任务（暂无摘要）',
+        summary: task.summary || task.prompt || copy.attentionFallbackSummary,
       }));
     const approvals = (snapshot?.approvals ?? [])
       .filter((approval) => approval.status === 'pending')
       .map((approval) => ({
         createdAt: approval.createdAt,
         id: `approval:${approval.id}`,
-        kind: '待处理审批',
+        kind: copy.attentionKindApproval,
         priority: getApprovalRiskLabel(approval.riskLevel),
-        status: '等待决定',
+        status: copy.attentionStatusPending,
         summary: approval.actionSummary,
       }));
     return [...tasks, ...approvals].sort((left, right) => asTimestamp(right.createdAt) - asTimestamp(left.createdAt));
-  }, [projectNames, snapshot?.agentTasks, snapshot?.approvals]);
+  }, [copy, projectNames, snapshot?.agentTasks, snapshot?.approvals]);
   const projectRows = useMemo<ProjectHealthRow[]>(
     () => projects.map((project) => {
       const git = getProjectGitStatus(project);
       return {
-        branch: git.branch || '未登记',
+        branch: git.branch || copy.projectBranchUnregistered,
         id: getProjectResourceId(project),
         label: getProjectResourceLabel(project),
-        state: projectNeedsAttention(project) ? '需关注' : '正常',
+        state: projectNeedsAttention(project) ? copy.projectStateAttention : copy.projectStateHealthy,
         workspace: git.changedEntries > 0
-          ? `有 ${git.changedEntries} 项改动`
+          ? copy.projectWorkspaceChanges.replace('{value}', `${git.changedEntries}`)
           : git.clean === false
-            ? '待检查'
-            : '正常',
+            ? copy.projectWorkspacePending
+            : copy.projectWorkspaceClean,
       };
     }),
-    [projects],
+    [copy, projects],
   );
   const runtimeRows = useMemo<RuntimeRow[]>(
     () => (snapshot?.runtimes ?? []).map((runtime) => {
       const presentation = getRuntimePresentation(runtime.kind, runtime.summary);
       return {
-        available: runtime.available ? '可用' : '不可用',
+        available: runtime.available ? copy.runtimeAvailable : copy.runtimeUnavailable,
         key: runtime.kind,
         name: presentation.label,
         summary: presentation.summary,
       };
     }),
-    [snapshot?.runtimes],
+    [copy, snapshot?.runtimes],
   );
 
   const filteredAttention = useMemo(
@@ -136,51 +177,51 @@ const Operations: React.FC = () => {
   );
   const filteredProjects = useMemo(() => {
     const byState = projectRows.filter((row) => {
-      if (projectFilter === 'attention') return row.state === '需关注';
-      if (projectFilter === 'ok') return row.state === '正常';
+      if (projectFilter === 'attention') return row.state === copy.projectStateAttention;
+      if (projectFilter === 'ok') return row.state === copy.projectStateHealthy;
       return true;
     });
     return filterByKeyword(byState, keyword, (row) => [row.label, row.state, row.workspace, row.branch]);
-  }, [keyword, projectFilter, projectRows]);
+  }, [copy, keyword, projectFilter, projectRows]);
   const filteredRuntimes = useMemo(
     () => filterByKeyword(runtimeRows, keyword, (row) => [row.name, row.available, row.summary]),
     [keyword, runtimeRows],
   );
 
   const attentionColumns: AxiTableColumn<AttentionRow>[] = [
-    { dataIndex: 'kind', title: '类型', width: 120 },
-    { dataIndex: 'summary', title: '事项' },
+    { dataIndex: 'kind', title: t('operations.column.kind'), width: 120 },
+    { dataIndex: 'summary', title: t('operations.column.summary') },
     {
       dataIndex: 'priority',
       dict: [
-        { color: 'red', label: '需要处理', value: '需要处理' },
-        { color: 'orange', label: '等待决定', value: '等待决定' },
-        { color: 'default', label: '需要确认', value: '需要确认' },
+        { color: 'red', label: t('operations.priority.failed'), value: t('operations.priority.failed') },
+        { color: 'orange', label: t('operations.priority.pending'), value: t('operations.priority.pending') },
+        { color: 'default', label: t('operations.priority.confirm'), value: t('operations.priority.confirm') },
       ],
-      title: '优先级',
+      title: t('operations.column.priority'),
       width: 120,
     },
-    { dataIndex: 'status', title: '状态', width: 120 },
+    { dataIndex: 'status', title: t('operations.column.status'), width: 120 },
     {
       dataIndex: 'projectLabel',
       render: (value, row) => value && row.projectId
         ? <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.projectId!)}`)}>{value}</Button>
         : '—',
-      title: '关联项目',
+      title: t('operations.column.target'),
       width: 180,
     },
-    { dataIndex: 'createdAt', render: (value) => formatTime(value), title: '更新时间', width: 150 },
+    { dataIndex: 'createdAt', render: (value) => formatTime(value, locale, copy.unknownTime), title: t('operations.column.updatedAt'), width: 150 },
   ];
   const projectColumns: AxiTableColumn<ProjectHealthRow>[] = [
-    { dataIndex: 'label', title: '项目' },
-    { dataIndex: 'state', dict: projectStateOptions, title: '状态', width: 100 },
-    { dataIndex: 'workspace', title: '工作区状态', width: 150 },
-    { dataIndex: 'branch', title: '分支', width: 150 },
+    { dataIndex: 'label', title: t('projects.column.label') },
+    { dataIndex: 'state', dict: projectStateOptions, title: t('operations.column.status'), width: 100 },
+    { dataIndex: 'workspace', title: t('projects.column.workspace'), width: 150 },
+    { dataIndex: 'branch', title: t('projects.column.branch'), width: 150 },
   ];
   const runtimeColumns: AxiTableColumn<RuntimeRow>[] = [
-    { dataIndex: 'name', title: '运行环境', width: 180 },
-    { dataIndex: 'available', dict: runtimeStateOptions, title: '状态', width: 100 },
-    { dataIndex: 'summary', title: '说明' },
+    { dataIndex: 'name', title: t('operations.column.runtime'), width: 180 },
+    { dataIndex: 'available', dict: runtimeStateOptions, title: t('operations.column.status'), width: 100 },
+    { dataIndex: 'summary', title: t('operations.column.summary') },
   ];
 
   const runSearch = () => setKeyword(keywordDraft.trim());
@@ -189,15 +230,15 @@ const Operations: React.FC = () => {
 
   return (
     <DesktopCrudFrame
-      ariaLabel="运行状态"
+      ariaLabel={t('operations.title')}
       className="operations-crud"
       filters={!showError && !showLoading ? (
         <Select
-          aria-label="项目健康筛选"
+          aria-label={t('operations.filter.ariaLabel')}
           options={[
-            { label: '全部项目', value: 'all' },
-            { label: '需关注', value: 'attention' },
-            { label: '正常', value: 'ok' },
+            { label: copy.projectFilterAll, value: 'all' },
+            { label: copy.projectFilterAttention, value: 'attention' },
+            { label: copy.projectFilterOk, value: 'ok' },
           ]}
           style={{ minWidth: 128 }}
           value={projectFilter}
@@ -208,8 +249,8 @@ const Operations: React.FC = () => {
         <div className="wb-crud-search-cluster">
           <Input
             allowClear
-            aria-label="搜索运行状态"
-            placeholder="搜索事项、项目、运行环境"
+            aria-label={t('operations.search.ariaLabel')}
+            placeholder={t('operations.search.placeholder')}
             value={keywordDraft}
             onChange={(event) => setKeywordDraft(event.target.value)}
             onClear={() => {
@@ -218,27 +259,27 @@ const Operations: React.FC = () => {
             }}
             onPressEnter={runSearch}
           />
-          <Button type="primary" onClick={runSearch}>搜索</Button>
+          <Button type="primary" onClick={runSearch}>{t('common.search')}</Button>
         </div>
       ) : undefined}
       top={(
         <div className="wb-crud-action-cluster">
           <Button loading={isFetching} onClick={() => void refetch()}>
-            刷新
+            {t('operations.refresh')}
           </Button>
         </div>
       )}
     >
       {showError ? (
         <ControlPlaneState
-          actionLabel="重新连接"
+          actionLabel={t('operations.error.retry')}
           actionLoading={isFetching}
-          description="当前无法连接控制面（默认 http://127.0.0.1:8092）。请确认已执行 pnpm --filter @axi/workstation-control-plane dev，然后点击重新连接。"
-          title="运行状态暂不可用"
+          description={t('operations.error.description')}
+          title={t('operations.error.title')}
           onAction={() => void refetch()}
         />
       ) : showLoading ? (
-        <ControlPlaneState description="正在从控制面读取跨项目运行状态。" loading title="正在同步运行状态" />
+        <ControlPlaneState description={t('operations.loading.description')} loading title={t('operations.loading.title')} />
       ) : (
         <div className="operations-crud__grid">
           <div className="operations-crud__main">
@@ -246,12 +287,12 @@ const Operations: React.FC = () => {
               className="operations-crud__attention"
               description={
                 filteredAttention.length
-                  ? `显示 ${filteredAttention.length} / ${attentionRows.length} 项需要处理`
+                  ? `${filteredAttention.length}/${attentionRows.length}${t('operations.attention.count')}`
                   : attentionRows.length
-                    ? '当前筛选条件下没有匹配事项'
-                    : '当前快照没有需要处理的任务或审批'
+                    ? t('operations.attention.emptyFiltered')
+                    : t('operations.attention.emptyAll')
               }
-              title="需要处理"
+              title={t('operations.attention.title')}
             >
               <AxiTable
                 columns={attentionColumns}
@@ -263,8 +304,8 @@ const Operations: React.FC = () => {
             </AxiTableGroup>
             <AxiTableGroup
               className="operations-crud__projects"
-              description={`显示 ${filteredProjects.length} / ${projectRows.length} 个已登记项目`}
-              title="项目健康"
+              description={`${filteredProjects.length}/${projectRows.length}${t('operations.projects.count')}`}
+              title={t('operations.projects.title')}
             >
               <AxiTable
                 columns={projectColumns}
@@ -282,8 +323,8 @@ const Operations: React.FC = () => {
           <aside className="operations-crud__side">
             <AxiTableGroup
               className="operations-crud__runtimes"
-              description={`显示 ${filteredRuntimes.length} / ${runtimeRows.length} 个运行环境`}
-              title="运行环境"
+              description={`${filteredRuntimes.length}/${runtimeRows.length}${t('operations.runtimes.count')}`}
+              title={t('operations.runtimes.title')}
             >
               <AxiTable
                 columns={runtimeColumns}
@@ -306,11 +347,11 @@ function asTimestamp(value: Date | string | undefined): number {
   return Number.isFinite(time) ? time : 0;
 }
 
-function formatTime(value: Date | string | undefined): string {
-  if (!value) return '时间未知';
+function formatTime(value: Date | string | undefined, locale: string, unknownText: string): string {
+  if (!value) return unknownText;
   const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return '时间未知';
-  return new Intl.DateTimeFormat('zh-CN', {
+  if (Number.isNaN(date.getTime())) return unknownText;
+  return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
