@@ -26,6 +26,8 @@ import {
 export interface BreadcrumbItem {
   /** Visible label. */
   label: string;
+  /** Optional i18n key. When present, consumers should prefer `t(labelKey)` over `label`. */
+  labelKey?: string;
   /** Optional leading icon. */
   icon?: React.ReactNode;
   /** Optional click target. When omitted the item is static. */
@@ -37,6 +39,7 @@ export interface BreadcrumbItem {
 /** A hierarchy node rendered before the current route. */
 export interface BreadcrumbNode {
   label: string;
+  labelKey?: string;
   icon?: AxiWorkbenchIconName | React.ReactNode;
   /** Optional route for a navigable ancestor. */
   path?: string;
@@ -45,6 +48,7 @@ export interface BreadcrumbNode {
 /** A registered primary route. `match` allows multi-segment active matching. */
 export interface BreadcrumbRoute {
   label: string;
+  labelKey?: string;
   icon?: AxiWorkbenchIconName | React.ReactNode;
   /** One-level compatibility field for callers that only have one parent. */
   parent?: BreadcrumbNode;
@@ -58,75 +62,91 @@ export interface BreadcrumbRoute {
  * Registry of admin routes known to the breadcrumb builder.
  * Keys are absolute paths; values describe the route's display.
  *
+ * Every entry exposes a `label` (canonical Chinese source string used by tests
+ * and as a literal fallback) and a `labelKey` (i18n dictionary key consumed by
+ * the renderer). Adding a new entry requires both fields.
+ *
  * Order in `getBreadcrumb` keys matters only when multiple prefixes tie —
  * longest match wins, ties are resolved by registry insertion order.
  */
 const WORKBENCH_PARENT: BreadcrumbNode = {
   label: '工作台',
+  labelKey: 'nav.crumb.workbench',
   icon: 'overview',
   path: '/admin/dashboard',
 };
 
 const ACCOUNT_PARENT: BreadcrumbNode = {
   label: '账号与设置',
+  labelKey: 'nav.crumb.account',
   icon: 'settings',
 };
 
 const PROFILE_PARENT: BreadcrumbNode = {
   label: '个人中心',
+  labelKey: 'nav.crumb.profile',
   icon: 'account',
   path: '/admin/me',
 };
 
 export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
-  '/admin/dashboard': { label: '工作台概览', icon: 'overview' },
-  '/admin/operations': { label: '运行状态', icon: 'laptop', parents: [WORKBENCH_PARENT] },
-  '/admin/project': { label: '项目组合', icon: 'project', parents: [WORKBENCH_PARENT] },
-  '/admin/task': { label: '工作项', icon: 'workspace', parents: [WORKBENCH_PARENT] },
-  '/admin/team': { label: '团队', icon: 'team', parents: [WORKBENCH_PARENT] },
-  '/admin/search': { label: '搜索', icon: 'search', parents: [WORKBENCH_PARENT] },
+  '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard', icon: 'overview' },
+  '/admin/operations': { label: '运行状态', labelKey: 'nav.operations', icon: 'laptop', parents: [WORKBENCH_PARENT] },
+  '/admin/project': { label: '项目组合', labelKey: 'nav.projects', icon: 'project', parents: [WORKBENCH_PARENT] },
+  '/admin/task': { label: '工作项', labelKey: 'nav.tasks', icon: 'workspace', parents: [WORKBENCH_PARENT] },
+  '/admin/team': { label: '团队', labelKey: 'nav.team', icon: 'team', parents: [WORKBENCH_PARENT] },
+  '/admin/search': { label: '搜索', labelKey: 'common.search', icon: 'search', parents: [WORKBENCH_PARENT] },
   '/admin/me': {
     label: '个人中心',
+    labelKey: 'nav.crumb.profile',
     icon: 'account',
     parents: [ACCOUNT_PARENT],
   },
   '/admin/me/account': {
     label: '账号信息',
+    labelKey: 'nav.crumb.accountInfo',
     icon: 'account',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/devices': {
     label: '设备管理',
+    labelKey: 'nav.crumb.devices',
     icon: 'mobile',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/notifications': {
     label: '通知中心',
+    labelKey: 'nav.crumb.notifications',
     icon: 'notification',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/theme': {
     label: '主题外观',
+    labelKey: 'nav.crumb.theme',
     icon: 'settings',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/settings': {
     label: '设置',
+    labelKey: 'common.settings.title',
     icon: 'settings',
     parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/settings/menu': {
     label: '菜单列表',
+    labelKey: 'nav.settings.menu',
     icon: 'menu',
     parents: [ACCOUNT_PARENT],
   },
   '/admin/settings/user': {
     label: '账号信息',
+    labelKey: 'nav.crumb.accountInfo',
     icon: 'account',
     parents: [ACCOUNT_PARENT],
   },
   '/admin/settings/role': {
     label: '角色列表',
+    labelKey: 'nav.settings.role',
     icon: 'roles',
     parents: [ACCOUNT_PARENT],
   },
