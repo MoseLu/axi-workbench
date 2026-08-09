@@ -17,6 +17,7 @@ import {
   useTenants,
   type TenantRole,
 } from '@epap/api-client';
+import { useI18n } from '../../i18n';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';
 import {
@@ -29,61 +30,58 @@ import {
 } from './tenantMemberCrud';
 import './RoleList.css';
 
-const memberFormItems: AxiFormItem<TenantMemberRow>[] = [
-  {
-    component: ({ disabled, form }: { disabled?: boolean; form: TenantMemberRow }) => (
-      <Input
-        disabled={disabled || Boolean(form.createdAt)}
-        placeholder="身份系统中的成员标识"
-      />
-    ),
-    label: '成员标识',
-    prop: 'subject',
-    required: true,
-    rules: [
-      { required: true, message: '请输入成员标识' },
-      { whitespace: true, message: '成员标识不能只包含空白字符' },
-    ],
-  },
-  {
-    label: '角色',
-    options: tenantRoleOptions,
-    prop: 'role',
-    required: true,
-    type: 'select',
-  },
-];
-
-const memberColumns: AxiTableColumn<TenantMemberRow>[] = [
-  { alwaysVisible: true, title: '', type: 'selection', width: 48 },
-  { alwaysVisible: true, title: '序号', type: 'index', width: 64 },
-  { align: 'left', dataIndex: 'subject', title: '成员标识', width: 280 },
-  {
-    dataIndex: 'role',
-    dict: tenantRoleOptions,
-    title: '角色',
-    width: 120,
-  },
-  {
-    dataIndex: 'updatedAt',
-    render: (value: string) => formatTenantMemberTime(value),
-    title: '更新时间',
-    width: 176,
-  },
-  { alwaysVisible: true, title: '操作', type: 'op', width: 100 },
-];
-
-/**
- * Web C 级组织访问入口（Cool Admin cl-crud 编排样板）：
- * 左工具栏刷新/新增 · 中筛选 · 右搜索 · 表格分页 · Upsert 弹窗。
- * 列表来自 Platform Core；写入经 Gateway 鉴权审计。无删除 API 故不暴露批量删除。
- */
 const RoleList: React.FC = () => {
+  const { t } = useI18n();
   const crudRef = useRef<AxiCrudRef<TenantMemberRow>>(null);
   const [tenantId, setTenantId] = useState('');
   const [roleFilter, setRoleFilter] = useState<TenantRole | ''>('');
   const [keywordDraft, setKeywordDraft] = useState('');
   const [keyword, setKeyword] = useState('');
+
+  const memberFormItems = useMemo<AxiFormItem<TenantMemberRow>[]>(() => [
+    {
+      component: ({ disabled, form }: { disabled?: boolean; form: TenantMemberRow }) => (
+        <Input
+          disabled={disabled || Boolean(form.createdAt)}
+          placeholder={t('authority.member.subject.placeholder')}
+        />
+      ),
+      label: t('authority.member.subject.label'),
+      prop: 'subject',
+      required: true,
+      rules: [
+        { required: true, message: t('authority.member.subject.required') },
+        { whitespace: true, message: t('authority.member.subject.whitespace') },
+      ],
+    },
+    {
+      label: t('authority.member.role.label'),
+      options: tenantRoleOptions,
+      prop: 'role',
+      required: true,
+      type: 'select',
+    },
+  ], [t]);
+
+  const memberColumns = useMemo<AxiTableColumn<TenantMemberRow>[]>(() => [
+    { alwaysVisible: true, title: '', type: 'selection', width: 48 },
+    { alwaysVisible: true, title: t('authority.column.index'), type: 'index', width: 64 },
+    { align: 'left', dataIndex: 'subject', title: t('authority.member.subject.label'), width: 280 },
+    {
+      dataIndex: 'role',
+      dict: tenantRoleOptions,
+      title: t('authority.member.role.label'),
+      width: 120,
+    },
+    {
+      dataIndex: 'updatedAt',
+      render: (value: string) => formatTenantMemberTime(value),
+      title: t('authority.column.updatedAt'),
+      width: 176,
+    },
+    { alwaysVisible: true, title: t('authority.column.actions'), type: 'op', width: 100 },
+  ], [t]);
+
   const tenantsQuery = useTenants();
   const createTenant = useCreateTenant();
   const tenants = tenantsQuery.data ?? [];
@@ -117,24 +115,24 @@ const RoleList: React.FC = () => {
       const member = data as TenantMemberRow | undefined;
       const subject = String(member?.subject ?? '').trim();
       const role = member?.role as TenantRole | undefined;
-      if (!selectedTenantId || !subject || !role) throw new Error('成员标识和角色不能为空');
+      if (!selectedTenantId || !subject || !role) throw new Error(t('authority.member.subjectOrRoleRequired'));
       await saveMember.mutateAsync({ role, subject });
     },
     update: async (data) => {
       const member = data as TenantMemberRow | undefined;
       const subject = String(member?.subject ?? '').trim();
       const role = member?.role as TenantRole | undefined;
-      if (!selectedTenantId || !subject || !role) throw new Error('成员标识和角色不能为空');
+      if (!selectedTenantId || !subject || !role) throw new Error(t('authority.member.subjectOrRoleRequired'));
       await saveMember.mutateAsync({ role, subject });
     },
-  }), [membersQuery, saveMember, selectedTenantId]);
+  }), [membersQuery, saveMember, selectedTenantId, t]);
 
   const refresh = () => {
     void tenantsQuery.refetch().then(() => {
       if (!selectedTenantId) return;
       return crudRef.current?.refresh();
     }).catch(() => {
-      message.error('成员目录暂时无法刷新，请检查平台服务和当前权限。');
+      message.error(t('authority.refresh.failed'));
     });
   };
 
@@ -151,9 +149,9 @@ const RoleList: React.FC = () => {
         slug,
       });
       setTenantId(tenant.id);
-      message.success(`已创建组织「${tenant.name}」`);
+      message.success(t('authority.bootstrap.success').replace('{name}', tenant.name));
     } catch {
-      message.error('创建组织失败。请确认 Platform Core（:8082）与 API Gateway 会话可用。');
+      message.error(t('authority.bootstrap.failed'));
     }
   };
 
@@ -179,15 +177,15 @@ const RoleList: React.FC = () => {
       service={service}
     >
       <DesktopCrudFrame
-        ariaLabel="成员与角色"
+        ariaLabel={t('authority.title')}
         className="authority-status"
         filters={hasTenantDirectory ? (
           <>
             <Select
-              aria-label="选择组织"
+              aria-label={t('authority.tenant.ariaLabel')}
               loading={tenantsQuery.isFetching}
               options={tenantOptions}
-              placeholder="选择组织"
+              placeholder={t('authority.tenant.placeholder')}
               style={{ minWidth: 160 }}
               value={selectedTenantId || undefined}
               onChange={setTenantId}
@@ -195,9 +193,9 @@ const RoleList: React.FC = () => {
             {canListMembers ? (
               <Select
                 allowClear
-                aria-label="按角色筛选"
+                aria-label={t('authority.role.ariaLabel')}
                 options={tenantRoleOptions}
-                placeholder="角色"
+                placeholder={t('authority.role.placeholder')}
                 style={{ minWidth: 120 }}
                 value={roleFilter || undefined}
                 onChange={(value) => setRoleFilter((value as TenantRole | undefined) ?? '')}
@@ -209,8 +207,8 @@ const RoleList: React.FC = () => {
           <div className="wb-crud-search-cluster">
             <Input
               allowClear
-              aria-label="搜索成员或角色"
-              placeholder="搜索成员标识、角色"
+              aria-label={t('authority.search.ariaLabel')}
+              placeholder={t('authority.search.placeholder')}
               value={keywordDraft}
               onChange={(event) => setKeywordDraft(event.target.value)}
               onClear={() => {
@@ -219,7 +217,7 @@ const RoleList: React.FC = () => {
               }}
               onPressEnter={runSearch}
             />
-            <Button type="primary" onClick={runSearch}>搜索</Button>
+            <Button type="primary" onClick={runSearch}>{t('common.search')}</Button>
           </div>
         ) : undefined}
         top={(
@@ -229,7 +227,7 @@ const RoleList: React.FC = () => {
               loading={tenantsQuery.isFetching || membersQuery.isFetching}
               onClick={refresh}
             >
-              刷新
+              {t('authority.refresh')}
             </Button>
             {canListMembers ? (
               <Button
@@ -237,7 +235,7 @@ const RoleList: React.FC = () => {
                 type="primary"
                 onClick={() => crudRef.current?.rowAdd()}
               >
-                新增
+                {t('authority.add')}
               </Button>
             ) : null}
             {!platformUnavailable && !loading && !selectedTenantId ? (
@@ -246,7 +244,7 @@ const RoleList: React.FC = () => {
                 type="primary"
                 onClick={() => void bootstrapTenant()}
               >
-                创建组织
+                {t('authority.bootstrap.cta')}
               </Button>
             ) : null}
           </div>
@@ -254,44 +252,44 @@ const RoleList: React.FC = () => {
       >
         {platformUnavailable ? (
           <ControlPlaneState
-            actionLabel="重新连接"
+            actionLabel={t('authority.error.reconnect')}
             actionLoading={tenantsQuery.isFetching}
-            description="无法连接 Platform Core（默认 http://127.0.0.1:8082，经 Gateway :8088 代理）。请执行 pnpm --filter @axi/platform-core dev 后点击重新连接。"
-            title="组织访问数据暂不可用"
+            description={t('authority.platformUnavailable.description')}
+            title={t('authority.platformUnavailable.title')}
             onAction={() => void tenantsQuery.refetch()}
           />
         ) : loading ? (
           <ControlPlaneState
-            description="正在读取当前主体的组织和成员角色。"
+            description={t('authority.loading.description')}
             loading
-            title="正在同步成员与角色"
+            title={t('authority.loading.title')}
           />
         ) : membersUnavailable ? (
           <ControlPlaneState
-            actionLabel="重试"
+            actionLabel={t('authority.error.retry')}
             actionLoading={membersQuery.isFetching}
-            description="组织已选定，但成员目录读取失败；请检查当前组织权限或平台服务状态。"
-            title="成员目录暂不可用"
+            description={t('authority.membersUnavailable.description')}
+            title={t('authority.membersUnavailable.title')}
             onAction={() => void membersQuery.refetch()}
           />
         ) : !selectedTenantId ? (
           <ControlPlaneState
-            actionLabel="创建组织"
+            actionLabel={t('authority.bootstrap.cta')}
             actionLoading={createTenant.isPending}
-            description="当前登录主体还没有可管理的组织。可创建默认组织「Axi Workbench」，你将自动成为所有者。"
-            title="没有可管理的组织"
+            description={t('authority.noTenant.description')}
+            title={t('authority.noTenant.title')}
             onAction={() => void bootstrapTenant()}
           />
         ) : (
           <AxiTableGroup
             description={
               visibleRows.length
-                ? `显示 ${visibleRows.length} / ${memberRows.length} 条 · 保存由服务端鉴权并审计`
+                ? `${visibleRows.length}/${memberRows.length}${t('authority.count')}`
                 : memberRows.length
-                  ? '当前筛选条件下没有匹配成员。'
-                  : '该组织尚无成员。点击「新增」写入已授权的身份主体。'
+                  ? t('authority.emptyFiltered')
+                  : t('authority.emptyAll')
             }
-            title="成员与角色"
+            title={t('authority.title')}
           >
             <AxiCrudTable
               columns={memberColumns}
@@ -315,7 +313,7 @@ const RoleList: React.FC = () => {
         onSubmit={(form, event) => {
           void event.next(form).catch(() => {
             event.done();
-            message.error('成员角色未保存。请确认当前组织权限后重试。');
+            message.error(t('authority.save.failed'));
           });
         }}
       />
