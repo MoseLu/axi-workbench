@@ -1,16 +1,3 @@
-.dashboard-crud__projects {
-  width: 100%;
-}
-
-.dashboard-crud .axi-table-group {
-  height: auto;
-  align-self: start;
-}
-
-.dashboard-crud .axi-table-group__body {
-  min-width: 0;
-}
-
 .dashboard-crud .axi-crud-table,
 .dashboard-crud .axi-table-wrapper {
   width: 100%;

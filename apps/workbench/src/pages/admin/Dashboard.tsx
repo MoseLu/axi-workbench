@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   AxiCrud,
   AxiCrudTable,
-  AxiTableGroup,
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
@@ -14,7 +13,6 @@ import {
   getProjectResourceId,
   getProjectResourceLabel,
   getProjectResources,
-  summarizeAgentTasks,
 } from '../workspaceRegistry';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';
@@ -61,8 +59,6 @@ const Dashboard: React.FC = () => {
     () => filterProjectRows(projectRows, { keyword, state: stateFilter }),
     [keyword, projectRows, stateFilter],
   );
-  const taskSummary = summarizeAgentTasks(snapshot?.agentTasks ?? []);
-  const runtimeCount = snapshot?.runtimes?.length ?? 0;
   const projectColumns: AxiTableColumn<ProjectRow>[] = [
     { alwaysVisible: true, title: '序号', type: 'index', width: 64 },
     { align: 'left', dataIndex: 'label', title: '项目', width: 280 },
@@ -99,7 +95,6 @@ const Dashboard: React.FC = () => {
       <DesktopCrudFrame
         ariaLabel="概览"
         className="dashboard-crud"
-        description={`统一查看已登记项目的健康状态、工作区变更和当前分支。受管任务 ${taskSummary.active} 项处理中，运行环境 ${runtimeCount} 个；详情请进入对应页面。`}
         filters={!showError && !showLoading ? (
           <Select
             aria-label="项目状态筛选"
@@ -129,7 +124,6 @@ const Dashboard: React.FC = () => {
             <Button type="primary" onClick={runSearch}>搜索</Button>
           </div>
         ) : undefined}
-        title="项目目录"
         top={(
           <div className="wb-crud-action-cluster">
             <Button disabled={isFetching} onClick={() => void refetch()}>
@@ -152,30 +146,24 @@ const Dashboard: React.FC = () => {
         ) : showLoading ? (
           <ControlPlaneState description="正在从控制面读取概览数据。" loading title="正在同步概览" />
         ) : (
-          <AxiTableGroup
-            className="dashboard-crud__projects"
-            description={`显示 ${filteredProjectRows.length} / ${projectRows.length} 个已登记项目`}
-            title="项目"
-          >
-            <AxiCrudTable
-              columns={projectColumns}
-              data={filteredProjectRows}
-              operationButtons={projectOperationButtons}
-              pagination={desktopCrudPagination(filteredProjectRows.length)}
-              rowKey="id"
-              rowSelection={false}
-              storageKey="axi-workbench:dashboard-projects"
-              toolbar={{
-                layout: ['size', 'columns', 'style'],
-                storageKey: 'axi-workbench:dashboard-projects',
-                visible: true,
-              }}
-              onRow={(row) => ({
-                onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                style: { cursor: 'pointer' },
-              })}
-            />
-          </AxiTableGroup>
+          <AxiCrudTable
+            columns={projectColumns}
+            data={filteredProjectRows}
+            operationButtons={projectOperationButtons}
+            pagination={desktopCrudPagination(filteredProjectRows.length)}
+            rowKey="id"
+            rowSelection={false}
+            storageKey="axi-workbench:dashboard-projects"
+            toolbar={{
+              layout: ['size', 'columns', 'style'],
+              storageKey: 'axi-workbench:dashboard-projects',
+              visible: true,
+            }}
+            onRow={(row) => ({
+              onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+              style: { cursor: 'pointer' },
+            })}
+          />
         )}
       </DesktopCrudFrame>
     </AxiCrud>
