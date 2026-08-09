@@ -61,7 +61,7 @@ button {
   cursor: pointer;
   display: inline-flex;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: var(--axi-font-weight-bold, 700);
   gap: 7px;
   justify-content: center;
   letter-spacing: 0;
@@ -208,7 +208,7 @@ code {
 .brand-copy span {
   color: var(--muted);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: var(--axi-font-weight-bold, 700);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -445,7 +445,7 @@ code {
   border-radius: var(--axi-radius-full, 999px);
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   gap: 6px;
   min-height: 26px;
@@ -489,7 +489,7 @@ code {
 .route-tab {
   background: var(--panel);
   border-color: var(--border-strong);
-  border-radius: 4px;
+  border-radius: var(--axi-radius-sm, 4px);
   color: var(--muted);
   flex: 0 0 auto;
   gap: 7px;
@@ -506,7 +506,7 @@ code {
 
 .route-tab-close {
   align-items: center;
-  border-radius: 4px;
+  border-radius: var(--axi-radius-sm, 4px);
   display: inline-flex;
   height: 16px;
   justify-content: center;
@@ -553,14 +553,14 @@ code {
 .app-breadcrumb-item small,
 .breadcrumb-meta {
   color: var(--subtle);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-bold, 700);
 }
 
 .notice {
   background: var(--axi-text-inverse, #ffffff);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.15);
   max-width: 440px;
   padding: 10px 12px;
@@ -573,7 +573,7 @@ code {
 .app-view-container {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   flex: 1 1 auto;
   margin: 10px;
   min-height: 0;
@@ -605,7 +605,7 @@ code {
 
 .eyebrow {
   color: var(--axi-text-secondary, #788496);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   letter-spacing: 0;
   margin: 0 0 4px;
@@ -640,7 +640,7 @@ code {
 .route-row {
   background: var(--axi-text-inverse, #ffffff);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
 }
 
 .metric {
@@ -652,7 +652,7 @@ code {
 
 .metric span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
 }
 
@@ -674,7 +674,7 @@ code {
 
 .panel-meta {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   margin-left: auto;
 }
@@ -699,13 +699,13 @@ code {
 
 .completion-stat span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
 }
 
 .completion-stat strong {
   color: var(--text);
-  font-size: 16px;
+  font-size: var(--axi-font-size-md, 16px);
   line-height: 1.2;
 }
 
@@ -717,7 +717,7 @@ code {
 .completion-empty {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: var(--axi-font-weight-bold, 700);
   padding: 6px 0;
 }
 
@@ -745,7 +745,7 @@ code {
 
 .completion-row small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   margin-top: 2px;
 }
 
@@ -754,7 +754,7 @@ code {
   align-items: center;
   border-radius: var(--axi-radius-full, 999px);
   display: inline-flex;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   gap: 5px;
   justify-content: center;
@@ -813,7 +813,7 @@ code {
 .detail-heading h2,
 .view-shell h2 {
   color: var(--text);
-  font-size: 16px;
+  font-size: var(--axi-font-size-md, 16px);
   letter-spacing: 0;
   line-height: 1.25;
   margin: 0;
@@ -840,7 +840,7 @@ code {
 .timeline-item > span {
   align-items: center;
   background: var(--axi-primary, #eef6ff);
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
   color: var(--primary);
   display: flex;
   height: 30px;
@@ -874,7 +874,7 @@ code {
 .contract-row span,
 .muted-copy {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 .contract-row {
@@ -908,7 +908,7 @@ code {
   align-items: center;
   border-radius: 7px;
   display: inline-flex;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   gap: 6px;
   min-height: 30px;
@@ -921,7 +921,7 @@ code {
   border-radius: 7px;
   color: var(--axi-text, #314053);
   display: block;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   line-height: 1.45;
   overflow-wrap: anywhere;
   padding: 9px;
@@ -988,13 +988,13 @@ code {
 
 .workbench-stat span {
   color: var(--axi-text-secondary, #718095);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-bold, 700);
 }
 
 .workbench-stat strong {
   color: var(--axi-text, #1d2735);
-  font-size: 14px;
+  font-size: var(--axi-font-size-sm, 14px);
   overflow-wrap: anywhere;
 }
 
@@ -1040,7 +1040,7 @@ code {
 
 .workbench-flow-item span {
   color: var(--axi-text-secondary, #718095);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 .workbench-flow-arrow {
@@ -1109,7 +1109,7 @@ code {
   border-radius: var(--axi-radius-full, 999px);
   color: var(--axi-text-secondary, #526173);
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   padding: 4px 7px;
 }
@@ -1174,7 +1174,7 @@ code {
   border-radius: var(--axi-radius-full, 999px);
   color: var(--axi-success, #0f6b39);
   display: inline-flex;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 800;
   gap: 6px;
   min-height: 26px;
@@ -1229,7 +1229,7 @@ code {
   align-items: center;
   background: var(--axi-text-inverse, #ffffff);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   color: var(--primary);
   display: flex;
   font-weight: 800;
@@ -1261,7 +1261,7 @@ code {
 .usage-summary {
   color: var(--axi-text-muted, #8a8f99);
   display: grid;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   gap: 6px;
   justify-items: center;
 }
@@ -1273,7 +1273,7 @@ code {
 .usage-summary strong {
   color: var(--axi-text-secondary, #677080);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: var(--axi-font-weight-bold, 700);
 }
 
 .usage-summary strong span {
@@ -1282,8 +1282,8 @@ code {
 
 .usage-summary small {
   color: var(--axi-text-muted, #9099a8);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 .provider-actions {
@@ -1311,7 +1311,7 @@ code {
   background: var(--axi-border, #edf2f7);
   border: 0;
   color: var(--axi-text-secondary, #7b8797);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   min-height: 30px;
   min-width: 70px;
 }
@@ -1393,7 +1393,7 @@ label {
 }
 
 .result {
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   display: grid;
   gap: 5px;
   padding: 12px;
@@ -1401,7 +1401,7 @@ label {
 
 .result span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 .result p {
@@ -1453,8 +1453,8 @@ label {
 .route-row code {
   background: var(--panel-soft);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--axi-radius-md, 6px);
+  font-size: var(--axi-font-size-xs, 12px);
   padding: 5px 7px;
 }
 
@@ -1483,7 +1483,7 @@ label {
 .terminal-command-bar {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   justify-content: flex-start;
   margin-bottom: 10px;
   min-height: 40px;
@@ -1496,7 +1496,7 @@ label {
   border-radius: 7px;
   color: var(--axi-text, #293342);
   display: block;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   max-width: 420px;
   overflow: hidden;
   padding: 6px 8px;
@@ -1507,7 +1507,7 @@ label {
 .terminal-switcher {
   background: var(--axi-bg-elevated, #f1f4f8);
   border: 1px solid var(--axi-border, #e1e6ef);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   display: inline-flex;
   flex: 0 1 auto;
   gap: 3px;
@@ -1518,9 +1518,9 @@ label {
 .terminal-switcher button {
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
   color: var(--axi-text-secondary, #68707c);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   min-height: 28px;
   min-width: 64px;
   padding: 0 9px;
@@ -1547,7 +1547,7 @@ label {
 .terminal-frame {
   background: var(--axi-text, #0b0f16);
   border: 1px solid var(--axi-text, #1c2430);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   display: grid;
   grid-template-rows: 40px minmax(0, 1fr);
   min-height: 0;
@@ -1572,7 +1572,7 @@ label {
   color: var(--axi-text-muted, #8ea0b7);
   display: block;
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1646,7 +1646,7 @@ label {
 .segmented {
   background: var(--axi-border, #edf1f7);
   border: 1px solid var(--axi-border, #e1e6ef);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   display: flex;
   padding: 3px;
 }
@@ -1654,7 +1654,7 @@ label {
 .segmented button {
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
   min-height: 28px;
 }
 
@@ -1665,7 +1665,7 @@ label {
 
 .table-wrap {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   overflow: auto;
 }
 
@@ -1689,7 +1689,7 @@ td {
 th {
   background: var(--axi-bg-elevated, #f7f9fc);
   color: var(--axi-text-secondary, #607083);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 tr:last-child td {
@@ -1722,7 +1722,7 @@ tr:last-child td {
   align-items: center;
   background: var(--axi-text-inverse, #ffffff);
   border: 1px dashed var(--axi-border, #d8e1ed);
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   display: flex;
   font-size: 13px;
   min-height: 56px;

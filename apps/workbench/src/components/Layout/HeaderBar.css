@@ -19,7 +19,7 @@
   border-radius: var(--axi-radius-md, 6px);
   background: var(--mpms-topbar-bg);
   color: var(--mpms-text-primary);
-  font-size: 14px;
+  font-size: var(--axi-font-size-sm, 14px);
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;

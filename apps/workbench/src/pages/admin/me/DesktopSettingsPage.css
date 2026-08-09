@@ -83,7 +83,7 @@
 
 .wb-settings-page .ant-descriptions-item-label {
   color: var(--axi-muted, rgba(255, 255, 255, .58));
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 .wb-settings-page .ant-descriptions-item-content {

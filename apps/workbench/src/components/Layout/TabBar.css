@@ -127,7 +127,7 @@
   align-items: center;
   gap: var(--axi-space-2, 8px);
   padding: 6px var(--axi-space-3, 12px);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   color: var(--mpms-text-secondary, #52525b);
   cursor: pointer;
   transition: color 0.15s, background-color 0.15s;

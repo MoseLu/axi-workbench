@@ -21,7 +21,7 @@
 .app-breadcrumb__sep {
   color: var(--mpms-text-tertiary, rgba(0, 0, 0, 0.32));
   margin: 0 var(--axi-space-2, 8px);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 /* Each breadcrumb item — 纯文字，无卡片 */
@@ -62,7 +62,7 @@ button.app-breadcrumb__item {
 .app-breadcrumb__item.is-active {
   background: transparent;
   color: var(--mpms-text-primary, #191919);
-  font-weight: 500;
+  font-weight: var(--axi-font-weight-medium, 500);
 }
 
 .app-breadcrumb__item.is-active .app-breadcrumb__icon {

@@ -37,7 +37,7 @@
 .wb-me-overview__identity span {
   overflow: hidden;
   color: var(--axi-muted, rgba(255, 255, 255, .58));
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

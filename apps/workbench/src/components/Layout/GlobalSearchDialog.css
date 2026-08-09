@@ -67,7 +67,7 @@
   border: 0;
   outline: 0;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--axi-font-size-sm, 14px);
 }
 
 .wb-global-search__field input::placeholder {
@@ -142,7 +142,7 @@
 
 .wb-global-search__title {
   color: var(--axi-text, #1f2937);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
   font-weight: 650;
 }
 
@@ -241,7 +241,7 @@
   padding: 0 1px;
   color: var(--axi-primary, #3b66d9);
   background: transparent;
-  font-weight: 700;
+  font-weight: var(--axi-font-weight-bold, 700);
 }
 
 .wb-global-search__result-group {
@@ -269,13 +269,13 @@
   flex-direction: column;
   gap: var(--axi-space-2, 8px);
   color: var(--axi-muted, #64748b);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 .wb-global-search__empty strong {
   color: var(--axi-text, #1f2937);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 .wb-global-search__empty-icon {

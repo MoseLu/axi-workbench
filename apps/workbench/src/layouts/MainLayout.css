@@ -72,8 +72,8 @@
 }
 
 .workbench-axi-shell .axi-topbar .axi-global-search-trigger__label {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-normal, 400);
 }
 
 .workbench-axi-shell .axi-topbar .axi-global-search-trigger kbd {
@@ -167,8 +167,8 @@
 .workbench-axi-shell .axi-breadcrumb {
   height: var(--workbench-chrome-control-size);
   color: var(--axi-muted);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-medium, 500);
 }
 
 .workbench-axi-shell .axi-breadcrumb-item {
@@ -179,8 +179,8 @@
   padding-inline: var(--space-2);
   color: var(--axi-muted);
   background: var(--workbench-chrome-control-bg);
-  font-size: 14px;
-  font-weight: 400;
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-normal, 400);
 }
 
 .workbench-axi-shell .axi-breadcrumb-item.is-link:hover {
@@ -205,7 +205,7 @@
   border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
   color: var(--axi-text);
   background: color-mix(in srgb, var(--axi-primary) 8%, transparent);
-  font-weight: 400;
+  font-weight: var(--axi-font-weight-normal, 400);
 }
 
 .workbench-axi-shell .axi-breadcrumb-item.is-current .axi-breadcrumb-item__icon {
@@ -228,7 +228,7 @@
   border: 1px solid var(--axi-border, rgba(15, 23, 42, .12));
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, .16);
-  font-size: 12px;
+  font-size: var(--axi-font-size-xs, 12px);
 }
 
 .workbench-floating-tool-panel span {
