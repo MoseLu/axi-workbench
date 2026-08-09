@@ -13,3 +13,22 @@
   height: auto;
   align-self: start;
 }
+
+.dashboard-crud .axi-table-group__body {
+  min-width: 0;
+}
+
+.dashboard-crud .axi-crud-table,
+.dashboard-crud .axi-table-wrapper {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .dashboard-crud__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-crud__projects {
+    grid-column: auto;
+  }
+}

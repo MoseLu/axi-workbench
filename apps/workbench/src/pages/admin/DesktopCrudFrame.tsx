@@ -6,6 +6,10 @@ import './DesktopCrudFrame.css';
 type DesktopCrudFrameProps = {
   /** 主区域无障碍标签。 */
   ariaLabel: string;
+  /** Cool Admin 标准 CRUD 页标题。 */
+  title?: React.ReactNode;
+  /** 标题下的资源说明或当前查询上下文。 */
+  description?: React.ReactNode;
   /**
    * Cool Admin 风格左侧主操作：刷新 / 新增 / 删除 等。
    * 也可用 `actions` 结构化声明。
@@ -47,6 +51,7 @@ export function DesktopCrudFrame({
   bulkActions,
   children,
   className = '',
+  description,
   filters,
   footer,
   queryActions,
@@ -55,6 +60,7 @@ export function DesktopCrudFrame({
   selectionLabel,
   toolbar,
   top,
+  title,
 }: DesktopCrudFrameProps) {
   return (
     <main aria-label={ariaLabel} className={`wb-crud-page ${className}`.trim()}>
@@ -62,6 +68,7 @@ export function DesktopCrudFrame({
         actions={actions}
         bulkActions={bulkActions}
         className="wb-crud-page__layout"
+        description={description}
         filters={filters}
         footer={footer}
         queryActions={queryActions}
@@ -70,6 +77,7 @@ export function DesktopCrudFrame({
         selectionLabel={selectionLabel}
         toolbar={toolbar}
         top={top}
+        title={title}
       >
         {children}
       </AxiCrudLayout>
