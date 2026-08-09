@@ -2,7 +2,7 @@
 .operations-crud__grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
   align-items: start;
 }
 
@@ -11,12 +11,12 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
 }
 
 .operations-crud__side {
   position: sticky;
-  top: 8px;
+  top: var(--axi-space-2, 8px);
 }
 
 .operations-crud__projects,

@@ -1,6 +1,6 @@
 .wb-settings-page {
   min-height: 100%;
-  padding: 12px 14px 24px;
+  padding: var(--axi-space-3, 12px) 14px 24px;
 }
 
 .wb-settings-page__layout,
@@ -18,18 +18,18 @@
 }
 
 .wb-settings-page__workspace .axi-filter-group__filters {
-  padding: 12px;
+  padding: var(--axi-space-3, 12px);
   border-right: 1px solid var(--axi-layout-border, var(--axi-border));
   background: color-mix(in srgb, var(--axi-layout-surface-strong, var(--axi-bg-page)) 72%, transparent);
 }
 
 .wb-settings-page__workspace .axi-master-list {
-  gap: 10px;
+  gap: var(--axi-space-2-5, 10px);
 }
 
 .wb-settings-page__workspace .axi-master-list__header {
   min-height: 30px;
-  padding: 0 2px 8px;
+  padding: 0 2px var(--axi-space-2, 8px);
 }
 
 .wb-settings-page__workspace .axi-master-list__header strong {
@@ -39,7 +39,7 @@
 
 .wb-settings-page__workspace .axi-master-list__item {
   min-height: 48px;
-  padding: 8px 10px;
+  padding: var(--axi-space-2, 8px) var(--axi-space-2-5, 10px);
 }
 
 .wb-settings-page__content {
@@ -52,7 +52,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
   margin-bottom: 12px;
 }
 
@@ -60,25 +60,25 @@
   margin: 0;
   color: var(--axi-text, #f5f7fb);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--axi-font-weight-semibold, 600);
   line-height: 1.4;
 }
 
 .wb-settings-page__actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
 }
 
 .wb-settings-page__body {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
   min-width: 0;
 }
 
 .wb-settings-page .axi-table-group {
-  border-radius: 6px;
+  border-radius: var(--axi-radius-md, 6px);
 }
 
 .wb-settings-page .ant-descriptions-item-label {

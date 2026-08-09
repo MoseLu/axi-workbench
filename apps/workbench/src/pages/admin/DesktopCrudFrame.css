@@ -1,12 +1,12 @@
 .wb-crud-page {
   min-height: 100%;
-  padding: 12px 14px 20px;
+  padding: var(--axi-space-3, 12px) 14px 20px;
   color: var(--axi-text, #f5f7fb);
 }
 
 .wb-crud-page__layout {
   min-height: 100%;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
 }
 
 .wb-crud-page__layout .axi-crud-layout__body > * {
@@ -25,7 +25,7 @@
 .wb-crud-page__layout .axi-crud-layout__body {
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: var(--axi-space-2-5, 10px);
 }
 
 /* 无 footer 时隐藏空分页行；有 footer 时展示 Cool Admin 底栏 */
@@ -46,13 +46,13 @@
 .wb-crud-page__context {
   color: var(--axi-text, #f5f7fb);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 /* —— Cool Admin 密度：工具栏 —— */
 .wb-crud-page .axi-crud-layout__toolbar {
   min-height: 40px;
-  gap: 10px;
+  gap: var(--axi-space-2-5, 10px);
 }
 
 .wb-crud-page .axi-crud-layout__toolbar-start,
@@ -60,7 +60,7 @@
 .wb-crud-page .axi-crud-layout__action-group,
 .wb-crud-page .axi-crud-layout__filter-fields,
 .wb-crud-page .axi-crud-layout__filter-actions {
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
 }
 
 .wb-crud-page .axi-crud-layout__toolbar .ant-btn {
@@ -84,7 +84,7 @@
 .wb-crud-query-cluster {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
 }
 
 .wb-crud-query-cluster .ant-select {
@@ -114,7 +114,7 @@
 .wb-crud-page .axi-table-group,
 .wb-crud-page .axi-filter-group {
   border-color: var(--axi-layout-border, var(--axi-border));
-  border-radius: 8px;
+  border-radius: var(--axi-radius-lg, 8px);
   background: var(--axi-layout-surface, var(--axi-bg-surface));
   overflow: hidden;
 }
@@ -127,7 +127,7 @@
 
 .wb-crud-page .axi-table-group__title {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 .wb-crud-page .axi-table-group__description {
@@ -138,13 +138,13 @@
 .wb-crud-page .axi-table-actions {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--axi-space-1, 4px);
 }
 
 .wb-crud-page .axi-table-action {
   height: 28px;
-  padding: 0 10px;
-  border-radius: 4px;
+  padding: 0 var(--axi-space-2-5, 10px);
+  border-radius: var(--axi-radius-sm, 4px);
   font-size: 13px;
   line-height: 26px;
   border: 1px solid var(--axi-layout-border, rgba(255, 255, 255, 0.12));
@@ -169,7 +169,7 @@
 
 /* 表格内分页贴 Cool Admin：右对齐、共 N 条 */
 .wb-crud-page .ant-pagination {
-  margin: 12px 12px 4px !important;
+  margin: var(--axi-space-3, 12px) var(--axi-space-3, 12px) var(--axi-space-1, 4px) !important;
   justify-content: flex-end;
 }
 
@@ -182,7 +182,7 @@
   min-height: min(420px, calc(100vh - 200px));
   align-content: center;
   justify-items: center;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
   padding: 28px;
   color: var(--axi-muted, rgba(255, 255, 255, .58));
   text-align: center;
@@ -195,7 +195,7 @@
 .wb-control-plane-state strong {
   color: var(--axi-text, #f5f7fb);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 .wb-control-plane-state p {

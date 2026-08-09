@@ -1,7 +1,7 @@
 .wb-me-overview__profile {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
   min-height: 64px;
   margin-bottom: 10px;
 }
@@ -45,5 +45,5 @@
 .wb-me-overview__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
 }

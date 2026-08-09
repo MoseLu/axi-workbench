@@ -1,7 +1,7 @@
 .workspace-crud__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
 }
 
 .workspace-crud__tasks {

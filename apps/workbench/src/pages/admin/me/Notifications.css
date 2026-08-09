@@ -1,7 +1,7 @@
 .wb-notification-center__state {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
   min-height: 112px;
   justify-content: center;
   width: 100%;
@@ -25,7 +25,7 @@
 
 .wb-notification-center__copy strong {
   color: var(--axi-text, #f5f7fb);
-  font-weight: 600;
+  font-weight: var(--axi-font-weight-semibold, 600);
 }
 
 .wb-notification-center__copy small {

@@ -1,5 +1,5 @@
 .wb-theme__description {
-  margin: 12px 0 0;
+  margin: var(--axi-space-3, 12px) 0 0;
   color: var(--axi-muted, rgba(255, 255, 255, .58));
   font-size: 12px;
 }

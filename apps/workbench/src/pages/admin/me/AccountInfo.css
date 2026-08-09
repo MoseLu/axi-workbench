@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: var(--axi-space-3, 12px);
   margin-bottom: 14px;
 }
 
@@ -23,7 +23,7 @@
 .wb-account__identity > div {
   display: grid;
   min-width: 0;
-  gap: 4px;
+  gap: var(--axi-space-1, 4px);
 }
 
 .wb-account__identity strong,
@@ -52,7 +52,7 @@
 
 .wb-account__edit-field {
   display: grid;
-  gap: 8px;
+  gap: var(--axi-space-2, 8px);
   color: var(--axi-text, #f5f7fb);
   font-size: 13px;
 }

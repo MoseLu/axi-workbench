@@ -1,6 +1,6 @@
 .authority-status {
   display: grid;
-  gap: 10px;
+  gap: var(--axi-space-2-5, 10px);
 }
 
 .authority-status__alert {
