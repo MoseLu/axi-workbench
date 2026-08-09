@@ -279,7 +279,7 @@ body {
 .wb-nav-badge--dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--axi-radius-full, 999px);
   background: var(--wb-badge);
   transform: translate(-30%, 0);
 }
@@ -291,7 +291,7 @@ body {
   min-width: 16px;
   height: 16px;
   padding: 0 var(--axi-space-1, 4px);
-  border-radius: 999px;
+  border-radius: var(--axi-radius-full, 999px);
   color: var(--axi-text-inverse, #fff);
   background: var(--wb-badge);
   font-size: 10px;

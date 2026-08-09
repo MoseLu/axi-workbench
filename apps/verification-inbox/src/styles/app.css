@@ -155,7 +155,7 @@
   inset-inline-end: 3px;
   width: 7px;
   min-height: 48px;
-  border-radius: 999px;
+  border-radius: var(--axi-radius-full, 999px);
   background: rgba(15, 23, 42, 0.2);
 }
 
@@ -178,7 +178,7 @@
   min-height: 24px;
   border: 0;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--axi-radius-full, 999px);
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -24,7 +24,7 @@
   width: 13px;
   height: 13px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--axi-radius-full, 999px);
   padding: 0;
   color: rgba(15, 23, 42, 0.68);
   display: inline-flex;
