@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n';
 import { WorkbenchIcon } from '../WorkbenchIcon';
 import './HeaderBar.css';
 
@@ -13,11 +14,12 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onToggleCollapse,
   onToggleRightSidebar,
 }) => {
+  const { t } = useI18n();
   return (
     <header className="app-topbar">
       {/* Left: collapse button */}
       <div className="app-topbar__left">
-        <button className="app-topbar__icon-btn" onClick={onToggleCollapse} title="折叠菜单">
+        <button className="app-topbar__icon-btn" onClick={onToggleCollapse} title={t('layout.topbar.toggleCollapse')}>
           <WorkbenchIcon name={collapsed ? 'expand' : 'collapse'} />
         </button>
       </div>
@@ -27,20 +29,20 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         <button className="app-topbar__icon-btn" title="GitHub">
           <WorkbenchIcon name="github" size={16} />
         </button>
-        <button className="app-topbar__icon-btn" title="国际化">
+        <button className="app-topbar__icon-btn" title={t('layout.topbar.language')}>
           <WorkbenchIcon name="language" size={16} />
         </button>
-        <button className="app-topbar__icon-btn" title="通知">
+        <button className="app-topbar__icon-btn" title={t('layout.topbar.notifications')}>
           <WorkbenchIcon name="notification" size={16} />
           <span className="app-topbar__badge">3</span>
         </button>
-        <button className="app-topbar__icon-btn" title="消息">
+        <button className="app-topbar__icon-btn" title={t('layout.topbar.messages')}>
           <WorkbenchIcon name="message" size={16} />
         </button>
-        <button className="app-topbar__icon-btn" title="偏好设置" onClick={onToggleRightSidebar}>
+        <button className="app-topbar__icon-btn" title={t('layout.topbar.preferences')} onClick={onToggleRightSidebar}>
           <WorkbenchIcon name="settings" size={16} />
         </button>
-        <button className="app-topbar__icon-btn" title="主题切换">
+        <button className="app-topbar__icon-btn" title={t('layout.topbar.theme')}>
           <WorkbenchIcon name="moon" size={16} />
         </button>
 
@@ -48,7 +50,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           <div className="app-topbar__avatar">
             <WorkbenchIcon name="account" />
           </div>
-          <span className="app-topbar__username">管理员</span>
+          <span className="app-topbar__username">{t('common.user.admin')}</span>
           <WorkbenchIcon name="down" className="app-topbar__user-arrow" />
         </div>
       </div>
