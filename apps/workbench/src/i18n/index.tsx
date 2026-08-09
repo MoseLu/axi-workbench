@@ -42,8 +42,10 @@ const I18nDictionaryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       t: (key: string, fallback?: string) => {
         const fromDict = dict[key];
         if (fromDict) return fromDict;
-        const fallbackDict = locale === 'zh-CN' ? messages['en-US'] : messages['zh-CN'];
-        return fallbackDict[key] ?? fallback ?? key;
+        // Align with cool-admin: Chinese is the universal fallback locale for
+        // any active locale, so missing keys surface the canonical Chinese
+        // wording instead of flipping between zh-CN and en-US.
+        return messages['zh-CN'][key] ?? messages['en-US'][key] ?? fallback ?? key;
       },
     };
   }, [locale]);
