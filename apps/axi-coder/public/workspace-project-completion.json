@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-08-07T06:52:07.714Z",
+  "generatedAt": "2026-08-10T11:51:07.515Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 35,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:legacy",
         "handoff:unready",
@@ -108,7 +108,7 @@
         "handoff:stale",
         "verify:PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py | npm --prefix infra/axi-agent-mcp test | npm --prefix infra/axi-agent-transport test | npm --prefix infra/codex-remote-bridge test | npm --prefix tools/axi-todo test",
         "health:test -f backend/app/api/workstation.py | test -f infra/axi-agent-mcp/package.json | test -f infra/axi-agent-transport/package.json | test -f tools/axi-todo/package.json",
-        "contracts:8"
+        "contracts:9"
       ],
       "remaining": [
         "Consolidate agent runtime completion evidence into project docs.",
@@ -137,11 +137,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "readOrder must contain at most 5 item(s)",
-          "readOrder[2] path does not exist: UPGRADE_v1.1.0.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -165,6 +161,7 @@
         "infra/axi-agent-transport/docs/adr/0001-axi-agent-transport.md",
         "infra/codex-remote-bridge/package.json",
         "tools/axi-todo/package.json",
+        "/Volumes/code/workspace/infra/axi-workspace-governance/contracts/task-execution-routing/v1/decision.schema.json",
         "/Volumes/code/workspace/docs/axi/merge-plans/AXI_AGENT_MERGE_PLAN.md"
       ]
     },
@@ -365,7 +362,7 @@
         "score": 10,
         "errors": [
           "readOrder must contain at most 5 item(s)",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -393,7 +390,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -430,7 +427,7 @@
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
           "decisions.changelog path does not exist: CHANGELOG.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -627,7 +624,7 @@
         "errors": [
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -703,7 +700,7 @@
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 57 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -832,7 +829,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -867,7 +864,7 @@
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -930,7 +927,7 @@
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -955,13 +952,13 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:python3 scripts/validate-index.py",
         "health:python3 scripts/validate-index.py",
-        "contracts:5"
+        "contracts:6"
       ],
       "remaining": [],
       "docs": {
@@ -982,11 +979,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "verification is stale: 57 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "python3 scripts/validate-index.py"
@@ -999,6 +994,7 @@
         "INDEX.md",
         "index/projects.json",
         "index/rules.json",
+        "index/task-execution-routing.v1.json",
         "scripts/validate-index.py"
       ]
     },
@@ -1051,7 +1047,7 @@
           "readOrder[4] path does not exist: MILESTONE.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -1089,7 +1085,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -1125,7 +1121,7 @@
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
           "decisions.changelog path does not exist: CHANGELOG.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -1218,7 +1214,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -1251,7 +1247,7 @@
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -1285,7 +1281,7 @@
         "handoff:verified",
         "verify:pnpm --dir apps/devsvc-dashboard typecheck | pnpm --dir apps/axi-coder typecheck | npm --prefix apps/verification-inbox run typecheck | python3 infra/fleet-console/scripts/fleetctl.py validate",
         "health:test -f package.json | test -d apps/devsvc-dashboard | test -d apps/axi-coder | test -d infra/fleet-console",
-        "contracts:10",
+        "contracts:11",
         "package-scripts:test,build"
       ],
       "remaining": [
@@ -1336,7 +1332,8 @@
         "apps/app-search-system/AGENTS.md",
         "infra/fleet-console/registry/machines.json",
         "tools/axi-app-cli/package.json",
-        "services/control-plane/src/control-plane.mjs"
+        "services/control-plane/src/control-plane.mjs",
+        "services/workflow-engine/services/executor.py"
       ]
     },
     {
@@ -1358,7 +1355,7 @@
         "handoff:stale",
         "verify:pnpm workspace:audit",
         "health:test -f /Volumes/code/workspace/infra/axi-workspace-governance/workspace.json",
-        "contracts:2"
+        "contracts:3"
       ],
       "remaining": [
         "Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves.",
@@ -1385,11 +1382,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "readOrder[3] path does not exist: TODO.md",
-          "readOrder[4] path does not exist: MILESTONE.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -1400,7 +1393,8 @@
       ],
       "contracts": [
         "/Volumes/code/workspace/infra/axi-workspace-governance/workspace.json",
-        "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md"
+        "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md",
+        "/Volumes/code/workspace/infra/axi-workspace-governance/contracts/task-execution-routing/v1/decision.schema.json"
       ]
     },
     {
@@ -1414,7 +1408,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1471,7 +1465,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1530,7 +1524,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1590,7 +1584,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1701,7 +1695,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1759,7 +1753,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1867,7 +1861,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -1904,7 +1898,7 @@
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -1932,7 +1926,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1993,7 +1987,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2050,7 +2044,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2107,7 +2101,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2171,7 +2165,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -2206,7 +2200,7 @@
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 50 days old (max 30)"
+          "verification is stale: 53 days old (max 30)"
         ]
       },
       "verify": [
@@ -2305,7 +2299,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-07T06:52:07.714Z",
+      "updatedAt": "2026-08-10T11:51:07.515Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",

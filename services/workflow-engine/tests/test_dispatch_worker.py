@@ -33,7 +33,10 @@ def test_dispatch_worker_executes_event_workflow_and_persists_outcome() -> None:
         stored = await repository.get(workflow.id, "alice")
         execution = await repository.get_execution(workflow.id, "alice")
         assert stored.status == WorkflowStatus.COMPLETED
-        assert execution.result == {"event": {"taskId": "task-1", "createdBy": "alice"}}
+        assert execution.result is not None
+        assert execution.result["event"] == {"taskId": "task-1", "createdBy": "alice"}
+        assert execution.result["_routing_decisions"] == {}
+        assert execution.result["_lifecycle_events"] == []
         assert repository.event_dispatches[("event-worker-1", workflow.id)]["status"] == "completed"
 
     asyncio.run(scenario())

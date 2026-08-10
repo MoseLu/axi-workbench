@@ -2,9 +2,9 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from models.workflow import (
     StepStatus,
@@ -17,6 +17,15 @@ from models.workflow import (
     WorkflowStep,
 )
 from services.http_client import HttpStepClient, HttpxStepClient
+from services.agent_runtime import (
+    BoundedAgentRuntime,
+    BoundedAgentRuntimeError,
+    UnavailableBoundedAgentRuntime,
+    action_digest,
+    decide_route,
+    validate_bounded_decision,
+)
+from services.approved_effects import ApprovedEffectExecutor, DenyApprovedEffectExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +49,11 @@ class WorkflowExecutor:
         http_allowed_hosts: set[str] | frozenset[str] = frozenset(),
         allow_insecure_http: bool = False,
         max_http_response_bytes: int = 1024 * 1024,
+        agent_runtime: BoundedAgentRuntime | None = None,
+        approved_effect_executor: ApprovedEffectExecutor | None = None,
+        bounded_agent_allowed_tools: set[str] | frozenset[str] = frozenset(
+            {"swarm_git_status", "swarm_validate_with_gates"}
+        ),
     ):
         self.step_timeout = max(0.1, float(step_timeout))
         self.http_client = http_client or HttpxStepClient(
@@ -47,6 +61,9 @@ class WorkflowExecutor:
             allow_insecure_http=allow_insecure_http,
             max_response_bytes=max_http_response_bytes,
         )
+        self.agent_runtime = agent_runtime or UnavailableBoundedAgentRuntime()
+        self.approved_effect_executor = approved_effect_executor or DenyApprovedEffectExecutor()
+        self.bounded_agent_allowed_tools = frozenset(bounded_agent_allowed_tools)
 
     async def execute_workflow(self, workflow: Workflow, event_payload: Any = None) -> WorkflowExecution:
         """Execute all steps in a workflow."""
@@ -57,7 +74,11 @@ class WorkflowExecutor:
             steps=[step.model_copy(deep=True) for step in workflow.steps],
         )
 
-        context: dict[str, Any] = {}
+        context: dict[str, Any] = {
+            "_routing_decisions": execution.routing_decisions,
+            "_lifecycle_events": execution.lifecycle_events,
+            "_approval_grants": {},
+        }
         if event_payload is not None:
             context["event"] = event_payload
 
@@ -75,6 +96,9 @@ class WorkflowExecutor:
         if execution.pending_approval.id != approval.id or approval.workflow_id != workflow.id:
             raise ValueError("approval does not belong to the pending workflow execution")
         context = dict(execution.result or {})
+        context.setdefault("_routing_decisions", execution.routing_decisions)
+        context.setdefault("_lifecycle_events", execution.lifecycle_events)
+        context.setdefault("_approval_grants", {})
         pending_index = next(
             (index for index, step in enumerate(execution.steps) if step.id == approval.step_id),
             None,
@@ -91,6 +115,29 @@ class WorkflowExecutor:
             execution.result = context
             execution.completed_at = datetime.now(UTC)
             return execution
+
+        if pending_step.step_type == StepType.APPROVED_EFFECT:
+            if not approval.action_digest:
+                raise ValueError("approved effect approval is missing its action digest")
+            grant = {
+                "grantId": str(uuid4()),
+                "approvalId": str(approval.id),
+                "actionDigest": approval.action_digest,
+                "permissions": approval.grant_permissions,
+                "expiresAt": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
+                "usedAt": None,
+            }
+            context.setdefault("_approval_grants", {})[str(pending_step.id)] = grant
+            pending_step.status = StepStatus.PENDING
+            self._record_lifecycle_event(
+                context,
+                event_type="approval_resumed",
+                producer="workflow-engine",
+                trace_id=self._trace_id_for_context(context),
+                idempotency_key=self._idempotency_key_for_context(context),
+                payload={"approvalId": str(approval.id), "actionDigest": approval.action_digest},
+            )
+            return await self._run_steps(execution, context, pending_index)
 
         pending_step.status = StepStatus.COMPLETED
         pending_step.result = {
@@ -173,6 +220,14 @@ class WorkflowExecutor:
                 if workflow_id is None:
                     raise ValueError("approval step requires a workflow execution")
                 return await self._execute_approval(step, workflow_id)
+            case StepType.BOUNDED_AGENT:
+                if workflow_id is None:
+                    raise ValueError("bounded Agent step requires a workflow execution")
+                return await self._execute_bounded_agent(step, context, workflow_id)
+            case StepType.APPROVED_EFFECT:
+                if workflow_id is None:
+                    raise ValueError("approved effect step requires a workflow execution")
+                return await self._execute_approved_effect(step, context, workflow_id)
             case _:
                 raise ValueError(f"Unknown step type: {step.step_type}")
 
@@ -291,6 +346,178 @@ class WorkflowExecutor:
             )
         )
 
+    async def _execute_bounded_agent(
+        self,
+        step: WorkflowStep,
+        context: dict[str, Any],
+        workflow_id: UUID,
+    ) -> dict[str, Any]:
+        """Run a typed, read-only Agent operation under a workflow-issued route."""
+        routing = step.config.get("routing", {})
+        decision = decide_route(routing, workflow_id=str(workflow_id), step_id=str(step.id))
+        context.setdefault("_routing_decisions", {})[str(step.id)] = decision
+        self._record_lifecycle_event(
+            context,
+            event_type="started",
+            producer="workflow-engine",
+            trace_id=decision["traceId"],
+            idempotency_key=decision["idempotencyKey"],
+            payload={"stepId": str(step.id), "route": decision["route"]},
+        )
+
+        if decision["route"] != "bounded_agent":
+            prompt = step.config.get("escalationPrompt", "Workflow routing requires human review before Agent execution.")
+            if not isinstance(prompt, str) or not prompt.strip():
+                raise ValueError("bounded Agent escalationPrompt must be a non-empty string")
+            raise ApprovalRequired(
+                WorkflowApproval(
+                    workflow_id=workflow_id,
+                    step_id=step.id,
+                    step_name=step.name,
+                    prompt=prompt.strip(),
+                    approvers=self._approvers(step),
+                )
+            )
+
+        try:
+            validate_bounded_decision(decision, allowed_tools=set(self.bounded_agent_allowed_tools))
+            request = step.config.get("request", {})
+            if not isinstance(request, dict):
+                raise BoundedAgentRuntimeError("bounded Agent request must be an object")
+            result = await self.agent_runtime.run(decision=decision, request=request)
+        except BoundedAgentRuntimeError as exc:
+            self._record_lifecycle_event(
+                context,
+                event_type="failed",
+                producer="workflow-engine",
+                trace_id=decision["traceId"],
+                idempotency_key=decision["idempotencyKey"],
+                payload={"stepId": str(step.id), "reasonCode": str(exc)},
+            )
+            raise
+
+        self._record_lifecycle_event(
+            context,
+            event_type="result",
+            producer="agent-platform",
+            trace_id=decision["traceId"],
+            idempotency_key=decision["idempotencyKey"],
+            payload={"stepId": str(step.id), "status": result.get("status", "succeeded")},
+        )
+        return {"routeDecision": decision, "agentResult": result}
+
+    async def _execute_approved_effect(
+        self,
+        step: WorkflowStep,
+        context: dict[str, Any],
+        workflow_id: UUID,
+    ) -> dict[str, Any]:
+        """Execute one digest-bound effect only after a durable approval grant."""
+        proposal_path = step.config.get("proposalFrom")
+        if not isinstance(proposal_path, str) or not proposal_path.strip():
+            raise ValueError("approved effect step requires proposalFrom")
+        exists, proposal = _resolve_path(context, proposal_path)
+        if not exists or not isinstance(proposal, dict):
+            raise ValueError("approved effect proposal was not found in workflow context")
+        action = proposal.get("action")
+        digest = proposal.get("actionDigest")
+        if not isinstance(action, dict) or not isinstance(digest, str) or digest != action_digest(action):
+            raise ValueError("approved effect proposal action digest is invalid")
+        kind = action.get("kind")
+        if not isinstance(kind, str) or not kind:
+            raise ValueError("approved effect action kind is required")
+        permissions = step.config.get("permissions", [f"effect:{kind}"])
+        if not isinstance(permissions, list) or any(not isinstance(item, str) or not item for item in permissions):
+            raise ValueError("approved effect permissions must be a non-empty string list")
+
+        grant = context.setdefault("_approval_grants", {}).get(str(step.id))
+        if grant is None:
+            prompt = step.config.get("prompt", f"Approve {kind} effect for workflow step {step.name}")
+            if not isinstance(prompt, str) or not prompt.strip():
+                raise ValueError("approved effect prompt must be a non-empty string")
+            raise ApprovalRequired(
+                WorkflowApproval(
+                    workflow_id=workflow_id,
+                    step_id=step.id,
+                    step_name=step.name,
+                    prompt=prompt.strip(),
+                    approvers=self._approvers(step),
+                    action_digest=digest,
+                    effect_action=action,
+                    grant_permissions=permissions,
+                )
+            )
+        if grant.get("actionDigest") != digest or grant.get("permissions") != permissions:
+            raise PermissionError("approval grant does not match the requested effect")
+        if grant.get("usedAt"):
+            raise PermissionError("approval grant has already been used")
+        try:
+            expires_at = datetime.fromisoformat(str(grant.get("expiresAt", "")).replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise PermissionError("approval grant expiry is invalid") from exc
+        if expires_at <= datetime.now(UTC):
+            raise PermissionError("approval grant has expired")
+
+        result = await self.approved_effect_executor.execute(action=action, grant=grant)
+        grant["usedAt"] = datetime.now(UTC).isoformat()
+        self._record_lifecycle_event(
+            context,
+            event_type="result",
+            producer="workflow-engine",
+            trace_id=self._trace_id_for_context(context),
+            idempotency_key=self._idempotency_key_for_context(context),
+            payload={"stepId": str(step.id), "actionDigest": digest, "grantId": grant["grantId"]},
+        )
+        return {"actionDigest": digest, "grantId": grant["grantId"], "effectResult": result}
+
+    @staticmethod
+    def _approvers(step: WorkflowStep) -> list[str]:
+        raw_approvers = step.config.get("approvers", [])
+        if not isinstance(raw_approvers, list) or any(not isinstance(item, str) or not item.strip() for item in raw_approvers):
+            raise ValueError("approval approvers must be an array of non-empty subjects")
+        return sorted(set(item.strip() for item in raw_approvers))
+
+    @staticmethod
+    def _record_lifecycle_event(
+        context: dict[str, Any],
+        *,
+        event_type: str,
+        producer: str,
+        trace_id: str,
+        idempotency_key: str,
+        payload: dict[str, Any],
+    ) -> None:
+        context.setdefault("_lifecycle_events", []).append(
+            {
+                "schemaVersion": "task-execution-routing/v1",
+                "eventType": event_type,
+                "eventId": str(uuid4()),
+                "producer": producer,
+                "traceId": trace_id,
+                "idempotencyKey": idempotency_key,
+                "occurredAt": datetime.now(UTC).isoformat(),
+                "payload": payload,
+            }
+        )
+
+    @staticmethod
+    def _trace_id_for_context(context: dict[str, Any]) -> str:
+        decisions = context.get("_routing_decisions", {})
+        if isinstance(decisions, dict):
+            for decision in decisions.values():
+                if isinstance(decision, dict) and isinstance(decision.get("traceId"), str):
+                    return decision["traceId"]
+        return "workflow-approval"
+
+    @staticmethod
+    def _idempotency_key_for_context(context: dict[str, Any]) -> str:
+        decisions = context.get("_routing_decisions", {})
+        if isinstance(decisions, dict):
+            for decision in decisions.values():
+                if isinstance(decision, dict) and isinstance(decision.get("idempotencyKey"), str):
+                    return decision["idempotencyKey"]
+        return "workflow-approval"
+
     async def _execute_parallel(self, step: WorkflowStep, context: dict[str, Any]) -> dict[str, Any]:
         """Execute independent child steps with a bounded worker pool.
 
@@ -324,8 +551,8 @@ class WorkflowExecutor:
                 raise ValueError(f"parallel child {name} has an unknown step type") from exc
             if step_type is StepType.PARALLEL:
                 raise ValueError("nested parallel steps are not supported")
-            if step_type is StepType.APPROVAL:
-                raise ValueError("approval steps are not supported inside parallel groups")
+            if step_type in {StepType.APPROVAL, StepType.BOUNDED_AGENT, StepType.APPROVED_EFFECT}:
+                raise ValueError("approval, bounded Agent, and approved effect steps are not supported inside parallel groups")
             child_config = raw_step.get("config", {})
             if not isinstance(child_config, dict):
                 raise ValueError(f"parallel child {name} config must be an object")

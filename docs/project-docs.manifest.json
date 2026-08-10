@@ -146,6 +146,30 @@
         "source": "control-plane environment"
       },
       {
+        "name": "WORKFLOW_AGENT_PLATFORM_URL",
+        "required": false,
+        "secret": false,
+        "source": "workflow-engine environment"
+      },
+      {
+        "name": "WORKFLOW_AGENT_ROUTE_CREDENTIAL_SECRET",
+        "required": true,
+        "secret": true,
+        "source": "workflow-engine environment"
+      },
+      {
+        "name": "WORKFLOW_AGENT_INTERNAL_EVENT_TOKEN",
+        "required": true,
+        "secret": true,
+        "source": "workflow-engine environment"
+      },
+      {
+        "name": "WORKFLOW_INTERNAL_SERVICE_TOKEN",
+        "required": true,
+        "secret": true,
+        "source": "workflow-engine environment"
+      },
+      {
         "name": "CONTROL_PLANE_PORT",
         "required": false,
         "secret": false,
@@ -175,13 +199,16 @@
       "Shared Workbench auth-session and locale foundation",
       "ZITADEL-backed OIDC and PKCE business API boundary",
       "Tenant-aware platform core with PostgreSQL RLS and transactional outbox",
-      "Axi App CLI scaffolding"
+      "Axi App CLI scaffolding",
+      "task-execution-routing/v1 workflow-agent orchestration"
     ],
     "consumes": [
       "Axi Agent Platform API when AXI_AGENT_PLATFORM_URL is configured",
       "CC-Connect memory database",
       "Codex CLI or Codex app-server runtime",
-      "Local infrastructure services declared in docker-compose.yml"
+      "Local infrastructure services declared in docker-compose.yml",
+      "Axi Agent Platform bounded read-only runtime",
+      "task-execution-routing/v1 governance contract"
     ],
     "files": [
       "packages/schemas/src/index.ts",
@@ -195,6 +222,9 @@
       "docs/adr/0001-zitadel-gin-platform-core.md",
       "services/control-plane/src/control-plane.mjs",
       "services/communication-gateway/src/gateway.mjs",
+      "services/workflow-engine/services/agent_runtime.py",
+      "services/workflow-engine/services/approved_effects.py",
+      "services/workflow-engine/routers/events.py",
       "docs/rules/epap-six-layer-sop.md",
       "docs/rules/epap-project-doc-agent-sop.md",
       "docs/rules/axi-workbench-boundary-sop.md",

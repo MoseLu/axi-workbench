@@ -55,15 +55,15 @@
 - `CC_CONNECT_MEMORY_DATABASE_URL`: required=no, secret=yes, source=local credentials or service environment
 - `CODEX_BIN`: required=no, secret=no, source=control-plane environment
 - `AXI_AGENT_PLATFORM_URL`: required=no, secret=no, source=control-plane environment
-- `CONTROL_PLANE_PORT`: required=no, secret=no, source=control-plane environment
-- `AXI_WORKSTATION_CONTROL_PLANE_URL`: required=no, secret=no, source=communication-gateway environment
-- `COMMUNICATION_GATEWAY_PORT`: required=no, secret=no, source=communication-gateway environment
+- `WORKFLOW_AGENT_PLATFORM_URL`: required=no, secret=no, source=workflow-engine environment
+- `WORKFLOW_AGENT_ROUTE_CREDENTIAL_SECRET`: required=yes, secret=yes, source=workflow-engine environment
+- `WORKFLOW_AGENT_INTERNAL_EVENT_TOKEN`: required=yes, secret=yes, source=workflow-engine environment
 
 ## Contracts
 
-- Provides: `IMEnvelope and AgentTask schemas`, `Six-layer control-plane resource snapshots`, `Communication gateway routing`, `Axi Dashboard application surfaces`, `Independent Web admin and mobile workbench applications`, `Shared Workbench auth-session and locale foundation`, `ZITADEL-backed OIDC and PKCE business API boundary`, `Tenant-aware platform core with PostgreSQL RLS and transactional outbox`, `Axi App CLI scaffolding`
-- Consumes: `Axi Agent Platform API when AXI_AGENT_PLATFORM_URL is configured`, `CC-Connect memory database`, `Codex CLI or Codex app-server runtime`, `Local infrastructure services declared in docker-compose.yml`
-- Contract files: `packages/schemas/src/index.ts`, `packages/workbench-foundation/src/index.ts`, `apps/workbench/src/layouts/MainLayout.tsx`, `apps/workbench-mobile/src/layouts/MobileShell.tsx`, `services/api-gateway/cmd/gateway/main.go`, `services/identity-adapter/cmd/identity-adapter/main.go`, `services/platform-core/cmd/platform-core/main.go`, `infra/helm/axi-workbench-platform/Chart.yaml`, `docs/adr/0001-zitadel-gin-platform-core.md`, `services/control-plane/src/control-plane.mjs`, `services/communication-gateway/src/gateway.mjs`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/epap-project-doc-agent-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `scripts/check-workbench-boundaries.mjs`
+- Provides: `IMEnvelope and AgentTask schemas`, `Six-layer control-plane resource snapshots`, `Communication gateway routing`, `Axi Dashboard application surfaces`, `Independent Web admin and mobile workbench applications`, `Shared Workbench auth-session and locale foundation`, `ZITADEL-backed OIDC and PKCE business API boundary`, `Tenant-aware platform core with PostgreSQL RLS and transactional outbox`, `Axi App CLI scaffolding`, `task-execution-routing/v1 workflow-agent orchestration`
+- Consumes: `Axi Agent Platform API when AXI_AGENT_PLATFORM_URL is configured`, `CC-Connect memory database`, `Codex CLI or Codex app-server runtime`, `Local infrastructure services declared in docker-compose.yml`, `Axi Agent Platform bounded read-only runtime`, `task-execution-routing/v1 governance contract`
+- Contract files: `packages/schemas/src/index.ts`, `packages/workbench-foundation/src/index.ts`, `apps/workbench/src/layouts/MainLayout.tsx`, `apps/workbench-mobile/src/layouts/MobileShell.tsx`, `services/api-gateway/cmd/gateway/main.go`, `services/identity-adapter/cmd/identity-adapter/main.go`, `services/platform-core/cmd/platform-core/main.go`, `infra/helm/axi-workbench-platform/Chart.yaml`, `docs/adr/0001-zitadel-gin-platform-core.md`, `services/control-plane/src/control-plane.mjs`, `services/communication-gateway/src/gateway.mjs`, `services/workflow-engine/services/agent_runtime.py`, `services/workflow-engine/services/approved_effects.py`, `services/workflow-engine/routers/events.py`, `docs/rules/epap-six-layer-sop.md`, `docs/rules/epap-project-doc-agent-sop.md`, `docs/rules/axi-workbench-boundary-sop.md`, `scripts/check-workbench-boundaries.mjs`
 
 ## Current Work
 

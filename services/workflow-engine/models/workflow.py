@@ -36,6 +36,8 @@ class StepType(str, Enum):
     PARALLEL = "parallel"
     HTTP = "http"
     APPROVAL = "approval"
+    BOUNDED_AGENT = "bounded_agent"
+    APPROVED_EFFECT = "approved_effect"
 
 
 class WorkflowApprovalStatus(str, Enum):
@@ -101,6 +103,9 @@ class WorkflowApproval(BaseModel):
     decided_at: datetime | None = Field(default=None, alias="decidedAt")
     decided_by: str | None = Field(default=None, alias="decidedBy")
     decision_comment: str | None = Field(default=None, alias="decisionComment")
+    action_digest: str | None = Field(default=None, alias="actionDigest", pattern=r"^[a-f0-9]{64}$")
+    effect_action: dict[str, Any] | None = Field(default=None, alias="effectAction")
+    grant_permissions: list[str] = Field(default_factory=list, alias="grantPermissions")
 
     def can_be_decided_by(self, subject: str) -> bool:
         return subject == self.owner_subject or subject in self.approvers
@@ -143,3 +148,5 @@ class WorkflowExecution(BaseModel):
     result: dict[str, Any] | None = None
     error: str | None = None
     pending_approval: WorkflowApproval | None = Field(default=None, alias="pendingApproval")
+    routing_decisions: dict[str, dict[str, Any]] = Field(default_factory=dict, alias="routingDecisions")
+    lifecycle_events: list[dict[str, Any]] = Field(default_factory=list, alias="lifecycleEvents")

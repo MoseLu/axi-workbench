@@ -53,8 +53,16 @@ CREATE TABLE IF NOT EXISTS axi_workflow.approvals (
     requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     decided_at TIMESTAMPTZ,
     decided_by TEXT,
-    decision_comment TEXT
+    decision_comment TEXT,
+    action_digest TEXT,
+    effect_action JSONB,
+    grant_permissions JSONB NOT NULL DEFAULT '[]'::jsonb
 );
+
+ALTER TABLE axi_workflow.approvals
+    ADD COLUMN IF NOT EXISTS action_digest TEXT,
+    ADD COLUMN IF NOT EXISTS effect_action JSONB,
+    ADD COLUMN IF NOT EXISTS grant_permissions JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE INDEX IF NOT EXISTS workflow_approvals_owner_status_idx
     ON axi_workflow.approvals (owner_subject, status, requested_at DESC);

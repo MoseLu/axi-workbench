@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-08-07T06:52:07.714Z",
+  "generatedAt": "2026-08-10T11:51:07.515Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
-    "total": 19,
-    "verified": 4,
+    "total": 20,
+    "verified": 5,
     "documented": 0,
     "stale": 13,
     "unready": 2
@@ -24,11 +24,7 @@
       "graphId": "axi-agent-platform",
       "graphMatched": true,
       "errors": [
-        "readOrder must contain at most 5 item(s)",
-        "readOrder[2] path does not exist: UPGRADE_v1.1.0.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-agent-platform/docs/state/VERIFICATION.md"
@@ -64,8 +60,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
         "active": [
           "SubAgent worktree lifecycle coverage",
           "SubAgent dashboard hardening",
@@ -125,7 +121,7 @@
       "graphMatched": true,
       "errors": [
         "readOrder must contain at most 5 item(s)",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
@@ -184,7 +180,7 @@
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
         "decisions.changelog path does not exist: CHANGELOG.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/state/VERIFICATION.md"
@@ -290,7 +286,7 @@
       "errors": [
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-notify/VERIFICATION.md"
@@ -353,7 +349,7 @@
         "readOrder[4] path does not exist: TDD.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 57 days old (max 30)"
+        "verification is stale: 60 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet/docs/state/VERIFICATION.md"
@@ -442,7 +438,7 @@
         "readOrder[4] path does not exist: PRD.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-proxy-companion/docs/state/VERIFICATION.md"
@@ -501,7 +497,7 @@
         "readOrder[4] path does not exist: PRD.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/infra/axi-registry/docs/state/VERIFICATION.md"
@@ -545,15 +541,13 @@
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-rules/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-rules/docs/HANDOFF.md",
       "graphId": "axi-rules",
       "graphMatched": true,
-      "errors": [
-        "verification is stale: 57 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Local authority for Axi agent routing, memory, safety, verification, and generated project/rule indexes, with a React visualization of the memory pipeline.",
       "commands": {
@@ -568,25 +562,27 @@
         ],
         "verify": [
           "make rules",
+          "python3 scripts/test-handoff-workflow.py --self-test",
           "pnpm --dir frontend typecheck",
           "pnpm --dir frontend test",
           "pnpm --dir frontend build"
         ],
         "smoke": [
-          "python3 scripts/validate-index.py"
+          "python3 scripts/validate-index.py",
+          "python3 scripts/test-handoff-workflow.py --self-test"
         ]
       },
       "currentWork": {
         "todo": "docs/state/TODO.md",
         "milestone": "docs/state/MILESTONE.md",
         "active": [
-          "Maintain the frontend contract track registered in todo/index.json.",
+          "Ship and harden scripts/handoff-workflow.py as the AR-HANDOFF-004 mechanical gate.",
           "Keep generated indexes synchronized with rule and workspace changes.",
-          "Keep AR-HANDOFF-004 aligned with workspace-project onboard, handoff-check, verify, deps, and consumers."
+          "Keep AR-HANDOFF-004 aligned with workspace-project onboard, handoff-check, and handoff-workflow."
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-06-11"
+      "lastVerifiedAt": "2026-08-10"
     },
     {
       "id": "axi-skills",
@@ -606,7 +602,7 @@
         "readOrder[4] path does not exist: MILESTONE.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
@@ -662,7 +658,7 @@
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
         "decisions.changelog path does not exist: CHANGELOG.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/docs/state/VERIFICATION.md"
@@ -765,7 +761,7 @@
         "readOrder[4] path does not exist: PRD.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Local Python tool that coordinates a Flask UI, Android device automation, mitmproxy capture, downloads, and SQLite tracking for personal-device video capture.",
@@ -820,7 +816,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [],
-      "summary": "Canonical AxiomaticWorld workbench for the six-layer control plane: independent Web and mobile applications plus a production Go API plane (ZITADEL, Gin gateway, identity adapter, modular platform core), shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+      "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
       "commands": {
         "setup": [
           "pnpm install"
@@ -854,9 +850,8 @@
         "todo": "docs/state/TODO.md",
         "milestone": "docs/state/MILESTONE.md",
         "active": [
-          "Keep the root documentation suite current",
           "Align verification commands with the real project stack",
-          "Keep Web Axi Dashboard Chrome and WeChat-style mobile composition independent",
+          "Implement the role-oriented multi-surface product contract: Web control center, Mobile role execution and professional tools; reconcile capability/action-policy ownership and navigation terminology while keeping the two app compositions independent",
           "Preserve ownership and cross-project boundaries",
           "Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment"
         ],
@@ -866,6 +861,53 @@
         ]
       },
       "lastVerifiedAt": "2026-08-07"
+    },
+    {
+      "id": "axi-workspace-governance",
+      "name": "Axi Workspace Governance",
+      "path": "/Volumes/code/workspace/infra/axi-workspace-governance",
+      "kind": "axi-workspace-governance",
+      "lifecycle": "active-governance",
+      "owner": "",
+      "readiness": "stale",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/HANDOFF.md",
+      "graphId": "axi-workspace-governance",
+      "graphMatched": true,
+      "errors": [
+        "verification is stale: 53 days old (max 30)"
+      ],
+      "warnings": [
+        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+      ],
+      "summary": "Workspace registry, relationship graph, generated catalog, zero-context handoff checks, and governance audit scripts.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [],
+        "health": [
+          "pnpm workspace:audit"
+        ],
+        "verify": [
+          "pnpm handoff:test",
+          "pnpm completion:test"
+        ],
+        "smoke": [
+          "pnpm handoff:test && pnpm completion:test"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
+          "Maintain the task-execution-routing/v1 workflow-first contract."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-06-18"
     },
     {
       "id": "ielts-vocab",
@@ -885,7 +927,7 @@
         "readOrder[4] path does not exist: TDD.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/ielts-vocab/docs/state/VERIFICATION.md"
@@ -940,7 +982,7 @@
         "readOrder[4] path does not exist: TDD.md",
         "currentWork.todo path does not exist: TODO.md",
         "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 50 days old (max 30)"
+        "verification is stale: 53 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Quasar and Vue 3 sports-management application skeleton with Pinia, Vue Router, Vue I18n, and a Capacitor Android wrapper; the backend directory is only a placeholder.",

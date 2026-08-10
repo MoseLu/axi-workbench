@@ -18,12 +18,14 @@ from models.workflow import (
 )
 from security import require_gateway_identity
 from services.executor import WorkflowExecutor
+from services.agent_runtime import HttpBoundedAgentRuntime, UnavailableBoundedAgentRuntime
 from services.repository import (
     MemoryWorkflowRepository,
     WorkflowAlreadyRunning,
     WorkflowApprovalConflict,
     WorkflowApprovalForbidden,
     WorkflowApprovalNotFound,
+    WorkflowCancellationConflict,
     WorkflowNotFound,
     WorkflowRepository,
     WorkflowWaitingApproval,
@@ -49,12 +51,31 @@ def _parse_http_allowed_hosts(value: str) -> frozenset[str]:
     return frozenset(item.strip().lower() for item in value.split(",") if item.strip())
 
 
+def _build_bounded_agent_runtime(settings):
+    if (
+        settings.agent_platform_url.strip()
+        and settings.agent_route_credential_secret
+        and settings.agent_internal_event_token
+    ):
+        return HttpBoundedAgentRuntime(
+            base_url=settings.agent_platform_url,
+            route_credential_secret=settings.agent_route_credential_secret,
+            internal_event_token=settings.agent_internal_event_token,
+            timeout_seconds=settings.agent_timeout_seconds,
+        )
+    return UnavailableBoundedAgentRuntime()
+
+
 _settings = get_settings()
 executor = WorkflowExecutor(
     step_timeout=_settings.step_timeout_seconds,
     http_allowed_hosts=_parse_http_allowed_hosts(_settings.http_allowed_hosts),
     allow_insecure_http=_settings.environment.lower() != "production",
     max_http_response_bytes=_settings.http_max_response_bytes,
+    agent_runtime=_build_bounded_agent_runtime(_settings),
+    bounded_agent_allowed_tools=frozenset(
+        item.strip() for item in _settings.agent_readonly_tools.split(",") if item.strip()
+    ),
 )
 
 
@@ -240,6 +261,45 @@ async def decide_workflow_approval(
     except WorkflowNotFound as exc:
         raise _not_found(workflow_id) from exc
     return execution
+
+
+@router.post("/{workflow_id}/cancel", response_model=WorkflowExecution)
+async def cancel_workflow_execution(
+    workflow_id: UUID,
+    comment: str | None = None,
+    subject: str = Depends(require_gateway_identity),
+) -> WorkflowExecution:
+    """Cancel a durable waiting execution before it can resume an approved effect."""
+    try:
+        execution = await repository.cancel_execution(workflow_id, subject, comment)
+        decisions = execution.routing_decisions
+        decision = next((item for item in decisions.values() if isinstance(item, dict)), None)
+        if isinstance(decision, dict):
+            lifecycle_event = {
+                "schemaVersion": "task-execution-routing/v1",
+                "eventType": "cancelled",
+                "producer": "workflow-engine",
+                "traceId": decision.get("traceId"),
+                "idempotencyKey": decision.get("idempotencyKey"),
+                "occurredAt": datetime.now(UTC).isoformat(),
+                "payload": {"reasonCode": "workflow_cancelled"},
+            }
+            execution.lifecycle_events.append(lifecycle_event)
+            if isinstance(execution.result, dict):
+                execution.result.setdefault("_lifecycle_events", []).append(lifecycle_event)
+        workflow = await repository.get(workflow_id, subject)
+        workflow.result = execution.result
+        workflow.updated_at = datetime.now(UTC)
+        await repository.update(workflow, subject)
+        await repository.save_execution(execution, subject)
+        return execution
+    except WorkflowCancellationConflict as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="workflow is not waiting for a cancellable approval",
+        ) from exc
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
 
 
 @router.get("/{workflow_id}/execution", response_model=WorkflowExecution)

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from models.workflow import Workflow, WorkflowExecution, WorkflowStatus
+from models.workflow import Workflow, WorkflowApproval, WorkflowExecution, WorkflowStatus, WorkflowStep
 from services.repository import MemoryWorkflowRepository, WorkflowAlreadyRunning, WorkflowNotFound
 
 
@@ -74,5 +74,42 @@ def test_memory_repository_persists_trigger_dispatch_for_event_owner() -> None:
             "event-2", "tenant-1", "task.created", {"createdBy": "alice"}, actor_subject="alice"
         )
         assert len(repository.event_dispatches) == 1
+
+    asyncio.run(scenario())
+
+
+def test_memory_repository_preserves_approved_effect_metadata() -> None:
+    async def scenario() -> None:
+        repository = MemoryWorkflowRepository()
+        workflow = await repository.create(
+            Workflow(name="approved effect", owner_subject="alice", steps=[WorkflowStep(name="publish proposal")])
+        )
+        await repository.claim_for_execution(workflow.id, "alice")
+        action_digest = "a" * 64
+        approval = WorkflowApproval(
+            workflow_id=workflow.id,
+            step_id=workflow.steps[0].id,
+            step_name="publish proposal",
+            prompt="Approve the exact proposed effect.",
+            action_digest=action_digest,
+            effect_action={"operation": "document_write", "documentId": "doc-1"},
+            grant_permissions=["documents.write"],
+        )
+        await repository.save_execution(
+            WorkflowExecution(
+                workflow_id=workflow.id,
+                status=WorkflowStatus.WAITING_APPROVAL,
+                started_at=datetime.now(UTC),
+                steps=[],
+                pending_approval=approval,
+            ),
+            "alice",
+        )
+
+        stored = await repository.get_execution(workflow.id, "alice")
+        assert stored.pending_approval is not None
+        assert stored.pending_approval.action_digest == action_digest
+        assert stored.pending_approval.effect_action == {"operation": "document_write", "documentId": "doc-1"}
+        assert stored.pending_approval.grant_permissions == ["documents.write"]
 
     asyncio.run(scenario())

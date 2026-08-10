@@ -83,6 +83,26 @@ class Settings(BaseSettings):
         default=1024 * 1024,
         validation_alias=AliasChoices("WORKFLOW_HTTP_MAX_RESPONSE_BYTES"),
     )
+    agent_platform_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("WORKFLOW_AGENT_PLATFORM_URL"),
+    )
+    agent_route_credential_secret: str = Field(
+        default="",
+        validation_alias=AliasChoices("WORKFLOW_AGENT_ROUTE_CREDENTIAL_SECRET"),
+    )
+    agent_internal_event_token: str = Field(
+        default="",
+        validation_alias=AliasChoices("WORKFLOW_AGENT_INTERNAL_EVENT_TOKEN"),
+    )
+    agent_timeout_seconds: float = Field(
+        default=30,
+        validation_alias=AliasChoices("WORKFLOW_AGENT_TIMEOUT_SECONDS"),
+    )
+    agent_readonly_tools: str = Field(
+        default="swarm_git_status,swarm_validate_with_gates",
+        validation_alias=AliasChoices("WORKFLOW_AGENT_READONLY_TOOLS"),
+    )
 
     class Config:
         env_file = ".env"

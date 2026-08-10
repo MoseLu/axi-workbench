@@ -12,3 +12,6 @@ class OutboxEvent(BaseModel):
     tenant_id: str = Field(default="", alias="tenantId", max_length=128)
     topic: str = Field(min_length=1, max_length=128)
     payload: Any = Field(default_factory=dict)
+    producer: str | None = Field(default=None, min_length=1, max_length=64)
+    trace_id: str | None = Field(default=None, alias="traceId", min_length=8, max_length=128)
+    idempotency_key: str | None = Field(default=None, alias="idempotencyKey", min_length=8, max_length=256)

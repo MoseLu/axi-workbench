@@ -6,6 +6,11 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
+- Added the workflow-first `task-execution-routing/v1` execution boundary:
+  typed `BOUNDED_AGENT` and `APPROVED_EFFECT` steps, durable digest-bound
+  approvals, cancellation, route decisions and authenticated Agent lifecycle
+  events. Generic HTTP steps and legacy Agent routes cannot bypass it.
+
 - Added the machine-checked multi-surface capability inventory and `pnpm check:capabilities` admission gate. It requires every current/new user capability to state its allowed actions, data source/status, A/B/C/D level, Owner, server authorization/revalidation, idempotency, audit, handoff and unsupported surface.
 - Added server-resolved domain approval scan contracts (`ApprovalScanPreview`, `MobileApprovalDecision`, `HandoffContext`), API-Gateway-only Mobile ingress, correlation-bound Web handoff continuation, schema/OpenAPI coverage, and audit/idempotency/revocation test coverage.
 - Added DevSvc Hosted App execution-boundary metadata for Fleet, Coder and Verification Inbox so Host discovery exposes Owner, authorization, audit and fallback without duplicating D-level execution.
