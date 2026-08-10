@@ -40,7 +40,29 @@
   gap: var(--axi-space-3, 12px);
 }
 
+.wb-account-page__avatar-preview-trigger {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.wb-account-page__avatar-preview-trigger:focus-visible {
+  outline: 2px solid var(--axi-primary, #4169e1);
+  outline-offset: 3px;
+}
+
+.wb-account-page__avatar-preview-trigger:hover .wb-account-page__avatar {
+  filter: brightness(1.08);
+}
+
 .wb-account-page__avatar {
+  display: block;
   width: 64px;
   height: 64px;
   border-radius: 50%;

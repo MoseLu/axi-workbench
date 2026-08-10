@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Button, Form, Input, message } from 'antd';
+import { AxiSvgIcon } from '@axi/core';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useI18n } from '../../../i18n';
 import {
@@ -24,7 +26,11 @@ const AccountInfo: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile>(() => loadProfile(user));
   const [nickname, setNickname] = useState(profile.nickname);
   const [avatarDataUrl, setAvatarDataUrl] = useState(profile.avatarDataUrl);
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const avatarPreviewTriggerRef = useRef<HTMLButtonElement>(null);
+  const avatarPreviewCloseRef = useRef<HTMLButtonElement>(null);
+  const avatarPreviewDialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onChange = () => {
@@ -53,6 +59,47 @@ const AccountInfo: React.FC = () => {
     }
   };
 
+  const closeAvatarPreview = useCallback(() => {
+    setAvatarPreviewOpen(false);
+    window.requestAnimationFrame(() => avatarPreviewTriggerRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!avatarPreviewOpen) return;
+
+    const frame = window.requestAnimationFrame(() => avatarPreviewCloseRef.current?.focus());
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeAvatarPreview();
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [avatarPreviewOpen, closeAvatarPreview]);
+
+  const onPreviewKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+
+    const focusable = Array.from(
+      avatarPreviewDialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? [],
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   const save = () => {
     const nextNickname = nickname.trim();
     if (!nextNickname) {
@@ -75,7 +122,17 @@ const AccountInfo: React.FC = () => {
         <Form className="wb-account-page__form" layout="vertical" onFinish={save}>
           <Form.Item label={t('account.avatar.label')}>
             <div className="wb-account-page__avatar-field">
-              <img alt={t('account.avatar.alt')} className="wb-account-page__avatar" src={resolveAvatarSrc(avatarDataUrl)} />
+              <button
+                aria-haspopup="dialog"
+                aria-label={t('account.avatar.preview')}
+                className="wb-account-page__avatar-preview-trigger"
+                ref={avatarPreviewTriggerRef}
+                title={t('account.avatar.preview')}
+                type="button"
+                onClick={() => setAvatarPreviewOpen(true)}
+              >
+                <img alt={t('account.avatar.alt')} className="wb-account-page__avatar" src={resolveAvatarSrc(avatarDataUrl)} />
+              </button>
               <Button type="default" onClick={() => fileRef.current?.click()}>
                 {t('account.avatar.pick')}
               </Button>
@@ -117,6 +174,51 @@ const AccountInfo: React.FC = () => {
           </Form.Item>
         </Form>
       </section>
+
+      {avatarPreviewOpen && typeof document !== 'undefined'
+        ? createPortal(
+          <div
+            className="axi-dashboard-avatar-preview-layer"
+            role="presentation"
+            onMouseDown={closeAvatarPreview}
+          >
+            <div
+              aria-label={t('account.avatar.previewTitle')}
+              aria-modal="true"
+              className="axi-dashboard-avatar-preview-viewer"
+              ref={avatarPreviewDialogRef}
+              role="dialog"
+              onKeyDown={onPreviewKeyDown}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <header className="axi-dashboard-avatar-preview-header">
+                <button
+                  aria-label={t('account.avatar.previewClose')}
+                  ref={avatarPreviewCloseRef}
+                  type="button"
+                  onClick={closeAvatarPreview}
+                >
+                  <AxiSvgIcon name="close" size={15} />
+                </button>
+              </header>
+              <div className="axi-dashboard-avatar-preview-body">
+                <div className="axi-dashboard-avatar-preview-image">
+                  <img alt={t('account.avatar.alt')} src={resolveAvatarSrc(avatarDataUrl)} />
+                </div>
+                <button
+                  className="axi-dashboard-avatar-preview-change"
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <AxiSvgIcon name="upload" size={14} />
+                  <span>{t('account.avatar.pick')}</span>
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+        : null}
     </main>
   );
 };

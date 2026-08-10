@@ -375,6 +375,9 @@ const MainLayout: React.FC = () => {
           description: profile.email,
           imageSrc: resolveAvatarSrc(profile.avatarDataUrl),
           label: displayName,
+          previewCloseLabel: t('account.avatar.previewClose'),
+          previewLabel: t('account.avatar.preview'),
+          previewTitle: t('account.avatar.previewTitle'),
           menuItems: [
             {
               key: 'profile',
