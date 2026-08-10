@@ -1,3 +1,12 @@
+.wb-notification-page .wb-notification-center {
+  width: 100%;
+  min-width: 0;
+}
+
+.wb-notification-page .axi-table-group {
+  min-height: min(460px, calc(100vh - 190px));
+}
+
 .wb-notification-center__state {
   display: inline-flex;
   align-items: center;
@@ -7,6 +16,12 @@
   width: 100%;
   color: var(--axi-muted, rgba(255, 255, 255, .58));
   font-size: var(--axi-font-size-xs, 12px);
+}
+
+.wb-notification-center__empty {
+  display: grid;
+  min-height: min(360px, calc(100vh - 280px));
+  place-items: center;
 }
 
 .wb-notification-center__copy {

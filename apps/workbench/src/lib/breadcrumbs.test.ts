@@ -70,18 +70,18 @@ describe('resolveBreadcrumbs', () => {
     expect(chain[1]?.isActive).toBe(true);
   });
 
-  it('builds a three-level hierarchy for personal subpages', () => {
+  it('treats notification center as a standalone topbar utility page', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/me/notifications'));
-    expect(chain.map((c) => c.label)).toEqual(['账号与设置', '个人中心', '通知中心']);
-    expect(chain[1]?.path).toBe('/admin/me');
-    expect(chain[2]?.path).toBe('/admin/me/notifications');
-    expect(chain[2]?.isActive).toBe(true);
+    expect(chain.map((c) => c.label)).toEqual(['通知中心']);
+    expect(chain[0]?.path).toBe('/admin/me/notifications');
+    expect(chain[0]?.isActive).toBe(true);
   });
 
-  it('falls back to the registered personal center route', () => {
+  it('treats personal center as a standalone avatar-menu page', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/me'));
-    expect(chain.map((c) => c.label)).toEqual(['账号与设置', '个人中心']);
-    expect(chain[chain.length - 1]?.isActive).toBe(true);
+    expect(chain.map((c) => c.label)).toEqual(['个人中心']);
+    expect(chain[0]?.path).toBe('/admin/me');
+    expect(chain[0]?.isActive).toBe(true);
   });
 
   it('respects `match[]` aliases when the path is not a registered key', () => {

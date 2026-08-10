@@ -25,7 +25,7 @@ export const SEARCH_CORPUS: SearchHit[] = [
   { id: 'projects', kind: 'navigation', title: '项目组合', titleKey: 'nav.projects', subtitle: '跨项目筛选、比较与详情', subtitleKey: 'search.projects.subtitle', path: '/admin/project' },
   { id: 'workspace', kind: 'navigation', title: '工作项', titleKey: 'nav.tasks', subtitle: '受管任务与待处理审批队列', subtitleKey: 'search.tasks.subtitle', path: '/admin/task' },
   { id: 'team', kind: 'navigation', title: '团队', titleKey: 'nav.team', subtitle: '协作成员', subtitleKey: 'search.team.subtitle', path: '/admin/team' },
-  { id: 'profile', kind: 'navigation', title: '个人中心', titleKey: 'nav.crumb.profile', subtitle: '账号与设置', subtitleKey: 'search.profile.subtitle', path: '/admin/me' },
+  { id: 'profile', kind: 'utility', title: '个人中心', titleKey: 'nav.crumb.profile', subtitle: '个人资料', subtitleKey: 'search.profile.subtitle', path: '/admin/me' },
   { id: 'notifications', kind: 'utility', title: '通知中心', titleKey: 'nav.crumb.notifications', subtitle: '工作台提醒', subtitleKey: 'search.notifications.subtitle', path: '/admin/me/notifications' },
   { id: 'menu', kind: 'utility', title: '菜单配置', titleKey: 'nav.settings.menu.configure', subtitle: '导航入口管理', subtitleKey: 'search.menu.subtitle', path: '/admin/settings/menu' },
   { id: 'roles', kind: 'utility', title: '角色权限', titleKey: 'nav.settings.role.permission', subtitle: '权限事实源', subtitleKey: 'search.roles.subtitle', path: '/admin/settings/role' },

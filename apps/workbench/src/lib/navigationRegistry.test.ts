@@ -12,8 +12,6 @@ describe('navigationRegistry', () => {
       '/admin/team',
       '/admin/settings/menu',
       '/admin/settings/role',
-      '/admin/me',
-      '/admin/me/notifications',
     ]);
   });
 
@@ -25,6 +23,17 @@ describe('navigationRegistry', () => {
     expect(workbenchMenuRouteMap['/admin/settings/role']).toEqual({
       label: '角色列表',
       labelKey: 'nav.settings.role',
+    });
+  });
+
+  it('keeps profile and notifications as tab-addressable topbar utilities, not sidebar entries', () => {
+    expect(workbenchMenuRouteMap['/admin/me']).toEqual({
+      label: '个人中心',
+      labelKey: 'nav.crumb.profile',
+    });
+    expect(workbenchMenuRouteMap['/admin/me/notifications']).toEqual({
+      label: '通知中心',
+      labelKey: 'nav.crumb.notifications',
     });
   });
 });

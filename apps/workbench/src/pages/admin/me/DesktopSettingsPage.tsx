@@ -5,8 +5,6 @@ import '../DesktopCrudFrame.css';
 import './DesktopSettingsPage.css';
 
 const settingsItems: AxiMasterListItem[] = [
-  { key: '/admin/me', label: '个人中心', description: '账户概览与常用设置' },
-  { key: '/admin/me/notifications', label: '通知中心', description: '查看并处理工作台提醒' },
   { key: '/admin/me/theme', label: '主题外观', description: '界面显示偏好' },
   { key: '/admin/me/devices', label: '设备管理', description: '登录设备会话' },
 ];
@@ -18,7 +16,11 @@ type DesktopSettingsPageProps = {
   title: string;
 };
 
-/** 桌面端账户与设置工作区：左侧目录，右侧承载当前设置，而不是手机式二级页。 */
+/**
+ * Workbench preference workspace. Profile and notification pages deliberately
+ * do not use this component: they are topbar special pages, not settings-menu
+ * children.
+ */
 export function DesktopSettingsPage({ activeKey, actions, children, title }: DesktopSettingsPageProps) {
   const navigate = useNavigate();
 
@@ -31,7 +33,7 @@ export function DesktopSettingsPage({ activeKey, actions, children, title }: Des
             <AxiMasterList
               activeKey={activeKey}
               items={settingsItems}
-              title="账号与设置"
+              title="系统设置"
               onSelect={(key) => navigate(key)}
             />
           )}

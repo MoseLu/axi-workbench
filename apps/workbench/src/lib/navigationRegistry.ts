@@ -2,9 +2,9 @@ import type { AxiDashboardNavGroup } from '@axi/shell';
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 
 /**
- * Canonical desktop navigation registration.  Both the application shell and
- * the settings page consume this definition so the UI never shows a separate
- * sample menu inventory.
+ * Canonical desktop navigation registration for the primary application
+ * sidebar. Profile and notification routes are intentionally absent: they are
+ * topbar utilities / special pages, not workbench menu destinations.
  *
  * Each group and item carries a Chinese label literal (used by tests and as
  * a literal fallback) plus an i18n `labelKey` consumed by renderers through
@@ -71,16 +71,6 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
       { key: '/admin/settings/role', label: '角色权限', labelKey: 'nav.settings.role.permission', iconName: axiWorkbenchIconMap.roles },
     ],
   },
-  {
-    key: 'account',
-    label: '账号与设置',
-    labelKey: 'nav.group.account',
-    iconName: axiWorkbenchIconMap.settings,
-    children: [
-      { key: '/admin/me', label: '个人中心', labelKey: 'nav.crumb.profile', iconName: axiWorkbenchIconMap.account },
-      { key: '/admin/me/notifications', label: '通知中心', labelKey: 'nav.crumb.notifications', iconName: axiWorkbenchIconMap.notification },
-    ],
-  },
 ];
 
 /**
@@ -110,7 +100,10 @@ export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
   '/admin/task': { label: '工作项', labelKey: 'nav.tasks' },
   '/admin/team': { label: '团队', labelKey: 'nav.team' },
   '/admin/handoff': { label: '跨端续办', labelKey: 'nav.handoff' },
+  // These routes open from the avatar menu and topbar notification action.
+  // They remain addressable as tabs without becoming sidebar menu entries.
   '/admin/me': { label: '个人中心', labelKey: 'nav.crumb.profile' },
+  '/admin/me/notifications': { label: '通知中心', labelKey: 'nav.crumb.notifications' },
   '/admin/settings/menu': { label: '菜单列表', labelKey: 'nav.settings.menu' },
   '/admin/settings/role': { label: '角色列表', labelKey: 'nav.settings.role' },
 };

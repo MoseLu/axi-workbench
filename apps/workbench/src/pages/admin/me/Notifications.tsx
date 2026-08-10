@@ -10,7 +10,7 @@ import {
   type WorkbenchNotification,
 } from '@axi/workbench-foundation';
 import { useI18n } from '../../../i18n';
-import { DesktopSettingsPage } from './DesktopSettingsPage';
+import { DesktopCrudFrame } from '../DesktopCrudFrame';
 import { formatNotificationTime } from './notificationPresentation';
 import './Notifications.css';
 
@@ -89,7 +89,7 @@ const Notifications: React.FC = () => {
   ];
 
   return (
-    <DesktopSettingsPage activeKey="/admin/me/notifications" title={t('notification.center')}>
+    <DesktopCrudFrame ariaLabel={t('notification.center')} className="wb-notification-page">
       <section
         aria-busy={inbox.isFetching || markRead.isPending || markAllRead.isPending}
         className="wb-notification-center"
@@ -119,7 +119,9 @@ const Notifications: React.FC = () => {
             />
           ) : null}
           {!inbox.isPending && !inbox.isError && notifications.length === 0 ? (
-            <Empty description={t('notification.empty')} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <div className="wb-notification-center__empty">
+              <Empty description={t('notification.empty')} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            </div>
           ) : null}
           {notifications.length > 0 ? (
             <AxiTable
@@ -138,7 +140,7 @@ const Notifications: React.FC = () => {
           ) : null}
         </AxiTableGroup>
       </section>
-    </DesktopSettingsPage>
+    </DesktopCrudFrame>
   );
 };
 

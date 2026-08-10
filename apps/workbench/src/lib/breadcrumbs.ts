@@ -82,11 +82,10 @@ const ACCOUNT_PARENT: BreadcrumbNode = {
   icon: 'settings',
 };
 
-const PROFILE_PARENT: BreadcrumbNode = {
-  label: '个人中心',
-  labelKey: 'nav.crumb.profile',
-  icon: 'account',
-  path: '/admin/me',
+const PREFERENCES_PARENT: BreadcrumbNode = {
+  label: '系统设置',
+  labelKey: 'common.settings.title',
+  icon: 'settings',
 };
 
 export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
@@ -100,25 +99,23 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
     label: '个人中心',
     labelKey: 'nav.crumb.profile',
     icon: 'account',
-    parents: [ACCOUNT_PARENT],
   },
   '/admin/me/devices': {
     label: '设备管理',
     labelKey: 'nav.crumb.devices',
     icon: 'mobile',
-    parents: [ACCOUNT_PARENT, PROFILE_PARENT],
+    parents: [PREFERENCES_PARENT],
   },
   '/admin/me/notifications': {
     label: '通知中心',
     labelKey: 'nav.crumb.notifications',
     icon: 'notification',
-    parents: [ACCOUNT_PARENT, PROFILE_PARENT],
   },
   '/admin/me/theme': {
     label: '主题外观',
     labelKey: 'nav.crumb.theme',
     icon: 'settings',
-    parents: [ACCOUNT_PARENT, PROFILE_PARENT],
+    parents: [PREFERENCES_PARENT],
   },
   '/admin/settings/menu': {
     label: '菜单列表',
