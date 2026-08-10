@@ -46,5 +46,7 @@ describe('AccountInfo', () => {
     expect(markup).toContain('aria-haspopup="dialog"');
     expect(markup).toContain('aria-label="预览头像"');
     expect(markup).toContain('title="预览头像"');
+    expect(markup).toContain('wb-account-page__avatar-edit');
+    expect(markup).toContain('aria-label="选择头像"');
   });
 });

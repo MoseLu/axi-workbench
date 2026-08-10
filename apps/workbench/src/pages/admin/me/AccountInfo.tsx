@@ -122,20 +122,28 @@ const AccountInfo: React.FC = () => {
         <Form className="wb-account-page__form" layout="vertical" onFinish={save}>
           <Form.Item label={t('account.avatar.label')}>
             <div className="wb-account-page__avatar-field">
-              <button
-                aria-haspopup="dialog"
-                aria-label={t('account.avatar.preview')}
-                className="wb-account-page__avatar-preview-trigger"
-                ref={avatarPreviewTriggerRef}
-                title={t('account.avatar.preview')}
-                type="button"
-                onClick={() => setAvatarPreviewOpen(true)}
-              >
-                <img alt={t('account.avatar.alt')} className="wb-account-page__avatar" src={resolveAvatarSrc(avatarDataUrl)} />
-              </button>
-              <Button type="default" onClick={() => fileRef.current?.click()}>
-                {t('account.avatar.pick')}
-              </Button>
+              <div className="wb-account-page__avatar-control">
+                <button
+                  aria-haspopup="dialog"
+                  aria-label={t('account.avatar.preview')}
+                  className="wb-account-page__avatar-preview-trigger"
+                  ref={avatarPreviewTriggerRef}
+                  title={t('account.avatar.preview')}
+                  type="button"
+                  onClick={() => setAvatarPreviewOpen(true)}
+                >
+                  <img alt={t('account.avatar.alt')} className="wb-account-page__avatar" src={resolveAvatarSrc(avatarDataUrl)} />
+                </button>
+                <button
+                  aria-label={t('account.avatar.pick')}
+                  className="wb-account-page__avatar-edit"
+                  title={t('account.avatar.pick')}
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <AxiSvgIcon name="edit" size={14} />
+                </button>
+              </div>
               <input
                 ref={fileRef}
                 accept="image/*"
