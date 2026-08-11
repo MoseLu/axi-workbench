@@ -182,6 +182,14 @@ func TestProductionRequiresAPIResourceAudienceAndScope(t *testing.T) {
 	}
 }
 
+func TestProductionRequiresRedisURL(t *testing.T) {
+	cfg := productionConfigForTest()
+	cfg.Identity.RedisURL = ""
+	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "GATEWAY_REDIS_URL") {
+		t.Fatalf("missing Redis URL error = %v", err)
+	}
+}
+
 func TestProductionRequiresDedicatedSpecialistCredentials(t *testing.T) {
 	tests := []struct {
 		name  string
