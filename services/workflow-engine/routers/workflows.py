@@ -10,6 +10,7 @@ from config import get_settings
 from models.workflow import (
     ApprovalDecisionRequest,
     Workflow,
+    WorkflowApproval,
     WorkflowApprovalStatus,
     WorkflowCreate,
     WorkflowExecution,
@@ -261,6 +262,18 @@ async def decide_workflow_approval(
     except WorkflowNotFound as exc:
         raise _not_found(workflow_id) from exc
     return execution
+
+
+@router.get("/{workflow_id}/approvals", response_model=list[WorkflowApproval])
+async def list_workflow_approvals(
+    workflow_id: UUID,
+    subject: str = Depends(require_gateway_identity),
+) -> list[WorkflowApproval]:
+    """Expose owner-scoped durable approval history for Workbench audit views."""
+    try:
+        return await repository.list_approvals(workflow_id, subject)
+    except WorkflowNotFound as exc:
+        raise _not_found(workflow_id) from exc
 
 
 @router.post("/{workflow_id}/cancel", response_model=WorkflowExecution)

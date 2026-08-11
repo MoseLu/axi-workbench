@@ -112,6 +112,14 @@ def test_workflow_approval_is_durable_and_resumes_only_for_allowed_approver() ->
                 headers=headers,
                 json={"decision": "approved"},
             )
+            approval_history = client.get(f"/workflows/{workflow_id}/approvals", headers=headers)
+            approval_history_for_other_subject = client.get(
+                f"/workflows/{workflow_id}/approvals",
+                headers={
+                    "X-Axi-Internal-Token": "workflow-test-token",
+                    "X-Axi-Subject": "carol",
+                },
+            )
         assert created.status_code == 201
         assert waiting.status_code == 200
         assert waiting.json()["status"] == "waiting_approval"
@@ -119,6 +127,28 @@ def test_workflow_approval_is_durable_and_resumes_only_for_allowed_approver() ->
         assert resumed_by_bob.status_code == 200
         assert resumed_by_bob.json()["status"] == "completed"
         assert duplicate.status_code == 409
+        assert approval_history.status_code == 200
+        assert approval_history_for_other_subject.status_code == 404
+        approval_records = approval_history.json()
+        assert len(approval_records) == 1
+        assert approval_records[0] == {
+            "id": approval_id,
+            "workflowId": workflow_id,
+            "stepId": waiting.json()["pendingApproval"]["stepId"],
+            "stepName": "release-approval",
+            "prompt": "Approve release",
+            "approvers": ["alice", "bob"],
+            "status": "approved",
+            "requestedAt": approval_records[0]["requestedAt"],
+            "decidedAt": approval_records[0]["decidedAt"],
+            "decidedBy": "bob",
+            "decisionComment": "approved",
+            "actionDigest": None,
+            "effectAction": None,
+            "grantPermissions": [],
+        }
+        assert approval_records[0]["requestedAt"]
+        assert approval_records[0]["decidedAt"]
     finally:
         from routers.workflows import executing_workflows, get_repository, workflows_db
 

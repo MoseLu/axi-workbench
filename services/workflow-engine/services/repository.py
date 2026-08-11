@@ -103,6 +103,11 @@ class WorkflowRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def list_approvals(self, workflow_id: UUID, subject: str) -> list[WorkflowApproval]:
+        """Return the durable approval history for one workflow owned by the subject."""
+        raise NotImplementedError
+
+    @abstractmethod
     async def cancel_execution(
         self,
         workflow_id: UUID,
@@ -277,6 +282,18 @@ class MemoryWorkflowRepository(WorkflowRepository):
             if workflow is None or workflow.owner_subject != subject or execution is None:
                 raise WorkflowNotFound
             return execution.model_copy(deep=True)
+
+    async def list_approvals(self, workflow_id: UUID, subject: str) -> list[WorkflowApproval]:
+        async with self._lock:
+            workflow = self.workflows.get(workflow_id)
+            if workflow is None or workflow.owner_subject != subject:
+                raise WorkflowNotFound
+            approvals = [
+                approval.model_copy(deep=True)
+                for approval in self.approvals.values()
+                if approval.workflow_id == workflow_id and approval.owner_subject == subject
+            ]
+            return sorted(approvals, key=lambda approval: (approval.requested_at, str(approval.id)), reverse=True)
 
     async def cancel_execution(
         self,
@@ -790,6 +807,26 @@ class PostgresWorkflowRepository(WorkflowRepository):
         if row is None:
             raise WorkflowNotFound
         return _execution_from_row(row)
+
+    async def list_approvals(self, workflow_id: UUID, subject: str) -> list[WorkflowApproval]:
+        # Check the owning workflow first so an unknown or unauthorized ID is
+        # not indistinguishable from a workflow with no approvals.
+        await self.get(workflow_id, subject)
+        async with self.pool.connection() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(
+                    """
+                    SELECT id, workflow_id, step_id, owner_subject, step_name, prompt,
+                           approvers, status, requested_at, decided_at, decided_by, decision_comment,
+                           action_digest, effect_action, grant_permissions
+                    FROM axi_workflow.approvals
+                    WHERE workflow_id = %s AND owner_subject = %s
+                    ORDER BY requested_at DESC, id DESC
+                    """,
+                    (workflow_id, subject),
+                )
+                rows = await cursor.fetchall()
+        return [_approval_from_row(row) for row in rows]
 
     async def cancel_execution(
         self,

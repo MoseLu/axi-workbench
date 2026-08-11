@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Button, Input, Segmented, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
-import { useControlSnapshot } from '@epap/api-client';
+import { useControlSnapshot, useWorkflowEngineWorkflows } from '@epap/api-client';
 import { useI18n } from '../../i18n';
 import {
   getApprovalRiskLabel,
@@ -14,6 +14,7 @@ import {
 } from '../workspaceRegistry';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';
+import { WorkflowEffectsPanel } from './WorkflowEffectsPanel';
 import {
   filterApprovalRows,
   filterTaskRows,
@@ -36,6 +37,7 @@ const Workspace: React.FC = () => {
   const navigate = useNavigate();
   const { locale, t } = useI18n();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
+  const workflowQuery = useWorkflowEngineWorkflows();
   const [filter, setFilter] = useState<WorkQueueFilter>('all');
   const [query, setQuery] = useState('');
   const projects = useMemo(
@@ -143,8 +145,12 @@ const Workspace: React.FC = () => {
             value={filter}
             onChange={(value) => setFilter(value)}
           />
-          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>
-            {isFetching ? t('workspace.refreshing') : t('workspace.refresh')}
+          <Button
+            disabled={isFetching || workflowQuery.isFetching}
+            size="small"
+            onClick={() => void Promise.all([refetch(), workflowQuery.refetch()])}
+          >
+            {isFetching || workflowQuery.isFetching ? t('workspace.refreshing') : t('workspace.refresh')}
           </Button>
         </Space>
       )}
@@ -179,6 +185,11 @@ const Workspace: React.FC = () => {
           </AxiTableGroup>
         </div>
       )}
+      <WorkflowEffectsPanel
+        error={workflowQuery.error}
+        isLoading={workflowQuery.isLoading}
+        workflows={workflowQuery.data ?? []}
+      />
     </DesktopCrudFrame>
   );
 };

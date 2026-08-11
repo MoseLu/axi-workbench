@@ -9,6 +9,9 @@ import type {
   ApprovalRequest,
   Project,
   ProjectListResponse,
+  WorkflowEngineApproval,
+  WorkflowEngineExecution,
+  WorkflowEngineWorkflow,
 } from "@axi/workstation-contracts"
 import type { AxiosRequestConfig } from "axios"
 
@@ -60,6 +63,75 @@ export const useControlSnapshot = (options?: AxiosRequestConfig) => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 10_000,
+  })
+}
+
+// ============================================
+// Workflow Engine Hooks
+// ============================================
+
+const workflowEngineQueryKey = ["workflowEngine"] as const
+
+/**
+ * Workflow Engine stays behind the authenticated API Gateway.  Browser code
+ * never talks to the Python service's internal address directly.
+ */
+export const useWorkflowEngineWorkflows = (options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...workflowEngineQueryKey, "workflows"],
+    queryFn: () =>
+      apiClient
+        .get<WorkflowEngineWorkflow[]>("/api/v1/workflows", options)
+        .then((res) => res.data),
+    retry: 1,
+    staleTime: 10_000,
+  })
+}
+
+export const useWorkflowEngineExecution = (workflowId: string, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...workflowEngineQueryKey, "execution", workflowId],
+    enabled: Boolean(workflowId),
+    queryFn: () =>
+      apiClient
+        .get<WorkflowEngineExecution>(`/api/v1/workflows/${encodeURIComponent(workflowId)}/execution`, options)
+        .then((res) => res.data),
+    retry: 1,
+  })
+}
+
+export const useWorkflowEngineApprovals = (workflowId: string, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...workflowEngineQueryKey, "approvals", workflowId],
+    enabled: Boolean(workflowId),
+    queryFn: () =>
+      apiClient
+        .get<WorkflowEngineApproval[]>(`/api/v1/workflows/${encodeURIComponent(workflowId)}/approvals`, options)
+        .then((res) => res.data),
+    retry: 1,
+  })
+}
+
+export const useDecideWorkflowEngineApproval = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ approvalId, comment, decision, workflowId }: {
+      approvalId: string
+      comment?: string
+      decision: "approved" | "rejected"
+      workflowId: string
+    }) =>
+      apiClient
+        .post<WorkflowEngineExecution>(
+          `/api/v1/workflows/${encodeURIComponent(workflowId)}/approvals/${encodeURIComponent(approvalId)}`,
+          { comment, decision },
+        )
+        .then((res) => res.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [...workflowEngineQueryKey, "workflows"] })
+      queryClient.invalidateQueries({ queryKey: [...workflowEngineQueryKey, "execution", variables.workflowId] })
+      queryClient.invalidateQueries({ queryKey: [...workflowEngineQueryKey, "approvals", variables.workflowId] })
+    },
   })
 }
 

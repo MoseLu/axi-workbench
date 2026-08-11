@@ -207,6 +207,9 @@ func TestGatewayRewritesSpecialistPathsAndUsesDedicatedTokens(t *testing.T) {
 	}{
 		{name: "file", method: http.MethodGet, gatewayPath: "/api/v1/files/download/report.pdf", downstreamPath: "/files/download/report.pdf", internalToken: "file-test-token"},
 		{name: "workflow", method: http.MethodPost, gatewayPath: "/api/v1/workflows/workflow-1/execute", downstreamPath: "/workflows/workflow-1/execute", internalToken: "workflow-test-token"},
+		{name: "workflow execution", method: http.MethodGet, gatewayPath: "/api/v1/workflows/workflow-1/execution", downstreamPath: "/workflows/workflow-1/execution", internalToken: "workflow-test-token"},
+		{name: "workflow approvals", method: http.MethodGet, gatewayPath: "/api/v1/workflows/workflow-1/approvals", downstreamPath: "/workflows/workflow-1/approvals", internalToken: "workflow-test-token"},
+		{name: "workflow approval decision", method: http.MethodPost, gatewayPath: "/api/v1/workflows/workflow-1/approvals/approval-1", downstreamPath: "/workflows/workflow-1/approvals/approval-1", internalToken: "workflow-test-token"},
 		{name: "notification", method: http.MethodGet, gatewayPath: "/api/v1/notifications/nav-badges", downstreamPath: "/api/v1/notifications/nav-badges", internalToken: "notification-test-token"},
 	}
 

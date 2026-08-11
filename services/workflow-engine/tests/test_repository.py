@@ -112,4 +112,12 @@ def test_memory_repository_preserves_approved_effect_metadata() -> None:
         assert stored.pending_approval.effect_action == {"operation": "document_write", "documentId": "doc-1"}
         assert stored.pending_approval.grant_permissions == ["documents.write"]
 
+        history = await repository.list_approvals(workflow.id, "alice")
+        assert len(history) == 1
+        assert history[0].effect_action == {"operation": "document_write", "documentId": "doc-1"}
+        assert history[0].grant_permissions == ["documents.write"]
+
+        with pytest.raises(WorkflowNotFound):
+            await repository.list_approvals(workflow.id, "bob")
+
     asyncio.run(scenario())
