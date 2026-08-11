@@ -567,6 +567,30 @@ func TestLogoutWithOriginalCookieRevokesMoreThanSixteenRotations(t *testing.T) {
 	}
 }
 
+func TestLogoutFailsClosedForMissingTombstoneSuccessor(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 14, 20, 0, 0, time.UTC)}
+	cfg := emailSessionConfig()
+	store := NewMemoryRecordStore(clock.Now)
+	service := NewForTest(cfg, store, nil, clock.Now)
+	if err := store.Set(context.Background(), sessionKey("predecessor"), supersessionTombstone(t, "missing-successor"), time.Hour); err != nil {
+		t.Fatalf("store predecessor tombstone: %v", err)
+	}
+	orphanSessionID, err := service.IssueEmailSession(context.Background(), "owner@axi.test")
+	if err != nil {
+		t.Fatalf("issue orphan successor session: %v", err)
+	}
+
+	if err := service.Logout(context.Background(), sessionRequest(cfg.SessionCookieName, "predecessor")); !errors.Is(err, ErrSessionStoreUnavailable) {
+		t.Fatalf("missing tombstone successor logout error = %v, want ErrSessionStoreUnavailable", err)
+	}
+	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, orphanSessionID)); err != nil {
+		t.Fatalf("orphan successor session was incorrectly revoked: %v", err)
+	}
+	if err := service.Logout(context.Background(), sessionRequest(cfg.SessionCookieName, "originally-missing")); err != nil {
+		t.Fatalf("originally missing cookie logout error = %v, want nil", err)
+	}
+}
+
 func TestLogoutRejectsCyclicOrMalformedTombstoneChains(t *testing.T) {
 	clock := &testClock{now: time.Date(2026, 8, 11, 14, 30, 0, 0, time.UTC)}
 	cfg := emailSessionConfig()
@@ -579,6 +603,20 @@ func TestLogoutRejectsCyclicOrMalformedTombstoneChains(t *testing.T) {
 		}
 		if err := service.Logout(context.Background(), sessionRequest(cfg.SessionCookieName, "loop")); !errors.Is(err, ErrSessionStoreUnavailable) {
 			t.Fatalf("self-referential tombstone logout error = %v, want ErrSessionStoreUnavailable", err)
+		}
+	})
+
+	t.Run("two node cycle", func(t *testing.T) {
+		store := NewMemoryRecordStore(clock.Now)
+		service := NewForTest(cfg, store, nil, clock.Now)
+		if err := store.Set(context.Background(), sessionKey("first"), supersessionTombstone(t, "second"), time.Hour); err != nil {
+			t.Fatalf("store first tombstone: %v", err)
+		}
+		if err := store.Set(context.Background(), sessionKey("second"), supersessionTombstone(t, "first"), time.Hour); err != nil {
+			t.Fatalf("store second tombstone: %v", err)
+		}
+		if err := service.Logout(context.Background(), sessionRequest(cfg.SessionCookieName, "first")); !errors.Is(err, ErrSessionStoreUnavailable) {
+			t.Fatalf("two-node tombstone cycle logout error = %v, want ErrSessionStoreUnavailable", err)
 		}
 	})
 

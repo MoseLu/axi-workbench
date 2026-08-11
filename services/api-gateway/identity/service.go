@@ -310,6 +310,7 @@ func (s *Service) Logout(ctx context.Context, request *http.Request) error {
 // expected-value check fails and cannot create a successor.
 func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 	currentID := sessionID
+	followedTombstone := false
 	visited := make(map[string]struct{})
 	for {
 		if currentID == "" {
@@ -323,6 +324,12 @@ func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 
 		record, err := s.records.Get(ctx, sessionKey(currentID))
 		if errors.Is(err, ErrRecordNotFound) {
+			if followedTombstone {
+				// An original cookie can be idempotently absent, but a missing
+				// successor means a rotation chain is incomplete and must not be
+				// reported as a successful revocation.
+				return ErrSessionStoreUnavailable
+			}
 			return nil
 		}
 		if err != nil {
@@ -342,6 +349,7 @@ func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 			if currentID == "" {
 				return ErrSessionStoreUnavailable
 			}
+			followedTombstone = true
 			continue
 		}
 
