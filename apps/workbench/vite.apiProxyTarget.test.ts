@@ -76,6 +76,12 @@ describe('selectApiProxyTarget', () => {
   ])('falls back to the default target for %s', (_description, apiBaseURL) => {
     expect(selectApiProxyTarget({ apiBaseURL })).toBe(DEFAULT_API_PROXY_TARGET);
   });
+
+  it('rejects a non-HTTP loopback API base URL instead of passing it to Vite', () => {
+    expect(() => selectApiProxyTarget({
+      apiBaseURL: 'ftp://127.0.0.1:39191',
+    })).toThrow(/VITE_API_BASE_URL/u);
+  });
 });
 
 describe('Workbench Vite API proxy configuration', () => {
@@ -107,6 +113,18 @@ describe('Workbench Vite API proxy configuration', () => {
       await expect(loadApiProxyTarget({
         VITE_API_PROXY_TARGET: 'not a URL',
       })).rejects.toThrow(/VITE_API_PROXY_TARGET/u);
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it('fails fast while loading Vite config for a non-HTTP loopback API base URL', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      await expect(loadApiProxyTarget({
+        VITE_API_BASE_URL: 'ftp://127.0.0.1:39191',
+        VITE_API_PROXY_TARGET: ' ',
+      })).rejects.toThrow(/VITE_API_BASE_URL/u);
     } finally {
       consoleError.mockRestore();
     }

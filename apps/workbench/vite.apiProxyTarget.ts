@@ -9,14 +9,25 @@ function isExactLoopbackHostname(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
 }
 
+function isHTTPURL(url: URL): boolean {
+  return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
 function normalizeLoopbackApiBaseURL(value: string | undefined): string | undefined {
   if (!value) return undefined;
+
+  let url: URL;
   try {
-    const url = new URL(value);
-    return isExactLoopbackHostname(url.hostname) ? url.href : undefined;
+    url = new URL(value);
   } catch {
     return undefined;
   }
+
+  if (!isExactLoopbackHostname(url.hostname)) return undefined;
+  if (!isHTTPURL(url)) {
+    throw new Error('VITE_API_BASE_URL must be a valid HTTP or HTTPS URL when it targets the local Vite proxy');
+  }
+  return url.href;
 }
 
 function normalizeExplicitApiProxyTarget(value: string | undefined): string | undefined {
@@ -25,7 +36,7 @@ function normalizeExplicitApiProxyTarget(value: string | undefined): string | un
 
   try {
     const url = new URL(target);
-    if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
+    if (isHTTPURL(url)) return url.href;
   } catch {
     // Invalid URL syntax falls through to the same actionable configuration error.
   }
