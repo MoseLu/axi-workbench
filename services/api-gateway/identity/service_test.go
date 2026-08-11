@@ -156,14 +156,28 @@ func (c *testClock) Advance(duration time.Duration) {
 	c.now = c.now.Add(duration)
 }
 
-func rotateRecord(t *testing.T, store RecordStore, oldKey string, expected []byte, newKey string, value []byte, ttl time.Duration) error {
+func rotateRecord(t *testing.T, store RecordStore, oldKey string, expected []byte, newKey string, value []byte, ttl time.Duration, tombstone []byte, tombstoneTTL time.Duration) error {
 	t.Helper()
-	return store.Rotate(context.Background(), oldKey, expected, newKey, value, ttl)
+	return store.Rotate(context.Background(), oldKey, expected, newKey, value, ttl, tombstone, tombstoneTTL)
 }
 
 func compareAndSetRecord(t *testing.T, store RecordStore, key string, expected, next []byte, ttl time.Duration) error {
 	t.Helper()
 	return store.CompareAndSet(context.Background(), key, expected, next, ttl)
+}
+
+func compareAndDeleteRecord(t *testing.T, store RecordStore, key string, expected []byte) error {
+	t.Helper()
+	return store.CompareAndDelete(context.Background(), key, expected)
+}
+
+func supersessionTombstone(t *testing.T, successor string) []byte {
+	t.Helper()
+	record, err := json.Marshal(map[string]string{"supersededBy": successor})
+	if err != nil {
+		t.Fatalf("encode supersession tombstone: %v", err)
+	}
+	return record
 }
 
 func restoreSession(t *testing.T, service *Service, request *http.Request) (Principal, string, error) {
@@ -215,12 +229,19 @@ func TestMemoryRecordStoreRotateAtomicallyReplacesOnlyLiveOldRecord(t *testing.T
 	}
 
 	newValue := []byte("new-value")
-	if err := rotateRecord(t, store, "old", expectedOldValue, "new", newValue, 30*time.Minute); err != nil {
+	if err := rotateRecord(t, store, "old", expectedOldValue, "new", newValue, 30*time.Minute, supersessionTombstone(t, "new"), time.Hour); err != nil {
 		t.Fatalf("rotate record: %v", err)
 	}
 	newValue[0] = 'x'
-	if _, err := store.Get(context.Background(), "old"); !errors.Is(err, ErrRecordNotFound) {
-		t.Fatalf("old record error = %v, want ErrRecordNotFound", err)
+	oldRecord, err := store.Get(context.Background(), "old")
+	if err != nil {
+		t.Fatalf("get tombstoned old record: %v", err)
+	}
+	var oldTombstone struct {
+		SupersededBy string `json:"supersededBy"`
+	}
+	if err := json.Unmarshal(oldRecord, &oldTombstone); err != nil || oldTombstone.SupersededBy != "new" {
+		t.Fatalf("old record tombstone = %#v, %v", oldTombstone, err)
 	}
 	got, err := store.Get(context.Background(), "new")
 	if err != nil {
@@ -230,7 +251,7 @@ func TestMemoryRecordStoreRotateAtomicallyReplacesOnlyLiveOldRecord(t *testing.T
 		t.Fatalf("rotated value = %q, want copied new value", got)
 	}
 
-	if err := rotateRecord(t, store, "missing", []byte("missing"), "absent-new", []byte("should-not-write"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+	if err := rotateRecord(t, store, "missing", []byte("missing"), "absent-new", []byte("should-not-write"), time.Hour, supersessionTombstone(t, "absent-new"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("missing old record error = %v, want ErrRecordNotFound", err)
 	}
 	if _, err := store.Get(context.Background(), "absent-new"); !errors.Is(err, ErrRecordNotFound) {
@@ -245,7 +266,7 @@ func TestMemoryRecordStoreRotateAtomicallyReplacesOnlyLiveOldRecord(t *testing.T
 		t.Fatalf("get expiring record before rotate: %v", err)
 	}
 	clock.Advance(time.Minute)
-	if err := rotateRecord(t, store, "expired", expectedExpiredValue, "expired-new", []byte("should-not-write"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+	if err := rotateRecord(t, store, "expired", expectedExpiredValue, "expired-new", []byte("should-not-write"), time.Hour, supersessionTombstone(t, "expired-new"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("expired old record error = %v, want ErrRecordNotFound", err)
 	}
 	if _, err := store.Get(context.Background(), "expired-new"); !errors.Is(err, ErrRecordNotFound) {
@@ -280,20 +301,55 @@ func TestMemoryRecordStoreConditionalWritesCannotReviveStaleRecords(t *testing.T
 	if err != nil {
 		t.Fatalf("get rotating record: %v", err)
 	}
-	if err := rotateRecord(t, store, "rotated", expectedRotated, "live-replacement", []byte("live-value"), time.Hour); err != nil {
+	if err := rotateRecord(t, store, "rotated", expectedRotated, "live-replacement", []byte("live-value"), time.Hour, supersessionTombstone(t, "live-replacement"), time.Hour); err != nil {
 		t.Fatalf("live rotate: %v", err)
 	}
-	if err := rotateRecord(t, store, "rotated", expectedRotated, "stale-replacement", []byte("stale-value"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+	if err := rotateRecord(t, store, "rotated", expectedRotated, "stale-replacement", []byte("stale-value"), time.Hour, supersessionTombstone(t, "stale-replacement"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("stale rotate error = %v, want ErrRecordNotFound", err)
 	}
-	if _, err := store.Get(context.Background(), "rotated"); !errors.Is(err, ErrRecordNotFound) {
-		t.Fatalf("rotated old record after stale rotate error = %v, want ErrRecordNotFound", err)
+	if err := compareAndSetRecord(t, store, "rotated", expectedRotated, []byte("stale-compare-and-set"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("stale compare-and-set after rotate error = %v, want ErrRecordNotFound", err)
+	}
+	rotatedRecord, err := store.Get(context.Background(), "rotated")
+	if err != nil {
+		t.Fatalf("get tombstoned old key after stale updates: %v", err)
+	}
+	if !bytes.Equal(rotatedRecord, supersessionTombstone(t, "live-replacement")) {
+		t.Fatalf("tombstoned old key was rewritten: %q", rotatedRecord)
 	}
 	if _, err := store.Get(context.Background(), "stale-replacement"); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("stale replacement error = %v, want ErrRecordNotFound", err)
 	}
 	if liveValue, err := store.Get(context.Background(), "live-replacement"); err != nil || string(liveValue) != "live-value" {
 		t.Fatalf("live replacement = %q, %v", liveValue, err)
+	}
+}
+
+func TestMemoryRecordStoreCompareAndDeleteRejectsStaleExpectedValue(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 9, 45, 0, 0, time.UTC)}
+	store := NewMemoryRecordStore(clock.Now)
+	if err := store.Set(context.Background(), "active", []byte("before"), time.Hour); err != nil {
+		t.Fatalf("set active record: %v", err)
+	}
+	expected, err := store.Get(context.Background(), "active")
+	if err != nil {
+		t.Fatalf("get active record: %v", err)
+	}
+	if err := store.Set(context.Background(), "active", []byte("after"), time.Hour); err != nil {
+		t.Fatalf("replace active record: %v", err)
+	}
+	if err := compareAndDeleteRecord(t, store, "active", expected); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("stale compare-and-delete error = %v, want ErrRecordNotFound", err)
+	}
+	current, err := store.Get(context.Background(), "active")
+	if err != nil || string(current) != "after" {
+		t.Fatalf("active record after stale compare-and-delete = %q, %v", current, err)
+	}
+	if err := compareAndDeleteRecord(t, store, "active", current); err != nil {
+		t.Fatalf("delete matching active record: %v", err)
+	}
+	if _, err := store.Get(context.Background(), "active"); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("deleted active record error = %v, want ErrRecordNotFound", err)
 	}
 }
 
@@ -414,14 +470,71 @@ func TestRestoreSessionRotatesOpaqueIDAndInvalidatesOldID(t *testing.T) {
 	if principal.Subject != "owner-subject" || newSessionID == "" || newSessionID == oldSessionID {
 		t.Fatalf("rotated principal/id = %#v / %q, old %q", principal, newSessionID, oldSessionID)
 	}
-	if _, err := store.Get(context.Background(), sessionKey(oldSessionID)); !errors.Is(err, ErrRecordNotFound) {
-		t.Fatalf("old rotated key error = %v, want ErrRecordNotFound", err)
+	if _, err := store.Get(context.Background(), sessionKey(oldSessionID)); err != nil {
+		t.Fatalf("get tombstoned old key: %v", err)
 	}
-	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, oldSessionID)); !errors.Is(err, ErrUnauthorized) {
+	oldRequest := sessionRequest(cfg.SessionCookieName, oldSessionID)
+	if _, err := service.Authenticate(context.Background(), oldRequest); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("old rotated cookie authentication error = %v, want ErrUnauthorized", err)
+	}
+	if _, _, err := restoreSession(t, service, oldRequest); !errors.Is(err, ErrUnauthorized) {
 		t.Fatalf("old rotated cookie restore error = %v, want ErrUnauthorized", err)
 	}
 	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, newSessionID)); err != nil {
 		t.Fatalf("new rotated cookie restore error = %v", err)
+	}
+}
+
+func TestLogoutWithRotatedPredecessorCookieRevokesSuccessor(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 13, 30, 0, 0, time.UTC)}
+	cfg := emailSessionConfig()
+	cfg.SessionRenewAfter = 5 * time.Minute
+	store := NewMemoryRecordStore(clock.Now)
+	service := NewForTest(cfg, store, nil, clock.Now)
+	oldSessionID, err := service.IssueEmailSession(context.Background(), "owner@axi.test")
+	if err != nil {
+		t.Fatalf("issue email session: %v", err)
+	}
+
+	clock.Advance(5 * time.Minute)
+	_, newSessionID, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, oldSessionID))
+	if err != nil || newSessionID == oldSessionID {
+		t.Fatalf("rotate session = %q, %v", newSessionID, err)
+	}
+	if err := service.Logout(context.Background(), sessionRequest(cfg.SessionCookieName, oldSessionID)); err != nil {
+		t.Fatalf("logout predecessor cookie: %v", err)
+	}
+	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, newSessionID)); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("successor after predecessor logout error = %v, want ErrUnauthorized", err)
+	}
+}
+
+func TestLogoutWithOriginalCookieRevokesRepeatedRotationChain(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 13, 45, 0, 0, time.UTC)}
+	cfg := emailSessionConfig()
+	cfg.SessionRenewAfter = 5 * time.Minute
+	store := NewMemoryRecordStore(clock.Now)
+	service := NewForTest(cfg, store, nil, clock.Now)
+	originalSessionID, err := service.IssueEmailSession(context.Background(), "owner@axi.test")
+	if err != nil {
+		t.Fatalf("issue email session: %v", err)
+	}
+
+	clock.Advance(5 * time.Minute)
+	_, firstSuccessorID, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, originalSessionID))
+	if err != nil || firstSuccessorID == originalSessionID {
+		t.Fatalf("first rotate = %q, %v", firstSuccessorID, err)
+	}
+	clock.Advance(5 * time.Minute)
+	_, finalSuccessorID, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, firstSuccessorID))
+	if err != nil || finalSuccessorID == firstSuccessorID {
+		t.Fatalf("second rotate = %q, %v", finalSuccessorID, err)
+	}
+	if err := service.Logout(context.Background(), sessionRequest(cfg.SessionCookieName, originalSessionID)); err != nil {
+		t.Fatalf("logout original predecessor: %v", err)
+	}
+	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, finalSuccessorID)); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("final successor after original logout error = %v, want ErrUnauthorized", err)
 	}
 }
 
@@ -593,11 +706,11 @@ func (s *failingRecordStore) CompareAndSet(ctx context.Context, key string, expe
 	return s.MemoryRecordStore.CompareAndSet(ctx, key, expected, next, ttl)
 }
 
-func (s *failingRecordStore) Rotate(ctx context.Context, oldKey string, expected []byte, newKey string, next []byte, ttl time.Duration) error {
+func (s *failingRecordStore) Rotate(ctx context.Context, oldKey string, expected []byte, newKey string, next []byte, ttl time.Duration, tombstone []byte, tombstoneTTL time.Duration) error {
 	if s.rotateErr != nil {
 		return s.rotateErr
 	}
-	return s.MemoryRecordStore.Rotate(ctx, oldKey, expected, newKey, next, ttl)
+	return s.MemoryRecordStore.Rotate(ctx, oldKey, expected, newKey, next, ttl, tombstone, tombstoneTTL)
 }
 
 func TestRestoreSessionMapsStoreIOFailures(t *testing.T) {
@@ -672,6 +785,102 @@ func TestNewRejectsMissingRedisWhenDurableSessionsAreRequired(t *testing.T) {
 			_ = service.Close()
 		}
 		t.Fatal("New accepted an empty Redis URL while durable sessions are required")
+	}
+}
+
+type trackedRecordStore struct {
+	*MemoryRecordStore
+	pingErr    error
+	pingCalls  int
+	closeCalls int
+}
+
+func (s *trackedRecordStore) Ping(context.Context) error {
+	s.pingCalls++
+	return s.pingErr
+}
+
+func (s *trackedRecordStore) Close() error {
+	s.closeCalls++
+	return nil
+}
+
+func replaceRedisStoreFactory(t *testing.T, factory func(string) (RecordStore, error)) {
+	t.Helper()
+	previous := newRedisRecordStore
+	newRedisRecordStore = factory
+	t.Cleanup(func() {
+		newRedisRecordStore = previous
+	})
+}
+
+func TestNewPingsEveryConfiguredRedisStore(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		store := &trackedRecordStore{MemoryRecordStore: NewMemoryRecordStore(nil)}
+		factoryCalls := 0
+		replaceRedisStoreFactory(t, func(redisURL string) (RecordStore, error) {
+			factoryCalls++
+			if redisURL != "redis://session-store.test:6379/0" {
+				t.Fatalf("factory Redis URL = %q", redisURL)
+			}
+			return store, nil
+		})
+		service, err := New(context.Background(), config.IdentityConfig{RedisURL: "redis://session-store.test:6379/0"})
+		if err != nil {
+			t.Fatalf("New configured Redis store: %v", err)
+		}
+		if factoryCalls != 1 || store.pingCalls != 1 || store.closeCalls != 0 {
+			t.Fatalf("factory/ping/close calls = %d/%d/%d, want 1/1/0", factoryCalls, store.pingCalls, store.closeCalls)
+		}
+		if err := service.Close(); err != nil {
+			t.Fatalf("close returned service: %v", err)
+		}
+		if store.closeCalls != 1 {
+			t.Fatalf("close calls after Service.Close = %d, want 1", store.closeCalls)
+		}
+	})
+
+	t.Run("ping failure closes store", func(t *testing.T) {
+		store := &trackedRecordStore{MemoryRecordStore: NewMemoryRecordStore(nil), pingErr: errors.New("ping failed")}
+		replaceRedisStoreFactory(t, func(string) (RecordStore, error) {
+			return store, nil
+		})
+		service, err := New(context.Background(), config.IdentityConfig{RedisURL: "redis://session-store.test:6379/0"})
+		if service != nil || !errors.Is(err, ErrSessionStoreUnavailable) {
+			t.Fatalf("New failed configured Redis store = service %v err %v", service, err)
+		}
+		if store.pingCalls != 1 || store.closeCalls != 1 {
+			t.Fatalf("ping/close calls = %d/%d, want 1/1", store.pingCalls, store.closeCalls)
+		}
+	})
+}
+
+func TestRecordStoresRejectSubMillisecondPositiveTTLs(t *testing.T) {
+	redisStore, err := NewRedisRecordStore("redis://127.0.0.1:1/0")
+	if err != nil {
+		t.Fatalf("create Redis record store: %v", err)
+	}
+	defer redisStore.Close()
+	stores := []struct {
+		name  string
+		store RecordStore
+	}{
+		{name: "memory", store: NewMemoryRecordStore(nil)},
+		{name: "redis", store: redisStore},
+	}
+	for _, entry := range stores {
+		t.Run(entry.name, func(t *testing.T) {
+			const ttl = 500 * time.Microsecond
+			if err := entry.store.Set(context.Background(), "ttl", []byte("value"), ttl); !errors.Is(err, ErrRecordTTLTooShort) {
+				t.Fatalf("Set sub-millisecond TTL error = %v, want ErrRecordTTLTooShort", err)
+			}
+			if err := entry.store.CompareAndSet(context.Background(), "ttl", []byte("old"), []byte("new"), ttl); !errors.Is(err, ErrRecordTTLTooShort) {
+				t.Fatalf("CompareAndSet sub-millisecond TTL error = %v, want ErrRecordTTLTooShort", err)
+			}
+			if err := entry.store.Rotate(context.Background(), "ttl", []byte("old"), "next", []byte("new"), ttl, supersessionTombstone(t, "next"), ttl); !errors.Is(err, ErrRecordTTLTooShort) {
+				t.Fatalf("Rotate sub-millisecond TTL error = %v, want ErrRecordTTLTooShort", err)
+			}
+		})
 	}
 }
 

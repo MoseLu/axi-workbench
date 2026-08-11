@@ -40,6 +40,14 @@ type browserSession struct {
 	RenewedAt     time.Time `json:"renewedAt"`
 }
 
+// sessionTombstone replaces a rotated session record. It is deliberately not a
+// browserSession: a predecessor cookie can never authenticate, but Logout can
+// use the private successor pointer to revoke the current session after a
+// cookie refresh race.
+type sessionTombstone struct {
+	SupersededBy string `json:"supersededBy"`
+}
+
 type authorizationTransaction struct {
 	CodeVerifier string `json:"codeVerifier"`
 	Nonce        string `json:"nonce"`
@@ -59,6 +67,13 @@ type Service struct {
 	now     func() time.Time
 }
 
+// newRedisRecordStore is a narrow construction seam for startup checks. It is
+// kept package-local so tests can prove fail-fast behavior without requiring a
+// reachable Redis server.
+var newRedisRecordStore = func(redisURL string) (RecordStore, error) {
+	return NewRedisRecordStore(redisURL)
+}
+
 func New(ctx context.Context, cfg config.IdentityConfig) (*Service, error) {
 	var records RecordStore
 	redisURL := strings.TrimSpace(cfg.RedisURL)
@@ -68,16 +83,14 @@ func New(ctx context.Context, cfg config.IdentityConfig) (*Service, error) {
 	if redisURL == "" {
 		records = NewMemoryRecordStore(nil)
 	} else {
-		redisStore, err := NewRedisRecordStore(redisURL)
+		redisStore, err := newRedisRecordStore(redisURL)
 		if err != nil {
 			return nil, fmt.Errorf("%w: Redis configuration is invalid", ErrSessionStoreUnavailable)
 		}
 		records = redisStore
-		if cfg.RequireDurableSessionStore {
-			if err := records.Ping(ctx); err != nil {
-				_ = records.Close()
-				return nil, fmt.Errorf("%w: durable session store ping failed", ErrSessionStoreUnavailable)
-			}
+		if err := records.Ping(ctx); err != nil {
+			_ = records.Close()
+			return nil, fmt.Errorf("%w: session store ping failed", ErrSessionStoreUnavailable)
 		}
 	}
 	service := &Service{config: cfg, records: records, now: time.Now}
@@ -254,7 +267,15 @@ func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Pr
 		if err != nil {
 			return Principal{}, "", err
 		}
-		if err := s.records.Rotate(ctx, sessionKey(cookie.Value), expected, sessionKey(newSessionID), encoded, ttl); err != nil {
+		tombstone, err := json.Marshal(sessionTombstone{SupersededBy: newSessionID})
+		if err != nil {
+			return Principal{}, "", err
+		}
+		tombstoneTTL := session.ExpiresAt.Sub(now)
+		if tombstoneTTL <= 0 {
+			return Principal{}, "", ErrUnauthorized
+		}
+		if err := s.records.Rotate(ctx, sessionKey(cookie.Value), expected, sessionKey(newSessionID), encoded, ttl, tombstone, tombstoneTTL); err != nil {
 			if errors.Is(err, ErrRecordNotFound) {
 				return Principal{}, "", ErrUnauthorized
 			}
@@ -272,11 +293,69 @@ func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Pr
 }
 
 func (s *Service) Logout(ctx context.Context, request *http.Request) error {
+	if request == nil {
+		return nil
+	}
 	cookie, err := request.Cookie(s.config.SessionCookieName)
 	if err != nil || cookie.Value == "" {
 		return nil
 	}
-	return s.records.Delete(ctx, sessionKey(cookie.Value))
+	return s.revokeSession(ctx, cookie.Value)
+}
+
+const maxSessionRevocationHops = 16
+
+// revokeSession invalidates a cookie's active record, following predecessor
+// tombstones created by rotation. A conditional delete means a concurrent
+// rotation cannot be missed: if it wins first, the next read observes its
+// tombstone and follows the new successor; if Logout wins first, Rotate's
+// expected-value check fails and cannot create a successor.
+func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
+	currentID := sessionID
+	visited := make(map[string]struct{}, maxSessionRevocationHops)
+	for hops := 0; hops < maxSessionRevocationHops; hops++ {
+		if currentID == "" {
+			return nil
+		}
+		if _, seen := visited[currentID]; seen {
+			// A malformed/cyclic record must not authenticate or cause writes.
+			return nil
+		}
+		visited[currentID] = struct{}{}
+
+		record, err := s.records.Get(ctx, sessionKey(currentID))
+		if errors.Is(err, ErrRecordNotFound) {
+			return nil
+		}
+		if err != nil {
+			return ErrSessionStoreUnavailable
+		}
+
+		var tombstone sessionTombstone
+		if err := json.Unmarshal(record, &tombstone); err == nil && tombstone.SupersededBy != "" {
+			currentID = tombstone.SupersededBy
+			continue
+		}
+
+		var session browserSession
+		if err := json.Unmarshal(record, &session); err != nil || session.Principal.Subject == "" {
+			// Do not interpret malformed records as a successor and never create
+			// new state while attempting to log out.
+			return nil
+		}
+		if err := s.records.CompareAndDelete(ctx, sessionKey(currentID), record); err == nil {
+			return nil
+		} else if errors.Is(err, ErrRecordNotFound) {
+			// The record was deleted or rotated after Get. Re-read this same key;
+			// a winning Rotate left a tombstone pointing at its successor.
+			delete(visited, currentID)
+			continue
+		} else {
+			return ErrSessionStoreUnavailable
+		}
+	}
+	// Bound predecessor traversal to avoid unbounded work on corrupt data.
+	return nil
 }
 
 func (s *Service) SetCookie(response http.ResponseWriter, sessionID string) {
