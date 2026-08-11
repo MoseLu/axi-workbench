@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         ],
       },
       proxy: {
-        // Priority: VITE_API_PROXY_TARGET, exact-loopback VITE_API_BASE_URL,
+        // Priority: trimmed VITE_API_PROXY_TARGET, exact-loopback VITE_API_BASE_URL,
         // then the local 127.0.0.1:8088 default. loadEnv makes .env* values apply.
         '/api': {
           target: selectApiProxyTarget({

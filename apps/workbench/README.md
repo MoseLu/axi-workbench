@@ -20,12 +20,15 @@ pnpm dev:workbench
 ```
 
 开发服务器仅绑定 IPv4 HTTP `http://127.0.0.1:5173`，并从本目录的 `.env*` 文件
-加载 Vite 环境变量。`/api` 代理目标依次取：非空 `VITE_API_PROXY_TARGET`、精确
-loopback（`localhost`、`127.0.0.1`、`::1`）的 `VITE_API_BASE_URL`，最后才是默认
-`http://127.0.0.1:8088`。因此 `VITE_API_BASE_URL=http://127.0.0.1:9090` 会让同源
-`/api` 请求代理到 9090；远端 `VITE_API_BASE_URL` 则继续由浏览器直接访问，不会被
-相对化。这里识别 `::1` 仅用于 Gateway 配置选择，不会让 Vite 监听 IPv6 或 HTTPS。
-邮箱登录依赖 identity-adapter；概览页还依赖 platform-core 与 control-plane。
+加载 Vite 环境变量。`/api` 代理目标优先使用去首尾空白后非空的
+`VITE_API_PROXY_TARGET`（必须是 HTTP(S) URL；无效值会使 Vite 启动失败）；空或全
+空白时才依次取精确 loopback（`localhost`、`127.0.0.1`、`::1`）的
+`VITE_API_BASE_URL` 与默认 `http://127.0.0.1:8088`。因此
+`VITE_API_BASE_URL=http://127.0.0.1:9090` 会让同源
+`/api` 请求代理到 9090；远端 `VITE_API_BASE_URL` 时，只有经 `resolveGatewayURL`
+构建的 Gateway/auth 请求会继续由浏览器直接访问，不会被相对化。这里识别 `::1` 仅
+用于 Gateway 配置选择，不会让 Vite 监听 IPv6 或 HTTPS。邮箱登录依赖
+identity-adapter；概览页还依赖 platform-core 与 control-plane。
 
 本地完整登录与概览链路需要同时运行以下服务（各开一个终端）：
 
