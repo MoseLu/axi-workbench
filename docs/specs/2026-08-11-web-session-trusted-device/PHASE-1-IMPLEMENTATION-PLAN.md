@@ -134,15 +134,17 @@ pnpm --filter @axi/workbench type-check
 
 ## Task 5 — 集成验证、回归检查与交接
 
-**状态：** [x] 已完成（2026-08-11）。真实验证使用隔离的 Docker Redis
+**状态：** [x] 已完成（2026-08-12）。真实验证使用隔离的 Docker Redis
 （AOF + 命名卷；宿主 `127.0.0.1:6380`，避免干扰既有 6379 原生 Redis）和
 Mailpit SMTP。浏览器已完成邮箱验证码登录，并验证 HMR、Vite 重启、Gateway
-重启、Docker Redis 重启、页面关闭重开及 Redis 短暂不可用后的会话行为；测试
-邮件最初未发送到真实 QQ 邮箱。2026-08-12 已额外进行真实 QQ SMTP 尝试：身份服务
-取得 SMTP 最终 `DATA` 成功应答，但邮件未在本次验证码有效窗口内出现在可见收件箱；
-浏览器窗口在另一个桌面空间，系统拒绝聚焦，因而无法可靠检查垃圾邮件文件夹。该真实
-外部投递验证仍标记为未完成，不能替代 Mailpit 的已完成验收。控制面未在本次隔离环境
-启动，Dashboard 的 502 与认证状态无关。
+重启、Docker Redis 重启、页面关闭重开及 Redis 短暂不可用后的会话行为。
+
+2026-08-12 进一步完成了真实 QQ SMTP 验收：在已登录 QQ 邮箱的内置浏览器中读取
+最新一次性验证码，身份服务确认该验证码后，浏览器进入本地管理台。随后同一浏览器会话
+经 HMR、Vite 重启、Gateway 重启、Docker Redis 重启及关闭页面后重新打开均保持登录，
+且恢复页面没有控制台错误。首次手动启动 Gateway 时遗漏了 `EMAIL_LOGIN_SUBJECT`，已按
+`services/api-gateway/scripts/dev-run.sh` 的开发默认值 `audit-user` 重启；这属于手动启动
+环境缺项，不是验证码或持久会话实现缺陷。控制面未在本次隔离环境启动。
 
 **Files:**
 
