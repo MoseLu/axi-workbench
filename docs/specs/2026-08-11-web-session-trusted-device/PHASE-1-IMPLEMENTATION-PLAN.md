@@ -54,6 +54,8 @@ make verify-go
 
 ## Task 2 — 将 session 从单一 TTL 演进为持久、闲置续期、绝对过期和原子轮换
 
+**状态：** [x] 已完成。
+
 **Files:**
 
 - Modify: `services/api-gateway/identity/store.go`
@@ -84,6 +86,8 @@ cd services/api-gateway && go test ./identity
 
 ## Task 3 — 让现有 `/auth/session` 路由承担无感续期
 
+**状态：** [x] 已完成。
+
 **Files:**
 
 - Modify: `services/api-gateway/handlers/oidc.go`
@@ -106,6 +110,8 @@ cd services/api-gateway && go test ./handlers ./cmd/gateway ./middleware
 
 ## Task 4 — 固定 Workbench 本地 Origin，并使所有 loopback Gateway 走 Vite 代理
 
+**状态：** [x] 已完成。
+
 **Files:**
 
 - Modify: `apps/workbench/vite.config.ts`
@@ -127,6 +133,13 @@ pnpm --filter @axi/workbench type-check
 ```
 
 ## Task 5 — 集成验证、回归检查与交接
+
+**状态：** [x] 已完成（2026-08-11）。真实验证使用隔离的 Docker Redis
+（AOF + 命名卷；宿主 `127.0.0.1:6380`，避免干扰既有 6379 原生 Redis）和
+Mailpit SMTP。浏览器已完成邮箱验证码登录，并验证 HMR、Vite 重启、Gateway
+重启、Docker Redis 重启、页面关闭重开及 Redis 短暂不可用后的会话行为；测试
+邮件未发送到真实 QQ 邮箱。控制面未在本次隔离环境启动，Dashboard 的 502 与认证
+状态无关。
 
 **Files:**
 
