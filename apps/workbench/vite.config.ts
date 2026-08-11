@@ -11,7 +11,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true,
+    host: '127.0.0.1',
+    strictPort: true,
     fs: {
       allow: [
         path.resolve(__dirname, '../..'),
@@ -19,9 +20,10 @@ export default defineConfig({
       ],
     },
     proxy: {
-      // 把 /api/* 代理到 api-gateway（默认 localhost:8088）
+      // 把 /api/* 代理到 api-gateway（默认 127.0.0.1:8088）。
+      // 浏览器端的 loopback Gateway 配置会被归一化为同源 /api。
       '/api': {
-        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:8088',
+        target: process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8088',
         changeOrigin: true,
       },
       // Keep the local control-plane behind the Web origin in development.

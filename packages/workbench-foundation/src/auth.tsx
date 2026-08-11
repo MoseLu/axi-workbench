@@ -53,11 +53,9 @@ function isLoopbackHostname(hostname: string): boolean {
 /**
  * Keeps browser-session cookies first-party during local development.
  *
- * Vite serves the Workbench through 127.0.0.1:5173 while a developer may
- * configure the gateway as localhost:8088. Those are different schemeful
- * sites, so modern browsers can reject the gateway's session cookie after a
- * successful email-code confirmation. Falling back to Vite's same-origin
- * /api proxy prevents that host mismatch without changing deployed URLs.
+ * Any loopback gateway is served through Vite's same-origin /api proxy during
+ * local development. That avoids browser session-cookie differences across
+ * loopback hostnames, ports, and schemes without changing deployed URLs.
  */
 export function normalizeGatewayBaseURL(configuredBaseURL: string, browserOrigin?: string): string {
   const baseURL = configuredBaseURL.replace(/\/$/, '');
@@ -66,11 +64,9 @@ export function normalizeGatewayBaseURL(configuredBaseURL: string, browserOrigin
   try {
     const gatewayURL = new URL(baseURL);
     const pageURL = new URL(browserOrigin);
-    const isMismatchedLoopbackPair = gatewayURL.protocol === pageURL.protocol
-      && isLoopbackHostname(gatewayURL.hostname)
-      && isLoopbackHostname(pageURL.hostname)
-      && gatewayURL.hostname !== pageURL.hostname;
-    return isMismatchedLoopbackPair ? '' : baseURL;
+    const isLoopbackPair = isLoopbackHostname(gatewayURL.hostname)
+      && isLoopbackHostname(pageURL.hostname);
+    return isLoopbackPair ? '' : baseURL;
   } catch {
     // An invalid configured URL should retain the existing request behavior
     // and surface through fetch rather than failing module initialization.

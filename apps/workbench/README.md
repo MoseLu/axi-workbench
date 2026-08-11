@@ -19,8 +19,10 @@ pnpm install   # 首次
 pnpm dev:workbench
 ```
 
-API 代理默认指向 `localhost:8088`（见 `vite.config.ts`）。邮箱登录依赖
-identity-adapter；概览页还依赖 platform-core 与 control-plane。
+API 代理默认指向 `127.0.0.1:8088`（可用 `VITE_API_PROXY_TARGET` 覆写，见
+`vite.config.ts`）。浏览器与 Gateway 均为 loopback 地址时，认证请求会统一走
+同源 `/api` 代理，以稳定保留会话 Cookie。邮箱登录依赖 identity-adapter；概览页
+还依赖 platform-core 与 control-plane。
 
 本地完整登录与概览链路需要同时运行以下服务（各开一个终端）：
 
