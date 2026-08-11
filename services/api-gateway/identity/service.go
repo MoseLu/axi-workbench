@@ -19,8 +19,9 @@ import (
 )
 
 var (
-	ErrUnauthorized = errors.New("gateway identity is not authenticated")
-	ErrUnavailable  = errors.New("gateway OIDC identity is not configured")
+	ErrUnauthorized            = errors.New("gateway identity is not authenticated")
+	ErrUnavailable             = errors.New("gateway OIDC identity is not configured")
+	ErrSessionStoreUnavailable = errors.New("gateway identity session store is unavailable")
 )
 
 type Principal struct {
@@ -30,10 +31,13 @@ type Principal struct {
 }
 
 type browserSession struct {
-	Principal    Principal `json:"principal"`
-	AccessToken  string    `json:"accessToken,omitempty"`
-	RefreshToken string    `json:"refreshToken,omitempty"`
-	ExpiresAt    time.Time `json:"expiresAt"`
+	Principal     Principal `json:"principal"`
+	AccessToken   string    `json:"accessToken,omitempty"`
+	RefreshToken  string    `json:"refreshToken,omitempty"`
+	ExpiresAt     time.Time `json:"expiresAt"`
+	IdleExpiresAt time.Time `json:"idleExpiresAt"`
+	LastSeenAt    time.Time `json:"lastSeenAt"`
+	RenewedAt     time.Time `json:"renewedAt"`
 }
 
 type authorizationTransaction struct {
@@ -57,14 +61,24 @@ type Service struct {
 
 func New(ctx context.Context, cfg config.IdentityConfig) (*Service, error) {
 	var records RecordStore
-	if cfg.RedisURL == "" {
+	redisURL := strings.TrimSpace(cfg.RedisURL)
+	if cfg.RequireDurableSessionStore && redisURL == "" {
+		return nil, errors.New("gateway durable session store requires Redis configuration")
+	}
+	if redisURL == "" {
 		records = NewMemoryRecordStore(nil)
 	} else {
-		redisStore, err := NewRedisRecordStore(cfg.RedisURL)
+		redisStore, err := NewRedisRecordStore(redisURL)
 		if err != nil {
-			return nil, fmt.Errorf("create gateway Redis store: %w", err)
+			return nil, fmt.Errorf("%w: Redis configuration is invalid", ErrSessionStoreUnavailable)
 		}
 		records = redisStore
+		if cfg.RequireDurableSessionStore {
+			if err := records.Ping(ctx); err != nil {
+				_ = records.Close()
+				return nil, fmt.Errorf("%w: durable session store ping failed", ErrSessionStoreUnavailable)
+			}
+		}
 	}
 	service := &Service{config: cfg, records: records, now: time.Now}
 	if cfg.IssuerURL == "" || cfg.ClientID == "" {
@@ -80,11 +94,11 @@ func New(ctx context.Context, cfg config.IdentityConfig) (*Service, error) {
 }
 
 func NewForTest(cfg config.IdentityConfig, records RecordStore, client oidcClient, now func() time.Time) *Service {
-	if records == nil {
-		records = NewMemoryRecordStore(now)
-	}
 	if now == nil {
 		now = time.Now
+	}
+	if records == nil {
+		records = NewMemoryRecordStore(now)
 	}
 	return &Service{config: cfg, records: records, client: client, now: now}
 }
@@ -144,46 +158,108 @@ func (s *Service) Complete(ctx context.Context, state, code string) (string, bro
 	if session.Principal.Subject == "" {
 		return "", browserSession{}, "", ErrUnauthorized
 	}
-	if session.ExpiresAt.IsZero() || session.ExpiresAt.After(s.now().Add(s.config.SessionTTL)) {
-		session.ExpiresAt = s.now().Add(s.config.SessionTTL)
+	now := s.now()
+	session, err = s.initializeSession(session, now)
+	if err != nil {
+		return "", browserSession{}, "", err
 	}
 	sessionID, err := opaqueValue()
 	if err != nil {
 		return "", browserSession{}, "", err
 	}
-	encoded, err := json.Marshal(session)
-	if err != nil {
-		return "", browserSession{}, "", err
-	}
-	ttl := session.ExpiresAt.Sub(s.now())
-	if ttl <= 0 {
-		return "", browserSession{}, "", ErrUnauthorized
-	}
-	if err := s.records.Set(ctx, sessionKey(sessionID), encoded, ttl); err != nil {
+	if err := s.persistSession(ctx, sessionID, session, now); err != nil {
 		return "", browserSession{}, "", err
 	}
 	return sessionID, session, transaction.ReturnTo, nil
 }
 
 func (s *Service) Authenticate(ctx context.Context, request *http.Request) (Principal, error) {
-	if sessionID, err := request.Cookie(s.config.SessionCookieName); err == nil && sessionID.Value != "" {
-		record, err := s.records.Get(ctx, sessionKey(sessionID.Value))
-		if err == nil {
-			var session browserSession
-			if json.Unmarshal(record, &session) == nil && session.Principal.Subject != "" && s.now().Before(session.ExpiresAt) {
+	var sessionStoreErr error
+	if request != nil {
+		if sessionID, err := request.Cookie(s.config.SessionCookieName); err == nil && sessionID.Value != "" {
+			session, err := s.loadSession(ctx, sessionID.Value, s.now())
+			if err == nil {
 				return session.Principal, nil
+			}
+			if errors.Is(err, ErrSessionStoreUnavailable) {
+				sessionStoreErr = err
+			}
+		}
+		if authorization := request.Header.Get("Authorization"); strings.HasPrefix(strings.ToLower(authorization), "bearer ") && s.client != nil {
+			return s.client.VerifyBearer(ctx, strings.TrimSpace(authorization[7:]))
+		}
+		if s.config.DevelopmentHeaderAuth {
+			if subject := strings.TrimSpace(request.Header.Get("X-Axi-Development-Subject")); subject != "" {
+				return Principal{Subject: subject, Email: strings.TrimSpace(request.Header.Get("X-Axi-Development-Email"))}, nil
 			}
 		}
 	}
-	if authorization := request.Header.Get("Authorization"); strings.HasPrefix(strings.ToLower(authorization), "bearer ") && s.client != nil {
-		return s.client.VerifyBearer(ctx, strings.TrimSpace(authorization[7:]))
-	}
-	if s.config.DevelopmentHeaderAuth {
-		if subject := strings.TrimSpace(request.Header.Get("X-Axi-Development-Subject")); subject != "" {
-			return Principal{Subject: subject, Email: strings.TrimSpace(request.Header.Get("X-Axi-Development-Email"))}, nil
-		}
+	if sessionStoreErr != nil {
+		return Principal{}, sessionStoreErr
 	}
 	return Principal{}, ErrUnauthorized
+}
+
+// RestoreSession validates and refreshes a browser cookie session. It returns
+// the session ID that a handler should place back in the cookie; that ID may
+// change when the configured renewal interval is reached.
+func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Principal, string, error) {
+	if request == nil {
+		return Principal{}, "", ErrUnauthorized
+	}
+	cookie, err := request.Cookie(s.config.SessionCookieName)
+	if err != nil || cookie.Value == "" {
+		return Principal{}, "", ErrUnauthorized
+	}
+	now := s.now()
+	session, err := s.loadSession(ctx, cookie.Value, now)
+	if err != nil {
+		return Principal{}, "", err
+	}
+	policy, err := s.sessionPolicy()
+	if err != nil {
+		return Principal{}, "", err
+	}
+
+	session.LastSeenAt = now
+	session.IdleExpiresAt = minTime(now.Add(policy.idleTTL), session.ExpiresAt)
+	if !now.Before(session.IdleExpiresAt) {
+		return Principal{}, "", ErrUnauthorized
+	}
+	shouldRotate := false
+	if session.RenewedAt.IsZero() {
+		// Legacy sessions did not record a renewal time. Initialize it on their
+		// first successful restore without moving the absolute expiry.
+		session.RenewedAt = now
+	} else if s.config.SessionRenewAfter > 0 && !now.Before(session.RenewedAt.Add(s.config.SessionRenewAfter)) {
+		session.RenewedAt = now
+		shouldRotate = true
+	}
+	encoded, err := json.Marshal(session)
+	if err != nil {
+		return Principal{}, "", err
+	}
+	ttl := session.IdleExpiresAt.Sub(now)
+	if ttl <= 0 {
+		return Principal{}, "", ErrUnauthorized
+	}
+	if shouldRotate {
+		newSessionID, err := opaqueValue()
+		if err != nil {
+			return Principal{}, "", err
+		}
+		if err := s.records.Rotate(ctx, sessionKey(cookie.Value), sessionKey(newSessionID), encoded, ttl); err != nil {
+			if errors.Is(err, ErrRecordNotFound) {
+				return Principal{}, "", ErrUnauthorized
+			}
+			return Principal{}, "", ErrSessionStoreUnavailable
+		}
+		return session.Principal, newSessionID, nil
+	}
+	if err := s.records.Set(ctx, sessionKey(cookie.Value), encoded, ttl); err != nil {
+		return Principal{}, "", ErrSessionStoreUnavailable
+	}
+	return session.Principal, cookie.Value, nil
 }
 
 func (s *Service) Logout(ctx context.Context, request *http.Request) error {
@@ -195,12 +271,16 @@ func (s *Service) Logout(ctx context.Context, request *http.Request) error {
 }
 
 func (s *Service) SetCookie(response http.ResponseWriter, sessionID string) {
+	maxAge := 0
+	if policy, err := s.sessionPolicy(); err == nil {
+		maxAge = int(policy.idleTTL.Seconds())
+	}
 	http.SetCookie(response, &http.Cookie{
 		Name:     s.config.SessionCookieName,
 		Value:    sessionID,
 		Path:     "/",
 		Domain:   s.config.SessionCookieDomain,
-		MaxAge:   int(s.config.SessionTTL.Seconds()),
+		MaxAge:   maxAge,
 		HttpOnly: true,
 		Secure:   s.config.SessionCookieSecure,
 		SameSite: http.SameSiteLaxMode,
@@ -218,6 +298,96 @@ func (s *Service) ClearCookie(response http.ResponseWriter) {
 		Secure:   s.config.SessionCookieSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+type sessionPolicy struct {
+	idleTTL     time.Duration
+	absoluteTTL time.Duration
+}
+
+func (s *Service) sessionPolicy() (sessionPolicy, error) {
+	legacyTTL := s.config.SessionTTL
+	if legacyTTL <= 0 {
+		return sessionPolicy{}, errors.New("gateway session TTL must be positive")
+	}
+	absoluteTTL := s.config.SessionAbsoluteTTL
+	if absoluteTTL <= 0 {
+		absoluteTTL = legacyTTL
+	}
+	idleTTL := s.config.SessionIdleTTL
+	if idleTTL <= 0 {
+		idleTTL = legacyTTL
+	}
+	if idleTTL > absoluteTTL {
+		idleTTL = absoluteTTL
+	}
+	return sessionPolicy{idleTTL: idleTTL, absoluteTTL: absoluteTTL}, nil
+}
+
+func (s *Service) initializeSession(session browserSession, now time.Time) (browserSession, error) {
+	policy, err := s.sessionPolicy()
+	if err != nil {
+		return browserSession{}, err
+	}
+	session.ExpiresAt = now.Add(policy.absoluteTTL)
+	session.IdleExpiresAt = minTime(now.Add(policy.idleTTL), session.ExpiresAt)
+	session.LastSeenAt = now
+	session.RenewedAt = now
+	return session, nil
+}
+
+func (s *Service) persistSession(ctx context.Context, sessionID string, session browserSession, now time.Time) error {
+	encoded, err := json.Marshal(session)
+	if err != nil {
+		return err
+	}
+	ttl := session.IdleExpiresAt.Sub(now)
+	if ttl <= 0 {
+		return ErrUnauthorized
+	}
+	if err := s.records.Set(ctx, sessionKey(sessionID), encoded, ttl); err != nil {
+		return ErrSessionStoreUnavailable
+	}
+	return nil
+}
+
+func (s *Service) loadSession(ctx context.Context, sessionID string, now time.Time) (browserSession, error) {
+	record, err := s.records.Get(ctx, sessionKey(sessionID))
+	if errors.Is(err, ErrRecordNotFound) {
+		return browserSession{}, ErrUnauthorized
+	}
+	if err != nil {
+		return browserSession{}, ErrSessionStoreUnavailable
+	}
+	var session browserSession
+	if err := json.Unmarshal(record, &session); err != nil || !session.validAt(now) {
+		return browserSession{}, ErrUnauthorized
+	}
+	return session, nil
+}
+
+func (session browserSession) validAt(now time.Time) bool {
+	return session.Principal.Subject != "" &&
+		!session.ExpiresAt.IsZero() &&
+		now.Before(session.ExpiresAt) &&
+		now.Before(session.effectiveIdleExpiresAt())
+}
+
+func (session browserSession) effectiveIdleExpiresAt() time.Time {
+	if session.IdleExpiresAt.IsZero() {
+		// Serialized sessions from before the idle policy only had ExpiresAt.
+		// Treat that timestamp as their idle deadline so an old session can
+		// never be extended beyond its pre-existing lifetime.
+		return session.ExpiresAt
+	}
+	return session.IdleExpiresAt
+}
+
+func minTime(first, second time.Time) time.Time {
+	if second.Before(first) {
+		return second
+	}
+	return first
 }
 
 func (s *Service) validReturnTo(value string) bool {
@@ -277,19 +447,16 @@ func (s *Service) IssueEmailSession(ctx context.Context, email string) (string, 
 	if err != nil {
 		return "", err
 	}
+	now := s.now()
+	session, err := s.initializeSession(browserSession{Principal: principal}, now)
+	if err != nil {
+		return "", err
+	}
 	sessionID, err := opaqueValue()
 	if err != nil {
 		return "", fmt.Errorf("generate session id: %w", err)
 	}
-	session := browserSession{
-		Principal: principal,
-		ExpiresAt: s.now().Add(s.config.SessionTTL),
-	}
-	encoded, err := json.Marshal(session)
-	if err != nil {
-		return "", fmt.Errorf("encode session: %w", err)
-	}
-	if err := s.records.Set(ctx, sessionKey(sessionID), encoded, s.config.SessionTTL); err != nil {
+	if err := s.persistSession(ctx, sessionID, session, now); err != nil {
 		return "", fmt.Errorf("persist session: %w", err)
 	}
 	return sessionID, nil

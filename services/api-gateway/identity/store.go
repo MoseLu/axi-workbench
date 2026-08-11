@@ -17,6 +17,7 @@ var ErrRecordNotFound = errors.New("gateway identity record not found")
 type RecordStore interface {
 	Set(context.Context, string, []byte, time.Duration) error
 	Get(context.Context, string) ([]byte, error)
+	Rotate(context.Context, string, string, []byte, time.Duration) error
 	Delete(context.Context, string) error
 	Ping(context.Context) error
 	Close() error
@@ -51,11 +52,25 @@ func (s *MemoryRecordStore) Get(_ context.Context, key string) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	record, exists := s.records[key]
-	if !exists || s.now().After(record.expiresAt) {
+	if !exists || !s.now().Before(record.expiresAt) {
 		delete(s.records, key)
 		return nil, ErrRecordNotFound
 	}
 	return append([]byte(nil), record.value...), nil
+}
+
+func (s *MemoryRecordStore) Rotate(_ context.Context, oldKey, newKey string, newValue []byte, ttl time.Duration) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	record, exists := s.records[oldKey]
+	if !exists || !now.Before(record.expiresAt) {
+		delete(s.records, oldKey)
+		return ErrRecordNotFound
+	}
+	s.records[newKey] = memoryRecord{value: append([]byte(nil), newValue...), expiresAt: now.Add(ttl)}
+	delete(s.records, oldKey)
+	return nil
 }
 
 func (s *MemoryRecordStore) Delete(_ context.Context, key string) error {
@@ -81,7 +96,7 @@ func NewRedisRecordStore(redisURL string) (*RedisRecordStore, error) {
 }
 
 func (s *RedisRecordStore) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
-	return s.client.Set(ctx, key, value, ttl).Err()
+	return s.client.Set(ctx, key, append([]byte(nil), value...), ttl).Err()
 }
 
 func (s *RedisRecordStore) Get(ctx context.Context, key string) ([]byte, error) {
@@ -89,7 +104,30 @@ func (s *RedisRecordStore) Get(ctx context.Context, key string) ([]byte, error) 
 	if errors.Is(err, redis.Nil) {
 		return nil, ErrRecordNotFound
 	}
-	return value, err
+	if err != nil {
+		return nil, err
+	}
+	return append([]byte(nil), value...), nil
+}
+
+const rotateRecordScript = `
+if redis.call('EXISTS', KEYS[1]) == 0 then
+  return 0
+end
+redis.call('SET', KEYS[2], ARGV[1], 'PX', ARGV[2])
+redis.call('DEL', KEYS[1])
+return 1
+`
+
+func (s *RedisRecordStore) Rotate(ctx context.Context, oldKey, newKey string, newValue []byte, ttl time.Duration) error {
+	result, err := s.client.Eval(ctx, rotateRecordScript, []string{oldKey, newKey}, append([]byte(nil), newValue...), ttl.Milliseconds()).Int()
+	if err != nil {
+		return err
+	}
+	if result == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
 }
 
 func (s *RedisRecordStore) Delete(ctx context.Context, key string) error {
