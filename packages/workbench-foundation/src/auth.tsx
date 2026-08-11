@@ -53,24 +53,24 @@ function isLoopbackHostname(hostname: string): boolean {
 /**
  * Keeps browser-session cookies first-party during local development.
  *
- * Any loopback gateway is served through Vite's same-origin /api proxy during
- * local development. That avoids browser session-cookie differences across
- * loopback hostnames, ports, and schemes without changing deployed URLs.
+ * This pure URL normalizer treats exact loopback hostname pairs as Vite's
+ * same-origin /api proxy, avoiding browser session-cookie differences without
+ * changing deployed URLs. The Vite development server itself is deliberately
+ * bound only to http://127.0.0.1:5173.
  */
 export function normalizeGatewayBaseURL(configuredBaseURL: string, browserOrigin?: string): string {
-  const baseURL = configuredBaseURL.replace(/\/$/, '');
-  if (!baseURL || !browserOrigin) return baseURL;
+  if (!configuredBaseURL || !browserOrigin) return configuredBaseURL;
 
   try {
-    const gatewayURL = new URL(baseURL);
+    const gatewayURL = new URL(configuredBaseURL);
     const pageURL = new URL(browserOrigin);
     const isLoopbackPair = isLoopbackHostname(gatewayURL.hostname)
       && isLoopbackHostname(pageURL.hostname);
-    return isLoopbackPair ? '' : baseURL;
+    return isLoopbackPair ? '' : configuredBaseURL;
   } catch {
     // An invalid configured URL should retain the existing request behavior
     // and surface through fetch rather than failing module initialization.
-    return baseURL;
+    return configuredBaseURL;
   }
 }
 
@@ -80,8 +80,8 @@ const gatewayBaseURL = normalizeGatewayBaseURL(
 );
 
 /** Resolve a gateway path for either a same-origin local app or a deployed client. */
-export function resolveGatewayURL(path: string): string {
-  return `${gatewayBaseURL}${path}`;
+export function resolveGatewayURL(path: string, baseURL = gatewayBaseURL): string {
+  return `${baseURL.replace(/\/+$/u, '')}${path}`;
 }
 
 function mapGatewayUser(value: NonNullable<GatewaySessionResponse['user']>): User {

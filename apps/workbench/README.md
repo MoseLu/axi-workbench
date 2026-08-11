@@ -19,10 +19,13 @@ pnpm install   # 首次
 pnpm dev:workbench
 ```
 
-API 代理默认指向 `127.0.0.1:8088`（可用 `VITE_API_PROXY_TARGET` 覆写，见
-`vite.config.ts`）。浏览器与 Gateway 均为 loopback 地址时，认证请求会统一走
-同源 `/api` 代理，以稳定保留会话 Cookie。邮箱登录依赖 identity-adapter；概览页
-还依赖 platform-core 与 control-plane。
+开发服务器仅绑定 IPv4 HTTP `http://127.0.0.1:5173`，并从本目录的 `.env*` 文件
+加载 Vite 环境变量。`/api` 代理目标依次取：非空 `VITE_API_PROXY_TARGET`、精确
+loopback（`localhost`、`127.0.0.1`、`::1`）的 `VITE_API_BASE_URL`，最后才是默认
+`http://127.0.0.1:8088`。因此 `VITE_API_BASE_URL=http://127.0.0.1:9090` 会让同源
+`/api` 请求代理到 9090；远端 `VITE_API_BASE_URL` 则继续由浏览器直接访问，不会被
+相对化。这里识别 `::1` 仅用于 Gateway 配置选择，不会让 Vite 监听 IPv6 或 HTTPS。
+邮箱登录依赖 identity-adapter；概览页还依赖 platform-core 与 control-plane。
 
 本地完整登录与概览链路需要同时运行以下服务（各开一个终端）：
 
