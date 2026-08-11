@@ -32,7 +32,7 @@ func RequireIdentity(service *identity.Service) gin.HandlerFunc {
 		// bearer-token and development-header authentication paths. A store
 		// failure above is deliberately terminal so those paths cannot bypass a
 		// broken durable-session chain.
-		principal, err = service.Authenticate(c.Request.Context(), c.Request)
+		principal, err = service.AuthenticateHeaderCredentials(c.Request.Context(), c.Request.Header)
 		if err != nil {
 			if errors.Is(err, identity.ErrSessionStoreUnavailable) {
 				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})

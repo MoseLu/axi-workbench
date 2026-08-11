@@ -54,12 +54,6 @@ type authorizationTransaction struct {
 	ReturnTo     string `json:"returnTo"`
 }
 
-// AuthorizationTransactionForTest and BrowserSessionForTest expose the method
-// signatures accepted by NewForTest without exposing mutable Service state.
-// They let black-box HTTP tests provide a narrow fake bearer verifier.
-type AuthorizationTransactionForTest = authorizationTransaction
-type BrowserSessionForTest = browserSession
-
 type oidcClient interface {
 	AuthorizationURL(state, verifier, nonce string) string
 	Exchange(context.Context, string, authorizationTransaction) (browserSession, error)
@@ -192,29 +186,37 @@ func (s *Service) Complete(ctx context.Context, state, code string) (string, bro
 	return sessionID, session, transaction.ReturnTo, nil
 }
 
+// Authenticate restores a browser session before considering header
+// credentials. A durable-session store failure is terminal: it must not be
+// bypassed by a bearer token or development header carried on the same request.
 func (s *Service) Authenticate(ctx context.Context, request *http.Request) (Principal, error) {
-	var sessionStoreErr error
-	if request != nil {
-		if sessionID, err := request.Cookie(s.config.SessionCookieName); err == nil && sessionID.Value != "" {
-			session, _, err := s.loadSession(ctx, sessionID.Value, s.now())
-			if err == nil {
-				return session.Principal, nil
-			}
-			if errors.Is(err, ErrSessionStoreUnavailable) {
-				sessionStoreErr = err
-			}
+	if request == nil {
+		return Principal{}, ErrUnauthorized
+	}
+	if sessionID, err := request.Cookie(s.config.SessionCookieName); err == nil && sessionID.Value != "" {
+		session, _, err := s.loadSession(ctx, sessionID.Value, s.now())
+		if err == nil {
+			return session.Principal, nil
 		}
-		if authorization := request.Header.Get("Authorization"); strings.HasPrefix(strings.ToLower(authorization), "bearer ") && s.client != nil {
-			return s.client.VerifyBearer(ctx, strings.TrimSpace(authorization[7:]))
-		}
-		if s.config.DevelopmentHeaderAuth {
-			if subject := strings.TrimSpace(request.Header.Get("X-Axi-Development-Subject")); subject != "" {
-				return Principal{Subject: subject, Email: strings.TrimSpace(request.Header.Get("X-Axi-Development-Email"))}, nil
-			}
+		if !errors.Is(err, ErrUnauthorized) {
+			return Principal{}, err
 		}
 	}
-	if sessionStoreErr != nil {
-		return Principal{}, sessionStoreErr
+	return s.AuthenticateHeaderCredentials(ctx, request.Header)
+}
+
+// AuthenticateHeaderCredentials verifies only bearer and development-header
+// credentials. It accepts http.Header rather than *http.Request so callers
+// that have already attempted RestoreSession cannot accidentally issue a
+// second browser-cookie or session-store read during fallback.
+func (s *Service) AuthenticateHeaderCredentials(ctx context.Context, header http.Header) (Principal, error) {
+	if authorization := header.Get("Authorization"); strings.HasPrefix(strings.ToLower(authorization), "bearer ") && s.client != nil {
+		return s.client.VerifyBearer(ctx, strings.TrimSpace(authorization[7:]))
+	}
+	if s.config.DevelopmentHeaderAuth {
+		if subject := strings.TrimSpace(header.Get("X-Axi-Development-Subject")); subject != "" {
+			return Principal{Subject: subject, Email: strings.TrimSpace(header.Get("X-Axi-Development-Email"))}, nil
+		}
 	}
 	return Principal{}, ErrUnauthorized
 }

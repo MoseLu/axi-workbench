@@ -48,6 +48,68 @@ func (f *fakeOIDCClient) VerifyBearer(_ context.Context, token string) (Principa
 	return Principal{Subject: "zitadel-bearer"}, nil
 }
 
+func TestAuthenticateHeaderCredentialsSupportsBearerAndDevelopmentHeaders(t *testing.T) {
+	service := NewForTest(config.IdentityConfig{DevelopmentHeaderAuth: true}, &failingRecordStore{
+		MemoryRecordStore: NewMemoryRecordStore(nil),
+		getErr:            errors.New("session store must not be read"),
+	}, &fakeOIDCClient{}, nil)
+
+	t.Run("bearer", func(t *testing.T) {
+		principal, err := service.AuthenticateHeaderCredentials(context.Background(), http.Header{"Authorization": []string{"Bearer valid-bearer"}})
+		if err != nil || principal.Subject != "zitadel-bearer" {
+			t.Fatalf("bearer principal = %#v, %v", principal, err)
+		}
+	})
+
+	t.Run("development header", func(t *testing.T) {
+		principal, err := service.AuthenticateHeaderCredentials(context.Background(), http.Header{"X-Axi-Development-Subject": []string{"development-user"}})
+		if err != nil || principal.Subject != "development-user" {
+			t.Fatalf("development principal = %#v, %v", principal, err)
+		}
+	})
+}
+
+func TestAuthenticateFailsClosedOnUnavailableCookieStore(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		setHeaders func(*http.Request)
+	}{
+		{
+			name: "bearer",
+			setHeaders: func(request *http.Request) {
+				request.Header.Set("Authorization", "Bearer valid-bearer")
+			},
+		},
+		{
+			name: "development header",
+			setHeaders: func(request *http.Request) {
+				request.Header.Set("X-Axi-Development-Subject", "development-user")
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			clock := &testClock{now: time.Date(2026, 8, 12, 9, 0, 0, 0, time.UTC)}
+			cfg := emailSessionConfig()
+			cfg.DevelopmentHeaderAuth = true
+			store := &failingRecordStore{
+				MemoryRecordStore: NewMemoryRecordStore(clock.Now),
+				getErr:            errors.New("session store disconnected"),
+			}
+			service := NewForTest(cfg, store, &fakeOIDCClient{}, clock.Now)
+			request := sessionRequest(cfg.SessionCookieName, "opaque-session")
+			test.setHeaders(request)
+
+			principal, err := service.Authenticate(context.Background(), request)
+			if !errors.Is(err, ErrSessionStoreUnavailable) {
+				t.Fatalf("authenticate error = %v, want ErrSessionStoreUnavailable", err)
+			}
+			if principal.Subject != "" {
+				t.Fatalf("authenticate principal = %#v, want empty", principal)
+			}
+		})
+	}
+}
+
 func TestOIDCStateIsSingleUseAndBrowserOnlyGetsOpaqueSession(t *testing.T) {
 	now := time.Date(2026, 8, 7, 1, 0, 0, 0, time.UTC)
 	client := &fakeOIDCClient{}

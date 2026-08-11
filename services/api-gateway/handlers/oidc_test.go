@@ -97,21 +97,17 @@ func (s *unavailableHandlerStore) Get(ctx context.Context, key string) ([]byte, 
 	return s.MemoryRecordStore.Get(ctx, key)
 }
 
-type handlerBearerOIDCClient struct{}
-
-func (handlerBearerOIDCClient) AuthorizationURL(string, string, string) string {
-	return ""
+type sequenceHandlerStore struct {
+	*identity.MemoryRecordStore
+	getCalls int
 }
 
-func (handlerBearerOIDCClient) Exchange(context.Context, string, identity.AuthorizationTransactionForTest) (identity.BrowserSessionForTest, error) {
-	return identity.BrowserSessionForTest{}, identity.ErrUnauthorized
-}
-
-func (handlerBearerOIDCClient) VerifyBearer(_ context.Context, token string) (identity.Principal, error) {
-	if token != "valid-bearer" {
-		return identity.Principal{}, identity.ErrUnauthorized
+func (s *sequenceHandlerStore) Get(context.Context, string) ([]byte, error) {
+	s.getCalls++
+	if s.getCalls == 1 {
+		return nil, identity.ErrRecordNotFound
 	}
-	return identity.Principal{Subject: "bearer-user"}, nil
+	return nil, errors.New("unexpected second session-store read")
 }
 
 func TestSessionRestoresBrowserCookieAndRefreshesCookie(t *testing.T) {
@@ -149,7 +145,9 @@ func TestSessionReturnsServiceUnavailableWithoutChangingCookie(t *testing.T) {
 	router := gin.New()
 	router.GET("/api/v1/auth/session", Session(service))
 	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, requestWithSessionCookie(http.MethodGet, "/api/v1/auth/session", cfg.SessionCookieName, "opaque-session"))
+	request := requestWithSessionCookie(http.MethodGet, "/api/v1/auth/session", cfg.SessionCookieName, "opaque-session")
+	request.Header.Set("X-Axi-Development-Subject", "development-user")
+	router.ServeHTTP(recorder, request)
 
 	if recorder.Code != http.StatusServiceUnavailable {
 		t.Fatalf("session status = %d, want %d; body=%s", recorder.Code, http.StatusServiceUnavailable, recorder.Body.String())
@@ -169,7 +167,8 @@ func TestSessionReturnsServiceUnavailableWithoutChangingCookie(t *testing.T) {
 func TestSessionFallsBackToDevelopmentHeaderAfterInvalidCookie(t *testing.T) {
 	clock := &handlerClock{now: time.Date(2026, 8, 11, 10, 30, 0, 0, time.UTC)}
 	cfg := handlerIdentityConfig()
-	service := newHandlerIdentityService(t, cfg, identity.NewMemoryRecordStore(clock.Now), clock.Now)
+	store := &sequenceHandlerStore{MemoryRecordStore: identity.NewMemoryRecordStore(clock.Now)}
+	service := newHandlerIdentityService(t, cfg, store, clock.Now)
 
 	router := gin.New()
 	router.GET("/api/v1/auth/session", Session(service))
@@ -186,32 +185,11 @@ func TestSessionFallsBackToDevelopmentHeaderAfterInvalidCookie(t *testing.T) {
 	if !response.Authenticated || response.User.Subject != "development-user" {
 		t.Fatalf("session fallback response = %#v", response)
 	}
+	if store.getCalls != 1 {
+		t.Fatalf("session-store reads = %d, want 1", store.getCalls)
+	}
 	if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
 		t.Fatalf("development fallback changed cookies: %v", got)
-	}
-}
-
-func TestSessionFallsBackToBearerAfterInvalidCookie(t *testing.T) {
-	clock := &handlerClock{now: time.Date(2026, 8, 11, 10, 35, 0, 0, time.UTC)}
-	cfg := handlerIdentityConfig()
-	service := identity.NewForTest(cfg, identity.NewMemoryRecordStore(clock.Now), handlerBearerOIDCClient{}, clock.Now)
-
-	router := gin.New()
-	router.GET("/api/v1/auth/session", Session(service))
-	request := requestWithSessionCookie(http.MethodGet, "/api/v1/auth/session", cfg.SessionCookieName, "expired-session")
-	request.Header.Set("Authorization", "Bearer valid-bearer")
-	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, request)
-
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("session bearer fallback status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
-	}
-	response := decodeSessionResponse(t, recorder)
-	if !response.Authenticated || response.User.Subject != "bearer-user" {
-		t.Fatalf("session bearer fallback response = %#v", response)
-	}
-	if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
-		t.Fatalf("bearer fallback changed cookies: %v", got)
 	}
 }
 

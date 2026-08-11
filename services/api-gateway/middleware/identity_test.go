@@ -89,21 +89,17 @@ func (s *unavailableMiddlewareStore) Get(ctx context.Context, key string) ([]byt
 	return s.MemoryRecordStore.Get(ctx, key)
 }
 
-type middlewareBearerOIDCClient struct{}
-
-func (middlewareBearerOIDCClient) AuthorizationURL(string, string, string) string {
-	return ""
+type sequenceMiddlewareStore struct {
+	*identity.MemoryRecordStore
+	getCalls int
 }
 
-func (middlewareBearerOIDCClient) Exchange(context.Context, string, identity.AuthorizationTransactionForTest) (identity.BrowserSessionForTest, error) {
-	return identity.BrowserSessionForTest{}, identity.ErrUnauthorized
-}
-
-func (middlewareBearerOIDCClient) VerifyBearer(_ context.Context, token string) (identity.Principal, error) {
-	if token != "valid-bearer" {
-		return identity.Principal{}, identity.ErrUnauthorized
+func (s *sequenceMiddlewareStore) Get(context.Context, string) ([]byte, error) {
+	s.getCalls++
+	if s.getCalls == 1 {
+		return nil, identity.ErrRecordNotFound
 	}
-	return identity.Principal{Subject: "bearer-user"}, nil
+	return nil, errors.New("unexpected second session-store read")
 }
 
 func TestRequireIdentityRestoresBrowserSessionAndRefreshesCookie(t *testing.T) {
@@ -200,7 +196,8 @@ func TestRequireIdentityFailsClosedWhenSessionStoreUnavailable(t *testing.T) {
 func TestRequireIdentityFallsBackToDevelopmentHeaderAfterInvalidCookie(t *testing.T) {
 	clock := &middlewareClock{now: time.Date(2026, 8, 11, 12, 45, 0, 0, time.UTC)}
 	cfg := middlewareIdentityConfig()
-	service := newMiddlewareIdentityService(cfg, identity.NewMemoryRecordStore(clock.Now), clock.Now)
+	store := &sequenceMiddlewareStore{MemoryRecordStore: identity.NewMemoryRecordStore(clock.Now)}
+	service := newMiddlewareIdentityService(cfg, store, clock.Now)
 
 	router := gin.New()
 	router.Use(RequireIdentity(service))
@@ -221,35 +218,10 @@ func TestRequireIdentityFallsBackToDevelopmentHeaderAfterInvalidCookie(t *testin
 	if response["subject"] != "development-user" {
 		t.Fatalf("development fallback response = %#v", response)
 	}
+	if store.getCalls != 1 {
+		t.Fatalf("session-store reads = %d, want 1", store.getCalls)
+	}
 	if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
 		t.Fatalf("development fallback changed cookies: %v", got)
-	}
-}
-
-func TestRequireIdentityFallsBackToBearerAfterInvalidCookie(t *testing.T) {
-	clock := &middlewareClock{now: time.Date(2026, 8, 11, 13, 0, 0, 0, time.UTC)}
-	cfg := middlewareIdentityConfig()
-	service := identity.NewForTest(cfg, identity.NewMemoryRecordStore(clock.Now), middlewareBearerOIDCClient{}, clock.Now)
-
-	router := gin.New()
-	router.Use(RequireIdentity(service))
-	router.GET("/protected", protectedHandler)
-	request := middlewareRequestWithCookie(cfg.SessionCookieName, "expired-session")
-	request.Header.Set("Authorization", "Bearer valid-bearer")
-	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, request)
-
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("bearer fallback status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
-	}
-	var response map[string]string
-	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
-		t.Fatalf("decode bearer fallback response: %v", err)
-	}
-	if response["subject"] != "bearer-user" {
-		t.Fatalf("bearer fallback response = %#v", response)
-	}
-	if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
-		t.Fatalf("bearer fallback changed cookies: %v", got)
 	}
 }

@@ -85,7 +85,7 @@ func Session(service *identity.Service) gin.HandlerFunc {
 		// Browser-session absence or invalidity may still be satisfied by an
 		// explicit bearer token or development header. Those credential paths
 		// never write a browser cookie.
-		principal, err = service.Authenticate(c.Request.Context(), c.Request)
+		principal, err = service.AuthenticateHeaderCredentials(c.Request.Context(), c.Request.Header)
 		if err != nil {
 			if errors.Is(err, identity.ErrSessionStoreUnavailable) {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
