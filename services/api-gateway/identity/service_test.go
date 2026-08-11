@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -974,11 +976,120 @@ func (s *trackedRecordStore) Close() error {
 
 func replaceRedisStoreFactory(t *testing.T, factory func(string) (RecordStore, error)) {
 	t.Helper()
+	newRedisRecordStoreMu.Lock()
 	previous := newRedisRecordStore
 	newRedisRecordStore = factory
+	newRedisRecordStoreMu.Unlock()
 	t.Cleanup(func() {
-		newRedisRecordStore = previous
+		setRedisStoreFactoryForTest(previous)
 	})
+}
+
+func setRedisStoreFactoryForTest(factory func(string) (RecordStore, error)) {
+	newRedisRecordStoreMu.Lock()
+	newRedisRecordStore = factory
+	newRedisRecordStoreMu.Unlock()
+}
+
+func TestNewSafelySnapshotsRedisRecordStoreFactoryDuringConcurrentReplacement(t *testing.T) {
+	const (
+		readers         = 8
+		newsPerReader   = 250
+		factoryReplaces = 1_000
+	)
+	cfg := config.IdentityConfig{RedisURL: "redis://factory-race.test:6379/0"}
+	factoryOne := func(string) (RecordStore, error) { return NewMemoryRecordStore(nil), nil }
+	factoryTwo := func(string) (RecordStore, error) { return NewMemoryRecordStore(nil), nil }
+	var cleanupRestoredFactoryCalls int
+	var cleanupRestoredFactoryMu sync.Mutex
+	cleanupRestoredFactory := func(string) (RecordStore, error) {
+		cleanupRestoredFactoryMu.Lock()
+		cleanupRestoredFactoryCalls++
+		cleanupRestoredFactoryMu.Unlock()
+		return NewMemoryRecordStore(nil), nil
+	}
+	var restoredFactoryCalls int
+	var restoredFactoryMu sync.Mutex
+	restoredFactory := func(string) (RecordStore, error) {
+		restoredFactoryMu.Lock()
+		restoredFactoryCalls++
+		restoredFactoryMu.Unlock()
+		return NewMemoryRecordStore(nil), nil
+	}
+	replaceRedisStoreFactory(t, cleanupRestoredFactory)
+	t.Cleanup(func() {
+		service, err := New(context.Background(), cfg)
+		if err != nil {
+			t.Errorf("New after cleanup factory restoration: %v", err)
+			return
+		}
+		if err := service.Close(); err != nil {
+			t.Errorf("close service after cleanup factory restoration: %v", err)
+		}
+		cleanupRestoredFactoryMu.Lock()
+		calls := cleanupRestoredFactoryCalls
+		cleanupRestoredFactoryMu.Unlock()
+		if calls != 1 {
+			t.Errorf("cleanup-restored factory calls = %d, want 1", calls)
+		}
+	})
+	replaceRedisStoreFactory(t, factoryOne)
+
+	start := make(chan struct{})
+	errCh := make(chan error, readers)
+	var readerGroup sync.WaitGroup
+	for range readers {
+		readerGroup.Add(1)
+		go func() {
+			defer readerGroup.Done()
+			<-start
+			for range newsPerReader {
+				service, err := New(context.Background(), cfg)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				if err := service.Close(); err != nil {
+					errCh <- err
+					return
+				}
+			}
+		}()
+	}
+	writerDone := make(chan struct{})
+	go func() {
+		defer close(writerDone)
+		<-start
+		for replacement := range factoryReplaces {
+			if replacement%2 == 0 {
+				setRedisStoreFactoryForTest(factoryOne)
+			} else {
+				setRedisStoreFactoryForTest(factoryTwo)
+			}
+			runtime.Gosched()
+		}
+	}()
+	close(start)
+	readerGroup.Wait()
+	<-writerDone
+	close(errCh)
+	for err := range errCh {
+		t.Fatalf("New during factory replacement: %v", err)
+	}
+	setRedisStoreFactoryForTest(restoredFactory)
+	service, err := New(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("New after factory restoration: %v", err)
+	}
+	if err := service.Close(); err != nil {
+		t.Fatalf("close service after factory restoration: %v", err)
+	}
+	restoredFactoryMu.Lock()
+	calls := restoredFactoryCalls
+	restoredFactoryMu.Unlock()
+	if calls != 1 {
+		t.Fatalf("restored factory calls = %d, want 1", calls)
+	}
 }
 
 func TestNewPingsEveryConfiguredRedisStore(t *testing.T) {

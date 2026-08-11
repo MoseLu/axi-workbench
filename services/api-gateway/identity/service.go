@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -69,10 +70,15 @@ type Service struct {
 
 // newRedisRecordStore is a narrow construction seam for startup checks. It is
 // kept package-local so tests can prove fail-fast behavior without requiring a
-// reachable Redis server.
-var newRedisRecordStore = func(redisURL string) (RecordStore, error) {
-	return NewRedisRecordStore(redisURL)
-}
+// reachable Redis server. New snapshots it under the mutex and invokes the
+// snapshot after unlocking so a factory cannot hold the write lock while it
+// performs network work.
+var (
+	newRedisRecordStoreMu sync.RWMutex
+	newRedisRecordStore   = func(redisURL string) (RecordStore, error) {
+		return NewRedisRecordStore(redisURL)
+	}
+)
 
 func New(ctx context.Context, cfg config.IdentityConfig) (*Service, error) {
 	var records RecordStore
@@ -83,7 +89,10 @@ func New(ctx context.Context, cfg config.IdentityConfig) (*Service, error) {
 	if redisURL == "" {
 		records = NewMemoryRecordStore(nil)
 	} else {
-		redisStore, err := newRedisRecordStore(redisURL)
+		newRedisRecordStoreMu.RLock()
+		redisStoreFactory := newRedisRecordStore
+		newRedisRecordStoreMu.RUnlock()
+		redisStore, err := redisStoreFactory(redisURL)
 		if err != nil {
 			return nil, fmt.Errorf("%w: Redis configuration is invalid", ErrSessionStoreUnavailable)
 		}

@@ -18,6 +18,8 @@ import (
 
 const redisIntegrationURLEnv = "GATEWAY_REDIS_INTEGRATION_URL"
 
+var redisIntegrationFactoryInstallMu sync.Mutex
+
 // redisIntegrationFixture owns only the keys it creates. It deliberately does
 // not use SCAN, KEYS, FLUSHDB, or FLUSHALL: an explicitly configured Redis URL
 // can point at DB 0 shared with an unrelated local process.
@@ -109,6 +111,7 @@ func (f *redisIntegrationFixture) trackSession(sessionID string) {
 // Its counter deliberately advances only after the underlying real Redis PING
 // succeeds, which gives the startup assertion a local, ACL-independent owner.
 type redisIntegrationPingFactory struct {
+	trackedURL      string
 	mu              sync.Mutex
 	constructed     int
 	successfulPings int
@@ -123,6 +126,9 @@ func (f *redisIntegrationPingFactory) newStore(redisURL string) (RecordStore, er
 	store, err := NewRedisRecordStore(redisURL)
 	if err != nil {
 		return nil, err
+	}
+	if redisURL != f.trackedURL {
+		return store, nil
 	}
 	f.mu.Lock()
 	f.constructed++
@@ -146,13 +152,21 @@ func (f *redisIntegrationPingFactory) stats() (constructed, successfulPings int)
 	return f.constructed, f.successfulPings
 }
 
-func installRedisIntegrationPingFactory(t *testing.T) *redisIntegrationPingFactory {
+func installRedisIntegrationPingFactory(t *testing.T, trackedURL string) *redisIntegrationPingFactory {
 	t.Helper()
-	factory := &redisIntegrationPingFactory{}
+	redisIntegrationFactoryInstallMu.Lock()
+	t.Cleanup(func() {
+		redisIntegrationFactoryInstallMu.Unlock()
+	})
+	factory := &redisIntegrationPingFactory{trackedURL: trackedURL}
+	newRedisRecordStoreMu.Lock()
 	previous := newRedisRecordStore
 	newRedisRecordStore = factory.newStore
+	newRedisRecordStoreMu.Unlock()
 	t.Cleanup(func() {
+		newRedisRecordStoreMu.Lock()
 		newRedisRecordStore = previous
+		newRedisRecordStoreMu.Unlock()
 	})
 	return factory
 }
@@ -191,7 +205,7 @@ func TestRedisIntegrationNewPingsAndRestoresEmailSessionAfterGatewayRestart(t *t
 	ctx := context.Background()
 	cfg := redisIntegrationConfig(fixture.url)
 	clock := &testClock{now: time.Date(2026, 8, 11, 20, 0, 0, 0, time.UTC)}
-	pingFactory := installRedisIntegrationPingFactory(t)
+	pingFactory := installRedisIntegrationPingFactory(t, fixture.url)
 
 	issuer, err := New(ctx, cfg)
 	if err != nil {
@@ -281,6 +295,102 @@ func TestRedisIntegrationRotateThenPredecessorLogoutRevokesSuccessor(t *testing.
 	}
 }
 
+// pauseFirstCompareAndDeleteStore forces the window where Logout has read an
+// active predecessor but has not yet issued its conditional delete. Its
+// embedded store remains the real RedisRecordStore used by this integration
+// test; only the first CompareAndDelete call is delayed.
+type pauseFirstCompareAndDeleteStore struct {
+	RecordStore
+	firstCompareAndDeleteEntered chan struct{}
+	allowFirstCompareAndDelete   chan struct{}
+	firstCompareAndDelete        sync.Once
+}
+
+func (s *pauseFirstCompareAndDeleteStore) CompareAndDelete(ctx context.Context, key string, expected []byte) error {
+	pause := false
+	s.firstCompareAndDelete.Do(func() {
+		pause = true
+		close(s.firstCompareAndDeleteEntered)
+	})
+	if pause {
+		select {
+		case <-s.allowFirstCompareAndDelete:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return s.RecordStore.CompareAndDelete(ctx, key, expected)
+}
+
+func TestRedisIntegrationLogoutRereadsTombstoneAfterConcurrentRotate(t *testing.T) {
+	fixture := newRedisIntegrationFixture(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cfg := redisIntegrationConfig(fixture.url)
+	cfg.SessionRenewAfter = 5 * time.Minute
+	clock := &testClock{now: time.Date(2026, 8, 11, 20, 45, 0, 0, time.UTC)}
+	logoutStore, err := NewRedisRecordStore(fixture.url)
+	if err != nil {
+		t.Fatalf("create Redis store for concurrent logout: %v", err)
+	}
+	if err := logoutStore.Ping(ctx); err != nil {
+		_ = logoutStore.Close()
+		t.Fatalf("ping Redis store for concurrent logout: %v", err)
+	}
+	barrierStore := &pauseFirstCompareAndDeleteStore{
+		RecordStore:                  logoutStore,
+		firstCompareAndDeleteEntered: make(chan struct{}),
+		allowFirstCompareAndDelete:   make(chan struct{}),
+	}
+	var releaseBarrier sync.Once
+	release := func() {
+		releaseBarrier.Do(func() {
+			close(barrierStore.allowFirstCompareAndDelete)
+		})
+	}
+	defer release()
+	service := NewForTest(cfg, barrierStore, nil, clock.Now)
+	t.Cleanup(func() { closeRedisIntegrationService(t, service) })
+
+	predecessorID, err := service.IssueEmailSession(ctx, "owner@axi.test")
+	if err != nil {
+		t.Fatalf("issue Redis-backed email session: %v", err)
+	}
+	fixture.trackSession(predecessorID)
+	logoutResult := make(chan error, 1)
+	go func() {
+		logoutResult <- service.Logout(ctx, redisIntegrationRequest(cfg.SessionCookieName, predecessorID))
+	}()
+	select {
+	case <-barrierStore.firstCompareAndDeleteEntered:
+	case <-ctx.Done():
+		t.Fatalf("Logout did not reach its first CompareAndDelete: %v", ctx.Err())
+	}
+
+	clock.Advance(cfg.SessionRenewAfter)
+	principal, successorID, err := service.RestoreSession(ctx, redisIntegrationRequest(cfg.SessionCookieName, predecessorID))
+	if err != nil {
+		t.Fatalf("rotate predecessor while Logout is paused: %v", err)
+	}
+	if principal.Subject != "owner-subject" || principal.Email != "owner@axi.test" || successorID == "" || successorID == predecessorID {
+		t.Fatalf("concurrent rotation principal/session = %#v / %q, predecessor %q", principal, successorID, predecessorID)
+	}
+	fixture.trackSession(successorID)
+
+	release()
+	select {
+	case err := <-logoutResult:
+		if err != nil {
+			t.Fatalf("Logout after concurrent rotate: %v", err)
+		}
+	case <-ctx.Done():
+		t.Fatalf("Logout did not finish after releasing CompareAndDelete: %v", ctx.Err())
+	}
+	if _, _, err := service.RestoreSession(ctx, redisIntegrationRequest(cfg.SessionCookieName, successorID)); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("successor remained restorable after concurrent predecessor logout: %v", err)
+	}
+}
+
 func TestRedisIntegrationLogoutThenStaleRotateCannotCreateSuccessor(t *testing.T) {
 	fixture := newRedisIntegrationFixture(t)
 	ctx := context.Background()
@@ -333,7 +443,10 @@ func TestRedisIntegrationRotateRejectsInvalidTTLsWithoutPartialWrites(t *testing
 	}
 }
 
-const redisIntegrationTTLDriftTolerance = 250 * time.Millisecond
+const (
+	redisIntegrationMinimumTTLDecay      = 30 * time.Millisecond
+	redisIntegrationTTLIncreaseTolerance = 5 * time.Millisecond
+)
 
 type redisIntegrationRecordSnapshot struct {
 	value []byte
@@ -357,8 +470,10 @@ func assertInvalidRotateLeavesRedisRecordsUntouched(t *testing.T, fixture *redis
 	if err := fixture.store.Set(ctx, newKey, originalNewValue, baselineTTL); err != nil {
 		t.Fatalf("set successor baseline for %s: %v", label, err)
 	}
-	oldBefore := redisIntegrationSnapshot(t, fixture.store, ctx, oldKey)
-	newBefore := redisIntegrationSnapshot(t, fixture.store, ctx, newKey)
+	oldInitial := redisIntegrationSnapshot(t, fixture.store, ctx, oldKey)
+	newInitial := redisIntegrationSnapshot(t, fixture.store, ctx, newKey)
+	oldBefore := redisIntegrationSnapshotAfterTTLDecay(t, fixture.store, ctx, oldKey, oldInitial)
+	newBefore := redisIntegrationSnapshotAfterTTLDecay(t, fixture.store, ctx, newKey, newInitial)
 	tombstone := []byte(`{"supersededBy":"invalid-ttl-successor"}`)
 	if err := fixture.store.Rotate(ctx, oldKey, expected, newKey, []byte("new-value"), newTTL, tombstone, tombstoneTTL); !errors.Is(err, ErrRecordTTLTooShort) {
 		t.Fatalf("Rotate %s error = %v, want ErrRecordTTLTooShort", label, err)
@@ -383,14 +498,28 @@ func redisIntegrationSnapshot(t *testing.T, store *RedisRecordStore, ctx context
 	return redisIntegrationRecordSnapshot{value: value, ttl: ttl}
 }
 
+func redisIntegrationSnapshotAfterTTLDecay(t *testing.T, store *RedisRecordStore, ctx context.Context, key string, initial redisIntegrationRecordSnapshot) redisIntegrationRecordSnapshot {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		current := redisIntegrationSnapshot(t, store, ctx, key)
+		if initial.ttl-current.ttl >= redisIntegrationMinimumTTLDecay {
+			return current
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("Redis PTTL for %q did not decay by %s: initial=%s current=%s", key, redisIntegrationMinimumTTLDecay, initial.ttl, current.ttl)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
 func assertRedisIntegrationSnapshotUnchanged(t *testing.T, store *RedisRecordStore, ctx context.Context, key string, before redisIntegrationRecordSnapshot) {
 	t.Helper()
 	after := redisIntegrationSnapshot(t, store, ctx, key)
 	if !bytes.Equal(after.value, before.value) {
 		t.Fatalf("Redis key %q value = %q, want unchanged %q", key, after.value, before.value)
 	}
-	ttlDrift := after.ttl - before.ttl
-	if ttlDrift > redisIntegrationTTLDriftTolerance || ttlDrift < -redisIntegrationTTLDriftTolerance {
-		t.Fatalf("Redis key %q PTTL changed by %s (%s -> %s), want at most %s normal elapsed-time drift", key, ttlDrift, before.ttl, after.ttl, redisIntegrationTTLDriftTolerance)
+	if ttlIncrease := after.ttl - before.ttl; ttlIncrease > redisIntegrationTTLIncreaseTolerance {
+		t.Fatalf("Redis key %q PTTL increased by %s (%s -> %s), want no increase beyond %s Redis rounding tolerance", key, ttlIncrease, before.ttl, after.ttl, redisIntegrationTTLIncreaseTolerance)
 	}
 }
