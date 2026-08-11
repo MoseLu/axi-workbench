@@ -9,12 +9,13 @@ function isExactLoopbackHostname(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]';
 }
 
-function isLoopbackApiBaseURL(value: string | undefined): value is string {
-  if (!value) return false;
+function normalizeLoopbackApiBaseURL(value: string | undefined): string | undefined {
+  if (!value) return undefined;
   try {
-    return isExactLoopbackHostname(new URL(value).hostname);
+    const url = new URL(value);
+    return isExactLoopbackHostname(url.hostname) ? url.href : undefined;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
@@ -24,7 +25,7 @@ function normalizeExplicitApiProxyTarget(value: string | undefined): string | un
 
   try {
     const url = new URL(target);
-    if (url.protocol === 'http:' || url.protocol === 'https:') return target;
+    if (url.protocol === 'http:' || url.protocol === 'https:') return url.href;
   } catch {
     // Invalid URL syntax falls through to the same actionable configuration error.
   }
@@ -39,6 +40,5 @@ function normalizeExplicitApiProxyTarget(value: string | undefined): string | un
 export function selectApiProxyTarget({ apiProxyTarget, apiBaseURL }: ApiProxyTargetInput): string {
   const explicitTarget = normalizeExplicitApiProxyTarget(apiProxyTarget);
   if (explicitTarget) return explicitTarget;
-  if (isLoopbackApiBaseURL(apiBaseURL)) return apiBaseURL;
-  return DEFAULT_API_PROXY_TARGET;
+  return normalizeLoopbackApiBaseURL(apiBaseURL) || DEFAULT_API_PROXY_TARGET;
 }
