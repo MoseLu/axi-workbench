@@ -25,6 +25,19 @@ export PLATFORM_CORE_URL="${PLATFORM_CORE_URL:-http://127.0.0.1:8082}"
 export CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://127.0.0.1:8092}"
 export GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN="${GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN:-${CONTROL_PLANE_INTERNAL_SERVICE_TOKEN:-axi-development-internal-token}}"
 
+# The local persistence contract is intentionally explicit: an omitted Redis
+# URL receives the loopback default, while an explicit blank URL aborts before
+# the Gateway can fall back to an in-memory session store.
+if [[ -n "${GATEWAY_REDIS_URL+x}" ]]; then
+  if [[ -z "${GATEWAY_REDIS_URL//[[:space:]]/}" ]]; then
+    echo "GATEWAY_REDIS_URL 已显式设为空；本地持久会话必须配置 Redis 地址。" >&2
+    exit 1
+  fi
+else
+  export GATEWAY_REDIS_URL="redis://127.0.0.1:6379/2"
+fi
+export GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true
+
 # Email OTP is deliberately owner-only for this personal Workbench. Keeping
 # the fallback in the local launcher avoids silently broadening production
 # identity configuration while making a copied .env usable immediately.

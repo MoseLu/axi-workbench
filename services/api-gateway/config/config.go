@@ -48,21 +48,25 @@ type ServicesConfig struct {
 }
 
 type IdentityConfig struct {
-	IssuerURL                 string
-	ClientID                  string
-	ClientSecret              string
-	APIAudience               string
-	RequiredAccessTokenScopes []string
-	CallbackURL               string
-	AllowedReturnURLs         []string
-	SessionCookieName         string
-	SessionCookieDomain       string
-	SessionCookieSecure       bool
-	SessionTTL                time.Duration
-	EmailLoginOwnerEmail      string
-	EmailLoginSubject         string
-	RedisURL                  string
-	DevelopmentHeaderAuth     bool
+	IssuerURL                  string
+	ClientID                   string
+	ClientSecret               string
+	APIAudience                string
+	RequiredAccessTokenScopes  []string
+	CallbackURL                string
+	AllowedReturnURLs          []string
+	SessionCookieName          string
+	SessionCookieDomain        string
+	SessionCookieSecure        bool
+	SessionTTL                 time.Duration
+	SessionIdleTTL             time.Duration
+	SessionAbsoluteTTL         time.Duration
+	SessionRenewAfter          time.Duration
+	EmailLoginOwnerEmail       string
+	EmailLoginSubject          string
+	RedisURL                   string
+	RequireDurableSessionStore bool
+	DevelopmentHeaderAuth      bool
 }
 
 type RateLimitConfig struct {
@@ -86,7 +90,8 @@ type LogConfig struct {
 
 func Load() (*Config, error) {
 	environment := getEnv("ENVIRONMENT", "development")
-	redisURL := os.Getenv("GATEWAY_REDIS_URL")
+	redisURL := strings.TrimSpace(os.Getenv("GATEWAY_REDIS_URL"))
+	legacySessionTTL := getDurationEnv("SESSION_TTL", 8*time.Hour)
 	cfg := &Config{
 		Environment: environment,
 		Server: ServerConfig{
@@ -112,21 +117,25 @@ func Load() (*Config, error) {
 			ControlPlaneInternalToken: getEnv("GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN", getEnv("CONTROL_PLANE_INTERNAL_SERVICE_TOKEN", "axi-development-internal-token")),
 		},
 		Identity: IdentityConfig{
-			IssuerURL:                 strings.TrimSuffix(os.Getenv("OIDC_ISSUER_URL"), "/"),
-			ClientID:                  os.Getenv("OIDC_CLIENT_ID"),
-			ClientSecret:              os.Getenv("OIDC_CLIENT_SECRET"),
-			APIAudience:               getEnv("OIDC_API_AUDIENCE", os.Getenv("OIDC_CLIENT_ID")),
-			RequiredAccessTokenScopes: getEnvSlice("OIDC_REQUIRED_ACCESS_TOKEN_SCOPES", nil),
-			CallbackURL:               getEnv("OIDC_CALLBACK_URL", "http://127.0.0.1:8088/api/v1/auth/oidc/callback"),
-			AllowedReturnURLs:         getEnvSlice("OIDC_ALLOWED_RETURN_URLS", []string{"http://127.0.0.1:5173/auth/callback", "http://127.0.0.1:5174/auth/callback"}),
-			SessionCookieName:         getEnv("SESSION_COOKIE_NAME", "axi_session"),
-			SessionCookieDomain:       os.Getenv("SESSION_COOKIE_DOMAIN"),
-			SessionCookieSecure:       getBoolEnv("SESSION_COOKIE_SECURE", environment == "production"),
-			SessionTTL:                getDurationEnv("SESSION_TTL", 8*time.Hour),
-			EmailLoginOwnerEmail:      strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_LOGIN_OWNER_EMAIL"))),
-			EmailLoginSubject:         strings.TrimSpace(os.Getenv("EMAIL_LOGIN_SUBJECT")),
-			RedisURL:                  redisURL,
-			DevelopmentHeaderAuth:     getBoolEnv("GATEWAY_ALLOW_DEVELOPMENT_HEADER_AUTH", false),
+			IssuerURL:                  strings.TrimSuffix(os.Getenv("OIDC_ISSUER_URL"), "/"),
+			ClientID:                   os.Getenv("OIDC_CLIENT_ID"),
+			ClientSecret:               os.Getenv("OIDC_CLIENT_SECRET"),
+			APIAudience:                getEnv("OIDC_API_AUDIENCE", os.Getenv("OIDC_CLIENT_ID")),
+			RequiredAccessTokenScopes:  getEnvSlice("OIDC_REQUIRED_ACCESS_TOKEN_SCOPES", nil),
+			CallbackURL:                getEnv("OIDC_CALLBACK_URL", "http://127.0.0.1:8088/api/v1/auth/oidc/callback"),
+			AllowedReturnURLs:          getEnvSlice("OIDC_ALLOWED_RETURN_URLS", []string{"http://127.0.0.1:5173/auth/callback", "http://127.0.0.1:5174/auth/callback"}),
+			SessionCookieName:          getEnv("SESSION_COOKIE_NAME", "axi_session"),
+			SessionCookieDomain:        os.Getenv("SESSION_COOKIE_DOMAIN"),
+			SessionCookieSecure:        getBoolEnv("SESSION_COOKIE_SECURE", environment == "production"),
+			SessionTTL:                 legacySessionTTL,
+			SessionIdleTTL:             getDurationEnv("SESSION_IDLE_TTL", legacySessionTTL),
+			SessionAbsoluteTTL:         getDurationEnv("SESSION_ABSOLUTE_TTL", legacySessionTTL),
+			SessionRenewAfter:          getDurationEnv("SESSION_RENEW_AFTER", 0),
+			EmailLoginOwnerEmail:       strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_LOGIN_OWNER_EMAIL"))),
+			EmailLoginSubject:          strings.TrimSpace(os.Getenv("EMAIL_LOGIN_SUBJECT")),
+			RedisURL:                   redisURL,
+			RequireDurableSessionStore: getBoolEnv("GATEWAY_REQUIRE_DURABLE_SESSION_STORE", false),
+			DevelopmentHeaderAuth:      getBoolEnv("GATEWAY_ALLOW_DEVELOPMENT_HEADER_AUTH", false),
 		},
 		RateLimit: RateLimitConfig{
 			RequestsPerMinute: getIntEnv("GATEWAY_RATE_LIMIT_PER_MINUTE", 120),
@@ -151,6 +160,21 @@ func Load() (*Config, error) {
 func (c Config) Validate() error {
 	if c.RateLimit.RequestsPerMinute <= 0 || c.Identity.SessionTTL <= 0 {
 		return fmt.Errorf("gateway rate limit and session TTL must be positive")
+	}
+	if c.Identity.SessionIdleTTL <= 0 {
+		return fmt.Errorf("SESSION_IDLE_TTL must be positive")
+	}
+	if c.Identity.SessionAbsoluteTTL <= 0 {
+		return fmt.Errorf("SESSION_ABSOLUTE_TTL must be positive")
+	}
+	if c.Identity.SessionIdleTTL > c.Identity.SessionAbsoluteTTL {
+		return fmt.Errorf("SESSION_IDLE_TTL must not exceed SESSION_ABSOLUTE_TTL")
+	}
+	if c.Identity.SessionRenewAfter < 0 {
+		return fmt.Errorf("SESSION_RENEW_AFTER must not be negative")
+	}
+	if c.Identity.RequireDurableSessionStore && strings.TrimSpace(c.Identity.RedisURL) == "" {
+		return fmt.Errorf("GATEWAY_REDIS_URL is required when GATEWAY_REQUIRE_DURABLE_SESSION_STORE is true")
 	}
 	if c.Environment == "production" {
 		if c.Identity.IssuerURL == "" || c.Identity.ClientID == "" || c.Identity.APIAudience == "" {
