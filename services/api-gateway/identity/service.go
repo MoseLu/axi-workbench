@@ -303,8 +303,6 @@ func (s *Service) Logout(ctx context.Context, request *http.Request) error {
 	return s.revokeSession(ctx, cookie.Value)
 }
 
-const maxSessionRevocationHops = 16
-
 // revokeSession invalidates a cookie's active record, following predecessor
 // tombstones created by rotation. A conditional delete means a concurrent
 // rotation cannot be missed: if it wins first, the next read observes its
@@ -312,14 +310,14 @@ const maxSessionRevocationHops = 16
 // expected-value check fails and cannot create a successor.
 func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 	currentID := sessionID
-	visited := make(map[string]struct{}, maxSessionRevocationHops)
-	for hops := 0; hops < maxSessionRevocationHops; hops++ {
+	visited := make(map[string]struct{})
+	for {
 		if currentID == "" {
-			return nil
+			return ErrSessionStoreUnavailable
 		}
 		if _, seen := visited[currentID]; seen {
 			// A malformed/cyclic record must not authenticate or cause writes.
-			return nil
+			return ErrSessionStoreUnavailable
 		}
 		visited[currentID] = struct{}{}
 
@@ -331,9 +329,19 @@ func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 			return ErrSessionStoreUnavailable
 		}
 
-		var tombstone sessionTombstone
-		if err := json.Unmarshal(record, &tombstone); err == nil && tombstone.SupersededBy != "" {
-			currentID = tombstone.SupersededBy
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(record, &fields); err != nil || fields == nil {
+			return ErrSessionStoreUnavailable
+		}
+		if _, isTombstone := fields["supersededBy"]; isTombstone {
+			var tombstone sessionTombstone
+			if err := json.Unmarshal(record, &tombstone); err != nil {
+				return ErrSessionStoreUnavailable
+			}
+			currentID = strings.TrimSpace(tombstone.SupersededBy)
+			if currentID == "" {
+				return ErrSessionStoreUnavailable
+			}
 			continue
 		}
 
@@ -341,7 +349,7 @@ func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 		if err := json.Unmarshal(record, &session); err != nil || session.Principal.Subject == "" {
 			// Do not interpret malformed records as a successor and never create
 			// new state while attempting to log out.
-			return nil
+			return ErrSessionStoreUnavailable
 		}
 		if err := s.records.CompareAndDelete(ctx, sessionKey(currentID), record); err == nil {
 			return nil
@@ -354,8 +362,6 @@ func (s *Service) revokeSession(ctx context.Context, sessionID string) error {
 			return ErrSessionStoreUnavailable
 		}
 	}
-	// Bound predecessor traversal to avoid unbounded work on corrupt data.
-	return nil
 }
 
 func (s *Service) SetCookie(response http.ResponseWriter, sessionID string) {

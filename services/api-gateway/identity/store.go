@@ -244,7 +244,7 @@ func (s *RedisRecordStore) Ping(ctx context.Context) error { return s.client.Pin
 func (s *RedisRecordStore) Close() error                   { return s.client.Close() }
 
 func validateRecordTTL(ttl time.Duration) error {
-	if ttl > 0 && ttl < time.Millisecond {
+	if ttl < time.Millisecond {
 		return ErrRecordTTLTooShort
 	}
 	return nil
