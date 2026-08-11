@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -105,34 +105,56 @@ func (f *redisIntegrationFixture) trackSession(sessionID string) {
 	f.track(sessionKey(sessionID))
 }
 
-func (f *redisIntegrationFixture) commandCalls(t *testing.T, command string) int64 {
-	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	stats, err := f.store.client.Info(ctx, "commandstats").Result()
+// redisIntegrationPingFactory wraps only stores that this test constructs.
+// Its counter deliberately advances only after the underlying real Redis PING
+// succeeds, which gives the startup assertion a local, ACL-independent owner.
+type redisIntegrationPingFactory struct {
+	mu              sync.Mutex
+	constructed     int
+	successfulPings int
+}
+
+type redisIntegrationPingStore struct {
+	*RedisRecordStore
+	factory *redisIntegrationPingFactory
+}
+
+func (f *redisIntegrationPingFactory) newStore(redisURL string) (RecordStore, error) {
+	store, err := NewRedisRecordStore(redisURL)
 	if err != nil {
-		t.Fatalf("read Redis command stats: %v", err)
+		return nil, err
 	}
-	prefix := "cmdstat_" + strings.ToLower(command) + ":"
-	for _, line := range strings.Split(stats, "\n") {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, prefix) {
-			continue
-		}
-		for _, field := range strings.Split(strings.TrimPrefix(line, prefix), ",") {
-			name, value, found := strings.Cut(field, "=")
-			if !found || name != "calls" {
-				continue
-			}
-			calls, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				t.Fatalf("parse Redis %s call count %q: %v", command, value, err)
-			}
-			return calls
-		}
+	f.mu.Lock()
+	f.constructed++
+	f.mu.Unlock()
+	return &redisIntegrationPingStore{RedisRecordStore: store, factory: f}, nil
+}
+
+func (s *redisIntegrationPingStore) Ping(ctx context.Context) error {
+	if err := s.RedisRecordStore.Ping(ctx); err != nil {
+		return err
 	}
-	t.Fatalf("Redis command stats did not include %q", command)
-	return 0
+	s.factory.mu.Lock()
+	s.factory.successfulPings++
+	s.factory.mu.Unlock()
+	return nil
+}
+
+func (f *redisIntegrationPingFactory) stats() (constructed, successfulPings int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.constructed, f.successfulPings
+}
+
+func installRedisIntegrationPingFactory(t *testing.T) *redisIntegrationPingFactory {
+	t.Helper()
+	factory := &redisIntegrationPingFactory{}
+	previous := newRedisRecordStore
+	newRedisRecordStore = factory.newStore
+	t.Cleanup(func() {
+		newRedisRecordStore = previous
+	})
+	return factory
 }
 
 func redisIntegrationConfig(redisURL string) config.IdentityConfig {
@@ -169,8 +191,8 @@ func TestRedisIntegrationNewPingsAndRestoresEmailSessionAfterGatewayRestart(t *t
 	ctx := context.Background()
 	cfg := redisIntegrationConfig(fixture.url)
 	clock := &testClock{now: time.Date(2026, 8, 11, 20, 0, 0, 0, time.UTC)}
+	pingFactory := installRedisIntegrationPingFactory(t)
 
-	pingCallsBeforeNew := fixture.commandCalls(t, "ping")
 	issuer, err := New(ctx, cfg)
 	if err != nil {
 		t.Fatalf("New Redis-backed issuer: %v", err)
@@ -181,8 +203,8 @@ func TestRedisIntegrationNewPingsAndRestoresEmailSessionAfterGatewayRestart(t *t
 			closeRedisIntegrationService(t, issuer)
 		}
 	})
-	if pingCallsAfterNew := fixture.commandCalls(t, "ping"); pingCallsAfterNew <= pingCallsBeforeNew {
-		t.Fatalf("New did not issue a Redis PING: before=%d after=%d", pingCallsBeforeNew, pingCallsAfterNew)
+	if constructed, successfulPings := pingFactory.stats(); constructed != 1 || successfulPings != 1 {
+		t.Fatalf("issuer Redis store/PING counts = %d/%d, want 1/1", constructed, successfulPings)
 	}
 	issuer.now = clock.Now
 
@@ -201,6 +223,9 @@ func TestRedisIntegrationNewPingsAndRestoresEmailSessionAfterGatewayRestart(t *t
 		t.Fatalf("recreate Redis-backed service: %v", err)
 	}
 	t.Cleanup(func() { closeRedisIntegrationService(t, restarted) })
+	if constructed, successfulPings := pingFactory.stats(); constructed != 2 || successfulPings != 2 {
+		t.Fatalf("restarted Redis store/PING counts = %d/%d, want 2/2", constructed, successfulPings)
+	}
 	restarted.now = clock.Now
 
 	principal, restoredID, err := restarted.RestoreSession(ctx, redisIntegrationRequest(cfg.SessionCookieName, sessionID))
@@ -240,6 +265,13 @@ func TestRedisIntegrationRotateThenPredecessorLogoutRevokesSuccessor(t *testing.
 		t.Fatalf("rotated session ID = %q, predecessor = %q", successorID, predecessorID)
 	}
 	fixture.trackSession(successorID)
+	principal, restoredID, err := service.RestoreSession(ctx, redisIntegrationRequest(cfg.SessionCookieName, successorID))
+	if err != nil {
+		t.Fatalf("restore successor before predecessor logout: %v", err)
+	}
+	if principal.Subject != "owner-subject" || principal.Email != "owner@axi.test" || restoredID != successorID {
+		t.Fatalf("restored successor principal/session = %#v / %q, want owner principal / %q", principal, restoredID, successorID)
+	}
 
 	if err := service.Logout(ctx, redisIntegrationRequest(cfg.SessionCookieName, predecessorID)); err != nil {
 		t.Fatalf("logout with rotated predecessor cookie: %v", err)
@@ -276,6 +308,9 @@ func TestRedisIntegrationLogoutThenStaleRotateCannotCreateSuccessor(t *testing.T
 	if err := service.Logout(ctx, redisIntegrationRequest(cfg.SessionCookieName, predecessorID)); err != nil {
 		t.Fatalf("logout active predecessor: %v", err)
 	}
+	if _, err := fixture.store.Get(ctx, predecessorKey); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("predecessor remained after logout: %v", err)
+	}
 	successorKey := fixture.key("logout-then-stale-rotate-successor")
 	tombstone := []byte(`{"supersededBy":"logout-then-stale-rotate-successor"}`)
 	if err := fixture.store.Rotate(ctx, predecessorKey, expected, successorKey, []byte("must-not-exist"), time.Hour, tombstone, time.Hour); !errors.Is(err, ErrRecordNotFound) {
@@ -292,44 +327,70 @@ func TestRedisIntegrationRotateRejectsInvalidTTLsWithoutPartialWrites(t *testing
 	invalidTTLs := []time.Duration{0, -time.Millisecond, 500 * time.Microsecond}
 	for _, invalidTTL := range invalidTTLs {
 		t.Run(invalidTTL.String(), func(t *testing.T) {
-			oldKey := fixture.key("invalid-ttl-old")
-			newKey := fixture.key("invalid-ttl-new")
-			oldValue := []byte("old-value")
-			originalNewValue := []byte("original-new-value")
-			if err := fixture.store.Set(ctx, oldKey, oldValue, time.Hour); err != nil {
-				t.Fatalf("set old record: %v", err)
-			}
-			expected, err := fixture.store.Get(ctx, oldKey)
-			if err != nil {
-				t.Fatalf("read old record: %v", err)
-			}
-			if err := fixture.store.Set(ctx, newKey, originalNewValue, time.Hour); err != nil {
-				t.Fatalf("set successor baseline: %v", err)
-			}
-			tombstone := []byte(`{"supersededBy":"invalid-ttl-successor"}`)
-
-			if err := fixture.store.Rotate(ctx, oldKey, expected, newKey, []byte("new-value"), invalidTTL, tombstone, time.Hour); !errors.Is(err, ErrRecordTTLTooShort) {
-				t.Fatalf("Rotate invalid successor TTL error = %v, want ErrRecordTTLTooShort", err)
-			}
-			assertRedisIntegrationValue(t, fixture.store, ctx, oldKey, expected)
-			assertRedisIntegrationValue(t, fixture.store, ctx, newKey, originalNewValue)
-
-			if err := fixture.store.Rotate(ctx, oldKey, expected, newKey, []byte("new-value"), time.Hour, tombstone, invalidTTL); !errors.Is(err, ErrRecordTTLTooShort) {
-				t.Fatalf("Rotate invalid tombstone TTL error = %v, want ErrRecordTTLTooShort", err)
-			}
-			assertRedisIntegrationValue(t, fixture.store, ctx, oldKey, expected)
-			assertRedisIntegrationValue(t, fixture.store, ctx, newKey, originalNewValue)
+			assertInvalidRotateLeavesRedisRecordsUntouched(t, fixture, ctx, "invalid-successor-ttl", invalidTTL, 2*time.Hour)
+			assertInvalidRotateLeavesRedisRecordsUntouched(t, fixture, ctx, "invalid-tombstone-ttl", 2*time.Hour, invalidTTL)
 		})
 	}
 }
 
-func assertRedisIntegrationValue(t *testing.T, store *RedisRecordStore, ctx context.Context, key string, want []byte) {
+const redisIntegrationTTLDriftTolerance = 250 * time.Millisecond
+
+type redisIntegrationRecordSnapshot struct {
+	value []byte
+	ttl   time.Duration
+}
+
+func assertInvalidRotateLeavesRedisRecordsUntouched(t *testing.T, fixture *redisIntegrationFixture, ctx context.Context, label string, newTTL, tombstoneTTL time.Duration) {
 	t.Helper()
-	got, err := store.Get(ctx, key)
+	oldKey := fixture.key(label + "-old")
+	newKey := fixture.key(label + "-new")
+	oldValue := []byte("old-value")
+	originalNewValue := []byte("original-new-value")
+	const baselineTTL = 45 * time.Minute
+	if err := fixture.store.Set(ctx, oldKey, oldValue, baselineTTL); err != nil {
+		t.Fatalf("set old record for %s: %v", label, err)
+	}
+	expected, err := fixture.store.Get(ctx, oldKey)
+	if err != nil {
+		t.Fatalf("read old record for %s: %v", label, err)
+	}
+	if err := fixture.store.Set(ctx, newKey, originalNewValue, baselineTTL); err != nil {
+		t.Fatalf("set successor baseline for %s: %v", label, err)
+	}
+	oldBefore := redisIntegrationSnapshot(t, fixture.store, ctx, oldKey)
+	newBefore := redisIntegrationSnapshot(t, fixture.store, ctx, newKey)
+	tombstone := []byte(`{"supersededBy":"invalid-ttl-successor"}`)
+	if err := fixture.store.Rotate(ctx, oldKey, expected, newKey, []byte("new-value"), newTTL, tombstone, tombstoneTTL); !errors.Is(err, ErrRecordTTLTooShort) {
+		t.Fatalf("Rotate %s error = %v, want ErrRecordTTLTooShort", label, err)
+	}
+	assertRedisIntegrationSnapshotUnchanged(t, fixture.store, ctx, oldKey, oldBefore)
+	assertRedisIntegrationSnapshotUnchanged(t, fixture.store, ctx, newKey, newBefore)
+}
+
+func redisIntegrationSnapshot(t *testing.T, store *RedisRecordStore, ctx context.Context, key string) redisIntegrationRecordSnapshot {
+	t.Helper()
+	value, err := store.Get(ctx, key)
 	if err != nil {
 		t.Fatalf("read Redis key %q: %v", key, err)
 	}
-	if !bytes.Equal(got, want) {
-		t.Fatalf("Redis key %q = %q, want %q", key, got, want)
+	ttl, err := store.client.PTTL(ctx, key).Result()
+	if err != nil {
+		t.Fatalf("read Redis PTTL for %q: %v", key, err)
+	}
+	if ttl <= 0 {
+		t.Fatalf("Redis PTTL for %q = %s, want live positive TTL", key, ttl)
+	}
+	return redisIntegrationRecordSnapshot{value: value, ttl: ttl}
+}
+
+func assertRedisIntegrationSnapshotUnchanged(t *testing.T, store *RedisRecordStore, ctx context.Context, key string, before redisIntegrationRecordSnapshot) {
+	t.Helper()
+	after := redisIntegrationSnapshot(t, store, ctx, key)
+	if !bytes.Equal(after.value, before.value) {
+		t.Fatalf("Redis key %q value = %q, want unchanged %q", key, after.value, before.value)
+	}
+	ttlDrift := after.ttl - before.ttl
+	if ttlDrift > redisIntegrationTTLDriftTolerance || ttlDrift < -redisIntegrationTTLDriftTolerance {
+		t.Fatalf("Redis key %q PTTL changed by %s (%s -> %s), want at most %s normal elapsed-time drift", key, ttlDrift, before.ttl, after.ttl, redisIntegrationTTLDriftTolerance)
 	}
 }
