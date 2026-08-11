@@ -5,7 +5,7 @@
 - 来源：2026-08-11 用户反馈 Web 在 Vite 重启、关闭前端或 HMR 后反复要求 QQ 邮箱验证码，并要求本机测试环境首登后保持可用。
 - 决策：测试环境先行；第一阶段交付持久会话与单一开发 Origin，第二阶段交付受信设备，Passkey 作为生产推广前的增强。
 - 不在本轮范围：生产环境放宽现有会话策略、把浏览器原始指纹当作认证凭据、修改移动端设备配对协议。
-- 状态：设计已确认；认证代码尚未开始修改。
+- 状态：第一阶段配置与启动契约已实施；持久 session engine 尚待 Task 2。
 
 ## 设计命题
 
@@ -23,7 +23,7 @@ flowchart LR
 ## 第一阶段：测试环境会话持久化
 
 1. **固定本机 Origin。** Web 开发服务器绑定 `127.0.0.1:5173` 并启用严格端口；开发浏览器请求一律使用相对 `/api`，由 Vite 代理到 `http://127.0.0.1:8088`。移除开发环境的直接 `VITE_API_BASE_URL`，避免 `localhost` 和 `127.0.0.1` 各自拥有一份 Cookie。
-2. **强制 Redis 会话存储。** 本地 Gateway 启动脚本要求 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0`；DB 0 专供 Gateway 浏览器会话，Identity 保持 DB 1、Workflow 保持 DB 2，不能共用键空间。Redis 不可用则启动失败，不回退到进程内存。现有 Docker Redis 的 AOF 与命名卷继续作为本地重启后的持久化基础。
+2. **强制 Redis 会话存储。** 本地 Gateway 启动脚本要求 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0`；DB 0 是 Gateway 专用 Redis DB（浏览器 session + Gateway rate-limit，键名前缀隔离），Identity 保持 DB 1、Workflow 保持 DB 2，不能共用键空间。Redis 不可用则启动失败，不回退到进程内存。现有 Docker Redis 的 AOF 与命名卷继续作为本地重启后的持久化基础。
 3. **拆分会话时限。** 新增 `SESSION_IDLE_TTL=720h`、`SESSION_ABSOLUTE_TTL=2160h` 与 `SESSION_RENEW_AFTER=168h`。新变量未配置时，兼容使用现有 `SESSION_TTL`，不改变生产环境默认 8 小时策略。Go 时长使用 `h`，不使用不被 `time.ParseDuration` 支持的 `d`。
 4. **滑动续期与轮换。** Gateway 在有效 `/api/v1/auth/session` 请求时更新闲置期限；达到续期阈值后原子地签发新 session ID、写入新 Redis 键并退休旧键。普通登出、绝对过期和服务端撤销始终立即失效。
 5. **可诊断失败。** 仅测试环境记录 `missing_cookie`、`unknown_session`、`expired_idle`、`expired_absolute`；日志绝不包含 Cookie、验证码、邮箱原文或 OAuth token。
@@ -47,7 +47,7 @@ flowchart LR
 | 类别 | 决定 |
 | --- | --- |
 | 既有接口 | `GET /api/v1/auth/session` 保持响应兼容；可在服务端静默续期或恢复，不返回 session ID。 |
-| 新配置 | `GATEWAY_REDIS_URL`、`SESSION_IDLE_TTL`、`SESSION_ABSOLUTE_TTL`、`SESSION_RENEW_AFTER`、`AUTH_TRUSTED_DEVICES_ENABLED`、`AUTH_PASSKEY_ENABLED`。 |
+| 新配置 | `GATEWAY_REDIS_URL`、`GATEWAY_REQUIRE_DURABLE_SESSION_STORE`、`SESSION_IDLE_TTL`、`SESSION_ABSOLUTE_TTL`、`SESSION_RENEW_AFTER`、`AUTH_TRUSTED_DEVICES_ENABLED`、`AUTH_PASSKEY_ENABLED`。 |
 | 新接口 | 第二阶段增加 `GET/DELETE /api/v1/auth/devices`；设备恢复复用既有 session 检查入口。 |
 | 新审计 | `session_created`、`session_restored`、`session_renewed`、`session_rejected`、`trusted_device_recovered`、`device_revoked`。 |
 

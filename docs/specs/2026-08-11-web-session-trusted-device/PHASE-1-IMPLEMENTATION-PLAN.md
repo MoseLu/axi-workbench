@@ -14,13 +14,15 @@
 
 ## 先决条件与回归基线
 
-- [ ] 在独立 worktree 安装锁定依赖：`pnpm install --frozen-lockfile`。
-- [ ] 记录当前基线：
+- [x] 在独立 worktree 安装锁定依赖：`pnpm install --frozen-lockfile`。
+- [x] 记录当前基线：
   - `go test ./...`（cwd: `services/api-gateway`）
   - `pnpm --filter @axi/workbench test -- src/lib/authGateway.test.ts`
-- [ ] 不修改主 worktree 中已有的 i18n 与自动提交日志；所有变更仅落在 `codex/web-session-persistence` worktree。
+- [x] 不修改主 worktree 中已有的 i18n 与自动提交日志；所有变更仅落在 `codex/web-session-persistence` worktree。
 
 ## Task 1 — 先固化会话配置和本地 Redis 启动契约
+
+**状态：** [x] 已完成（配置与启动契约）；session engine 保持待 Task 2。
 
 **Files:**
 
@@ -37,7 +39,7 @@
 1. 先为 `Config.Validate` 增加失败测试：`GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true` 而 `GATEWAY_REDIS_URL` 为空时必须拒绝启动；`SESSION_IDLE_TTL`、`SESSION_ABSOLUTE_TTL` 必须为正数且 idle 不得超过 absolute；续期阈值不得为负数、且启用时必须小于 idle TTL。
 2. 先为默认兼容性增加测试：只设置既有 `SESSION_TTL` 时，idle/absolute 均回退为它，且续期阈值关闭（或等同于不会在有效期内触发），保留现有生产 8h 语义。
 3. 实现 `IdentityConfig` 的 `SessionIdleTTL`、`SessionAbsoluteTTL`、`SessionRenewAfter`、`RequireDurableSessionStore`；新会话时长和 durable 开关的非空无效值必须在 `Load` 中失败关闭，而遗留 `SESSION_TTL` 与既有 timeout 的宽松解析保持不变；`Validate` 执行上述不变量。
-4. 修改本地启动脚本：默认并强制 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0` 和 `GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true`；DB 0 专供 Gateway 会话，不能与 Identity 的 DB 1 或 Workflow 的 DB 2 共用。变量为空时以不含敏感信息的中文错误退出。脚本不回退到进程内存。
+4. 修改本地启动脚本：默认并强制 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0` 和 `GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true`；DB 0 是 Gateway 专用 Redis DB（浏览器 session + Gateway rate-limit，键名前缀隔离），不能与 Identity 的 DB 1 或 Workflow 的 DB 2 共用。变量为空或显式指定非 DB 0 时以不含敏感信息的中文错误退出。脚本不回退到进程内存。
 5. 更新 `.env.example`：使用同一 loopback Redis DB，给出 `720h`、`2160h`、`168h` 的测试环境示例和 `VITE_API_BASE_URL=`，不写任何真实邮箱或凭据。
 6. 将 launcher 行为测试加入 `services/api-gateway/package.json` 的 `test` 与根 `Makefile` 的 `verify-go`，保证常规验证路径不会跳过启动契约。
 

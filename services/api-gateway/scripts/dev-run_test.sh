@@ -4,9 +4,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." &> /dev/null && pwd)"
 LAUNCHER_SOURCE="${LAUNCHER_SOURCE:-${SCRIPT_DIR}/dev-run.sh}"
+PACKAGE_SOURCE="${REPO_ROOT}/services/api-gateway/package.json"
+MAKEFILE_SOURCE="${REPO_ROOT}/Makefile"
 SENTINEL_SECRET="sentinel-smtp-password-must-not-leak"
-REDIS_ERROR="GATEWAY_REDIS_URL 已显式设为空；本地持久会话必须配置 Redis 地址。"
+EMPTY_REDIS_ERROR="GATEWAY_REDIS_URL 已显式设为空；本地持久会话必须配置 Redis 地址。"
+REDIS_DB_ERROR="GATEWAY_REDIS_URL 必须使用本地 Gateway 专用 Redis DB 0（路径 /0）。"
+UNSET_REDIS="__axi_unset_redis__"
 TEST_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/axi-gateway-dev-run-test.XXXXXX")"
 
 cleanup() {
@@ -19,13 +24,14 @@ fail() {
   exit 1
 }
 
-if [[ ! -f "${LAUNCHER_SOURCE}" ]]; then
-  fail "launcher source does not exist"
+if [[ ! -f "${LAUNCHER_SOURCE}" || ! -f "${PACKAGE_SOURCE}" || ! -f "${MAKEFILE_SOURCE}" ]]; then
+	fail "launcher, package, or Makefile source does not exist"
 fi
 
 mkdir -p "${TEST_ROOT}/bin" "${TEST_ROOT}/services/api-gateway/scripts"
 cp "${LAUNCHER_SOURCE}" "${TEST_ROOT}/services/api-gateway/scripts/dev-run.sh"
-chmod +x "${TEST_ROOT}/services/api-gateway/scripts/dev-run.sh"
+cp "${PACKAGE_SOURCE}" "${TEST_ROOT}/services/api-gateway/package.json"
+cp "${MAKEFILE_SOURCE}" "${TEST_ROOT}/Makefile"
 
 OBSERVED_ENV="${TEST_ROOT}/observed.env"
 cat > "${TEST_ROOT}/bin/go" <<'EOF'
@@ -49,15 +55,25 @@ write_env() {
   } > "${TEST_ROOT}/.env"
 }
 
+run_with_redis_environment() {
+	local stdout_path="$1"
+	local stderr_path="$2"
+	local inherited_redis_url="$3"
+	shift 3
+	(
+		if [[ "${inherited_redis_url}" == "${UNSET_REDIS}" ]]; then
+			unset GATEWAY_REDIS_URL
+		else
+			export GATEWAY_REDIS_URL="${inherited_redis_url}"
+		fi
+		export PATH="${TEST_ROOT}/bin:${PATH}"
+		export FAKE_GO_ENV_FILE="${OBSERVED_ENV}"
+		"$@"
+	) > "${stdout_path}" 2> "${stderr_path}"
+}
+
 run_launcher() {
-  local stdout_path="$1"
-  local stderr_path="$2"
-  (
-    unset GATEWAY_REDIS_URL
-    export PATH="${TEST_ROOT}/bin:${PATH}"
-    export FAKE_GO_ENV_FILE="${OBSERVED_ENV}"
-    "${TEST_ROOT}/services/api-gateway/scripts/dev-run.sh"
-  ) > "${stdout_path}" 2> "${stderr_path}"
+	run_with_redis_environment "$1" "$2" "${UNSET_REDIS}" bash "${TEST_ROOT}/services/api-gateway/scripts/dev-run.sh"
 }
 
 assert_observed_line() {
@@ -68,21 +84,37 @@ assert_observed_line() {
 }
 
 assert_redis_rejected() {
-  local redis_line="$1"
-  local case_name="$2"
-  local stdout_path="${TEST_ROOT}/${case_name}.stdout"
-  local stderr_path="${TEST_ROOT}/${case_name}.stderr"
+	local redis_line="$1"
+	local inherited_redis_url="$2"
+	local case_name="$3"
+	local expected_error="$4"
+	local stdout_path="${TEST_ROOT}/${case_name}.stdout"
+	local stderr_path="${TEST_ROOT}/${case_name}.stderr"
 
-  write_env "${redis_line}"
-  if run_launcher "${stdout_path}" "${stderr_path}"; then
-    fail "${case_name} Redis URL unexpectedly started the launcher"
-  fi
-  if ! grep -Fq "${REDIS_ERROR}" "${stdout_path}" "${stderr_path}"; then
-    fail "${case_name} Redis URL did not report the Chinese Redis configuration error"
+	write_env "${redis_line}"
+	if run_with_redis_environment "${stdout_path}" "${stderr_path}" "${inherited_redis_url}" bash "${TEST_ROOT}/services/api-gateway/scripts/dev-run.sh"; then
+		fail "${case_name} Redis URL unexpectedly started the launcher"
+	fi
+	if ! grep -Fq "${expected_error}" "${stdout_path}" "${stderr_path}"; then
+		fail "${case_name} Redis URL did not report the Chinese Redis configuration error"
   fi
   if grep -Fq "${SENTINEL_SECRET}" "${stdout_path}" "${stderr_path}"; then
     fail "${case_name} Redis URL leaked the SMTP sentinel"
-  fi
+	fi
+}
+
+assert_entrypoint_uses_launcher() {
+	local case_name="$1"
+	shift
+	local stdout_path="${TEST_ROOT}/${case_name}.stdout"
+	local stderr_path="${TEST_ROOT}/${case_name}.stderr"
+
+	write_env ""
+	if ! run_with_redis_environment "${stdout_path}" "${stderr_path}" "${UNSET_REDIS}" "$@"; then
+		fail "${case_name} did not start through the durable launcher"
+	fi
+	assert_observed_line "GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0"
+	assert_observed_line "GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true"
 }
 
 write_env ""
@@ -92,7 +124,13 @@ fi
 assert_observed_line "GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0"
 assert_observed_line "GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true"
 
-assert_redis_rejected "GATEWAY_REDIS_URL=" "empty"
-assert_redis_rejected "GATEWAY_REDIS_URL='   '" "whitespace"
+assert_redis_rejected "GATEWAY_REDIS_URL=" "${UNSET_REDIS}" "empty" "${EMPTY_REDIS_ERROR}"
+assert_redis_rejected "GATEWAY_REDIS_URL='   '" "${UNSET_REDIS}" "whitespace" "${EMPTY_REDIS_ERROR}"
+assert_redis_rejected "GATEWAY_REDIS_URL=redis://127.0.0.1:6379/1" "${UNSET_REDIS}" "env-db1" "${REDIS_DB_ERROR}"
+assert_redis_rejected "GATEWAY_REDIS_URL=redis://127.0.0.1:6379/2" "${UNSET_REDIS}" "env-db2" "${REDIS_DB_ERROR}"
+assert_redis_rejected "" "redis://127.0.0.1:6379/2" "inherited-db2" "${REDIS_DB_ERROR}"
+
+assert_entrypoint_uses_launcher "pnpm-dev" pnpm --dir "${TEST_ROOT}/services/api-gateway" run dev
+assert_entrypoint_uses_launcher "make-dev-gateway" make -C "${TEST_ROOT}" dev-gateway
 
 printf 'ok - dev-run durable Redis contract\n'

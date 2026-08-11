@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "go run cmd/gateway/main.go",
+    "dev": "bash scripts/dev-run.sh",
     "build": "go build -o bin/gateway ./cmd/gateway",
     "test": "go test ./... && bash scripts/dev-run_test.sh"
   }

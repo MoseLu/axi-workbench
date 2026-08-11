@@ -61,7 +61,7 @@ docker-down:
 # Backend services. The dev-run scripts load the repository .env without
 # printing secrets and apply the local ports/defaults used by Workbench.
 dev-gateway:
-	./services/api-gateway/scripts/dev-run.sh
+	bash services/api-gateway/scripts/dev-run.sh
 
 dev-identity:
 	./services/identity-adapter/scripts/dev-run.sh
