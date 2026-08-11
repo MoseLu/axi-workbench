@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"sync"
@@ -17,7 +18,8 @@ var ErrRecordNotFound = errors.New("gateway identity record not found")
 type RecordStore interface {
 	Set(context.Context, string, []byte, time.Duration) error
 	Get(context.Context, string) ([]byte, error)
-	Rotate(context.Context, string, string, []byte, time.Duration) error
+	CompareAndSet(context.Context, string, []byte, []byte, time.Duration) error
+	Rotate(context.Context, string, []byte, string, []byte, time.Duration) error
 	Delete(context.Context, string) error
 	Ping(context.Context) error
 	Close() error
@@ -59,13 +61,32 @@ func (s *MemoryRecordStore) Get(_ context.Context, key string) ([]byte, error) {
 	return append([]byte(nil), record.value...), nil
 }
 
-func (s *MemoryRecordStore) Rotate(_ context.Context, oldKey, newKey string, newValue []byte, ttl time.Duration) error {
+func (s *MemoryRecordStore) CompareAndSet(_ context.Context, key string, expected, next []byte, ttl time.Duration) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	record, exists := s.records[key]
+	if !exists || !now.Before(record.expiresAt) {
+		delete(s.records, key)
+		return ErrRecordNotFound
+	}
+	if !bytes.Equal(record.value, expected) {
+		return ErrRecordNotFound
+	}
+	s.records[key] = memoryRecord{value: append([]byte(nil), next...), expiresAt: now.Add(ttl)}
+	return nil
+}
+
+func (s *MemoryRecordStore) Rotate(_ context.Context, oldKey string, expected []byte, newKey string, newValue []byte, ttl time.Duration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := s.now()
 	record, exists := s.records[oldKey]
 	if !exists || !now.Before(record.expiresAt) {
 		delete(s.records, oldKey)
+		return ErrRecordNotFound
+	}
+	if !bytes.Equal(record.value, expected) {
 		return ErrRecordNotFound
 	}
 	s.records[newKey] = memoryRecord{value: append([]byte(nil), newValue...), expiresAt: now.Add(ttl)}
@@ -110,17 +131,38 @@ func (s *RedisRecordStore) Get(ctx context.Context, key string) ([]byte, error) 
 	return append([]byte(nil), value...), nil
 }
 
-const rotateRecordScript = `
-if redis.call('EXISTS', KEYS[1]) == 0 then
+const compareAndSetRecordScript = `
+local current = redis.call('GET', KEYS[1])
+if not current or current ~= ARGV[1] then
   return 0
 end
-redis.call('SET', KEYS[2], ARGV[1], 'PX', ARGV[2])
+redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+return 1
+`
+
+func (s *RedisRecordStore) CompareAndSet(ctx context.Context, key string, expected, next []byte, ttl time.Duration) error {
+	result, err := s.client.Eval(ctx, compareAndSetRecordScript, []string{key}, append([]byte(nil), expected...), append([]byte(nil), next...), ttl.Milliseconds()).Int()
+	if err != nil {
+		return err
+	}
+	if result == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
+}
+
+const rotateRecordScript = `
+local current = redis.call('GET', KEYS[1])
+if not current or current ~= ARGV[1] then
+  return 0
+end
+redis.call('SET', KEYS[2], ARGV[2], 'PX', ARGV[3])
 redis.call('DEL', KEYS[1])
 return 1
 `
 
-func (s *RedisRecordStore) Rotate(ctx context.Context, oldKey, newKey string, newValue []byte, ttl time.Duration) error {
-	result, err := s.client.Eval(ctx, rotateRecordScript, []string{oldKey, newKey}, append([]byte(nil), newValue...), ttl.Milliseconds()).Int()
+func (s *RedisRecordStore) Rotate(ctx context.Context, oldKey string, expected []byte, newKey string, newValue []byte, ttl time.Duration) error {
+	result, err := s.client.Eval(ctx, rotateRecordScript, []string{oldKey, newKey}, append([]byte(nil), expected...), append([]byte(nil), newValue...), ttl.Milliseconds()).Int()
 	if err != nil {
 		return err
 	}

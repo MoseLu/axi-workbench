@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -155,9 +156,14 @@ func (c *testClock) Advance(duration time.Duration) {
 	c.now = c.now.Add(duration)
 }
 
-func rotateRecord(t *testing.T, store RecordStore, oldKey, newKey string, value []byte, ttl time.Duration) error {
+func rotateRecord(t *testing.T, store RecordStore, oldKey string, expected []byte, newKey string, value []byte, ttl time.Duration) error {
 	t.Helper()
-	return store.Rotate(context.Background(), oldKey, newKey, value, ttl)
+	return store.Rotate(context.Background(), oldKey, expected, newKey, value, ttl)
+}
+
+func compareAndSetRecord(t *testing.T, store RecordStore, key string, expected, next []byte, ttl time.Duration) error {
+	t.Helper()
+	return store.CompareAndSet(context.Background(), key, expected, next, ttl)
 }
 
 func restoreSession(t *testing.T, service *Service, request *http.Request) (Principal, string, error) {
@@ -203,9 +209,13 @@ func TestMemoryRecordStoreRotateAtomicallyReplacesOnlyLiveOldRecord(t *testing.T
 		t.Fatalf("set old record: %v", err)
 	}
 	oldValue[0] = 'x'
+	expectedOldValue, err := store.Get(context.Background(), "old")
+	if err != nil {
+		t.Fatalf("get old record before rotate: %v", err)
+	}
 
 	newValue := []byte("new-value")
-	if err := rotateRecord(t, store, "old", "new", newValue, 30*time.Minute); err != nil {
+	if err := rotateRecord(t, store, "old", expectedOldValue, "new", newValue, 30*time.Minute); err != nil {
 		t.Fatalf("rotate record: %v", err)
 	}
 	newValue[0] = 'x'
@@ -220,7 +230,7 @@ func TestMemoryRecordStoreRotateAtomicallyReplacesOnlyLiveOldRecord(t *testing.T
 		t.Fatalf("rotated value = %q, want copied new value", got)
 	}
 
-	if err := rotateRecord(t, store, "missing", "absent-new", []byte("should-not-write"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+	if err := rotateRecord(t, store, "missing", []byte("missing"), "absent-new", []byte("should-not-write"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("missing old record error = %v, want ErrRecordNotFound", err)
 	}
 	if _, err := store.Get(context.Background(), "absent-new"); !errors.Is(err, ErrRecordNotFound) {
@@ -230,12 +240,60 @@ func TestMemoryRecordStoreRotateAtomicallyReplacesOnlyLiveOldRecord(t *testing.T
 	if err := store.Set(context.Background(), "expired", []byte("expired-value"), time.Minute); err != nil {
 		t.Fatalf("set expiring record: %v", err)
 	}
+	expectedExpiredValue, err := store.Get(context.Background(), "expired")
+	if err != nil {
+		t.Fatalf("get expiring record before rotate: %v", err)
+	}
 	clock.Advance(time.Minute)
-	if err := rotateRecord(t, store, "expired", "expired-new", []byte("should-not-write"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+	if err := rotateRecord(t, store, "expired", expectedExpiredValue, "expired-new", []byte("should-not-write"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("expired old record error = %v, want ErrRecordNotFound", err)
 	}
 	if _, err := store.Get(context.Background(), "expired-new"); !errors.Is(err, ErrRecordNotFound) {
 		t.Fatalf("new record after expired-old rotate error = %v, want ErrRecordNotFound", err)
+	}
+}
+
+func TestMemoryRecordStoreConditionalWritesCannotReviveStaleRecords(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 9, 30, 0, 0, time.UTC)}
+	store := NewMemoryRecordStore(clock.Now)
+	if err := store.Set(context.Background(), "deleted", []byte("before-delete"), time.Hour); err != nil {
+		t.Fatalf("set deleted record: %v", err)
+	}
+	expectedDeleted, err := store.Get(context.Background(), "deleted")
+	if err != nil {
+		t.Fatalf("get deleted record: %v", err)
+	}
+	if err := store.Delete(context.Background(), "deleted"); err != nil {
+		t.Fatalf("delete record: %v", err)
+	}
+	if err := compareAndSetRecord(t, store, "deleted", expectedDeleted, []byte("stale-revival"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("stale compare-and-set error = %v, want ErrRecordNotFound", err)
+	}
+	if _, err := store.Get(context.Background(), "deleted"); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("deleted record after stale compare-and-set error = %v, want ErrRecordNotFound", err)
+	}
+
+	if err := store.Set(context.Background(), "rotated", []byte("before-rotate"), time.Hour); err != nil {
+		t.Fatalf("set rotating record: %v", err)
+	}
+	expectedRotated, err := store.Get(context.Background(), "rotated")
+	if err != nil {
+		t.Fatalf("get rotating record: %v", err)
+	}
+	if err := rotateRecord(t, store, "rotated", expectedRotated, "live-replacement", []byte("live-value"), time.Hour); err != nil {
+		t.Fatalf("live rotate: %v", err)
+	}
+	if err := rotateRecord(t, store, "rotated", expectedRotated, "stale-replacement", []byte("stale-value"), time.Hour); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("stale rotate error = %v, want ErrRecordNotFound", err)
+	}
+	if _, err := store.Get(context.Background(), "rotated"); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("rotated old record after stale rotate error = %v, want ErrRecordNotFound", err)
+	}
+	if _, err := store.Get(context.Background(), "stale-replacement"); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("stale replacement error = %v, want ErrRecordNotFound", err)
+	}
+	if liveValue, err := store.Get(context.Background(), "live-replacement"); err != nil || string(liveValue) != "live-value" {
+		t.Fatalf("live replacement = %q, %v", liveValue, err)
 	}
 }
 
@@ -403,16 +461,20 @@ func TestRestoreSessionRejectsIdleExpiryAndLogout(t *testing.T) {
 	})
 }
 
-func TestRestoreSessionLegacyRecordNeverExtendsItsExistingExpiry(t *testing.T) {
+func TestRestoreSessionLegacyRecordNeverMutatesOrRenewsIt(t *testing.T) {
 	clock := &testClock{now: time.Date(2026, 8, 11, 16, 0, 0, 0, time.UTC)}
 	cfg := emailSessionConfig()
-	cfg.SessionIdleTTL = 2 * time.Hour
+	cfg.SessionIdleTTL = 15 * time.Minute
 	cfg.SessionAbsoluteTTL = 8 * time.Hour
+	cfg.SessionRenewAfter = 5 * time.Minute
 	store := NewMemoryRecordStore(clock.Now)
 	service := NewForTest(cfg, store, nil, clock.Now)
 	legacySessionID := "legacy-opaque-id"
 	legacyExpiresAt := clock.Now().Add(time.Hour)
-	encoded, err := json.Marshal(browserSession{
+	encoded, err := json.Marshal(struct {
+		Principal Principal `json:"principal"`
+		ExpiresAt time.Time `json:"expiresAt"`
+	}{
 		Principal: Principal{Subject: "legacy-subject", Email: "legacy@axi.test"},
 		ExpiresAt: legacyExpiresAt,
 	})
@@ -423,20 +485,161 @@ func TestRestoreSessionLegacyRecordNeverExtendsItsExistingExpiry(t *testing.T) {
 		t.Fatalf("persist legacy session: %v", err)
 	}
 
-	clock.Advance(15 * time.Minute)
-	principal, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, legacySessionID))
-	if err != nil || principal.Subject != "legacy-subject" {
-		t.Fatalf("restore legacy session = %#v, %v", principal, err)
+	clock.Advance(5 * time.Minute)
+	principal, returnedID, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, legacySessionID))
+	if err != nil || principal.Subject != "legacy-subject" || returnedID != legacySessionID {
+		t.Fatalf("first legacy restore = principal %#v id %q err %v", principal, returnedID, err)
 	}
-	refreshed := storedSession(t, store, legacySessionID)
-	if !refreshed.ExpiresAt.Equal(legacyExpiresAt) || !refreshed.IdleExpiresAt.Equal(legacyExpiresAt) {
-		t.Fatalf("legacy expiries after restore = absolute %s idle %s, want %s", refreshed.ExpiresAt, refreshed.IdleExpiresAt, legacyExpiresAt)
+	storedRaw, err := store.Get(context.Background(), sessionKey(legacySessionID))
+	if err != nil {
+		t.Fatalf("get legacy record after restore: %v", err)
+	}
+	if !bytes.Equal(storedRaw, encoded) {
+		t.Fatalf("legacy record was rewritten: got %s, want %s", storedRaw, encoded)
+	}
+	untouched := storedSession(t, store, legacySessionID)
+	if !untouched.IdleExpiresAt.IsZero() || !untouched.LastSeenAt.IsZero() || !untouched.RenewedAt.IsZero() {
+		t.Fatalf("legacy lifecycle fields were added: %#v", untouched)
 	}
 
-	clock.Advance(45 * time.Minute)
+	clock.Advance(5 * time.Minute)
+	principal, returnedID, err = restoreSession(t, service, sessionRequest(cfg.SessionCookieName, legacySessionID))
+	if err != nil || principal.Subject != "legacy-subject" || returnedID != legacySessionID {
+		t.Fatalf("renewal-threshold legacy restore = principal %#v id %q err %v", principal, returnedID, err)
+	}
+	storedRaw, err = store.Get(context.Background(), sessionKey(legacySessionID))
+	if err != nil || !bytes.Equal(storedRaw, encoded) {
+		t.Fatalf("legacy record changed at renewal threshold: raw %s err %v", storedRaw, err)
+	}
+
+	clock.Advance(50 * time.Minute)
 	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, legacySessionID)); !errors.Is(err, ErrUnauthorized) {
 		t.Fatalf("legacy expiry restore error = %v, want ErrUnauthorized", err)
 	}
+}
+
+type deleteAfterGetMemoryStore struct {
+	*MemoryRecordStore
+	afterGet func()
+}
+
+func (s *deleteAfterGetMemoryStore) Get(ctx context.Context, key string) ([]byte, error) {
+	value, err := s.MemoryRecordStore.Get(ctx, key)
+	if err == nil && s.afterGet != nil {
+		afterGet := s.afterGet
+		s.afterGet = nil
+		afterGet()
+	}
+	return value, err
+}
+
+func TestRestoreSessionCannotReviveSessionDeletedAfterRead(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 16, 30, 0, 0, time.UTC)}
+	cfg := emailSessionConfig()
+	backingStore := NewMemoryRecordStore(clock.Now)
+	store := &deleteAfterGetMemoryStore{MemoryRecordStore: backingStore}
+	service := NewForTest(cfg, store, nil, clock.Now)
+	sessionID, err := service.IssueEmailSession(context.Background(), "owner@axi.test")
+	if err != nil {
+		t.Fatalf("issue email session: %v", err)
+	}
+	request := sessionRequest(cfg.SessionCookieName, sessionID)
+	var logoutErr error
+	store.afterGet = func() {
+		logoutErr = service.Logout(context.Background(), request)
+	}
+	if _, _, err := restoreSession(t, service, request); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("stale restore after logout error = %v, want ErrUnauthorized", err)
+	}
+	if logoutErr != nil {
+		t.Fatalf("logout during stale restore: %v", logoutErr)
+	}
+	if _, err := backingStore.Get(context.Background(), sessionKey(sessionID)); !errors.Is(err, ErrRecordNotFound) {
+		t.Fatalf("old session was revived after stale restore: %v", err)
+	}
+}
+
+func TestRestoreSessionRejectsBadJSON(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 11, 17, 30, 0, 0, time.UTC)}
+	cfg := emailSessionConfig()
+	store := NewMemoryRecordStore(clock.Now)
+	service := NewForTest(cfg, store, nil, clock.Now)
+	if err := store.Set(context.Background(), sessionKey("bad-json"), []byte("{not-json"), time.Hour); err != nil {
+		t.Fatalf("store malformed session: %v", err)
+	}
+	if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, "bad-json")); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("bad JSON restore error = %v, want ErrUnauthorized", err)
+	}
+}
+
+type failingRecordStore struct {
+	*MemoryRecordStore
+	getErr           error
+	compareAndSetErr error
+	rotateErr        error
+}
+
+func (s *failingRecordStore) Get(ctx context.Context, key string) ([]byte, error) {
+	if s.getErr != nil {
+		return nil, s.getErr
+	}
+	return s.MemoryRecordStore.Get(ctx, key)
+}
+
+func (s *failingRecordStore) CompareAndSet(ctx context.Context, key string, expected, next []byte, ttl time.Duration) error {
+	if s.compareAndSetErr != nil {
+		return s.compareAndSetErr
+	}
+	return s.MemoryRecordStore.CompareAndSet(ctx, key, expected, next, ttl)
+}
+
+func (s *failingRecordStore) Rotate(ctx context.Context, oldKey string, expected []byte, newKey string, next []byte, ttl time.Duration) error {
+	if s.rotateErr != nil {
+		return s.rotateErr
+	}
+	return s.MemoryRecordStore.Rotate(ctx, oldKey, expected, newKey, next, ttl)
+}
+
+func TestRestoreSessionMapsStoreIOFailures(t *testing.T) {
+	t.Run("get", func(t *testing.T) {
+		clock := &testClock{now: time.Date(2026, 8, 11, 18, 0, 0, 0, time.UTC)}
+		cfg := emailSessionConfig()
+		store := &failingRecordStore{MemoryRecordStore: NewMemoryRecordStore(clock.Now), getErr: errors.New("get failed")}
+		service := NewForTest(cfg, store, nil, clock.Now)
+		if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, "unavailable")); !errors.Is(err, ErrSessionStoreUnavailable) {
+			t.Fatalf("get failure restore error = %v, want ErrSessionStoreUnavailable", err)
+		}
+	})
+
+	t.Run("compare and set", func(t *testing.T) {
+		clock := &testClock{now: time.Date(2026, 8, 11, 18, 15, 0, 0, time.UTC)}
+		cfg := emailSessionConfig()
+		store := &failingRecordStore{MemoryRecordStore: NewMemoryRecordStore(clock.Now), compareAndSetErr: errors.New("compare-and-set failed")}
+		service := NewForTest(cfg, store, nil, clock.Now)
+		sessionID, err := service.IssueEmailSession(context.Background(), "owner@axi.test")
+		if err != nil {
+			t.Fatalf("issue email session: %v", err)
+		}
+		if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, sessionID)); !errors.Is(err, ErrSessionStoreUnavailable) {
+			t.Fatalf("compare-and-set failure restore error = %v, want ErrSessionStoreUnavailable", err)
+		}
+	})
+
+	t.Run("rotate", func(t *testing.T) {
+		clock := &testClock{now: time.Date(2026, 8, 11, 18, 30, 0, 0, time.UTC)}
+		cfg := emailSessionConfig()
+		cfg.SessionRenewAfter = 5 * time.Minute
+		store := &failingRecordStore{MemoryRecordStore: NewMemoryRecordStore(clock.Now), rotateErr: errors.New("rotate failed")}
+		service := NewForTest(cfg, store, nil, clock.Now)
+		sessionID, err := service.IssueEmailSession(context.Background(), "owner@axi.test")
+		if err != nil {
+			t.Fatalf("issue email session: %v", err)
+		}
+		clock.Advance(5 * time.Minute)
+		if _, _, err := restoreSession(t, service, sessionRequest(cfg.SessionCookieName, sessionID)); !errors.Is(err, ErrSessionStoreUnavailable) {
+			t.Fatalf("rotate failure restore error = %v, want ErrSessionStoreUnavailable", err)
+		}
+	})
 }
 
 func TestLegacySessionTTLFallsBackForEmailPolicy(t *testing.T) {

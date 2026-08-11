@@ -177,7 +177,7 @@ func (s *Service) Authenticate(ctx context.Context, request *http.Request) (Prin
 	var sessionStoreErr error
 	if request != nil {
 		if sessionID, err := request.Cookie(s.config.SessionCookieName); err == nil && sessionID.Value != "" {
-			session, err := s.loadSession(ctx, sessionID.Value, s.now())
+			session, _, err := s.loadSession(ctx, sessionID.Value, s.now())
 			if err == nil {
 				return session.Principal, nil
 			}
@@ -212,9 +212,15 @@ func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Pr
 		return Principal{}, "", ErrUnauthorized
 	}
 	now := s.now()
-	session, err := s.loadSession(ctx, cookie.Value, now)
+	session, expected, err := s.loadSession(ctx, cookie.Value, now)
 	if err != nil {
 		return Principal{}, "", err
+	}
+	if session.IdleExpiresAt.IsZero() {
+		// Records serialized before idle/session renewal existed must remain
+		// bounded by their original ExpiresAt. Returning them without a write
+		// preserves both the legacy payload and its original store TTL.
+		return session.Principal, cookie.Value, nil
 	}
 	policy, err := s.sessionPolicy()
 	if err != nil {
@@ -248,7 +254,7 @@ func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Pr
 		if err != nil {
 			return Principal{}, "", err
 		}
-		if err := s.records.Rotate(ctx, sessionKey(cookie.Value), sessionKey(newSessionID), encoded, ttl); err != nil {
+		if err := s.records.Rotate(ctx, sessionKey(cookie.Value), expected, sessionKey(newSessionID), encoded, ttl); err != nil {
 			if errors.Is(err, ErrRecordNotFound) {
 				return Principal{}, "", ErrUnauthorized
 			}
@@ -256,7 +262,10 @@ func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Pr
 		}
 		return session.Principal, newSessionID, nil
 	}
-	if err := s.records.Set(ctx, sessionKey(cookie.Value), encoded, ttl); err != nil {
+	if err := s.records.CompareAndSet(ctx, sessionKey(cookie.Value), expected, encoded, ttl); err != nil {
+		if errors.Is(err, ErrRecordNotFound) {
+			return Principal{}, "", ErrUnauthorized
+		}
 		return Principal{}, "", ErrSessionStoreUnavailable
 	}
 	return session.Principal, cookie.Value, nil
@@ -351,19 +360,19 @@ func (s *Service) persistSession(ctx context.Context, sessionID string, session 
 	return nil
 }
 
-func (s *Service) loadSession(ctx context.Context, sessionID string, now time.Time) (browserSession, error) {
+func (s *Service) loadSession(ctx context.Context, sessionID string, now time.Time) (browserSession, []byte, error) {
 	record, err := s.records.Get(ctx, sessionKey(sessionID))
 	if errors.Is(err, ErrRecordNotFound) {
-		return browserSession{}, ErrUnauthorized
+		return browserSession{}, nil, ErrUnauthorized
 	}
 	if err != nil {
-		return browserSession{}, ErrSessionStoreUnavailable
+		return browserSession{}, nil, ErrSessionStoreUnavailable
 	}
 	var session browserSession
 	if err := json.Unmarshal(record, &session); err != nil || !session.validAt(now) {
-		return browserSession{}, ErrUnauthorized
+		return browserSession{}, nil, ErrUnauthorized
 	}
-	return session, nil
+	return session, record, nil
 }
 
 func (session browserSession) validAt(now time.Time) bool {
