@@ -54,6 +54,12 @@ type authorizationTransaction struct {
 	ReturnTo     string `json:"returnTo"`
 }
 
+// AuthorizationTransactionForTest and BrowserSessionForTest expose the method
+// signatures accepted by NewForTest without exposing mutable Service state.
+// They let black-box HTTP tests provide a narrow fake bearer verifier.
+type AuthorizationTransactionForTest = authorizationTransaction
+type BrowserSessionForTest = browserSession
+
 type oidcClient interface {
 	AuthorizationURL(state, verifier, nonce string) string
 	Exchange(context.Context, string, authorizationTransaction) (browserSession, error)
