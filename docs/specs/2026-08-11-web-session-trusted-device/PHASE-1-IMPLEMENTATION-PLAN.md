@@ -27,21 +27,27 @@
 - Modify: `services/api-gateway/config/config.go`
 - Modify: `services/api-gateway/config/config_test.go`
 - Modify: `services/api-gateway/scripts/dev-run.sh`
+- Modify: `services/api-gateway/scripts/dev-run_test.sh`
+- Modify: `services/api-gateway/package.json`
+- Modify: `Makefile`
 - Modify: `.env.example`
 
 **TDD steps:**
 
-1. 先为 `Config.Validate` 增加失败测试：`GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true` 而 `GATEWAY_REDIS_URL` 为空时必须拒绝启动；`SESSION_IDLE_TTL`、`SESSION_ABSOLUTE_TTL` 必须为正数且 idle 不得超过 absolute；续期阈值不得为负数。
+1. 先为 `Config.Validate` 增加失败测试：`GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true` 而 `GATEWAY_REDIS_URL` 为空时必须拒绝启动；`SESSION_IDLE_TTL`、`SESSION_ABSOLUTE_TTL` 必须为正数且 idle 不得超过 absolute；续期阈值不得为负数、且启用时必须小于 idle TTL。
 2. 先为默认兼容性增加测试：只设置既有 `SESSION_TTL` 时，idle/absolute 均回退为它，且续期阈值关闭（或等同于不会在有效期内触发），保留现有生产 8h 语义。
-3. 实现 `IdentityConfig` 的 `SessionIdleTTL`、`SessionAbsoluteTTL`、`SessionRenewAfter`、`RequireDurableSessionStore`；在 `Load` 中由环境变量构造，并在 `Validate` 中执行上述不变量。
-4. 修改本地启动脚本：默认并强制 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/2` 和 `GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true`；变量为空时以不含敏感信息的中文错误退出。脚本不回退到进程内存。
+3. 实现 `IdentityConfig` 的 `SessionIdleTTL`、`SessionAbsoluteTTL`、`SessionRenewAfter`、`RequireDurableSessionStore`；新会话时长和 durable 开关的非空无效值必须在 `Load` 中失败关闭，而遗留 `SESSION_TTL` 与既有 timeout 的宽松解析保持不变；`Validate` 执行上述不变量。
+4. 修改本地启动脚本：默认并强制 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0` 和 `GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true`；DB 0 专供 Gateway 会话，不能与 Identity 的 DB 1 或 Workflow 的 DB 2 共用。变量为空时以不含敏感信息的中文错误退出。脚本不回退到进程内存。
 5. 更新 `.env.example`：使用同一 loopback Redis DB，给出 `720h`、`2160h`、`168h` 的测试环境示例和 `VITE_API_BASE_URL=`，不写任何真实邮箱或凭据。
+6. 将 launcher 行为测试加入 `services/api-gateway/package.json` 的 `test` 与根 `Makefile` 的 `verify-go`，保证常规验证路径不会跳过启动契约。
 
 **Acceptance checks:**
 
 ```bash
-cd services/api-gateway && go test ./config
+( cd services/api-gateway && go test ./config )
 bash -n services/api-gateway/scripts/dev-run.sh
+pnpm --dir services/api-gateway test
+make verify-go
 ```
 
 ## Task 2 — 将 session 从单一 TTL 演进为持久、闲置续期、绝对过期和原子轮换

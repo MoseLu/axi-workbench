@@ -23,7 +23,7 @@ flowchart LR
 ## 第一阶段：测试环境会话持久化
 
 1. **固定本机 Origin。** Web 开发服务器绑定 `127.0.0.1:5173` 并启用严格端口；开发浏览器请求一律使用相对 `/api`，由 Vite 代理到 `http://127.0.0.1:8088`。移除开发环境的直接 `VITE_API_BASE_URL`，避免 `localhost` 和 `127.0.0.1` 各自拥有一份 Cookie。
-2. **强制 Redis 会话存储。** 本地 Gateway 启动脚本要求 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/2`；Redis 不可用则启动失败，不回退到进程内存。现有 Docker Redis 的 AOF 与命名卷继续作为本地重启后的持久化基础。
+2. **强制 Redis 会话存储。** 本地 Gateway 启动脚本要求 `GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0`；DB 0 专供 Gateway 浏览器会话，Identity 保持 DB 1、Workflow 保持 DB 2，不能共用键空间。Redis 不可用则启动失败，不回退到进程内存。现有 Docker Redis 的 AOF 与命名卷继续作为本地重启后的持久化基础。
 3. **拆分会话时限。** 新增 `SESSION_IDLE_TTL=720h`、`SESSION_ABSOLUTE_TTL=2160h` 与 `SESSION_RENEW_AFTER=168h`。新变量未配置时，兼容使用现有 `SESSION_TTL`，不改变生产环境默认 8 小时策略。Go 时长使用 `h`，不使用不被 `time.ParseDuration` 支持的 `d`。
 4. **滑动续期与轮换。** Gateway 在有效 `/api/v1/auth/session` 请求时更新闲置期限；达到续期阈值后原子地签发新 session ID、写入新 Redis 键并退休旧键。普通登出、绝对过期和服务端撤销始终立即失效。
 5. **可诊断失败。** 仅测试环境记录 `missing_cookie`、`unknown_session`、`expired_idle`、`expired_absolute`；日志绝不包含 Cookie、验证码、邮箱原文或 OAuth token。

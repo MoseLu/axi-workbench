@@ -119,7 +119,7 @@ func TestLoadSessionPolicyUsesExplicitDurations(t *testing.T) {
 
 func TestLoadReadsDurableSessionStoreRequirement(t *testing.T) {
 	t.Setenv("ENVIRONMENT", "development")
-	t.Setenv("GATEWAY_REDIS_URL", "redis://127.0.0.1:6379/2")
+	t.Setenv("GATEWAY_REDIS_URL", "redis://127.0.0.1:6379/0")
 	t.Setenv("GATEWAY_REQUIRE_DURABLE_SESSION_STORE", "true")
 
 	cfg, err := Load()
@@ -128,6 +128,73 @@ func TestLoadReadsDurableSessionStoreRequirement(t *testing.T) {
 	}
 	if !cfg.Identity.RequireDurableSessionStore {
 		t.Fatal("RequireDurableSessionStore = false, want true")
+	}
+}
+
+func configureSessionLoadForTest(t *testing.T) {
+	t.Helper()
+	t.Setenv("ENVIRONMENT", "development")
+	t.Setenv("SESSION_TTL", "8h")
+	t.Setenv("SESSION_IDLE_TTL", "")
+	t.Setenv("SESSION_ABSOLUTE_TTL", "")
+	t.Setenv("SESSION_RENEW_AFTER", "")
+	t.Setenv("GATEWAY_REDIS_URL", "redis://127.0.0.1:6379/0")
+	t.Setenv("GATEWAY_REQUIRE_DURABLE_SESSION_STORE", "")
+}
+
+func TestLoadRejectsInvalidExplicitSessionConfiguration(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		value string
+	}{
+		{name: "idle duration", key: "SESSION_IDLE_TTL", value: "not-a-duration"},
+		{name: "absolute duration", key: "SESSION_ABSOLUTE_TTL", value: "not-a-duration"},
+		{name: "renewal duration", key: "SESSION_RENEW_AFTER", value: "not-a-duration"},
+		{name: "durable session store boolean", key: "GATEWAY_REQUIRE_DURABLE_SESSION_STORE", value: "sometimes"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configureSessionLoadForTest(t)
+			t.Setenv(tt.key, tt.value)
+
+			if _, err := Load(); err == nil || !strings.Contains(err.Error(), tt.key) {
+				t.Fatalf("Load() error = %v, want %s", err, tt.key)
+			}
+		})
+	}
+}
+
+func TestLoadParsesDurableSessionStoreBooleans(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{name: "empty defaults false", value: "", want: false},
+		{name: "whitespace defaults false", value: "   ", want: false},
+		{name: "true", value: "true", want: true},
+		{name: "uppercase true", value: "TRUE", want: true},
+		{name: "one", value: "1", want: true},
+		{name: "yes", value: "yes", want: true},
+		{name: "false", value: "false", want: false},
+		{name: "uppercase false", value: "FALSE", want: false},
+		{name: "zero", value: "0", want: false},
+		{name: "no", value: "no", want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configureSessionLoadForTest(t)
+			t.Setenv("GATEWAY_REQUIRE_DURABLE_SESSION_STORE", tt.value)
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+			if cfg.Identity.RequireDurableSessionStore != tt.want {
+				t.Fatalf("RequireDurableSessionStore = %t, want %t", cfg.Identity.RequireDurableSessionStore, tt.want)
+			}
+		})
 	}
 }
 
@@ -141,6 +208,8 @@ func TestValidateSessionPolicy(t *testing.T) {
 		{name: "absolute TTL must be positive", apply: func(cfg *Config) { cfg.Identity.SessionAbsoluteTTL = 0 }, want: "SESSION_ABSOLUTE_TTL"},
 		{name: "idle TTL cannot exceed absolute TTL", apply: func(cfg *Config) { cfg.Identity.SessionIdleTTL = 2 * time.Hour }, want: "SESSION_IDLE_TTL must not exceed SESSION_ABSOLUTE_TTL"},
 		{name: "renewal threshold cannot be negative", apply: func(cfg *Config) { cfg.Identity.SessionRenewAfter = -time.Minute }, want: "SESSION_RENEW_AFTER"},
+		{name: "renewal threshold cannot equal idle TTL", apply: func(cfg *Config) { cfg.Identity.SessionRenewAfter = time.Hour }, want: "SESSION_RENEW_AFTER must be less than SESSION_IDLE_TTL"},
+		{name: "renewal threshold cannot exceed idle TTL", apply: func(cfg *Config) { cfg.Identity.SessionRenewAfter = 2 * time.Hour }, want: "SESSION_RENEW_AFTER must be less than SESSION_IDLE_TTL"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

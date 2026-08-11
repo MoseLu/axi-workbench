@@ -92,6 +92,22 @@ func Load() (*Config, error) {
 	environment := getEnv("ENVIRONMENT", "development")
 	redisURL := strings.TrimSpace(os.Getenv("GATEWAY_REDIS_URL"))
 	legacySessionTTL := getDurationEnv("SESSION_TTL", 8*time.Hour)
+	sessionIdleTTL, err := getStrictDurationEnv("SESSION_IDLE_TTL", legacySessionTTL)
+	if err != nil {
+		return nil, err
+	}
+	sessionAbsoluteTTL, err := getStrictDurationEnv("SESSION_ABSOLUTE_TTL", legacySessionTTL)
+	if err != nil {
+		return nil, err
+	}
+	sessionRenewAfter, err := getStrictDurationEnv("SESSION_RENEW_AFTER", 0)
+	if err != nil {
+		return nil, err
+	}
+	requireDurableSessionStore, err := getStrictBoolEnv("GATEWAY_REQUIRE_DURABLE_SESSION_STORE", false)
+	if err != nil {
+		return nil, err
+	}
 	cfg := &Config{
 		Environment: environment,
 		Server: ServerConfig{
@@ -128,13 +144,13 @@ func Load() (*Config, error) {
 			SessionCookieDomain:        os.Getenv("SESSION_COOKIE_DOMAIN"),
 			SessionCookieSecure:        getBoolEnv("SESSION_COOKIE_SECURE", environment == "production"),
 			SessionTTL:                 legacySessionTTL,
-			SessionIdleTTL:             getDurationEnv("SESSION_IDLE_TTL", legacySessionTTL),
-			SessionAbsoluteTTL:         getDurationEnv("SESSION_ABSOLUTE_TTL", legacySessionTTL),
-			SessionRenewAfter:          getDurationEnv("SESSION_RENEW_AFTER", 0),
+			SessionIdleTTL:             sessionIdleTTL,
+			SessionAbsoluteTTL:         sessionAbsoluteTTL,
+			SessionRenewAfter:          sessionRenewAfter,
 			EmailLoginOwnerEmail:       strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_LOGIN_OWNER_EMAIL"))),
 			EmailLoginSubject:          strings.TrimSpace(os.Getenv("EMAIL_LOGIN_SUBJECT")),
 			RedisURL:                   redisURL,
-			RequireDurableSessionStore: getBoolEnv("GATEWAY_REQUIRE_DURABLE_SESSION_STORE", false),
+			RequireDurableSessionStore: requireDurableSessionStore,
 			DevelopmentHeaderAuth:      getBoolEnv("GATEWAY_ALLOW_DEVELOPMENT_HEADER_AUTH", false),
 		},
 		RateLimit: RateLimitConfig{
@@ -172,6 +188,9 @@ func (c Config) Validate() error {
 	}
 	if c.Identity.SessionRenewAfter < 0 {
 		return fmt.Errorf("SESSION_RENEW_AFTER must not be negative")
+	}
+	if c.Identity.SessionRenewAfter > 0 && c.Identity.SessionRenewAfter >= c.Identity.SessionIdleTTL {
+		return fmt.Errorf("SESSION_RENEW_AFTER must be less than SESSION_IDLE_TTL when enabled")
 	}
 	if c.Identity.RequireDurableSessionStore && strings.TrimSpace(c.Identity.RedisURL) == "" {
 		return fmt.Errorf("GATEWAY_REDIS_URL is required when GATEWAY_REQUIRE_DURABLE_SESSION_STORE is true")
@@ -267,12 +286,39 @@ func getDurationEnv(key string, fallback time.Duration) time.Duration {
 	return fallback
 }
 
+func getStrictDurationEnv(key string, fallback time.Duration) (time.Duration, error) {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback, nil
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a valid duration", key)
+	}
+	return duration, nil
+}
+
 func getBoolEnv(key string, fallback bool) bool {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
 	return value == "1" || strings.EqualFold(value, "true") || strings.EqualFold(value, "yes")
+}
+
+func getStrictBoolEnv(key string, fallback bool) (bool, error) {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback, nil
+	}
+	switch strings.ToLower(value) {
+	case "1", "true", "yes":
+		return true, nil
+	case "0", "false", "no":
+		return false, nil
+	default:
+		return false, fmt.Errorf("%s must be one of true, false, 1, 0, yes, or no", key)
+	}
 }
 
 func getEnvSlice(key string, fallback []string) []string {

@@ -89,7 +89,7 @@ write_env ""
 if ! run_launcher "${TEST_ROOT}/default.stdout" "${TEST_ROOT}/default.stderr"; then
   fail "unset Redis URL did not start through the fake go binary"
 fi
-assert_observed_line "GATEWAY_REDIS_URL=redis://127.0.0.1:6379/2"
+assert_observed_line "GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0"
 assert_observed_line "GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true"
 
 assert_redis_rejected "GATEWAY_REDIS_URL=" "empty"

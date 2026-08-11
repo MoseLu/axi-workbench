@@ -34,7 +34,7 @@ if [[ -n "${GATEWAY_REDIS_URL+x}" ]]; then
     exit 1
   fi
 else
-  export GATEWAY_REDIS_URL="redis://127.0.0.1:6379/2"
+  export GATEWAY_REDIS_URL="redis://127.0.0.1:6379/0"
 fi
 export GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true
 
