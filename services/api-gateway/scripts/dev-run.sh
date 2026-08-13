@@ -5,7 +5,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." &> /dev/null && pwd)"
-ENV_FILE="${REPO_ROOT}/.env"
+ENV_FILE="${AXI_ENV_FILE:-${REPO_ROOT}/.env}"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "缺少 ${ENV_FILE}，请先按 .env.example 建一份。" >&2
