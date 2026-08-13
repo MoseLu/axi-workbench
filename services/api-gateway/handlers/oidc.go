@@ -156,6 +156,59 @@ func EmailLoginConfirm(service *identity.Service, identityAdapterURL string) gin
 	}
 }
 
+// PasswordLogin verifies the configured owner password and issues the same
+// durable HttpOnly browser session used by the other login factors. The
+// configured bcrypt hash stays inside the identity service; this handler never
+// forwards or returns a password token.
+func PasswordLogin(service *identity.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req struct {
+			Email    string `json:"email" binding:"required,email"`
+			Password string `json:"password" binding:"required,min=8,max=72"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
+			return
+		}
+		principal, err := service.AuthenticatePassword(c.Request.Context(), req.Email, req.Password)
+		if err != nil {
+			if errors.Is(err, identity.ErrUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "password login is not configured"})
+				return
+			}
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+			return
+		}
+		sessionID, err := service.IssuePrincipalSession(c.Request.Context(), principal)
+		if err != nil {
+			if errors.Is(err, identity.ErrSessionStoreUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not issue session"})
+			return
+		}
+		service.SetCookie(c.Writer, sessionID)
+		c.JSON(http.StatusOK, gin.H{
+			"authenticated": true,
+			"user":          principal,
+		})
+	}
+}
+
+// AuthMethods exposes capability flags without revealing owner identity or
+// credential material. It lets the Web client keep an unavailable password
+// tab visibly honest while still using the same right-column layout.
+func AuthMethods(service *identity.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"emailLogin":    service.EmailLoginConfigured(),
+			"passwordLogin": service.PasswordLoginConfigured(),
+			"qrLogin":       true,
+		})
+	}
+}
+
 var emailCodePattern = regexp.MustCompile(`^\d{6}$`)
 
 func verifyEmailToken(ctx context.Context, client *http.Client, baseURL, challengeID, token string) (string, error) {

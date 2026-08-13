@@ -64,6 +64,9 @@ type IdentityConfig struct {
 	SessionRenewAfter          time.Duration
 	EmailLoginOwnerEmail       string
 	EmailLoginSubject          string
+	PasswordLoginOwnerEmail    string
+	PasswordLoginSubject       string
+	PasswordLoginPasswordHash  string
 	RedisURL                   string
 	RequireDurableSessionStore bool
 	DevelopmentHeaderAuth      bool
@@ -108,6 +111,16 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	emailLoginOwnerEmail := strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_LOGIN_OWNER_EMAIL")))
+	emailLoginSubject := strings.TrimSpace(os.Getenv("EMAIL_LOGIN_SUBJECT"))
+	passwordLoginOwnerEmail := strings.ToLower(strings.TrimSpace(os.Getenv("PASSWORD_LOGIN_OWNER_EMAIL")))
+	if passwordLoginOwnerEmail == "" {
+		passwordLoginOwnerEmail = emailLoginOwnerEmail
+	}
+	passwordLoginSubject := strings.TrimSpace(os.Getenv("PASSWORD_LOGIN_SUBJECT"))
+	if passwordLoginSubject == "" {
+		passwordLoginSubject = emailLoginSubject
+	}
 	cfg := &Config{
 		Environment: environment,
 		Server: ServerConfig{
@@ -147,8 +160,11 @@ func Load() (*Config, error) {
 			SessionIdleTTL:             sessionIdleTTL,
 			SessionAbsoluteTTL:         sessionAbsoluteTTL,
 			SessionRenewAfter:          sessionRenewAfter,
-			EmailLoginOwnerEmail:       strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_LOGIN_OWNER_EMAIL"))),
-			EmailLoginSubject:          strings.TrimSpace(os.Getenv("EMAIL_LOGIN_SUBJECT")),
+			EmailLoginOwnerEmail:       emailLoginOwnerEmail,
+			EmailLoginSubject:          emailLoginSubject,
+			PasswordLoginOwnerEmail:    passwordLoginOwnerEmail,
+			PasswordLoginSubject:       passwordLoginSubject,
+			PasswordLoginPasswordHash:  strings.TrimSpace(os.Getenv("PASSWORD_LOGIN_PASSWORD_HASH")),
 			RedisURL:                   redisURL,
 			RequireDurableSessionStore: requireDurableSessionStore,
 			DevelopmentHeaderAuth:      getBoolEnv("GATEWAY_ALLOW_DEVELOPMENT_HEADER_AUTH", false),

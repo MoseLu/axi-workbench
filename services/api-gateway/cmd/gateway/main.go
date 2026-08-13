@@ -153,6 +153,7 @@ func setupRouter(
 	auth := v1.Group("/auth")
 	auth.GET("/oidc/start", handlers.OIDCStart(identityService))
 	auth.GET("/oidc/callback", handlers.OIDCCallback(identityService))
+	auth.GET("/methods", handlers.AuthMethods(identityService))
 	auth.GET("/session", handlers.Session(identityService))
 	auth.POST("/logout", handlers.Logout(identityService))
 	auth.POST("/qr/transactions", proxyHandler.ProxyToIdentity())
@@ -164,6 +165,9 @@ func setupRouter(
 	// and issue a browser session. Replaces the OIDC code-exchange step for
 	// environments that use SMTP delivery instead of an external IdP.
 	auth.POST("/login/email/confirm", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
+	// Password login uses the configured bcrypt owner hash and issues the same
+	// durable browser session as email and device login.
+	auth.POST("/login/password", handlers.PasswordLogin(identityService))
 	// A browser that has no cookie may create/poll a device-login QR. The
 	// scanner bearer never reaches a browser session endpoint; completion is
 	// intercepted by the Gateway so only it issues the HttpOnly cookie.

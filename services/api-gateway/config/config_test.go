@@ -131,6 +131,29 @@ func TestLoadReadsDurableSessionStoreRequirement(t *testing.T) {
 	}
 }
 
+func TestLoadReadsPasswordLoginConfiguration(t *testing.T) {
+	t.Setenv("ENVIRONMENT", "development")
+	t.Setenv("EMAIL_LOGIN_OWNER_EMAIL", "owner@example.test")
+	t.Setenv("EMAIL_LOGIN_SUBJECT", "owner-subject")
+	t.Setenv("PASSWORD_LOGIN_OWNER_EMAIL", "password-owner@example.test")
+	t.Setenv("PASSWORD_LOGIN_SUBJECT", "password-owner-subject")
+	t.Setenv("PASSWORD_LOGIN_PASSWORD_HASH", "$2a$04$012345678901234567890uOeY1J0K4Vx1q6h2n2Yk7xQ0Y1w2Z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9q0")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Identity.PasswordLoginOwnerEmail != "password-owner@example.test" {
+		t.Fatalf("PasswordLoginOwnerEmail = %q", cfg.Identity.PasswordLoginOwnerEmail)
+	}
+	if cfg.Identity.PasswordLoginSubject != "password-owner-subject" {
+		t.Fatalf("PasswordLoginSubject = %q", cfg.Identity.PasswordLoginSubject)
+	}
+	if cfg.Identity.PasswordLoginPasswordHash == "" {
+		t.Fatal("PasswordLoginPasswordHash was not loaded")
+	}
+}
+
 func configureSessionLoadForTest(t *testing.T) {
 	t.Helper()
 	t.Setenv("ENVIRONMENT", "development")

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/epap/api-gateway/identity"
 	"github.com/epap/api-gateway/middleware"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type handlerClock struct {
@@ -70,6 +72,15 @@ func responseCookie(t *testing.T, recorder *httptest.ResponseRecorder, name stri
 	return nil
 }
 
+func passwordHash(t *testing.T, password string) string {
+	t.Helper()
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("generate password hash: %v", err)
+	}
+	return string(hash)
+}
+
 func decodeSessionResponse(t *testing.T, recorder *httptest.ResponseRecorder) struct {
 	Authenticated bool               `json:"authenticated"`
 	User          identity.Principal `json:"user"`
@@ -83,6 +94,87 @@ func decodeSessionResponse(t *testing.T, recorder *httptest.ResponseRecorder) st
 		t.Fatalf("decode session response: %v", err)
 	}
 	return response
+}
+
+func TestPasswordLoginIssuesBrowserSession(t *testing.T) {
+	clock := &handlerClock{now: time.Date(2026, 8, 14, 1, 0, 0, 0, time.UTC)}
+	cfg := handlerIdentityConfig()
+	cfg.PasswordLoginOwnerEmail = "owner@axi.test"
+	cfg.PasswordLoginSubject = "owner-password-subject"
+	cfg.PasswordLoginPasswordHash = passwordHash(t, "correct-password")
+	service := newHandlerIdentityService(t, cfg, identity.NewMemoryRecordStore(clock.Now), clock.Now)
+
+	router := gin.New()
+	router.POST("/api/v1/auth/login/password", PasswordLogin(service))
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login/password", bytes.NewBufferString(`{"email":"OWNER@AXI.TEST","password":"correct-password"}`))
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("password login status = %d, want %d; body=%s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	response := decodeSessionResponse(t, recorder)
+	if !response.Authenticated || response.User.Subject != "owner-password-subject" {
+		t.Fatalf("password login response = %#v", response)
+	}
+	cookie := responseCookie(t, recorder, cfg.SessionCookieName)
+	if cookie.Value == "" || !cookie.HttpOnly {
+		t.Fatalf("password login cookie = %#v", cookie)
+	}
+	principal, _, err := service.RestoreSession(context.Background(), requestWithSessionCookie(http.MethodGet, "/api/v1/auth/session", cfg.SessionCookieName, cookie.Value))
+	if err != nil || principal.Subject != "owner-password-subject" {
+		t.Fatalf("restore password session = %#v, %v", principal, err)
+	}
+}
+
+func TestPasswordLoginRejectsInvalidCredentialsWithoutCookie(t *testing.T) {
+	cfg := handlerIdentityConfig()
+	cfg.PasswordLoginOwnerEmail = "owner@axi.test"
+	cfg.PasswordLoginSubject = "owner-password-subject"
+	cfg.PasswordLoginPasswordHash = passwordHash(t, "correct-password")
+	service := newHandlerIdentityService(t, cfg, identity.NewMemoryRecordStore(nil), nil)
+
+	router := gin.New()
+	router.POST("/api/v1/auth/login/password", PasswordLogin(service))
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login/password", bytes.NewBufferString(`{"email":"owner@axi.test","password":"wrong-password"}`))
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("invalid password status = %d, want %d; body=%s", recorder.Code, http.StatusUnauthorized, recorder.Body.String())
+	}
+	if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
+		t.Fatalf("invalid password set cookies: %v", got)
+	}
+}
+
+func TestAuthMethodsReportsConfiguredPasswordLogin(t *testing.T) {
+	cfg := handlerIdentityConfig()
+	cfg.PasswordLoginOwnerEmail = "owner@axi.test"
+	cfg.PasswordLoginSubject = "owner-password-subject"
+	cfg.PasswordLoginPasswordHash = passwordHash(t, "correct-password")
+	service := newHandlerIdentityService(t, cfg, identity.NewMemoryRecordStore(nil), nil)
+
+	router := gin.New()
+	router.GET("/api/v1/auth/methods", AuthMethods(service))
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/api/v1/auth/methods", nil))
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("auth methods status = %d, want %d", recorder.Code, http.StatusOK)
+	}
+	var response struct {
+		EmailLogin    bool `json:"emailLogin"`
+		PasswordLogin bool `json:"passwordLogin"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode auth methods: %v", err)
+	}
+	if !response.EmailLogin || !response.PasswordLogin {
+		t.Fatalf("auth methods = %#v", response)
+	}
 }
 
 type unavailableHandlerStore struct {

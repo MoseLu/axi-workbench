@@ -16,6 +16,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/epap/api-gateway/config"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 )
 
@@ -556,6 +557,59 @@ func (s *Service) EmailLoginPrincipal(email string) (Principal, error) {
 		return Principal{}, ErrUnavailable
 	}
 	return Principal{Subject: subject, Email: email}, nil
+}
+
+// EmailLoginConfigured reports whether the owner-only email factor can issue
+// a session. The endpoint uses this boolean for UI capability discovery; it
+// never exposes the configured owner identity.
+func (s *Service) EmailLoginConfigured() bool {
+	return strings.TrimSpace(s.config.EmailLoginOwnerEmail) != "" && strings.TrimSpace(s.config.EmailLoginSubject) != ""
+}
+
+// PasswordLoginConfigured reports whether a valid server-side bcrypt hash and
+// canonical owner mapping are available. The raw password is never accepted
+// from configuration or returned to a caller.
+func (s *Service) PasswordLoginConfigured() bool {
+	owner, subject, passwordHash := s.passwordLoginConfig()
+	if owner == "" || subject == "" || passwordHash == "" {
+		return false
+	}
+	_, err := bcrypt.Cost([]byte(passwordHash))
+	return err == nil
+}
+
+// AuthenticatePassword verifies the configured owner password and returns the
+// same principal shape used by OIDC, email OTP, and device approval. Password
+// mismatches and unknown owner emails intentionally collapse to ErrUnauthorized
+// so the endpoint cannot be used to enumerate identities.
+func (s *Service) AuthenticatePassword(_ context.Context, email, password string) (Principal, error) {
+	owner, subject, passwordHash := s.passwordLoginConfig()
+	if owner == "" || subject == "" || passwordHash == "" {
+		return Principal{}, ErrUnavailable
+	}
+	if _, err := bcrypt.Cost([]byte(passwordHash)); err != nil {
+		return Principal{}, ErrUnavailable
+	}
+	canonicalEmail := strings.TrimSpace(strings.ToLower(email))
+	if canonicalEmail == "" || password == "" || len([]byte(password)) > 72 {
+		return Principal{}, ErrUnauthorized
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil || canonicalEmail != owner {
+		return Principal{}, ErrUnauthorized
+	}
+	return Principal{Subject: subject, Email: canonicalEmail}, nil
+}
+
+func (s *Service) passwordLoginConfig() (owner, subject, passwordHash string) {
+	owner = strings.TrimSpace(strings.ToLower(s.config.PasswordLoginOwnerEmail))
+	if owner == "" {
+		owner = strings.TrimSpace(strings.ToLower(s.config.EmailLoginOwnerEmail))
+	}
+	subject = strings.TrimSpace(s.config.PasswordLoginSubject)
+	if subject == "" {
+		subject = strings.TrimSpace(s.config.EmailLoginSubject)
+	}
+	return owner, subject, strings.TrimSpace(s.config.PasswordLoginPasswordHash)
 }
 
 // IssueEmailSession creates a browser session for a verified owner email

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
 import { AxiLogoMark } from '@axi/core';
+import { resolveGatewayURL } from '@axi/workbench-foundation';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../i18n';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
@@ -16,7 +17,10 @@ import {
 import './Login.css';
 
 type Phase = 'email' | 'code' | 'verifying';
+type LoginMode = 'password' | 'email';
 type DeviceQrStatus = 'creating' | 'waiting_scan' | 'approved' | 'expired' | 'failed';
+type PasswordLoginResponse = { authenticated: boolean };
+type AuthMethodsResponse = { passwordLogin?: boolean };
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,15 +46,19 @@ const Login: React.FC = () => {
   } = useAuth();
   const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/admin/dashboard';
 
-  // 左侧二维码固定存在；phase 只描述右侧邮箱登录的步骤。
+  // 左侧二维码固定存在；登录方式和 phase 只描述右侧登录流程。
+  const [loginMode, setLoginMode] = useState<LoginMode>('email');
+  const [passwordLoginEnabled, setPasswordLoginEnabled] = useState(false);
   const [phase, setPhase] = useState<Phase>('email');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [code, setCode] = useState<OneTimeCode | string>(() => createOneTimeCode());
   const [sentTo, setSentTo] = useState('');
   const [challengeId, setChallengeId] = useState('');
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
   const [qrSubmitting, setQrSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -69,6 +77,29 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, navigate, next]);
 
+  // Capability discovery stays local to the Web login surface. Mobile keeps
+  // its existing shared AuthProvider contract and does not gain a new request.
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(resolveGatewayURL('/api/v1/auth/methods'), {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('登录方式不可用');
+        return (await response.json().catch(() => ({}))) as AuthMethodsResponse;
+      })
+      .then((methods) => {
+        if (!cancelled) setPasswordLoginEnabled(methods.passwordLogin === true);
+      })
+      .catch(() => {
+        if (!cancelled) setPasswordLoginEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = window.setInterval(() => {
@@ -83,7 +114,14 @@ const Login: React.FC = () => {
 
   // 二维码始终在左侧启动；其轮询凭证只留在内存中。
   useEffect(() => {
-    if (deviceQr || deviceQrCreatingRef.current) return;
+    if (deviceQr || deviceQrCreatingRef.current) return undefined;
+    if (deviceQrStatus === 'failed') {
+      const retryTimer = window.setTimeout(() => {
+        setDeviceQrStatus('creating');
+        setQrError(null);
+      }, 2_500);
+      return () => window.clearTimeout(retryTimer);
+    }
     deviceQrCreatingRef.current = true;
     setDeviceQrStatus('creating');
     setQrError(null);
@@ -99,7 +137,8 @@ const Login: React.FC = () => {
       .finally(() => {
         deviceQrCreatingRef.current = false;
       });
-  }, [deviceQr]);
+    return undefined;
+  }, [deviceQr, deviceQrStatus]);
 
   useEffect(() => {
     if (!deviceQr || deviceQrStatus === 'expired' || deviceQrStatus === 'failed') return undefined;
@@ -111,7 +150,7 @@ const Login: React.FC = () => {
         if (cancelled) return;
         if (status.status === 'expired' || status.status === 'consumed') {
           setDeviceQrStatus('expired');
-          if (status.status === 'expired') setQrError('二维码已过期，请重新生成。');
+          if (status.status === 'expired') setQrError('二维码已过期，正在自动更新。');
           return;
         }
         setDeviceQrStatus(status.status);
@@ -122,7 +161,7 @@ const Login: React.FC = () => {
         try {
           await consumeWebDeviceLoginQr(deviceQr);
           const authenticated = await refreshSession();
-          if (!authenticated) throw new Error('电脑会话未建立，请重新生成二维码。');
+          if (!authenticated) throw new Error('电脑会话未建立，正在自动更新二维码。');
         } catch (cause: unknown) {
           if (!cancelled) {
             setDeviceQrStatus('failed');
@@ -147,13 +186,17 @@ const Login: React.FC = () => {
     };
   }, [deviceQr, deviceQrStatus, refreshSession]);
 
-  const resetDeviceQr = () => {
-    if (qrSubmitting) return;
-    deviceQrConsumingRef.current = false;
-    setDeviceQr(null);
-    setDeviceQrStatus('creating');
-    setQrError(null);
-  };
+  // 失效、消费失败或轮询失败后自动换发二维码，不让用户承担恢复操作。
+  useEffect(() => {
+    if (!deviceQr || !['expired', 'failed'].includes(deviceQrStatus) || qrSubmitting) return undefined;
+    const refreshTimer = window.setTimeout(() => {
+      deviceQrConsumingRef.current = false;
+      setDeviceQr(null);
+      setDeviceQrStatus('creating');
+      setQrError(null);
+    }, deviceQrStatus === 'expired' ? 900 : 2_500);
+    return () => window.clearTimeout(refreshTimer);
+  }, [deviceQr, deviceQrStatus, qrSubmitting]);
 
   const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -180,6 +223,51 @@ const Login: React.FC = () => {
       setError(message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const loginWithPassword = async (loginEmail: string, loginPassword: string): Promise<boolean> => {
+    const response = await fetch(resolveGatewayURL('/api/v1/auth/login/password'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+    });
+    const payload = (await response.json().catch(() => ({}))) as PasswordLoginResponse & { error?: string };
+    if (!response.ok) {
+      throw new Error(payload.error || `密码登录失败 (HTTP ${response.status})`);
+    }
+    if (payload.authenticated !== true) throw new Error('密码登录未建立会话');
+    const authenticated = await refreshSession();
+    if (!authenticated) throw new Error('会话未建立，请重试密码登录');
+    return authenticated;
+  };
+
+  const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (passwordSubmitting || sessionLoading) return;
+    const trimmed = email.trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(trimmed)) {
+      setError(t('auth.login.invalidEmail'));
+      return;
+    }
+    if (!password) {
+      setError('请输入登录密码');
+      return;
+    }
+    setError(null);
+    setHint(null);
+    setPasswordSubmitting(true);
+    try {
+      const ok = await loginWithPassword(trimmed, password);
+      if (!ok) setError('密码登录失败，请检查邮箱和密码。');
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : '密码登录失败，请检查邮箱和密码。');
+    } finally {
+      setPasswordSubmitting(false);
     }
   };
 
@@ -237,7 +325,7 @@ const Login: React.FC = () => {
     setHint(null);
   };
 
-  const banner = error || (sessionError && phase === 'verifying' ? sessionError : null);
+  const banner = error || (sessionError && (phase === 'verifying' || loginMode === 'password') ? sessionError : null);
   const qrStatusLabel: Record<DeviceQrStatus, string> = {
     creating: '正在生成二维码',
     waiting_scan: '等待手机扫码',
@@ -256,18 +344,27 @@ const Login: React.FC = () => {
         <div className="axi-login-card__body">
           <section className="axi-login-qr-column" id="axi-login-qr-panel" aria-label="扫码登录">
             <h1 id="axi-login-title">扫描二维码登录</h1>
-            <div className={`axi-login-qr-frame ${deviceQrStatus === 'failed' || deviceQrStatus === 'expired' ? 'is-error' : ''}`}>
-              {deviceQr ? (
-                <QRCode
-                  aria-label="电脑登录二维码"
-                  value={webDeviceLoginQrPayload(deviceQr)}
-                  size={176}
-                  errorLevel="M"
-                  status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
-                />
-              ) : (
-                <div className="axi-login-qr-loading"><span /><span /><span /></div>
-              )}
+            <div
+              className="axi-login-qr-hover"
+              title="请使用 Axi WorkBench 手机端扫描二维码登录"
+              aria-label="使用 Axi WorkBench 手机端扫描二维码登录"
+              role="img"
+              tabIndex={0}
+            >
+              <div className={`axi-login-qr-frame ${deviceQrStatus === 'failed' || deviceQrStatus === 'expired' ? 'is-error' : ''}`}>
+                {deviceQr ? (
+                  <QRCode
+                    aria-label="电脑登录二维码"
+                    value={webDeviceLoginQrPayload(deviceQr)}
+                    size={176}
+                    errorLevel="M"
+                    status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
+                  />
+                ) : (
+                  <div className="axi-login-qr-loading"><span /><span /><span /></div>
+                )}
+              </div>
+              <span className="axi-login-qr-tooltip" role="tooltip">使用手机端扫码登录</span>
             </div>
             <p className="axi-login-qr-instruction">
               请使用 <strong>Axi WorkBench 手机端</strong><br />
@@ -278,31 +375,43 @@ const Login: React.FC = () => {
               <strong>{qrStatusLabel[deviceQrStatus]}</strong>
             </div>
             {deviceQr && deviceQrStatus === 'waiting_scan' && (
-              <p className="axi-login-qr-meta">有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}</p>
+              <p className="axi-login-qr-meta">有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}，失效后自动更新</p>
             )}
             {qrError && <div className="axi-login-qr-alert" role="alert">{qrError}</div>}
-            <button className="axi-login-button axi-login-button--quiet" type="button" onClick={resetDeviceQr} disabled={qrSubmitting}>
-              重新生成二维码
-            </button>
           </section>
 
           <div className="axi-login-card__divider" aria-hidden="true" />
 
-          <section className="axi-login-right" id="axi-login-email-panel" aria-label="邮箱登录">
+          <section className="axi-login-right" id="axi-login-email-panel" aria-label="登录方式">
             <div className="axi-login-right__tabs" role="tablist" aria-label="登录方式">
               <button
                 type="button"
                 role="tab"
-                aria-selected={false}
-                aria-disabled="true"
-                disabled
-                title="当前环境暂未启用密码登录"
-                className="is-disabled"
+                aria-selected={loginMode === 'password'}
+                aria-disabled={!passwordLoginEnabled}
+                disabled={!passwordLoginEnabled}
+                title={passwordLoginEnabled ? '使用邮箱和密码登录' : '当前环境尚未配置密码登录'}
+                className={`${loginMode === 'password' ? 'is-active' : ''} ${!passwordLoginEnabled ? 'is-disabled' : ''}`}
+                onClick={() => {
+                  setLoginMode('password');
+                  setError(null);
+                  setHint(null);
+                }}
               >
                 密码登录
               </button>
               <span aria-hidden="true">|</span>
-              <button type="button" role="tab" aria-selected={true} className="is-active">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginMode === 'email'}
+                className={loginMode === 'email' ? 'is-active' : ''}
+                onClick={() => {
+                  setLoginMode('email');
+                  setError(null);
+                  setHint(null);
+                }}
+              >
                 邮箱登录
               </button>
             </div>
@@ -311,7 +420,46 @@ const Login: React.FC = () => {
               {banner && <div className="axi-login-alert" role="alert">{banner}</div>}
               {hint && !banner && <div className="axi-login-hint">{hint}</div>}
 
-              {phase === 'email' && (
+              {loginMode === 'password' && (
+                <form className="axi-login-form" onSubmit={handlePasswordLogin} noValidate>
+                  <h2>密码登录</h2>
+                  <p className="axi-login-form__description">使用已配置的工作台账号密码登录。</p>
+                  <label htmlFor="axi-login-password-email">{t('auth.email')}</label>
+                  <input
+                    id="axi-login-password-email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@axi.workbench.dev"
+                    disabled={passwordSubmitting}
+                  />
+                  <label htmlFor="axi-login-password">密码</label>
+                  <input
+                    id="axi-login-password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="请输入密码"
+                    disabled={passwordSubmitting}
+                  />
+                  <button
+                    className="axi-login-button axi-login-button--primary"
+                    type="submit"
+                    disabled={passwordSubmitting || sessionLoading || !email.trim() || !password}
+                  >
+                    {passwordSubmitting ? '登录中…' : '登录'}
+                  </button>
+                </form>
+              )}
+
+              {loginMode === 'email' && phase === 'email' && (
                 <form className="axi-login-form" onSubmit={handleRequestCode} noValidate>
                   <h2>邮箱登录</h2>
                   <p className="axi-login-form__description">输入登录邮箱，获取验证码完成登录。</p>
@@ -337,7 +485,7 @@ const Login: React.FC = () => {
                 </form>
               )}
 
-              {(phase === 'code' || phase === 'verifying') && (
+              {loginMode === 'email' && (phase === 'code' || phase === 'verifying') && (
                 <form className="axi-login-form" onSubmit={handleVerifyCode} noValidate>
                   <h2>输入邮箱验证码</h2>
                   <div className="axi-login-form__row">
@@ -363,7 +511,11 @@ const Login: React.FC = () => {
                 </form>
               )}
             </div>
-            <p className="axi-login-right__hint">首次登录使用邮箱验证码；验证通过后，本机浏览器会保持安全会话。</p>
+            <p className="axi-login-right__hint">
+              {loginMode === 'password'
+                ? '密码验证通过后，本机浏览器会保持安全会话。'
+                : '首次登录使用邮箱验证码；验证通过后，本机浏览器会保持安全会话。'}
+            </p>
           </section>
         </div>
 

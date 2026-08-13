@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/epap/api-gateway/config"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type fakeOIDCClient struct {
@@ -69,6 +70,86 @@ func TestAuthenticateHeaderCredentialsSupportsBearerAndDevelopmentHeaders(t *tes
 			t.Fatalf("development principal = %#v, %v", principal, err)
 		}
 	})
+}
+
+func TestPasswordAuthenticationUsesConfiguredOwnerHash(t *testing.T) {
+	hash, err := bcrypt.GenerateFromPassword([]byte("correct-password"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("generate password hash: %v", err)
+	}
+	cfg := emailSessionConfig()
+	cfg.PasswordLoginOwnerEmail = "owner@axi.test"
+	cfg.PasswordLoginSubject = "owner-password-subject"
+	cfg.PasswordLoginPasswordHash = string(hash)
+	service := NewForTest(cfg, NewMemoryRecordStore(nil), nil, nil)
+
+	if !service.PasswordLoginConfigured() {
+		t.Fatal("password login should be configured for a valid bcrypt hash")
+	}
+	principal, err := service.AuthenticatePassword(context.Background(), "OWNER@AXI.TEST", "correct-password")
+	if err != nil {
+		t.Fatalf("password authentication: %v", err)
+	}
+	if principal.Subject != "owner-password-subject" || principal.Email != "owner@axi.test" {
+		t.Fatalf("password principal = %#v", principal)
+	}
+}
+
+func TestPasswordAuthenticationRejectsWrongOwnerAndPassword(t *testing.T) {
+	hash, err := bcrypt.GenerateFromPassword([]byte("correct-password"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatalf("generate password hash: %v", err)
+	}
+	cfg := emailSessionConfig()
+	cfg.PasswordLoginOwnerEmail = "owner@axi.test"
+	cfg.PasswordLoginSubject = "owner-password-subject"
+	cfg.PasswordLoginPasswordHash = string(hash)
+	service := NewForTest(cfg, NewMemoryRecordStore(nil), nil, nil)
+
+	for _, test := range []struct {
+		name     string
+		email    string
+		password string
+	}{
+		{name: "wrong email", email: "other@axi.test", password: "correct-password"},
+		{name: "wrong password", email: "owner@axi.test", password: "wrong-password"},
+		{name: "empty password", email: "owner@axi.test", password: ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			principal, authErr := service.AuthenticatePassword(context.Background(), test.email, test.password)
+			if !errors.Is(authErr, ErrUnauthorized) {
+				t.Fatalf("password authentication error = %v, want ErrUnauthorized", authErr)
+			}
+			if principal.Subject != "" {
+				t.Fatalf("rejected password principal = %#v", principal)
+			}
+		})
+	}
+}
+
+func TestPasswordAuthenticationFailsClosedWhenHashIsMissingOrMalformed(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		hash string
+	}{
+		{name: "missing", hash: ""},
+		{name: "malformed", hash: "not-a-bcrypt-hash"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := emailSessionConfig()
+			cfg.PasswordLoginOwnerEmail = "owner@axi.test"
+			cfg.PasswordLoginSubject = "owner-password-subject"
+			cfg.PasswordLoginPasswordHash = test.hash
+			service := NewForTest(cfg, NewMemoryRecordStore(nil), nil, nil)
+			if service.PasswordLoginConfigured() {
+				t.Fatal("malformed or missing hash reported as configured")
+			}
+			_, authErr := service.AuthenticatePassword(context.Background(), "owner@axi.test", "correct-password")
+			if !errors.Is(authErr, ErrUnavailable) {
+				t.Fatalf("password authentication error = %v, want ErrUnavailable", authErr)
+			}
+		})
+	}
 }
 
 func TestAuthenticateFailsClosedOnUnavailableCookieStore(t *testing.T) {
