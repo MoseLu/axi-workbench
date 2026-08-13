@@ -137,6 +137,81 @@ func TestGatewayRoutesZitadelQRCompletionThroughIdentityAdapter(t *testing.T) {
 	}
 }
 
+func TestGatewayCompletesPublicDeviceQRCodeLoginWithoutForwardingBrowserCredentials(t *testing.T) {
+	const webLoginID = "weblogin_a8e4d721-388a-4b17-90fa-170a91dd9e4d"
+	const pollToken = "browser-poll-token"
+	downstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+			t.Errorf("control-plane internal token = %q", got)
+		}
+		if got := request.Header.Get("Authorization"); got != "" {
+			t.Errorf("browser authorization leaked downstream: %q", got)
+		}
+		if got := request.Header.Get("Cookie"); got != "" {
+			t.Errorf("browser cookie leaked downstream: %q", got)
+		}
+		switch request.URL.Path {
+		case "/internal/gateway/v1/web-login/qr":
+			if request.Method != http.MethodPost {
+				t.Errorf("QR create method = %s", request.Method)
+			}
+			writer.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(writer, `{"ok":true,"webLoginId":"`+webLoginID+`","scanToken":"scan-token","pollToken":"poll-token","expiresAt":1800000000}`)
+		case "/internal/gateway/v1/web-login/qr/" + webLoginID + "/consume":
+			if got := request.Header.Get("X-Axi-QR-Poll-Token"); got != pollToken {
+				t.Errorf("poll token = %q", got)
+			}
+			writer.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(writer, `{"ok":true,"status":"approved","ownerSubject":"owner-subject","ownerEmail":"owner@example.test"}`)
+		default:
+			t.Errorf("unexpected control-plane path = %q", request.URL.Path)
+			writer.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer downstream.Close()
+
+	cfg := testGatewayConfig(downstream.URL, 10)
+	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
+	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
+	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	gateway := httptest.NewServer(router)
+	defer gateway.Close()
+
+	create, err := http.NewRequest(http.MethodPost, gateway.URL+"/api/v1/auth/device-login/qr", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatalf("create device QR request: %v", err)
+	}
+	create.Header.Set("Content-Type", "application/json")
+	create.Header.Set("Authorization", "Bearer attacker-token")
+	create.AddCookie(&http.Cookie{Name: "axi_session", Value: "attacker-cookie"})
+	created, err := gateway.Client().Do(create)
+	if err != nil {
+		t.Fatalf("call device QR create: %v", err)
+	}
+	created.Body.Close()
+	if created.StatusCode != http.StatusOK {
+		t.Fatalf("device QR create status = %d", created.StatusCode)
+	}
+
+	consume, err := http.NewRequest(http.MethodPost, gateway.URL+"/api/v1/auth/device-login/qr/"+webLoginID+"/consume", nil)
+	if err != nil {
+		t.Fatalf("create device QR consume request: %v", err)
+	}
+	consume.Header.Set("X-Axi-QR-Poll-Token", pollToken)
+	consume.AddCookie(&http.Cookie{Name: "axi_session", Value: "old-browser-cookie"})
+	completed, err := gateway.Client().Do(consume)
+	if err != nil {
+		t.Fatalf("call device QR consume: %v", err)
+	}
+	defer completed.Body.Close()
+	if completed.StatusCode != http.StatusOK {
+		t.Fatalf("device QR consume status = %d", completed.StatusCode)
+	}
+	if cookies := completed.Cookies(); len(cookies) != 1 || cookies[0].Name != cfg.Identity.SessionCookieName || !cookies[0].HttpOnly {
+		t.Fatalf("issued device QR browser cookies = %#v", cookies)
+	}
+}
+
 func TestGatewayFansOutPlatformEventsWithConsumerCredentials(t *testing.T) {
 	assertConsumer := func(name, token string, got *bool) *httptest.Server {
 		return httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -266,6 +341,13 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 			if got := request.Header.Get("X-Axi-Subject"); got != "" {
 				t.Errorf("untrusted mobile subject was forwarded: %q", got)
 			}
+		case "/internal/mobile/v1/pair/qr/scan":
+			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+				t.Errorf("QR scan internal token = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Subject"); got != "" {
+				t.Errorf("untrusted QR scan subject was forwarded: %q", got)
+			}
 		case "/internal/web/v1/handoffs/handoff-1":
 			if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
 				t.Errorf("web handoff subject = %q", got)
@@ -282,6 +364,16 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 			}
 			if got := request.Header.Get("Authorization"); got != "" {
 				t.Errorf("browser bearer leaked to control plane: %q", got)
+			}
+		case "/internal/web/v1/mobile/pair/qr":
+			if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
+				t.Errorf("Web QR pairing subject = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+				t.Errorf("Web QR pairing internal token = %q", got)
+			}
+			if got := request.Header.Get("Authorization"); got != "" {
+				t.Errorf("browser bearer leaked to QR pairing backend: %q", got)
 			}
 		default:
 			t.Errorf("unexpected control-plane path = %q", request.URL.Path)
@@ -315,6 +407,20 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 		t.Fatalf("mobile proxy status = %d", mobileResponse.StatusCode)
 	}
 
+	qrScan, err := http.NewRequest(http.MethodPost, gateway.URL+"/api/v1/mobile/pair/qr/scan", nil)
+	if err != nil {
+		t.Fatalf("create QR scan request: %v", err)
+	}
+	qrScan.Header.Set("X-Axi-Subject", "attacker")
+	qrScanResponse, err := gateway.Client().Do(qrScan)
+	if err != nil {
+		t.Fatalf("call QR scan proxy: %v", err)
+	}
+	qrScanResponse.Body.Close()
+	if qrScanResponse.StatusCode != http.StatusOK {
+		t.Fatalf("QR scan proxy status = %d", qrScanResponse.StatusCode)
+	}
+
 	handoff, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/handoffs/handoff-1", nil)
 	if err != nil {
 		t.Fatalf("create handoff request: %v", err)
@@ -343,6 +449,21 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 	controlResponse.Body.Close()
 	if controlResponse.StatusCode != http.StatusOK {
 		t.Fatalf("web control proxy status = %d", controlResponse.StatusCode)
+	}
+
+	webPairing, err := http.NewRequest(http.MethodPost, gateway.URL+"/api/v1/control-plane/mobile/pair/qr", nil)
+	if err != nil {
+		t.Fatalf("create Web QR pairing request: %v", err)
+	}
+	webPairing.Header.Set("X-Axi-Development-Subject", "zitadel-alice")
+	webPairing.Header.Set("Authorization", "Bearer attacker-token")
+	webPairingResponse, err := gateway.Client().Do(webPairing)
+	if err != nil {
+		t.Fatalf("call Web QR pairing proxy: %v", err)
+	}
+	webPairingResponse.Body.Close()
+	if webPairingResponse.StatusCode != http.StatusOK {
+		t.Fatalf("Web QR pairing proxy status = %d", webPairingResponse.StatusCode)
 	}
 }
 

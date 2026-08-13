@@ -27,7 +27,7 @@ export function createControlPlaneHttpServer({
     function sendRaw(res, statusCode, body, url) {
       const headers = {
         "Content-Type": "application/json; charset=utf-8",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token, X-Axi-QR-Poll-Token",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Vary": "Origin",
       };
@@ -56,7 +56,7 @@ export function createControlPlaneHttpServer({
       const headers = {
         "Content-Type": "application/json; charset=utf-8",
         "X-Idempotency-Replay": "true",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token, X-Axi-QR-Poll-Token",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Vary": "Origin",
       };
@@ -151,6 +151,68 @@ export function createControlPlaneHttpServer({
       controlPlane.pairing.audit({ event: "web_pairing_approved", subject, pairingId: approved.pairingId });
       return sendJson(res, 200, { ok: true, status: approved.status, deviceName: approved.deviceName }, url);
     }
+    const webLoginStatusMatch = url.pathname.match(/^\/internal\/gateway\/v1\/web-login\/qr\/(weblogin_[A-Za-z0-9_-]+)$/);
+    const webLoginConsumeMatch = url.pathname.match(/^\/internal\/gateway\/v1\/web-login\/qr\/(weblogin_[A-Za-z0-9_-]+)\/consume$/);
+    if (
+      (req.method === "POST" && url.pathname === "/internal/gateway/v1/web-login/qr") ||
+      (req.method === "GET" && webLoginStatusMatch) ||
+      (req.method === "POST" && webLoginConsumeMatch)
+    ) {
+      if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+      }
+      if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+      if (req.method === "POST" && url.pathname === "/internal/gateway/v1/web-login/qr") {
+        const body = await readJsonBody(req);
+        if (!body || Object.keys(body).length !== 0) return sendJson(res, 400, { error: "Web login QR creation accepts no fields" }, url);
+        const created = controlPlane.pairing.startWebLogin();
+        return sendJson(res, created.ok ? 200 : 400, created, url);
+      }
+      const pollToken = String(req.headers["x-axi-qr-poll-token"] || "");
+      if (req.method === "GET" && webLoginStatusMatch) {
+        const status = controlPlane.pairing.webLoginStatus({ webLoginId: webLoginStatusMatch[1], pollToken });
+        return sendJson(res, status.ok ? 200 : 404, status, url);
+      }
+      const body = await readJsonBody(req);
+      if (!body || Object.keys(body).length !== 0) return sendJson(res, 400, { error: "Web login QR consume accepts no fields" }, url);
+      const consumed = controlPlane.pairing.consumeWebLogin({ webLoginId: webLoginConsumeMatch[1], pollToken });
+      if (!consumed.ok) return sendJson(res, 400, consumed, url);
+      controlPlane.pairing.audit({ event: "web_login_qr_consumed", webLoginId: webLoginConsumeMatch[1], ownerSubject: consumed.ownerSubject });
+      return sendJson(res, 200, consumed, url);
+    }
+    const webPairingStatusMatch = url.pathname.match(/^\/internal\/web\/v1\/mobile\/pair\/qr\/(webpair_[A-Za-z0-9_-]+)$/);
+    const webPairingApproveMatch = url.pathname.match(/^\/internal\/web\/v1\/mobile\/pair\/qr\/(webpair_[A-Za-z0-9_-]+)\/approve$/);
+    if (
+      (req.method === "POST" && url.pathname === "/internal/web/v1/mobile/pair/qr") ||
+      (req.method === "GET" && webPairingStatusMatch) ||
+      (req.method === "POST" && webPairingApproveMatch)
+    ) {
+      if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+      }
+      const subject = String(req.headers["x-axi-subject"] || "").trim();
+      if (!subject) return sendJson(res, 401, { error: "verified web identity required" }, url);
+      if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+      if (req.method === "POST" && url.pathname === "/internal/web/v1/mobile/pair/qr") {
+        const body = await readJsonBody(req);
+        if (!body || Object.keys(body).length !== 0) return sendJson(res, 400, { error: "QR pairing creation accepts no fields" }, url);
+        const created = controlPlane.pairing.startWebPairing({
+          ownerSubject: subject,
+          ownerEmail: String(req.headers["x-axi-email"] || "").trim(),
+        });
+        return sendJson(res, created.ok ? 200 : 400, created, url);
+      }
+      if (req.method === "GET" && webPairingStatusMatch) {
+        const status = controlPlane.pairing.webPairingStatus({ webPairingId: webPairingStatusMatch[1], ownerSubject: subject });
+        return sendJson(res, status.ok ? 200 : 404, status, url);
+      }
+      const body = await readJsonBody(req);
+      if (!body || Object.keys(body).length !== 0) return sendJson(res, 400, { error: "QR pairing approval accepts no fields" }, url);
+      const approved = controlPlane.pairing.approveWebPairing({ webPairingId: webPairingApproveMatch[1], ownerSubject: subject });
+      if (!approved.ok) return sendJson(res, 400, approved, url);
+      controlPlane.pairing.audit({ event: "web_qr_pairing_approved", subject, webPairingId: webPairingApproveMatch[1] });
+      return sendJson(res, 200, approved, url);
+    }
     let gatewayWebAuth = false;
     if (url.pathname.startsWith("/internal/web/v1/")) {
       if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
@@ -190,7 +252,57 @@ export function createControlPlaneHttpServer({
       if (req.method === "POST" && url.pathname === "/mobile/v1/pair/start") {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const body = await readJsonBody(req);
-        const r = controlPlane.pairing.startPair(body || {});
+        const allowedStartFields = ["publicKeyHex", "publicKeyAlgorithm", "deviceName", "clientInfo"];
+        if (!body || Object.keys(body).some((key) => !allowedStartFields.includes(key))) {
+          return sendJson(res, 400, { error: "pairing start accepts only a device key, declared algorithm, device name, and optional client info" }, url);
+        }
+        const r = controlPlane.pairing.startPair({
+          publicKeyHex: body.publicKeyHex,
+          publicKeyAlgorithm: body.publicKeyAlgorithm,
+          deviceName: body.deviceName,
+          clientInfo: body.clientInfo,
+        });
+        return sendJson(res, r.ok ? 200 : 400, r, url);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/qr/scan") {
+        if (!isGatewayMobileRoute) return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+        const body = await readJsonBody(req);
+        const allowedScanFields = ["webPairingId", "scanToken", "publicKeyHex", "publicKeyAlgorithm", "deviceName"];
+        if (
+          !body ||
+          Object.keys(body).some((key) => !allowedScanFields.includes(key)) ||
+          typeof body.webPairingId !== "string" ||
+          typeof body.scanToken !== "string" ||
+          typeof body.publicKeyHex !== "string" ||
+          !["Ed25519", "ES256"].includes(body.publicKeyAlgorithm) ||
+          typeof body.deviceName !== "string"
+        ) {
+          return sendJson(res, 400, { error: "QR pairing scan requires only transaction, scan token, device key, algorithm, and device name" }, url);
+        }
+        const r = controlPlane.pairing.scanWebPairing(body || {});
+        return sendJson(res, r.ok ? 200 : 400, r, url);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/web-login/qr/scan") {
+        if (!isGatewayMobileRoute) return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+        const auth = authenticate(req, controlPlane, { pairingRequired, mobileOwnerToken });
+        if (!auth.ok) return sendJson(res, 401, { error: auth.error }, url);
+        const body = await readJsonBody(req);
+        if (
+          !body ||
+          Object.keys(body).some((key) => !["webLoginId", "scanToken"].includes(key)) ||
+          typeof body.webLoginId !== "string" ||
+          typeof body.scanToken !== "string"
+        ) {
+          return sendJson(res, 400, { error: "Web login QR scan requires only transaction and scan token" }, url);
+        }
+        const r = controlPlane.pairing.scanWebLogin({
+          webLoginId: body.webLoginId,
+          scanToken: body.scanToken,
+          deviceId: auth.deviceId,
+        });
+        if (r.ok) controlPlane.pairing.audit({ event: "mobile_web_login_qr_approved", webLoginId: body.webLoginId, deviceId: auth.deviceId });
         return sendJson(res, r.ok ? 200 : 400, r, url);
       }
       if (req.method === "POST" && url.pathname === "/mobile/v1/pair/confirm") {

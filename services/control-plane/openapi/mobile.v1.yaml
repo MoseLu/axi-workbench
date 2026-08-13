@@ -56,6 +56,70 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '503':
           $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/qr/scan:
+    post:
+      tags: [pairing]
+      summary: Register a phone after it scans a one-time Web pairing QR
+      description: |
+        This route is reachable only through the API Gateway service identity.
+        The phone submits an opaque Web-owned transaction and one-time scan
+        bearer alongside its Android Keystore public key. A successful scan
+        does not activate the device: it only creates a pending pairing that
+        the same authenticated Web owner must explicitly confirm. The response
+        never echoes the scan bearer.
+      operationId: scanWebPairing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QrPairScanRequest'
+      responses:
+        '200':
+          description: Phone registered as pending Web owner confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrPairScanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/web-login/qr/scan:
+    post:
+      tags: [pairing]
+      summary: Approve a computer login QR from an already paired phone
+      description: |
+        The phone must first hold an active Control Plane device bearer and
+        the device must have been explicitly bound to the same Web owner via
+        the Web settings QR flow. The camera payload has only a one-time scan
+        bearer; the browser poll credential and owner identity are never sent
+        to the phone. The API Gateway receives the resulting owner grant on a
+        private hop and is the only component that writes the browser cookie.
+      operationId: approveWebLoginQr
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebLoginQrScanRequest'
+      responses:
+        '200':
+          description: The authenticated mobile device approved this computer login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebLoginQrScanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
   /mobile/v1/pair/confirm:
     post:
       tags: [pairing]
@@ -511,6 +575,78 @@ components:
         codeExpiresAt:
           type: integer
           description: Unix epoch seconds (5-minute TTL by default)
+    QrPairScanRequest:
+      type: object
+      required: [webPairingId, scanToken, publicKeyHex, publicKeyAlgorithm, deviceName]
+      additionalProperties: false
+      properties:
+        webPairingId:
+          type: string
+          pattern: '^webpair_[A-Za-z0-9_-]{16,}$'
+          description: Opaque transaction created by the authenticated Web owner.
+        scanToken:
+          type: string
+          minLength: 32
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+          description: One-time bearer encoded only into the short-lived QR image.
+        publicKeyHex:
+          type: string
+          minLength: 64
+          maxLength: 512
+          pattern: '^[0-9a-fA-F]+$'
+          description: Android Keystore ES256 SPKI public key; its private half never leaves the device.
+        publicKeyAlgorithm:
+          type: string
+          enum: [ES256]
+        deviceName:
+          type: string
+          minLength: 1
+          maxLength: 200
+    QrPairScanResponse:
+      type: object
+      required: [ok, pairingId, code, expiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        pairingId:
+          type: string
+          pattern: '^pair_[A-Za-z0-9_-]{36}$'
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Opaque local polling credential retained on the phone only; not shown to the Web owner.
+        expiresAt:
+          type: integer
+          description: Unix epoch milliseconds; approval is possible only before this timestamp.
+    WebLoginQrScanRequest:
+      type: object
+      required: [webLoginId, scanToken]
+      additionalProperties: false
+      properties:
+        webLoginId:
+          type: string
+          pattern: '^weblogin_[A-Za-z0-9_-]{16,}$'
+          description: Opaque computer-login transaction created through the Gateway.
+        scanToken:
+          type: string
+          minLength: 32
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+          description: One-time scanner bearer; it is not a browser cookie or mobile access token.
+    WebLoginQrScanResponse:
+      type: object
+      required: [ok, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        status:
+          type: string
+          enum: [approved]
     PairConfirmRequest:
       type: object
       required: [pairingId, code, ownerApprovalToken]

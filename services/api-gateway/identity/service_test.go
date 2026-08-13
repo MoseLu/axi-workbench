@@ -208,6 +208,32 @@ func TestEmailLoginPrincipalFailsClosedWhenNotConfigured(t *testing.T) {
 	}
 }
 
+func TestIssuePrincipalSessionCreatesTheSameDurableCookieSessionForATrustedDeviceGrant(t *testing.T) {
+	clock := &testClock{now: time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)}
+	cfg := emailSessionConfig()
+	store := NewMemoryRecordStore(clock.Now)
+	service := NewForTest(cfg, store, nil, clock.Now)
+
+	sessionID, err := service.IssuePrincipalSession(context.Background(), Principal{
+		Subject: "owner-subject",
+		Email:   "owner@example.test",
+		Name:    "Owner",
+	})
+	if err != nil || sessionID == "" {
+		t.Fatalf("issue trusted-device session: id=%q err=%v", sessionID, err)
+	}
+	principal, restoredID, err := service.RestoreSession(context.Background(), sessionRequest(cfg.SessionCookieName, sessionID))
+	if err != nil {
+		t.Fatalf("restore trusted-device session: %v", err)
+	}
+	if restoredID != sessionID || principal.Subject != "owner-subject" || principal.Email != "owner@example.test" || principal.Name != "Owner" {
+		t.Fatalf("restored trusted-device principal/id = %#v / %q", principal, restoredID)
+	}
+	if _, err := service.IssuePrincipalSession(context.Background(), Principal{Subject: "   "}); !errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("blank trusted-device subject error = %v, want ErrUnauthorized", err)
+	}
+}
+
 type testClock struct {
 	now time.Time
 }

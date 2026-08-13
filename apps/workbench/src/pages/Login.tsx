@@ -1,12 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { QRCode } from 'antd';
 import { AxiLogoMark } from '@axi/core';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../i18n';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
 import { createOneTimeCode, oneTimeCodeValue, type OneTimeCode } from '../lib/oneTimeCode';
+import {
+  consumeWebDeviceLoginQr,
+  createWebDeviceLoginQr,
+  getWebDeviceLoginQrStatus,
+  webDeviceLoginQrPayload,
+  type WebDeviceLoginQr,
+} from '../lib/webDeviceLogin';
 
-type Phase = 'email' | 'code' | 'verifying';
+type Phase = 'device-qr' | 'email' | 'code' | 'verifying';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,10 +37,11 @@ const Login: React.FC = () => {
     error: sessionError,
     requestEmailCode,
     confirmEmailCode,
+    refreshSession,
   } = useAuth();
   const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/admin/dashboard';
 
-  const [phase, setPhase] = useState<Phase>('email');
+  const [phase, setPhase] = useState<Phase>('device-qr');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState<OneTimeCode | string>(() => createOneTimeCode());
   const [sentTo, setSentTo] = useState('');
@@ -42,9 +51,13 @@ const Login: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
+  const [deviceQr, setDeviceQr] = useState<WebDeviceLoginQr | null>(null);
+  const [deviceQrStatus, setDeviceQrStatus] = useState<'creating' | 'waiting_scan' | 'approved' | 'expired' | 'failed'>('creating');
   const codeInputRef = useRef<HTMLInputElement | null>(null);
   // 跟踪成功提交后的导航动作，避免在 navigate 后再触发 setState。
   const didNavigateRef = useRef(false);
+  const deviceQrCreatingRef = useRef(false);
+  const deviceQrConsumingRef = useRef(false);
 
   // 已有有效会话则直接跳走。
   useEffect(() => {
@@ -67,6 +80,92 @@ const Login: React.FC = () => {
   useEffect(() => {
     if (phase === 'code') codeInputRef.current?.focus();
   }, [phase]);
+
+  // A computer that has no session can start a QR transaction, but the QR
+  // itself contains only the scanner bearer. The poll bearer remains in this
+  // component's memory and is never put in the camera payload or storage.
+  useEffect(() => {
+    if (phase !== 'device-qr' || deviceQr || deviceQrCreatingRef.current) return;
+    deviceQrCreatingRef.current = true;
+    setDeviceQrStatus('creating');
+    setError(null);
+    void createWebDeviceLoginQr()
+      .then((created) => {
+        setDeviceQr(created);
+        setDeviceQrStatus('waiting_scan');
+      })
+      .catch((cause: unknown) => {
+        setDeviceQrStatus('failed');
+        setError(cause instanceof Error ? cause.message : '无法生成电脑登录二维码');
+      })
+      .finally(() => {
+        deviceQrCreatingRef.current = false;
+      });
+  }, [deviceQr, phase]);
+
+  // The browser learns only the transaction state. Once the already signed-in
+  // phone has scanned, the Gateway consumes the one-time approval and writes
+  // the usual HttpOnly browser session cookie.
+  useEffect(() => {
+    if (phase !== 'device-qr' || !deviceQr || deviceQrStatus === 'expired' || deviceQrStatus === 'failed') return undefined;
+
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const status = await getWebDeviceLoginQrStatus(deviceQr);
+        if (cancelled) return;
+        if (status.status === 'expired' || status.status === 'consumed') {
+          setDeviceQrStatus('expired');
+          if (status.status === 'expired') setHint('二维码已过期，请重新生成。');
+          return;
+        }
+        setDeviceQrStatus(status.status);
+        if (status.status !== 'approved' || deviceQrConsumingRef.current) return;
+
+        deviceQrConsumingRef.current = true;
+        setSubmitting(true);
+        try {
+          await consumeWebDeviceLoginQr(deviceQr);
+          const authenticated = await refreshSession();
+          if (!authenticated) throw new Error('电脑会话未建立，请重新生成二维码。');
+        } catch (cause: unknown) {
+          if (!cancelled) {
+            setDeviceQrStatus('failed');
+            setError(cause instanceof Error ? cause.message : '手机授权后无法建立电脑会话');
+          }
+        } finally {
+          if (!cancelled) setSubmitting(false);
+        }
+      } catch (cause: unknown) {
+        if (!cancelled) {
+          setDeviceQrStatus('failed');
+          setError(cause instanceof Error ? cause.message : '无法读取电脑登录二维码状态');
+        }
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 1_500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [deviceQr, deviceQrStatus, phase, refreshSession]);
+
+  const resetDeviceQr = () => {
+    if (submitting) return;
+    deviceQrConsumingRef.current = false;
+    setDeviceQr(null);
+    setDeviceQrStatus('creating');
+    setError(null);
+    setHint(null);
+  };
+
+  const selectEmailLogin = () => {
+    setPhase('email');
+    setError(null);
+    setHint(null);
+  };
 
   const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -166,7 +265,7 @@ const Login: React.FC = () => {
   };
   const card: React.CSSProperties = {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 460,
     padding: 36,
     background: 'rgba(255, 255, 255, 0.02)',
     borderRadius: 16,
@@ -218,10 +317,61 @@ const Login: React.FC = () => {
             </h1>
           </div>
           <p style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(255, 255, 255, 0.54)', margin: 0 }}>
-            {phase === 'code' || phase === 'verifying'
+            {phase === 'device-qr'
+              ? '使用已登录的手机端扫一扫，授权本电脑登录。'
+              : phase === 'code' || phase === 'verifying'
               ? t('auth.login.subtitle.code')
               : t('auth.login.subtitle.email')}
           </p>
+        </div>
+
+        <div
+          role="tablist"
+          aria-label="登录方式"
+          style={{ display: 'flex', gap: 8, marginBottom: 22, padding: 4, borderRadius: 10, background: 'rgba(255, 255, 255, 0.04)' }}
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={phase === 'device-qr'}
+            onClick={() => {
+              setPhase('device-qr');
+              setError(null);
+              setHint(null);
+            }}
+            style={{
+              flex: 1,
+              padding: '9px 10px',
+              border: 'none',
+              borderRadius: 7,
+              color: phase === 'device-qr' ? '#fff' : 'rgba(255, 255, 255, 0.65)',
+              background: phase === 'device-qr' ? 'var(--axi-primary)' : 'transparent',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            手机扫码登录
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={phase !== 'device-qr'}
+            onClick={selectEmailLogin}
+            style={{
+              flex: 1,
+              padding: '9px 10px',
+              border: 'none',
+              borderRadius: 7,
+              color: phase !== 'device-qr' ? '#fff' : 'rgba(255, 255, 255, 0.65)',
+              background: phase !== 'device-qr' ? 'var(--axi-primary)' : 'transparent',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            邮箱验证码
+          </button>
         </div>
 
         {banner && (
@@ -257,6 +407,58 @@ const Login: React.FC = () => {
           >
             {hint}
           </div>
+        )}
+
+        {phase === 'device-qr' && (
+          <section aria-label="手机扫码登录" style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                minHeight: 244,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+                borderRadius: 12,
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'rgba(255, 255, 255, 0.03)',
+              }}
+            >
+              {deviceQr ? (
+                <QRCode
+                  aria-label="电脑登录二维码"
+                  value={webDeviceLoginQrPayload(deviceQr)}
+                  size={208}
+                  errorLevel="M"
+                  status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
+                />
+              ) : (
+                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 13 }}>正在生成安全二维码…</span>
+              )}
+            </div>
+            <p style={{ color: 'rgba(255, 255, 255, 0.68)', fontSize: 13, lineHeight: 1.7, margin: '16px 0 8px' }}>
+              {deviceQrStatus === 'waiting_scan' && '请在已登录手机端打开“扫一扫”，扫描此二维码。'}
+              {deviceQrStatus === 'approved' && '手机已确认，正在建立本电脑会话…'}
+              {deviceQrStatus === 'expired' && '此二维码已失效。'}
+              {deviceQrStatus === 'failed' && '二维码登录未完成。'}
+              {deviceQrStatus === 'creating' && '正在准备一次性二维码。'}
+            </p>
+            {deviceQr && deviceQrStatus === 'waiting_scan' && (
+              <p style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 11, margin: '0 0 16px' }}>
+                有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}；二维码不包含浏览器会话或邮箱验证码。
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={resetDeviceQr}
+              disabled={submitting}
+              style={{ ...primaryButton, opacity: submitting ? 0.6 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
+            >
+              重新生成二维码
+            </button>
+            <p style={{ margin: '16px 0 0', fontSize: 12, color: 'rgba(255, 255, 255, 0.45)' }}>
+              首次没有已登录手机时，可切换到邮箱验证码完成一次初始登录。
+            </p>
+          </section>
         )}
 
         {phase === 'email' && (

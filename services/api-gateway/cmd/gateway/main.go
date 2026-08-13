@@ -149,6 +149,7 @@ func setupRouter(
 	})
 
 	v1 := router.Group("/api/v1")
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
 	auth := v1.Group("/auth")
 	auth.GET("/oidc/start", handlers.OIDCStart(identityService))
 	auth.GET("/oidc/callback", handlers.OIDCCallback(identityService))
@@ -163,6 +164,12 @@ func setupRouter(
 	// and issue a browser session. Replaces the OIDC code-exchange step for
 	// environments that use SMTP delivery instead of an external IdP.
 	auth.POST("/login/email/confirm", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
+	// A browser that has no cookie may create/poll a device-login QR. The
+	// scanner bearer never reaches a browser session endpoint; completion is
+	// intercepted by the Gateway so only it issues the HttpOnly cookie.
+	auth.POST("/device-login/qr", mobileControl.ProxyPublicWebLogin())
+	auth.GET("/device-login/qr/:id", mobileControl.ProxyPublicWebLogin())
+	auth.POST("/device-login/qr/:id/consume", mobileControl.ConsumeWebLogin(identityService))
 	// ZITADEL custom-login completes a QR transaction through the public
 	// gateway. The adapter still checks its webhook secret; this path preserves
 	// the sole-Ingress and ClusterIP-only identity-adapter topology.
@@ -172,7 +179,6 @@ func setupRouter(
 	// dedicated internal credentials.
 	v1.POST("/internal/events", middleware.RequireInternalToken(cfg.Services.PlatformOutboxToken), proxyHandler.ProxyToEventConsumers())
 
-	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
 	protected := v1.Group("")
 	protected.Use(middleware.RequireIdentity(identityService))
 	protected.POST("/auth/qr/transactions/:id/approve", proxyHandler.ProxyToIdentity())

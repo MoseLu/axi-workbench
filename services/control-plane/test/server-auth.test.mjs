@@ -363,6 +363,234 @@ test("authenticated web owner can approve an Android pairing without receiving t
   );
 });
 
+test("Web owner can create, observe, and confirm a QR pairing without exposing its scan bearer", async () => {
+  const { server } = fixture();
+  const authHeaders = {
+    "x-axi-internal-token": "axi-development-internal-token",
+    "x-axi-subject": "owner-subject",
+  };
+  const created = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair/qr",
+    headers: authHeaders,
+    body: {},
+  });
+  assert.equal(created.status, 200, created.body);
+  const createdBody = JSON.parse(created.body);
+  assert.match(createdBody.webPairingId, /^webpair_/);
+  assert.match(createdBody.scanToken, /^[A-Za-z0-9_-]{32,}$/);
+
+  const beforeScan = await invokeServer(server, {
+    method: "GET",
+    url: `/internal/web/v1/mobile/pair/qr/${createdBody.webPairingId}`,
+    headers: authHeaders,
+  });
+  assert.equal(beforeScan.status, 200, beforeScan.body);
+  const beforeScanBody = JSON.parse(beforeScan.body);
+  assert.equal(beforeScanBody.status, "waiting_scan");
+  assert.equal("scanToken" in beforeScanBody, false);
+
+  const foreignOwner = await invokeServer(server, {
+    method: "GET",
+    url: `/internal/web/v1/mobile/pair/qr/${createdBody.webPairingId}`,
+    headers: { ...authHeaders, "x-axi-subject": "other-owner" },
+  });
+  assert.equal(foreignOwner.status, 404);
+});
+
+test("phone QR scan is gateway-only and requires the one-time scan bearer", async () => {
+  const { server } = fixture();
+  const created = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair/qr",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: {},
+  });
+  const createdBody = JSON.parse(created.body);
+  const { publicKeyHex } = freshKey();
+
+  const extraField = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/mobile/v1/pair/qr/scan",
+    headers: { "x-axi-internal-token": "axi-development-internal-token" },
+    body: {
+      webPairingId: createdBody.webPairingId,
+      scanToken: createdBody.scanToken,
+      publicKeyHex,
+      publicKeyAlgorithm: "Ed25519",
+      deviceName: "phone",
+      ownerSubject: "forged-owner",
+    },
+  });
+  assert.equal(extraField.status, 400, "the phone scan request must not accept owner or browser fields");
+
+  const missingGatewayIdentity = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/mobile/v1/pair/qr/scan",
+    body: {
+      webPairingId: createdBody.webPairingId,
+      scanToken: createdBody.scanToken,
+      publicKeyHex,
+      publicKeyAlgorithm: "Ed25519",
+      deviceName: "phone",
+    },
+  });
+  assert.equal(missingGatewayIdentity.status, 401);
+
+  const scan = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/mobile/v1/pair/qr/scan",
+    headers: { "x-axi-internal-token": "axi-development-internal-token" },
+    body: {
+      webPairingId: createdBody.webPairingId,
+      scanToken: createdBody.scanToken,
+      publicKeyHex,
+      publicKeyAlgorithm: "Ed25519",
+      deviceName: "phone",
+    },
+  });
+  assert.equal(scan.status, 200, scan.body);
+  const scanBody = JSON.parse(scan.body);
+  assert.match(scanBody.pairingId, /^pair_/);
+  assert.match(scanBody.code, /^\d{6}$/);
+
+  const approved = await invokeServer(server, {
+    method: "POST",
+    url: `/internal/web/v1/mobile/pair/qr/${createdBody.webPairingId}/approve`,
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: {},
+  });
+  assert.equal(approved.status, 200, approved.body);
+  assert.equal(JSON.parse(approved.body).status, "approved");
+});
+
+test("public pairing start cannot forge a Web owner binding", async () => {
+  const { server } = fixture();
+  const { publicKeyHex } = freshKey();
+  const response = await invokeServer(server, {
+    method: "POST",
+    url: "/mobile/v1/pair/start",
+    body: {
+      publicKeyHex,
+      deviceName: "attacker-device",
+      ownerSubject: "forged-owner",
+    },
+  });
+  assert.equal(response.status, 400);
+  assert.match(JSON.parse(response.body).error, /accepts only/i);
+});
+
+test("a previously owner-bound mobile bearer can approve one browser QR without exposing its identity to polling", async () => {
+  const { server, controlPlane } = fixture();
+  const { publicKeyHex, privateKey } = freshKey();
+  const enrollment = controlPlane.pairing.startWebPairing({ ownerSubject: "owner-subject", ownerEmail: "owner@example.test" });
+  const enrollmentScan = controlPlane.pairing.scanWebPairing({
+    webPairingId: enrollment.webPairingId,
+    scanToken: enrollment.scanToken,
+    publicKeyHex,
+    deviceName: "physical-android",
+  });
+  assert.equal(controlPlane.pairing.approveWebPairing({ webPairingId: enrollment.webPairingId, ownerSubject: "owner-subject" }).ok, true);
+  const paired = controlPlane.pairing.pairingStatus({ pairingId: enrollmentScan.pairingId, code: enrollmentScan.code });
+  const nonce = controlPlane.pairing.requestAuthNonce({ deviceId: paired.deviceId });
+  const bearer = controlPlane.pairing.exchangeNonceForAccessToken({
+    deviceId: paired.deviceId,
+    nonceId: nonce.nonceId,
+    nonce: nonce.nonce,
+    signatureHex: signNonce(privateKey, nonce.nonce),
+  });
+  assert.equal(bearer.ok, true);
+
+  const created = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/gateway/v1/web-login/qr",
+    headers: { "x-axi-internal-token": "axi-development-internal-token" },
+    body: {},
+  });
+  assert.equal(created.status, 200, created.body);
+  const login = JSON.parse(created.body);
+  assert.match(login.webLoginId, /^weblogin_/);
+  assert.match(login.scanToken, /^[A-Za-z0-9_-]{32,}$/);
+  assert.match(login.pollToken, /^[A-Za-z0-9_-]{32,}$/);
+
+  const before = await invokeServer(server, {
+    method: "GET",
+    url: `/internal/gateway/v1/web-login/qr/${login.webLoginId}`,
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-qr-poll-token": login.pollToken,
+    },
+  });
+  assert.equal(before.status, 200, before.body);
+  const beforeBody = JSON.parse(before.body);
+  assert.equal(beforeBody.status, "waiting_scan");
+  assert.equal("ownerSubject" in beforeBody, false);
+
+  const directMobile = await invokeServer(server, {
+    method: "POST",
+    url: "/mobile/v1/web-login/qr/scan",
+    headers: { authorization: `Bearer ${bearer.accessToken}` },
+    body: { webLoginId: login.webLoginId, scanToken: login.scanToken },
+  });
+  assert.equal(directMobile.status, 401, "the device bearer must still traverse API Gateway");
+
+  const approved = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/mobile/v1/web-login/qr/scan",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      authorization: `Bearer ${bearer.accessToken}`,
+    },
+    body: { webLoginId: login.webLoginId, scanToken: login.scanToken },
+  });
+  assert.equal(approved.status, 200, approved.body);
+  assert.equal(JSON.parse(approved.body).status, "approved");
+
+  const after = await invokeServer(server, {
+    method: "GET",
+    url: `/internal/gateway/v1/web-login/qr/${login.webLoginId}`,
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-qr-poll-token": login.pollToken,
+    },
+  });
+  assert.deepEqual(JSON.parse(after.body), { ok: true, status: "approved", expiresAt: login.expiresAt });
+
+  const consumed = await invokeServer(server, {
+    method: "POST",
+    url: `/internal/gateway/v1/web-login/qr/${login.webLoginId}/consume`,
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-qr-poll-token": login.pollToken,
+    },
+    body: {},
+  });
+  assert.equal(consumed.status, 200, consumed.body);
+  assert.deepEqual(JSON.parse(consumed.body), {
+    ok: true,
+    status: "approved",
+    ownerSubject: "owner-subject",
+    ownerEmail: "owner@example.test",
+    deviceName: "physical-android",
+  });
+  const replay = await invokeServer(server, {
+    method: "POST",
+    url: `/internal/gateway/v1/web-login/qr/${login.webLoginId}/consume`,
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-qr-poll-token": login.pollToken,
+    },
+    body: {},
+  });
+  assert.equal(replay.status, 400);
+});
+
 test("phone can poll only its own pairing transaction until Web approval exposes a device id", async () => {
   const { server, controlPlane } = fixture();
   const { publicKeyHex } = freshKey();

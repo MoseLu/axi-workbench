@@ -90,6 +90,79 @@ export const PairingChallengeSchema = z.object({
   confirmedAt: z.coerce.date().optional(),
 })
 
+/**
+ * Web creates this short-lived transaction for a phone camera. The scan token
+ * is a one-time bearer for the scan step only; it is neither a Web session nor
+ * an owner approval credential.
+ */
+export const WebPairingQrTransactionSchema = z.object({
+  webPairingId: z.string().regex(/^webpair_[A-Za-z0-9_-]{16,}$/),
+  scanToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+  expiresAt: z.number().int().positive(),
+}).strict()
+
+/** Serialized into the QR image, never returned by an owner status endpoint. */
+export const WebPairingQrPayloadSchema = z.object({
+  kind: z.literal("axi-mobile-pair-v1"),
+  webPairingId: z.string().regex(/^webpair_[A-Za-z0-9_-]{16,}$/),
+  scanToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+}).strict()
+
+export const WebPairingQrStatusSchema = z.object({
+  status: z.enum(["waiting_scan", "scanned", "approved", "expired"]),
+  expiresAt: z.number().int().positive(),
+  deviceName: z.string().min(1).optional(),
+}).strict()
+
+/** Phone-to-gateway request after CameraX/ML Kit has decoded the QR payload. */
+export const QrPairScanRequestSchema = z.object({
+  webPairingId: z.string().regex(/^webpair_[A-Za-z0-9_-]{16,}$/),
+  scanToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+  publicKeyHex: z.string().regex(/^[0-9a-fA-F]{64,512}$/),
+  publicKeyAlgorithm: z.enum(["Ed25519", "ES256"]),
+  deviceName: z.string().min(1).max(200),
+}).strict()
+
+/**
+ * The code remains only in device-local secure storage for status polling.
+ * It intentionally omits scanToken, owner identity, and browser credentials.
+ */
+export const QrPairScanResponseSchema = z.object({
+  ok: z.literal(true),
+  pairingId: z.string().regex(/^pair_[A-Za-z0-9_-]{36}$/),
+  code: z.string().regex(/^\d{6}$/),
+  expiresAt: z.number().int().positive(),
+}).strict()
+
+/** A browser that has no session receives this transaction from the Gateway.
+ * `pollToken` stays in browser memory, while the camera QR contains only the
+ * scan token. Neither token is a browser session or an owner credential. */
+export const WebLoginQrTransactionSchema = z.object({
+  webLoginId: z.string().regex(/^weblogin_[A-Za-z0-9_-]{16,}$/),
+  scanToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+  pollToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+  expiresAt: z.number().int().positive(),
+}).strict()
+
+/** Serialized into the computer-login QR image; `pollToken` is intentionally absent. */
+export const WebLoginQrPayloadSchema = z.object({
+  kind: z.literal("axi-web-login-v1"),
+  webLoginId: z.string().regex(/^weblogin_[A-Za-z0-9_-]{16,}$/),
+  scanToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+}).strict()
+
+/** Sent by a pre-authorized phone only. The device bearer comes from the
+ * Control Plane interceptor, never from this JSON body. */
+export const WebLoginQrScanRequestSchema = z.object({
+  webLoginId: z.string().regex(/^weblogin_[A-Za-z0-9_-]{16,}$/),
+  scanToken: z.string().regex(/^[A-Za-z0-9_-]{32,}$/),
+}).strict()
+
+export const WebLoginQrScanResponseSchema = z.object({
+  ok: z.literal(true),
+  status: z.literal("approved"),
+}).strict()
+
 export const AttachmentRefSchema = z.object({
   id: z.string().min(1),
   routeKey: z.string().optional(),
@@ -176,6 +249,15 @@ export const HandoffContextSchema = z.object({
 export type ApprovalScanPreview = z.infer<typeof ApprovalScanPreviewSchema>
 export type MobileApprovalDecision = z.infer<typeof MobileApprovalDecisionSchema>
 export type HandoffContext = z.infer<typeof HandoffContextSchema>
+export type WebPairingQrTransaction = z.infer<typeof WebPairingQrTransactionSchema>
+export type WebPairingQrPayload = z.infer<typeof WebPairingQrPayloadSchema>
+export type WebPairingQrStatus = z.infer<typeof WebPairingQrStatusSchema>
+export type QrPairScanRequest = z.infer<typeof QrPairScanRequestSchema>
+export type QrPairScanResponse = z.infer<typeof QrPairScanResponseSchema>
+export type WebLoginQrTransaction = z.infer<typeof WebLoginQrTransactionSchema>
+export type WebLoginQrPayload = z.infer<typeof WebLoginQrPayloadSchema>
+export type WebLoginQrScanRequest = z.infer<typeof WebLoginQrScanRequestSchema>
+export type WebLoginQrScanResponse = z.infer<typeof WebLoginQrScanResponseSchema>
 
 export const AgentTaskSchema = z.object({
   id: z.string().min(1),

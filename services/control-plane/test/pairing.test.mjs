@@ -171,6 +171,143 @@ test("an authenticated owner can approve a pending pairing by its six-digit code
   assert.equal(pairing.pairingStatus({ pairingId: start.pairingId, code: "000000" }).ok, false);
 });
 
+test("a Web-owned QR pairing binds the scanned device to the same Web owner only after confirmation", () => {
+  const pairing = freshPairing();
+  const { publicKeyHex, publicKeyAlgorithm } = freshEs256Key();
+  const created = pairing.startWebPairing({ ownerSubject: "owner-a", ownerEmail: "owner-a@example.test" });
+
+  assert.equal(created.ok, true);
+  assert.match(created.webPairingId, /^webpair_/);
+  assert.match(created.scanToken, /^[A-Za-z0-9_-]{32,}$/);
+  assert.equal(pairing.webPairingStatus({ webPairingId: created.webPairingId, ownerSubject: "owner-a" }).status, "waiting_scan");
+
+  const scanned = pairing.scanWebPairing({
+    webPairingId: created.webPairingId,
+    scanToken: created.scanToken,
+    publicKeyHex,
+    publicKeyAlgorithm,
+    deviceName: "physical-android",
+  });
+  assert.equal(scanned.ok, true);
+  assert.match(scanned.pairingId, /^pair_/);
+  assert.match(scanned.code, /^\d{6}$/);
+
+  const status = pairing.webPairingStatus({ webPairingId: created.webPairingId, ownerSubject: "owner-a" });
+  assert.deepEqual(status, {
+    ok: true,
+    status: "scanned",
+    deviceName: "physical-android",
+    expiresAt: created.expiresAt,
+  });
+  assert.equal("scanToken" in status, false, "the QR bearer must never be returned after creation");
+  assert.equal(pairing.approveWebPairing({ webPairingId: created.webPairingId, ownerSubject: "owner-b" }).ok, false);
+
+  const approved = pairing.approveWebPairing({ webPairingId: created.webPairingId, ownerSubject: "owner-a" });
+  assert.equal(approved.ok, true);
+  assert.equal(approved.status, "approved");
+  assert.equal(approved.deviceName, "physical-android");
+
+  const phoneStatus = pairing.pairingStatus({ pairingId: scanned.pairingId, code: scanned.code });
+  assert.equal(phoneStatus.ok, true);
+  assert.equal(phoneStatus.status, "approved");
+  assert.match(phoneStatus.deviceId, /^dev_/);
+  assert.deepEqual(
+    pairing._internals.readDevice(phoneStatus.deviceId).owner,
+    { subject: "owner-a", email: "owner-a@example.test" },
+    "the newly trusted device must carry the Web identity that explicitly approved it",
+  );
+  const ledger = pairing._internals.readWebPairing(created.webPairingId);
+  assert.equal("scanToken" in ledger, false, "the QR bearer must not be retained in the ledger");
+  assert.match(ledger.scanTokenHash, /^[0-9a-f]{64}$/);
+  assert.equal(pairing.scanWebPairing({ webPairingId: created.webPairingId, scanToken: created.scanToken, publicKeyHex, publicKeyAlgorithm }).ok, false, "the QR transaction is single-use");
+});
+
+test("only an active mobile device already bound to an owner can authorize one Web login", () => {
+  const pairing = freshPairing();
+  const { publicKeyHex, publicKeyAlgorithm } = freshEs256Key();
+
+  // A signed-in browser explicitly creates and approves the phone binding.
+  const deviceEnrollment = pairing.startWebPairing({ ownerSubject: "owner-a", ownerEmail: "owner-a@example.test" });
+  const enrollmentScan = pairing.scanWebPairing({
+    webPairingId: deviceEnrollment.webPairingId,
+    scanToken: deviceEnrollment.scanToken,
+    publicKeyHex,
+    publicKeyAlgorithm,
+    deviceName: "physical-android",
+  });
+  assert.equal(pairing.approveWebPairing({ webPairingId: deviceEnrollment.webPairingId, ownerSubject: "owner-a" }).ok, true);
+  const enrolled = pairing.pairingStatus({ pairingId: enrollmentScan.pairingId, code: enrollmentScan.code });
+  assert.equal(enrolled.status, "approved");
+
+  const webLogin = pairing.startWebLogin();
+  assert.equal(webLogin.ok, true);
+  assert.match(webLogin.webLoginId, /^weblogin_/);
+  assert.match(webLogin.scanToken, /^[A-Za-z0-9_-]{32,}$/);
+  assert.match(webLogin.pollToken, /^[A-Za-z0-9_-]{32,}$/);
+  assert.deepEqual(
+    pairing.webLoginStatus({ webLoginId: webLogin.webLoginId, pollToken: webLogin.pollToken }),
+    { ok: true, status: "waiting_scan", expiresAt: webLogin.expiresAt },
+  );
+
+  const scanned = pairing.scanWebLogin({
+    webLoginId: webLogin.webLoginId,
+    scanToken: webLogin.scanToken,
+    deviceId: enrolled.deviceId,
+  });
+  assert.equal(scanned.ok, true);
+  assert.equal(scanned.status, "approved");
+
+  const status = pairing.webLoginStatus({ webLoginId: webLogin.webLoginId, pollToken: webLogin.pollToken });
+  assert.deepEqual(status, { ok: true, status: "approved", expiresAt: webLogin.expiresAt });
+  assert.equal("ownerSubject" in status, false, "polling a login card never exposes the owner identity");
+
+  const consumed = pairing.consumeWebLogin({ webLoginId: webLogin.webLoginId, pollToken: webLogin.pollToken });
+  assert.deepEqual(consumed, {
+    ok: true,
+    status: "approved",
+    ownerSubject: "owner-a",
+    ownerEmail: "owner-a@example.test",
+    deviceName: "physical-android",
+  });
+  assert.equal(pairing.consumeWebLogin({ webLoginId: webLogin.webLoginId, pollToken: webLogin.pollToken }).ok, false, "a browser login card is single-use");
+
+  const unbound = pairDevice(pairing, { publicKeyHex: freshKey().publicKeyHex, deviceName: "legacy-device" });
+  const anotherLogin = pairing.startWebLogin();
+  const rejected = pairing.scanWebLogin({
+    webLoginId: anotherLogin.webLoginId,
+    scanToken: anotherLogin.scanToken,
+    deviceId: unbound.confirm.deviceId,
+  });
+  assert.equal(rejected.ok, false);
+  assert.match(rejected.error, /bound to a Web owner/i);
+});
+
+test("a Web QR pairing rejects a forged or expired scan token without creating a phone transaction", () => {
+  let now = 1_700_000_000;
+  const pairing = freshPairing({ clock: () => now * 1000 });
+  const { publicKeyHex, publicKeyAlgorithm } = freshEs256Key();
+  const created = pairing.startWebPairing({ ownerSubject: "owner-a" });
+
+  const forged = pairing.scanWebPairing({
+    webPairingId: created.webPairingId,
+    scanToken: "forged-token",
+    publicKeyHex,
+    publicKeyAlgorithm,
+  });
+  assert.equal(forged.ok, false);
+  assert.equal(pairing.webPairingStatus({ webPairingId: created.webPairingId, ownerSubject: "owner-a" }).status, "waiting_scan");
+
+  now = created.expiresAt + 1;
+  const expired = pairing.scanWebPairing({
+    webPairingId: created.webPairingId,
+    scanToken: created.scanToken,
+    publicKeyHex,
+    publicKeyAlgorithm,
+  });
+  assert.equal(expired.ok, false);
+  assert.equal(pairing.webPairingStatus({ webPairingId: created.webPairingId, ownerSubject: "owner-a" }).status, "expired");
+});
+
 test("verifyNonceSignature + issueAccessToken issue an HS256 token that round-trips on Ed25519-signed nonces", () => {
   const pairing = freshPairing();
   const { publicKeyHex, privateKey } = freshKey();

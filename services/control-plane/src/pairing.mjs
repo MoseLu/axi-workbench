@@ -35,7 +35,7 @@
  */
 
 import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createHmac, createPublicKey, randomBytes, randomInt, randomUUID, verify as cryptoVerify, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, createPublicKey, randomBytes, randomInt, randomUUID, verify as cryptoVerify, timingSafeEqual } from "node:crypto";
 import { dirname, join } from "node:path";
 
 const DEFAULT_CODE_TTL_SECONDS = 300;          // 5 minutes
@@ -47,6 +47,8 @@ const NONCE_LENGTH = 32;                       // 32 random bytes -> base64url ~
 const DEVICES_DIRNAME = "devices";
 const NONCES_DIRNAME = "nonces";
 const PAIR_CODES_FILE = "pairing-codes.jsonl";
+const WEB_PAIRINGS_FILE = "web-pairings.jsonl";
+const WEB_LOGINS_FILE = "web-logins.jsonl";
 const TOKENS_FILE = "access-tokens.jsonl";
 
 /* ─── Ed25519 raw → SPKI helpers (RFC 8410 §3, OID 1.3.101.112) ──────────
@@ -223,6 +225,29 @@ function fingerprintPublicKey(publicKeyHex, publicKeyAlgorithm = KEY_ALGORITHM_E
     .digest("hex");
 }
 
+/** QR and browser poll credentials are high-entropy one-time bearers.  The
+ * ledger retains only their SHA-256 digests so a local cache inspection
+ * cannot replay a still-live QR transaction. */
+function opaqueTokenHash(value) {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function opaqueTokenMatches(value, expectedHash) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_-]{32,}$/.test(value)) return false;
+  if (typeof expectedHash !== "string" || !/^[0-9a-f]{64}$/i.test(expectedHash)) return false;
+  const expected = Buffer.from(expectedHash, "hex");
+  const actual = Buffer.from(opaqueTokenHash(value), "hex");
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+function normalizeOwner({ ownerSubject, ownerEmail } = {}) {
+  const subject = typeof ownerSubject === "string" ? ownerSubject.trim() : "";
+  if (!subject || subject.length > 256 || /[\u0000-\u001f\u007f]/.test(subject)) return null;
+  const email = typeof ownerEmail === "string" ? ownerEmail.trim() : "";
+  if (email && (email.length > 320 || /[\u0000-\u001f\u007f]/.test(email))) return null;
+  return email ? { subject, email } : { subject };
+}
+
 /* ─── createPairingService ────────────────────────────────────────────── */
 
 export function createPairingService({
@@ -245,6 +270,8 @@ export function createPairingService({
   const devicesDir = join(cacheDir, DEVICES_DIRNAME);
   const noncesDir = join(cacheDir, NONCES_DIRNAME);
   const pairCodesPath = join(cacheDir, PAIR_CODES_FILE);
+  const webPairingsPath = join(cacheDir, WEB_PAIRINGS_FILE);
+  const webLoginsPath = join(cacheDir, WEB_LOGINS_FILE);
   const tokensPath = join(cacheDir, TOKENS_FILE);
 
   for (const dir of [cacheDir, devicesDir, noncesDir]) {
@@ -265,8 +292,215 @@ export function createPairingService({
     writeFileSync(path, JSON.stringify(device, null, 2), { mode: 0o600 });
   }
 
+  function readWebPairing(webPairingId) {
+    if (typeof webPairingId !== "string" || !/^webpair_[A-Za-z0-9_-]{6,}$/.test(webPairingId)) return null;
+    return [...readJsonl(webPairingsPath)].reverse().find((entry) => entry?.webPairingId === webPairingId) || null;
+  }
+
+  function updateWebPairing(entry) {
+    appendJsonl(webPairingsPath, entry);
+    return entry;
+  }
+
+  function readWebLogin(webLoginId) {
+    if (typeof webLoginId !== "string" || !/^weblogin_[A-Za-z0-9_-]{6,}$/.test(webLoginId)) return null;
+    return [...readJsonl(webLoginsPath)].reverse().find((entry) => entry?.webLoginId === webLoginId) || null;
+  }
+
+  function updateWebLogin(entry) {
+    appendJsonl(webLoginsPath, entry);
+    return entry;
+  }
+
+  /**
+   * A signed-in Web owner creates a short-lived, opaque QR transaction.  The
+   * random scan token is a bearer only for the *scan* step; it never grants a
+   * device a session and is never returned by a status endpoint.
+   */
+  function startWebPairing({ ownerSubject, ownerEmail } = {}) {
+    const owner = normalizeOwner({ ownerSubject, ownerEmail });
+    if (!owner) {
+      return { ok: false, error: "verified web identity required" };
+    }
+    const now = nowSeconds();
+    const scanToken = base64url(randomBytes(NONCE_LENGTH));
+    const entry = {
+      webPairingId: `webpair_${randomUUID()}`,
+      ownerSubject: owner.subject,
+      ownerEmail: owner.email,
+      scanTokenHash: opaqueTokenHash(scanToken),
+      createdAt: now,
+      expiresAt: now + codeTtlSeconds,
+      status: "waiting_scan",
+    };
+    updateWebPairing(entry);
+    return {
+      ok: true,
+      webPairingId: entry.webPairingId,
+      scanToken,
+      expiresAt: entry.expiresAt,
+    };
+  }
+
+  /** The phone scans a Web-owned QR and contributes its device public key. */
+  function scanWebPairing({ webPairingId, scanToken, publicKeyHex, publicKeyAlgorithm, deviceName, clientInfo } = {}) {
+    if (typeof scanToken !== "string" || !/^[A-Za-z0-9_-]{32,}$/.test(scanToken)) {
+      return { ok: false, error: "invalid pairing scan token" };
+    }
+    const current = readWebPairing(webPairingId);
+    if (!current) return { ok: false, error: "web pairing not found" };
+    const now = nowSeconds();
+    if (current.expiresAt <= now) return { ok: false, error: "web pairing expired" };
+    if (current.status !== "waiting_scan") return { ok: false, error: "web pairing is no longer scannable" };
+    if (!opaqueTokenMatches(scanToken, current.scanTokenHash)) {
+      return { ok: false, error: "invalid pairing scan token" };
+    }
+    const started = startPair({
+      publicKeyHex,
+      publicKeyAlgorithm,
+      deviceName,
+      clientInfo,
+      ownerSubject: current.ownerSubject,
+      ownerEmail: current.ownerEmail,
+    });
+    if (!started.ok) return started;
+    updateWebPairing({
+      ...current,
+      status: "scanned",
+      scannedAt: now,
+      pairingId: started.pairingId,
+      deviceName: typeof deviceName === "string" ? deviceName : "unknown-device",
+    });
+    return {
+      ok: true,
+      pairingId: started.pairingId,
+      code: started.code,
+      expiresAt: started.codeExpiresAt,
+    };
+  }
+
+  /** An owner may view only their own transaction and never its scan bearer. */
+  function webPairingStatus({ webPairingId, ownerSubject } = {}) {
+    if (typeof ownerSubject !== "string" || !ownerSubject.trim()) return { ok: false, error: "verified web identity required" };
+    const current = readWebPairing(webPairingId);
+    if (!current || current.ownerSubject !== ownerSubject.trim()) return { ok: false, error: "web pairing not found" };
+    const now = nowSeconds();
+    if (current.expiresAt <= now && current.status !== "approved") {
+      return { ok: true, status: "expired", expiresAt: current.expiresAt };
+    }
+    const result = { ok: true, status: current.status, expiresAt: current.expiresAt };
+    if (current.status === "scanned" || current.status === "approved") result.deviceName = current.deviceName;
+    return result;
+  }
+
+  /** Final, explicit owner confirmation.  Only then is the device activated. */
+  function approveWebPairing({ webPairingId, ownerSubject } = {}) {
+    if (typeof ownerSubject !== "string" || !ownerSubject.trim()) return { ok: false, error: "verified web identity required" };
+    const current = readWebPairing(webPairingId);
+    if (!current || current.ownerSubject !== ownerSubject.trim()) return { ok: false, error: "web pairing not found" };
+    const now = nowSeconds();
+    if (current.expiresAt <= now) return { ok: false, error: "web pairing expired" };
+    if (current.status !== "scanned" || typeof current.pairingId !== "string") {
+      return { ok: false, error: "phone has not scanned this QR code" };
+    }
+    const pair = [...readJsonl(pairCodesPath)].reverse().find((entry) => entry?.pairingId === current.pairingId);
+    if (!pair || pair.consumed || pair.expiresAt <= now) return { ok: false, error: "phone pairing expired" };
+    const approved = approvePairByCode(pair.code);
+    if (!approved.ok) return approved;
+    updateWebPairing({ ...current, status: "approved", approvedAt: now });
+    return { ok: true, status: "approved", deviceName: approved.deviceName };
+  }
+
+  /** A browser that is not yet authenticated creates this short-lived QR.
+   * The QR carries only the scanner bearer; its polling bearer remains in the
+   * browser.  A mobile device must already be active and owner-bound before
+   * it can approve this transaction. */
+  function startWebLogin() {
+    const now = nowSeconds();
+    const scanToken = base64url(randomBytes(NONCE_LENGTH));
+    const pollToken = base64url(randomBytes(NONCE_LENGTH));
+    const entry = {
+      webLoginId: `weblogin_${randomUUID()}`,
+      scanTokenHash: opaqueTokenHash(scanToken),
+      pollTokenHash: opaqueTokenHash(pollToken),
+      createdAt: now,
+      expiresAt: now + codeTtlSeconds,
+      status: "waiting_scan",
+    };
+    updateWebLogin(entry);
+    return {
+      ok: true,
+      webLoginId: entry.webLoginId,
+      scanToken,
+      pollToken,
+      expiresAt: entry.expiresAt,
+    };
+  }
+
+  function webLoginStatus({ webLoginId, pollToken } = {}) {
+    if (typeof pollToken !== "string" || !/^[A-Za-z0-9_-]{32,}$/.test(pollToken)) {
+      return { ok: false, error: "invalid browser poll token" };
+    }
+    const current = readWebLogin(webLoginId);
+    if (!current || !opaqueTokenMatches(pollToken, current.pollTokenHash)) {
+      return { ok: false, error: "web login not found" };
+    }
+    if (current.expiresAt <= nowSeconds() && current.status !== "consumed") {
+      return { ok: true, status: "expired", expiresAt: current.expiresAt };
+    }
+    return { ok: true, status: current.status, expiresAt: current.expiresAt };
+  }
+
+  function scanWebLogin({ webLoginId, scanToken, deviceId } = {}) {
+    if (typeof scanToken !== "string" || !/^[A-Za-z0-9_-]{32,}$/.test(scanToken)) {
+      return { ok: false, error: "invalid web login scan token" };
+    }
+    const current = readWebLogin(webLoginId);
+    if (!current) return { ok: false, error: "web login not found" };
+    const now = nowSeconds();
+    if (current.expiresAt <= now) return { ok: false, error: "web login expired" };
+    if (current.status !== "waiting_scan") return { ok: false, error: "web login is no longer scannable" };
+    if (!opaqueTokenMatches(scanToken, current.scanTokenHash)) return { ok: false, error: "invalid web login scan token" };
+    const device = readDevice(deviceId);
+    if (!device || device.status !== "active") return { ok: false, error: "mobile device is not active" };
+    if (!device.owner?.subject) return { ok: false, error: "mobile device is not bound to a Web owner" };
+    updateWebLogin({
+      ...current,
+      status: "approved",
+      approvedAt: now,
+      approvingDeviceId: device.deviceId,
+      ownerSubject: device.owner.subject,
+      ownerEmail: device.owner.email,
+      deviceName: device.deviceName,
+    });
+    return { ok: true, status: "approved" };
+  }
+
+  /** Consume is internal-gateway only at the HTTP layer.  The browser holder
+   * gets a cookie from API Gateway; the identity is never exposed by polling. */
+  function consumeWebLogin({ webLoginId, pollToken } = {}) {
+    if (typeof pollToken !== "string" || !/^[A-Za-z0-9_-]{32,}$/.test(pollToken)) {
+      return { ok: false, error: "invalid browser poll token" };
+    }
+    const current = readWebLogin(webLoginId);
+    if (!current || !opaqueTokenMatches(pollToken, current.pollTokenHash)) {
+      return { ok: false, error: "web login not found" };
+    }
+    const now = nowSeconds();
+    if (current.expiresAt <= now) return { ok: false, error: "web login expired" };
+    if (current.status !== "approved" || !current.ownerSubject) return { ok: false, error: "web login is not approved" };
+    updateWebLogin({ ...current, status: "consumed", consumedAt: now });
+    return {
+      ok: true,
+      status: "approved",
+      ownerSubject: current.ownerSubject,
+      ownerEmail: current.ownerEmail,
+      deviceName: current.deviceName,
+    };
+  }
+
   /* startPair — generate a one-time code; device is not yet registered. */
-  function startPair({ publicKeyHex, publicKeyAlgorithm, deviceName, clientInfo } = {}) {
+  function startPair({ publicKeyHex, publicKeyAlgorithm, deviceName, clientInfo, ownerSubject, ownerEmail } = {}) {
     const normalizedPublicKeyAlgorithm = normalizePublicKeyAlgorithm(publicKeyAlgorithm);
     if (!normalizedPublicKeyAlgorithm || !isValidHexPublicKey(publicKeyHex, normalizedPublicKeyAlgorithm)) {
       return { ok: false, error: "publicKeyHex must be a valid declared device signing key" };
@@ -274,6 +508,10 @@ export function createPairingService({
     const now = nowSeconds();
     const code = randomPairCode();
     const pairingId = `pair_${randomUUID()}`;
+    const owner = ownerSubject === undefined && ownerEmail === undefined ? null : normalizeOwner({ ownerSubject, ownerEmail });
+    if ((ownerSubject !== undefined || ownerEmail !== undefined) && !owner) {
+      return { ok: false, error: "verified web identity required" };
+    }
     const entry = {
       pairingId,
       code,
@@ -286,6 +524,7 @@ export function createPairingService({
       expiresAt: now + codeTtlSeconds,
       consumed: false,
     };
+    if (owner) entry.owner = owner;
     appendJsonl(pairCodesPath, entry);
     return { ok: true, pairingId, code, codeExpiresAt: entry.expiresAt };
   }
@@ -341,6 +580,7 @@ export function createPairingService({
       createdAt: now,
       lastSeenAt: now,
     };
+    if (entry.owner) device.owner = entry.owner;
     writeDevice(device);
 
     // Issue an initial nonce so the device can immediately request a token.
@@ -609,6 +849,14 @@ export function createPairingService({
     confirmPair,
     approvePairByCode,
     pairingStatus,
+    startWebPairing,
+    scanWebPairing,
+    webPairingStatus,
+    approveWebPairing,
+    startWebLogin,
+    scanWebLogin,
+    webLoginStatus,
+    consumeWebLogin,
     requestAuthNonce,
     verifyNonceSignature,
     exchangeNonceForAccessToken,
@@ -630,6 +878,10 @@ export function createPairingService({
       writeDevice,
       devicesDir,
       pairCodesPath,
+      webPairingsPath,
+      webLoginsPath,
+      readWebPairing,
+      readWebLogin,
       tokensPath,
       computeOwnerApprovalToken,
       parseEd25519PublicKey,

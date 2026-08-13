@@ -566,6 +566,22 @@ func (s *Service) IssueEmailSession(ctx context.Context, email string) (string, 
 	if err != nil {
 		return "", err
 	}
+	return s.IssuePrincipalSession(ctx, principal)
+}
+
+// IssuePrincipalSession creates the same durable, renewable browser session
+// used by OIDC and email login after an upstream trust boundary has already
+// verified the principal. The Control Plane device-login grant is one such
+// boundary: it only returns a subject from an active device explicitly bound
+// to an existing browser owner. This method must never be called with browser
+// supplied identity fields.
+func (s *Service) IssuePrincipalSession(ctx context.Context, principal Principal) (string, error) {
+	principal.Subject = strings.TrimSpace(principal.Subject)
+	principal.Email = strings.TrimSpace(principal.Email)
+	principal.Name = strings.TrimSpace(principal.Name)
+	if principal.Subject == "" || len(principal.Subject) > 256 || len(principal.Email) > 320 || len(principal.Name) > 256 {
+		return "", ErrUnauthorized
+	}
 	now := s.now()
 	session, err := s.initializeSession(browserSession{Principal: principal}, now)
 	if err != nil {
