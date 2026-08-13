@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
 import { AxiLogoMark } from '@axi/core';
 import { resolveGatewayURL } from '@axi/workbench-foundation';
+import scanPromptImage from '../assets/login/scan-prompt.png';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../i18n';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
@@ -364,7 +365,10 @@ const Login: React.FC = () => {
                   <div className="axi-login-qr-loading"><span /><span /><span /></div>
                 )}
               </div>
-              <span className="axi-login-qr-tooltip" role="tooltip">使用手机端扫码登录</span>
+              <span className="axi-login-qr-tooltip" role="tooltip">
+                <img src={scanPromptImage} alt="" aria-hidden="true" />
+                <span className="axi-login-qr-tooltip__label">使用手机端扫码登录</span>
+              </span>
             </div>
             <p className="axi-login-qr-instruction">
               请使用 <strong>Axi WorkBench 手机端</strong><br />

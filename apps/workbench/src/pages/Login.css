@@ -142,22 +142,39 @@
 
 .axi-login-qr-tooltip {
   position: absolute;
-  inset: var(--space-2);
+  inset: 0;
   display: grid;
-  place-items: center;
-  padding: var(--space-3);
-  border-radius: var(--radius-xs);
-  color: var(--palette-white);
-  background: color-mix(in srgb, var(--palette-gray-900) 78%, transparent);
+  overflow: hidden;
+  place-items: end center;
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: var(--radius-sm);
+  background: var(--palette-white);
   box-shadow: 0 var(--space-2) var(--space-5) color-mix(in srgb, var(--palette-black) 24%, transparent);
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.5;
   opacity: 0;
   pointer-events: none;
   text-align: center;
   transform: translateY(var(--space-1));
   transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.axi-login-qr-tooltip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.axi-login-qr-tooltip__label {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  left: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--palette-white);
+  background: color-mix(in srgb, var(--palette-gray-900) 72%, transparent);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
 }
 
 .axi-login-qr-hover:hover .axi-login-qr-tooltip,
