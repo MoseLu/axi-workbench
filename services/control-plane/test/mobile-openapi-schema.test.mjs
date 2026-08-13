@@ -57,6 +57,7 @@ test("OpenAPI: every documented /mobile/v1/* path appears in paths", () => {
   const routes = [
     "/mobile/v1/pair/start",
     "/mobile/v1/pair/confirm",
+    "/mobile/v1/pair/status",
     "/mobile/v1/auth/token",
     "/mobile/v1/auth/owner-token",
     "/mobile/v1/auth/nonce",
@@ -78,6 +79,7 @@ test("OpenAPI: every documented route has a post/get operation block", () => {
   const postRoutes = [
     "/mobile/v1/pair/start",
     "/mobile/v1/pair/confirm",
+    "/mobile/v1/pair/status",
     "/mobile/v1/auth/token",
     "/mobile/v1/auth/owner-token",
     "/mobile/v1/auth/nonce",
@@ -112,6 +114,8 @@ test("OpenAPI: required schemas exist for the runtime surface", () => {
     "PairStartResponse",
     "PairConfirmRequest",
     "PairConfirmResponse",
+    "PairStatusRequest",
+    "PairStatusResponse",
     "TokenRequest",
     "OwnerTokenRequest",
     "OwnerTokenResponse",
@@ -179,6 +183,15 @@ test("OpenAPI: bearerAuth security scheme documents HS256 + 1h TTL", () => {
 
 test("OpenAPI: PairStartResponse pattern matches the runtime 6-digit code", () => {
   expectContains("pattern: '^[0-9]{6}$'", "PairStartResponse code pattern");
+});
+
+test("OpenAPI: device pairing documents the Android Keystore ES256 key format without dropping legacy Ed25519", () => {
+  const pairStart = readSubSection("PairStartRequest");
+  assert.ok(pairStart, "PairStartRequest schema must exist");
+  assert.match(pairStart, /publicKeyAlgorithm:/, "pairing must declare the key algorithm");
+  assert.match(pairStart, /enum: \[Ed25519, ES256\]/, "only supported device key algorithms may be declared");
+  assert.match(pairStart, /maxLength:\s*512/, "ES256 SPKI key must fit the contract");
+  expectContains("Android Keystore ES256", "Android Keystore signing contract");
 });
 
 test("OpenAPI: approval-scan decision accepts only decision, idempotency and correlation", () => {

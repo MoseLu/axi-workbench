@@ -27,6 +27,20 @@ function signNonce(privateKey, nonce) {
   return cryptoSign(null, Buffer.from(nonce, "utf8"), privateKey).toString("hex");
 }
 
+/** Android Keystore documents EC P-256 as its portable signing path. Its
+ * SHA256withECDSA signature is DER encoded, exactly as Node crypto.verify()
+ * expects for an ES256 key. */
+function freshEs256Key() {
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const publicKeyHex = publicKey.export({ type: "spki", format: "der" }).toString("hex");
+  const privateKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
+  return { publicKeyHex, publicKeyAlgorithm: "ES256", privateKey: createPrivateKey(privateKeyPem) };
+}
+
+function signEs256Nonce(privateKey, nonce) {
+  return cryptoSign("sha256", Buffer.from(nonce, "utf8"), privateKey).toString("hex");
+}
+
 function freshPairing(opts = {}) {
   return createPairingService({
     cacheDir: freshCacheDir(),
@@ -36,8 +50,8 @@ function freshPairing(opts = {}) {
   });
 }
 
-function pairDevice(pairing, { publicKeyHex, privateKey, deviceName = "x" } = {}) {
-  const start = pairing.startPair({ publicKeyHex, deviceName });
+function pairDevice(pairing, { publicKeyHex, publicKeyAlgorithm, privateKey, deviceName = "x" } = {}) {
+  const start = pairing.startPair({ publicKeyHex, publicKeyAlgorithm, deviceName });
   const ownerApprovalToken = pairing.getOwnerApprovalToken(start.pairingId, start.code);
   const confirm = pairing.confirmPair({ pairingId: start.pairingId, code: start.code, ownerApprovalToken });
   return { start, confirm, privateKey };
@@ -133,6 +147,30 @@ test("confirmPair rejects a second use of the same pairing id", () => {
   assert.equal(second.ok, false);
 });
 
+test("an authenticated owner can approve a pending pairing by its six-digit code without releasing an approval secret", () => {
+  const pairing = freshPairing();
+  const { publicKeyHex } = freshKey();
+  const start = pairing.startPair({ publicKeyHex, deviceName: "android-lan" });
+
+  assert.deepEqual(
+    pairing.pairingStatus({ pairingId: start.pairingId, code: start.code }),
+    { ok: true, status: "pending", expiresAt: start.codeExpiresAt },
+  );
+
+  const approved = pairing.approvePairByCode(start.code);
+  assert.equal(approved.ok, true);
+  assert.equal(approved.status, "approved");
+  assert.equal(approved.deviceName, "android-lan");
+  assert.equal("ownerApprovalToken" in approved, false);
+
+  const status = pairing.pairingStatus({ pairingId: start.pairingId, code: start.code });
+  assert.equal(status.ok, true);
+  assert.equal(status.status, "approved");
+  assert.match(status.deviceId, /^dev_/);
+  assert.equal(pairing.approvePairByCode(start.code).ok, false, "approval is single-use");
+  assert.equal(pairing.pairingStatus({ pairingId: start.pairingId, code: "000000" }).ok, false);
+});
+
 test("verifyNonceSignature + issueAccessToken issue an HS256 token that round-trips on Ed25519-signed nonces", () => {
   const pairing = freshPairing();
   const { publicKeyHex, privateKey } = freshKey();
@@ -152,6 +190,48 @@ test("verifyNonceSignature + issueAccessToken issue an HS256 token that round-tr
   assert.equal(verify.ok, true);
   assert.equal(verify.deviceId, confirm.deviceId);
   assert.deepEqual(verify.scopes, ["mobile"]);
+});
+
+test("Android Keystore-compatible ES256 pairing keeps the private key on-device and verifies a DER ECDSA signature", () => {
+  const pairing = freshPairing();
+  const { publicKeyHex, publicKeyAlgorithm, privateKey } = freshEs256Key();
+  const { confirm } = pairDevice(pairing, {
+    publicKeyHex,
+    publicKeyAlgorithm,
+    privateKey,
+    deviceName: "android-keystore-p256",
+  });
+
+  assert.equal(confirm.ok, true, `ES256 pairing failed: ${confirm.error || "unknown error"}`);
+  const verified = pairing.verifyNonceSignature({
+    deviceId: confirm.deviceId,
+    nonceId: confirm.nonce.nonceId,
+    nonce: confirm.nonce.nonce,
+    signatureHex: signEs256Nonce(privateKey, confirm.nonce.nonce),
+  });
+  assert.equal(verified.ok, true, `ES256 nonce verification failed: ${verified.error || "unknown error"}`);
+  assert.equal(verified.device.publicKeyAlgorithm, "ES256");
+});
+
+test("declared device signing algorithms fail closed instead of guessing a key format", () => {
+  const pairing = freshPairing();
+  const { publicKeyHex } = freshEs256Key();
+
+  assert.equal(
+    pairing.startPair({ publicKeyHex, publicKeyAlgorithm: "Ed25519", deviceName: "mismatched-key" }).ok,
+    false,
+    "an ES256 SPKI must not be reinterpreted as a legacy Ed25519 key",
+  );
+  assert.equal(
+    pairing.startPair({ publicKeyHex, publicKeyAlgorithm: "RSA", deviceName: "unsupported-key" }).ok,
+    false,
+    "unknown signing algorithms must be rejected",
+  );
+  assert.equal(
+    pairing.startPair({ publicKeyHex: "00".repeat(64), publicKeyAlgorithm: "ES256", deviceName: "malformed-key" }).ok,
+    false,
+    "non-SPKI ES256 values must be rejected before they enter the ledger",
+  );
 });
 
 test("issueAccessToken ignores caller-supplied scopes and always returns the least-privilege default", () => {

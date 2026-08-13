@@ -338,6 +338,96 @@ test("authenticated web owner can mint a pairing approval token through the inte
   assert.equal(body.ownerApprovalToken, controlPlane.pairing.getOwnerApprovalToken(start.pairingId, start.code));
 });
 
+test("authenticated web owner can approve an Android pairing without receiving the owner approval secret", async () => {
+  const { server, controlPlane } = fixture();
+  const { publicKeyHex } = freshKey();
+  const start = controlPlane.pairing.startPair({ publicKeyHex, deviceName: "android-lan" });
+  const r = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair/approve",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: { code: start.code },
+  });
+
+  assert.equal(r.status, 200, `expected 200, got ${r.status}: ${r.body}`);
+  const body = JSON.parse(r.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.status, "approved");
+  assert.equal("ownerApprovalToken" in body, false);
+  assert.equal(
+    controlPlane.pairing.pairingStatus({ pairingId: start.pairingId, code: start.code }).status,
+    "approved",
+  );
+});
+
+test("phone can poll only its own pairing transaction until Web approval exposes a device id", async () => {
+  const { server, controlPlane } = fixture();
+  const { publicKeyHex } = freshKey();
+  const start = controlPlane.pairing.startPair({ publicKeyHex, deviceName: "lan-polling-phone" });
+
+  const pending = await invokeServer(server, {
+    method: "POST",
+    url: "/mobile/v1/pair/status",
+    body: { pairingId: start.pairingId, code: start.code },
+  });
+  assert.equal(pending.status, 200, `expected pending 200, got ${pending.status}: ${pending.body}`);
+  assert.deepEqual(JSON.parse(pending.body).status, "pending");
+  assert.equal("deviceId" in JSON.parse(pending.body), false, "pending response must not disclose a device id");
+
+  const approve = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair/approve",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: { code: start.code },
+  });
+  assert.equal(approve.status, 200, `expected approval 200, got ${approve.status}: ${approve.body}`);
+
+  const approved = await invokeServer(server, {
+    method: "POST",
+    url: "/mobile/v1/pair/status",
+    body: { pairingId: start.pairingId, code: start.code },
+  });
+  assert.equal(approved.status, 200, `expected approved 200, got ${approved.status}: ${approved.body}`);
+  const approvedBody = JSON.parse(approved.body);
+  assert.equal(approvedBody.status, "approved");
+  assert.match(approvedBody.deviceId, /^dev_/);
+
+  const wrongCode = await invokeServer(server, {
+    method: "POST",
+    url: "/mobile/v1/pair/status",
+    body: { pairingId: start.pairingId, code: "000000" },
+  });
+  assert.equal(wrongCode.status, 400, `wrong code must fail closed, got ${wrongCode.status}: ${wrongCode.body}`);
+});
+
+test("native pairing approval route rejects spoofed or malformed owner requests", async () => {
+  const { server } = fixture();
+  const missingSubject = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair/approve",
+    headers: { "x-axi-internal-token": "axi-development-internal-token" },
+    body: { code: "123456" },
+  });
+  assert.equal(missingSubject.status, 401);
+
+  const malformed = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/web/v1/mobile/pair/approve",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+    body: { code: "not-a-code" },
+  });
+  assert.equal(malformed.status, 400);
+});
+
 test("pairing approval route rejects spoofed or incomplete internal requests", async () => {
   const { server } = fixture();
   const missingSubject = await invokeServer(server, {

@@ -78,6 +78,34 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '503':
           $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/status:
+    post:
+      tags: [pairing]
+      summary: Poll a Web-approved device pairing
+      description: |
+        The mobile app supplies the opaque pairing transaction and its
+        short-lived code. Before an authenticated Web owner approves that
+        exact code, the response remains `pending`; the deviceId is disclosed
+        only after approval and is still insufficient to mint a token without
+        a signature from the registered device key.
+      operationId: pairingStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairStatusRequest'
+      responses:
+        '200':
+          description: Pairing is pending Web approval or has been approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
   /mobile/v1/auth/token:
     post:
       tags: [pairing]
@@ -446,8 +474,20 @@ components:
         publicKeyHex:
           type: string
           minLength: 64
-          maxLength: 64
-          description: 64-char hex-encoded device authentication key; stored under Android Keystore protection
+          maxLength: 512
+          pattern: '^[0-9a-fA-F]+$'
+          description: |
+            Hex-encoded device public key. Legacy Ed25519 records use a
+            raw 32-byte key (64 hex chars); Android Keystore ES256 records
+            use a P-256 SPKI DER key. The private key never leaves the device.
+        publicKeyAlgorithm:
+          type: string
+          enum: [Ed25519, ES256]
+          default: Ed25519
+          description: |
+            Declares the signing key format. Current Android clients send
+            ES256 because Android Keystore guarantees EC P-256 signing;
+            absent means legacy Ed25519 for backward compatibility.
         deviceName:
           type: string
           minLength: 1
@@ -506,6 +546,34 @@ components:
           enum: [active]
         nonce:
           $ref: '#/components/schemas/NonceResponse'
+    PairStatusRequest:
+      type: object
+      required: [pairingId, code]
+      additionalProperties: false
+      properties:
+        pairingId:
+          type: string
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+    PairStatusResponse:
+      type: object
+      required: [ok, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        status:
+          type: string
+          enum: [pending, approved]
+        expiresAt:
+          type: integer
+          description: Present while status is pending; Unix epoch seconds.
+        deviceId:
+          type: string
+          description: Present only after the authenticated Web owner approves this pairing.
+          pattern: '^dev_[A-Za-z0-9_-]{36}$'
     TokenRequest:
       type: object
       required: [deviceId, nonceId, nonce, signatureHex]
@@ -520,14 +588,12 @@ components:
         signatureHex:
           type: string
           description: |
-            Ed25519 signature of `nonce` produced with the device private
-            key whose public counterpart was registered during
-            /pair/start.  The previous HMAC-based signature scheme was
-            forgeable because the public key was a symmetric secret; the
-            runtime now requires real Ed25519 SPKI (RFC 8410 §3, OID
-            1.3.101.112).  Length is 128 lowercase hex chars.
-          minLength: 128
-          maxLength: 128
+            Signature of `nonce` produced with the registered device private
+            key: 128 hex chars for legacy Ed25519, or bounded DER ECDSA
+            output for Android Keystore ES256. The runtime chooses the
+            verifier from the server-registered publicKeyAlgorithm only.
+          minLength: 2
+          maxLength: 512
     TokenResponse:
       type: object
       required: [ok, accessToken, expiresAt]
@@ -573,10 +639,10 @@ components:
         signatureHex:
           type: string
           description: |
-            Ed25519 signature of `nonce` produced with the device private
-            key whose public counterpart was registered during /pair/start.
-          minLength: 128
-          maxLength: 128
+            Signature of `nonce` produced with the registered device private
+            key, validated according to publicKeyAlgorithm from /pair/start.
+          minLength: 2
+          maxLength: 512
         ownerProof:
           type: string
           description: |

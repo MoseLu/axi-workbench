@@ -135,6 +135,22 @@ export function createControlPlaneHttpServer({
       if (!ownerApprovalToken) return sendJson(res, 503, { error: "owner approval secret not configured" }, url);
       return sendJson(res, 200, { ownerApprovalToken }, url);
     }
+    if (req.method === "POST" && url.pathname === "/internal/web/v1/mobile/pair/approve") {
+      if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+      }
+      const subject = String(req.headers["x-axi-subject"] || "").trim();
+      if (!subject) return sendJson(res, 401, { error: "verified web identity required" }, url);
+      if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+      const body = await readJsonBody(req);
+      if (!body || typeof body.code !== "string" || !/^\d{6}$/.test(body.code.trim()) || Object.keys(body).some((key) => key !== "code")) {
+        return sendJson(res, 400, { error: "a 6-digit pairing code is required" }, url);
+      }
+      const approved = controlPlane.pairing.approvePairByCode(body.code.trim());
+      if (!approved.ok) return sendJson(res, 400, approved, url);
+      controlPlane.pairing.audit({ event: "web_pairing_approved", subject, pairingId: approved.pairingId });
+      return sendJson(res, 200, { ok: true, status: approved.status, deviceName: approved.deviceName }, url);
+    }
     let gatewayWebAuth = false;
     if (url.pathname.startsWith("/internal/web/v1/")) {
       if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
@@ -181,6 +197,12 @@ export function createControlPlaneHttpServer({
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const body = await readJsonBody(req);
         const r = controlPlane.pairing.confirmPair(body || {});
+        return sendJson(res, r.ok ? 200 : 400, r, url);
+      }
+      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/status") {
+        if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
+        const body = await readJsonBody(req);
+        const r = controlPlane.pairing.pairingStatus(body || {});
         return sendJson(res, r.ok ? 200 : 400, r, url);
       }
       if (req.method === "POST" && url.pathname === "/mobile/v1/auth/token") {

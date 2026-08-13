@@ -9,11 +9,13 @@
  * revocation, no expiry, and no audit binding to a device id.
  *
  * This module introduces a per-device pairing flow:
- *   1. Client posts /mobile/v1/pair/start with {publicKeyHex, deviceName}
- *      and receives a one-time six-digit pairing code (5-minute TTL).
- *   2. Client posts /mobile/v1/pair/confirm with the code; if it matches,
- *      the device is recorded as active in cacheDir/devices/<id>.json.
- *   3. Client posts /mobile/v1/auth/token with its deviceId and signs
+ *   1. Client posts /mobile/v1/pair/start with its declared public signing
+ *      key and receives a one-time six-digit pairing code (5-minute TTL).
+ *   2. An authenticated Web owner submits that code to the internal Web
+ *      approval route. The server activates the device without ever sending
+ *      its owner-approval secret to the phone.
+ *   3. Client polls /mobile/v1/pair/status, then posts /mobile/v1/auth/token
+ *      with its approved deviceId and signs
  *      a server-issued nonce with the private key matching publicKeyHex;
  *      on success it receives a 1-hour HS256 access token.
  *   4. Subsequent mobile requests carry `Authorization: Bearer <jwt>`;
@@ -57,6 +59,10 @@ const TOKENS_FILE = "access-tokens.jsonl";
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 const RAW_PUBLIC_KEY_LENGTH = 32;
 const RAW_PUBLIC_KEY_HEX_LENGTH = RAW_PUBLIC_KEY_LENGTH * 2;
+const KEY_ALGORITHM_ED25519 = "Ed25519";
+const KEY_ALGORITHM_ES256 = "ES256";
+const ES256_SPKI_MAX_BYTES = 256;
+const MAX_SIGNATURE_HEX_LENGTH = 512;
 
 function rawPublicKeyHexToSpki(publicKeyHex) {
   const raw = Buffer.from(publicKeyHex, "hex");
@@ -72,6 +78,36 @@ function parseEd25519PublicKey(publicKeyHex) {
   } catch {
     return null;
   }
+}
+
+/** Android Keystore's portable asymmetric-signing API is P-256 EC rather
+ * than Ed25519.  ES256 requests therefore carry the complete SPKI DER public
+ * key; Node validates both key type and curve before accepting it. */
+function parseEs256PublicKey(publicKeyHex) {
+  if (typeof publicKeyHex !== "string" || !/^[0-9a-f]+$/i.test(publicKeyHex) || publicKeyHex.length % 2 !== 0) return null;
+  const spki = Buffer.from(publicKeyHex, "hex");
+  if (spki.length < 64 || spki.length > ES256_SPKI_MAX_BYTES) return null;
+  try {
+    const publicKey = createPublicKey({ key: spki, format: "der", type: "spki" });
+    if (publicKey.asymmetricKeyType !== "ec" || publicKey.asymmetricKeyDetails?.namedCurve !== "prime256v1") return null;
+    return publicKey;
+  } catch {
+    return null;
+  }
+}
+
+function normalizePublicKeyAlgorithm(value) {
+  // Old pairings had no explicit algorithm and used raw Ed25519 keys. Keep
+  // them usable while every current Android client explicitly sends ES256.
+  if (value === undefined || value === null || value === "") return KEY_ALGORITHM_ED25519;
+  if (value === KEY_ALGORITHM_ED25519 || value === KEY_ALGORITHM_ES256) return value;
+  return null;
+}
+
+function parseDevicePublicKey(publicKeyAlgorithm, publicKeyHex) {
+  if (publicKeyAlgorithm === KEY_ALGORITHM_ED25519) return parseEd25519PublicKey(publicKeyHex);
+  if (publicKeyAlgorithm === KEY_ALGORITHM_ES256) return parseEs256PublicKey(publicKeyHex);
+  return null;
 }
 
 /* Owner out-of-band approval: when AXI_OWNER_PAIR_APPROVAL_SECRET is
@@ -175,14 +211,16 @@ function randomPairCode() {
   return randomInt(0, 10 ** PAIR_CODE_LENGTH).toString(10).padStart(PAIR_CODE_LENGTH, "0");
 }
 
-function isValidHexPublicKey(value) {
-  if (typeof value !== "string" || !/^[0-9a-f]{64}$/i.test(value)) return false;
-  // Reject malformed keys that pass the regex but cannot be parsed as Ed25519 SPKI.
-  return parseEd25519PublicKey(value.toLowerCase()) !== null;
+function isValidHexPublicKey(value, publicKeyAlgorithm) {
+  if (typeof value !== "string") return false;
+  if (publicKeyAlgorithm === KEY_ALGORITHM_ED25519 && !/^[0-9a-f]{64}$/i.test(value)) return false;
+  return parseDevicePublicKey(publicKeyAlgorithm, value.toLowerCase()) !== null;
 }
 
-function fingerprintPublicKey(publicKeyHex) {
-  return createHmac("sha256", "axi-mobile-pubkey-fingerprint-v1").update(publicKeyHex.toLowerCase()).digest("hex");
+function fingerprintPublicKey(publicKeyHex, publicKeyAlgorithm = KEY_ALGORITHM_ED25519) {
+  return createHmac("sha256", "axi-mobile-pubkey-fingerprint-v1")
+    .update(`${publicKeyAlgorithm}:${publicKeyHex.toLowerCase()}`)
+    .digest("hex");
 }
 
 /* ─── createPairingService ────────────────────────────────────────────── */
@@ -228,9 +266,10 @@ export function createPairingService({
   }
 
   /* startPair — generate a one-time code; device is not yet registered. */
-  function startPair({ publicKeyHex, deviceName, clientInfo } = {}) {
-    if (!isValidHexPublicKey(publicKeyHex)) {
-      return { ok: false, error: "publicKeyHex must be a 64-char hex string" };
+  function startPair({ publicKeyHex, publicKeyAlgorithm, deviceName, clientInfo } = {}) {
+    const normalizedPublicKeyAlgorithm = normalizePublicKeyAlgorithm(publicKeyAlgorithm);
+    if (!normalizedPublicKeyAlgorithm || !isValidHexPublicKey(publicKeyHex, normalizedPublicKeyAlgorithm)) {
+      return { ok: false, error: "publicKeyHex must be a valid declared device signing key" };
     }
     const now = nowSeconds();
     const code = randomPairCode();
@@ -239,7 +278,8 @@ export function createPairingService({
       pairingId,
       code,
       publicKeyHex: publicKeyHex.toLowerCase(),
-      publicKeyFingerprint: fingerprintPublicKey(publicKeyHex),
+      publicKeyAlgorithm: normalizedPublicKeyAlgorithm,
+      publicKeyFingerprint: fingerprintPublicKey(publicKeyHex, normalizedPublicKeyAlgorithm),
       deviceName: typeof deviceName === "string" ? deviceName : "unknown-device",
       clientInfo: clientInfo && typeof clientInfo === "object" ? clientInfo : null,
       createdAt: now,
@@ -279,15 +319,21 @@ export function createPairingService({
     if (entry.expiresAt <= now) return { ok: false, error: "pairing code expired" };
     if (entry.code !== code) return { ok: false, error: "pairing code mismatch" };
 
-    // Mark consumed and register the device.
+    const deviceId = `dev_${randomUUID()}`;
+    // Mark the transaction as consumed before publishing the device record.
+    // The append-only ledger carries the device id so the original device can
+    // later poll its own pairing status without ever receiving the owner's
+    // approval secret.
     entry.consumed = true;
     entry.consumedAt = now;
+    entry.deviceId = deviceId;
+    entry.status = "approved";
     appendJsonl(pairCodesPath, entry);
 
-    const deviceId = `dev_${randomUUID()}`;
     const device = {
       deviceId,
       publicKeyHex: entry.publicKeyHex,
+      publicKeyAlgorithm: entry.publicKeyAlgorithm,
       publicKeyFingerprint: entry.publicKeyFingerprint,
       deviceName: entry.deviceName,
       clientInfo: entry.clientInfo,
@@ -311,6 +357,69 @@ export function createPairingService({
     };
   }
 
+  /**
+   * A Web owner approves the request by entering the six-digit code shown on
+   * the phone.  This deliberately returns no HMAC approval token: that token
+   * remains an internal server implementation detail and never crosses to a
+   * native device.
+   */
+  function approvePairByCode(code) {
+    if (typeof code !== "string" || !/^\d{6}$/.test(code.trim())) {
+      return { ok: false, error: "pairing code must be a 6-digit string" };
+    }
+    const now = nowSeconds();
+    const candidates = readJsonl(pairCodesPath).filter((entry) => (
+      entry &&
+      entry.code === code.trim() &&
+      !entry.consumed &&
+      typeof entry.expiresAt === "number" &&
+      entry.expiresAt > now
+    ));
+    if (candidates.length === 0) return { ok: false, error: "pairing not found or expired" };
+    // A six-digit code is deliberately human-enterable. In the unlikely event
+    // of a collision, require a fresh request instead of approving either.
+    if (candidates.length !== 1) return { ok: false, error: "pairing code is ambiguous; start a new pairing request" };
+
+    const entry = candidates[0];
+    const ownerApprovalToken = getOwnerApprovalToken(entry.pairingId, entry.code);
+    if (!ownerApprovalToken) return { ok: false, error: "owner approval secret not configured" };
+    const confirmed = confirmPair({
+      pairingId: entry.pairingId,
+      code: entry.code,
+      ownerApprovalToken,
+    });
+    if (!confirmed.ok) return confirmed;
+    return {
+      ok: true,
+      status: "approved",
+      pairingId: entry.pairingId,
+      deviceName: entry.deviceName,
+    };
+  }
+
+  /**
+   * The phone proves continuity with both its opaque pairing id and the
+   * short-lived code. A device id is disclosed only after the authenticated
+   * Web owner has approved the exact request; access still requires an
+   * registered-device nonce signature in the next step.
+   */
+  function pairingStatus({ pairingId, code } = {}) {
+    if (typeof pairingId !== "string" || typeof code !== "string") {
+      return { ok: false, error: "pairingId and code are required" };
+    }
+    const entry = [...readJsonl(pairCodesPath)].reverse().find((candidate) => candidate?.pairingId === pairingId);
+    if (!entry) return { ok: false, error: "pairing not found" };
+    if (entry.code !== code) return { ok: false, error: "pairing code mismatch" };
+    if (!entry.consumed) {
+      if (entry.expiresAt <= nowSeconds()) return { ok: false, error: "pairing code expired" };
+      return { ok: true, status: "pending", expiresAt: entry.expiresAt };
+    }
+    if (typeof entry.deviceId !== "string") return { ok: false, error: "approved pairing record is incomplete" };
+    const device = readDevice(entry.deviceId);
+    if (!device || device.status !== "active") return { ok: false, error: "approved device is unavailable" };
+    return { ok: true, status: "approved", deviceId: entry.deviceId };
+  }
+
   /* requestAuthNonce — mint a single-use nonce for /auth/token (refresh path). */
   function requestAuthNonce({ deviceId } = {}) {
     const device = readDevice(deviceId);
@@ -324,20 +433,23 @@ export function createPairingService({
     return { ok: true, nonceId, nonce, expiresAt: nonceEntry.expiresAt };
   }
 
-  /* verifyNonceSignature — Ed25519 verify(signature, nonce, pubkey).
+  /* verifyNonceSignature — verify a signature against the registered device key.
    *
-   * The device's `publicKeyHex` is a real Ed25519 SPKI (raw 32 bytes
-   * encoded as 64 hex chars).  Only the holder of the corresponding
-   * private key can sign the nonce; the previous HMAC-based design was
-   * forgeable because the publicKeyHex value was self-asserted by the
-   * pairing caller.  See services/control-plane/test/pairing-ed25519.test.mjs
-   * for the positive/negative sign + verify contract.
+   * Legacy records use a raw Ed25519 public key. Current Android Keystore
+   * records use an ES256 P-256 SPKI key and SHA256withECDSA DER signature.
+   * In both cases only the holder of the keystore private key can sign the
+   * nonce; the old HMAC design was forgeable because the key was symmetric.
    */
   function verifyNonceSignature({ deviceId, nonceId, nonce, signatureHex } = {}) {
     const device = readDevice(deviceId);
     if (!device) return { ok: false, error: "device not found" };
     if (device.status !== "active") return { ok: false, error: `device ${device.status}` };
-    if (typeof signatureHex !== "string" || !/^[0-9a-f]{128}$/i.test(signatureHex)) {
+    const publicKeyAlgorithm = normalizePublicKeyAlgorithm(device.publicKeyAlgorithm);
+    if (!publicKeyAlgorithm) return { ok: false, error: "device signing algorithm is not supported" };
+    if (typeof signatureHex !== "string" || !/^[0-9a-f]+$/i.test(signatureHex) || signatureHex.length % 2 !== 0 || signatureHex.length > MAX_SIGNATURE_HEX_LENGTH) {
+      return { ok: false, error: "signatureHex must be a bounded hexadecimal device signature" };
+    }
+    if (publicKeyAlgorithm === KEY_ALGORITHM_ED25519 && signatureHex.length !== 128) {
       return { ok: false, error: "signatureHex must be a 128-char Ed25519 signature hex string" };
     }
     if (typeof nonce !== "string" || typeof nonceId !== "string") {
@@ -351,11 +463,16 @@ export function createPairingService({
     if (nonceEntry.nonce !== nonce) return { ok: false, error: "nonce mismatch" };
     if (nonceEntry.deviceId !== deviceId) return { ok: false, error: "nonce/device mismatch" };
 
-    const publicKey = parseEd25519PublicKey(device.publicKeyHex);
-    if (!publicKey) return { ok: false, error: "device public key is not a valid Ed25519 key" };
+    const publicKey = parseDevicePublicKey(publicKeyAlgorithm, device.publicKeyHex);
+    if (!publicKey) return { ok: false, error: "device public key is not a valid declared signing key" };
     let signatureValid = false;
     try {
-      signatureValid = cryptoVerify(null, Buffer.from(nonce, "utf8"), publicKey, Buffer.from(signatureHex, "hex"));
+      signatureValid = cryptoVerify(
+        publicKeyAlgorithm === KEY_ALGORITHM_ES256 ? "sha256" : null,
+        Buffer.from(nonce, "utf8"),
+        publicKey,
+        Buffer.from(signatureHex, "hex")
+      );
     } catch {
       signatureValid = false;
     }
@@ -490,6 +607,8 @@ export function createPairingService({
   return {
     startPair,
     confirmPair,
+    approvePairByCode,
+    pairingStatus,
     requestAuthNonce,
     verifyNonceSignature,
     exchangeNonceForAccessToken,
@@ -515,6 +634,9 @@ export function createPairingService({
       computeOwnerApprovalToken,
       parseEd25519PublicKey,
       rawPublicKeyHexToSpki,
+      parseEs256PublicKey,
+      parseDevicePublicKey,
+      normalizePublicKeyAlgorithm,
     },
   };
 }
