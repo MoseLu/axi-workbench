@@ -234,3 +234,174 @@
 .workbench-floating-tool-panel span {
   color: var(--axi-muted, #64748b);
 }
+
+/* 顶栏插件列表：保持与截图中的紧凑、深色描边图标按钮同一套密度。 */
+.workbench-axi-shell .workbench-plugin-list-popover {
+  width: 272px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.workbench-plugin-list {
+  color: var(--axi-text, #e5e7eb);
+}
+
+.workbench-plugin-list__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--axi-border, rgba(148, 163, 184, .18));
+}
+
+.workbench-plugin-list__header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.workbench-plugin-list__header strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workbench-plugin-list__header span {
+  color: var(--axi-muted, #94a3b8);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.workbench-plugin-list__header > svg {
+  flex: 0 0 auto;
+  color: var(--axi-primary, #60a5fa);
+}
+
+.workbench-plugin-list__items {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+}
+
+.workbench-plugin-list__item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--axi-text, #e5e7eb);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workbench-plugin-list__item:hover,
+.workbench-plugin-list__item:focus-visible {
+  background: var(--axi-layout-hover, rgba(148, 163, 184, .12));
+  outline: none;
+}
+
+.workbench-plugin-list__item span {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-plugin-list__item em {
+  color: var(--axi-success, #34d399);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.workbench-system-settings-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workbench-system-settings-title svg {
+  color: var(--axi-primary, #60a5fa);
+}
+
+.workbench-system-settings__hint {
+  margin: 0 0 16px;
+  color: var(--axi-muted, #64748b);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.workbench-system-settings__items {
+  display: grid;
+  gap: 8px;
+}
+
+.workbench-system-settings__item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--axi-border, rgba(148, 163, 184, .2));
+  border-radius: 10px;
+  color: var(--axi-text, #1f2937);
+  background: var(--axi-bg-surface, #fff);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.workbench-system-settings__item:hover,
+.workbench-system-settings__item:focus-visible {
+  border-color: color-mix(in srgb, var(--axi-primary, #60a5fa) 55%, var(--axi-border, #cbd5e1));
+  background: var(--axi-layout-hover, #f8fafc);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.workbench-system-settings__item-icon {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--axi-primary, #2563eb);
+  background: color-mix(in srgb, var(--axi-primary, #60a5fa) 12%, transparent);
+}
+
+.workbench-system-settings__item-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.workbench-system-settings__item-copy strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workbench-system-settings__item-copy small {
+  overflow: hidden;
+  color: var(--axi-muted, #64748b);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-system-settings__item > svg {
+  color: var(--axi-muted, #64748b);
+}
+
+@media (max-width: 560px) {
+  .workbench-system-settings-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .workbench-system-settings-modal .ant-modal-content {
+    padding: 18px;
+  }
+}

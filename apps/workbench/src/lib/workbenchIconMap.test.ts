@@ -9,4 +9,10 @@ describe('Axi Workbench account-menu icon semantics', () => {
     expect(axiWorkbenchIconMap.logout).toBe('exit');
     expect(resolveAxiWorkbenchIcon('logout')).toBe('exit');
   });
+
+  it('keeps plugin discovery and preferences on distinct semantic glyphs', () => {
+    expect(axiWorkbenchIconMap.plugins).toBe('app');
+    expect(axiWorkbenchIconMap.preferences).toBe('theme');
+    expect(resolveAxiWorkbenchIcon('preferences')).toBe('theme');
+  });
 });

@@ -32,6 +32,8 @@ export const axiWorkbenchIconMap = {
   moon: 'dark',
   notification: 'notice',
   overview: 'admin-dashboard',
+  plugins: 'app',
+  preferences: 'theme',
   project: 'admin-project',
   roles: 'admin-usergroup-add',
   scan: 'admin-scan',

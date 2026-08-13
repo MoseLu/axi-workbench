@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Modal } from 'antd';
 import { AxiLogoMark, AxiSvgIcon, useAxiTheme } from '@axi/core';
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { axiStylePresets } from '@axi/presets';
@@ -9,6 +10,7 @@ import {
   AxiFloatingToolDock,
   createAxiShellPlugins,
   type AxiDashboardNavGroup,
+  type AxiDashboardTopbarPluginAction,
 } from '@axi/shell';
 import { AxiPluginProvider } from '@axi/core';
 import type { TabItem } from '../lib/tabs';
@@ -77,7 +79,8 @@ const MainLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile>(() => loadProfile(user));
   const [collapsed, setCollapsed] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [systemSettingsOpen, setSystemSettingsOpen] = useState(false);
   const [sidebarSearchValue, setSidebarSearchValue] = useState('');
   const [contentFullscreen, setContentFullscreen] = useState(false);
   const persistedTabs = useMemo(loadPersistedTabs, []);
@@ -358,11 +361,92 @@ const MainLayout: React.FC = () => {
       ],
       onChange: (value) => setLocale(value as 'zh-CN' | 'en-US'),
     },
-    theme: {
-      value: preference,
-      onChange: setPreference,
+  }), [locale, navigate, setLocale, t, unreadCount]);
+
+  const pluginListItems = useMemo(() => shellPlugins.map((plugin) => {
+    const iconName = plugin.id === 'shell-github'
+      ? axiWorkbenchIconMap.github
+      : plugin.id === 'shell-locale'
+        ? axiWorkbenchIconMap.language
+        : plugin.id === 'shell-notification'
+          ? axiWorkbenchIconMap.notification
+          : axiWorkbenchIconMap.plugins;
+    const label = plugin.id === 'shell-locale'
+      ? t('layout.topbar.language')
+      : plugin.id === 'shell-notification'
+        ? t('layout.topbar.notifications')
+        : plugin.label || plugin.id;
+    return { id: plugin.id, iconName, label };
+  }), [shellPlugins, t]);
+
+  const pluginListPopover = useMemo(() => (
+    <div className="workbench-plugin-list">
+      <div className="workbench-plugin-list__header">
+        <div>
+          <strong>{locale === 'zh-CN' ? '插件列表' : 'Plugins'}</strong>
+          <span>{locale === 'zh-CN' ? '当前 Web 工作台已启用的扩展' : 'Extensions enabled in this Web workbench'}</span>
+        </div>
+        <AxiSvgIcon name={axiWorkbenchIconMap.plugins} size={18} />
+      </div>
+      <div className="workbench-plugin-list__items">
+        {pluginListItems.map((plugin) => (
+          <button
+            className="workbench-plugin-list__item"
+            data-axi-popover-close
+            key={plugin.id}
+            type="button"
+          >
+            <AxiSvgIcon name={plugin.iconName} size={16} />
+            <span>{plugin.label}</span>
+            <em>{locale === 'zh-CN' ? '已启用' : 'Enabled'}</em>
+          </button>
+        ))}
+      </div>
+    </div>
+  ), [locale, pluginListItems]);
+
+  const topbarPluginActions = useMemo<AxiDashboardTopbarPluginAction[]>(() => [
+    {
+      key: 'plugin-list',
+      iconName: axiWorkbenchIconMap.plugins,
+      label: locale === 'zh-CN' ? '插件列表' : 'Plugins',
+      popover: pluginListPopover,
+      popoverClassName: 'workbench-plugin-list-popover',
     },
-  }), [locale, navigate, preference, setLocale, setPreference, t, unreadCount]);
+    {
+      key: 'preferences',
+      iconName: axiWorkbenchIconMap.preferences,
+      label: t('layout.topbar.preferences'),
+      onClick: () => {
+        setSystemSettingsOpen(false);
+        setPreferencesOpen(true);
+      },
+    },
+  ], [locale, pluginListPopover, t]);
+
+  const systemSettingItems = useMemo(() => [
+    {
+      key: 'profile',
+      iconName: axiWorkbenchIconMap.account,
+      label: t('nav.crumb.profile'),
+      description: locale === 'zh-CN' ? '管理个人资料与账号信息' : 'Manage profile and account details',
+      path: '/admin/me',
+    },
+    {
+      key: 'devices',
+      iconName: axiWorkbenchIconMap.mobile,
+      label: t('nav.crumb.devices'),
+      description: locale === 'zh-CN' ? '查看已配对设备与跨端会话' : 'Review paired devices and sessions',
+      path: '/admin/me/devices',
+    },
+    {
+      key: 'notifications',
+      iconName: axiWorkbenchIconMap.notification,
+      label: t('nav.crumb.notifications'),
+      description: locale === 'zh-CN' ? '查看工作台提醒与系统通知' : 'Review workbench and system alerts',
+      path: '/admin/me/notifications',
+    },
+  ], [locale, t]);
 
   /* ---------- Web: shared Axi admin chrome ---------- */
   return (
@@ -419,7 +503,10 @@ const MainLayout: React.FC = () => {
           if (key.startsWith('/')) navigate(key);
         }}
         onReload={() => window.location.reload()}
-        onSettings={() => setSettingsOpen(true)}
+        onSettings={() => {
+          setPreferencesOpen(false);
+          setSystemSettingsOpen(true);
+        }}
         onSidebarCollapsedChange={setCollapsed}
         onSidebarSearchChange={setSidebarSearchValue}
         onTabClose={handleTabClose}
@@ -444,9 +531,13 @@ const MainLayout: React.FC = () => {
             iconName: axiWorkbenchIconMap.settings,
             key: 'settings',
             label: t('common.settings.title'),
-            onClick: () => setSettingsOpen(true),
+            onClick: () => {
+              setPreferencesOpen(false);
+              setSystemSettingsOpen(true);
+            },
           },
         }}
+        topbarPluginActions={topbarPluginActions}
       >
         <Outlet />
       </AxiDashboardShell>
@@ -461,16 +552,16 @@ const MainLayout: React.FC = () => {
         onSelect={handleGlobalSearchSelect}
       />
 
-      {settingsOpen ? (
+      {preferencesOpen ? (
         <AxiAdminSettingsPanel
           activeStylePreset={settings.stylePreset}
           activeTheme={preset.name}
-          open={settingsOpen}
+          open={preferencesOpen}
           stylePresetOptions={stylePresetOptions}
           themePreference={preference}
           value={settings}
           onChange={updateSetting}
-          onOpenChange={setSettingsOpen}
+          onOpenChange={setPreferencesOpen}
           onStylePresetChange={(stylePreset) => updateSetting('stylePreset', stylePreset)}
           onThemeChange={(name) => {
             updateSetting('themeColor', '');
@@ -480,6 +571,52 @@ const MainLayout: React.FC = () => {
           onThemePreferenceChange={setPreference}
         />
       ) : null}
+
+      <Modal
+        centered
+        className="workbench-system-settings-modal"
+        destroyOnClose
+        footer={null}
+        onCancel={() => setSystemSettingsOpen(false)}
+        open={systemSettingsOpen}
+        title={(
+          <span className="workbench-system-settings-title">
+            <AxiSvgIcon name={axiWorkbenchIconMap.settings} size={18} />
+            <span>{t('common.settings.title')}</span>
+          </span>
+        )}
+        width={520}
+      >
+        <div className="workbench-system-settings">
+          <p className="workbench-system-settings__hint">
+            {locale === 'zh-CN'
+              ? '系统级入口集中在此弹窗，不占用侧边菜单。界面偏好请使用画板图标。'
+              : 'System-level shortcuts live in this popup, outside the sidebar. Use the palette icon for interface preferences.'}
+          </p>
+          <div className="workbench-system-settings__items">
+            {systemSettingItems.map((item) => (
+              <button
+                className="workbench-system-settings__item"
+                key={item.key}
+                onClick={() => {
+                  setSystemSettingsOpen(false);
+                  navigate(item.path);
+                }}
+                type="button"
+              >
+                <span className="workbench-system-settings__item-icon">
+                  <AxiSvgIcon name={item.iconName} size={17} />
+                </span>
+                <span className="workbench-system-settings__item-copy">
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
+                <AxiSvgIcon name={axiWorkbenchIconMap.forward} size={15} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
     </AxiPluginProvider>
   );
 };
