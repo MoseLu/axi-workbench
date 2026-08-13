@@ -13,6 +13,7 @@ import {
   webDeviceLoginQrPayload,
   type WebDeviceLoginQr,
 } from '../lib/webDeviceLogin';
+import './Login.css';
 
 type Phase = 'device-qr' | 'email' | 'code' | 'verifying';
 
@@ -255,317 +256,204 @@ const Login: React.FC = () => {
     setHint(null);
   };
 
-  const shell: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, var(--color-tabbar-dark) 0%, var(--color-login-bg) 100%)',
-    padding: 20,
-  };
-  const card: React.CSSProperties = {
-    width: '100%',
-    maxWidth: 460,
-    padding: 36,
-    background: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: 16,
-    border: '1px solid rgba(255, 255, 255, 0.06)',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-  };
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '12px 14px',
-    fontSize: 14,
-    color: 'var(--axi-text, #f8fafc)',
-    background: 'rgba(255, 255, 255, 0.04)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: 8,
-    outline: 'none',
-    boxSizing: 'border-box',
-  };
-  const primaryButton: React.CSSProperties = {
-    width: '100%',
-    padding: '12px 18px',
-    fontSize: 14,
-    fontWeight: 600,
-    color: 'var(--axi-text-inverse, #fff)',
-    background: 'var(--axi-primary)',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-  };
-  const linkButton: React.CSSProperties = {
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--axi-primary)',
-    cursor: 'pointer',
-    fontSize: 13,
-    padding: 0,
-  };
-
   const localError = error;
   const banner = localError || (sessionError && phase === 'verifying' ? sessionError : null);
+  const qrStatusLabel = {
+    creating: '正在准备安全二维码',
+    waiting_scan: '等待手机扫码确认',
+    approved: '手机已确认，正在建立会话',
+    expired: '二维码已失效，请重新生成',
+    failed: '二维码暂不可用',
+  }[deviceQrStatus];
 
   return (
-    <main style={shell}>
-      <section style={card} aria-labelledby="axi-login-title">
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <AxiLogoMark size={28} />
-            <h1 id="axi-login-title" style={{ fontSize: 24, fontWeight: 650, color: 'var(--axi-text, #f8fafc)', letterSpacing: '-0.5px', margin: 0 }}>
-              Axi WorkBench
-            </h1>
+    <main className="axi-login-page">
+      <div className="axi-login-page__glow axi-login-page__glow--one" aria-hidden="true" />
+      <div className="axi-login-page__glow axi-login-page__glow--two" aria-hidden="true" />
+      <div className="axi-login-page__grid" aria-hidden="true" />
+
+      <section className="axi-login-card" aria-labelledby="axi-login-title">
+        <header className="axi-login-card__header">
+          <div className="axi-login-brand">
+            <span className="axi-login-brand__mark"><AxiLogoMark size={30} /></span>
+            <span>
+              <strong>Axi WorkBench</strong>
+              <small>LOCAL WORKSPACE</small>
+            </span>
           </div>
-          <p style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(255, 255, 255, 0.54)', margin: 0 }}>
+          <div className="axi-login-security"><span />安全登录</div>
+        </header>
+
+        <div className="axi-login-heading">
+          <span className="axi-login-eyebrow">AXIOMATICWORLD / WORKBENCH</span>
+          <h1 id="axi-login-title">登录工作台</h1>
+          <p>
             {phase === 'device-qr'
-              ? '使用已登录的手机端扫一扫，授权本电脑登录。'
+              ? '用已登录的手机确认一次，即可安全进入本机工作台。'
               : phase === 'code' || phase === 'verifying'
               ? t('auth.login.subtitle.code')
               : t('auth.login.subtitle.email')}
           </p>
         </div>
 
-        <div
-          role="tablist"
-          aria-label="登录方式"
-          style={{ display: 'flex', gap: 8, marginBottom: 22, padding: 4, borderRadius: 10, background: 'rgba(255, 255, 255, 0.04)' }}
-        >
+        <div className="axi-login-methods" role="tablist" aria-label="登录方式">
           <button
             type="button"
             role="tab"
             aria-selected={phase === 'device-qr'}
+            aria-controls="axi-login-qr-panel"
             onClick={() => {
               setPhase('device-qr');
               setError(null);
               setHint(null);
             }}
-            style={{
-              flex: 1,
-              padding: '9px 10px',
-              border: 'none',
-              borderRadius: 7,
-              color: phase === 'device-qr' ? '#fff' : 'rgba(255, 255, 255, 0.65)',
-              background: phase === 'device-qr' ? 'var(--axi-primary)' : 'transparent',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
+            className={phase === 'device-qr' ? 'is-active' : ''}
           >
-            手机扫码登录
+            <span>手机扫码登录</span>
+            <small>推荐</small>
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={phase !== 'device-qr'}
+            aria-controls="axi-login-email-panel"
             onClick={selectEmailLogin}
-            style={{
-              flex: 1,
-              padding: '9px 10px',
-              border: 'none',
-              borderRadius: 7,
-              color: phase !== 'device-qr' ? '#fff' : 'rgba(255, 255, 255, 0.65)',
-              background: phase !== 'device-qr' ? 'var(--axi-primary)' : 'transparent',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
+            className={phase !== 'device-qr' ? 'is-active' : ''}
           >
             邮箱验证码
           </button>
         </div>
+        <div className="axi-login-card__body">
+          {phase === 'device-qr' ? (
+            <section className="axi-login-qr-panel" id="axi-login-qr-panel" aria-label="手机扫码登录">
+              <div className="axi-login-panel-kicker">登录方式 01</div>
+              <div className={`axi-login-qr-frame ${deviceQrStatus === 'failed' || deviceQrStatus === 'expired' ? 'is-error' : ''}`}>
+                {deviceQr ? (
+                  <QRCode
+                    aria-label="电脑登录二维码"
+                    value={webDeviceLoginQrPayload(deviceQr)}
+                    size={224}
+                    errorLevel="M"
+                    status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
+                  />
+                ) : (
+                  <div className="axi-login-qr-loading"><span /><span /><span /></div>
+                )}
+              </div>
+              <div className="axi-login-qr-status">
+                <span className={`axi-login-qr-status__dot is-${deviceQrStatus}`} />
+                <strong>{qrStatusLabel}</strong>
+              </div>
+              <p className="axi-login-qr-meta">
+                {deviceQr && deviceQrStatus === 'waiting_scan'
+                  ? `有效期至 ${new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}`
+                  : '二维码仅用于本次登录，不包含邮箱验证码。'}
+              </p>
+              <button className="axi-login-button axi-login-button--quiet" type="button" onClick={resetDeviceQr} disabled={submitting}>
+                重新生成二维码
+              </button>
+            </section>
+          ) : (
+            <aside className="axi-login-side-note" aria-label="邮箱登录说明">
+              <div className="axi-login-side-note__badge">邮箱登录</div>
+              <h2>邮箱是你的<br /><em>固定登录凭证</em></h2>
+              <p>首次登录或设备变更时输入验证码。验证通过后，浏览器会建立安全会话。</p>
+              <div className="axi-login-side-note__rule" />
+              <div className="axi-login-side-note__facts">
+                <span><b>01</b> 验证邮箱归属</span>
+                <span><b>02</b> 写入 HttpOnly 会话</span>
+              </div>
+              <button className="axi-login-text-button" type="button" onClick={() => { setPhase('device-qr'); setError(null); setHint(null); }}>
+                返回手机扫码登录
+              </button>
+            </aside>
+          )}
 
-        {banner && (
-          <div
-            role="alert"
-            style={{
-              padding: '12px 16px',
-              background: 'rgba(255, 77, 79, 0.1)',
-              border: '1px solid rgba(255, 77, 79, 0.3)',
-              borderRadius: 8,
-              color: 'var(--color-chart-4)',
-              fontSize: 13,
-              marginBottom: 20,
-              wordBreak: 'break-word',
-            }}
-          >
-            {banner}
-          </div>
-        )}
+          <div className="axi-login-card__divider" aria-hidden="true" />
 
-        {hint && !banner && (
-          <div
-            style={{
-              padding: '10px 14px',
-              background: 'rgba(64, 169, 255, 0.08)',
-              border: '1px solid rgba(64, 169, 255, 0.28)',
-              borderRadius: 8,
-              color: 'rgba(180, 220, 255, 0.92)',
-              fontSize: 12,
-              marginBottom: 18,
-              lineHeight: 1.6,
-            }}
-          >
-            {hint}
-          </div>
-        )}
+          <section className="axi-login-form-panel" id="axi-login-email-panel" aria-label="邮箱验证码登录">
+            {banner && <div className="axi-login-alert" role="alert">{banner}</div>}
+            {hint && !banner && <div className="axi-login-hint">{hint}</div>}
 
-        {phase === 'device-qr' && (
-          <section aria-label="手机扫码登录" style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                minHeight: 244,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 16,
-                borderRadius: 12,
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                background: 'rgba(255, 255, 255, 0.03)',
-              }}
-            >
-              {deviceQr ? (
-                <QRCode
-                  aria-label="电脑登录二维码"
-                  value={webDeviceLoginQrPayload(deviceQr)}
-                  size={208}
-                  errorLevel="M"
-                  status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
+            {phase === 'device-qr' && (
+              <div className="axi-login-qr-guide">
+                <div className="axi-login-panel-kicker">手机授权</div>
+                <h2>在手机上确认登录</h2>
+                <p>请使用已登录的手机端打开“扫一扫”，扫描左侧二维码。</p>
+                <ol>
+                  <li><span>1</span>打开手机端工作台</li>
+                  <li><span>2</span>扫描此页面上的二维码</li>
+                  <li><span>3</span>在手机上确认本机登录</li>
+                </ol>
+                <button className="axi-login-button axi-login-button--secondary" type="button" onClick={selectEmailLogin}>
+                  使用邮箱验证码登录
+                </button>
+              </div>
+            )}
+
+            {phase === 'email' && (
+              <form className="axi-login-form" onSubmit={handleRequestCode} noValidate>
+                <div className="axi-login-panel-kicker">登录方式 02</div>
+                <h2>邮箱验证码登录</h2>
+                <p className="axi-login-form__description">输入固定邮箱，获取一次性验证码完成登录。</p>
+                <label htmlFor="axi-login-email">{t('auth.email')}</label>
+                <input
+                  id="axi-login-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@axi.workbench.dev"
+                  disabled={submitting}
                 />
-              ) : (
-                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 13 }}>正在生成安全二维码…</span>
-              )}
-            </div>
-            <p style={{ color: 'rgba(255, 255, 255, 0.68)', fontSize: 13, lineHeight: 1.7, margin: '16px 0 8px' }}>
-              {deviceQrStatus === 'waiting_scan' && '请在已登录手机端打开“扫一扫”，扫描此二维码。'}
-              {deviceQrStatus === 'approved' && '手机已确认，正在建立本电脑会话…'}
-              {deviceQrStatus === 'expired' && '此二维码已失效。'}
-              {deviceQrStatus === 'failed' && '二维码登录未完成。'}
-              {deviceQrStatus === 'creating' && '正在准备一次性二维码。'}
-            </p>
-            {deviceQr && deviceQrStatus === 'waiting_scan' && (
-              <p style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 11, margin: '0 0 16px' }}>
-                有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}；二维码不包含浏览器会话或邮箱验证码。
-              </p>
+                <button
+                  className="axi-login-button axi-login-button--primary"
+                  type="submit"
+                  disabled={submitting || sessionLoading || !email.trim()}
+                >
+                  {submitting ? t('auth.login.sending') : t('auth.login.requestCode')}
+                </button>
+              </form>
             )}
-            <button
-              type="button"
-              onClick={resetDeviceQr}
-              disabled={submitting}
-              style={{ ...primaryButton, opacity: submitting ? 0.6 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
-            >
-              重新生成二维码
-            </button>
-            <p style={{ margin: '16px 0 0', fontSize: 12, color: 'rgba(255, 255, 255, 0.45)' }}>
-              首次没有已登录手机时，可切换到邮箱验证码完成一次初始登录。
-            </p>
+
+            {(phase === 'code' || phase === 'verifying') && (
+              <form className="axi-login-form" onSubmit={handleVerifyCode} noValidate>
+                <div className="axi-login-panel-kicker">邮箱验证码</div>
+                <h2>输入邮箱中的验证码</h2>
+                <div className="axi-login-form__row">
+                  <span id="axi-login-code-label">{t('auth.login.sentTo')} <strong>{sentTo}</strong></span>
+                  <button className="axi-login-text-button" type="button" onClick={handleChangeEmail}>{t('auth.login.changeEmail')}</button>
+                </div>
+                <OneTimeCodeInput
+                  ariaLabelledBy="axi-login-code-label"
+                  disabled={submitting}
+                  firstInputRef={codeInputRef}
+                  value={code}
+                  onChange={setCode}
+                />
+                <div className="axi-login-form__row axi-login-form__row--muted">
+                  <span>{expiresAt ? `${t('auth.login.expiresPrefix')}${new Date(expiresAt).toLocaleString()}${t('auth.login.expiresSuffix')}` : '验证码有效期有限'}</span>
+                  <button className="axi-login-text-button" type="button" onClick={handleResend} disabled={cooldown > 0 || submitting}>
+                    {cooldown > 0 ? `${cooldown}${t('auth.login.resendCooldown')}` : t('auth.login.resend')}
+                  </button>
+                </div>
+                <button className="axi-login-button axi-login-button--primary" type="submit" disabled={submitting || oneTimeCodeValue(code).length !== 6}>
+                  {phase === 'verifying' || submitting ? t('auth.login.verifying') : t('auth.signin')}
+                </button>
+              </form>
+            )}
           </section>
-        )}
+        </div>
 
-        {phase === 'email' && (
-          <form onSubmit={handleRequestCode} noValidate>
-            <label
-              htmlFor="axi-login-email"
-              style={{ display: 'block', fontSize: 12, color: 'rgba(255, 255, 255, 0.6)', marginBottom: 6 }}
-            >
-              {t('auth.email')}
-            </label>
-            <input
-              id="axi-login-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@axi.workbench.dev"
-              disabled={submitting}
-              style={{ ...inputStyle, marginBottom: 16 }}
-            />
-            <button
-              type="submit"
-              disabled={submitting || sessionLoading || !email.trim()}
-              style={{
-                ...primaryButton,
-                opacity: submitting || sessionLoading || !email.trim() ? 0.6 : 1,
-                cursor: submitting || sessionLoading || !email.trim() ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {submitting ? t('auth.login.sending') : t('auth.login.requestCode')}
-            </button>
-          </form>
-        )}
-
-        {(phase === 'code' || phase === 'verifying') && (
-          <form onSubmit={handleVerifyCode} noValidate>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 6,
-                fontSize: 12,
-                color: 'rgba(255, 255, 255, 0.6)',
-              }}
-            >
-              <span id="axi-login-code-label">{t('auth.login.codeLabel')}</span>
-              <button type="button" onClick={handleChangeEmail} style={linkButton}>
-                {t('auth.login.changeEmail')}
-              </button>
-            </div>
-            <OneTimeCodeInput
-              ariaLabelledBy="axi-login-code-label"
-              disabled={submitting}
-              firstInputRef={codeInputRef}
-              value={code}
-              onChange={setCode}
-            />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: 12,
-                color: 'rgba(255, 255, 255, 0.55)',
-                marginBottom: 16,
-              }}
-            >
-              <span>
-                {t('auth.login.sentTo')}{' '}
-                <strong style={{ color: 'var(--axi-text, #f8fafc)' }}>{sentTo}</strong>
-              </span>
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={cooldown > 0 || submitting}
-                style={{
-                  ...linkButton,
-                  color: cooldown > 0 ? 'rgba(255, 255, 255, 0.4)' : 'var(--axi-primary)',
-                  cursor: cooldown > 0 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {cooldown > 0 ? `${cooldown}${t('auth.login.resendCooldown')}` : t('auth.login.resend')}
-              </button>
-            </div>
-            {expiresAt && (
-              <p style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)', margin: '0 0 16px' }}>
-                {t('auth.login.expiresPrefix')}{new Date(expiresAt).toLocaleString()}{t('auth.login.expiresSuffix')}
-              </p>
-            )}
-            <button
-              type="submit"
-              disabled={submitting || oneTimeCodeValue(code).length !== 6}
-              style={{
-                ...primaryButton,
-                opacity: submitting || oneTimeCodeValue(code).length !== 6 ? 0.6 : 1,
-                cursor: submitting || oneTimeCodeValue(code).length !== 6 ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {phase === 'verifying' || submitting ? t('auth.login.verifying') : t('auth.signin')}
-            </button>
-          </form>
-        )}
-
+        <footer className="axi-login-card__footer">
+          <span><i />本机 Web 登录</span>
+          <span>安全会话由网关托管</span>
+        </footer>
       </section>
+
+      <p className="axi-login-page__footer">Axi WorkBench · 本地开发工作台</p>
     </main>
   );
 };
