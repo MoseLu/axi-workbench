@@ -37,7 +37,12 @@ export function createControlPlane(options = {}) {
   const cacheDir = options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane");
   const pairingEnabled = Object.hasOwn(options, "pairingEnabled")
     ? options.pairingEnabled === true
-    : process.env.AXI_MOBILE_PAIRING_ENABLED === "true";
+    : resolveMobilePairingEnabled({
+        configured: Object.hasOwn(process.env, "AXI_MOBILE_PAIRING_ENABLED"),
+        configuredValue: process.env.AXI_MOBILE_PAIRING_ENABLED,
+        cacheDir,
+        nodeEnv: options.nodeEnv || process.env.NODE_ENV || "development",
+      });
   const deps = {
     workspaceRoot,
     graphPath: options.graphPath || join(workspaceRoot, "workspace.graph.json"),
@@ -62,6 +67,21 @@ export function createControlPlane(options = {}) {
     }),
   };
   return buildControlPlaneSurface(deps);
+}
+
+/**
+ * 新设备仍需显式开启移动配对；但开发机已经持有私有配对密钥时，重启控制面
+ * 必须恢复该既有状态，不能让真机因漏传一个开发环境变量而全部断线。
+ * 显式 false（包括空值）与生产环境始终优先，避免把本地缓存变成生产授权来源。
+ */
+export function resolveMobilePairingEnabled({ configured = false, configuredValue = "", cacheDir, nodeEnv = "development" } = {}) {
+  if (configured) return configuredValue === "true";
+  if (nodeEnv !== "development" || !cacheDir) return false;
+  try {
+    return readFileSync(join(cacheDir, "mobile-pairing-token-secret"), "utf8").trim().length > 0;
+  } catch {
+    return false;
+  }
 }
 
 /**

@@ -31,7 +31,7 @@ export function MobileProjectionState({ session, isLoading, error, onRefresh }: 
     return (
       <div className="axi-mobile-projection-state" role="status">
         <strong>需要设备配对</strong>
-        <p>移动端仅使用短期设备会话读取工作区，不保存访问令牌。</p>
+        <p>移动端会保留本机不可导出的设备密钥，但不会保存访问令牌。</p>
         <button type="button" onClick={() => navigate('/me?pair=1')}>前往设备配对</button>
       </div>
     );

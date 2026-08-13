@@ -4,16 +4,41 @@ import {
   MobileControlError,
   clearMobileDeviceSession,
   confirmMobileDevicePairing,
+  mobileDeviceRestoreMessage,
+  restoreMobileDeviceSession,
+  setMobileDeviceKeyStoreForTest,
   startMobileDevicePairing,
 } from './mobileControl';
 
-afterEach(() => {
-  clearMobileDeviceSession();
+let restoreDeviceKeyStore: (() => void) | undefined;
+
+function installDeviceKeyStore(initial: { deviceId: string; privateKey: CryptoKey; publicKeyHex: string } | null = null) {
+  let record = initial;
+  const read = vi.fn(async () => record);
+  const write = vi.fn(async (next: { deviceId: string; privateKey: CryptoKey; publicKeyHex: string }) => { record = next; });
+  const remove = vi.fn(async () => { record = null; });
+  restoreDeviceKeyStore = setMobileDeviceKeyStoreForTest({ read, write, remove });
+  return { read, write, remove, record: () => record };
+}
+
+afterEach(async () => {
+  await clearMobileDeviceSession();
+  restoreDeviceKeyStore?.();
+  restoreDeviceKeyStore = undefined;
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
 describe('mobile control transport', () => {
+  it('keeps restoration failures actionable without claiming the pairing was erased', () => {
+    expect(mobileDeviceRestoreMessage(new MobileControlError('service_unavailable', 503)))
+      .toContain('未被清除');
+    expect(mobileDeviceRestoreMessage(new MobileControlError('device_missing', 401)))
+      .toContain('重新配对');
+    expect(mobileDeviceRestoreMessage(new MobileControlError('device_key_storage_unavailable', 503)))
+      .toContain('安全存储');
+  });
+
   it('converts an unreachable gateway into the truthful unavailable state instead of loading forever', async () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
@@ -38,6 +63,7 @@ describe('mobile control transport', () => {
   });
 
   it('uses an Ed25519 public key, web-owner approval, and an Ed25519 nonce signature', async () => {
+    const keyStore = installDeviceKeyStore();
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
@@ -49,6 +75,9 @@ describe('mobile control transport', () => {
       }
       if (url.endsWith('/api/v1/mobile/pair/confirm')) {
         return new Response(JSON.stringify({ deviceId: 'dev_test01', nonce: { nonceId: 'nonce_test', nonce: 'nonce-value' } }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+        return new Response(JSON.stringify({ nonceId: 'nonce_test', nonce: 'nonce-value' }), { status: 200 });
       }
       if (url.endsWith('/api/v1/mobile/auth/token')) {
         return new Response(JSON.stringify({ accessToken: 'jwt-test', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
@@ -66,7 +95,44 @@ describe('mobile control transport', () => {
     expect(approvalBody).toEqual({ pairingId: 'pair_test', code: '123456' });
     const confirmBody = JSON.parse(String(calls[2].init?.body));
     expect(confirmBody.ownerApprovalToken).toBe('a'.repeat(64));
-    const tokenBody = JSON.parse(String(calls[3].init?.body));
+    const tokenBody = JSON.parse(String(calls[4].init?.body));
+    expect(tokenBody.signatureHex).toMatch(/^[0-9a-f]{128}$/);
+    expect(keyStore.write).toHaveBeenCalledOnce();
+    expect(keyStore.record()?.privateKey.extractable).toBe(false);
+  });
+
+  it('restores a paired device with its persisted non-extractable key and a fresh short-lived token', async () => {
+    const keyPair = await globalThis.crypto.subtle.generateKey(
+      { name: 'Ed25519' } as AlgorithmIdentifier,
+      false,
+      ['sign', 'verify'],
+    ) as CryptoKeyPair;
+    const publicKey = await globalThis.crypto.subtle.exportKey('raw', keyPair.publicKey);
+    const publicKeyHex = Array.from(new Uint8Array(publicKey), (part) => part.toString(16).padStart(2, '0')).join('');
+    installDeviceKeyStore({ deviceId: 'dev_restore01', privateKey: keyPair.privateKey, publicKeyHex });
+
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+        return new Response(JSON.stringify({ nonceId: 'nonce_restore', nonce: 'restore-value' }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/auth/token')) {
+        return new Response(JSON.stringify({ accessToken: 'jwt-restored', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: 'unexpected route' }), { status: 404 });
+    }));
+
+    const restored = await restoreMobileDeviceSession();
+
+    expect(restored).toMatchObject({ deviceId: 'dev_restore01' });
+    expect(keyPair.privateKey.extractable).toBe(false);
+    expect(calls.map((call) => call.url)).toEqual([
+      expect.stringContaining('/api/v1/mobile/auth/nonce'),
+      expect.stringContaining('/api/v1/mobile/auth/token'),
+    ]);
+    const tokenBody = JSON.parse(String(calls[1].init?.body));
+    expect(tokenBody).toMatchObject({ deviceId: 'dev_restore01', nonceId: 'nonce_restore', nonce: 'restore-value' });
     expect(tokenBody.signatureHex).toMatch(/^[0-9a-f]{128}$/);
   });
 });

@@ -60,7 +60,7 @@ export default function ProfilePage() {
       </div>
       <div className="axi-mobile-setting-group axi-mobile-device-pairing">
         <p>设备配对</p>
-        {deviceSession ? <><div className="axi-mobile-device-pairing__status"><strong>此设备已配对</strong><small>{deviceSession.deviceId}</small></div><button type="button" className="axi-mobile-setting-row" onClick={() => clearMobileDeviceSession()}><span>清除本次设备会话</span><MobileIcon name="arrow-right" size={16} /></button></> : <>
+        {deviceSession ? <><div className="axi-mobile-device-pairing__status"><strong>此设备已配对</strong><small>{deviceSession.deviceId}</small></div><button type="button" className="axi-mobile-setting-row" onClick={() => { void clearMobileDeviceSession(); }}><span>清除本机设备配对</span><MobileIcon name="arrow-right" size={16} /></button></> : <>
           <div className="axi-mobile-device-pairing__status"><strong>未配对</strong><small>访问工作区和审批前需要短期设备会话。</small></div>
           {!pairingStarted ? <button type="button" className="axi-mobile-setting-row" disabled={pairingBusy} onClick={() => void beginPairing()}><span>{pairingBusy ? '正在请求配对…' : '开始设备配对'}</span><MobileIcon name="arrow-right" size={16} /></button> : <div className="axi-mobile-device-pairing__confirm"><input value={pairingCode} inputMode="numeric" maxLength={6} onChange={(event) => setPairingCode(event.target.value.replace(/\D/g, ''))} placeholder="6 位确认码" /><button type="button" disabled={pairingBusy || pairingCode.length !== 6} onClick={() => void finishPairing()}>{pairingBusy ? '正在确认…' : '确认配对'}</button></div>}
         </>}
@@ -68,7 +68,7 @@ export default function ProfilePage() {
       </div>
       {signedIn ? <button type="button" className="axi-mobile-web-login-link" onClick={() => navigate('/login/confirm-web')}>确认网页登录</button> : null}
       {signedIn ? (
-        <button type="button" className="axi-mobile-signout" onClick={() => { clearMobileDeviceSession(); void logout(); navigate('/login'); }}><MobileIcon name="logout" size={19} />{t('profile.logout')}</button>
+        <button type="button" className="axi-mobile-signout" onClick={() => { void clearMobileDeviceSession(); void logout(); navigate('/login'); }}><MobileIcon name="logout" size={19} />{t('profile.logout')}</button>
       ) : (
         <button type="button" className="axi-mobile-signout" onClick={() => navigate('/login')}>{t('profile.signIn')}</button>
       )}

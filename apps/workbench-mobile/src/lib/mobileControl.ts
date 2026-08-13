@@ -56,11 +56,20 @@ export class MobileControlError extends Error {
 
 type ActiveSession = MobileDeviceSession & { accessToken: string };
 type PendingPairing = { privateKey: CryptoKey; publicKeyHex: string; pairingId: string; expiresAt: number | null };
+type PersistedDeviceKey = { deviceId: string; privateKey: CryptoKey; publicKeyHex: string };
+type DeviceKeyStore = {
+  read: () => Promise<PersistedDeviceKey | null>;
+  write: (record: PersistedDeviceKey) => Promise<void>;
+  remove: () => Promise<void>;
+};
 
 let activeSession: ActiveSession | null = null;
 let pendingPairing: PendingPairing | null = null;
 const sessionListeners = new Set<() => void>();
 export const MOBILE_REQUEST_TIMEOUT_MS = 8_000;
+const DEVICE_KEY_DATABASE = 'axi.workbench.mobile.device-keys';
+const DEVICE_KEY_STORE = 'device-keys';
+const DEVICE_KEY_ID = 'current';
 
 const mobilePath = (path: string) => resolveGatewayURL(`/api/v1/mobile${path}`);
 
@@ -102,6 +111,39 @@ export function useMobileDeviceSession() {
   );
 }
 
+export function useRestoreMobileDeviceSession() {
+  return useQuery({
+    queryKey: ['mobile-device-session-restore'],
+    queryFn: restoreMobileDeviceSession,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+export function useEnsureMobileDeviceSession() {
+  const restored = useRestoreMobileDeviceSession();
+  return {
+    isRestoring: restored.isPending,
+    restoreError: restored.error,
+    retryRestore: restored.refetch,
+  };
+}
+
+/** A recoverable startup failure must be visible; silently rendering an unpaired shell is misleading. */
+export function mobileDeviceRestoreMessage(error: unknown): string | null {
+  if (!error) return null;
+  if (error instanceof MobileControlError && error.code === 'device_key_storage_unavailable') {
+    return '无法访问本机设备密钥。请使用支持本机安全存储的浏览器后重试。';
+  }
+  if (error instanceof MobileControlError && error.status === 401) {
+    return '此设备配对已失效，需要重新配对。';
+  }
+  if (error instanceof MobileControlError && error.status === 503) {
+    return '设备恢复服务暂时不可用；本机配对信息未被清除，请稍后重试。';
+  }
+  return '无法恢复已配对设备，请稍后重试。';
+}
+
 async function mobileFetch<T>(path: string, init: RequestInit = {}, { requiresDevice = true }: { requiresDevice?: boolean } = {}): Promise<T> {
   const session = sessionSnapshot();
   if (requiresDevice && !session) throw new MobileControlError('device_pairing_required', 401);
@@ -133,12 +175,70 @@ function bytesToHex(value: ArrayBuffer): string {
   return Array.from(new Uint8Array(value), (part) => part.toString(16).padStart(2, '0')).join('');
 }
 
+function deviceKeyStorageUnavailable(): MobileControlError {
+  return new MobileControlError('device_key_storage_unavailable', 503);
+}
+
+function openDeviceKeyDatabase(): Promise<IDBDatabase> {
+  if (typeof indexedDB === 'undefined') return Promise.reject(deviceKeyStorageUnavailable());
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DEVICE_KEY_DATABASE, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(DEVICE_KEY_STORE)) request.result.createObjectStore(DEVICE_KEY_STORE);
+    };
+    request.onerror = () => reject(deviceKeyStorageUnavailable());
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+async function useDeviceKeyStore<T>(mode: IDBTransactionMode, operation: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const database = await openDeviceKeyDatabase();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const transaction = database.transaction(DEVICE_KEY_STORE, mode);
+      const request = operation(transaction.objectStore(DEVICE_KEY_STORE));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(deviceKeyStorageUnavailable());
+      transaction.onabort = () => reject(deviceKeyStorageUnavailable());
+    });
+  } finally {
+    database.close();
+  }
+}
+
+const indexedDbDeviceKeyStore: DeviceKeyStore = {
+  async read() {
+    const value = await useDeviceKeyStore<unknown>('readonly', (store) => store.get(DEVICE_KEY_ID));
+    if (!value || typeof value !== 'object') return null;
+    const record = value as Partial<PersistedDeviceKey>;
+    if (typeof record.deviceId !== 'string' || typeof record.publicKeyHex !== 'string' || !record.privateKey || record.privateKey.type !== 'private' || record.privateKey.extractable) {
+      return null;
+    }
+    return { deviceId: record.deviceId, publicKeyHex: record.publicKeyHex, privateKey: record.privateKey };
+  },
+  async write(record) {
+    await useDeviceKeyStore<IDBValidKey>('readwrite', (store) => store.put(record, DEVICE_KEY_ID));
+  },
+  async remove() {
+    await useDeviceKeyStore<undefined>('readwrite', (store) => store.delete(DEVICE_KEY_ID));
+  },
+};
+
+let deviceKeyStore: DeviceKeyStore = indexedDbDeviceKeyStore;
+
+/** Test seam; production always keeps the private CryptoKey in IndexedDB. */
+export function setMobileDeviceKeyStoreForTest(store: DeviceKeyStore): () => void {
+  const previous = deviceKeyStore;
+  deviceKeyStore = store;
+  return () => { deviceKeyStore = previous; };
+}
+
 async function generateDeviceKeyPair(): Promise<{ privateKey: CryptoKey; publicKeyHex: string }> {
   if (!globalThis.crypto?.subtle) throw new MobileControlError('device_key_algorithm_unavailable', 503);
   try {
     const keyPair = await globalThis.crypto.subtle.generateKey(
       { name: 'Ed25519' } as AlgorithmIdentifier,
-      true,
+      false,
       ['sign', 'verify'],
     ) as CryptoKeyPair;
     const publicKey = await globalThis.crypto.subtle.exportKey('raw', keyPair.publicKey);
@@ -185,7 +285,7 @@ async function requestOwnerPairApproval(pairingId: string, code: string): Promis
   }
 }
 
-/** Starts pairing and keeps the Ed25519 private key in memory only. */
+/** Starts pairing; the non-extractable Ed25519 private key is persisted only after owner confirmation. */
 export async function startMobileDevicePairing(deviceName = 'Axi Workbench Mobile'): Promise<{ pairingId: string; expiresAt: number | null }> {
   const keyPair = await generateDeviceKeyPair();
   const response = await mobileFetch<{ pairingId: string; codeExpiresAt?: number }>('/pair/start', {
@@ -196,6 +296,44 @@ export async function startMobileDevicePairing(deviceName = 'Axi Workbench Mobil
   return { pairingId: response.pairingId, expiresAt: response.codeExpiresAt ?? null };
 }
 
+async function exchangeDeviceNonce(device: PersistedDeviceKey): Promise<ActiveSession> {
+  const nonce = await mobileFetch<{ nonceId: string; nonce: string }>('/auth/nonce', {
+    method: 'POST',
+    body: JSON.stringify({ deviceId: device.deviceId }),
+  }, { requiresDevice: false });
+  const signatureHex = await signNonce(device.privateKey, nonce.nonce);
+  const token = await mobileFetch<{ accessToken: string; expiresAt: number }>('/auth/token', {
+    method: 'POST',
+    body: JSON.stringify({ deviceId: device.deviceId, nonceId: nonce.nonceId, nonce: nonce.nonce, signatureHex }),
+  }, { requiresDevice: false });
+  return { deviceId: device.deviceId, accessToken: token.accessToken, expiresAt: token.expiresAt };
+}
+
+/** Restores a paired device by signing a fresh server nonce; no access token is persisted. */
+export async function restoreMobileDeviceSession(): Promise<MobileDeviceSession | null> {
+  if (sessionSnapshot()) return sessionSnapshot();
+  let device: PersistedDeviceKey | null;
+  try {
+    device = await deviceKeyStore.read();
+  } catch (error) {
+    if (error instanceof MobileControlError) throw error;
+    throw deviceKeyStorageUnavailable();
+  }
+  if (!device) return null;
+  try {
+    activeSession = await exchangeDeviceNonce(device);
+    publishSessionChange();
+    return sessionSnapshot();
+  } catch (error) {
+    if (error instanceof MobileControlError && error.status === 401) {
+      await deviceKeyStore.remove().catch(() => undefined);
+    }
+    activeSession = null;
+    publishSessionChange();
+    throw error;
+  }
+}
+
 /** Completes pairing after the authenticated owner session approves the code. */
 export async function confirmMobileDevicePairing(code: string): Promise<MobileDeviceSession> {
   if (!pendingPairing) throw new MobileControlError('pairing_not_started');
@@ -204,20 +342,28 @@ export async function confirmMobileDevicePairing(code: string): Promise<MobileDe
     method: 'POST',
     body: JSON.stringify({ pairingId: pendingPairing.pairingId, code: code.trim(), ownerApprovalToken }),
   }, { requiresDevice: false });
-  const signatureHex = await signNonce(pendingPairing.privateKey, confirmed.nonce.nonce);
-  const token = await mobileFetch<{ accessToken: string; expiresAt: number }>('/auth/token', {
-    method: 'POST',
-    body: JSON.stringify({ deviceId: confirmed.deviceId, nonceId: confirmed.nonce.nonceId, nonce: confirmed.nonce.nonce, signatureHex }),
-  }, { requiresDevice: false });
-  activeSession = { deviceId: confirmed.deviceId, accessToken: token.accessToken, expiresAt: token.expiresAt };
-  pendingPairing = null;
-  publishSessionChange();
-  return sessionSnapshot()!;
+  const device = { deviceId: confirmed.deviceId, privateKey: pendingPairing.privateKey, publicKeyHex: pendingPairing.publicKeyHex };
+  try {
+    await deviceKeyStore.write(device);
+  } catch (error) {
+    if (error instanceof MobileControlError) throw error;
+    throw deviceKeyStorageUnavailable();
+  }
+  try {
+    activeSession = await exchangeDeviceNonce(device);
+    pendingPairing = null;
+    publishSessionChange();
+    return sessionSnapshot()!;
+  } catch (error) {
+    await deviceKeyStore.remove().catch(() => undefined);
+    throw error;
+  }
 }
 
-export function clearMobileDeviceSession() {
+export async function clearMobileDeviceSession() {
   activeSession = null;
   pendingPairing = null;
+  await deviceKeyStore.remove().catch(() => undefined);
   publishSessionChange();
 }
 

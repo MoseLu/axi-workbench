@@ -25,6 +25,18 @@ export PLATFORM_CORE_URL="${PLATFORM_CORE_URL:-http://127.0.0.1:8082}"
 export CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://127.0.0.1:8092}"
 export GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN="${GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN:-${CONTROL_PLANE_INTERNAL_SERVICE_TOKEN:-axi-development-internal-token}}"
 
+# The Gateway is the only ingress for device-paired Mobile requests. Refuse a
+# misleading local startup when its control plane is not listening yet: a 502
+# after the phone has opened is much harder to diagnose than a clear launch
+# failure here. Set AXI_GATEWAY_SKIP_CONTROL_PLANE_READY_CHECK=true only for
+# isolated Gateway tests that deliberately stub this dependency.
+if [[ "${AXI_GATEWAY_SKIP_CONTROL_PLANE_READY_CHECK:-false}" != "true" ]]; then
+  if ! curl --silent --show-error --fail --max-time 1 "${CONTROL_PLANE_URL}/health" >/dev/null; then
+    echo "移动控制面未就绪（${CONTROL_PLANE_URL}）。先启动 services/control-plane/scripts/dev-run.sh；现有本地配对状态会在开发环境自动恢复。" >&2
+    exit 1
+  fi
+fi
+
 # Email OTP is deliberately owner-only for this personal Workbench. Keeping
 # the fallback in the local launcher avoids silently broadening production
 # identity configuration while making a copied .env usable immediately.
