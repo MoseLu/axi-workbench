@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"sync"
@@ -9,7 +10,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrRecordNotFound = errors.New("gateway identity record not found")
+var (
+	ErrRecordNotFound    = errors.New("gateway identity record not found")
+	ErrRecordTTLTooShort = errors.New("gateway identity record TTL must be at least one millisecond")
+)
 
 // RecordStore is used for opaque browser sessions and single-use OIDC state.
 // Raw OAuth tokens remain server-side in this store and never appear in API
@@ -17,6 +21,9 @@ var ErrRecordNotFound = errors.New("gateway identity record not found")
 type RecordStore interface {
 	Set(context.Context, string, []byte, time.Duration) error
 	Get(context.Context, string) ([]byte, error)
+	CompareAndSet(context.Context, string, []byte, []byte, time.Duration) error
+	CompareAndDelete(context.Context, string, []byte) error
+	Rotate(context.Context, string, []byte, string, []byte, time.Duration, []byte, time.Duration) error
 	Delete(context.Context, string) error
 	Ping(context.Context) error
 	Close() error
@@ -41,6 +48,9 @@ func NewMemoryRecordStore(now func() time.Time) *MemoryRecordStore {
 }
 
 func (s *MemoryRecordStore) Set(_ context.Context, key string, value []byte, ttl time.Duration) error {
+	if err := validateRecordTTL(ttl); err != nil {
+		return err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.records[key] = memoryRecord{value: append([]byte(nil), value...), expiresAt: s.now().Add(ttl)}
@@ -51,11 +61,69 @@ func (s *MemoryRecordStore) Get(_ context.Context, key string) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	record, exists := s.records[key]
-	if !exists || s.now().After(record.expiresAt) {
+	if !exists || !s.now().Before(record.expiresAt) {
 		delete(s.records, key)
 		return nil, ErrRecordNotFound
 	}
 	return append([]byte(nil), record.value...), nil
+}
+
+func (s *MemoryRecordStore) CompareAndSet(_ context.Context, key string, expected, next []byte, ttl time.Duration) error {
+	if err := validateRecordTTL(ttl); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	record, exists := s.records[key]
+	if !exists || !now.Before(record.expiresAt) {
+		delete(s.records, key)
+		return ErrRecordNotFound
+	}
+	if !bytes.Equal(record.value, expected) {
+		return ErrRecordNotFound
+	}
+	s.records[key] = memoryRecord{value: append([]byte(nil), next...), expiresAt: now.Add(ttl)}
+	return nil
+}
+
+func (s *MemoryRecordStore) CompareAndDelete(_ context.Context, key string, expected []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	record, exists := s.records[key]
+	if !exists || !now.Before(record.expiresAt) {
+		delete(s.records, key)
+		return ErrRecordNotFound
+	}
+	if !bytes.Equal(record.value, expected) {
+		return ErrRecordNotFound
+	}
+	delete(s.records, key)
+	return nil
+}
+
+func (s *MemoryRecordStore) Rotate(_ context.Context, oldKey string, expected []byte, newKey string, newValue []byte, newTTL time.Duration, tombstone []byte, tombstoneTTL time.Duration) error {
+	if err := validateRecordTTL(newTTL); err != nil {
+		return err
+	}
+	if err := validateRecordTTL(tombstoneTTL); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	record, exists := s.records[oldKey]
+	if !exists || !now.Before(record.expiresAt) {
+		delete(s.records, oldKey)
+		return ErrRecordNotFound
+	}
+	if !bytes.Equal(record.value, expected) {
+		return ErrRecordNotFound
+	}
+	s.records[newKey] = memoryRecord{value: append([]byte(nil), newValue...), expiresAt: now.Add(newTTL)}
+	s.records[oldKey] = memoryRecord{value: append([]byte(nil), tombstone...), expiresAt: now.Add(tombstoneTTL)}
+	return nil
 }
 
 func (s *MemoryRecordStore) Delete(_ context.Context, key string) error {
@@ -81,7 +149,10 @@ func NewRedisRecordStore(redisURL string) (*RedisRecordStore, error) {
 }
 
 func (s *RedisRecordStore) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
-	return s.client.Set(ctx, key, value, ttl).Err()
+	if err := validateRecordTTL(ttl); err != nil {
+		return err
+	}
+	return s.client.Set(ctx, key, append([]byte(nil), value...), ttl).Err()
 }
 
 func (s *RedisRecordStore) Get(ctx context.Context, key string) ([]byte, error) {
@@ -89,7 +160,80 @@ func (s *RedisRecordStore) Get(ctx context.Context, key string) ([]byte, error) 
 	if errors.Is(err, redis.Nil) {
 		return nil, ErrRecordNotFound
 	}
-	return value, err
+	if err != nil {
+		return nil, err
+	}
+	return append([]byte(nil), value...), nil
+}
+
+const compareAndSetRecordScript = `
+local current = redis.call('GET', KEYS[1])
+if not current or current ~= ARGV[1] then
+  return 0
+end
+redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+return 1
+`
+
+func (s *RedisRecordStore) CompareAndSet(ctx context.Context, key string, expected, next []byte, ttl time.Duration) error {
+	if err := validateRecordTTL(ttl); err != nil {
+		return err
+	}
+	result, err := s.client.Eval(ctx, compareAndSetRecordScript, []string{key}, append([]byte(nil), expected...), append([]byte(nil), next...), ttl.Milliseconds()).Int()
+	if err != nil {
+		return err
+	}
+	if result == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
+}
+
+const compareAndDeleteRecordScript = `
+local current = redis.call('GET', KEYS[1])
+if not current or current ~= ARGV[1] then
+  return 0
+end
+redis.call('DEL', KEYS[1])
+return 1
+`
+
+func (s *RedisRecordStore) CompareAndDelete(ctx context.Context, key string, expected []byte) error {
+	result, err := s.client.Eval(ctx, compareAndDeleteRecordScript, []string{key}, append([]byte(nil), expected...)).Int()
+	if err != nil {
+		return err
+	}
+	if result == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
+}
+
+const rotateRecordScript = `
+local current = redis.call('GET', KEYS[1])
+if not current or current ~= ARGV[1] then
+  return 0
+end
+redis.call('SET', KEYS[2], ARGV[2], 'PX', ARGV[3])
+redis.call('SET', KEYS[1], ARGV[4], 'PX', ARGV[5])
+return 1
+`
+
+func (s *RedisRecordStore) Rotate(ctx context.Context, oldKey string, expected []byte, newKey string, newValue []byte, newTTL time.Duration, tombstone []byte, tombstoneTTL time.Duration) error {
+	if err := validateRecordTTL(newTTL); err != nil {
+		return err
+	}
+	if err := validateRecordTTL(tombstoneTTL); err != nil {
+		return err
+	}
+	result, err := s.client.Eval(ctx, rotateRecordScript, []string{oldKey, newKey}, append([]byte(nil), expected...), append([]byte(nil), newValue...), newTTL.Milliseconds(), append([]byte(nil), tombstone...), tombstoneTTL.Milliseconds()).Int()
+	if err != nil {
+		return err
+	}
+	if result == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
 }
 
 func (s *RedisRecordStore) Delete(ctx context.Context, key string) error {
@@ -98,3 +242,10 @@ func (s *RedisRecordStore) Delete(ctx context.Context, key string) error {
 
 func (s *RedisRecordStore) Ping(ctx context.Context) error { return s.client.Ping(ctx).Err() }
 func (s *RedisRecordStore) Close() error                   { return s.client.Close() }
+
+func validateRecordTTL(ttl time.Duration) error {
+	if ttl < time.Millisecond {
+		return ErrRecordTTLTooShort
+	}
+	return nil
+}

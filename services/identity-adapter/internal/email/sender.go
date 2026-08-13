@@ -104,7 +104,6 @@ func (s SMTPSender) Send(message Message) error {
 	if err != nil {
 		return fmt.Errorf("open smtp body: %w", err)
 	}
-	defer body.Close()
 
 	content, err := composeMIMEMessage(s.From, message)
 	if err != nil {
@@ -112,6 +111,9 @@ func (s SMTPSender) Send(message Message) error {
 	}
 	if _, err := body.Write(content); err != nil {
 		return fmt.Errorf("write smtp body: %w", err)
+	}
+	if err := body.Close(); err != nil {
+		return fmt.Errorf("finalize smtp body: %w", err)
 	}
 	return nil
 }

@@ -2,8 +2,9 @@
  * Vitest configuration for apps/workbench.
  *
  * Why explicit: without pinning, vitest would walk the project for every test
- * file ending in test or spec. We pin to the test pattern under src so future
- * spec-style files (Playwright / E2E) do not accidentally run here.
+ * file ending in test or spec. We pin to tests under src plus the one
+ * config-only Vite proxy test so future spec-style files (Playwright / E2E)
+ * do not accidentally run here.
  *
  * Environment: node. The workbench UI is browser-only and not exercised yet,
  * and the breadcrumb unit test is a pure function. Switch to jsdom only when
@@ -22,7 +23,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'vite.apiProxyTarget.test.ts'],
     // Keep coverage off by default — surfaces lazily when CI asks for it.
     coverage: {
       enabled: false,

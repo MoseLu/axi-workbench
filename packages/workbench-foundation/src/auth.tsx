@@ -53,28 +53,24 @@ function isLoopbackHostname(hostname: string): boolean {
 /**
  * Keeps browser-session cookies first-party during local development.
  *
- * Vite serves the Workbench through 127.0.0.1:5173 while a developer may
- * configure the gateway as localhost:8088. Those are different schemeful
- * sites, so modern browsers can reject the gateway's session cookie after a
- * successful email-code confirmation. Falling back to Vite's same-origin
- * /api proxy prevents that host mismatch without changing deployed URLs.
+ * This pure URL normalizer treats exact loopback hostname pairs as Vite's
+ * same-origin /api proxy, avoiding browser session-cookie differences without
+ * changing deployed URLs. The Vite development server itself is deliberately
+ * bound only to http://127.0.0.1:5173.
  */
 export function normalizeGatewayBaseURL(configuredBaseURL: string, browserOrigin?: string): string {
-  const baseURL = configuredBaseURL.replace(/\/$/, '');
-  if (!baseURL || !browserOrigin) return baseURL;
+  if (!configuredBaseURL || !browserOrigin) return configuredBaseURL;
 
   try {
-    const gatewayURL = new URL(baseURL);
+    const gatewayURL = new URL(configuredBaseURL);
     const pageURL = new URL(browserOrigin);
-    const isMismatchedLoopbackPair = gatewayURL.protocol === pageURL.protocol
-      && isLoopbackHostname(gatewayURL.hostname)
-      && isLoopbackHostname(pageURL.hostname)
-      && gatewayURL.hostname !== pageURL.hostname;
-    return isMismatchedLoopbackPair ? '' : baseURL;
+    const isLoopbackPair = isLoopbackHostname(gatewayURL.hostname)
+      && isLoopbackHostname(pageURL.hostname);
+    return isLoopbackPair ? '' : configuredBaseURL;
   } catch {
     // An invalid configured URL should retain the existing request behavior
     // and surface through fetch rather than failing module initialization.
-    return baseURL;
+    return configuredBaseURL;
   }
 }
 
@@ -84,8 +80,8 @@ const gatewayBaseURL = normalizeGatewayBaseURL(
 );
 
 /** Resolve a gateway path for either a same-origin local app or a deployed client. */
-export function resolveGatewayURL(path: string): string {
-  return `${gatewayBaseURL}${path}`;
+export function resolveGatewayURL(path: string, baseURL = gatewayBaseURL): string {
+  return `${baseURL.replace(/\/+$/u, '')}${path}`;
 }
 
 function mapGatewayUser(value: NonNullable<GatewaySessionResponse['user']>): User {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/epap/api-gateway/identity"
+	"github.com/epap/api-gateway/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,8 +59,38 @@ func OIDCCallback(service *identity.Service) gin.HandlerFunc {
 
 func Session(service *identity.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		principal, err := service.Authenticate(c.Request.Context(), c.Request)
+		// A protected route may already have restored and rotated this browser
+		// session in RequireIdentity. Reusing that principal prevents a second
+		// RestoreSession call from looking up the predecessor cookie again.
+		if principal, ok := middleware.PrincipalFromContext(c); ok {
+			c.JSON(http.StatusOK, gin.H{"authenticated": true, "user": principal})
+			return
+		}
+
+		principal, sessionID, err := service.RestoreSession(c.Request.Context(), c.Request)
+		if err == nil {
+			service.SetCookie(c.Writer, sessionID)
+			c.JSON(http.StatusOK, gin.H{"authenticated": true, "user": principal})
+			return
+		}
+		if errors.Is(err, identity.ErrSessionStoreUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+			return
+		}
+		if !errors.Is(err, identity.ErrUnauthorized) {
+			c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
+			return
+		}
+
+		// Browser-session absence or invalidity may still be satisfied by an
+		// explicit bearer token or development header. Those credential paths
+		// never write a browser cookie.
+		principal, err = service.AuthenticateHeaderCredentials(c.Request.Context(), c.Request.Header)
 		if err != nil {
+			if errors.Is(err, identity.ErrSessionStoreUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+				return
+			}
 			c.JSON(http.StatusUnauthorized, gin.H{"authenticated": false})
 			return
 		}

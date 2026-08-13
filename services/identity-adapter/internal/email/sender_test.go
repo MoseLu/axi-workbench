@@ -1,14 +1,19 @@
 package email
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
 	"mime/quotedprintable"
+	"net"
 	"net/mail"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestComposeMIMEMessageEmbedsOfficialCIDLogo(t *testing.T) {
@@ -83,5 +88,101 @@ func TestComposeMIMEMessageRejectsUnsafeInlineContentID(t *testing.T) {
 	_, err := composeMIMEMessage("noreply@example.test", Message{HTML: "<p>test</p>", InlineAssets: []InlineAsset{{ContentID: "logo\r\nBcc: victim@example.test", Data: []byte("x")}}})
 	if err == nil {
 		t.Fatal("expected unsafe content ID to be rejected")
+	}
+}
+
+func TestSMTPSenderReturnsFinalDataError(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+
+	serverDone := make(chan error, 1)
+	go func() {
+		connection, err := listener.Accept()
+		if err != nil {
+			serverDone <- err
+			return
+		}
+		defer connection.Close()
+		if err := connection.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+			serverDone <- err
+			return
+		}
+
+		reader := bufio.NewReader(connection)
+		writeResponse := func(response string) error {
+			_, err := fmt.Fprint(connection, response)
+			return err
+		}
+		expectCommand := func(prefix string) error {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return err
+			}
+			if !strings.HasPrefix(line, prefix) {
+				return fmt.Errorf("command %q does not start with %q", line, prefix)
+			}
+			return nil
+		}
+
+		if err := writeResponse("220 test SMTP\r\n"); err != nil {
+			serverDone <- err
+			return
+		}
+		for _, exchange := range []struct {
+			command  string
+			response string
+		}{
+			{command: "EHLO ", response: "250 test SMTP\r\n"},
+			{command: "MAIL FROM:", response: "250 sender accepted\r\n"},
+			{command: "RCPT TO:", response: "250 recipient accepted\r\n"},
+			{command: "DATA", response: "354 send message\r\n"},
+		} {
+			if err := expectCommand(exchange.command); err != nil {
+				serverDone <- err
+				return
+			}
+			if err := writeResponse(exchange.response); err != nil {
+				serverDone <- err
+				return
+			}
+		}
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				serverDone <- err
+				return
+			}
+			if line == ".\r\n" {
+				break
+			}
+		}
+		if err := writeResponse("554 message rejected\r\n"); err != nil {
+			serverDone <- err
+			return
+		}
+		if err := expectCommand("QUIT"); err != nil {
+			serverDone <- err
+			return
+		}
+		serverDone <- writeResponse("221 bye\r\n")
+	}()
+
+	address := listener.Addr().(*net.TCPAddr)
+	sender := SMTPSender{
+		Host:          "127.0.0.1",
+		Port:          fmt.Sprint(address.Port),
+		From:          "sender@example.test",
+		AllowInsecure: true,
+		Timeout:       time.Second,
+	}
+	err = sender.Send(Message{To: "recipient@example.test", Subject: "test", Text: "body"})
+	if err == nil || !strings.Contains(err.Error(), "finalize smtp body") {
+		t.Fatalf("Send error = %v, want final DATA rejection", err)
+	}
+	if err := <-serverDone; err != nil {
+		t.Fatalf("SMTP test server: %v", err)
 	}
 }

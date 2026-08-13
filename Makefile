@@ -61,7 +61,7 @@ docker-down:
 # Backend services. The dev-run scripts load the repository .env without
 # printing secrets and apply the local ports/defaults used by Workbench.
 dev-gateway:
-	./services/api-gateway/scripts/dev-run.sh
+	bash services/api-gateway/scripts/dev-run.sh
 
 dev-identity:
 	./services/identity-adapter/scripts/dev-run.sh
@@ -110,7 +110,7 @@ migrate-notification:
 	cd services/notification-service && go run ./cmd/migrate
 
 verify-go:
-	cd services/api-gateway && go test -race ./...
+	cd services/api-gateway && go test -race ./... && bash scripts/dev-run_test.sh
 	cd services/identity-adapter && go test -race ./...
 	cd services/platform-core && go test -race ./...
 	cd services/notification-service && go test -race ./...
