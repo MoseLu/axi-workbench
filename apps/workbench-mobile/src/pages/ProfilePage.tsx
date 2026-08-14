@@ -38,36 +38,27 @@ export default function ProfilePage() {
 
   return (
     <section className="axi-mobile-page axi-mobile-profile">
-      <div className="axi-mobile-profile-card">
-        <span className="axi-mobile-profile-card__avatar">{(user?.name || 'A').slice(0, 1).toUpperCase()}</span>
-        <span className="axi-mobile-profile-card__identity"><strong>{user?.name || t('profile.guest')}</strong><small>{user?.email || t('profile.account')}</small></span>
-        <button
-          type="button"
-          className="axi-mobile-profile-card__web-login-scan"
-          onClick={() => navigate('/login/confirm-web')}
-          aria-label="扫码确认电脑登录"
-        >
-          <MobileIcon name="scan" size={21} />
-        </button>
-        <MobileIcon name="arrow-right" size={18} />
-      </div>
-      <div className="axi-mobile-setting-group">
-        <p>{t('profile.account')}</p>
-        <button type="button" className="axi-mobile-setting-row" onClick={() => toggleMode()}>
-          <span className="axi-mobile-setting-row__icon"><MobileIcon name={mode === 'dark' ? 'moon' : 'sun'} size={19} /></span>
-          <span>{t('profile.theme')}</span>
-          <em>{mode === 'dark' ? t('profile.theme.dark') : t('profile.theme.light')}</em>
-          <MobileIcon name="arrow-right" size={16} />
-        </button>
-        <button type="button" className="axi-mobile-setting-row" onClick={() => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')}>
-          <span className="axi-mobile-setting-row__icon"><MobileIcon name="language" size={19} /></span>
-          <span>{t('profile.language')}</span>
-          <em>{locale === 'zh-CN' ? '简体中文' : 'English'}</em>
-          <MobileIcon name="arrow-right" size={16} />
-        </button>
-      </div>
+      <section className="axi-mobile-profile__hero" aria-label={t('profile.account')}>
+        <div className="axi-mobile-profile-card">
+          <span className="axi-mobile-profile-card__avatar">{(user?.name || 'A').slice(0, 1).toUpperCase()}</span>
+          <span className="axi-mobile-profile-card__identity"><strong>{user?.name || t('profile.guest')}</strong><small>{user?.email || t('profile.account')}</small></span>
+          <MobileIcon name="arrow-right" size={18} />
+        </div>
+        <div className="axi-mobile-profile__preference-actions">
+          <button type="button" className="axi-mobile-profile__preference-action" onClick={() => toggleMode()}>
+            <span className="axi-mobile-profile__preference-icon"><MobileIcon name={mode === 'dark' ? 'moon' : 'sun'} size={19} /></span>
+            <span><small>{t('profile.theme')}</small><strong>{mode === 'dark' ? t('profile.theme.dark') : t('profile.theme.light')}</strong></span>
+            <MobileIcon name="arrow-right" size={15} />
+          </button>
+          <button type="button" className="axi-mobile-profile__preference-action" onClick={() => setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')}>
+            <span className="axi-mobile-profile__preference-icon"><MobileIcon name="language" size={19} /></span>
+            <span><small>{t('profile.language')}</small><strong>{locale === 'zh-CN' ? '简体中文' : 'English'}</strong></span>
+            <MobileIcon name="arrow-right" size={15} />
+          </button>
+        </div>
+      </section>
       <div className="axi-mobile-setting-group axi-mobile-device-pairing">
-        <p>设备配对</p>
+        <p>设备安全</p>
         {deviceSession ? <><div className="axi-mobile-device-pairing__status"><strong>此设备已配对</strong><small>{deviceSession.deviceId}</small></div><button type="button" className="axi-mobile-setting-row" onClick={() => { void clearMobileDeviceSession(); }}><span>清除本机设备配对</span><MobileIcon name="arrow-right" size={16} /></button></> : <>
           <div className="axi-mobile-device-pairing__status"><strong>未配对</strong><small>访问工作区和审批前需要短期设备会话。</small></div>
           {!pairingStarted ? <button type="button" className="axi-mobile-setting-row" disabled={pairingBusy} onClick={() => void beginPairing()}><span>{pairingBusy ? '正在请求配对…' : '开始设备配对'}</span><MobileIcon name="arrow-right" size={16} /></button> : <div className="axi-mobile-device-pairing__confirm"><input value={pairingCode} inputMode="numeric" maxLength={6} onChange={(event) => setPairingCode(event.target.value.replace(/\D/g, ''))} placeholder="6 位确认码" /><button type="button" disabled={pairingBusy || pairingCode.length !== 6} onClick={() => void finishPairing()}>{pairingBusy ? '正在确认…' : '确认配对'}</button></div>}

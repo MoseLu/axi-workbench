@@ -15,6 +15,7 @@ export function MobileHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const title = t(mobilePageTitleKey(location.pathname));
+  const isProfilePage = location.pathname === '/me';
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -28,8 +29,19 @@ export function MobileHeader() {
   return (
     <header className="wb-mobile-topbar">
       <div className="wb-mobile-topbar__inner">
-        <h1 className="wb-mobile-topbar__title">{title}</h1>
+        <h1 className={`wb-mobile-topbar__title${isProfilePage ? ' wb-mobile-topbar__title--with-profile-actions' : ''}`}>{title}</h1>
         <div className="wb-mobile-topbar__actions">
+          {isProfilePage ? (
+            <button
+              type="button"
+              className="wb-mobile-topbar__btn wb-mobile-topbar__btn--scan"
+              onClick={() => navigate('/login/confirm-web')}
+              aria-label="扫码确认电脑登录"
+              title="扫码确认电脑登录"
+            >
+              <MobileIcon name="scan" size={20} />
+            </button>
+          ) : null}
           <button
             type="button"
             className="wb-mobile-topbar__btn"

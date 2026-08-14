@@ -22,7 +22,6 @@ const loginConfirm = read('src/pages/WebLoginConfirmPage.tsx');
 const approvalScan = read('src/lib/approvalScan.ts');
 const webLoginQr = read('src/lib/webLoginQr.ts');
 const mobileControl = read('src/lib/mobileControl.ts');
-const profile = read('src/pages/ProfilePage.tsx');
 const home = read('src/pages/HomePage.tsx');
 const projects = read('src/pages/ProjectsPage.tsx');
 const workspace = read('src/pages/FocusPage.tsx');
@@ -40,7 +39,7 @@ requireMatch(tabBar, /wb-bottom-nav/, 'mobile tab bar must keep the WeChat-style
 requireMatch(navigation, /MobileNavKey\s*=\s*'home'\s*\|\s*'projects'\s*\|\s*'workspace'\s*\|\s*'me'/, 'mobile navigation must have exactly four primary tab keys');
 forbidMatch(navigation, /\{\s*key:\s*'scan'/, 'scan must not occupy a bottom-navigation tab');
 requireMatch(header, /navigate\('\/scan'\)/, 'mobile header plus menu must own the scan entry');
-requireMatch(profile, /axi-mobile-profile-card__web-login-scan[\s\S]*navigate\('\/login\/confirm-web'\)/, 'profile must expose the direct computer-login scan entry');
+requireMatch(header, /isProfilePage[\s\S]*wb-mobile-topbar__btn--scan[\s\S]*navigate\('\/login\/confirm-web'\)/, 'profile header must expose the direct computer-login scan entry');
 requireMatch(packageJson, /"@axi\/workbench-foundation"/, 'mobile app must consume the shared foundation package');
 requireMatch(mobileIcons, /AxiSvgIcon[\s\S]*resolveAxiWorkbenchIcon/, 'mobile icons must resolve to the shared Axi SVG registry');
 requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared four-color Axi mark');
