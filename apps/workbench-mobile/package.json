@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "verify:contracts": "node scripts/verify-mobile-contracts.mjs"
+    "verify:contracts": "node scripts/verify-mobile-contracts.mjs",
+    "android:assemble": "pnpm build && node scripts/run-android-gradle.mjs",
+    "android:install": "pnpm run android:assemble && node scripts/install-android.mjs"
   },
   "dependencies": {
     "@axi/core": "link:../../../../shared/axi-ui/packages/core",

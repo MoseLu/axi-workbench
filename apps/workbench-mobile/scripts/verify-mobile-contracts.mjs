@@ -28,6 +28,9 @@ const workspace = read('src/pages/FocusPage.tsx');
 const search = read('src/pages/SearchPage.tsx');
 const packageJson = read('package.json');
 const mobileStyles = read('src/styles/wechat-mobile.css');
+const androidManifest = read('android/app/src/main/AndroidManifest.xml');
+const androidActivity = read('android/app/src/main/java/com/axi/workbench/mobile/MainActivity.java');
+const androidBuild = read('android/app/build.gradle');
 
 requireMatch(app, /MobileShell/, 'mobile application must own an independent shell');
 requireMatch(app, /WorkbenchLocaleProvider[\s\S]*BrowserRouter/, 'mobile application must mount shared locale before its own router');
@@ -84,5 +87,10 @@ forbidMatch(`${app}\n${shell}\n${header}\n${tabBar}`, /(?:\.\.\/)+workbench\//, 
 forbidMatch(`${mobileIcons}\n${header}\n${tabBar}`, /<svg|<path|<circle|<rect/, 'mobile must not maintain a parallel hand-drawn icon set');
 forbidMatch(mobileStyles, /\.wb-mobile-topbar__plus::before|\.wb-mobile-topbar__plus::after/, 'mobile plus affordance must not redraw the shared glyph with CSS pseudo-elements');
 forbidMatch(`${scan}\n${loginConfirm}`, /(?:localStorage|sessionStorage|console\.(?:log|debug|info))/, 'scan flows must not persist or log QR credentials');
+
+requireMatch(androidBuild, /applicationId\s+'com\.axi\.workbench\.mobile'/, 'Android host must own a stable mobile application id');
+requireMatch(androidManifest, /android\.permission\.INTERNET/, 'Android host must declare network access for the gateway');
+requireMatch(androidManifest, /android:name="\.MainActivity"[\s\S]*android:exported="true"/, 'Android host must expose its launcher activity');
+requireMatch(androidActivity, /new WebView\(this\)[\s\S]*setContentView\(webView\)[\s\S]*loadUrl/, 'Android host must launch the mobile surface inside the installed app');
 
 console.log('Workbench Mobile UI contracts: PASS');
