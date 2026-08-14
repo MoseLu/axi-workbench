@@ -20,8 +20,9 @@ const navigation = read('src/lib/navigation.ts');
 const scan = read('src/pages/ScanPage.tsx');
 const loginConfirm = read('src/pages/WebLoginConfirmPage.tsx');
 const approvalScan = read('src/lib/approvalScan.ts');
-const qrLogin = read('src/lib/qrLogin.ts');
+const webLoginQr = read('src/lib/webLoginQr.ts');
 const mobileControl = read('src/lib/mobileControl.ts');
+const profile = read('src/pages/ProfilePage.tsx');
 const home = read('src/pages/HomePage.tsx');
 const projects = read('src/pages/ProjectsPage.tsx');
 const workspace = read('src/pages/FocusPage.tsx');
@@ -39,6 +40,7 @@ requireMatch(tabBar, /wb-bottom-nav/, 'mobile tab bar must keep the WeChat-style
 requireMatch(navigation, /MobileNavKey\s*=\s*'home'\s*\|\s*'projects'\s*\|\s*'workspace'\s*\|\s*'me'/, 'mobile navigation must have exactly four primary tab keys');
 forbidMatch(navigation, /\{\s*key:\s*'scan'/, 'scan must not occupy a bottom-navigation tab');
 requireMatch(header, /navigate\('\/scan'\)/, 'mobile header plus menu must own the scan entry');
+requireMatch(profile, /axi-mobile-profile-card__web-login-scan[\s\S]*navigate\('\/login\/confirm-web'\)/, 'profile must expose the direct computer-login scan entry');
 requireMatch(packageJson, /"@axi\/workbench-foundation"/, 'mobile app must consume the shared foundation package');
 requireMatch(mobileIcons, /AxiSvgIcon[\s\S]*resolveAxiWorkbenchIcon/, 'mobile icons must resolve to the shared Axi SVG registry');
 requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared four-color Axi mark');
@@ -54,9 +56,11 @@ requireMatch(mobileStyles, /\.wb-mobile-topbar__plus svg[\s\S]*width:\s*10px/, '
 requireMatch(scan, /parseApprovalScanPayload[\s\S]*resolveMobileApprovalScan/, 'top-level Scan must resolve an opaque domain approval URI through the control plane');
 requireMatch(approvalScan, /axi:\/\/approval/, 'domain approval QR must use its own opaque URI scheme');
 forbidMatch(approvalScan, /ticket|projectId|actionId/, 'domain approval URI must not carry identity tickets or business object fields');
-requireMatch(loginConfirm, /parseQRApprovalPayload[\s\S]*qrApprovalEndpoint/, 'web login confirmation must retain the isolated OIDC QR transaction flow');
-requireMatch(loginConfirm, /credentials:\s*'include'/, 'OIDC login confirmation must use the verified mobile session cookie');
-requireMatch(qrLogin, /ticket remains in local function scope/, 'QR ticket handling must remain in transient memory');
+requireMatch(loginConfirm, /parseWebLoginQrPayload[\s\S]*approveMobileWebLoginQr/, 'web login confirmation must use the isolated device-login QR flow');
+requireMatch(webLoginQr, /kind:\s*'axi-web-login-v1'/, 'computer login QR must retain its explicit payload kind');
+requireMatch(webLoginQr, /WEB_LOGIN_ID_PATTERN[\s\S]*OPAQUE_TOKEN_PATTERN/, 'computer login QR must validate the opaque transaction and scan tokens');
+requireMatch(mobileControl, /web-login\/qr\/scan/, 'paired-device confirmation must use the gateway mobile web-login route');
+forbidMatch(loginConfirm, /parseQRApprovalPayload|qrApprovalEndpoint|credentials:\s*'include'/, 'computer login QR must not fall back to the unrelated OIDC approval-cookie route');
 for (const [name, page] of [['Home', home], ['Projects', projects], ['Workspace', workspace]]) {
   requireMatch(page, /useMobileWorkspaceQuery/, `${name} must render the authenticated control-plane projection`);
   requireMatch(page, /MobileProjectionState/, `${name} must render a truthful pairing/permission/service state`);

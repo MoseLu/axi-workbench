@@ -1,8 +1,8 @@
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { resolveGatewayURL } from '@axi/workbench-foundation';
 import { MobileIcon } from '../components/MobileIcons';
-import { parseQRApprovalPayload, qrApprovalEndpoint } from '../lib/qrLogin';
+import { approveMobileWebLoginQr } from '../lib/mobileControl';
+import { parseWebLoginQrPayload } from '../lib/webLoginQr';
 
 type QRDetection = { rawValue?: string };
 type QRDetector = { detect(source: CanvasImageSource): Promise<readonly QRDetection[]> };
@@ -33,14 +33,11 @@ export default function WebLoginConfirmPage() {
 
   const approve = useCallback(async (raw: string) => {
     try {
-      const payload = parseQRApprovalPayload(raw);
+      const payload = parseWebLoginQrPayload(raw);
       stop(); setOpening(true); setError(''); setMessage('正在确认网页登录…');
-      const response = await fetch(resolveGatewayURL(qrApprovalEndpoint(payload.transactionId)), {
-        method: 'POST', credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket: payload.ticket }),
-      });
-      if (response.status !== 202) throw new Error('rejected');
+      await approveMobileWebLoginQr(payload);
       setMessage('网页登录已确认。');
-    } catch { setError('二维码无效、已失效，或当前会话无法确认网页登录。'); }
+    } catch { setError('二维码无效、已失效，或当前设备尚未完成配对。'); }
     finally { setOpening(false); }
   }, [stop]);
 

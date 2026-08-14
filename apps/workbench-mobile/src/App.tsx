@@ -34,7 +34,7 @@ const MobileSurface: React.FC = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/login/confirm-web" element={<RequireSession><WebLoginConfirmPage /></RequireSession>} />
+            <Route path="/login/confirm-web" element={<RequireSession><MobileDeviceSessionBootstrap><WebLoginConfirmPage /></MobileDeviceSessionBootstrap></RequireSession>} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/" element={<RequireSession><MobileDeviceSessionBootstrap><MobileShell /></MobileDeviceSessionBootstrap></RequireSession>}>
               <Route index element={<Navigate to="home" replace />} />

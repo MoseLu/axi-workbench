@@ -41,6 +41,14 @@ export default function ProfilePage() {
       <div className="axi-mobile-profile-card">
         <span className="axi-mobile-profile-card__avatar">{(user?.name || 'A').slice(0, 1).toUpperCase()}</span>
         <span className="axi-mobile-profile-card__identity"><strong>{user?.name || t('profile.guest')}</strong><small>{user?.email || t('profile.account')}</small></span>
+        <button
+          type="button"
+          className="axi-mobile-profile-card__web-login-scan"
+          onClick={() => navigate('/login/confirm-web')}
+          aria-label="扫码确认电脑登录"
+        >
+          <MobileIcon name="scan" size={21} />
+        </button>
         <MobileIcon name="arrow-right" size={18} />
       </div>
       <div className="axi-mobile-setting-group">
@@ -66,7 +74,6 @@ export default function ProfilePage() {
         </>}
         {pairingMessage ? <p className="axi-mobile-device-pairing__message" role="status">{pairingMessage}</p> : null}
       </div>
-      {signedIn ? <button type="button" className="axi-mobile-web-login-link" onClick={() => navigate('/login/confirm-web')}>确认网页登录</button> : null}
       {signedIn ? (
         <button type="button" className="axi-mobile-signout" onClick={() => { void clearMobileDeviceSession(); void logout(); navigate('/login'); }}><MobileIcon name="logout" size={19} />{t('profile.logout')}</button>
       ) : (

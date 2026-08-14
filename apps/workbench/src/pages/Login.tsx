@@ -367,7 +367,7 @@ const Login: React.FC = () => {
               </div>
               <span className="axi-login-qr-tooltip" role="tooltip">
                 <img src={scanPromptImage} alt="" aria-hidden="true" />
-                <span className="axi-login-qr-tooltip__label">使用手机端扫码登录</span>
+                <span className="axi-login-qr-tooltip__label">在手机端「我的」点击右上角扫一扫</span>
               </span>
             </div>
             <p className="axi-login-qr-instruction">

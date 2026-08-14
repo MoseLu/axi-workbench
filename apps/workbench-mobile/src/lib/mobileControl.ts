@@ -48,6 +48,11 @@ export type ApprovalScanPreview = {
 
 export type MobileDeviceSession = { deviceId: string; expiresAt: number };
 
+export type MobileWebLoginQrPayload = Pick<
+  import('./webLoginQr').WebLoginQrPayload,
+  'webLoginId' | 'scanToken'
+>;
+
 export class MobileControlError extends Error {
   constructor(public readonly code: string, public readonly status?: number) {
     super(code);
@@ -396,6 +401,14 @@ export async function decideMobileApprovalScan(scanId: string, decision: Approva
   return mobileFetch(`/approval-scans/${encodeURIComponent(scanId)}/decision`, {
     method: 'POST',
     body: JSON.stringify({ decision, idempotencyKey: crypto.randomUUID(), handoffCorrelationId }),
+  });
+}
+
+/** Confirms a browser-owned login QR with the current paired-device bearer. */
+export async function approveMobileWebLoginQr(payload: MobileWebLoginQrPayload) {
+  return mobileFetch<{ ok: true; status: 'approved' }>('/web-login/qr/scan', {
+    method: 'POST',
+    body: JSON.stringify({ webLoginId: payload.webLoginId, scanToken: payload.scanToken }),
   });
 }
 

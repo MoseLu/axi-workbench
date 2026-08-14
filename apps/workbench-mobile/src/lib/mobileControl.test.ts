@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   MOBILE_REQUEST_TIMEOUT_MS,
   MobileControlError,
+  approveMobileWebLoginQr,
   clearMobileDeviceSession,
   confirmMobileDevicePairing,
   mobileDeviceRestoreMessage,
@@ -134,5 +135,45 @@ describe('mobile control transport', () => {
     const tokenBody = JSON.parse(String(calls[1].init?.body));
     expect(tokenBody).toMatchObject({ deviceId: 'dev_restore01', nonceId: 'nonce_restore', nonce: 'restore-value' });
     expect(tokenBody.signatureHex).toMatch(/^[0-9a-f]{128}$/);
+  });
+
+  it('confirms a computer-login QR only with the restored paired-device bearer', async () => {
+    const keyPair = await globalThis.crypto.subtle.generateKey(
+      { name: 'Ed25519' } as AlgorithmIdentifier,
+      false,
+      ['sign', 'verify'],
+    ) as CryptoKeyPair;
+    const publicKey = await globalThis.crypto.subtle.exportKey('raw', keyPair.publicKey);
+    const publicKeyHex = Array.from(new Uint8Array(publicKey), (part) => part.toString(16).padStart(2, '0')).join('');
+    installDeviceKeyStore({ deviceId: 'dev_web_login', privateKey: keyPair.privateKey, publicKeyHex });
+
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+        return new Response(JSON.stringify({ nonceId: 'nonce_web_login', nonce: 'web-login-value' }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/auth/token')) {
+        return new Response(JSON.stringify({ accessToken: 'jwt-web-login', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/web-login/qr/scan')) {
+        return new Response(JSON.stringify({ ok: true, status: 'approved' }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: 'unexpected route' }), { status: 404 });
+    }));
+
+    await restoreMobileDeviceSession();
+    await expect(approveMobileWebLoginQr({
+      webLoginId: 'weblogin_0123456789abcdef',
+      scanToken: 'abcdefghijklmnopqrstuvwxyzABCDEF',
+    })).resolves.toEqual({ ok: true, status: 'approved' });
+
+    const scan = calls[calls.length - 1]!;
+    expect(scan.url).toContain('/api/v1/mobile/web-login/qr/scan');
+    expect(new Headers(scan.init?.headers).get('Authorization')).toBe('Bearer jwt-web-login');
+    expect(JSON.parse(String(scan.init?.body))).toEqual({
+      webLoginId: 'weblogin_0123456789abcdef',
+      scanToken: 'abcdefghijklmnopqrstuvwxyzABCDEF',
+    });
   });
 });

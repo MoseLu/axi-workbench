@@ -412,6 +412,8 @@ body {
 .axi-mobile-profile-card { padding: 16px; }
 .axi-mobile-profile-card__avatar { border-radius: 8px; background: var(--wb-success); }
 .axi-mobile-profile-card__identity small, .axi-mobile-setting-row em { color: var(--wb-ink-muted); }
+.axi-mobile-profile-card__web-login-scan { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; color: var(--wb-success); background: transparent; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.axi-mobile-profile-card__web-login-scan:active { background: color-mix(in srgb, var(--wb-success) 12%, transparent); }
 .axi-mobile-setting-group { margin-top: 12px; }
 .axi-mobile-setting-group > p { color: var(--wb-ink-muted); text-transform: none; }
 .axi-mobile-setting-row { border-top-color: var(--wb-divider); color: var(--wb-ink); }
@@ -452,8 +454,6 @@ body {
 .axi-mobile-device-pairing__confirm input { min-width: 0; flex: 1; height: 34px; padding: 0 9px; border: 1px solid var(--wb-divider); border-radius: 6px; color: var(--wb-ink); background: var(--wb-page); }
 .axi-mobile-device-pairing__confirm button { padding: 0 10px; border: 0; border-radius: 6px; color: var(--axi-text-inverse, #fff); background: var(--wb-success); font-size: 12px; }
 .axi-mobile-device-pairing__message { margin: 0; padding: 0 14px 12px; }
-.axi-mobile-web-login-link { display: block; width: calc(100% - 32px); margin: 14px 16px 0; padding: 12px; border: 0; border-radius: 7px; color: var(--wb-success); background: var(--wb-surface); font-size: 13px; text-align: center; cursor: pointer; }
-
 /* 登录页和扫码页是移动端自己的轻量入口，不继承 Web 后台的认证界面。 */
 .axi-mobile-login {
   --wb-page: var(--axi-bg-page, #ededed);
