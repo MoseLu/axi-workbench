@@ -11,13 +11,13 @@ export default function HomePage() {
 
   return (
     <section className="axi-mobile-page axi-mobile-home">
-      <div className="axi-mobile-projection-heading">
+      {snapshot ? <div className="axi-mobile-projection-heading">
         <div>
           <p>移动工作区</p>
           <h2>当前责任范围</h2>
         </div>
-        {snapshot ? <button type="button" onClick={() => void workspace.refetch()}>刷新</button> : null}
-      </div>
+        <button type="button" onClick={() => void workspace.refetch()}>刷新</button>
+      </div> : null}
       <MobileProjectionState session={session} isLoading={workspace.isPending} error={workspace.error} onRefresh={() => void workspace.refetch()} />
       {snapshot ? (
         <>

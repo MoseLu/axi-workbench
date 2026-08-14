@@ -4,9 +4,11 @@ import {
   MobileControlError,
   approveMobileWebLoginQr,
   clearMobileDeviceSession,
+  completeScannedMobilePairing,
   confirmMobileDevicePairing,
   mobileDeviceRestoreMessage,
   restoreMobileDeviceSession,
+  scanMobilePairingQr,
   setMobileDeviceKeyStoreForTest,
   startMobileDevicePairing,
 } from './mobileControl';
@@ -69,7 +71,7 @@ describe('mobile control transport', () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
       if (url.endsWith('/api/v1/mobile/pair/start')) {
-        return new Response(JSON.stringify({ pairingId: 'pair_test', codeExpiresAt: 123 }), { status: 200 });
+        return new Response(JSON.stringify({ pairingId: 'pair_test', code: '123456', codeExpiresAt: 123 }), { status: 200 });
       }
       if (url.endsWith('/api/v1/control-plane/mobile/pair-approval')) {
         return new Response(JSON.stringify({ ownerApprovalToken: 'a'.repeat(64) }), { status: 200 });
@@ -175,5 +177,52 @@ describe('mobile control transport', () => {
       webLoginId: 'weblogin_0123456789abcdef',
       scanToken: 'abcdefghijklmnopqrstuvwxyzABCDEF',
     });
+  });
+
+  it('registers a Web-owned QR scan and activates only after Web approval', async () => {
+    const keyStore = installDeviceKeyStore();
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    let statusCalls = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, init });
+      if (url.endsWith('/api/v1/mobile/pair/qr/scan')) {
+        return new Response(JSON.stringify({ pairingId: 'pair_12345678-1234-1234-1234-123456789012', code: '123456', expiresAt: 1_800_000_000 }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/pair/status')) {
+        statusCalls += 1;
+        return new Response(JSON.stringify(statusCalls === 1 ? { status: 'pending' } : { status: 'approved', deviceId: 'dev_qr_test' }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+        return new Response(JSON.stringify({ nonceId: 'nonce_qr_test', nonce: 'nonce-value' }), { status: 200 });
+      }
+      if (url.endsWith('/api/v1/mobile/auth/token')) {
+        return new Response(JSON.stringify({ accessToken: 'jwt-qr-test', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: 'unexpected route' }), { status: 404 });
+    }));
+
+    await expect(scanMobilePairingQr({
+      webPairingId: 'webpair_1234567890abcdef',
+      scanToken: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345',
+    })).resolves.toMatchObject({ pairingId: 'pair_12345678-1234-1234-1234-123456789012' });
+    const scanBody = JSON.parse(String(calls[0].init?.body));
+    expect(scanBody).toEqual(expect.objectContaining({
+      webPairingId: 'webpair_1234567890abcdef',
+      scanToken: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345',
+      publicKeyAlgorithm: 'Ed25519',
+      deviceName: 'Axi Workbench Mobile',
+    }));
+    expect(scanBody.publicKeyHex).toMatch(/^[0-9a-f]{64}$/);
+    expect(Object.keys(scanBody).sort()).toEqual([
+      'deviceName',
+      'publicKeyAlgorithm',
+      'publicKeyHex',
+      'scanToken',
+      'webPairingId',
+    ]);
+    await expect(completeScannedMobilePairing()).resolves.toBeNull();
+    await expect(completeScannedMobilePairing()).resolves.toMatchObject({ deviceId: 'dev_qr_test' });
+    expect(keyStore.write).toHaveBeenCalledOnce();
+    expect(statusCalls).toBe(2);
   });
 });

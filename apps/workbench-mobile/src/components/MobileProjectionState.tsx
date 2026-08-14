@@ -29,10 +29,10 @@ export function MobileProjectionState({ session, isLoading, error, onRefresh }: 
   const state = mobileProjectionState(session, isLoading, error);
   if (state === 'pairing') {
     return (
-      <div className="axi-mobile-projection-state" role="status">
-        <strong>需要设备配对</strong>
-        <p>移动端会保留本机不可导出的设备密钥，但不会保存访问令牌。</p>
-        <button type="button" onClick={() => navigate('/me?pair=1')}>前往设备配对</button>
+      <div className="axi-mobile-projection-state axi-mobile-projection-state--pairing" role="status">
+        <strong>先完成本机配对</strong>
+        <p>在已登录 Web 工作台的「设备管理」生成手机配对二维码，再用本机扫一扫扫描并在网页确认。</p>
+        <button type="button" onClick={() => navigate('/scan')}>扫描配对二维码</button>
       </div>
     );
   }

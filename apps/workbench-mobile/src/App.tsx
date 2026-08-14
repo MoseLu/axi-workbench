@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage';
 import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import ScanPage from './pages/ScanPage';
+import PairingScanPage from './pages/PairingScanPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import WebLoginConfirmPage from './pages/WebLoginConfirmPage';
 import RequireSession from './components/RequireSession';
@@ -36,13 +37,14 @@ const MobileSurface: React.FC = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/login/confirm-web" element={<RequireSession><MobileDeviceSessionBootstrap><WebLoginConfirmPage /></MobileDeviceSessionBootstrap></RequireSession>} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/" element={<RequireSession><MobileDeviceSessionBootstrap><MobileShell /></MobileDeviceSessionBootstrap></RequireSession>}>
+            <Route path="/" element={<MobileDeviceSessionBootstrap><MobileShell /></MobileDeviceSessionBootstrap>}>
               <Route index element={<Navigate to="home" replace />} />
               <Route path="home" element={<HomePage />} />
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="workspace" element={<WorkspacePage />} />
               <Route path="focus" element={<Navigate to="/workspace" replace />} />
               <Route path="scan" element={<ScanPage />} />
+              <Route path="scan/pair" element={<PairingScanPage />} />
               <Route path="inbox" element={<InboxPage />} />
               <Route path="me" element={<ProfilePage />} />
               <Route path="search" element={<SearchPage />} />
@@ -57,7 +59,7 @@ const MobileSurface: React.FC = () => (
 
 export default function App() {
   return (
-    <AxiThemeProvider defaultPreference="light" defaultPresetName="default" storageNamespace="axi.workbench.mobile">
+    <AxiThemeProvider defaultPreference="system" defaultPresetName="default" storageNamespace="axi.workbench.mobile">
       <MobileSurface />
     </AxiThemeProvider>
   );

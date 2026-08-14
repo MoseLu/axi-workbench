@@ -60,7 +60,7 @@ export class MobileControlError extends Error {
 }
 
 type ActiveSession = MobileDeviceSession & { accessToken: string };
-type PendingPairing = { privateKey: CryptoKey; publicKeyHex: string; pairingId: string; expiresAt: number | null };
+type PendingPairing = { privateKey: CryptoKey; publicKeyHex: string; pairingId: string; code: string; expiresAt: number | null };
 type PersistedDeviceKey = { deviceId: string; privateKey: CryptoKey; publicKeyHex: string };
 type DeviceKeyStore = {
   read: () => Promise<PersistedDeviceKey | null>;
@@ -293,12 +293,78 @@ async function requestOwnerPairApproval(pairingId: string, code: string): Promis
 /** Starts pairing; the non-extractable Ed25519 private key is persisted only after owner confirmation. */
 export async function startMobileDevicePairing(deviceName = 'Axi Workbench Mobile'): Promise<{ pairingId: string; expiresAt: number | null }> {
   const keyPair = await generateDeviceKeyPair();
-  const response = await mobileFetch<{ pairingId: string; codeExpiresAt?: number }>('/pair/start', {
+  const response = await mobileFetch<{ pairingId: string; code: string; codeExpiresAt?: number }>('/pair/start', {
     method: 'POST',
     body: JSON.stringify({ publicKeyHex: keyPair.publicKeyHex, deviceName, clientInfo: { surface: 'workbench-mobile' } }),
   }, { requiresDevice: false });
-  pendingPairing = { ...keyPair, pairingId: response.pairingId, expiresAt: response.codeExpiresAt ?? null };
+  pendingPairing = { ...keyPair, pairingId: response.pairingId, code: response.code, expiresAt: response.codeExpiresAt ?? null };
   return { pairingId: response.pairingId, expiresAt: response.codeExpiresAt ?? null };
+}
+
+export type MobileQrPairingResult = {
+  pairingId: string;
+  expiresAt: number;
+};
+
+/** Registers the current device key after a Web-owned QR has been scanned. */
+export async function scanMobilePairingQr(
+  payload: { webPairingId: string; scanToken: string },
+  deviceName = 'Axi Workbench Mobile',
+): Promise<MobileQrPairingResult> {
+  const keyPair = await generateDeviceKeyPair();
+  const response = await mobileFetch<{ pairingId: string; code: string; expiresAt: number }>('/pair/qr/scan', {
+    method: 'POST',
+    body: JSON.stringify({
+      webPairingId: payload.webPairingId,
+      scanToken: payload.scanToken,
+      publicKeyHex: keyPair.publicKeyHex,
+      publicKeyAlgorithm: 'Ed25519',
+      deviceName,
+    }),
+  }, { requiresDevice: false });
+  if (!response.pairingId || !/^pair_[A-Za-z0-9_-]{36}$/.test(response.pairingId) || !/^\d{6}$/.test(response.code) || !Number.isFinite(response.expiresAt)) {
+    throw new MobileControlError('invalid_pairing_response', 502);
+  }
+  pendingPairing = { ...keyPair, pairingId: response.pairingId, code: response.code, expiresAt: response.expiresAt };
+  return { pairingId: response.pairingId, expiresAt: response.expiresAt };
+}
+
+/**
+ * Checks the owner-confirmed status of a QR pairing. A pending response keeps
+ * the private key only in memory; an approved response persists it in the
+ * device-key store and immediately exchanges a nonce for the short-lived
+ * mobile session.
+ */
+export async function completeScannedMobilePairing(): Promise<MobileDeviceSession | null> {
+  if (!pendingPairing) throw new MobileControlError('pairing_not_started');
+  const status = await mobileFetch<{ status: 'pending' | 'approved'; deviceId?: string }>('/pair/status', {
+    method: 'POST',
+    body: JSON.stringify({ pairingId: pendingPairing.pairingId, code: pendingPairing.code }),
+  }, { requiresDevice: false });
+  if (status.status !== 'approved' || !status.deviceId) return null;
+
+  const device = {
+    deviceId: status.deviceId,
+    privateKey: pendingPairing.privateKey,
+    publicKeyHex: pendingPairing.publicKeyHex,
+  };
+  try {
+    await deviceKeyStore.write(device);
+  } catch (error) {
+    if (error instanceof MobileControlError) throw error;
+    throw deviceKeyStorageUnavailable();
+  }
+  try {
+    activeSession = await exchangeDeviceNonce(device);
+    pendingPairing = null;
+    publishSessionChange();
+    return sessionSnapshot();
+  } catch (error) {
+    await deviceKeyStore.remove().catch(() => undefined);
+    activeSession = null;
+    publishSessionChange();
+    throw error;
+  }
 }
 
 async function exchangeDeviceNonce(device: PersistedDeviceKey): Promise<ActiveSession> {

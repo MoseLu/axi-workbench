@@ -18,6 +18,8 @@ const mobileIcons = read('src/components/MobileIcons.tsx');
 const login = read('src/pages/LoginPage.tsx');
 const navigation = read('src/lib/navigation.ts');
 const scan = read('src/pages/ScanPage.tsx');
+const pairingScan = read('src/pages/PairingScanPage.tsx');
+const pairingQr = read('src/lib/mobilePairingQr.ts');
 const loginConfirm = read('src/pages/WebLoginConfirmPage.tsx');
 const approvalScan = read('src/lib/approvalScan.ts');
 const webLoginQr = read('src/lib/webLoginQr.ts');
@@ -28,13 +30,11 @@ const workspace = read('src/pages/FocusPage.tsx');
 const search = read('src/pages/SearchPage.tsx');
 const packageJson = read('package.json');
 const mobileStyles = read('src/styles/wechat-mobile.css');
-const androidManifest = read('android/app/src/main/AndroidManifest.xml');
-const androidActivity = read('android/app/src/main/java/com/axi/workbench/mobile/MainActivity.java');
-const androidBuild = read('android/app/build.gradle');
 
 requireMatch(app, /MobileShell/, 'mobile application must own an independent shell');
 requireMatch(app, /WorkbenchLocaleProvider[\s\S]*BrowserRouter/, 'mobile application must mount shared locale before its own router');
-requireMatch(app, /path="scan"/, 'mobile application must own the scan route');
+requireMatch(app, /path="scan"/, 'mobile application must own the approval scan route');
+requireMatch(app, /path="scan\/pair"/, 'mobile application must own the QR pairing scan route');
 requireMatch(shell, /isScanRoute[\s\S]*axi-mobile-app--scanner/, 'scan must have an independent full-screen mobile surface');
 requireMatch(shell, /MobileHeader[\s\S]*MobileTabBar/, 'ordinary mobile routes must own their header and tab bar composition');
 requireMatch(header, /wb-mobile-topbar/, 'mobile header must keep the WeChat-style mobile top bar');
@@ -42,7 +42,7 @@ requireMatch(tabBar, /wb-bottom-nav/, 'mobile tab bar must keep the WeChat-style
 requireMatch(navigation, /MobileNavKey\s*=\s*'home'\s*\|\s*'projects'\s*\|\s*'workspace'\s*\|\s*'me'/, 'mobile navigation must have exactly four primary tab keys');
 forbidMatch(navigation, /\{\s*key:\s*'scan'/, 'scan must not occupy a bottom-navigation tab');
 requireMatch(header, /navigate\('\/scan'\)/, 'mobile header plus menu must own the scan entry');
-requireMatch(header, /isProfilePage[\s\S]*wb-mobile-topbar__btn--scan[\s\S]*navigate\('\/login\/confirm-web'\)/, 'profile header must expose the direct computer-login scan entry');
+forbidMatch(header, /wb-mobile-topbar__btn--scan|login\/confirm-web/, 'mobile profile must not add a second top-bar scan affordance; QR flows belong to the scan menu');
 requireMatch(packageJson, /"@axi\/workbench-foundation"/, 'mobile app must consume the shared foundation package');
 requireMatch(mobileIcons, /AxiSvgIcon[\s\S]*resolveAxiWorkbenchIcon/, 'mobile icons must resolve to the shared Axi SVG registry');
 requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared four-color Axi mark');
@@ -56,6 +56,9 @@ forbidMatch(login, /password/i, 'mobile login must not reintroduce a password fl
 requireMatch(header, /MobileIcon className="wb-mobile-topbar__plus" name="plus"/, 'mobile header must render the shared plus glyph inside its mobile-only circular affordance');
 requireMatch(mobileStyles, /\.wb-mobile-topbar__plus svg[\s\S]*width:\s*10px/, 'mobile plus affordance must size the shared SVG inside its mobile-only circle');
 requireMatch(scan, /parseApprovalScanPayload[\s\S]*resolveMobileApprovalScan/, 'top-level Scan must resolve an opaque domain approval URI through the control plane');
+requireMatch(pairingScan, /parseMobilePairingQrPayload[\s\S]*scanMobilePairingQr/, 'pairing scan must submit the Web-owned QR through the mobile control plane');
+requireMatch(pairingScan, /completeScannedMobilePairing/, 'pairing scan must poll for explicit Web owner confirmation');
+requireMatch(pairingQr, /axi-mobile-pair-v1[\s\S]*webPairingId[\s\S]*scanToken/, 'pairing QR parser must require the strict Web pairing payload');
 requireMatch(approvalScan, /axi:\/\/approval/, 'domain approval QR must use its own opaque URI scheme');
 forbidMatch(approvalScan, /ticket|projectId|actionId/, 'domain approval URI must not carry identity tickets or business object fields');
 requireMatch(loginConfirm, /parseWebLoginQrPayload[\s\S]*approveMobileWebLoginQr/, 'web login confirmation must use the isolated device-login QR flow');
@@ -88,9 +91,6 @@ forbidMatch(`${mobileIcons}\n${header}\n${tabBar}`, /<svg|<path|<circle|<rect/, 
 forbidMatch(mobileStyles, /\.wb-mobile-topbar__plus::before|\.wb-mobile-topbar__plus::after/, 'mobile plus affordance must not redraw the shared glyph with CSS pseudo-elements');
 forbidMatch(`${scan}\n${loginConfirm}`, /(?:localStorage|sessionStorage|console\.(?:log|debug|info))/, 'scan flows must not persist or log QR credentials');
 
-requireMatch(androidBuild, /applicationId\s+'com\.axi\.workbench\.mobile'/, 'Android host must own a stable mobile application id');
-requireMatch(androidManifest, /android\.permission\.INTERNET/, 'Android host must declare network access for the gateway');
-requireMatch(androidManifest, /android:name="\.MainActivity"[\s\S]*android:exported="true"/, 'Android host must expose its launcher activity');
-requireMatch(androidActivity, /new WebView\(this\)[\s\S]*setContentView\(webView\)[\s\S]*loadUrl/, 'Android host must launch the mobile surface inside the installed app');
+forbidMatch(app, /com\.axi\.workbench\.mobile|MainActivity|WebView/, 'the Vite mobile surface must not claim ownership of the separate physical APK shell');
 
 console.log('Workbench Mobile UI contracts: PASS');
