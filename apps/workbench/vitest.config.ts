@@ -6,9 +6,9 @@
  * config-only Vite proxy test so future spec-style files (Playwright / E2E)
  * do not accidentally run here.
  *
- * Environment: node. The workbench UI is browser-only and not exercised yet,
- * and the breadcrumb unit test is a pure function. Switch to jsdom only when
- * we add a component test.
+ * Environment: jsdom. Component behavior tests use the same DOM boundary as
+ * the shipped browser surface; pure logic tests remain isolated in the same
+ * runner.
  */
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
@@ -22,11 +22,16 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'vite.apiProxyTarget.test.ts'],
     // Keep coverage off by default — surfaces lazily when CI asks for it.
     coverage: {
-      enabled: false,
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/vite-env.d.ts', 'src/main.tsx'],
+      thresholds: { lines: 80, branches: 70 },
     },
   },
 });
