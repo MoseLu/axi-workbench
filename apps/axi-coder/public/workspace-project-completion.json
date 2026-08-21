@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-08-10T12:18:23.506Z",
+  "generatedAt": "2026-08-17T02:38:25.812Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 35,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:legacy",
         "handoff:unready",
@@ -137,7 +137,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -362,7 +362,7 @@
         "score": 10,
         "errors": [
           "readOrder must contain at most 5 item(s)",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -390,7 +390,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -427,7 +427,7 @@
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
           "decisions.changelog path does not exist: CHANGELOG.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -624,7 +624,7 @@
         "errors": [
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -700,7 +700,7 @@
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
+          "verification is stale: 67 days old (max 30)"
         ]
       },
       "verify": [
@@ -829,7 +829,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -864,7 +864,7 @@
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -927,7 +927,7 @@
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -952,7 +952,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1047,7 +1047,7 @@
           "readOrder[4] path does not exist: MILESTONE.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -1085,7 +1085,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -1121,7 +1121,7 @@
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
           "decisions.changelog path does not exist: CHANGELOG.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -1214,7 +1214,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -1247,7 +1247,7 @@
           "readOrder[4] path does not exist: PRD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -1382,7 +1382,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -1408,7 +1408,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1465,7 +1465,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1524,7 +1524,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1584,7 +1584,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1695,7 +1695,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1753,7 +1753,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1861,7 +1861,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -1898,7 +1898,7 @@
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -1926,7 +1926,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1987,7 +1987,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2044,7 +2044,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2101,7 +2101,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2165,7 +2165,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -2200,7 +2200,7 @@
           "readOrder[4] path does not exist: TDD.md",
           "currentWork.todo path does not exist: TODO.md",
           "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 53 days old (max 30)"
+          "verification is stale: 60 days old (max 30)"
         ]
       },
       "verify": [
@@ -2299,7 +2299,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-10T12:18:23.506Z",
+      "updatedAt": "2026-08-17T02:38:25.812Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
