@@ -78,7 +78,7 @@
   "common.user.admin": "管理员",
   "common.settings.title": "系统设置",
   "common.settings.close": "关闭设置面板",
-  "auth.signin": "Sign In",
+  "auth.signin": "登录",
   "auth.login.subtitle.email": "输入邮箱后，我们会发送一个一次性验证码用于登录。",
   "auth.login.subtitle.code": "已向邮箱发送一次性验证码，输入后即可登录。",
   "auth.login.invalidEmail": "请输入合法的邮箱地址",
