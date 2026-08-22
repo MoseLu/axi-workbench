@@ -4,6 +4,8 @@
 >
 > 本 PRD 的变更规格、公开案例研究和能力台账位于 [`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)。当前源码角色仍以 [`docs/architecture/source-catalog.md`](../architecture/source-catalog.md) 为准；本文不把规划能力写成既有实现。
 
+**P0 状态（2026-08-22）**：产品架构与能力盘点已完成。详细能力台账见 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)；跨端交接协议草案见 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)。
+
 ## 1. 产品决策：不是响应式后台，而是“控制—执行—专业工具”架构
 
 **Axi Workbench 是多端后台管理系统：Web 是完整的管理控制中心；移动端是围绕在途、值班和即时任务的角色执行端；专业运维能力留在专用工具。**
@@ -197,7 +199,7 @@ DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是
 
 | 阶段 | 目标 | 可交付物 | 退出条件 |
 | --- | --- | --- | --- |
-| P0：产品架构与能力盘点 | 将产品形态参照转化为 Workbench 的角色/动作归属 | 完整当前能力盘点、动作政策模板、扫码语义台账、产品命名统一 | 以可审阅的全量盘点逐项记录现有能力的端侧任务、Web / Mobile / 专业工具归属与 A/B/C/D 动作等级；当前基线台账只提供示例，不能单独作为 P0 退出证据。 |
+| P0：产品架构与能力盘点 | 将产品形态参照转化为 Workbench 的角色/动作归属 | 完整当前能力盘点、动作政策模板、扫码语义台账、产品命名统一 | **已完成（2026-08-22）**：全量盘点记录于 [`CAPABILITY-INVENTORY.json`](../specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-INVENTORY.json)；结构化台账见 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)；跨端交接协议草案见 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)。 |
 | P1：Web 控制中心收敛 | 形成后台级信息架构 | Web 主导航、复杂管理页面优先级、桌面交互规范 | 核心管理员任务可在桌面端闭环，不需要借用移动交互。 |
 | P2：Mobile 角色执行收敛 | 让高频、即时、个人化任务安全闭环 | 待办、告警、审批、项目状态和安全扫码流程 | 每个 Mobile 写动作满足 B 级政策，C 级任务可无损交接 Web。 |
 | P3：共享动作合同与跨端连续性 | 让用户不丢失对象、状态和责任上下文 | 统一对象标识、服务端动作政策、登录后产品内交接入口、`handoff correlation id` | Web 和 Mobile 可从同一对象继续工作，最终状态由服务端一致返回。 |
@@ -224,6 +226,23 @@ DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是
 | Web legacy UI / `@epap/*` 兼容层影响视觉收敛 | 作为独立迁移议题，先完成消费者验证，不与产品定位变更捆绑。 |
 | 缺少本项目实际用户研究数据 | 本版是 Owner 方向、源码事实和公开产品形态的设计基线；P0 应补充管理员、值班和现场角色的任务访谈/可用性验证。 |
 | Mobile 推送、离线与设备安全能力未完全验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 |
+
+## 12. Open Questions 与解决计划
+
+| 问题 | 状态 | 解决计划 | 负责人 |
+| --- | --- | --- | --- |
+| 竞品功能表直接复制为需求 | 已防护 | 外部研究只提供角色分工和动作治理启发；每项 Workbench 能力需用户任务、业务价值和技术边界证据。 | 产品 Owner |
+| "移动端辅助"误解为"移动端不能完成工作" | 已防护 | 用动作等级决定能力：B 级可在满足政策时由 Mobile 闭环。 | 产品 Owner |
+| 所有重要操作一律锁在 Web | 已防护 | 按对象数、影响范围、授权、服务端重验、确认和审计判断，不按重要性单因素判断。 | 产品 Owner |
+| "扫码"继续掩盖不同安全模型 | 已防护 | 只保留 Mobile 领域审批与 Identity 登录确认两条受控流程；Web 不公开通用扫码。 | 产品 Owner |
+| 旧文档仍称移动端为五项底栏 | 已防护 | 以 4 项常驻导航 + Scan 动作为本期事实。 | 产品 Owner |
+| Web legacy UI 影响视觉收敛 | 待处理 | 作为独立迁移议题，先完成消费者验证，不与产品定位变更捆绑。 | 前端 Owner |
+| 缺少实际用户研究数据 | 待处理 | P0 应补充管理员、值班和现场角色的任务访谈/可用性验证。 | 产品 Owner |
+| Mobile 推送、离线与设备安全能力 | 待验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 | 产品 Owner + 安全 |
+| 交接超时 SLA 默认值 | 规划中 | 需确定不同场景的 SLA（HANDOFF-PROTOCOL.md 中已列 Open）。 | 产品 Owner |
+| 交接拒绝场景 | 规划中 | 用户拒绝处理时的状态流转（HANDOFF-PROTOCOL.md 中已列 Open）。 | 产品 Owner |
+| Web → Mobile 交接 | Reserved | 当前聚焦 Mobile → Web，P3 再考虑反向。 | 产品 Owner |
+| 批量交接语义 | 规划中 | 多对象交接的打包语义（HANDOFF-PROTOCOL.md 中已列 Open）。 | 产品 Owner |
 
 ## 13. 可追溯文档
 

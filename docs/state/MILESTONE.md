@@ -16,6 +16,7 @@ in its dedicated tools.
 - Status: Delivered — P0–P5 implemented on 2026-08-09
 - Evidence: `CAPABILITY-INVENTORY.json` records 17 current Web/Mobile/Host capability groups and is enforced by `pnpm check:capabilities`; Web navigation is grouped by control object, its `运行状态` and `工作项` surfaces consume the Control Plane projection, and generic desktop scanning is excluded; Mobile projects, workspace and search consume the authenticated Control Plane projection and never fall back to static business data; `ApprovalScanPreview` / `MobileApprovalDecision` / `HandoffContext` contracts, Gateway proxying, Control Plane audit tests and `/admin/handoff/:id` implement C/D continuation; DevSvc hosted specialist entries declare Owner, authorization, audit and fallback.
 - Exit criteria: Met for this batch. New user-facing work now updates the machine-checked inventory and retains separate Web/Mobile browser acceptance, Gateway/Control Plane policy tests, and host execution-boundary metadata.
+- 2026-08-22 更新：完成能力台账结构化文档 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)，包含 Web 管理控制中心能力清单（10 项）、Mobile 角色执行端能力清单（7 项）、跨端交接能力（4 场景）；发布跨端交接协议草案 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)，定义 Correlation ID 格式（`HF-{timestamp}-{uuid}`）和状态机（`created → delivered → accepted → completed/failed/expired`）。
 
 ## Milestone 1: Documentation Baseline
 
