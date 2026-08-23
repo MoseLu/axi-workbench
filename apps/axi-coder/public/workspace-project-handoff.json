@@ -1,12 +1,12 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-08-17T02:38:25.812Z",
+  "generatedAt": "2026-08-23T01:40:24.751Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 20,
-    "verified": 5,
+    "verified": 18,
     "documented": 0,
-    "stale": 13,
+    "stale": 0,
     "unready": 2
   },
   "projects": [
@@ -17,18 +17,14 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-agent-platform/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-agent-platform/docs/HANDOFF.md",
       "graphId": "axi-agent-platform",
       "graphMatched": true,
-      "errors": [
-        "verification is stale: 60 days old (max 30)"
-      ],
-      "warnings": [
-        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-agent-platform/docs/state/VERIFICATION.md"
-      ],
+      "errors": [],
+      "warnings": [],
       "summary": "Multi-agent collaboration platform combining a FastAPI backend, React dashboard, SubAgent worktree isolation, an MCP model swarm, and the Axi Todo tool.",
       "commands": {
         "setup": [
@@ -71,7 +67,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-artboard",
@@ -80,31 +76,43 @@
       "kind": "product",
       "lifecycle": "feature-stage",
       "owner": "libu",
-      "readiness": "unready",
-      "score": 0,
+      "readiness": "verified",
+      "score": 10,
       "manifestPath": "/Volumes/code/workspace/products/axi-artboard/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/products/axi-artboard/docs/HANDOFF.md",
       "graphId": "axi-artboard",
       "graphMatched": true,
-      "errors": [
-        "manifest file is missing"
+      "errors": [],
+      "warnings": [
+        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
       ],
-      "warnings": [],
-      "summary": "AxiomaticWorld artboard/canvas product. Feature stage: React 19 + Vite 8 + TypeScript with custom vite-plugin-source-attrs + OverlayCanvas (right-click pin + left-drag marquee) + window.__artboard.targets() debug API + ambient-language anchoring for agent iteration. First real feature shipped: agent-node-picker.",
+      "summary": "Single-page canvas / artboard frontend for the Axi Spun-out Products line.",
       "commands": {
-        "setup": [],
-        "start": [],
-        "health": [],
-        "verify": [],
-        "smoke": []
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev"
+        ],
+        "health": [
+          "test -f index.html"
+        ],
+        "verify": [
+          "pnpm build"
+        ],
+        "smoke": [
+          "pnpm dev --port 3000"
+        ]
       },
       "currentWork": {
-        "todo": "",
-        "milestone": "",
-        "active": [],
+        "todo": "AGENTS.md",
+        "milestone": "AGENTS.md",
+        "active": [
+          "Maintain canvas / artboard frontend."
+        ],
         "knownFailures": []
       },
-      "lastVerifiedAt": ""
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-docs",
@@ -113,16 +121,13 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-docs/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-docs/docs/HANDOFF.md",
       "graphId": "axi-docs",
       "graphMatched": true,
-      "errors": [
-        "readOrder must contain at most 5 item(s)",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
       "commands": {
@@ -139,7 +144,8 @@
         ],
         "verify": [
           "pnpm --dir app verify",
-          "pnpm --dir app test:run"
+          "pnpm --dir app test:run",
+          "pnpm --dir app rule:check"
         ],
         "smoke": [
           "pnpm --dir app docs:check",
@@ -159,7 +165,7 @@
           "Live Blinko, AI analysis, and OSS integrations require their corresponding external services and credentials."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-22"
     },
     {
       "id": "axi-feishu-codex-bridge",
@@ -168,19 +174,14 @@
       "kind": "tool",
       "lifecycle": "active-tool-local-runtime",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/HANDOFF.md",
       "graphId": "axi-feishu-codex-bridge",
       "graphMatched": true,
       "errors": [
-        "readOrder[3] path does not exist: TODO.md",
-        "readOrder[4] path does not exist: MILESTONE.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "decisions.changelog path does not exist: CHANGELOG.md",
-        "verification is stale: 60 days old (max 30)"
+        "decisions.changelog path does not exist: CHANGELOG.md"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/state/VERIFICATION.md"
@@ -207,8 +208,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Complete end-to-end smoke coverage for all three Codex execution surfaces.",
           "Add CI coverage for the unittest discovery command.",
@@ -219,7 +220,7 @@
           "Memory features are not fully healthy when PostgreSQL or Ollama is unavailable."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-image-preview",
@@ -235,10 +236,8 @@
       "graphId": "axi-image-preview",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-image-preview/docs/state/VERIFICATION.md"
-      ],
-      "summary": "Vite and React image preview UI with a local wallpaper library, a stdio MCP upload server, and a reserved macOS Swift desktop shell.",
+      "warnings": [],
+      "summary": "Browser preview app for the Axi Image Preview target — wallpaper gallery, MCP-backed my-wallpapers writes, and CSS-to-SCSS migration.",
       "commands": {
         "setup": [
           "pnpm install"
@@ -247,47 +246,41 @@
           "pnpm dev"
         ],
         "health": [
-          "curl -fsS http://127.0.0.1:5173/"
+          "test -f index.html"
         ],
         "verify": [
-          "pnpm build && pnpm test"
+          "pnpm build"
         ],
         "smoke": [
-          "pnpm build && pnpm test"
+          "pnpm dev --port 3001"
         ]
       },
       "currentWork": {
-        "todo": "docs/state/TODO.md",
-        "milestone": "docs/state/MILESTONE.md",
+        "todo": "TODO.md",
+        "milestone": "MILESTONE.md",
         "active": [
-          "Harden MCP source validation, remote download limits, and structured errors.",
-          "Add visual regression coverage and observable fetch manifests."
+          "Migrate CSS to SCSS across the gallery components.",
+          "Deduplicate wallpaper uploads via sha256.",
+          "Refresh my-wallpapers on silent reload."
         ],
-        "knownFailures": [
-          "Visual regression command and baseline are not implemented.",
-          "The macOS Swift shell remains a reserved, non-primary path."
-        ]
+        "knownFailures": []
       },
-      "lastVerifiedAt": "2026-07-22"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
-      "id": "axi-notify-mobile",
-      "name": "Axi Notify / Mobile",
+      "id": "axi-notify",
+      "name": "Axi Notify",
       "path": "/Volumes/code/workspace/projects/axi-notify",
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "hubu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-notify/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-notify/docs/HANDOFF.md",
       "graphId": "axi-notify",
       "graphMatched": true,
-      "errors": [
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-notify/VERIFICATION.md"
       ],
@@ -316,8 +309,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Desktop badge and unread summary",
           "Compose and React Native dynamic material pipeline",
@@ -329,7 +322,7 @@
           "Several planned security, health, schema, and Android tests listed in TODO.md are not implemented yet."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-pet",
@@ -338,19 +331,13 @@
       "kind": "project",
       "lifecycle": "active-local",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-pet/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-pet/docs/HANDOFF.md",
       "graphId": "axi-pet",
       "graphMatched": true,
-      "errors": [
-        "readOrder[3] path does not exist: PRD.md",
-        "readOrder[4] path does not exist: TDD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 67 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet/docs/state/VERIFICATION.md"
       ],
@@ -373,8 +360,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Keep the root documentation suite complete and current.",
           "Align verification guidance with the real monorepo surfaces.",
@@ -386,7 +373,7 @@
           "Feature services can require external providers and untracked credentials."
         ]
       },
-      "lastVerifiedAt": "2026-06-11"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-pet-desktop",
@@ -395,31 +382,44 @@
       "kind": "project",
       "lifecycle": "active-local",
       "owner": "libu",
-      "readiness": "unready",
-      "score": 0,
+      "readiness": "verified",
+      "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-pet-desktop/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-pet-desktop/docs/HANDOFF.md",
       "graphId": "axi-pet-desktop",
       "graphMatched": true,
-      "errors": [
-        "manifest file is missing"
+      "errors": [],
+      "warnings": [
+        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
       ],
-      "warnings": [],
-      "summary": "Independent Electron desktop monorepo extracted from axi-pet on 2026-06-18 (former apps/stage-tamagotchi). Owns the macOS-first desktop-pet app and a self-contained set of Stage/electron/contract packages. Namespace locked to @axi-pet-desktop/* (legacy @proj-airi/* packages migrated 2026-07-17). Remote publication pending owner sign-off (see remote_decision_pending). Lineage: fork of axi-pet, sharing the moeru-ai/airi upstream.",
+      "summary": "macOS desktop runtime for the Axi Pet virtual companion; Tauri shell plus React frontend.",
       "commands": {
-        "setup": [],
-        "start": [],
-        "health": [],
-        "verify": [],
-        "smoke": []
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm tauri dev"
+        ],
+        "health": [
+          "pnpm tauri info"
+        ],
+        "verify": [
+          "pnpm tauri build --debug"
+        ],
+        "smoke": [
+          "pnpm tauri info"
+        ]
       },
       "currentWork": {
-        "todo": "",
-        "milestone": "",
-        "active": [],
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Maintain the Tauri shell + React frontend sync.",
+          "Keep the desktop runtime aligned with the Web companion."
+        ],
         "knownFailures": []
       },
-      "lastVerifiedAt": ""
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-proxy-companion",
@@ -428,18 +428,13 @@
       "kind": "tool",
       "lifecycle": "active-tool",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/tools/axi-proxy-companion/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/tools/axi-proxy-companion/docs/HANDOFF.md",
       "graphId": "axi-proxy-companion",
       "graphMatched": true,
-      "errors": [
-        "readOrder[4] path does not exist: PRD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-proxy-companion/docs/state/VERIFICATION.md"
       ],
@@ -466,8 +461,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Keep the zero-context manifest aligned with backend definitions, local ports, runtime paths, and secret boundaries.",
           "Add visual regression coverage for the native dashboard when a suitable framework is adopted."
@@ -478,7 +473,7 @@
           "Cloudflare Worker deployment and EdgeTunnel installation require operator-provided local credentials and are not safe onboarding smoke tests."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-registry",
@@ -487,18 +482,13 @@
       "kind": "infra",
       "lifecycle": "active-infra",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/infra/axi-registry/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/infra/axi-registry/docs/HANDOFF.md",
       "graphId": "axi-registry",
       "graphMatched": true,
-      "errors": [
-        "readOrder[4] path does not exist: PRD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/infra/axi-registry/docs/state/VERIFICATION.md"
       ],
@@ -522,8 +512,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Keep the zero-context manifest aligned with actual commands and package contracts.",
           "Keep verification evidence fresh after runtime or documentation changes."
@@ -532,7 +522,7 @@
           "package.json does not define test or build scripts; documentation verification and the live health smoke are the current safe gates."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-rules",
@@ -595,19 +585,13 @@
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/shared/axi-skills/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/shared/axi-skills/docs/HANDOFF.md",
       "graphId": "axi-skills",
       "graphMatched": true,
-      "errors": [
-        "readOrder[3] path does not exist: TODO.md",
-        "readOrder[4] path does not exist: MILESTONE.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
       "commands": {
@@ -630,8 +614,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state.",
           "Keep the generated skill index and i18n batch manifest aligned with skills/.",
@@ -642,7 +626,53 @@
           "skills.zh/ is git-ignored and must not be treated as runtime source."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-soul-world",
+      "name": "Axi Soul World",
+      "path": "/Volumes/code/workspace/products/axi-soul-world",
+      "kind": "product",
+      "lifecycle": "active-product",
+      "owner": "Mose",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/axi-soul-world/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/axi-soul-world/docs/HANDOFF.md",
+      "graphId": "axi-soul-world",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "A multi-surface local-first product root with stable cross-runtime contracts, a local runtime boundary, and the Axi Mood Android record surface.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [
+          "test -f README.md && test -f PRD.md && test -f BACKEND_CONTRACT.md"
+        ],
+        "verify": [
+          "git diff --check",
+          "cd axi-mood-app/android && ./gradlew :app:checkDesignTokens",
+          "cd axi-mood-app/android && ./gradlew :app:testDebugUnitTest",
+          "cargo test --manifest-path axi-auth-helper/Cargo.toml"
+        ],
+        "smoke": [
+          "test -f axi-mood-app/android/gradlew && test -f axi-auth-helper/Cargo.toml"
+        ]
+      },
+      "currentWork": {
+        "todo": "TODO.md",
+        "milestone": "IMPLEMENTATION_PLAN.md",
+        "active": [
+          "Establish the canonical product repository and main/dev release workflow.",
+          "Keep the Axi Mood Android record flow aligned with the product contract.",
+          "Separate product-core and local-runtime work from future remote or host deployments."
+        ],
+        "knownFailures": [
+          "The formal C++ backend and Web BFF are contract-planned but not implemented in this repository."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-tauri-starter",
@@ -651,18 +681,14 @@
       "kind": "shared",
       "lifecycle": "active-shared-reference",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/HANDOFF.md",
       "graphId": "axi-tauri-starter",
       "graphMatched": true,
       "errors": [
-        "readOrder[4] path does not exist: PRD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "decisions.changelog path does not exist: CHANGELOG.md",
-        "verification is stale: 60 days old (max 30)"
+        "decisions.changelog path does not exist: CHANGELOG.md"
       ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/docs/state/VERIFICATION.md"
@@ -686,8 +712,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Keep the root documentation suite current.",
           "Keep cache-bootstrap verification aligned with the shell script."
@@ -697,7 +723,7 @@
           "This reference does not provide a runnable Tauri application by design."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-ui",
@@ -746,7 +772,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-07-23"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-video-downloader",
@@ -755,18 +781,13 @@
       "kind": "tool",
       "lifecycle": "active-tool",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/tools/axi-video-downloader/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/tools/axi-video-downloader/docs/HANDOFF.md",
       "graphId": "axi-video-downloader",
       "graphMatched": true,
-      "errors": [
-        "readOrder[4] path does not exist: PRD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Local Python tool that coordinates a Flask UI, Android device automation, mitmproxy capture, downloads, and SQLite tracking for personal-device video capture.",
       "commands": {
@@ -790,8 +811,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Keep the zero-context manifest aligned with the actual Python entrypoints and hardware prerequisites.",
           "Add a small automated pytest smoke test without requiring a connected device."
@@ -803,7 +824,7 @@
           "There is no automated pytest suite yet."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-workbench",
@@ -867,72 +888,19 @@
       "lastVerifiedAt": "2026-08-07"
     },
     {
-      "id": "axi-workspace-governance",
-      "name": "Axi Workspace Governance",
-      "path": "/Volumes/code/workspace/infra/axi-workspace-governance",
-      "kind": "axi-workspace-governance",
-      "lifecycle": "active-governance",
-      "owner": "",
-      "readiness": "stale",
-      "score": 10,
-      "manifestPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-docs.manifest.json",
-      "handoffPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/HANDOFF.md",
-      "graphId": "axi-workspace-governance",
-      "graphMatched": true,
-      "errors": [
-        "verification is stale: 60 days old (max 30)"
-      ],
-      "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
-      ],
-      "summary": "Workspace registry, relationship graph, generated catalog, zero-context handoff checks, and governance audit scripts.",
-      "commands": {
-        "setup": [
-          "pnpm install"
-        ],
-        "start": [],
-        "health": [
-          "pnpm workspace:audit"
-        ],
-        "verify": [
-          "pnpm handoff:test",
-          "pnpm completion:test"
-        ],
-        "smoke": [
-          "pnpm handoff:test && pnpm completion:test"
-        ]
-      },
-      "currentWork": {
-        "todo": "docs/state/TODO.md",
-        "milestone": "docs/state/MILESTONE.md",
-        "active": [
-          "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
-          "Maintain the task-execution-routing/v1 workflow-first contract."
-        ],
-        "knownFailures": []
-      },
-      "lastVerifiedAt": "2026-06-18"
-    },
-    {
       "id": "ielts-vocab",
       "name": "IELTS Vocabulary",
       "path": "/Volumes/code/workspace/products/ielts-vocab",
       "kind": "product",
       "lifecycle": "active-product",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/products/ielts-vocab/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/products/ielts-vocab/docs/HANDOFF.md",
       "graphId": "ielts-vocab",
       "graphMatched": true,
-      "errors": [
-        "readOrder[3] path does not exist: PRD.md",
-        "readOrder[4] path does not exist: TDD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/ielts-vocab/docs/state/VERIFICATION.md"
       ],
@@ -955,8 +923,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "backend/TODO.md",
+        "milestone": "docs/project-audit-2026-03-31.md",
         "active": [
           "Keep the deployed split backend stable.",
           "Complete final remote release, preflight, smoke, bounded storage drill, and closeout documentation."
@@ -966,7 +934,7 @@
           "Visual regression coverage for frontend components is not yet established."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "sports-management",
@@ -975,19 +943,13 @@
       "kind": "project",
       "lifecycle": "active-product",
       "owner": "hubu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/HANDOFF.md",
       "graphId": "sports-management",
       "graphMatched": true,
-      "errors": [
-        "readOrder[3] path does not exist: PRD.md",
-        "readOrder[4] path does not exist: TDD.md",
-        "currentWork.todo path does not exist: TODO.md",
-        "currentWork.milestone path does not exist: MILESTONE.md",
-        "verification is stale: 60 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Quasar and Vue 3 sports-management application skeleton with Pinia, Vue Router, Vue I18n, and a Capacitor Android wrapper; the backend directory is only a placeholder.",
       "commands": {
@@ -1008,8 +970,8 @@
         ]
       },
       "currentWork": {
-        "todo": "TODO.md",
-        "milestone": "MILESTONE.md",
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
         "active": [
           "Maintain a parseable, evidence-backed root documentation suite.",
           "Keep Quasar lint and build clean.",
@@ -1021,7 +983,7 @@
           "The application currently ships only the en-US locale."
         ]
       },
-      "lastVerifiedAt": "2026-06-18"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "story-graph",

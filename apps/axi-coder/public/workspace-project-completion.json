@@ -1,15 +1,15 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-08-17T02:38:25.812Z",
+  "generatedAt": "2026-08-23T01:40:24.751Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 35,
-    "axiTotal": 20,
+    "total": 36,
+    "axiTotal": 21,
     "complete": 1,
     "usableOrBetter": 9,
     "blocked": 0,
     "byStage": {
-      "unassessed": 24,
+      "unassessed": 25,
       "building": 2,
       "usable": 7,
       "complete": 1,
@@ -18,7 +18,7 @@
     "byConfidence": {
       "low": 19,
       "high": 6,
-      "medium": 10
+      "medium": 11
     }
   },
   "projects": [
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:legacy",
         "handoff:unready",
@@ -104,8 +104,8 @@
         "projects/axi-agent-platform/infra/axi-agent-transport/package.json (transport)",
         "projects/axi-agent-platform/infra/codex-remote-bridge/package.json (remote bridge)",
         "projects/axi-agent-platform/tools/axi-todo/package.json (local task ledger)",
-        "docs:partial",
-        "handoff:stale",
+        "docs:ready",
+        "handoff:verified",
         "verify:PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py | npm --prefix infra/axi-agent-mcp test | npm --prefix infra/axi-agent-transport test | npm --prefix infra/codex-remote-bridge test | npm --prefix tools/axi-todo test",
         "health:test -f backend/app/api/workstation.py | test -f infra/axi-agent-mcp/package.json | test -f infra/axi-agent-transport/package.json | test -f tools/axi-todo/package.json",
         "contracts:9"
@@ -113,11 +113,10 @@
       "remaining": [
         "Consolidate agent runtime completion evidence into project docs.",
         "Keep MCP/transport/bridge consumer checks green as Axi Coder grows.",
-        "Resolve graph node ID drift — fixed 2026-07-17 (was 'axi-agent', now 'axi-agent-platform' to match workspace.json).",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+        "Resolve graph node ID drift — fixed 2026-07-17 (was 'axi-agent', now 'axi-agent-platform' to match workspace.json)."
       ],
       "docs": {
-        "status": "partial",
+        "status": "ready",
         "present": [
           "README.md",
           "AGENTS.md",
@@ -127,18 +126,15 @@
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
-        ],
-        "missing": [
+          "docs/project-docs.manifest.json",
           "VERIFICATION.md"
-        ]
+        ],
+        "missing": []
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py",
@@ -183,8 +179,8 @@
         "products/axi-artboard/src/overlay/vite-plugin-source-attrs-ast.ts",
         "products/axi-artboard/src/overlay/{inspect,perception,source-map,server-perception}.ts",
         "products/axi-artboard/src/styles/** (full scss token/layout/component/theme tree)",
-        "docs:legacy",
-        "handoff:unready",
+        "docs:partial",
+        "handoff:verified",
         "verify:/Volumes/code/workspace/scripts/workspace-project validate | pnpm --dir /Volumes/code/workspace/products/axi-artboard build",
         "health:test -f /Volumes/code/workspace/products/axi-artboard/AGENTS.md | test -f /Volumes/code/workspace/products/axi-artboard/README.md | test -f /Volumes/code/workspace/products/axi-artboard/package.json | test -d /Volumes/code/workspace/products/axi-artboard/.git | curl -sS -m 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:5173/ | grep -q '^200$'",
         "contracts:9",
@@ -193,16 +189,16 @@
       "remaining": [
         "First non-overlay product feature (owner scope)",
         "GitHub remote (axiomaticworld/axi-artboard) when ready to publish",
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 TODO.md，让待办和里程碑可审计。",
         "补齐 MILESTONE.md，让待办和里程碑可审计。",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
-        "status": "legacy",
+        "status": "partial",
         "present": [
           "README.md",
-          "AGENTS.md"
+          "AGENTS.md",
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "CHANGELOG.md",
@@ -211,16 +207,13 @@
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
           "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "manifest file is missing"
-        ]
+        "status": "verified",
+        "score": 10,
+        "errors": []
       },
       "verify": [
         "/Volumes/code/workspace/scripts/workspace-project validate",
@@ -331,7 +324,7 @@
         "Workspace graph registers app verification and MCP/document contracts.",
         "Workspace governance docs are mirrored into the Axi Docs source tree.",
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:pnpm --dir app verify",
         "health:test -d app | test -f app/package.json",
         "contracts:4"
@@ -358,12 +351,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder must contain at most 5 item(s)",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "pnpm --dir app verify"
@@ -390,10 +380,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:unready",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
         "health:test -f pyproject.toml | test -d src/codex_feishu_bridge",
         "contracts:5"
@@ -419,15 +409,10 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "unready",
         "score": 10,
         "errors": [
-          "readOrder[3] path does not exist: TODO.md",
-          "readOrder[4] path does not exist: MILESTONE.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "decisions.changelog path does not exist: CHANGELOG.md",
-          "verification is stale: 60 days old (max 30)"
+          "decisions.changelog path does not exist: CHANGELOG.md"
         ]
       },
       "verify": [
@@ -479,13 +464,13 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json"
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
           "docs/PRD.md",
           "docs/TDD.md",
-          "VERIFICATION.md"
+          "docs/HANDOFF.md"
         ]
       },
       "handoff": {
@@ -592,7 +577,7 @@
         "Relay and local smoke verification are registered in the workspace graph.",
         "Axi Coder consumes Notify for mobile companion task and notification return paths.",
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:make test-relay | make smoke-relay-local",
         "health:make test-relay | test -d android-app/app | test -d donors/android-workspace-app | test -d donors/feiyu-agentflow",
         "contracts:7"
@@ -619,13 +604,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "make test-relay",
@@ -664,7 +645,7 @@
         "Local verification covers stage-web, stage-ui, and stage-layouts typechecks.",
         "13 packages confirmed using @proj-airi/* namespace (grep across apps/*/package.json + packages/*/package.json).",
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:[object Object] | [object Object] | [object Object]",
         "health:test -f package.json | test -d apps/stage-web | test -d packages/stage-ui",
         "contracts:7",
@@ -693,15 +674,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[3] path does not exist: PRD.md",
-          "readOrder[4] path does not exist: TDD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 67 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         {
@@ -756,7 +731,7 @@
         "pnpm -F @axi-pet-desktop/desktop-pet typecheck passes (tsc --noEmit, no output).",
         "workspace.graph.json contracts aligned to apps/desktop-pet on 2026-07-17.",
         "docs:partial",
-        "handoff:unready",
+        "handoff:verified",
         "verify:pnpm -F @axi-pet-desktop/desktop-pet typecheck | pnpm -F @axi-pet-desktop/desktop-pet test:run | pnpm -F @axi-pet-desktop/desktop-pet lint | pnpm typecheck",
         "health:test -f package.json | test -f pnpm-workspace.yaml | test -d apps/desktop-pet | test -d packages/stage-ui",
         "contracts:9",
@@ -766,7 +741,6 @@
         "Add GitHub remote + .github/workflows/* CI lane (P1, owner-approved).",
         "Lock contract package version-sync workflow with axi-pet (P1).",
         "Final deprecation PR to remove references/archives/axi-pet-desktop-stage-tamagotchi once downstream axi-pet imports are confirmed unused.",
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 MILESTONE.md，让待办和里程碑可审计。",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
@@ -776,23 +750,21 @@
           "README.md",
           "AGENTS.md",
           "TODO.md",
-          "docs/HANDOFF.md"
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
           "CHANGELOG.md",
           "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
-          "docs/project-docs.manifest.json",
           "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "manifest file is missing"
-        ]
+        "status": "verified",
+        "score": 10,
+        "errors": []
       },
       "verify": [
         "pnpm -F @axi-pet-desktop/desktop-pet typecheck",
@@ -829,10 +801,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:swift build",
         "health:swift build",
         "contracts:2"
@@ -858,14 +830,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[4] path does not exist: PRD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "swift build"
@@ -894,7 +861,7 @@
         "Workspace graph registers registry health verification.",
         "Axi UI declares the registry as its package distribution boundary.",
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:npm run health",
         "health:npm run health",
         "contracts:2"
@@ -921,14 +888,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[4] path does not exist: PRD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "npm run health"
@@ -952,7 +914,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1015,7 +977,7 @@
         "i18n verifier protects the English runtime source while tracking translation batch coverage.",
         "apm.yml exposes a focused zero-context bootstrap skill subset for cross-harness consumers.",
         "docs:ready",
-        "handoff:stale",
+        "handoff:verified",
         "verify:python3 scripts/verify.py | python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff | test -f apm.yml",
         "health:python3 scripts/verify.py",
         "contracts:13"
@@ -1040,15 +1002,9 @@
         "missing": []
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[3] path does not exist: TODO.md",
-          "readOrder[4] path does not exist: MILESTONE.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "python3 scripts/verify.py",
@@ -1075,6 +1031,79 @@
       ]
     },
     {
+      "id": "axi-soul-world",
+      "name": "Axi Soul World",
+      "path": "/Volumes/code/workspace/products/axi-soul-world",
+      "kind": "standalone-product",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "medium",
+      "confidenceLabel": "中",
+      "summary": "Axi Soul World is promoted to the canonical product path with its initial Git history, current source changes, product contracts, and Axi Mood Android surface preserved; local Rust and Android verification passed.",
+      "updatedAt": "2026-08-23",
+      "evidence": [
+        "products/axi-soul-world/AGENTS.md",
+        "products/axi-soul-world/docs/project-docs.manifest.json",
+        "products/axi-soul-world/BACKEND_CONTRACT.md",
+        "admissions/axi-soul-world.json",
+        "docs:partial",
+        "handoff:verified",
+        "verify:git diff --check | cd axi-mood-app/android && ./gradlew :app:checkDesignTokens | cd axi-mood-app/android && ./gradlew :app:testDebugUnitTest | cargo test --manifest-path axi-auth-helper/Cargo.toml",
+        "health:test -f /Volumes/code/workspace/products/axi-soul-world/README.md | test -f /Volumes/code/workspace/products/axi-soul-world/docs/project-docs.manifest.json | test -d /Volumes/code/workspace/products/axi-soul-world/.git",
+        "contracts:8"
+      ],
+      "remaining": [
+        "Run the Android device behavior flow and record state-specific evidence.",
+        "Retire the preserved incubation rollback checkout only after owner acceptance.",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "TODO.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": [
+          "CHANGELOG.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [
+        "git diff --check",
+        "cd axi-mood-app/android && ./gradlew :app:checkDesignTokens",
+        "cd axi-mood-app/android && ./gradlew :app:testDebugUnitTest",
+        "cargo test --manifest-path axi-auth-helper/Cargo.toml"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/products/axi-soul-world/README.md",
+        "test -f /Volumes/code/workspace/products/axi-soul-world/docs/project-docs.manifest.json",
+        "test -d /Volumes/code/workspace/products/axi-soul-world/.git"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "README.md",
+        "docs/HANDOFF.md",
+        "docs/project-docs.manifest.json",
+        "PRD.md",
+        "BACKEND_CONTRACT.md",
+        "axi-mood-app/android/app/build.gradle",
+        "axi-auth-helper/Cargo.toml"
+      ]
+    },
+    {
       "id": "axi-tauri-starter",
       "name": "Axi Tauri Starter",
       "path": "/Volumes/code/workspace/shared/axi-tauri-starter",
@@ -1085,10 +1114,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:unready",
         "verify:test -f scripts/tauri-env.sh",
         "health:test -f scripts/tauri-env.sh",
         "contracts:2"
@@ -1114,14 +1143,10 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "unready",
         "score": 10,
         "errors": [
-          "readOrder[4] path does not exist: PRD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "decisions.changelog path does not exist: CHANGELOG.md",
-          "verification is stale: 60 days old (max 30)"
+          "decisions.changelog path does not exist: CHANGELOG.md"
         ]
       },
       "verify": [
@@ -1214,10 +1239,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:python3 -m py_compile app.py",
         "health:test -f app.py",
         "contracts:3"
@@ -1241,14 +1266,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[4] path does not exist: PRD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "python3 -m py_compile app.py"
@@ -1382,7 +1402,11 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 60 days old (max 30)"
+          "readOrder[3] path does not exist: TODO.md",
+          "readOrder[4] path does not exist: MILESTONE.md",
+          "currentWork.todo path does not exist: TODO.md",
+          "currentWork.milestone path does not exist: MILESTONE.md",
+          "verification is stale: 66 days old (max 30)"
         ]
       },
       "verify": [
@@ -1408,7 +1432,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1465,7 +1489,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1524,7 +1548,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1584,7 +1608,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1695,7 +1719,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1753,7 +1777,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1861,10 +1885,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
         "health:pnpm --dir frontend verify:repo-guards",
         "contracts:4",
@@ -1891,15 +1915,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[3] path does not exist: PRD.md",
-          "readOrder[4] path does not exist: TDD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "pnpm --dir frontend verify:repo-guards",
@@ -1926,7 +1944,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1987,7 +2005,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2044,7 +2062,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2101,7 +2119,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2165,10 +2183,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:pnpm test",
         "health:test -f package.json",
         "contracts:3",
@@ -2193,15 +2211,9 @@
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[3] path does not exist: PRD.md",
-          "readOrder[4] path does not exist: TDD.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 60 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "pnpm test"
@@ -2299,7 +2311,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-17T02:38:25.812Z",
+      "updatedAt": "2026-08-23T01:40:24.751Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
