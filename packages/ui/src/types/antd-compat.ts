@@ -4,7 +4,7 @@
  * 为 @mpms/ui 添加与 Ant Design 组件类型兼容的定义
  * 提供与 Ant Design API 兼容的类型，使得从 Ant Design 迁移更顺畅
  */
-import type { ComponentProps, CSSProperties, ReactNode, ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 // Re-export all compatibility types
 export * from './index';
