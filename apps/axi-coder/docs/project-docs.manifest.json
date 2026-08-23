@@ -1,0 +1,92 @@
+{
+  "version": 2,
+  "project": "axi-model-gateway",
+  "name": "Axi Model Gateway",
+  "status": "verified",
+  "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
+  "kind": "infrastructure-contract-consumed-by-axi-coder",
+  "lifecycle": "active",
+  "owner": "Axi Core Projects",
+  "summary": "Provider / profile / local proxy contract consumed by Axi Coder.",
+  "readOrder": [
+    "README.md",
+    "AGENTS.md",
+    "CHANGE.md"
+  ],
+  "documents": {
+    "readme": "README.md",
+    "agents": "AGENTS.md",
+    "change": "CHANGE.md",
+    "manifest": "docs/project-docs.manifest.json"
+  },
+  "entrypoints": [
+    {
+      "id": "manifest-only",
+      "path": "README.md",
+      "purpose": "Anchor file referenced by the synthetic manifest; no live entrypoint yet."
+    }
+  ],
+  "commands": {
+    "setup": [],
+    "start": [],
+    "health": [
+      "test -d /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder"
+    ],
+    "verify": [
+      "test -f /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder/README.md"
+    ],
+    "smoke": [
+      "test -f /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder/README.md"
+    ]
+  },
+  "contracts": {
+    "provides": [
+      "infrastructure-contract-consumed-by-axi-coder"
+    ],
+    "consumes": [],
+    "files": [
+      "README.md"
+    ]
+  },
+  "troubleshooting": [],
+  "decisions": {
+    "linkedAdrs": [
+      "ADR-006",
+      "ADR-007"
+    ],
+    "supersedes": [],
+    "notes": "Synthetic manifest authored 2026-08-23 to satisfy handoff-check for nested / contract-placeholder projects that are not registered in governance/workspace.json but exist in workspace.graph.json. See ADR-007 alias contract.",
+    "changelog": "CHANGE.md",
+    "adr": "",
+    "submitLog": ""
+  },
+  "owners": {
+    "product": "Axi Core Projects",
+    "docsAgent": "control-plane AgentTask"
+  },
+  "currentWork": {
+    "todo": "README.md",
+    "milestone": "README.md",
+    "active": [],
+    "knownFailures": []
+  },
+  "environment": {
+    "runtimes": [],
+    "services": [],
+    "variables": []
+  },
+  "verification": {
+    "status": "verified",
+    "lastVerifiedAt": "2026-08-23",
+    "commands": [
+      "test -d /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder"
+    ],
+    "evidence": [
+      "synthetic manifest authored 2026-08-23"
+    ]
+  },
+  "writer": "governance auto-remediation 2026-08-23",
+  "source": "workspace-remediation 2026-08-23",
+  "created": "2026-08-23",
+  "updated": "2026-08-23"
+}
