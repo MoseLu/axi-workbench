@@ -1,61 +1,128 @@
 {
   "version": 2,
   "project": "axi-model-gateway",
-  "name": "Axi Model Gateway",
+  "name": "Axi Coder (axi-model-gateway contract alias)",
   "status": "verified",
   "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
-  "kind": "infrastructure-contract-consumed-by-axi-coder",
+  "kind": "full-development-workbench",
   "lifecycle": "active",
   "owner": "Axi Core Projects",
-  "summary": "Provider / profile / local proxy contract consumed by Axi Coder.",
+  "summary": "Axi Coder development workbench with a grandfathered axi-model-gateway provider contract alias at the same physical path.",
   "readOrder": [
     "README.md",
     "AGENTS.md",
-    "CHANGE.md"
+    "CHANGE.md",
+    "VERIFICATION.md",
+    "docs/project-docs.manifest.json"
   ],
   "documents": {
     "readme": "README.md",
     "agents": "AGENTS.md",
     "change": "CHANGE.md",
+    "handoff": "docs/HANDOFF.md",
+    "verification": "VERIFICATION.md",
     "manifest": "docs/project-docs.manifest.json"
   },
   "entrypoints": [
     {
-      "id": "manifest-only",
-      "path": "README.md",
-      "purpose": "Anchor file referenced by the synthetic manifest; no live entrypoint yet."
+      "id": "hosted-react-app",
+      "path": "src/main.tsx",
+      "purpose": "Hosted and desktop React application entrypoint."
+    },
+    {
+      "id": "product-contract",
+      "path": "src/features/product/axiCoderProductSurface.ts",
+      "purpose": "Axi Coder capability and consumer contract surface."
+    },
+    {
+      "id": "provider-routing",
+      "path": "src/features/providers/axiProviderProfile.ts",
+      "purpose": "Provider profile, credential reference, and model-routing contract."
+    },
+    {
+      "id": "tauri-runtime",
+      "path": "src-tauri/src/main.rs",
+      "purpose": "Tauri desktop runtime and native command surface."
     }
   ],
   "commands": {
-    "setup": [],
-    "start": [],
+    "setup": [
+      "pnpm install"
+    ],
+    "start": [
+      "pnpm dev",
+      "pnpm tauri dev"
+    ],
     "health": [
-      "test -d /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder"
+      "test -f package.json",
+      "test -f README.md",
+      "test -f AGENTS.md",
+      "test -f VERIFICATION.md"
     ],
     "verify": [
-      "test -f /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder/README.md"
+      "pnpm typecheck",
+      "pnpm test",
+      "pnpm build",
+      "cargo check --manifest-path src-tauri/Cargo.toml --offline",
+      "cargo test --manifest-path src-tauri/Cargo.toml --offline"
     ],
     "smoke": [
-      "test -f /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder/README.md"
+      "pnpm typecheck && pnpm test"
     ]
   },
   "contracts": {
     "provides": [
-      "infrastructure-contract-consumed-by-axi-coder"
+      "project-development-workbench",
+      "mac-desktop-client",
+      "mobile-companion-client",
+      "cli-orchestration",
+      "agent-task-console",
+      "model-routing-adapter",
+      "terminal-sessions",
+      "artifact-review",
+      "provider-profile-contract",
+      "credential-ref-routing",
+      "cli-compatible-model-proxy"
     ],
-    "consumes": [],
+    "consumes": [
+      "axi-workbench",
+      "axi-agent-platform",
+      "axi-accounts",
+      "axi-notify",
+      "ai-capability",
+      "ollama-local",
+      "minimax-tokenplan",
+      "sub2api"
+    ],
     "files": [
-      "README.md"
+      "README.md",
+      "package.json",
+      "src/features/product/axiCoderProductSurface.ts",
+      "src/features/product/axiCoderWorkspaceE2E.test.ts",
+      "src/features/providers/axiProviderProfile.ts",
+      "src-tauri/src/proxy/mod.rs",
+      "src-tauri/src/commands.rs"
     ]
   },
-  "troubleshooting": [],
+  "troubleshooting": [
+    {
+      "symptom": "Hosted dashboard starts but native commands are unavailable.",
+      "diagnosis": "The browser-hosted mode is running without the Tauri runtime.",
+      "resolution": "Use AXI_APP_BASE / AXI_APP_PORT and the browser-safe fallback; use pnpm tauri dev for native command verification."
+    },
+    {
+      "symptom": "Provider requests fail before reaching the configured model.",
+      "diagnosis": "Provider profile, credential reference, or local proxy routing is invalid.",
+      "resolution": "Run the provider profile tests and inspect the local diagnostic category; never store the raw API key in SQLite or Git."
+    }
+  ],
   "decisions": {
     "linkedAdrs": [
       "ADR-006",
       "ADR-007"
     ],
     "supersedes": [],
-    "notes": "Synthetic manifest authored 2026-08-23 to satisfy handoff-check for nested / contract-placeholder projects that are not registered in governance/workspace.json but exist in workspace.graph.json. See ADR-007 alias contract.",
+    "notes": "Axi Coder is the actual product at this path. axi-model-gateway is a grandfathered contract alias, not a second project; see ADR-007.",
     "changelog": "CHANGE.md",
     "adr": "",
     "submitLog": ""
@@ -67,26 +134,56 @@
   "currentWork": {
     "todo": "README.md",
     "milestone": "README.md",
-    "active": [],
+    "active": [
+      "Keep the completion panel wired to generated workspace evidence.",
+      "Keep the Mac desktop, hosted browser, and mobile companion contracts aligned.",
+      "Keep provider routing and credential references separate from the Axi Coder product identity."
+    ],
     "knownFailures": []
   },
   "environment": {
-    "runtimes": [],
-    "services": [],
-    "variables": []
+    "runtimes": [
+      "Node.js 20+",
+      "pnpm 10.33.2",
+      "Rust/Cargo",
+      "Tauri 2"
+    ],
+    "services": [
+      "local proxy on 127.0.0.1:15721 when enabled"
+    ],
+    "variables": [
+      {
+        "name": "AXI_APP_BASE",
+        "required": false,
+        "secret": false,
+        "source": "Hosted dashboard profile or local process environment"
+      },
+      {
+        "name": "AXI_APP_PORT",
+        "required": false,
+        "secret": false,
+        "source": "Hosted dashboard profile or local process environment"
+      }
+    ]
   },
   "verification": {
     "status": "verified",
     "lastVerifiedAt": "2026-08-23",
     "commands": [
-      "test -d /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder"
+      "pnpm typecheck",
+      "pnpm test",
+      "pnpm build",
+      "cargo check --manifest-path src-tauri/Cargo.toml --offline",
+      "cargo test --manifest-path src-tauri/Cargo.toml --offline"
     ],
     "evidence": [
-      "synthetic manifest authored 2026-08-23"
+      "Project-owned AGENTS.md, CHANGE.md, VERIFICATION.md, and manifest restored on 2026-08-23.",
+      "2026-08-23: pnpm typecheck, pnpm test (7 files, 14 tests), pnpm build, cargo check --offline, and cargo test --offline (19 tests) passed.",
+      "The manifest preserves the axi-model-gateway alias contract while describing the actual Axi Coder runtime."
     ]
   },
-  "writer": "governance auto-remediation 2026-08-23",
-  "source": "workspace-remediation 2026-08-23",
+  "writer": "axi-coder project handoff remediation",
+  "source": "project-owned handoff remediation 2026-08-23",
   "created": "2026-08-23",
   "updated": "2026-08-23"
 }

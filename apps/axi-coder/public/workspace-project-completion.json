@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-08-23T01:40:24.751Z",
+  "generatedAt": "2026-08-23T07:11:10.851Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 36,
@@ -33,43 +33,40 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
-        "docs:legacy",
-        "handoff:unready",
+        "docs:partial",
+        "handoff:verified",
         "verify:test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md",
         "health:test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md",
         "contracts:2"
       ],
       "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 TODO.md，让待办和里程碑可审计。",
         "补齐 MILESTONE.md，让待办和里程碑可审计。",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
-        "status": "legacy",
+        "status": "partial",
         "present": [
-          "README.md"
+          "README.md",
+          "AGENTS.md",
+          "docs/project-docs.manifest.json"
         ],
         "missing": [
-          "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
           "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
           "VERIFICATION.md"
         ]
       },
       "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "manifest file is missing"
-        ]
+        "status": "verified",
+        "score": 10,
+        "errors": []
       },
       "verify": [
         "test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md"
@@ -198,6 +195,7 @@
         "present": [
           "README.md",
           "AGENTS.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
@@ -206,7 +204,6 @@
           "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md",
-          "docs/HANDOFF.md",
           "VERIFICATION.md"
         ]
       },
@@ -253,8 +250,8 @@
       "evidence": [
         "Product surface and workspace E2E contract tests define the Axi Coder capability boundary.",
         "Hosted dashboard registration exposes Axi Coder under /apps/axi-coder/overview.",
-        "docs:legacy",
-        "handoff:unready",
+        "docs:partial",
+        "handoff:verified",
         "verify:pnpm typecheck | pnpm test",
         "health:test -f package.json | test -f src/features/product/axiCoderProductSurface.ts",
         "contracts:5",
@@ -263,34 +260,30 @@
       "remaining": [
         "Keep the completion panel wired to generated workspace evidence.",
         "Add native Tauri completion command only if the static snapshot stops being sufficient.",
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 TODO.md，让待办和里程碑可审计。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+        "补齐 MILESTONE.md，让待办和里程碑可审计。"
       ],
       "docs": {
-        "status": "legacy",
+        "status": "partial",
         "present": [
-          "README.md"
+          "README.md",
+          "AGENTS.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
-          "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "manifest file is missing"
-        ]
+        "status": "verified",
+        "score": 10,
+        "errors": []
       },
       "verify": [
         "pnpm typecheck",
@@ -380,7 +373,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -464,13 +457,13 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
+          "docs/HANDOFF.md",
           "docs/project-docs.manifest.json",
           "VERIFICATION.md"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
@@ -510,8 +503,8 @@
       "evidence": [
         "ProviderProfile tests guard credential-ref routing without plaintext secrets.",
         "Axi Coder proxy handles OpenAI, Claude Messages, and Gemini request shapes.",
-        "docs:legacy",
-        "handoff:unready",
+        "docs:partial",
+        "handoff:verified",
         "verify:pnpm typecheck",
         "health:test -f src/features/providers/axiProviderProfile.ts | test -f src-tauri/src/proxy/mod.rs",
         "contracts:3",
@@ -519,34 +512,30 @@
       ],
       "remaining": [
         "Keep gateway status as an infrastructure contract, not a separate product UI.",
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
         "补齐 TODO.md，让待办和里程碑可审计。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+        "补齐 MILESTONE.md，让待办和里程碑可审计。"
       ],
       "docs": {
-        "status": "legacy",
+        "status": "partial",
         "present": [
-          "README.md"
+          "README.md",
+          "AGENTS.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
-          "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "manifest file is missing"
-        ]
+        "status": "verified",
+        "score": 10,
+        "errors": []
       },
       "verify": [
         "pnpm typecheck"
@@ -801,7 +790,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -914,7 +903,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1114,7 +1103,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1239,7 +1228,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1372,14 +1361,13 @@
         "workspace:docs:sync generates catalog and completion docs.",
         "workspace-project validate remains the root graph sanity check.",
         "docs:partial",
-        "handoff:stale",
+        "handoff:verified",
         "verify:pnpm workspace:audit",
         "health:test -f /Volumes/code/workspace/infra/axi-workspace-governance/workspace.json",
         "contracts:3"
       ],
       "remaining": [
-        "Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves.",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+        "Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves."
       ],
       "docs": {
         "status": "partial",
@@ -1389,25 +1377,19 @@
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
-          "docs/project-docs.manifest.json"
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
         ],
         "missing": [
           "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md",
-          "VERIFICATION.md"
+          "docs/TDD.md"
         ]
       },
       "handoff": {
-        "status": "stale",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "readOrder[3] path does not exist: TODO.md",
-          "readOrder[4] path does not exist: MILESTONE.md",
-          "currentWork.todo path does not exist: TODO.md",
-          "currentWork.milestone path does not exist: MILESTONE.md",
-          "verification is stale: 66 days old (max 30)"
-        ]
+        "errors": []
       },
       "verify": [
         "pnpm workspace:audit"
@@ -1432,7 +1414,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1489,7 +1471,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1548,7 +1530,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1608,7 +1590,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1719,7 +1701,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1777,7 +1759,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1885,7 +1867,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1944,7 +1926,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2005,7 +1987,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2062,7 +2044,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2119,7 +2101,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2183,7 +2165,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2311,7 +2293,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T01:40:24.751Z",
+      "updatedAt": "2026-08-23T07:11:10.851Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",

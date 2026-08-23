@@ -58,7 +58,7 @@ describe("Axi Coder workspace E2E contract", () => {
       ]),
     );
     expect(axiCoder.consumes).toEqual(
-      expect.arrayContaining(["axi-workbench", "axi-agent", "axi-model-gateway", "axi-accounts", "axi-notify"]),
+      expect.arrayContaining(["axi-workbench", "axi-agent-platform", "axi-model-gateway", "axi-accounts", "axi-notify"]),
     );
     expect(axiCoder.completion).toMatchObject({
       stage: "building",

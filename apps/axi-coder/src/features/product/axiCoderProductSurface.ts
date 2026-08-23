@@ -37,7 +37,7 @@ export const AXI_CODER_PRODUCT_SURFACE: AxiCoderProductSurface = {
   ],
   consumesContracts: [
     "axi-workbench",
-    "axi-agent",
+    "axi-agent-platform",
     "axi-model-gateway",
     "axi-accounts",
     "axi-notify",

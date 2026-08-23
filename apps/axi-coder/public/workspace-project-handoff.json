@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-08-23T01:40:24.751Z",
+  "generatedAt": "2026-08-23T07:11:10.851Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
-    "total": 20,
-    "verified": 18,
+    "total": 21,
+    "verified": 19,
     "documented": 0,
     "stale": 0,
     "unready": 2
@@ -84,7 +84,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/axi-artboard/VERIFICATION.md"
       ],
       "summary": "Single-page canvas / artboard frontend for the Axi Spun-out Products line.",
       "commands": {
@@ -390,7 +390,7 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [
-        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet-desktop/VERIFICATION.md"
       ],
       "summary": "macOS desktop runtime for the Axi Pet virtual companion; Tauri shell plus React frontend.",
       "commands": {
@@ -665,6 +665,7 @@
         "milestone": "IMPLEMENTATION_PLAN.md",
         "active": [
           "Establish the canonical product repository and main/dev release workflow.",
+          "Refine the Axi Mood Android Todo module with conventional filters, sections, progress, and task-row states.",
           "Keep the Axi Mood Android record flow aligned with the product contract.",
           "Separate product-core and local-runtime work from future remote or host deployments."
         ],
@@ -886,6 +887,51 @@
         ]
       },
       "lastVerifiedAt": "2026-08-07"
+    },
+    {
+      "id": "axi-workspace-governance",
+      "name": "Axi Workspace Governance",
+      "path": "/Volumes/code/workspace/infra/axi-workspace-governance",
+      "kind": "axi-workspace-governance",
+      "lifecycle": "active-governance",
+      "owner": "",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/HANDOFF.md",
+      "graphId": "axi-workspace-governance",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+      ],
+      "summary": "Workspace registry, relationship graph, generated catalog, zero-context handoff checks, and governance audit scripts.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [],
+        "health": [
+          "pnpm workspace:audit"
+        ],
+        "verify": [
+          "pnpm handoff:test",
+          "pnpm completion:test"
+        ],
+        "smoke": [
+          "pnpm handoff:test && pnpm completion:test"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
+          "Maintain the task-execution-routing/v1 workflow-first contract."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "ielts-vocab",
