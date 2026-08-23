@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-08-23T07:11:10.851Z",
+  "generatedAt": "2026-08-23T09:21:12.508Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 21,
@@ -83,9 +83,7 @@
       "graphId": "axi-artboard",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/axi-artboard/VERIFICATION.md"
-      ],
+      "warnings": [],
       "summary": "Single-page canvas / artboard frontend for the Axi Spun-out Products line.",
       "commands": {
         "setup": [
@@ -389,32 +387,31 @@
       "graphId": "axi-pet-desktop",
       "graphMatched": true,
       "errors": [],
-      "warnings": [
-        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet-desktop/VERIFICATION.md"
-      ],
-      "summary": "macOS desktop runtime for the Axi Pet virtual companion; Tauri shell plus React frontend.",
+      "warnings": [],
+      "summary": "macOS desktop runtime for the Axi Pet virtual companion; Electron shell plus React frontend.",
       "commands": {
         "setup": [
           "pnpm install"
         ],
         "start": [
-          "pnpm tauri dev"
+          "pnpm dev"
         ],
         "health": [
-          "pnpm tauri info"
+          "test -f apps/desktop-pet/electron.vite.config.ts"
         ],
         "verify": [
-          "pnpm tauri build --debug"
+          "pnpm typecheck",
+          "pnpm -F @axi-pet-desktop/desktop-pet test:run"
         ],
         "smoke": [
-          "pnpm tauri info"
+          "pnpm -F @axi-pet-desktop/desktop-pet e2e:linux"
         ]
       },
       "currentWork": {
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
-          "Maintain the Tauri shell + React frontend sync.",
+          "Maintain the Electron shell + React frontend sync.",
           "Keep the desktop runtime aligned with the Web companion."
         ],
         "knownFailures": []
