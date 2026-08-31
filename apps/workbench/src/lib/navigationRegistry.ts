@@ -41,6 +41,16 @@ export type WorkbenchNavGroup = {
 
 export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
   {
+    key: 'personal-os',
+    label: '个人操作系统',
+    labelKey: 'nav.group.personalOs',
+    iconName: axiWorkbenchIconMap.overview,
+    children: [
+      { key: '/admin/personal-os/today', label: '今日', labelKey: 'personalOs.nav.today', iconName: axiWorkbenchIconMap.overview },
+      { key: '/admin/personal-os/workbench', label: '项目队列', labelKey: 'personalOs.nav.workbench', iconName: axiWorkbenchIconMap.project },
+    ],
+  },
+  {
     key: 'overview',
     label: '概览',
     labelKey: 'nav.group.overview',
@@ -94,6 +104,8 @@ export interface MenuRoute {
  * and assigns `labelKey` to the active tab. The renderer calls `t(labelKey)`.
  */
 export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
+  '/admin/personal-os/today': { label: '今日', labelKey: 'personalOs.nav.today' },
+  '/admin/personal-os/workbench': { label: '项目队列', labelKey: 'personalOs.nav.workbench' },
   '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard' },
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations' },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects' },

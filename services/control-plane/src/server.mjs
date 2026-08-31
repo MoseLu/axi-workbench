@@ -28,7 +28,7 @@ export function createControlPlaneHttpServer({
       const headers = {
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token, X-Axi-QR-Poll-Token",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, OPTIONS",
         "Vary": "Origin",
       };
       const origin = res.req && res.req.headers && typeof res.req.headers.origin === "string" ? res.req.headers.origin : "";
@@ -57,7 +57,7 @@ export function createControlPlaneHttpServer({
         "Content-Type": "application/json; charset=utf-8",
         "X-Idempotency-Replay": "true",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token, X-Axi-QR-Poll-Token",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, OPTIONS",
         "Vary": "Origin",
       };
       const origin = res.req && res.req.headers && typeof res.req.headers.origin === "string" ? res.req.headers.origin : "";
@@ -231,6 +231,58 @@ export function createControlPlaneHttpServer({
     // already passed the gateway identity and internal-token checks.
     if (gatewayWebAuth && req.method === "GET" && url.pathname === "/snapshot") {
       return sendJson(res, 200, controlPlane.snapshot(), url);
+    }
+    const personalOsPath = url.pathname === "/personal-os" || url.pathname.startsWith("/personal-os/");
+    if (personalOsPath) {
+      if (!controlPlane.personalOs) return sendJson(res, 503, { error: "personal OS is not configured" }, url);
+      const personalOsAuth = gatewayWebAuth ? { ok: true, source: "gateway_web" } : authenticateCoreRequest(req, coreApiToken);
+      if (!personalOsAuth.ok) return sendJson(res, 401, { error: personalOsAuth.error }, url);
+
+      if (req.method === "GET" && url.pathname === "/personal-os/queue") {
+        try {
+          return sendJson(res, 200, await controlPlane.personalOs.getQueue({
+            view: url.searchParams.get("view") || "all",
+            query: url.searchParams.get("query") || url.searchParams.get("q") || "",
+            partition: url.searchParams.get("partition") || "",
+          }), url);
+        } catch (error) {
+          return sendPersonalOsError(sendJson, res, error, url);
+        }
+      }
+
+      const personalOsProjectMatch = url.pathname.match(/^\/personal-os\/projects\/([^/]+)$/);
+      if (personalOsProjectMatch && req.method === "GET") {
+        try {
+          return sendJson(res, 200, await controlPlane.personalOs.getProject(decodeURIComponent(personalOsProjectMatch[1])), url);
+        } catch (error) {
+          return sendPersonalOsError(sendJson, res, error, url);
+        }
+      }
+      if (personalOsProjectMatch && req.method === "PATCH") {
+        const body = await readJsonBody(req);
+        const validation = validatePersonalOsPatch(body);
+        if (!validation.ok) return sendJson(res, 400, { error: validation.error }, url);
+        try {
+          return sendJson(res, 200, await controlPlane.personalOs.updateProject(decodeURIComponent(personalOsProjectMatch[1]), body), url);
+        } catch (error) {
+          return sendPersonalOsError(sendJson, res, error, url);
+        }
+      }
+
+      if (req.method === "GET" && url.pathname === "/personal-os/focus") {
+        return sendJson(res, 200, await controlPlane.personalOs.getFocus(), url);
+      }
+      if (req.method === "PUT" && url.pathname === "/personal-os/focus") {
+        const body = await readJsonBody(req);
+        const validation = validatePersonalOsFocus(body);
+        if (!validation.ok) return sendJson(res, 400, { error: validation.error }, url);
+        try {
+          return sendJson(res, 200, await controlPlane.personalOs.updateFocus(body), url);
+        } catch (error) {
+          return sendPersonalOsError(sendJson, res, error, url);
+        }
+      }
+      return sendJson(res, 404, { error: "personal OS endpoint not found" }, url);
     }
     // Mobile public traffic reaches this process only through API Gateway.
     // Gateway changes /api/v1/mobile/* to /internal/mobile/v1/* and injects
@@ -552,6 +604,9 @@ export function createControlPlaneHttpServer({
     }
     return sendJson(res, 404, { error: "not found" }, url);
   } catch (error) {
+    if (url?.pathname?.startsWith("/personal-os")) {
+      return sendPersonalOsError(sendJson, res, error, url);
+    }
     return sendJson(res, 500, { error: "control-plane error", message: error?.message || String(error) }, url);
   }
   });
@@ -640,6 +695,35 @@ function validateMobileApprovalScanDecision(body) {
   const unknown = Object.keys(body).filter((key) => !allowed.has(key));
   if (unknown.length) return { ok: false, error: `approval scan decision accepts only decision, idempotencyKey, handoffCorrelationId; unsupported: ${unknown.join(", ")}` };
   return { ok: true };
+}
+
+function validatePersonalOsPatch(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return { ok: false, error: "request body must be a JSON object" };
+  const allowed = new Set(["lifecycleOverride", "finishLine", "usesAxiUi", "revision"]);
+  const unknown = Object.keys(body).filter((key) => !allowed.has(key));
+  if (unknown.length) return { ok: false, error: `unsupported personal OS field(s): ${unknown.join(", ")}` };
+  if (!Object.hasOwn(body, "revision")) return { ok: false, error: "revision is required" };
+  return { ok: true };
+}
+
+function validatePersonalOsFocus(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return { ok: false, error: "request body must be a JSON object" };
+  const allowed = new Set(["projectId", "revision"]);
+  const unknown = Object.keys(body).filter((key) => !allowed.has(key));
+  if (unknown.length) return { ok: false, error: `unsupported personal OS focus field(s): ${unknown.join(", ")}` };
+  if (!Object.hasOwn(body, "revision")) return { ok: false, error: "revision is required" };
+  if (body.projectId !== null && typeof body.projectId !== "string") return { ok: false, error: "projectId must be a string or null" };
+  return { ok: true };
+}
+
+function sendPersonalOsError(sendJson, res, error, url) {
+  const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+  const body = {
+    error: error?.code || "personal_os_error",
+    message: statusCode >= 500 ? "personal OS request failed" : error?.message || "personal OS request rejected",
+  };
+  if (statusCode === 409 && error?.current) body.current = error.current;
+  return sendJson(res, statusCode, body, url);
 }
 
 async function readJsonBody(req) {

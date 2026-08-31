@@ -35,6 +35,7 @@ import {
   workbenchMenuRouteMap,
 } from '../lib/navigationRegistry';
 import { loadProfile, resolveAvatarSrc, type UserProfile } from '../pages/admin/me/profileStore';
+import PersonalOsLayout from './PersonalOsLayout';
 import './MainLayout.css';
 
 const ROUTE_PREFIX_LABEL_KEYS: Array<{ prefix: string; labelKey: string }> = [
@@ -90,7 +91,7 @@ const MainLayout: React.FC = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const { preference, preset, setPreference, setPreset } = useAxiTheme();
+  const { preference, setPreference, setStylePreset } = useAxiTheme();
   const { settings, updateSetting } = useAxiAdminSettings({
     applyToDocument: true,
     storageKey: 'axi.workbench.admin-settings',
@@ -448,6 +449,31 @@ const MainLayout: React.FC = () => {
     },
   ], [locale, t]);
 
+  if (location.pathname.startsWith('/admin/personal-os')) {
+    return (
+      <>
+        <PersonalOsLayout
+          displayName={displayName}
+          email={profile.email}
+          onGlobalSearch={openGlobalSearch}
+          onLogout={() => {
+            logout();
+            navigate('/login');
+          }}
+        />
+        <GlobalSearchDialog
+          open={globalSearchOpen}
+          query={globalSearchQuery}
+          items={globalSearchItems}
+          recentItems={recentSearchItems}
+          onChange={setGlobalSearchQuery}
+          onClose={closeGlobalSearch}
+          onSelect={handleGlobalSearchSelect}
+        />
+      </>
+    );
+  }
+
   /* ---------- Web: shared Axi admin chrome ---------- */
   return (
     <AxiPluginProvider plugins={shellPlugins}>
@@ -555,19 +581,16 @@ const MainLayout: React.FC = () => {
       {preferencesOpen ? (
         <AxiAdminSettingsPanel
           activeStylePreset={settings.stylePreset}
-          activeTheme={preset.name}
           open={preferencesOpen}
           stylePresetOptions={stylePresetOptions}
           themePreference={preference}
           value={settings}
           onChange={updateSetting}
           onOpenChange={setPreferencesOpen}
-          onStylePresetChange={(stylePreset) => updateSetting('stylePreset', stylePreset)}
-          onThemeChange={(name) => {
-            updateSetting('themeColor', '');
-            setPreset(name);
+          onStylePresetChange={(stylePreset) => {
+            updateSetting('stylePreset', stylePreset);
+            setStylePreset(stylePreset);
           }}
-          onThemeColorChange={(color) => updateSetting('themeColor', color)}
           onThemePreferenceChange={setPreference}
         />
       ) : null}

@@ -30,6 +30,7 @@ import Devices from './pages/admin/me/Devices';
 import Notifications from './pages/admin/me/Notifications';
 import Theme from './pages/admin/me/Theme';
 import AuthCallback from './pages/AuthCallback';
+import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
 import RequireSession from './components/Auth/RequireSession';
 import { AuthProvider } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
@@ -74,6 +75,8 @@ const WorkbenchSurface: React.FC = () => {
                   <Route path="/" element={<RequireSession><MainLayout /></RequireSession>}>
                     <Route index element={<Navigate to="admin/dashboard" replace />} />
                     <Route path="admin/dashboard" element={<Dashboard />} />
+                    <Route path="admin/personal-os/today" element={<PersonalOsToday />} />
+                    <Route path="admin/personal-os/workbench" element={<PersonalOsWorkbench />} />
                     <Route path="admin/operations" element={<Operations />} />
                     <Route path="admin/project" element={<Projects />} />
                     <Route path="admin/project/:id" element={<ProjectDetail />} />
@@ -113,7 +116,7 @@ const WorkbenchSurface: React.FC = () => {
 const App: React.FC = () => (
   <AxiThemeProvider
     defaultPreference="dark"
-    defaultPresetName="default"
+    defaultStylePreset="black-gold"
     storageNamespace="axi.workbench"
   >
     <WorkbenchSurface />

@@ -20,6 +20,8 @@ export type SearchHit = {
  * a hit requires both fields.
  */
 export const SEARCH_CORPUS: SearchHit[] = [
+  { id: 'personal-os-today', kind: 'navigation', title: '今日', titleKey: 'personalOs.nav.today', subtitle: '焦点项目、活动与需要处理的项目', subtitleKey: 'personalOs.search.todaySubtitle', path: '/admin/personal-os/today' },
+  { id: 'personal-os-workbench', kind: 'navigation', title: '项目队列', titleKey: 'personalOs.nav.workbench', subtitle: '生命周期、运行时与项目完成定义', subtitleKey: 'personalOs.search.workbenchSubtitle', path: '/admin/personal-os/workbench' },
   { id: 'dashboard', kind: 'navigation', title: '工作台概览', titleKey: 'nav.dashboard', subtitle: '跨项目状态、任务与运行环境概览', subtitleKey: 'search.dashboard.subtitle', path: '/admin/dashboard' },
   { id: 'operations', kind: 'navigation', title: '运行状态', titleKey: 'nav.operations', subtitle: '项目健康、受管运行环境与需要处理事项', subtitleKey: 'search.operations.subtitle', path: '/admin/operations' },
   { id: 'projects', kind: 'navigation', title: '项目组合', titleKey: 'nav.projects', subtitle: '跨项目筛选、比较与详情', subtitleKey: 'search.projects.subtitle', path: '/admin/project' },

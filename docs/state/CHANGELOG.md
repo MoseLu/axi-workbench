@@ -6,6 +6,12 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
+- Added the Personal OS v0.1 Project Queue surface inside Workbench: a
+  control-plane SQLite overlay, versioned queue/focus/project contracts,
+  Today and Workbench routes, Inspector editing, explicit runtime/warning
+  states, and a `personal-os-local` workspace profile. The first slice keeps
+  resource-search, Agent dispatch, Flow and Library outside the active scope.
+
 - Added the workflow-first `task-execution-routing/v1` execution boundary:
   typed `BOUNDED_AGENT` and `APPROVED_EFFECT` steps, durable digest-bound
   approvals, cancellation, route decisions and authenticated Agent lifecycle

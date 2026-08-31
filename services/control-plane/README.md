@@ -28,6 +28,34 @@ Local six-layer project control plane for IM-driven status queries and safe regi
 - `POST /commands/:id/run`
 - `GET /runs/:id`
 
+### Personal OS project queue
+
+Personal OS v0.1 is a Workbench surface backed by the existing control-plane;
+it is not a new provider or a second resource gateway. The public Gateway
+maps these authenticated routes to the control-plane process:
+
+- `GET /api/v1/control-plane/personal-os/queue`
+- `GET /api/v1/control-plane/personal-os/projects/:projectId`
+- `PATCH /api/v1/control-plane/personal-os/projects/:projectId`
+- `GET /api/v1/control-plane/personal-os/focus`
+- `PUT /api/v1/control-plane/personal-os/focus`
+
+The projection reads project identity and relationships from the workspace
+registry/graph, runtime and activity from DevSvc/control-plane sources, and
+only reads editable lifecycle metadata, `finishLine`, `usesAxiUi` and focus
+state from Personal OS SQLite. Its local database is stored below
+`AXI_WORKSTATION_CONTROL_CACHE_DIR` (or the existing control-plane cache
+directory) as `personal-os.sqlite`; it does not replace the file-backed jobs,
+audit or AgentRun stores.
+
+The API returns a versioned `ProjectQueueItem` projection and a warnings list.
+AgentRun data is reduced to safe summaries and never exposes prompts, working
+directories, process output, provider credentials or authentication material.
+The route/schema reference is openapi/personal-os.v1.yaml; the TypeScript
+source of truth is the @axi/workstation-contracts Personal OS entity module.
+The control-plane service requires Node.js `>=22.5.0` because it uses the
+built-in `node:sqlite` runtime API for the local metadata store.
+
 ### Mobile action and cross-surface contract
 
 Browser and mobile clients do not call this process directly. API Gateway is

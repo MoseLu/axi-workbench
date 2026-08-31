@@ -5,6 +5,8 @@ import { getRegisteredDesktopRoutes, workbenchMenuRouteMap } from './navigationR
 describe('navigationRegistry', () => {
   it('exposes the same real routes used by the desktop shell', () => {
     expect(getRegisteredDesktopRoutes().map((item) => item.path)).toEqual([
+      '/admin/personal-os/today',
+      '/admin/personal-os/workbench',
       '/admin/dashboard',
       '/admin/operations',
       '/admin/project',

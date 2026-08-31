@@ -1,0 +1,469 @@
+openapi: 3.0.3
+info:
+  title: Axi Workstation Personal OS Project Queue
+  version: 1.0.0
+  description: >
+    Personal OS v0.1 is a Workbench projection. Project identity comes from
+    workspace.graph, runtime comes from DevSvc/control-plane, and editable
+    metadata comes from the private Personal OS SQLite overlay. Browser
+    clients reach these paths through the authenticated API Gateway session.
+servers:
+  - url: /
+paths:
+  /api/v1/control-plane/personal-os/queue:
+    get:
+      summary: Read the project queue
+      operationId: getPersonalOsQueue
+      security:
+        - gatewaySession: []
+      parameters:
+        - $ref: '#/components/parameters/view'
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/partition'
+      responses:
+        '200':
+          description: Versioned project queue projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalOsQueueEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/v1/control-plane/personal-os/projects/{projectId}:
+    get:
+      summary: Read one project queue item
+      operationId: getPersonalOsProject
+      security:
+        - gatewaySession: []
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+      responses:
+        '200':
+          description: Versioned project projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalOsProjectResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update Personal OS project overlay
+      operationId: updatePersonalOsProject
+      security:
+        - gatewaySession: []
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalOsProjectPatch'
+      responses:
+        '200':
+          description: Updated project projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalOsProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/control-plane/personal-os/focus:
+    get:
+      summary: Read the focused project
+      operationId: getPersonalOsFocus
+      security:
+        - gatewaySession: []
+      responses:
+        '200':
+          description: Versioned focus projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalOsFocusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      summary: Set or clear the focused project
+      operationId: updatePersonalOsFocus
+      security:
+        - gatewaySession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalOsFocusUpdate'
+      responses:
+        '200':
+          description: Updated focus projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalOsFocusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  securitySchemes:
+    gatewaySession:
+      type: apiKey
+      in: cookie
+      name: axi_session
+      description: HttpOnly session cookie established by the API Gateway.
+  parameters:
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    view:
+      name: view
+      in: query
+      schema:
+        type: string
+        enum: [today, in-progress, stalled, all]
+        default: all
+    query:
+      name: query
+      in: query
+      schema:
+        type: string
+    partition:
+      name: partition
+      in: query
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Invalid Personal OS input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Gateway session or internal owner bearer is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Project is not an eligible registered project
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: The supplied optimistic revision is stale
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictError'
+    Unavailable:
+      description: Personal OS projection is not configured
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+    ConflictError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          required: [current]
+          properties:
+            current:
+              $ref: '#/components/schemas/ProjectOverlay'
+    PersonalOsSource:
+      type: object
+      required: [project, runtime, metadata]
+      properties:
+        project:
+          type: string
+          enum: [workspace.graph]
+        runtime:
+          type: string
+          enum: [devsvc]
+        metadata:
+          type: string
+          enum: [personal-os.sqlite]
+    ProjectOverlay:
+      type: object
+      required: [projectId, lifecycleOverride, finishLine, usesAxiUi, revision, updatedAt]
+      properties:
+        projectId:
+          type: string
+        lifecycleOverride:
+          type: string
+          nullable: true
+          enum: [exploration, building, stalled, usable, shipped, archived]
+        finishLine:
+          type: string
+        usesAxiUi:
+          type: boolean
+          nullable: true
+        revision:
+          type: integer
+          minimum: 0
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    AgentRunSummary:
+      type: object
+      required: [id, projectId, status, runtime, summary, createdAt, startedAt, completedAt, updatedAt, source]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed, cancelled, awaiting_approval]
+        runtime:
+          type: string
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        source:
+          type: string
+          enum: [control-plane.agent-task]
+    ProjectQueueItem:
+      type: object
+      required: [id, name, path, partition, role, summary, status, lifecycle, lifecycleSource, overlay, finishLine, usesAxiUi, focus, runtime, activity, recentAgentRuns, relationships, source]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        path:
+          type: string
+        partition:
+          type: string
+        role:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+        lifecycle:
+          type: string
+          enum: [exploration, building, stalled, usable, shipped, archived]
+        lifecycleSource:
+          type: string
+          enum: [derived, manual]
+        overlay:
+          $ref: '#/components/schemas/ProjectOverlay'
+        finishLine:
+          type: string
+        usesAxiUi:
+          type: boolean
+        focus:
+          type: boolean
+        runtime:
+          type: object
+          required: [state, registered, serviceIds, summary]
+          properties:
+            state:
+              type: string
+              enum: [unknown, stopped, running, unhealthy]
+            registered:
+              type: boolean
+            serviceIds:
+              type: array
+              items:
+                type: string
+            summary:
+              type: string
+            checkedAt:
+              type: string
+              format: date-time
+              nullable: true
+        activity:
+          type: object
+          required: [lastCommitAt, lastAgentRunAt, lastActivityAt, changedEntries, clean]
+          properties:
+            lastCommitAt:
+              type: string
+              format: date-time
+              nullable: true
+            lastAgentRunAt:
+              type: string
+              format: date-time
+              nullable: true
+            lastActivityAt:
+              type: string
+              format: date-time
+              nullable: true
+            changedEntries:
+              type: integer
+              minimum: 0
+            clean:
+              type: boolean
+              nullable: true
+        recentAgentRuns:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentRunSummary'
+        relationships:
+          type: object
+          required: [provides, consumes, consumers]
+          properties:
+            provides:
+              type: array
+              items:
+                type: string
+            consumes:
+              type: array
+              items:
+                type: string
+            consumers:
+              type: array
+              items:
+                type: string
+        source:
+          $ref: '#/components/schemas/PersonalOsSource'
+    PersonalOsQueueEnvelope:
+      type: object
+      required: [contractVersion, generatedAt, source, view, focusProjectId, items, warnings]
+      properties:
+        contractVersion:
+          type: integer
+          enum: [1]
+        generatedAt:
+          type: string
+          format: date-time
+        source:
+          $ref: '#/components/schemas/PersonalOsSource'
+        view:
+          type: string
+          enum: [today, in-progress, stalled, all]
+        focusProjectId:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectQueueItem'
+        warnings:
+          type: array
+          items:
+            type: string
+    PersonalOsProjectResponse:
+      type: object
+      required: [contractVersion, generatedAt, project, warnings]
+      properties:
+        contractVersion:
+          type: integer
+          enum: [1]
+        generatedAt:
+          type: string
+          format: date-time
+        project:
+          $ref: '#/components/schemas/ProjectQueueItem'
+        overlay:
+          $ref: '#/components/schemas/ProjectOverlay'
+        warnings:
+          type: array
+          items:
+            type: string
+    PersonalOsProjectPatch:
+      type: object
+      required: [revision]
+      additionalProperties: false
+      properties:
+        lifecycleOverride:
+          type: string
+          nullable: true
+          enum: [exploration, building, stalled, usable, shipped, archived]
+        finishLine:
+          type: string
+          maxLength: 500
+        usesAxiUi:
+          type: boolean
+          nullable: true
+        revision:
+          type: integer
+          minimum: 0
+    PersonalOsFocus:
+      type: object
+      required: [projectId, revision, updatedAt]
+      properties:
+        projectId:
+          type: string
+          nullable: true
+        revision:
+          type: integer
+          minimum: 0
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PersonalOsFocusResponse:
+      type: object
+      required: [contractVersion, generatedAt, focus, warnings]
+      properties:
+        contractVersion:
+          type: integer
+          enum: [1]
+        generatedAt:
+          type: string
+          format: date-time
+        focus:
+          $ref: '#/components/schemas/PersonalOsFocus'
+        warnings:
+          type: array
+          items:
+            type: string
+    PersonalOsFocusUpdate:
+      type: object
+      required: [projectId, revision]
+      additionalProperties: false
+      properties:
+        projectId:
+          type: string
+          nullable: true
+        revision:
+          type: integer
+          minimum: 0

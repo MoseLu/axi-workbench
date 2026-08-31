@@ -12,6 +12,12 @@ import type {
   WorkflowEngineApproval,
   WorkflowEngineExecution,
   WorkflowEngineWorkflow,
+  PersonalOsFocusResponse,
+  PersonalOsFocusUpdate,
+  PersonalOsProjectPatch,
+  PersonalOsProjectResponse,
+  PersonalOsQueueEnvelope,
+  PersonalOsView,
 } from "@axi/workstation-contracts"
 import type { AxiosRequestConfig } from "axios"
 
@@ -63,6 +69,82 @@ export const useControlSnapshot = (options?: AxiosRequestConfig) => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 10_000,
+  })
+}
+
+const personalOsQueryKey = ["personalOs"] as const
+
+export const usePersonalOsQueue = (
+  params: { view?: PersonalOsView; query?: string; partition?: string } = {},
+  options?: AxiosRequestConfig,
+) => {
+  return useQuery({
+    queryKey: [...personalOsQueryKey, "queue", params],
+    queryFn: () =>
+      controlPlaneClient
+        .get<PersonalOsQueueEnvelope>("/personal-os/queue", { ...options, params: { ...params, ...(options?.params || {}) } })
+        .then((res) => res.data),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10_000,
+  })
+}
+
+export const usePersonalOsProject = (projectId: string, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...personalOsQueryKey, "project", projectId],
+    enabled: Boolean(projectId),
+    queryFn: () =>
+      controlPlaneClient
+        .get<PersonalOsProjectResponse>(`/personal-os/projects/${encodeURIComponent(projectId)}`, options)
+        .then((res) => res.data),
+    retry: 1,
+    staleTime: 10_000,
+  })
+}
+
+export const useUpdatePersonalOsProject = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, ...patch }: PersonalOsProjectPatch & { projectId: string }) =>
+      controlPlaneClient
+        .patch<PersonalOsProjectResponse>(`/personal-os/projects/${encodeURIComponent(projectId)}`, patch)
+        .then((res) => res.data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [...personalOsQueryKey, "queue"] })
+      queryClient.invalidateQueries({ queryKey: [...personalOsQueryKey, "project", variables.projectId] })
+      if (data?.project?.id) {
+        queryClient.setQueryData([...personalOsQueryKey, "project", data.project.id], data)
+      }
+    },
+  })
+}
+
+export const usePersonalOsFocus = (options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...personalOsQueryKey, "focus"],
+    queryFn: () =>
+      controlPlaneClient
+        .get<PersonalOsFocusResponse>("/personal-os/focus", options)
+        .then((res) => res.data),
+    retry: 2,
+    staleTime: 10_000,
+  })
+}
+
+export const useUpdatePersonalOsFocus = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: PersonalOsFocusUpdate) =>
+      controlPlaneClient
+        .put<PersonalOsFocusResponse>("/personal-os/focus", input)
+        .then((res) => res.data),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...personalOsQueryKey, "focus"], data)
+      queryClient.invalidateQueries({ queryKey: [...personalOsQueryKey, "queue"] })
+    },
   })
 }
 

@@ -125,6 +125,30 @@
   --size-icon-lg: 22px;
   --size-icon-xl: 24px;
 
+  /* Personal OS surface dimensions. Keep page layout values in the shared
+     token layer so the isolated surface does not grow a second token system. */
+  --personal-os-sidebar-width: 232px;
+  --personal-os-shell-search-width: 150px;
+  --personal-os-page-max-width: 1400px;
+  --personal-os-heading-size: 28px;
+  --personal-os-copy-max-width: 620px;
+  --personal-os-metric-size: 22px;
+  --personal-os-toolbar-label-width: 112px;
+  --personal-os-page-search-width: 220px;
+  --personal-os-warning-rule-width: 3px;
+  --personal-os-inspector-min-width: 320px;
+  --personal-os-inspector-width: 380px;
+  --personal-os-row-meta-width: 88px;
+  --personal-os-state-min-height: 300px;
+  --personal-os-dialog-max-width: 560px;
+  --personal-os-form-width: 320px;
+  --personal-os-border-width: var(--space-px);
+  --personal-os-focus-width: 2px;
+  --personal-os-focus-offset: 2px;
+  --personal-os-metric-min-width: 72px;
+  --personal-os-row-min-height: 76px;
+  --personal-os-hover-lift: -1px;
+
   /* ── Radius ── */
   --radius-xs: 4px;
   --radius-sm: 8px;

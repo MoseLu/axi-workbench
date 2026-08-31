@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { Annotation, END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
 import { createPairingService } from "./pairing.mjs";
 import { createIdempotencyService } from "./idempotency.mjs";
+import { createPersonalOsService } from "./personal-os.mjs";
 
 const DEFAULT_WORKSPACE_ROOT = "/Volumes/code/workspace";
 const WORKSTATION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -54,6 +55,10 @@ export function createControlPlane(options = {}) {
     agentTaskExecutor: options.agentTaskExecutor || executeAgentTask,
     roleAgentExecutor: options.roleAgentExecutor || executeRoleAgentRun,
     axiAgentTaskExecutor: options.axiAgentTaskExecutor || executeAxiAgentTask,
+    personalOsService: options.personalOsService || null,
+    personalOsStore: options.personalOsStore,
+    personalOsRuntimeReader: options.personalOsRuntimeReader,
+    devsvcOverviewUrl: options.devsvcOverviewUrl,
     heartbeatMs: options.heartbeatMs || JOB_HEARTBEAT_MS,
     codexBin: options.codexBin || process.env.CODEX_BIN || "codex",
     appServerBin: options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex",
@@ -120,6 +125,7 @@ function buildControlPlaneSurface({
   workspaceRoot, graphPath, cacheDir, memoryDatabaseUrl, memoryProjectReader,
   agentTaskExecutor, roleAgentExecutor, axiAgentTaskExecutor, heartbeatMs,
   codexBin, appServerBin, ownerApprovalSecret, pairingTokenSecret, pairingEnabled,
+  personalOsService, personalOsStore, personalOsRuntimeReader, devsvcOverviewUrl,
 }) {
   const pairing = pairingTokenSecret
     ? createPairingService({
@@ -139,6 +145,15 @@ function buildControlPlaneSurface({
   const handoffs = loadPersistedRecordMap(join(cacheDir, "handoffs"));
   const jobs = new Map();
   const jobEnvelopeIndex = new Map();
+  const personalOs = personalOsService || createPersonalOsService({
+    workspaceRoot,
+    graphPath,
+    cacheDir,
+    store: personalOsStore,
+    runtimeReader: personalOsRuntimeReader,
+    devsvcOverviewUrl,
+    snapshotReader: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
+  });
 
   const surface = {
     workspaceRoot,
@@ -147,6 +162,7 @@ function buildControlPlaneSurface({
     pairingEnabled,
     pairing,
     idempotency,
+    personalOs,
     snapshot: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileSnapshot: () => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
     mobileProject: (id) => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }).projects.find((project) => project.id === id) || null,
@@ -2582,11 +2598,13 @@ function readGitStatus(projectPath) {
   if (inside.status !== 0) return null;
   const branch = spawnSync("git", ["branch", "--show-current"], { cwd: projectPath, encoding: "utf8", timeout: 5_000 });
   const status = spawnSync("git", ["status", "--porcelain"], { cwd: projectPath, encoding: "utf8", timeout: 5_000 });
+  const lastCommit = spawnSync("git", ["log", "-1", "--format=%cI"], { cwd: projectPath, encoding: "utf8", timeout: 5_000 });
   const changedEntries = status.stdout ? status.stdout.trim().split(/\r?\n/).filter(Boolean).length : 0;
   return {
     branch: branch.stdout.trim(),
     changedEntries,
     clean: changedEntries === 0,
+    lastCommitAt: lastCommit.status === 0 && lastCommit.stdout.trim() ? lastCommit.stdout.trim() : null,
   };
 }
 

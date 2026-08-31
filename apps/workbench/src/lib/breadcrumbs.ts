@@ -90,6 +90,8 @@ const PREFERENCES_PARENT: BreadcrumbNode = {
 
 export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
   '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard', icon: 'overview' },
+  '/admin/personal-os/today': { label: '今日', labelKey: 'personalOs.nav.today', icon: 'overview', parents: [WORKBENCH_PARENT] },
+  '/admin/personal-os/workbench': { label: '项目队列', labelKey: 'personalOs.nav.workbench', icon: 'project', parents: [WORKBENCH_PARENT] },
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations', icon: 'laptop', parents: [WORKBENCH_PARENT] },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects', icon: 'project', parents: [WORKBENCH_PARENT] },
   '/admin/task': { label: '工作项', labelKey: 'nav.tasks', icon: 'workspace', parents: [WORKBENCH_PARENT] },
