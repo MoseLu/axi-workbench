@@ -7,6 +7,7 @@ All notable changes to Ollama Menu Assistant are documented in this file.
 ### Changed
 
 - Added native macOS titlebar double-click zoom and restore behavior to the assistant window.
+- Constrained the conversation composer to a centered maximum width of `760pt`, matching the Codex-style layout in both new and existing conversations.
 
 ## 0.0.1 - 2026-05-07
 
