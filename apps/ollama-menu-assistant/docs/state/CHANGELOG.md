@@ -2,6 +2,12 @@
 
 All notable changes to Ollama Menu Assistant are documented in this file.
 
+## Unreleased
+
+### Changed
+
+- Added native macOS titlebar double-click zoom and restore behavior to the assistant window.
+
 ## 0.0.1 - 2026-05-07
 
 Initial public release of Ollama Menu Assistant, a native macOS menu-bar assistant for local Ollama models.
