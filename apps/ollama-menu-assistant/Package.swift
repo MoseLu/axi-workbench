@@ -3,27 +3,38 @@
 import PackageDescription
 
 let developerDir = Context.environment["DEVELOPER_DIR"] ?? "/Library/Developer/CommandLineTools"
+let isXcodeDeveloperDirectory = developerDir.hasSuffix("/Contents/Developer")
+let swiftToolchainDir = isXcodeDeveloperDirectory
+    ? "\(developerDir)/Toolchains/XcodeDefault.xctoolchain"
+    : developerDir
+let testingFrameworkDir = isXcodeDeveloperDirectory
+    ? "\(developerDir)/Platforms/MacOSX.platform/Developer/Library/Frameworks"
+    : "\(developerDir)/Library/Developer/Frameworks"
+let testingRuntimeDir = isXcodeDeveloperDirectory
+    ? "\(swiftToolchainDir)/usr/lib"
+    : "\(developerDir)/Library/Developer/usr/lib"
+let testingMacroPlugin = "\(swiftToolchainDir)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib"
 // Standalone Command Line Tools do not add Swift Testing's framework and macro paths to SwiftPM test targets.
 let testingSwiftSettings: [SwiftSetting] = [
     .unsafeFlags([
         "-F",
-        "\(developerDir)/Library/Developer/Frameworks",
+        testingFrameworkDir,
         "-load-plugin-library",
-        "\(developerDir)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib",
+        testingMacroPlugin,
     ], .when(platforms: [.macOS])),
 ]
 let testingLinkerSettings: [LinkerSetting] = [
     .unsafeFlags([
         "-F",
-        "\(developerDir)/Library/Developer/Frameworks",
+        testingFrameworkDir,
         "-Xlinker",
         "-rpath",
         "-Xlinker",
-        "\(developerDir)/Library/Developer/Frameworks",
+        testingFrameworkDir,
         "-Xlinker",
         "-rpath",
         "-Xlinker",
-        "\(developerDir)/Library/Developer/usr/lib",
+        testingRuntimeDir,
     ], .when(platforms: [.macOS])),
     .linkedFramework("Testing", .when(platforms: [.macOS])),
     .linkedFramework("_Testing_AppKit", .when(platforms: [.macOS])),

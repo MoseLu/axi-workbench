@@ -251,6 +251,9 @@ struct SettingsPanelView: View {
             appModel.refreshPetCatalog()
             appModel.refreshPetRunnerState()
         }
+        .onChange(of: language) { _, newValue in
+            PetRunnerIPC.publishLanguage(AppLanguage.resolved(from: newValue))
+        }
     }
 
     func settingsSidebar(scrollProxy: ScrollViewProxy) -> some View {

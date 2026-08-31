@@ -48,6 +48,60 @@ func petAssetLoaderDefaultsToAssistantApplicationSupport() {
 }
 
 @Test
+func petRunnerMenuLabelsAreLocalized() {
+    let chinese = PetRunnerMenuLabels(language: .simplifiedChinese)
+    #expect(chinese.pauseMovement == "暂停移动")
+    #expect(chinese.resumeMovement == "恢复移动")
+    #expect(chinese.runToCursor == "移动到光标")
+    #expect(chinese.reloadPet == "重新加载宠物")
+    #expect(chinese.quit == "退出")
+
+    let english = PetRunnerMenuLabels(language: .english)
+    #expect(english.pauseMovement == "Pause Movement")
+    #expect(english.resumeMovement == "Resume Movement")
+    #expect(english.runToCursor == "Run To Cursor")
+    #expect(english.reloadPet == "Reload Pet")
+    #expect(english.quit == "Quit")
+}
+
+@Test
+func petRunnerLanguageResolvesExplicitValuesBeforeLocaleFallback() {
+    #expect(
+        PetRunnerLanguage.resolved(
+            from: "simplifiedChinese",
+            locale: Locale(identifier: "en_US")
+        ) == .simplifiedChinese
+    )
+    #expect(
+        PetRunnerLanguage.resolved(
+            from: "english",
+            locale: Locale(identifier: "zh_CN")
+        ) == .english
+    )
+    #expect(
+        PetRunnerLanguage.resolved(
+            from: "auto",
+            locale: Locale(identifier: "zh_CN")
+        ) == .simplifiedChinese
+    )
+    #expect(
+        PetRunnerLanguage.resolved(
+            from: "auto",
+            locale: Locale(identifier: "en_US")
+        ) == .english
+    )
+}
+
+@Test
+func petRunnerGroupCommandsKeepStableWireValues() {
+    #expect(PetRunnerIPC.Command.pause.rawValue == "pause")
+    #expect(PetRunnerIPC.Command.resume.rawValue == "resume")
+    #expect(PetRunnerIPC.Command.runToCursor.rawValue == "runToCursor")
+    #expect(PetRunnerIPC.Command.reload.rawValue == "reload")
+    #expect(PetRunnerIPC.Command.quit.rawValue == "quit")
+}
+
+@Test
 func petAssetLoaderPrefersRedrawSpritesheetWhenPresent() throws {
     let root = try makeTemporaryPetDirectory()
     defer { try? FileManager.default.removeItem(at: root) }

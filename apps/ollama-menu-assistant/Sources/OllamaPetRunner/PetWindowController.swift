@@ -35,8 +35,10 @@ final class PetWindowController: NSObject {
 
     private let petDirectoryURL: URL
     private let instanceID: String
+    private let groupID: String
     private var slotIndex: Int
     private var slotCount: Int
+    private var language: PetRunnerLanguage
     private let allowsDirectionalRunning: Bool
     private let defaults: UserDefaults
     private let panel: PetPanel
@@ -51,15 +53,19 @@ final class PetWindowController: NSObject {
     init(
         petDirectoryURL: URL = PetAssetLoader.defaultPetDirectory,
         instanceID: String = "default",
+        groupID: String = PetRunnerIPC.groupID,
         slotIndex: Int = 0,
         slotCount: Int = 1,
+        language: PetRunnerLanguage = .current,
         allowsDirectionalRunning: Bool = true,
         defaults: UserDefaults = .standard
     ) {
         self.petDirectoryURL = petDirectoryURL
         self.instanceID = instanceID
+        self.groupID = groupID
         self.slotIndex = min(max(slotIndex, 0), 2)
         self.slotCount = min(max(slotCount, 1), 3)
+        self.language = language
         self.allowsDirectionalRunning = allowsDirectionalRunning
         self.defaults = defaults
         self.petView = PetSpriteView(
@@ -75,6 +81,8 @@ final class PetWindowController: NSObject {
         configurePanel()
         configureInteractions()
         startGroupInteractionObserver()
+        startGroupCommandObserver()
+        startLanguageObserver()
         startFormationUpdateObserver()
     }
 
@@ -192,21 +200,27 @@ final class PetWindowController: NSObject {
     }
 
     @objc private func toggleWandering(_ sender: Any?) {
-        wanderModel.setPaused(!wanderModel.isPaused)
-        petView.setLoopingState(.idle)
+        let command: PetRunnerIPC.Command = wanderModel.isPaused ? .resume : .pause
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func comeHere(_ sender: Any?) {
-        runToClick(at: NSEvent.mouseLocation)
+        let command = PetRunnerIPC.Command.runToCursor
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func reloadPetFromMenu(_ sender: Any?) {
-        reloadPet()
+        let command = PetRunnerIPC.Command.reload
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func quit(_ sender: Any?) {
-        persistPosition()
-        NSApp.terminate(sender)
+        let command = PetRunnerIPC.Command.quit
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func handleGroupInteraction(_ notification: Notification) {
@@ -223,6 +237,29 @@ final class PetWindowController: NSObject {
         clickTargetVisibleFrame = nil
         wanderModel.interruptForInteraction()
         petView.playOnce(groupReactionState)
+    }
+
+    @objc private func handleGroupCommand(_ notification: Notification) {
+        guard slotCount > 1,
+              stringValue(notification.userInfo?[PetRunnerIPC.groupIDKey]) == groupID,
+              let rawCommand = stringValue(notification.userInfo?[PetRunnerIPC.commandKey]),
+              let command = PetRunnerIPC.Command(rawValue: rawCommand),
+              stringValue(notification.userInfo?[PetRunnerIPC.senderInstanceIDKey]) != instanceID
+        else {
+            return
+        }
+
+        applyGroupCommand(command)
+    }
+
+    @objc private func handleLanguageUpdate(_ notification: Notification) {
+        guard stringValue(notification.userInfo?[PetRunnerIPC.groupIDKey]) == groupID,
+              let rawLanguage = stringValue(notification.userInfo?[PetRunnerIPC.languageKey])
+        else {
+            return
+        }
+
+        language = PetRunnerLanguage.resolved(from: rawLanguage)
     }
 
     @objc private func handleFormationUpdate(_ notification: Notification) {
@@ -255,13 +292,14 @@ final class PetWindowController: NSObject {
 
     private func showContextMenu(for event: NSEvent) {
         let menu = NSMenu()
-        let pauseTitle = wanderModel.isPaused ? "Resume Movement" : "Pause Movement"
+        let labels = PetRunnerMenuLabels(language: language)
+        let pauseTitle = wanderModel.isPaused ? labels.resumeMovement : labels.pauseMovement
         menu.addItem(NSMenuItem(title: pauseTitle, action: #selector(toggleWandering(_:)), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Run To Cursor", action: #selector(comeHere(_:)), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Reload Pet", action: #selector(reloadPetFromMenu(_:)), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: labels.runToCursor, action: #selector(comeHere(_:)), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: labels.reloadPet, action: #selector(reloadPetFromMenu(_:)), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit(_:)), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: labels.quit, action: #selector(quit(_:)), keyEquivalent: ""))
 
         for item in menu.items {
             item.target = self
@@ -328,6 +366,24 @@ final class PetWindowController: NSObject {
         )
     }
 
+    private func startGroupCommandObserver() {
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleGroupCommand(_:)),
+            name: PetRunnerIPC.groupCommandNotificationName,
+            object: nil
+        )
+    }
+
+    private func startLanguageObserver() {
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleLanguageUpdate(_:)),
+            name: PetRunnerIPC.languageUpdateNotificationName,
+            object: nil
+        )
+    }
+
     private func startFormationUpdateObserver() {
         DistributedNotificationCenter.default().addObserver(
             self,
@@ -348,6 +404,36 @@ final class PetWindowController: NSObject {
             userInfo: [GroupInteraction.senderKey: instanceID],
             deliverImmediately: true
         )
+    }
+
+    private func publishGroupCommand(_ command: PetRunnerIPC.Command) {
+        guard slotCount > 1 else {
+            return
+        }
+
+        PetRunnerIPC.publishGroupCommand(
+            command,
+            groupID: groupID,
+            senderInstanceID: instanceID
+        )
+    }
+
+    private func applyGroupCommand(_ command: PetRunnerIPC.Command) {
+        switch command {
+        case .pause:
+            wanderModel.setPaused(true)
+            petView.setLoopingState(.idle)
+        case .resume:
+            wanderModel.setPaused(false)
+            petView.setLoopingState(.idle)
+        case .runToCursor:
+            runToClick(at: NSEvent.mouseLocation)
+        case .reload:
+            reloadPet()
+        case .quit:
+            persistPosition()
+            NSApp.terminate(nil)
+        }
     }
 
     private var groupReactionState: PetAnimationState {
@@ -485,6 +571,16 @@ final class PetWindowController: NSObject {
         }
         if let stringValue = value as? String {
             return Int(stringValue)
+        }
+        return nil
+    }
+
+    private func stringValue(_ value: Any?) -> String? {
+        if let stringValue = value as? String {
+            return stringValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.stringValue
         }
         return nil
     }
