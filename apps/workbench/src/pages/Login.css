@@ -76,6 +76,7 @@
   border-radius: var(--radius-sm);
   background: var(--palette-white);
   box-shadow: 0 2rem 5rem color-mix(in srgb, var(--palette-black) 42%, transparent);
+  color-scheme: light;
   animation: axi-login-card-in .42s ease-out both;
 }
 
@@ -407,6 +408,25 @@
 .axi-login-form input:not(.axi-one-time-code__input):focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
+}
+
+.axi-login-form input:not(.axi-one-time-code__input):autofill {
+  color: var(--palette-gray-900);
+  background-color: var(--palette-white);
+  -webkit-text-fill-color: var(--palette-gray-900);
+  caret-color: var(--palette-gray-900);
+  box-shadow: 0 0 0 1000px var(--palette-white) inset;
+}
+
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill,
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill:hover,
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill:focus,
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill:active {
+  -webkit-text-fill-color: var(--palette-gray-900);
+  caret-color: var(--palette-gray-900);
+  background-color: var(--palette-white);
+  -webkit-box-shadow: 0 0 0 1000px var(--palette-white) inset;
+  box-shadow: 0 0 0 1000px var(--palette-white) inset;
 }
 
 .axi-login-form input:not(.axi-one-time-code__input):disabled {

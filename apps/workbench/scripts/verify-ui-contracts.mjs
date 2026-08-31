@@ -17,6 +17,7 @@ const app = read('apps/workbench/src/App.tsx');
 const main = read('apps/workbench/src/main.tsx');
 const webShellCss = read('apps/workbench/src/layouts/MainLayout.css');
 const tokens = read('apps/workbench/src/styles/tokens.css');
+const loginCss = read('apps/workbench/src/pages/Login.css');
 const webPackage = read('apps/workbench/package.json');
 const foundationIcons = read('packages/workbench-foundation/src/icons.ts');
 const workbenchIcon = read('apps/workbench/src/components/WorkbenchIcon.tsx');
@@ -78,6 +79,21 @@ requireMatch(
   tokens,
   /:root[\s\S]*--palette-blue-antd:\s*#409eff[;\s\S]*--mpms-layout-bg:/,
   'local compatibility tokens must remain inside a valid root block',
+);
+requireMatch(
+  loginCss,
+  /\.axi-login-card\s*\{[\s\S]*?color-scheme:\s*light;/,
+  'login card must scope native controls to the light color scheme',
+);
+requireMatch(
+  loginCss,
+  /:autofill\s*\{[\s\S]*?box-shadow:/,
+  'login inputs must define a standard autofill background override',
+);
+requireMatch(
+  loginCss,
+  /:-webkit-autofill[\s\S]*?-webkit-text-fill-color:/,
+  'login inputs must preserve readable Chrome autofill text',
 );
 forbidMatch(webShellCss, /wb-mobile-shell|wb-desktop-topbar|body\.wb-desktop-body|AppLayout/, 'Web shell CSS must not own a mobile shell or legacy desktop layout');
 
