@@ -99,6 +99,29 @@ func petRunnerGroupCommandsKeepStableWireValues() {
     #expect(PetRunnerIPC.Command.runToCursor.rawValue == "runToCursor")
     #expect(PetRunnerIPC.Command.reload.rawValue == "reload")
     #expect(PetRunnerIPC.Command.quit.rawValue == "quit")
+    #expect(PetRunnerIPC.Command.setDragMode.rawValue == "setDragMode")
+    #expect(PetRunnerIPC.DragEvent.began.rawValue == "began")
+    #expect(PetRunnerIPC.DragEvent.moved.rawValue == "moved")
+    #expect(PetRunnerIPC.DragEvent.ended.rawValue == "ended")
+}
+
+@Test
+func petRunnerDragModeLabelsAreLocalized() {
+    let chinese = PetRunnerMenuLabels(language: .simplifiedChinese)
+    #expect(chinese.dragMode == "拖拽模式")
+    #expect(chinese.individualDrag == "单独拖拽")
+    #expect(chinese.allPetsDrag == "全部拖拽")
+
+    let english = PetRunnerMenuLabels(language: .english)
+    #expect(english.dragMode == "Drag Mode")
+    #expect(english.individualDrag == "This Pet Only")
+    #expect(english.allPetsDrag == "All Pets")
+}
+
+@Test
+func petRunnerDragModesHaveStableStorageValues() {
+    #expect(PetRunnerDragMode.individual.rawValue == "individual")
+    #expect(PetRunnerDragMode.allPets.rawValue == "allPets")
 }
 
 @Test

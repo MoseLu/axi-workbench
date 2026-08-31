@@ -152,6 +152,12 @@ enum PetAssetLoader {
         )
     }
 
+    static var selectedPetDragMode: PetRunnerDragMode {
+        PetRunnerDragMode(
+            rawValue: UserDefaults.standard.string(forKey: PetRunnerIPC.dragModeDefaultsKey) ?? ""
+        ) ?? .individual
+    }
+
     static var selectedPetSlotIndex: Int {
         clampedIntegerEnvironmentValue(
             key: petSlotIndexEnvironmentKey,
