@@ -100,7 +100,7 @@
   display: grid;
   grid-template-columns: minmax(14rem, .72fr) var(--space-px) minmax(20rem, 1.28fr);
   gap: var(--space-6);
-  min-height: 22.25rem;
+  min-height: 20rem;
   box-sizing: border-box;
   padding: var(--space-4) var(--space-8) var(--space-3);
 }
@@ -297,31 +297,6 @@
   font-weight: var(--font-weight-medium);
 }
 
-.axi-login-qr-status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1_5);
-  color: var(--palette-gray-500);
-  font-size: var(--text-xs);
-}
-
-.axi-login-qr-status__dot {
-  width: var(--space-1_5);
-  height: var(--space-1_5);
-  border-radius: var(--radius-full);
-  background: var(--color-brand);
-}
-
-.axi-login-qr-status__dot.is-approved { background: var(--color-success); }
-.axi-login-qr-status__dot.is-expired,
-.axi-login-qr-status__dot.is-failed { background: var(--color-danger); }
-
-.axi-login-qr-meta {
-  margin: var(--space-1) 0 0;
-  color: var(--palette-gray-400);
-  font-size: var(--text-xs);
-}
-
 .axi-login-banner--qr {
   width: min(100%, 15rem);
   margin-top: var(--space-2);
@@ -333,7 +308,7 @@
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  padding-top: var(--space-1_5);
+  justify-content: center;
 }
 
 .axi-login-right__tabs {
@@ -583,23 +558,6 @@
 
 .axi-login-button:disabled { cursor: not-allowed; opacity: .55; }
 
-.axi-login-card__footer {
-  min-height: 2.5rem;
-  box-sizing: border-box;
-  align-items: center;
-  display: flex;
-  justify-content: center;
-  padding: var(--space-2) var(--space-8);
-  border-top: 0;
-  color: var(--palette-gray-400);
-  background: var(--palette-white);
-  font-size: var(--text-xs);
-}
-
-.axi-login-card__footer span {
-  display: block;
-}
-
 @keyframes axi-login-card-in {
   from { opacity: 0; transform: translateY(var(--space-3)); }
   to { opacity: 1; transform: translateY(0); }
@@ -640,23 +598,16 @@
   }
 
   .axi-login-right {
-    padding-top: 0;
+    justify-content: center;
   }
 
   .axi-login-right__body { width: min(24rem, 100%); }
-
-  .axi-login-card__footer {
-    display: flex;
-    gap: 0;
-    padding-inline: var(--space-6);
-  }
 }
 
 @media (max-width: 28rem) {
   .axi-login-page { padding-right: var(--space-3); padding-left: var(--space-3); }
   .axi-login-card__body { padding: var(--space-5) var(--space-4); }
   .axi-login-card__chrome { padding-inline: var(--space-3); }
-  .axi-login-card__footer { padding-inline: var(--space-4); }
   .axi-login-right__tabs { gap: var(--space-4); }
   .axi-login-right__tabs button { font-size: var(--text-md); }
   .axi-login-button { width: 100%; }

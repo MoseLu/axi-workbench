@@ -329,13 +329,6 @@ const Login: React.FC = () => {
   };
 
   const banner = error || (sessionError && (phase === 'verifying' || loginMode === 'password') ? sessionError : null);
-  const qrStatusLabel: Record<DeviceQrStatus, string> = {
-    creating: '正在生成二维码',
-    waiting_scan: '等待手机扫码',
-    approved: '手机已确认登录',
-    expired: '二维码已失效',
-    failed: '暂时无法生成二维码',
-  };
   const qrOverlayTitle = deviceQrStatus === 'expired' ? '二维码已过期' : '二维码加载失败';
   const qrOverlayHint = deviceQrStatus === 'expired' ? '请点击刷新' : '请点击重试';
 
@@ -400,13 +393,6 @@ const Login: React.FC = () => {
               请使用 <strong>Axi WorkBench 手机端</strong><br />
               扫码登录或确认本机登录
             </p>
-            <div className="axi-login-qr-status">
-              <span className={`axi-login-qr-status__dot is-${deviceQrStatus}`} />
-              <strong>{qrStatusLabel[deviceQrStatus]}</strong>
-            </div>
-            {deviceQr && deviceQrStatus === 'waiting_scan' && (
-              <p className="axi-login-qr-meta">有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}，失效后自动更新</p>
-            )}
             {qrError && deviceQrStatus === 'failed' && (
               <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">
                 {qrError}
@@ -546,10 +532,6 @@ const Login: React.FC = () => {
             </div>
           </section>
         </div>
-
-        <footer className="axi-login-card__footer">
-          <span>安全会话由网关托管</span>
-        </footer>
       </section>
     </main>
   );

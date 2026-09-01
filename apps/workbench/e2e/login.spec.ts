@@ -1,9 +1,68 @@
 import { expect, test } from 'playwright/test';
 
 test('renders the web login journey in a real browser', async ({ page }) => {
+  const transaction = {
+    ok: true,
+    webLoginId: 'weblogin_render_123456789',
+    scanToken: 'scan_token_render_1234567890123456789012345678',
+    pollToken: 'poll_token_render_1234567890123456789012345678',
+    expiresAt: Math.floor(Date.now() / 1000) + 60,
+  };
+
+  await page.route('**/api/**', async (route) => {
+    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'not mocked' }) });
+  });
+  await page.route('**/api/v1/auth/session*', async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ authenticated: false }),
+    });
+  });
+  await page.route('**/api/v1/auth/methods*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ passwordLogin: false }),
+    });
+  });
+  await page.route('**/api/v1/auth/device-login/qr', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(transaction) });
+  });
+  await page.route('**/api/v1/auth/device-login/qr/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, status: 'waiting_scan', expiresAt: transaction.expiresAt }),
+    });
+  });
+
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: '扫描二维码登录' })).toBeVisible();
   await expect(page.getByRole('tablist', { name: '登录方式' })).toBeVisible();
+  await expect(page.locator('.axi-login-qr-status')).toHaveCount(0);
+  await expect(page.locator('.axi-login-qr-meta')).toHaveCount(0);
+  await expect(page.locator('.axi-login-card__footer')).toHaveCount(0);
+
+  const layout = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector(selector);
+      const box = element?.getBoundingClientRect();
+      return box ? { top: box.top, bottom: box.bottom, height: box.height } : null;
+    };
+    const right = rect('.axi-login-right');
+    const tabs = rect('.axi-login-right__tabs');
+    const form = rect('.axi-login-form');
+    const groupCenter = tabs && form ? (tabs.top + form.bottom) / 2 : null;
+    const rightCenter = right ? (right.top + right.bottom) / 2 : null;
+    return {
+      cardHeight: rect('.axi-login-card')?.height ?? null,
+      centerOffset: groupCenter !== null && rightCenter !== null ? Math.abs(groupCenter - rightCenter) : null,
+    };
+  });
+
+  expect(layout.cardHeight ?? 999).toBeLessThan(380);
+  expect(layout.centerOffset ?? 999).toBeLessThanOrEqual(1);
 });
 
 test('login error banner keeps the card height stable across appearance', async ({ page }) => {
