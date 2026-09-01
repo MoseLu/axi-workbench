@@ -26,6 +26,7 @@ type AuthMethodsResponse = { passwordLogin?: boolean };
 const RESEND_COOLDOWN_SECONDS = 60;
 const QR_POLL_INTERVAL_MS = 3_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const OTP_PATTERN = /^\d{6}$/;
 
 /**
  * Web 登录入口。
@@ -109,10 +110,6 @@ const Login: React.FC = () => {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [cooldown]);
-
-  useEffect(() => {
-    if (phase === 'code') codeInputRef.current?.focus();
-  }, [phase]);
 
   // 二维码始终在左侧启动；其轮询凭证只留在内存中。
   useEffect(() => {
@@ -201,11 +198,15 @@ const Login: React.FC = () => {
     return () => window.clearTimeout(refreshTimer);
   }, [deviceQr, deviceQrStatus, qrSubmitting]);
 
-  const handleRequestCode = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const trimmedEmail = email.trim().toLowerCase();
+  const emailIsValid = EMAIL_PATTERN.test(trimmedEmail);
+  const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
+  const canResend = emailIsValid && cooldown <= 0 && !submitting && Boolean(sentTo);
+  const canVerify = emailIsValid && codeIsValid && !submitting && Boolean(challengeId);
+
+  const handleSendCode = async () => {
     if (submitting || sessionLoading) return;
-    const trimmed = email.trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(trimmed)) {
+    if (!emailIsValid) {
       setError(t('auth.login.invalidEmail'));
       return;
     }
@@ -213,13 +214,11 @@ const Login: React.FC = () => {
     setHint(null);
     setSubmitting(true);
     try {
-      const result = await requestEmailCode(trimmed);
-      setSentTo(trimmed);
+      const result = await requestEmailCode(trimmedEmail);
+      setSentTo(trimmedEmail);
       setChallengeId(result.challengeId);
       setExpiresAt(result.expiresAt || null);
-      setCode(createOneTimeCode());
       setCooldown(RESEND_COOLDOWN_SECONDS);
-      setPhase('code');
       setHint(t('auth.login.codeSentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
@@ -252,8 +251,7 @@ const Login: React.FC = () => {
   const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (passwordSubmitting || sessionLoading) return;
-    const trimmed = email.trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(trimmed)) {
+    if (!emailIsValid) {
       setError(t('auth.login.invalidEmail'));
       return;
     }
@@ -265,7 +263,7 @@ const Login: React.FC = () => {
     setHint(null);
     setPasswordSubmitting(true);
     try {
-      const ok = await loginWithPassword(trimmed, password);
+      const ok = await loginWithPassword(trimmedEmail, password);
       if (!ok) setError('密码登录失败，请检查邮箱和密码。');
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : '密码登录失败，请检查邮箱和密码。');
@@ -274,15 +272,19 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleVerifyCode = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleVerifyCode = async (event?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+    if (event && 'preventDefault' in event) event.preventDefault();
     if (submitting) return;
+    if (!emailIsValid) {
+      setError(t('auth.login.invalidEmail'));
+      return;
+    }
     const trimmed = oneTimeCodeValue(code);
     if (!trimmed) {
       setError(t('auth.login.codeRequired'));
       return;
     }
-    if (!/^\d{6}$/.test(trimmed)) {
+    if (!codeIsValid) {
       setError(t('auth.login.codeLength'));
       return;
     }
@@ -304,7 +306,7 @@ const Login: React.FC = () => {
   };
 
   const handleResend = async () => {
-    if (cooldown > 0 || submitting || !sentTo) return;
+    if (!canResend) return;
     setError(null);
     setHint(null);
     setSubmitting(true);
@@ -327,6 +329,9 @@ const Login: React.FC = () => {
     setPhase('email');
     setCode(createOneTimeCode());
     setChallengeId('');
+    setSentTo('');
+    setExpiresAt(null);
+    setCooldown(0);
     setError(null);
     setHint(null);
   };
@@ -409,7 +414,7 @@ const Login: React.FC = () => {
               扫码登录或确认本机登录
             </p>
             {qrError && deviceQrStatus === 'failed' && (
-              <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">
+              <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">
                 {qrError}
               </AxiBanner>
             )}
@@ -443,39 +448,43 @@ const Login: React.FC = () => {
               </button>
             </div>
 
-            <div className={`axi-login-right__body${banner || hint ? ' has-banner' : ''}`}>
+            <div className="axi-login-right__body">
               <div className="axi-login-banner-slot" aria-live="polite">
-                {banner && <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
-                {!banner && hint && <AxiBanner tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
+                {banner && <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
+                {!banner && hint && <AxiBanner compact tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
               </div>
               <div className="axi-login-form-slot">
                 {loginMode === 'password' && (
                 <form className="axi-login-form axi-login-form--password" onSubmit={handlePasswordLogin} noValidate>
                   <label htmlFor="axi-login-password-email">{t('auth.email')}</label>
-                  <input
-                    id="axi-login-password-email"
-                    name="email"
-                    type="email"
-                    autoComplete="username"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@axi.workbench.dev"
-                    disabled={passwordSubmitting}
-                  />
+                  <div className="axi-login-form__row axi-login-form__row--input">
+                    <input
+                      id="axi-login-password-email"
+                      name="email"
+                      type="email"
+                      autoComplete="username"
+                      required
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="you@axi.workbench.dev"
+                      disabled={passwordSubmitting}
+                    />
+                  </div>
                   <label htmlFor="axi-login-password">密码</label>
-                  <input
-                    id="axi-login-password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="请输入密码"
-                    disabled={passwordSubmitting}
-                  />
+                  <div className="axi-login-form__row axi-login-form__row--input">
+                    <input
+                      id="axi-login-password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="请输入密码"
+                      disabled={passwordSubmitting}
+                    />
+                  </div>
                   <button
                     className="axi-login-button axi-login-button--primary"
                     type="submit"
@@ -486,52 +495,54 @@ const Login: React.FC = () => {
                 </form>
               )}
 
-              {loginMode === 'email' && phase === 'email' && (
-                <form className="axi-login-form axi-login-form--email" onSubmit={handleRequestCode} noValidate>
+              {loginMode === 'email' && (
+                <form className="axi-login-form axi-login-form--email" onSubmit={(event) => event.preventDefault()} noValidate>
                   <label htmlFor="axi-login-email">{t('auth.email')}</label>
-                  <input
-                    id="axi-login-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@axi.workbench.dev"
-                    disabled={submitting}
-                  />
-                  <button
-                    className="axi-login-button axi-login-button--primary"
-                    type="submit"
-                    disabled={submitting || sessionLoading || !email.trim()}
-                  >
-                    {submitting ? t('auth.login.sending') : t('auth.login.requestCode')}
-                  </button>
-                </form>
-              )}
-
-              {loginMode === 'email' && (phase === 'code' || phase === 'verifying') && (
-                <form className="axi-login-form axi-login-form--code" onSubmit={handleVerifyCode} noValidate>
-                  <h2>输入邮箱验证码</h2>
-                  <div className="axi-login-form__row">
-                    <span id="axi-login-code-label">{t('auth.login.sentTo')} <strong>{sentTo}</strong></span>
-                    <button className="axi-login-text-button" type="button" onClick={handleChangeEmail}>{t('auth.login.changeEmail')}</button>
-                  </div>
-                  <OneTimeCodeInput
-                    ariaLabelledBy="axi-login-code-label"
-                    disabled={submitting}
-                    firstInputRef={codeInputRef}
-                    value={code}
-                    onChange={setCode}
-                  />
-                  <div className="axi-login-form__row axi-login-form__row--muted">
-                    <span>{expiresAt ? `${t('auth.login.expiresPrefix')}${new Date(expiresAt).toLocaleString()}${t('auth.login.expiresSuffix')}` : '验证码有效期有限'}</span>
-                    <button className="axi-login-text-button" type="button" onClick={handleResend} disabled={cooldown > 0 || submitting}>
-                      {cooldown > 0 ? `${cooldown}${t('auth.login.resendCooldown')}` : t('auth.login.resend')}
+                  <div className="axi-login-form__row axi-login-form__row--email">
+                    <input
+                      id="axi-login-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="you@axi.workbench.dev"
+                      disabled={submitting}
+                    />
+                    <button
+                      type="button"
+                      className="axi-login-text-button axi-login-text-button--send"
+                      onClick={handleSendCode}
+                      disabled={!emailIsValid || submitting || sessionLoading || (cooldown > 0 && sentTo === trimmedEmail)}
+                      title={cooldown > 0 && sentTo === trimmedEmail ? `${cooldown}s 后可重新发送` : t('auth.login.requestCode')}
+                    >
+                      {submitting
+                        ? t('auth.login.sending')
+                        : cooldown > 0 && sentTo === trimmedEmail
+                          ? `${cooldown}s`
+                          : t('auth.login.requestCode')}
                     </button>
                   </div>
-                  <button className="axi-login-button axi-login-button--primary" type="submit" disabled={submitting || oneTimeCodeValue(code).length !== 6}>
-                    {phase === 'verifying' || submitting ? t('auth.login.verifying') : t('auth.signin')}
+
+                  <label htmlFor="axi-login-otp-first">{t('auth.login.codeLabel')}</label>
+                  <div className="axi-login-form__row axi-login-form__row--code">
+                    <OneTimeCodeInput
+                      ariaLabelledBy="axi-login-otp-first"
+                      disabled={submitting}
+                      firstInputRef={codeInputRef}
+                      value={code}
+                      onChange={setCode}
+                    />
+                  </div>
+
+                  <button
+                    className="axi-login-button axi-login-button--primary"
+                    type="button"
+                    onClick={handleVerifyCode}
+                    disabled={!canVerify}
+                  >
+                    {submitting ? t('auth.login.verifying') : t('auth.signin')}
                   </button>
                 </form>
               )}

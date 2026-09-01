@@ -6,6 +6,7 @@ import '@axi/core/styles.css';
 import '@axi/crud/styles.css';
 import '@axi/shell/styles.css';
 import '@axi/settings/styles.css';
+import '@axi/widgets/styles.css';
 import App from './App';
 import './index.css';
 

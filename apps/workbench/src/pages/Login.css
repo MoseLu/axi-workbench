@@ -3,6 +3,14 @@
  * 页面背景、卡片蒙层和二维码失效蒙层是三层独立的视觉状态，避免互相串色。
  */
 .axi-login-page {
+  --axi-bg-surface: var(--palette-white);
+  --axi-bg-elevated: var(--palette-gray-50);
+  --axi-border: var(--palette-gray-250);
+  --axi-text: var(--palette-gray-900);
+  --axi-text-secondary: var(--palette-gray-600);
+  --axi-text-muted: var(--palette-gray-400);
+  --axi-muted: var(--palette-gray-500);
+  --axi-warning: var(--color-brand);
   position: relative;
   isolation: isolate;
   display: grid;
@@ -400,11 +408,22 @@
 }
 
 .axi-login-banner {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   margin: 0;
   overflow: hidden;
+}
+
+.axi-login-banner.axi-banner--compact .ant-alert-content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.axi-login-banner.axi-banner--compact .ant-alert-description {
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .axi-login-form-slot {
@@ -734,6 +753,11 @@
     height: auto;
   }
   .axi-login-banner { height: auto; }
+  .axi-login-banner.axi-banner--compact .ant-alert-description {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
   .axi-login-form-slot { height: auto; }
   .axi-login-form-slot { justify-content: flex-start; }
   .axi-login-form {

@@ -108,6 +108,25 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
   await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
+  const bannerPresentation = await page.evaluate(() => {
+    const banner = document.querySelector('.axi-login-banner--hint');
+    const description = banner?.querySelector('.ant-alert-description');
+    if (!banner || !description) return null;
+    const bannerStyle = getComputedStyle(banner);
+    const descriptionStyle = getComputedStyle(description);
+    return {
+      className: banner.className,
+      height: banner.getBoundingClientRect().height,
+      padding: bannerStyle.padding,
+      background: bannerStyle.backgroundColor,
+      descriptionWhiteSpace: descriptionStyle.whiteSpace,
+      descriptionOverflow: descriptionStyle.overflow,
+    };
+  });
+  expect(bannerPresentation?.className ?? '').toMatch(/axi-banner--compact/);
+  expect(bannerPresentation?.height ?? 999).toBeLessThanOrEqual(44.1);
+  expect(bannerPresentation?.padding).toBe('8px 12px');
+  expect(bannerPresentation?.background).not.toBe('rgb(17, 26, 44)');
 
   const emailCodeLayout = await page.evaluate(() => {
     const rect = (selector: string) => {
