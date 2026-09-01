@@ -36,12 +36,12 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       body: JSON.stringify({ ok: true, status: 'waiting_scan', expiresAt: transaction.expiresAt }),
     });
   });
-  await page.route('**/api/v1/auth/sms-verifications', async (route) => {
+  await page.route('**/api/v1/auth/email-verifications', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        challengeId: 'sms_challenge_render_12345678901234567890123456789012',
+        challengeId: 'email_challenge_render_12345678901234567890123456789012',
         expiresAt: new Date(Date.now() + 60_000).toISOString(),
       }),
     });
@@ -82,22 +82,26 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   expect(layout.centerOffset ?? 999).toBeLessThanOrEqual(1);
 
   const baseline = layout;
-  await expect(page.getByRole('tab', { name: '短信登录' })).toHaveAttribute('aria-selected', 'true');
-  await page.getByLabel('手机号').fill('13800138000');
+  await expect(page.getByRole('tab', { name: '邮箱登录' })).toHaveAttribute('aria-selected', 'true');
+  await page.getByLabel('邮箱').fill('render@example.com');
   await page.getByRole('button', { name: '获取验证码' }).click();
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
   await expect(page.locator('.axi-one-time-code__input').first()).toBeFocused();
-  const smsLayout = await page.evaluate(() => {
+  await expect(page.getByRole('heading', { name: '输入邮箱验证码' })).toBeVisible();
+  const emailCodeLayout = await page.evaluate(() => {
     const card = document.querySelector('.axi-login-card')?.getBoundingClientRect();
     const tabs = document.querySelector('.axi-login-right__tabs')?.getBoundingClientRect();
     const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
+    const firstInput = document.querySelector('.axi-one-time-code__input')?.getBoundingClientRect();
     const lastInput = document.querySelector('.axi-one-time-code__input:last-child')?.getBoundingClientRect();
-    return { cardTop: card?.top ?? null, cardHeight: card?.height ?? null, cardBottom: card?.bottom ?? null, tabsTop: tabs?.top ?? null, buttonTop: button?.top ?? null, buttonBottom: button?.bottom ?? null, lastInputBottom: lastInput?.bottom ?? null };
+    return { cardTop: card?.top ?? null, cardHeight: card?.height ?? null, cardBottom: card?.bottom ?? null, tabsTop: tabs?.top ?? null, buttonTop: button?.top ?? null, buttonBottom: button?.bottom ?? null, firstInputWidth: firstInput?.width ?? null, firstInputHeight: firstInput?.height ?? null, lastInputBottom: lastInput?.bottom ?? null };
   });
   for (const key of ['cardTop', 'cardHeight', 'cardBottom', 'tabsTop', 'buttonTop', 'buttonBottom'] as const) {
-    expect(Math.abs((smsLayout[key] ?? 999) - (baseline[key] ?? 0))).toBeLessThanOrEqual(0.1);
+    expect(Math.abs((emailCodeLayout[key] ?? 999) - (baseline[key] ?? 0))).toBeLessThanOrEqual(0.1);
   }
-  expect((smsLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(smsLayout.buttonTop ?? 0);
+  expect(emailCodeLayout.firstInputWidth ?? 999).toBeLessThanOrEqual(36.1);
+  expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(32.1);
+  expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
 
   await page.getByRole('tab', { name: '密码登录' }).click();
   await expect(page.getByLabel('密码')).toBeVisible();
@@ -108,17 +112,9 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     return { cardTop: card?.top ?? null, cardHeight: card?.height ?? null, cardBottom: card?.bottom ?? null, tabsTop: tabs?.top ?? null, buttonTop: button?.top ?? null, buttonBottom: button?.bottom ?? null };
   });
 
-  await page.getByRole('tab', { name: '短信登录' }).click();
-  await expect(page.getByLabel('手机号')).toBeVisible();
-  const codeLayout = await page.evaluate(() => {
-    const card = document.querySelector('.axi-login-card')?.getBoundingClientRect();
-    const tabs = document.querySelector('.axi-login-right__tabs')?.getBoundingClientRect();
-    const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
-    const lastInput = document.querySelector('.axi-one-time-code__input:last-child')?.getBoundingClientRect();
-    return { cardTop: card?.top ?? null, cardHeight: card?.height ?? null, cardBottom: card?.bottom ?? null, tabsTop: tabs?.top ?? null, buttonTop: button?.top ?? null, buttonBottom: button?.bottom ?? null, lastInputBottom: lastInput?.bottom ?? null };
-  });
-
-  for (const state of [passwordLayout, codeLayout]) {
+  await page.getByRole('tab', { name: '邮箱登录' }).click();
+  await expect(page.getByLabel('邮箱')).toBeVisible();
+  for (const state of [passwordLayout, emailCodeLayout]) {
     expect(Math.abs((state.cardTop ?? 999) - (baseline.cardTop ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.cardHeight ?? 999) - (baseline.cardHeight ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.cardBottom ?? 999) - (baseline.cardBottom ?? 0))).toBeLessThanOrEqual(0.1);
@@ -126,19 +122,19 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     expect(Math.abs((state.buttonTop ?? 999) - (baseline.buttonTop ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.buttonBottom ?? 999) - (baseline.buttonBottom ?? 0))).toBeLessThanOrEqual(0.1);
   }
-  expect((codeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(codeLayout.buttonTop ?? 0);
+  expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
 });
 
-test('SMS login error banner keeps the card height stable across appearance', async ({ page }) => {
+test('email login error banner keeps the card height stable across appearance', async ({ page }) => {
   await page.goto('/login');
 
-  // Fail the SMS verification request so the real error banner is rendered
+  // Fail the email verification request so the real error banner is rendered
   // without depending on the device QR rotation.
-  await page.route('**/api/v1/auth/sms-verifications', (route) => {
+  await page.route('**/api/v1/auth/email-verifications', (route) => {
     route.fulfill({
       status: 400,
       contentType: 'application/json',
-      body: JSON.stringify({ error: '短信登录未配置' }),
+      body: JSON.stringify({ error: '邮箱验证未开启' }),
     });
   });
 
@@ -151,7 +147,7 @@ test('SMS login error banner keeps the card height stable across appearance', as
   const beforeButtonBottom = await button.evaluate((node) => node.getBoundingClientRect().bottom);
   await expect(bannerSlot.locator('.axi-banner')).toHaveCount(0);
 
-  await page.getByLabel('手机号').fill('13800138000');
+  await page.getByLabel('邮箱').fill('broken@example.com');
   await page.getByRole('button', { name: '获取验证码' }).click();
 
   const banner = bannerSlot.locator('.axi-banner');
@@ -215,6 +211,7 @@ test('expired QR keeps a readable client-style scrim until the user refreshes it
       qr: rect('.axi-login-qr-frame'),
       button: rect('.axi-login-button'),
       scrim: getComputedStyle(document.querySelector('.axi-login-qr-expired-overlay')!).backgroundColor,
+      iconAnimation: getComputedStyle(document.querySelector('.axi-login-qr-expired-overlay__icon')!).animationName,
     };
   });
 
@@ -222,6 +219,7 @@ test('expired QR keeps a readable client-style scrim until the user refreshes it
   expect(layout.qr?.width ?? 999).toBeLessThan(180);
   expect(layout.button?.width ?? 999).toBeLessThan(220);
   expect(layout.scrim).toContain('0.86');
+  expect(layout.iconAnimation).toBe('none');
 
   await overlay.click();
   await expect.poll(() => createCalls).toBeGreaterThan(1);

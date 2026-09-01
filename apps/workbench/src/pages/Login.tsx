@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../i18n';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
 import { createOneTimeCode, oneTimeCodeValue, type OneTimeCode } from '../lib/oneTimeCode';
-import { confirmSmsCode, isValidSmsPhone, normalizeSmsPhone, requestSmsCode } from '../lib/smsLogin';
 import {
   consumeWebDeviceLoginQr,
   createWebDeviceLoginQr,
@@ -19,7 +18,7 @@ import {
 import './Login.css';
 
 type Phase = 'email' | 'code' | 'verifying';
-type LoginMode = 'password' | 'sms' | 'email';
+type LoginMode = 'password' | 'email';
 type DeviceQrStatus = 'creating' | 'waiting_scan' | 'approved' | 'expired' | 'failed';
 type PasswordLoginResponse = { authenticated: boolean };
 type AuthMethodsResponse = { passwordLogin?: boolean };
@@ -32,7 +31,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * Web 登录入口。
  *
  * 视觉结构固定为客户端常见的双栏登录面板：左侧始终显示扫码登录，
- * 右侧承载密码和短信验证码流程。扫码和右侧登录方式是并行的
+ * 右侧承载密码和邮箱验证码流程。扫码和右侧登录方式是并行的
  * 真实登录路径，不再通过顶部标签互相替换整个面板。
  */
 const Login: React.FC = () => {
@@ -50,11 +49,10 @@ const Login: React.FC = () => {
   const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/admin/dashboard';
 
   // 左侧二维码固定存在；登录方式和 phase 只描述右侧登录流程。
-  const [loginMode, setLoginMode] = useState<LoginMode>('sms');
+  const [loginMode, setLoginMode] = useState<LoginMode>('email');
   const [passwordLoginEnabled, setPasswordLoginEnabled] = useState(false);
   const [phase, setPhase] = useState<Phase>('email');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState<OneTimeCode | string>(() => createOneTimeCode());
   const [sentTo, setSentTo] = useState('');
@@ -231,32 +229,6 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleRequestSmsCode = async () => {
-    if (submitting || sessionLoading) return;
-    const normalizedPhone = normalizeSmsPhone(phone);
-    if (!isValidSmsPhone(normalizedPhone)) {
-      setError(t('auth.login.invalidPhone'));
-      return;
-    }
-    setError(null);
-    setHint(null);
-    setSubmitting(true);
-    try {
-      const result = await requestSmsCode(normalizedPhone);
-      setSentTo(normalizedPhone);
-      setChallengeId(result.challengeId);
-      setExpiresAt(result.expiresAt || null);
-      setCode(createOneTimeCode());
-      setCooldown(RESEND_COOLDOWN_SECONDS);
-      setPhase('code');
-    } catch (caught: unknown) {
-      const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
-      setError(message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const loginWithPassword = async (loginEmail: string, loginPassword: string): Promise<boolean> => {
     const response = await fetch(resolveGatewayURL('/api/v1/auth/login/password'), {
       method: 'POST',
@@ -319,14 +291,7 @@ const Login: React.FC = () => {
     setPhase('verifying');
     setSubmitting(true);
     try {
-      let ok = false;
-      if (loginMode === 'sms') {
-        await confirmSmsCode(challengeId, trimmed);
-        ok = await refreshSession();
-        if (!ok) throw new Error('会话未建立，请重新验证验证码');
-      } else {
-        ok = await confirmEmailCode(challengeId, trimmed);
-      }
+      const ok = await confirmEmailCode(challengeId, trimmed);
       if (ok) return;
       setError(t('auth.login.codeInvalid'));
       setPhase('code');
@@ -338,29 +303,18 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleSmsSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!challengeId) {
-      await handleRequestSmsCode();
-      return;
-    }
-    await handleVerifyCode(event);
-  };
-
   const handleResend = async () => {
     if (cooldown > 0 || submitting || !sentTo) return;
     setError(null);
     setHint(null);
     setSubmitting(true);
     try {
-      const result = loginMode === 'sms'
-        ? await requestSmsCode(sentTo)
-        : await requestEmailCode(sentTo);
+      const result = await requestEmailCode(sentTo);
       setChallengeId(result.challengeId);
       setExpiresAt(result.expiresAt || null);
       setCooldown(RESEND_COOLDOWN_SECONDS);
       setCode(createOneTimeCode());
-      setHint(loginMode === 'sms' ? t('auth.login.smsResentHint') : t('auth.login.resentHint'));
+      setHint(t('auth.login.resentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.resendFailed');
       setError(message);
@@ -369,7 +323,7 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleChangeRecipient = () => {
+  const handleChangeEmail = () => {
     setPhase('email');
     setCode(createOneTimeCode());
     setChallengeId('');
@@ -377,7 +331,7 @@ const Login: React.FC = () => {
     setHint(null);
   };
 
-  const selectLoginMode = (mode: LoginMode) => {
+  const handleLoginModeChange = (mode: LoginMode) => {
     setLoginMode(mode);
     setPhase('email');
     setCode(createOneTimeCode());
@@ -439,7 +393,7 @@ const Login: React.FC = () => {
                       setQrError(null);
                     }}
                   >
-                    <span className="axi-login-qr-expired-overlay__icon" />
+                    <span className="axi-login-qr-expired-overlay__icon" aria-hidden="true" />
                     <span className="axi-login-qr-expired-overlay__title">{qrOverlayTitle}</span>
                     <span className="axi-login-qr-expired-overlay__hint">{qrOverlayHint}</span>
                   </button>
@@ -463,7 +417,7 @@ const Login: React.FC = () => {
 
           <div className="axi-login-card__divider" aria-hidden="true" />
 
-          <section className="axi-login-right" id="axi-login-method-panel" aria-label="登录方式">
+          <section className="axi-login-right" id="axi-login-email-panel" aria-label="登录方式">
             <div className="axi-login-right__tabs" role="tablist" aria-label="登录方式">
               <button
                 type="button"
@@ -473,7 +427,7 @@ const Login: React.FC = () => {
                 disabled={!passwordLoginEnabled}
                 title={passwordLoginEnabled ? '使用邮箱和密码登录' : '当前环境尚未配置密码登录'}
                 className={`${loginMode === 'password' ? 'is-active' : ''} ${!passwordLoginEnabled ? 'is-disabled' : ''}`}
-                onClick={() => selectLoginMode('password')}
+                onClick={() => handleLoginModeChange('password')}
               >
                 密码登录
               </button>
@@ -481,11 +435,11 @@ const Login: React.FC = () => {
               <button
                 type="button"
                 role="tab"
-                aria-selected={loginMode === 'sms'}
-                className={loginMode === 'sms' ? 'is-active' : ''}
-                onClick={() => selectLoginMode('sms')}
+                aria-selected={loginMode === 'email'}
+                className={loginMode === 'email' ? 'is-active' : ''}
+                onClick={() => handleLoginModeChange('email')}
               >
-                短信登录
+                邮箱登录
               </button>
             </div>
 
@@ -532,50 +486,6 @@ const Login: React.FC = () => {
                 </form>
               )}
 
-              {loginMode === 'sms' && (
-                <form className="axi-login-form axi-login-form--sms" onSubmit={handleSmsSubmit} noValidate>
-                  <label htmlFor="axi-login-phone">手机号</label>
-                  <div className="axi-login-sms-fields">
-                    <div className="axi-login-sms-phone-row">
-                      <span className="axi-login-sms-country" aria-hidden="true">+86</span>
-                      <input
-                        id="axi-login-phone"
-                        name="phone"
-                        type="tel"
-                        autoComplete="tel"
-                        inputMode="tel"
-                        required
-                        value={phone}
-                        onChange={(event) => setPhone(normalizeSmsPhone(event.target.value))}
-                        placeholder="请输入手机号"
-                        disabled={submitting}
-                      />
-                      <button
-                        className="axi-login-text-button axi-login-sms-request"
-                        type="button"
-                        onClick={() => void handleRequestSmsCode()}
-                        disabled={submitting || sessionLoading || !phone.trim() || cooldown > 0}
-                      >
-                        {submitting ? t('auth.login.sending') : cooldown > 0 ? `${cooldown}s` : t('auth.login.requestCode')}
-                      </button>
-                    </div>
-                    <div className="axi-login-sms-code-field">
-                      <span id="axi-login-sms-code-label">验证码</span>
-                      <OneTimeCodeInput
-                        ariaLabelledBy="axi-login-sms-code-label"
-                        disabled={submitting}
-                        firstInputRef={codeInputRef}
-                        value={code}
-                        onChange={setCode}
-                      />
-                    </div>
-                  </div>
-                  <button className="axi-login-button axi-login-button--primary" type="submit" disabled={submitting || !challengeId || oneTimeCodeValue(code).length !== 6}>
-                    {submitting ? t('auth.login.verifying') : '登录/注册'}
-                  </button>
-                </form>
-              )}
-
               {loginMode === 'email' && phase === 'email' && (
                 <form className="axi-login-form axi-login-form--email" onSubmit={handleRequestCode} noValidate>
                   <label htmlFor="axi-login-email">{t('auth.email')}</label>
@@ -605,7 +515,7 @@ const Login: React.FC = () => {
                   <h2>输入邮箱验证码</h2>
                   <div className="axi-login-form__row">
                     <span id="axi-login-code-label">{t('auth.login.sentTo')} <strong>{sentTo}</strong></span>
-                    <button className="axi-login-text-button" type="button" onClick={handleChangeRecipient}>{t('auth.login.changeEmail')}</button>
+                    <button className="axi-login-text-button" type="button" onClick={handleChangeEmail}>{t('auth.login.changeEmail')}</button>
                   </div>
                   <OneTimeCodeInput
                     ariaLabelledBy="axi-login-code-label"
