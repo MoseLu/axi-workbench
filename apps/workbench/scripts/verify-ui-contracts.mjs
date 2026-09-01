@@ -52,7 +52,8 @@ requireMatch(foundationIcons, /sun:/, 'shared semantic icon registry must includ
 requireMatch(foundationIcons, /logout:\s*'exit'/, 'shared semantic icon registry must use the canonical logout glyph');
 requireMatch(workbenchIcon, /resolveAxiWorkbenchIcon/, 'Web must render icon semantics through the shared SVG registry');
 requireMatch(globalSearch, /axiWorkbenchIconMap\.search[\s\S]*axiWorkbenchIconMap\.forward/, 'global search controls must use shared Workbench icon semantics');
-requireMatch(login, /AxiLogoMark/, 'Web login must use the shared four-color Axi mark');
+requireMatch(login, /axi-login-card__chrome/, 'Web login must expose the client-style card chrome');
+requireMatch(login, /axi-login-qr-expired-overlay/, 'Web login must own the QR expiry scrim and refresh action');
 requireMatch(layout, /iconName: axiWorkbenchIconMap\.logout/, 'Web account menu must use the canonical logout icon semantic');
 forbidMatch(layout, /MobileTopBar|MobileBottomNav|useIsMobile|wb-mobile-shell/, 'Web layout must not contain a viewport-switched mobile shell');
 forbidMatch(layout, /logo-axi-core-color\.png|admin-sun|admin-night-mode/, 'Web chrome must not use a local logo or generic theme glyphs');

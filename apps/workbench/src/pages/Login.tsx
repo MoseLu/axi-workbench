@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
-import { AxiLogoMark } from '@axi/core';
 import { AxiBanner } from '@axi/widgets';
 import { resolveGatewayURL } from '@axi/workbench-foundation';
 import scanPromptImage from '../assets/login/scan-prompt.png';
@@ -189,15 +188,16 @@ const Login: React.FC = () => {
     };
   }, [deviceQr, deviceQrStatus, refreshSession]);
 
-  // 失效、消费失败或轮询失败后自动换发二维码，不让用户承担恢复操作。
+  // 服务异常自动重试；二维码明确过期时保留蒙层，交给用户点击刷新。
   useEffect(() => {
     if (!deviceQr || !['expired', 'failed'].includes(deviceQrStatus) || qrSubmitting) return undefined;
+    if (deviceQrStatus === 'expired') return undefined;
     const refreshTimer = window.setTimeout(() => {
       deviceQrConsumingRef.current = false;
       setDeviceQr(null);
       setDeviceQrStatus('creating');
       setQrError(null);
-    }, deviceQrStatus === 'expired' ? 900 : 2_500);
+    }, 2_500);
     return () => window.clearTimeout(refreshTimer);
   }, [deviceQr, deviceQrStatus, qrSubmitting]);
 
@@ -336,14 +336,19 @@ const Login: React.FC = () => {
     expired: '二维码已失效',
     failed: '暂时无法生成二维码',
   };
+  const qrOverlayTitle = deviceQrStatus === 'expired' ? '二维码已过期' : '二维码加载失败';
+  const qrOverlayHint = deviceQrStatus === 'expired' ? '请点击刷新' : '请点击重试';
 
   return (
     <main className="axi-login-page">
-      <div className="axi-login-page__glow axi-login-page__glow--one" aria-hidden="true" />
-      <div className="axi-login-page__glow axi-login-page__glow--two" aria-hidden="true" />
       <div className="axi-login-page__grid" aria-hidden="true" />
 
       <section className="axi-login-card" aria-labelledby="axi-login-title">
+        <div className="axi-login-card__chrome" aria-hidden="true">
+          <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--close" />
+          <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--minimize" />
+          <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--maximize" />
+        </div>
         <div className="axi-login-card__body">
           <section className="axi-login-qr-column" id="axi-login-qr-panel" aria-label="扫码登录">
             <h1 id="axi-login-title">扫描二维码登录</h1>
@@ -363,10 +368,27 @@ const Login: React.FC = () => {
                     color="#111827"
                     bgColor="#ffffff"
                     errorLevel="M"
-                    status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
+                    status="active"
                   />
                 ) : (
                   <div className="axi-login-qr-loading"><span /><span /><span /></div>
+                )}
+                {(deviceQrStatus === 'expired' || deviceQrStatus === 'failed') && deviceQr && (
+                  <button
+                    type="button"
+                    className="axi-login-qr-expired-overlay"
+                    aria-label={`${qrOverlayTitle}，${qrOverlayHint}`}
+                    onClick={() => {
+                      deviceQrConsumingRef.current = false;
+                      setDeviceQr(null);
+                      setDeviceQrStatus('creating');
+                      setQrError(null);
+                    }}
+                  >
+                    <span className="axi-login-qr-expired-overlay__icon" />
+                    <span className="axi-login-qr-expired-overlay__title">{qrOverlayTitle}</span>
+                    <span className="axi-login-qr-expired-overlay__hint">{qrOverlayHint}</span>
+                  </button>
                 )}
               </div>
               <span className="axi-login-qr-tooltip" role="tooltip">
@@ -385,7 +407,11 @@ const Login: React.FC = () => {
             {deviceQr && deviceQrStatus === 'waiting_scan' && (
               <p className="axi-login-qr-meta">有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}，失效后自动更新</p>
             )}
-            {qrError && <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">{qrError}</AxiBanner>}
+            {qrError && deviceQrStatus === 'failed' && (
+              <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">
+                {qrError}
+              </AxiBanner>
+            )}
           </section>
 
           <div className="axi-login-card__divider" aria-hidden="true" />
@@ -424,7 +450,7 @@ const Login: React.FC = () => {
               </button>
             </div>
 
-            <div className="axi-login-right__body">
+            <div className={`axi-login-right__body${banner || hint ? ' has-banner' : ''}`}>
               <div className="axi-login-banner-slot" aria-live="polite">
                 {banner && <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
                 {!banner && hint && <AxiBanner tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
@@ -432,8 +458,6 @@ const Login: React.FC = () => {
               <div className="axi-login-form-slot">
                 {loginMode === 'password' && (
                 <form className="axi-login-form" onSubmit={handlePasswordLogin} noValidate>
-                  <h2>密码登录</h2>
-                  <p className="axi-login-form__description">使用已配置的工作台账号密码登录。</p>
                   <label htmlFor="axi-login-password-email">{t('auth.email')}</label>
                   <input
                     id="axi-login-password-email"
@@ -471,8 +495,6 @@ const Login: React.FC = () => {
 
               {loginMode === 'email' && phase === 'email' && (
                 <form className="axi-login-form" onSubmit={handleRequestCode} noValidate>
-                  <h2>邮箱登录</h2>
-                  <p className="axi-login-form__description">输入登录邮箱，获取验证码完成登录。</p>
                   <label htmlFor="axi-login-email">{t('auth.email')}</label>
                   <input
                     id="axi-login-email"
@@ -522,21 +544,13 @@ const Login: React.FC = () => {
               )}
               </div>
             </div>
-            <p className="axi-login-right__hint">
-              {loginMode === 'password'
-                ? '密码验证通过后，本机浏览器会保持安全会话。'
-                : '首次登录使用邮箱验证码；验证通过后，本机浏览器会保持安全会话。'}
-            </p>
           </section>
         </div>
 
         <footer className="axi-login-card__footer">
-          <span><AxiLogoMark size={15} /> Axi WorkBench</span>
           <span>安全会话由网关托管</span>
         </footer>
       </section>
-
-      <p className="axi-login-page__footer">Axi WorkBench · 本地开发工作台</p>
     </main>
   );
 };

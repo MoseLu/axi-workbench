@@ -21,7 +21,7 @@ test('login error banner keeps the card height stable across appearance', async 
 
   const card = page.locator('.axi-login-card');
   const bannerSlot = page.locator('.axi-login-banner-slot');
-  await expect(bannerSlot).toBeVisible();
+  await expect(page.locator('.axi-login-right__body')).toBeVisible();
 
   const beforeHeight = await card.evaluate((node) => node.getBoundingClientRect().height);
   await expect(bannerSlot.locator('.axi-banner')).toHaveCount(0);
@@ -39,4 +39,64 @@ test('login error banner keeps the card height stable across appearance', async 
   await page.waitForTimeout(150);
   const afterHeight = await card.evaluate((node) => node.getBoundingClientRect().height);
   expect(Math.abs(afterHeight - beforeHeight)).toBeLessThanOrEqual(2);
+});
+
+test('expired QR keeps a readable client-style scrim until the user refreshes it', async ({ page }) => {
+  let createCalls = 0;
+  const transaction = {
+    ok: true,
+    webLoginId: 'weblogin_expired_12345678',
+    scanToken: 'scan_token_1234567890123456789012345678',
+    pollToken: 'poll_token_1234567890123456789012345678',
+    expiresAt: Math.floor(Date.now() / 1000) + 60,
+  };
+
+  await page.route('**/api/v1/auth/session*', (route) => route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ authenticated: false }),
+  }));
+  await page.route('**/api/v1/auth/methods*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ passwordLogin: false }),
+  }));
+  await page.route('**/api/v1/auth/device-login/qr', (route) => {
+    createCalls += 1;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(transaction) });
+  });
+  await page.route('**/api/v1/auth/device-login/qr/*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, status: 'expired', expiresAt: transaction.expiresAt }),
+  }));
+
+  await page.goto('/login');
+  const overlay = page.locator('.axi-login-qr-expired-overlay');
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveAttribute('aria-label', '二维码已过期，请点击刷新');
+  await expect(page.locator('.axi-login-qr-expired-overlay__title')).toHaveText('二维码已过期');
+  await expect(page.locator('.axi-login-card__chrome-dot')).toHaveCount(3);
+
+  const layout = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector(selector);
+      const box = element?.getBoundingClientRect();
+      return box ? { width: box.width, height: box.height } : null;
+    };
+    return {
+      card: rect('.axi-login-card'),
+      qr: rect('.axi-login-qr-frame'),
+      button: rect('.axi-login-button'),
+      scrim: getComputedStyle(document.querySelector('.axi-login-qr-expired-overlay')!).backgroundColor,
+    };
+  });
+
+  expect(layout.card?.height ?? 999).toBeLessThan(450);
+  expect(layout.qr?.width ?? 999).toBeLessThan(180);
+  expect(layout.button?.width ?? 999).toBeLessThan(220);
+  expect(layout.scrim).toContain('0.86');
+
+  await overlay.click();
+  await expect.poll(() => createCalls).toBeGreaterThan(1);
 });
