@@ -20,7 +20,7 @@ vi.mock('@axi/core', () => ({
 }));
 
 vi.mock('@axi/shell', () => ({
-  AxiViewGroup: ({ aside, asideAriaLabel: _asideAriaLabel, asideTitle: _asideTitle, asideWidth: _asideWidth, children, collapsible: _collapsible, ...props }: { aside?: React.ReactNode; asideAriaLabel?: string; asideTitle?: React.ReactNode; asideWidth?: number; children: React.ReactNode; collapsible?: boolean }) => (
+  AxiViewGroup: ({ aside, asideAriaLabel: _asideAriaLabel, asideTitle: _asideTitle, asideWidth: _asideWidth, children, collapsible: _collapsible, collapseAsideLabel: _collapseAsideLabel, expandAsideLabel: _expandAsideLabel, ...props }: { aside?: React.ReactNode; asideAriaLabel?: string; asideTitle?: React.ReactNode; asideWidth?: number; children: React.ReactNode; collapsible?: boolean; collapseAsideLabel?: string; expandAsideLabel?: string }) => (
     <section {...props}>
       {aside ? <aside>{aside}</aside> : null}
       <div>{children}</div>
