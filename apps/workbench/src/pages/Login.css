@@ -100,7 +100,8 @@
   display: grid;
   grid-template-columns: minmax(14rem, .72fr) var(--space-px) minmax(20rem, 1.28fr);
   gap: var(--space-6);
-  min-height: 20rem;
+  height: 22.25rem;
+  min-height: 22.25rem;
   box-sizing: border-box;
   padding: var(--space-4) var(--space-8) var(--space-3);
 }
@@ -582,6 +583,7 @@
   .axi-login-card__body {
     grid-template-columns: 1fr;
     gap: var(--space-6);
+    height: auto;
     min-height: auto;
     padding: var(--space-6);
   }

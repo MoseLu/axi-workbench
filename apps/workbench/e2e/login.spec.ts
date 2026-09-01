@@ -57,11 +57,13 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const rightCenter = right ? (right.top + right.bottom) / 2 : null;
     return {
       cardHeight: rect('.axi-login-card')?.height ?? null,
+      bodyHeight: rect('.axi-login-card__body')?.height ?? null,
       centerOffset: groupCenter !== null && rightCenter !== null ? Math.abs(groupCenter - rightCenter) : null,
     };
   });
 
-  expect(layout.cardHeight ?? 999).toBeLessThan(380);
+  expect(layout.cardHeight ?? 999).toBeLessThan(420);
+  expect(Math.abs((layout.bodyHeight ?? 999) - 356)).toBeLessThanOrEqual(0.1);
   expect(layout.centerOffset ?? 999).toBeLessThanOrEqual(1);
 });
 

@@ -89,6 +89,7 @@ requireMatch(
   /\.axi-login-card\s*\{[\s\S]*?color-scheme:\s*light;/,
   'login card must scope native controls to the light color scheme',
 );
+requireMatch(loginCss, /\.axi-login-card__body\s*\{[\s\S]*?height:\s*22\.25rem;[\s\S]*?min-height:\s*22\.25rem;/, 'login body must preserve a fixed desktop height across login states');
 requireMatch(
   loginCss,
   /:autofill\s*\{[\s\S]*?box-shadow:/,
