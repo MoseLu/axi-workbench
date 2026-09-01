@@ -54,6 +54,8 @@ requireMatch(workbenchIcon, /resolveAxiWorkbenchIcon/, 'Web must render icon sem
 requireMatch(globalSearch, /axiWorkbenchIconMap\.search[\s\S]*axiWorkbenchIconMap\.forward/, 'global search controls must use shared Workbench icon semantics');
 requireMatch(login, /axi-login-card__chrome/, 'Web login must expose the client-style card chrome');
 requireMatch(login, /axi-login-qr-expired-overlay/, 'Web login must own the QR expiry scrim and refresh action');
+requireMatch(login, /axi-login-form--sms[\s\S]*OneTimeCodeInput/, 'Web login SMS flow must use the shared six-slot verification input');
+requireMatch(login, /短信登录/, 'Web login must expose the SMS login surface');
 forbidMatch(login, /axi-login-qr-status|axi-login-qr-meta|axi-login-card__footer/, 'Web login must not retain removed QR status or footer copy');
 requireMatch(layout, /iconName: axiWorkbenchIconMap\.logout/, 'Web account menu must use the canonical logout icon semantic');
 forbidMatch(layout, /MobileTopBar|MobileBottomNav|useIsMobile|wb-mobile-shell/, 'Web layout must not contain a viewport-switched mobile shell');
@@ -90,6 +92,9 @@ requireMatch(
   'login card must scope native controls to the light color scheme',
 );
 requireMatch(loginCss, /\.axi-login-card__body\s*\{[\s\S]*?height:\s*22\.25rem;[\s\S]*?min-height:\s*22\.25rem;/, 'login body must preserve a fixed desktop height across login states');
+requireMatch(loginCss, /\.axi-login-right\s*\{[\s\S]*?grid-template-rows:\s*2rem 16rem;/, 'login right rail must use a fixed desktop track');
+requireMatch(loginCss, /\.axi-login-banner-slot\s*\{[\s\S]*?position:\s*absolute;[\s\S]*?bottom:\s*0;/, 'login feedback must not reflow the desktop form track');
+forbidMatch(loginCss, /axi-login-card-in/, 'login card must not animate its vertical position');
 requireMatch(
   loginCss,
   /:autofill\s*\{[\s\S]*?box-shadow:/,
