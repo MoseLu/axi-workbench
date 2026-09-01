@@ -24,6 +24,7 @@ type PasswordLoginResponse = { authenticated: boolean };
 type AuthMethodsResponse = { passwordLogin?: boolean };
 
 const RESEND_COOLDOWN_SECONDS = 60;
+const QR_POLL_INTERVAL_MS = 3_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
@@ -180,7 +181,7 @@ const Login: React.FC = () => {
     };
 
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 1_500);
+    const interval = window.setInterval(() => void refresh(), QR_POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
@@ -358,6 +359,8 @@ const Login: React.FC = () => {
                     aria-label="电脑登录二维码"
                     value={webDeviceLoginQrPayload(deviceQr)}
                     size={176}
+                    color="#111827"
+                    bgColor="#ffffff"
                     errorLevel="M"
                     status={deviceQrStatus === 'expired' || deviceQrStatus === 'failed' ? 'expired' : 'active'}
                   />
