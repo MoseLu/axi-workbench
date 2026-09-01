@@ -424,6 +424,12 @@
   gap: var(--space-3);
 }
 
+/* Password and email forms share the same row width (21.125rem) so the two
+ * visible input rows stay aligned when the user switches tabs. */
+.axi-login-form--password {
+  gap: var(--space-3);
+}
+
 /* The code form has an extra message row; keep its fields above the shared submit baseline. */
 .axi-login-form--code {
   gap: var(--space-1);
@@ -522,21 +528,90 @@
   font-size: var(--text-xs);
 }
 
+/* Password row: full-width input that shares the email form's row footprint. */
+.axi-login-form__row--input {
+  width: 21.125rem;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.axi-login-form__row--input input {
+  width: 100%;
+}
+
+/* Email row: input on the left, embedded "获取验证码" button on the right edge of the same row.
+ * The row's total width matches the 6-slot OTP row (6 × 3rem + 5 × 0.625rem = 21.125rem). */
+.axi-login-form__row--email {
+  width: 21.125rem;
+  max-width: 100%;
+  gap: 0;
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: var(--radius-xs);
+  background: var(--palette-white);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+  margin-inline: auto;
+}
+
+.axi-login-form__row--email:focus-within {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
+}
+
+/* Match the generic form-input selector's specificity so its border cannot
+ * reopen the seam between the email field and the send-code action. */
+.axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input) {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input):focus {
+  border: 0;
+  box-shadow: none;
+}
+
+.axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input):-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--palette-white) inset;
+  box-shadow: 0 0 0 1000px var(--palette-white) inset;
+}
+
+/* OTP row: 6 fixed-size rounded-rectangle slots; total width matches the email row. */
+.axi-login-form__row--code {
+  display: flex;
+  width: 21.125rem;
+  max-width: 100%;
+  padding: 0;
+  justify-content: center;
+  margin-inline: auto;
+}
+
+.axi-login-form__hint {
+  display: block;
+  color: var(--palette-gray-400);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
 .axi-login-form .axi-one-time-code {
-  width: min(100%, 15rem);
-  margin: var(--space-2) auto var(--space-1);
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--space-1_5);
+  width: auto;
+  margin: 0;
+  grid-template-columns: repeat(6, 3rem);
+  gap: var(--space-2_5);
 }
 
 .axi-login-form .axi-one-time-code__input {
-  width: 100%;
-  height: 2rem;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
   border-color: var(--palette-gray-250);
   border-radius: var(--radius-sm);
   color: var(--palette-gray-900);
   background: var(--palette-white);
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
+  line-height: 1;
 }
 
 .axi-login-form .axi-one-time-code__input:focus {
@@ -557,6 +632,23 @@
 
 .axi-login-text-button:hover:not(:disabled) { color: var(--color-brand-hover); }
 .axi-login-text-button:disabled { cursor: not-allowed; opacity: .55; }
+
+/* "获取验证码" sits inside the email row; no separator so the row reads as one surface. */
+.axi-login-text-button--send {
+  flex: 0 0 auto;
+  height: 100%;
+  min-height: 2.625rem;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.axi-login-text-button--send:disabled {
+  color: var(--palette-gray-350);
+  opacity: 1;
+}
 
 .axi-login-button {
   position: absolute;

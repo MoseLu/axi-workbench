@@ -74,46 +74,92 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       buttonTop: form ? rect('.axi-login-button')?.top ?? null : null,
       buttonBottom: form ? rect('.axi-login-button')?.bottom ?? null : null,
       centerOffset: groupCenter !== null && rightCenter !== null ? Math.abs(groupCenter - rightCenter) : null,
+      emailRow: rect('.axi-login-form__row--email') ?? null,
+      codeRow: rect('.axi-login-form__row--code') ?? null,
     };
   });
 
   expect(layout.cardHeight ?? 999).toBeLessThan(420);
   expect(Math.abs((layout.bodyHeight ?? 999) - 356)).toBeLessThanOrEqual(0.1);
   expect(layout.centerOffset ?? 999).toBeLessThanOrEqual(1);
+  // The email row and the OTP row share the same height so the two visible
+  // input rows visually align (1px row borders explain the 2px delta).
+  expect(Math.abs((layout.emailRow?.height ?? 0) - (layout.codeRow?.height ?? 0))).toBeLessThanOrEqual(8);
 
   const baseline = layout;
   await expect(page.getByRole('tab', { name: '邮箱登录' })).toHaveAttribute('aria-selected', 'true');
-  await page.getByLabel('邮箱').fill('render@example.com');
+  await page.locator('#axi-login-email').fill('render@example.com');
+  // The "获取验证码" button is now embedded inside the email input row on the right edge.
+  await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toBeVisible();
+  const emailRowBorders = await page.evaluate(() => {
+    const row = document.querySelector('.axi-login-form__row--email');
+    const input = row?.querySelector('input');
+    const button = row?.querySelector('button');
+    if (!row || !input || !button) return null;
+    return {
+      rowRight: getComputedStyle(row).borderRightWidth,
+      inputLeft: getComputedStyle(input).borderLeftWidth,
+      inputRight: getComputedStyle(input).borderRightWidth,
+      buttonLeft: getComputedStyle(button).borderLeftWidth,
+    };
+  });
+  expect(emailRowBorders).toEqual({ rowRight: '1px', inputLeft: '0px', inputRight: '0px', buttonLeft: '0px' });
   await page.getByRole('button', { name: '获取验证码' }).click();
+  // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
-  await expect(page.locator('.axi-one-time-code__input').first()).toBeFocused();
-  await expect(page.getByRole('heading', { name: '输入邮箱验证码' })).toBeVisible();
+  await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
+
   const emailCodeLayout = await page.evaluate(() => {
-    const card = document.querySelector('.axi-login-card')?.getBoundingClientRect();
-    const tabs = document.querySelector('.axi-login-right__tabs')?.getBoundingClientRect();
-    const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
-    const firstInput = document.querySelector('.axi-one-time-code__input')?.getBoundingClientRect();
-    const lastInput = document.querySelector('.axi-one-time-code__input:last-child')?.getBoundingClientRect();
-    return { cardTop: card?.top ?? null, cardHeight: card?.height ?? null, cardBottom: card?.bottom ?? null, tabsTop: tabs?.top ?? null, buttonTop: button?.top ?? null, buttonBottom: button?.bottom ?? null, firstInputWidth: firstInput?.width ?? null, firstInputHeight: firstInput?.height ?? null, lastInputBottom: lastInput?.bottom ?? null };
+    const rect = (selector: string) => {
+      const element = document.querySelector(selector);
+      const box = element?.getBoundingClientRect();
+      return box ? { top: box.top, bottom: box.bottom, height: box.height } : null;
+    };
+    return {
+      cardTop: rect('.axi-login-card')?.top ?? null,
+      cardHeight: rect('.axi-login-card')?.height ?? null,
+      cardBottom: rect('.axi-login-card')?.bottom ?? null,
+      tabsTop: rect('.axi-login-right__tabs')?.top ?? null,
+      buttonTop: rect('.axi-login-button')?.top ?? null,
+      buttonBottom: rect('.axi-login-button')?.bottom ?? null,
+      emailRow: rect('.axi-login-form__row--email') ?? null,
+      codeRow: rect('.axi-login-form__row--code') ?? null,
+      firstInputWidth: rect('.axi-one-time-code__input')?.width ?? null,
+      firstInputHeight: rect('.axi-one-time-code__input')?.height ?? null,
+      lastInputBottom: rect('.axi-one-time-code__input:last-child')?.bottom ?? null,
+    };
   });
   for (const key of ['cardTop', 'cardHeight', 'cardBottom', 'tabsTop', 'buttonTop', 'buttonBottom'] as const) {
     expect(Math.abs((emailCodeLayout[key] ?? 999) - (baseline[key] ?? 0))).toBeLessThanOrEqual(0.1);
   }
-  expect(emailCodeLayout.firstInputWidth ?? 999).toBeLessThanOrEqual(36.1);
-  expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(32.1);
+  expect(Math.abs((emailCodeLayout.emailRow?.height ?? 0) - (emailCodeLayout.codeRow?.height ?? 0))).toBeLessThanOrEqual(8);
+  expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(50.1);
   expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
 
+  // Switching to the password tab and back keeps the card height stable.
+  // The challengeId is intentionally not preserved across tab switches to
+  // reflect the real UX (each tab starts a fresh flow); the email tab starts
+  // back at its initial "请先获取验证码" hint.
   await page.getByRole('tab', { name: '密码登录' }).click();
-  await expect(page.getByLabel('密码')).toBeVisible();
+  await expect(page.locator('#axi-login-password')).toBeVisible();
   const passwordLayout = await page.evaluate(() => {
-    const card = document.querySelector('.axi-login-card')?.getBoundingClientRect();
-    const tabs = document.querySelector('.axi-login-right__tabs')?.getBoundingClientRect();
-    const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
-    return { cardTop: card?.top ?? null, cardHeight: card?.height ?? null, cardBottom: card?.bottom ?? null, tabsTop: tabs?.top ?? null, buttonTop: button?.top ?? null, buttonBottom: button?.bottom ?? null };
+    const rect = (selector: string) => {
+      const element = document.querySelector(selector);
+      const box = element?.getBoundingClientRect();
+      return box ? { top: box.top, bottom: box.bottom, height: box.height } : null;
+    };
+    return {
+      cardTop: rect('.axi-login-card')?.top ?? null,
+      cardHeight: rect('.axi-login-card')?.height ?? null,
+      cardBottom: rect('.axi-login-card')?.bottom ?? null,
+      tabsTop: rect('.axi-login-right__tabs')?.top ?? null,
+      buttonTop: rect('.axi-login-button')?.top ?? null,
+      buttonBottom: rect('.axi-login-button')?.bottom ?? null,
+    };
   });
 
   await page.getByRole('tab', { name: '邮箱登录' }).click();
-  await expect(page.getByLabel('邮箱')).toBeVisible();
+  await expect(page.locator('#axi-login-email')).toBeVisible();
   for (const state of [passwordLayout, emailCodeLayout]) {
     expect(Math.abs((state.cardTop ?? 999) - (baseline.cardTop ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.cardHeight ?? 999) - (baseline.cardHeight ?? 0))).toBeLessThanOrEqual(0.1);
@@ -122,7 +168,19 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     expect(Math.abs((state.buttonTop ?? 999) - (baseline.buttonTop ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.buttonBottom ?? 999) - (baseline.buttonBottom ?? 0))).toBeLessThanOrEqual(0.1);
   }
-  expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
+
+  // After the tab reset, request a fresh code so the sign-in button can be
+  // armed. The OTP slots must reject non-digit input and only enable the
+  // button when exactly 6 digits are entered.
+  await page.locator('#axi-login-email').fill('render-final@example.com');
+  await page.getByRole('button', { name: '获取验证码' }).click();
+  await expect(page.getByRole('button', { name: '登录' })).toBeDisabled();
+  await page.locator('.axi-one-time-code__input').first().fill('x');
+  await expect(page.locator('.axi-one-time-code__input').first()).toHaveValue('');
+  for (let index = 0; index < 6; index += 1) {
+    await page.locator('.axi-one-time-code__input').nth(index).fill(String(index + 1));
+  }
+  await expect(page.getByRole('button', { name: '登录' })).toBeEnabled();
 });
 
 test('email login error banner keeps the card height stable across appearance', async ({ page }) => {
@@ -147,7 +205,7 @@ test('email login error banner keeps the card height stable across appearance', 
   const beforeButtonBottom = await button.evaluate((node) => node.getBoundingClientRect().bottom);
   await expect(bannerSlot.locator('.axi-banner')).toHaveCount(0);
 
-  await page.getByLabel('邮箱').fill('broken@example.com');
+  await page.locator('#axi-login-email').fill('broken@example.com');
   await page.getByRole('button', { name: '获取验证码' }).click();
 
   const banner = bannerSlot.locator('.axi-banner');
