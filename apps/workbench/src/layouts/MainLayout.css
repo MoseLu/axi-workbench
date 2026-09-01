@@ -55,6 +55,29 @@
   filter: none;
 }
 
+/* Personal OS keeps the shared shell, with its compact two-entry menu centered
+ * as a product surface instead of introducing a second sidebar implementation. */
+.workbench-axi-shell--personal-os .axi-sidebar-brand {
+  justify-content: center;
+}
+
+.workbench-axi-shell--personal-os .axi-side-menu {
+  padding-inline: var(--space-2_5);
+}
+
+.workbench-axi-shell--personal-os .axi-side-submenu,
+.workbench-axi-shell--personal-os .axi-side-item {
+  justify-content: center;
+}
+
+.workbench-axi-shell--personal-os .axi-side-submenu {
+  padding-inline: var(--space-2);
+}
+
+.workbench-axi-shell--personal-os .axi-side-item {
+  padding-inline: var(--space-2);
+}
+
 /*
  * Web global search follows the Art-style framed trigger: it is a deliberate
  * 160px command affordance in the desktop topbar. Its height intentionally

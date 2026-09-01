@@ -35,7 +35,6 @@ import {
   workbenchMenuRouteMap,
 } from '../lib/navigationRegistry';
 import { loadProfile, resolveAvatarSrc, type UserProfile } from '../pages/admin/me/profileStore';
-import PersonalOsLayout from './PersonalOsLayout';
 import './MainLayout.css';
 
 const ROUTE_PREFIX_LABEL_KEYS: Array<{ prefix: string; labelKey: string }> = [
@@ -91,6 +90,7 @@ const MainLayout: React.FC = () => {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const isPersonalOsRoute = location.pathname.startsWith('/admin/personal-os');
   const { preference, setPreference, setStylePreset } = useAxiTheme();
   const { settings, updateSetting } = useAxiAdminSettings({
     applyToDocument: true,
@@ -275,6 +275,13 @@ const MainLayout: React.FC = () => {
     return filtered as unknown as AxiDashboardNavGroup[];
   }, [sidebarSearchValue, t]);
 
+  const shellNavGroups = useMemo(
+    () => isPersonalOsRoute
+      ? visibleDesktopNavGroups.filter((group) => group.key === 'personal-os')
+      : visibleDesktopNavGroups,
+    [isPersonalOsRoute, visibleDesktopNavGroups],
+  );
+
   const desktopBreadcrumbs = useMemo(
     () => resolveBreadcrumbs(location.pathname).map((item, index) => ({
       key: `${item.label}-${index}`,
@@ -449,31 +456,6 @@ const MainLayout: React.FC = () => {
     },
   ], [locale, t]);
 
-  if (location.pathname.startsWith('/admin/personal-os')) {
-    return (
-      <>
-        <PersonalOsLayout
-          displayName={displayName}
-          email={profile.email}
-          onGlobalSearch={openGlobalSearch}
-          onLogout={() => {
-            logout();
-            navigate('/login');
-          }}
-        />
-        <GlobalSearchDialog
-          open={globalSearchOpen}
-          query={globalSearchQuery}
-          items={globalSearchItems}
-          recentItems={recentSearchItems}
-          onChange={setGlobalSearchQuery}
-          onClose={closeGlobalSearch}
-          onSelect={handleGlobalSearchSelect}
-        />
-      </>
-    );
-  }
-
   /* ---------- Web: shared Axi admin chrome ---------- */
   return (
     <AxiPluginProvider plugins={shellPlugins}>
@@ -509,18 +491,20 @@ const MainLayout: React.FC = () => {
         }}
         brand={{
           logo: <AxiLogoMark size={24} className="workbench-axi-brand-mark" />,
-          title: 'Axi WorkBench',
+          subtitle: isPersonalOsRoute ? t('personalOs.shell.subtitle') : undefined,
+          title: isPersonalOsRoute ? t('personalOs.shell.brand') : 'Axi WorkBench',
         }}
         breadcrumbs={settings.breadcrumb ? desktopBreadcrumbs : []}
         breadcrumbLabel={t('layout.breadcrumbLabel')}
-        className="workbench-axi-shell"
+        className={`workbench-axi-shell${isPersonalOsRoute ? ' workbench-axi-shell--personal-os' : ''}`}
         contentClassName="workbench-axi-content"
+        contentLayout={isPersonalOsRoute ? 'flush' : 'inset'}
         contentFullscreen={contentFullscreen}
         floatingTools={floatingTools}
         githubHref={undefined}
         globalSearchLabel={t('layout.globalSearch.label')}
         globalSearchShortcut="⌘ K"
-        navGroups={visibleDesktopNavGroups}
+        navGroups={shellNavGroups}
         onBack={() => window.history.back()}
         onFullscreenToggle={() => setContentFullscreen((value) => !value)}
         onGlobalSearch={openGlobalSearch}
