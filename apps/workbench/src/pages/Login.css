@@ -334,32 +334,36 @@
 }
 
 .axi-login-right__body {
-  display: flex;
+  display: grid;
   flex: 1;
   max-width: 25rem;
+  grid-template-rows: 3.25rem 1fr;
+  gap: var(--space-4);
+}
+
+.axi-login-banner-slot {
+  display: flex;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.axi-login-banner {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.axi-login-form-slot {
+  display: flex;
   flex-direction: column;
+  /* 三个表单（密码登录 / 邮箱 phase=email / 邮箱 phase=code）的行数不同，
+   * 不锁高度会导致切换 Tab 时整张登录卡片上下抖动 ~82px。
+   * 这里锁住「最满的那个」——目前是密码登录（2 个 input + 提交按钮，
+   * 实测约 18rem）。后续如果再加更长的表单，再同步调高。 */
+  min-height: 18rem;
   justify-content: center;
-}
-
-.axi-login-alert,
-.axi-login-hint {
-  margin-bottom: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-}
-
-.axi-login-alert {
-  border: var(--space-px) solid var(--color-danger-border);
-  color: var(--color-danger-text);
-  background: var(--color-danger-bg);
-}
-
-.axi-login-hint {
-  border: var(--space-px) solid color-mix(in srgb, var(--color-brand) 20%, var(--palette-gray-200));
-  color: color-mix(in srgb, var(--color-brand) 78%, var(--palette-gray-700));
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--palette-white));
 }
 
 .axi-login-form {

@@ -19,6 +19,12 @@ vi.mock('@axi/core', () => ({
   AxiSvgIcon: ({ name }: { name: string }) => <span aria-hidden="true" data-icon={name} />,
 }));
 
+vi.mock('@axi/widgets', () => ({
+  AxiBanner: ({ children, className, tone, role }: { children?: React.ReactNode; className?: string; tone?: string; role?: string }) => (
+    <div className={`axi-banner axi-banner--tone-${tone ?? 'info'}${className ? ` ${className}` : ''}`} data-tone={tone} role={role}>{children}</div>
+  ),
+}));
+
 vi.mock('@axi/shell', () => ({
   AxiViewGroup: ({ aside, asideAriaLabel: _asideAriaLabel, asideTitle: _asideTitle, asideWidth: _asideWidth, children, collapsible: _collapsible, collapseAsideLabel: _collapseAsideLabel, expandAsideLabel: _expandAsideLabel, ...props }: { aside?: React.ReactNode; asideAriaLabel?: string; asideTitle?: React.ReactNode; asideWidth?: number; children: React.ReactNode; collapsible?: boolean; collapseAsideLabel?: string; expandAsideLabel?: string }) => (
     <section {...props}>

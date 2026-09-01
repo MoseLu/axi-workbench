@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AxiSvgIcon } from '@axi/core';
+import { AxiBanner } from '@axi/widgets';
 import { AxiViewGroup } from '@axi/shell';
 import {
   usePersonalOsFocus,
@@ -158,10 +159,7 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
       </div>
 
       {queueQuery.data?.warnings.length ? (
-        <div className="personal-os-page__warning" role="status">
-          <AxiSvgIcon name={axiWorkbenchIconMap.info} size={16} />
-          <span>{warningText}</span>
-        </div>
+        <AxiBanner tone="warning" role="status" className="personal-os-page__warning">{warningText}</AxiBanner>
       ) : null}
 
       {queueQuery.error && !queueQuery.data ? (
@@ -356,7 +354,7 @@ function ProjectInspector({
           />
           <span>{t('personalOs.inspector.usesAxiUi')}</span>
         </label>
-        {mutationError ? <p className="personal-os-field-error" role="alert">{t('personalOs.inspector.saveFailed')}</p> : null}
+        {mutationError ? <AxiBanner tone="danger" role="alert" className="personal-os-field-error">{t('personalOs.inspector.saveFailed')}</AxiBanner> : null}
         <button className="personal-os-save-button" disabled={isSaving} onClick={onSave} type="button">
           <AxiSvgIcon name={axiWorkbenchIconMap.edit} size={15} />
           <span>{isSaving ? t('personalOs.inspector.saving') : t('personalOs.inspector.save')}</span>

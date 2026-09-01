@@ -152,15 +152,12 @@
 }
 
 .personal-os-page__warning {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--axi-space-2, 8px);
-  padding: var(--axi-space-2, 8px) var(--axi-space-3, 12px);
+  margin: 0;
   border-left: 3px solid var(--axi-warning);
-  color: var(--axi-text-secondary, var(--axi-muted));
-  background: color-mix(in srgb, var(--axi-warning) 10%, var(--axi-layout-surface, var(--axi-bg-surface)));
-  font-size: var(--axi-font-size-sm, 13px);
+}
+
+.personal-os-page__warning.axi-banner {
+  border-left-width: 3px;
 }
 
 .personal-os-page__workspace {
@@ -471,8 +468,6 @@
 
 .personal-os-field-error {
   margin: 0;
-  color: var(--axi-danger);
-  font-size: var(--axi-font-size-sm, 13px);
 }
 
 .personal-os-runs {

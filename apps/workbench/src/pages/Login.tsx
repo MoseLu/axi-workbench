@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
 import { AxiLogoMark } from '@axi/core';
+import { AxiBanner } from '@axi/widgets';
 import { resolveGatewayURL } from '@axi/workbench-foundation';
 import scanPromptImage from '../assets/login/scan-prompt.png';
 import { useAuth } from '../contexts/AuthContext';
@@ -384,7 +385,7 @@ const Login: React.FC = () => {
             {deviceQr && deviceQrStatus === 'waiting_scan' && (
               <p className="axi-login-qr-meta">有效期至 {new Date(deviceQr.expiresAt * 1000).toLocaleTimeString()}，失效后自动更新</p>
             )}
-            {qrError && <div className="axi-login-qr-alert" role="alert">{qrError}</div>}
+            {qrError && <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">{qrError}</AxiBanner>}
           </section>
 
           <div className="axi-login-card__divider" aria-hidden="true" />
@@ -424,10 +425,12 @@ const Login: React.FC = () => {
             </div>
 
             <div className="axi-login-right__body">
-              {banner && <div className="axi-login-alert" role="alert">{banner}</div>}
-              {hint && !banner && <div className="axi-login-hint">{hint}</div>}
-
-              {loginMode === 'password' && (
+              <div className="axi-login-banner-slot" aria-live="polite">
+                {banner && <AxiBanner tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
+                {!banner && hint && <AxiBanner tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
+              </div>
+              <div className="axi-login-form-slot">
+                {loginMode === 'password' && (
                 <form className="axi-login-form" onSubmit={handlePasswordLogin} noValidate>
                   <h2>密码登录</h2>
                   <p className="axi-login-form__description">使用已配置的工作台账号密码登录。</p>
@@ -517,6 +520,7 @@ const Login: React.FC = () => {
                   </button>
                 </form>
               )}
+              </div>
             </div>
             <p className="axi-login-right__hint">
               {loginMode === 'password'
