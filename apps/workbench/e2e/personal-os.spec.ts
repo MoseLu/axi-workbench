@@ -121,18 +121,23 @@ for (const viewport of [
     await expect(page.getByTestId('personal-os-project-row')).toHaveCount(1);
     await expect(page.getByRole('complementary', { name: '项目检查器' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: '完成定义' })).toHaveValue('完成主流程');
+    await expect(page.locator('.axi-shell')).toHaveClass(/workbench-axi-shell/);
+    await expect(page.locator('.axi-view-group')).toHaveCount(1);
+    await expect(page.locator('.personal-os-shell')).toHaveCount(0);
+    await expect(page.locator('.personal-os-page h1, .personal-os-page > .personal-os-page__header')).toHaveCount(0);
+    await expect(page.locator('.personal-os-page__metrics')).toHaveCount(0);
 
     const layout = await page.evaluate(() => {
       const pageElement = document.querySelector('.personal-os-page');
-      const header = document.querySelector('.personal-os-page__header')?.getBoundingClientRect();
       const toolbar = document.querySelector('.personal-os-page__toolbar')?.getBoundingClientRect();
       const workspace = document.querySelector('.personal-os-page__workspace')?.getBoundingClientRect();
+      const topbar = document.querySelector('.axi-topbar')?.getBoundingClientRect();
       return {
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
         bodyWidth: document.body.scrollWidth,
         pageWidth: pageElement?.getBoundingClientRect().width ?? 0,
-        headerBottom: header?.bottom ?? 0,
+        topbarHeight: topbar?.height ?? 0,
         toolbarTop: toolbar?.top ?? 0,
         workspaceTop: workspace?.top ?? 0,
       };
@@ -141,8 +146,8 @@ for (const viewport of [
     expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
     expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewportWidth);
     expect(layout.pageWidth).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.toolbarTop).toBeGreaterThanOrEqual(layout.headerBottom);
     expect(layout.workspaceTop).toBeGreaterThanOrEqual(layout.toolbarTop);
+    expect(layout.topbarHeight).toBeLessThanOrEqual(56);
 
     await page.screenshot({
       path: testInfo.outputPath('personal-os-' + viewport.width + 'x' + viewport.height + '.png'),

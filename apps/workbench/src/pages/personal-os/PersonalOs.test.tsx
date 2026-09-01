@@ -15,7 +15,17 @@ import { AuthProvider } from '../../contexts/AuthContext';
 import { PersonalOsToday, PersonalOsWorkbench } from './PersonalOs';
 
 vi.mock('@axi/core', () => ({
+  AxiIconButton: ({ children, ...props }: React.ComponentProps<'button'>) => <button {...props}>{children}</button>,
   AxiSvgIcon: ({ name }: { name: string }) => <span aria-hidden="true" data-icon={name} />,
+}));
+
+vi.mock('@axi/shell', () => ({
+  AxiViewGroup: ({ aside, asideAriaLabel: _asideAriaLabel, asideTitle: _asideTitle, asideWidth: _asideWidth, children, collapsible: _collapsible, ...props }: { aside?: React.ReactNode; asideAriaLabel?: string; asideTitle?: React.ReactNode; asideWidth?: number; children: React.ReactNode; collapsible?: boolean }) => (
+    <section {...props}>
+      {aside ? <aside>{aside}</aside> : null}
+      <div>{children}</div>
+    </section>
+  ),
 }));
 
 vi.mock('@epap/api-client', () => ({

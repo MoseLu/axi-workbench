@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AxiSvgIcon } from '@axi/core';
+import { AxiViewGroup } from '@axi/shell';
 import {
   usePersonalOsFocus,
   usePersonalOsQueue,
@@ -55,8 +56,6 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
   const updateFocus = useUpdatePersonalOsFocus();
   const items = queueQuery.data?.items ?? [];
   const selectedItem = items.find((item) => item.id === selectedId) ?? null;
-  const activeCount = items.filter((item) => item.lifecycle === 'building' || item.recentAgentRuns.some((run) => ['queued', 'running', 'awaiting_approval'].includes(run.status))).length;
-  const stalledCount = items.filter((item) => item.lifecycle === 'stalled').length;
   const warningText = queueQuery.data?.warnings.includes('control_plane_snapshot_stale')
     ? t('personalOs.warning.snapshotStale')
     : t('personalOs.warning.runtimeUnavailable');
@@ -82,12 +81,7 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
   }, [selectedItem?.id, selectedItem?.overlay.revision, selectedItem?.lifecycle, selectedItem?.finishLine, selectedItem?.usesAxiUi]);
 
   const pageTitle = mode === 'today' ? t('personalOs.page.today.title') : t('personalOs.page.workbench.title');
-  const pageDescription = mode === 'today' ? t('personalOs.page.today.description') : t('personalOs.page.workbench.description');
   const queueLabel = mode === 'today' ? t('personalOs.queue.todayLabel') : t('personalOs.queue.workbenchLabel');
-  const filterLabel = useMemo(
-    () => workbenchViews.find((entry) => entry.value === view)?.labelKey || 'personalOs.filter.all',
-    [view],
-  );
 
   const saveOverlay = async () => {
     if (!selectedItem || !draft) return;
@@ -118,68 +112,49 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
 
   return (
     <main aria-label={pageTitle} className="personal-os-page">
-      <header className="personal-os-page__header">
-        <div className="personal-os-page__heading">
-          <span className="personal-os-page__kicker">{t('personalOs.page.kicker')}</span>
-          <h2>{pageTitle}</h2>
-          <p>{pageDescription}</p>
-        </div>
-        <dl className="personal-os-page__metrics" aria-label={t('personalOs.metrics.label')}>
-          <div>
-            <dt>{t('personalOs.metrics.visible')}</dt>
-            <dd>{items.length}</dd>
-          </div>
-          <div>
-            <dt>{t('personalOs.metrics.active')}</dt>
-            <dd>{activeCount}</dd>
-          </div>
-          <div>
-            <dt>{t('personalOs.metrics.stalled')}</dt>
-            <dd>{stalledCount}</dd>
-          </div>
-        </dl>
-      </header>
-
       <div className="personal-os-page__toolbar">
-        {mode === 'workbench' ? (
-          <div aria-label={t('personalOs.filter.label')} className="personal-os-page__filters" role="tablist">
-            {workbenchViews.map((entry) => (
-              <button
-                aria-selected={view === entry.value}
-                className={`personal-os-filter${view === entry.value ? ' is-active' : ''}`}
-                key={entry.value}
-                onClick={() => setView(entry.value)}
-                role="tab"
-                type="button"
-              >
-                {t(entry.labelKey)}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className="personal-os-page__view-label">{t(filterLabel)}</span>
-        )}
-        <label className="personal-os-page__search">
-          <AxiSvgIcon name={axiWorkbenchIconMap.search} size={16} />
-          <span className="personal-os-visually-hidden">{t('personalOs.search.ariaLabel')}</span>
-          <input
-            aria-label={t('personalOs.search.ariaLabel')}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('personalOs.search.placeholder')}
-            type="search"
-            value={query}
-          />
-        </label>
-        <button
-          aria-label={t('personalOs.action.refresh')}
-          className="personal-os-action-button"
-          disabled={queueQuery.isFetching}
-          onClick={() => void queueQuery.refetch()}
-          type="button"
-        >
-          <AxiSvgIcon name={axiWorkbenchIconMap.refresh} size={16} />
-          <span>{queueQuery.isFetching ? t('personalOs.action.refreshing') : t('personalOs.action.refresh')}</span>
-        </button>
+        <div className="personal-os-page__toolbar-leading">
+          {mode === 'workbench' ? (
+            <div aria-label={t('personalOs.filter.label')} className="personal-os-page__filters" role="tablist">
+              {workbenchViews.map((entry) => (
+                <button
+                  aria-selected={view === entry.value}
+                  className={`personal-os-filter${view === entry.value ? ' is-active' : ''}`}
+                  key={entry.value}
+                  onClick={() => setView(entry.value)}
+                  role="tab"
+                  type="button"
+                >
+                  {t(entry.labelKey)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="personal-os-page__toolbar-actions">
+          <label className="personal-os-page__search">
+            <AxiSvgIcon name={axiWorkbenchIconMap.search} size={16} />
+            <span className="personal-os-visually-hidden">{t('personalOs.search.ariaLabel')}</span>
+            <input
+              aria-label={t('personalOs.search.ariaLabel')}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('personalOs.search.placeholder')}
+              type="search"
+              value={query}
+            />
+          </label>
+          <button
+            aria-label={t('personalOs.action.refresh')}
+            className="personal-os-action-button"
+            disabled={queueQuery.isFetching}
+            onClick={() => void queueQuery.refetch()}
+            title={queueQuery.isFetching ? t('personalOs.action.refreshing') : t('personalOs.action.refresh')}
+            type="button"
+          >
+            <AxiSvgIcon name={axiWorkbenchIconMap.refresh} size={16} />
+            <span className="personal-os-visually-hidden">{queueQuery.isFetching ? t('personalOs.action.refreshing') : t('personalOs.action.refresh')}</span>
+          </button>
+        </div>
       </div>
 
       {queueQuery.data?.warnings.length ? (
@@ -206,15 +181,9 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
           title={mode === 'today' ? t('personalOs.empty.today.title') : t('personalOs.empty.workbench.title')}
         />
       ) : (
-        <div className="personal-os-page__workspace">
-          <section aria-label={queueLabel} className="personal-os-queue">
-            <header className="personal-os-queue__header">
-              <div>
-                <span className="personal-os-page__kicker">{t('personalOs.queue.kicker')}</span>
-                <h3>{queueLabel}</h3>
-              </div>
-              <span className="personal-os-queue__count">{items.length}</span>
-            </header>
+        <AxiViewGroup
+          aria-label={t('personalOs.inspector.label')}
+          aside={(
             <div className="personal-os-queue__list" role="list">
               {items.map((item) => (
                 <ProjectQueueRow
@@ -227,8 +196,16 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
                 />
               ))}
             </div>
-          </section>
-
+          )}
+          asideAriaLabel={queueLabel}
+          asideTitle={queueLabel}
+          className="personal-os-page__workspace"
+          collapseAsideLabel={t('personalOs.action.collapseQueue')}
+          collapsible
+          data-testid="personal-os-view-group"
+          asideWidth={340}
+          expandAsideLabel={t('personalOs.action.expandQueue')}
+        >
           <ProjectInspector
             draft={draft}
             focusPending={updateFocus.isPending}
@@ -241,7 +218,7 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
             onSave={() => void saveOverlay()}
             t={t}
           />
-        </div>
+        </AxiViewGroup>
       )}
     </main>
   );
@@ -419,7 +396,7 @@ function PersonalOsEmptyState({ actionLabel, description, onAction, title }: { a
       <span className="personal-os-state__mark"><AxiSvgIcon name={axiWorkbenchIconMap.project} size={22} /></span>
       <h3>{title}</h3>
       <p>{description}</p>
-      {actionLabel && onAction ? <button className="personal-os-save-button" onClick={onAction} type="button">{actionLabel}</button> : null}
+      {actionLabel && onAction ? <button className="personal-os-action-button personal-os-state__action" onClick={onAction} type="button">{actionLabel}</button> : null}
     </section>
   );
 }
