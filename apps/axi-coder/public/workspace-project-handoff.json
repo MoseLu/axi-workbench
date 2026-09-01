@@ -1,15 +1,81 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-08-23T09:21:12.508Z",
+  "generatedAt": "2026-08-31T16:07:29.218Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
-    "total": 21,
-    "verified": 19,
+    "total": 22,
+    "verified": 22,
     "documented": 0,
     "stale": 0,
-    "unready": 2
+    "unready": 0
   },
   "projects": [
+    {
+      "id": "ai-resource-orchestration",
+      "name": "资源调度中心",
+      "path": "/Volumes/code/workspace/products/ai-resource-orchestration",
+      "kind": "product",
+      "lifecycle": "active-local",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/ai-resource-orchestration/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/ai-resource-orchestration/docs/HANDOFF.md",
+      "graphId": "ai-resource-orchestration",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Local-first conversational resource orchestration workbench with a standalone five-category gateway, provider-backed discovery, MiniMax bridges, and deterministic validation.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev",
+          "pnpm --filter @resource-broker/gateway start"
+        ],
+        "health": [
+          "test -f apps/workbench/index.html",
+          "curl -sSf http://127.0.0.1:5177/",
+          "curl -sSf http://127.0.0.1:8787/health/live"
+        ],
+        "verify": [
+          "pnpm typecheck",
+          "pnpm test",
+          "pnpm build",
+          "pnpm --filter @resource-broker/contracts test",
+          "pnpm --filter @resource-broker/gateway test -- test/resource-search.test.ts"
+        ],
+        "smoke": [
+          "test -f apps/workbench/public/favicon.svg",
+          "curl -sSf http://127.0.0.1:5177/",
+          "curl -sSf http://127.0.0.1:8787/memory/settings",
+          "curl -sSf http://127.0.0.1:8787/sessions?dateKey=2026-08-29",
+          "node --test scripts/gateway-ha/gateway-ha.test.mjs",
+          "curl -sS -X POST http://127.0.0.1:8787/resource/search -H \"content-type: application/json\" -H \"x-request-id: smoke-resource-search\" -d '{\"query\":\"cat\",\"resourceKinds\":[\"image\"]}'"
+        ]
+      },
+      "currentWork": {
+        "todo": "TASK.md",
+        "milestone": "PRD.md",
+        "active": [
+          "Validate provider-backed image, knowledge, web-search, and generated-image flows.",
+          "Keep deterministic validation ahead of presentation and future processors.",
+          "Standalone gateway routes image/document/project/ui/icon through controlled adapters with fallback, timeout, breaker, backpressure, cache, health, metrics, and drain semantics.",
+          "Image-search cascade: 本地图库 → 网络搜索找参考 → 合成 prompt → 生成；fixture 仅作 VITE_FIXTURE_MODE 显式兜底。",
+          "W1-W4 acceptance sync: L1/L1b/L2/L3 verified; L4 production HA remains undeclared.",
+          "Local memory MVP MEM-MVP-001..022 is implemented: default-off single-instance JSON memory, gateway boundary, planner context, idle policy, redaction, management UI, and browser smoke are complete; multi-instance memory consistency remains Phase 2.",
+          "Lightweight session management SES-MVP-001..023 is implemented: date-grouped daily/manual sessions, same-day resume, independent session store/API, bounded conversation context, overlay drawer; user entries persist before dispatch and in-flight runs mark interrupted on pagehide."
+        ],
+        "knownFailures": [
+          "Axi Docs source-lock drift and legacy Chinese batch drift remain inherited workspace baselines.",
+          "Gateway L4 production evidence remains undeclared for the real sandbox-token outage drill, 30-day production monitoring, and SRE plus owner sign-off; local L1/L1b/L2/L3 evidence is complete.",
+          "Memory Phase 2 remains outside the MVP: multi-instance memory consistency, cloud or cross-device sync, embedding retrieval, model-based consolidation, and Codex private-memory integration.",
+          "Session Phase 2 remains outside the MVP: multi-instance shared session store, cloud or cross-device sync, embedding/search, and Codex private session files."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-29"
+    },
     {
       "id": "axi-agent-platform",
       "name": "Axi Agent Platform",
@@ -172,15 +238,13 @@
       "kind": "tool",
       "lifecycle": "active-tool-local-runtime",
       "owner": "libu",
-      "readiness": "unready",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/HANDOFF.md",
       "graphId": "axi-feishu-codex-bridge",
       "graphMatched": true,
-      "errors": [
-        "decisions.changelog path does not exist: CHANGELOG.md"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/state/VERIFICATION.md"
       ],
@@ -640,37 +704,43 @@
       "graphMatched": true,
       "errors": [],
       "warnings": [],
-      "summary": "A multi-surface local-first product root with stable cross-runtime contracts, a local runtime boundary, and the Axi Mood Android record surface.",
+      "summary": "A multi-surface local-first product: core backend in this repo, Axi Mood on Android, and an admin Web (later Mac) that logs in by phone QR scan.",
       "commands": {
         "setup": [],
         "start": [],
         "health": [
-          "test -f README.md && test -f PRD.md && test -f BACKEND_CONTRACT.md"
+          "test -f README.md && test -f PRD.md && test -f BACKEND_CONTRACT.md && test -f docs/architecture/three-surface-bff.md"
         ],
         "verify": [
           "git diff --check",
-          "cd axi-mood-app/android && ./gradlew :app:checkDesignTokens",
-          "cd axi-mood-app/android && ./gradlew :app:testDebugUnitTest",
-          "cargo test --manifest-path axi-auth-helper/Cargo.toml"
+          "test -f axi-soul-api/README.md && test -f apps/web-admin/index.html && test -f apps/web-bff/README.md",
+          "cd apps/android && ./gradlew :app:checkDesignTokens",
+          "cd apps/android && ./gradlew :app:testDebugUnitTest",
+          "cargo test --manifest-path axi-auth-helper/Cargo.toml",
+          "cd axi-soul-api && cmake --preset mac-arm64-clang-debug && cmake --build --preset mac-arm64-clang-debug && ctest --preset mac-arm64-clang-debug --output-on-failure"
         ],
         "smoke": [
-          "test -f axi-mood-app/android/gradlew && test -f axi-auth-helper/Cargo.toml"
+          "test -f apps/android/gradlew && test -f axi-auth-helper/Cargo.toml && test -f apps/web-admin/index.html"
         ]
       },
       "currentWork": {
         "todo": "TODO.md",
         "milestone": "IMPLEMENTATION_PLAN.md",
         "active": [
-          "Establish the canonical product repository and main/dev release workflow.",
-          "Refine the Axi Mood Android Todo module with conventional filters, sections, progress, and task-row states.",
-          "Keep the Axi Mood Android record flow aligned with the product contract.",
-          "Separate product-core and local-runtime work from future remote or host deployments."
+          "W1-W8 restricted delivery is integrated in dev and origin/dev at merge 795a804; the W5-W8 topic head b9dfef3 is its second parent.",
+          "W9 object-store readiness/revalidation implementation and its two contract targets are integrated into dev; the controlled PG/S3-compatible profile remains opt-in and owner-gated.",
+          "W10 SQLite media/profile repositories, replay fixtures, and MediaBank residual guard are integrated into dev; real-device replay, upgrade, offline, UI-tree, and logcat evidence remain incomplete.",
+          "W11 QR secure-session adapter/orchestrator, standard encoder, Activity wiring, and JVM tests are integrated into dev; keep Web pairing separate from Android LAN AuthServer and keep sync_enabled=false by default.",
+          "W12 local implementation is complete on codex/w12-sync-operations (worker/DLQ/readback/status contracts); controlled W9/W10/W11 gates, owner ADR decisions, staging restore and production acceptance remain blocked."
         ],
         "knownFailures": [
-          "The formal C++ backend and Web BFF are contract-planned but not implemented in this repository."
+          "Vendor object storage credentials, bucket policy, and controlled PostgreSQL profile are not available; W9 cannot be exercised against a real S3-compatible/PG environment in this session.",
+          "Formal identity provider, session persistence, domain/TLS certificate, cookie policy, CORS/CSRF, and real browser-to-device E2E evidence remain unverified for W11.",
+          "No controlled Android device with camera/photo permissions is available for the W10 replay/upgrade/offline screenshots, UI tree, and logcat evidence.",
+          "W12 staging restore, real server-side outbox profile, owner ADR decisions and controlled device/deployment evidence remain unverified; local worker/readback/DLQ implementation is covered by the W12 report."
         ]
       },
-      "lastVerifiedAt": "2026-08-23"
+      "lastVerifiedAt": "2026-08-25"
     },
     {
       "id": "axi-tauri-starter",
@@ -679,15 +749,13 @@
       "kind": "shared",
       "lifecycle": "active-shared-reference",
       "owner": "libu",
-      "readiness": "unready",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/HANDOFF.md",
       "graphId": "axi-tauri-starter",
       "graphMatched": true,
-      "errors": [
-        "decisions.changelog path does not exist: CHANGELOG.md"
-      ],
+      "errors": [],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/docs/state/VERIFICATION.md"
       ],

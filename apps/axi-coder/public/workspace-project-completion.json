@@ -1,15 +1,15 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-08-23T09:21:12.508Z",
+  "generatedAt": "2026-08-31T16:07:29.218Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 36,
+    "total": 37,
     "axiTotal": 21,
     "complete": 1,
     "usableOrBetter": 9,
     "blocked": 0,
     "byStage": {
-      "unassessed": 25,
+      "unassessed": 26,
       "building": 2,
       "usable": 7,
       "complete": 1,
@@ -17,7 +17,7 @@
     },
     "byConfidence": {
       "low": 19,
-      "high": 6,
+      "high": 7,
       "medium": 11
     }
   },
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -110,7 +110,8 @@
       "remaining": [
         "Consolidate agent runtime completion evidence into project docs.",
         "Keep MCP/transport/bridge consumer checks green as Axi Coder grows.",
-        "Resolve graph node ID drift — fixed 2026-07-17 (was 'axi-agent', now 'axi-agent-platform' to match workspace.json)."
+        "Resolve graph node ID drift — fixed 2026-07-17 (was 'axi-agent', now 'axi-agent-platform' to match workspace.json).",
+        "consumes ai-resource-orchestration is a declarative capability edge only. Runtime dispatch flows through task-execution-routing/v1 and must never instantiate a second resource gateway or front the standalone gateway directly. See ADR-005/006 and the resource-search ADR for the cross-project contract surface."
       ],
       "docs": {
         "status": "ready",
@@ -372,10 +373,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:verified",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
         "health:test -f pyproject.toml | test -d src/codex_feishu_bridge",
         "contracts:5"
@@ -401,11 +402,9 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "decisions.changelog path does not exist: CHANGELOG.md"
-        ]
+        "errors": []
       },
       "verify": [
         "PYTHONPATH=src .venv/bin/python -m unittest discover -s tests"
@@ -788,7 +787,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -901,7 +900,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1036,9 +1035,9 @@
         "admissions/axi-soul-world.json",
         "docs:partial",
         "handoff:verified",
-        "verify:git diff --check | cd axi-mood-app/android && ./gradlew :app:checkDesignTokens | cd axi-mood-app/android && ./gradlew :app:testDebugUnitTest | cargo test --manifest-path axi-auth-helper/Cargo.toml",
+        "verify:git diff --check | test -f apps/web-admin/index.html && test -f apps/web-bff/README.md | cd apps/android && ./gradlew :app:checkDesignTokens | cd apps/android && ./gradlew :app:testDebugUnitTest | cargo test --manifest-path axi-auth-helper/Cargo.toml | node scripts/live-resource-search-e2e.mjs",
         "health:test -f /Volumes/code/workspace/products/axi-soul-world/README.md | test -f /Volumes/code/workspace/products/axi-soul-world/docs/project-docs.manifest.json | test -d /Volumes/code/workspace/products/axi-soul-world/.git",
-        "contracts:8"
+        "contracts:14"
       ],
       "remaining": [
         "Run the Android device behavior flow and record state-specific evidence.",
@@ -1070,9 +1069,11 @@
       },
       "verify": [
         "git diff --check",
-        "cd axi-mood-app/android && ./gradlew :app:checkDesignTokens",
-        "cd axi-mood-app/android && ./gradlew :app:testDebugUnitTest",
-        "cargo test --manifest-path axi-auth-helper/Cargo.toml"
+        "test -f apps/web-admin/index.html && test -f apps/web-bff/README.md",
+        "cd apps/android && ./gradlew :app:checkDesignTokens",
+        "cd apps/android && ./gradlew :app:testDebugUnitTest",
+        "cargo test --manifest-path axi-auth-helper/Cargo.toml",
+        "node scripts/live-resource-search-e2e.mjs"
       ],
       "health": [
         "test -f /Volumes/code/workspace/products/axi-soul-world/README.md",
@@ -1086,8 +1087,14 @@
         "docs/project-docs.manifest.json",
         "PRD.md",
         "BACKEND_CONTRACT.md",
-        "axi-mood-app/android/app/build.gradle",
-        "axi-auth-helper/Cargo.toml"
+        "apps/android/app/build.gradle",
+        "axi-soul-api/README.md",
+        "apps/web-admin/index.html",
+        "apps/web-bff/README.md",
+        "axi-auth-helper/Cargo.toml",
+        "axi-soul-api/include/axi/soul/transport/resource_search_handler.hpp",
+        "axi-soul-api/src/transport/resource_search_handler.cpp",
+        "axi-soul-api/include/axi/soul/transport/resource_search_gateway.hpp"
       ]
     },
     {
@@ -1101,10 +1108,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
-        "handoff:unready",
+        "handoff:verified",
         "verify:test -f scripts/tauri-env.sh",
         "health:test -f scripts/tauri-env.sh",
         "contracts:2"
@@ -1130,11 +1137,9 @@
         ]
       },
       "handoff": {
-        "status": "unready",
+        "status": "verified",
         "score": 10,
-        "errors": [
-          "decisions.changelog path does not exist: CHANGELOG.md"
-        ]
+        "errors": []
       },
       "verify": [
         "test -f scripts/tauri-env.sh"
@@ -1226,7 +1231,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1293,7 +1298,8 @@
       ],
       "remaining": [
         "Finish the project completion data and UI loop for Axi Coder.",
-        "Continue consolidating dashboard/control-plane documentation and evidence."
+        "Continue consolidating dashboard/control-plane documentation and evidence.",
+        "consumes ai-resource-orchestration is a declarative capability edge only. Runtime dispatch flows through task-execution-routing/v1 and must never instantiate a second resource gateway or front the standalone gateway directly. See ADR-005/006 and the resource-search ADR for the cross-project contract surface."
       ],
       "docs": {
         "status": "partial",
@@ -1412,7 +1418,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1459,6 +1465,86 @@
       ]
     },
     {
+      "id": "ai-resource-orchestration",
+      "name": "资源调度中心",
+      "path": "/Volumes/code/workspace/products/ai-resource-orchestration",
+      "kind": "standalone-product",
+      "isAxi": false,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Promoted from incubation after standalone-product admission; provider-backed resource search and MiniMax search/generation fallback are covered by tests and browser smoke.",
+      "updatedAt": "2026-08-26",
+      "evidence": [
+        "products/ai-resource-orchestration/AGENTS.md",
+        "products/ai-resource-orchestration/docs/HANDOFF.md",
+        "products/ai-resource-orchestration/docs/project-docs.manifest.json",
+        "products/ai-resource-orchestration/VERIFICATION.md",
+        "docs:partial",
+        "handoff:verified",
+        "verify:pnpm --dir /Volumes/code/workspace/products/ai-resource-orchestration typecheck | pnpm --dir /Volumes/code/workspace/products/ai-resource-orchestration test | pnpm --dir /Volumes/code/workspace/products/ai-resource-orchestration build",
+        "health:test -f /Volumes/code/workspace/products/ai-resource-orchestration/AGENTS.md | test -f /Volumes/code/workspace/products/ai-resource-orchestration/package.json | test -d /Volumes/code/workspace/products/ai-resource-orchestration/.git | curl -sS -m 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:5177/ | grep -q '^200$'",
+        "contracts:14",
+        "package-scripts:test,build"
+      ],
+      "remaining": [
+        "Decide when the local runtime should receive a published remote.",
+        "Promote deterministic Excel/document processors only after a separate scoped contract.",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ],
+        "missing": [
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [
+        "pnpm --dir /Volumes/code/workspace/products/ai-resource-orchestration typecheck",
+        "pnpm --dir /Volumes/code/workspace/products/ai-resource-orchestration test",
+        "pnpm --dir /Volumes/code/workspace/products/ai-resource-orchestration build"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/products/ai-resource-orchestration/AGENTS.md",
+        "test -f /Volumes/code/workspace/products/ai-resource-orchestration/package.json",
+        "test -d /Volumes/code/workspace/products/ai-resource-orchestration/.git",
+        "curl -sS -m 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:5177/ | grep -q '^200$'"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "README.md",
+        "docs/HANDOFF.md",
+        "PRD.md",
+        "DESIGN.md",
+        "TASK.md",
+        "packages/contracts/src/index.ts",
+        "packages/orchestrator/src/index.ts",
+        "packages/adapters/src/index.ts",
+        "apps/workbench/src/App.tsx",
+        "apps/workbench/vite.config.ts",
+        "packages/contracts/src/resource-search.ts",
+        "apps/gateway/src/server.ts",
+        "apps/gateway/src/routes.ts"
+      ]
+    },
+    {
       "id": "blinko",
       "name": "Blinko Reference",
       "path": "/Volumes/code/workspace/references/blinko",
@@ -1469,7 +1555,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1528,7 +1614,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1588,7 +1674,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1699,7 +1785,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1757,7 +1843,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1865,7 +1951,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1924,7 +2010,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1985,7 +2071,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2042,7 +2128,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2099,7 +2185,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2163,7 +2249,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2291,7 +2377,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-23T09:21:12.508Z",
+      "updatedAt": "2026-08-31T16:07:29.218Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
