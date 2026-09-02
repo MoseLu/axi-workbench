@@ -54,6 +54,8 @@ export {
   safeUseLocalStorage,
   set,
   setPath,
+  useDebouncedState,
+  useDeferredValueSafe,
   useElementSize,
   useFileDownload,
   useMutationObserver,

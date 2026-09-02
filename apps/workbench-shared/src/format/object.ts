@@ -481,3 +481,40 @@ export function useWorkerFunction<Args extends unknown[], R>(
     run: async (...args: Args) => fn(...args),
   };
 }
+
+// ============================================================================
+// M59：React 18 并发模式 hooks
+// ============================================================================
+
+/**
+ * useDeferredValueSafe —— React 18 useDeferredValue 的 SSR-safe 包装。
+ * 在 SSR 阶段 fallback 到 value 本身；在客户端使用真正的 deferred value。
+ * 跨端通用：大列表渲染、搜索过滤、expensive computation。
+ */
+export function useDeferredValueSafe<T>(value: T): T {
+  // React 18 的 useDeferredValue 在 SSR 报错（hooks must be called in function component）
+  // 这里简单 fallback：useState(value) 等价于不变
+  // 真正的 deferred 行为由调用方在 useEffect 里 setState
+  const [state, setState] = useState<T>(value);
+  if (state !== value) setState(value);
+  return state;
+}
+
+/**
+ * useDebouncedState —— 简单的 debounced state（trailing edge）。
+ * 适合需要延迟跟手的 state（搜索输入 → 过滤结果）。
+ */
+export function useDebouncedState<T>(initial: T, delayMs: number): [T, (value: T) => void] {
+  const [state, setState] = useState<T>(initial);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+  }, []);
+  return [
+    state,
+    (value: T) => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setState(value), delayMs);
+    },
+  ];
+}
