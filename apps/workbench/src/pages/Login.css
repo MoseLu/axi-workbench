@@ -756,3 +756,51 @@
 @media (prefers-reduced-motion: reduce) {
   .axi-login-qr-loading span { animation: none; }
 }
+
+/* ====================================================================
+ * Mac App（Tauri 壳）形态 — Bilibili 登录窗对齐
+ * 仅在 body.axi-tauri-shell 下生效（Login.tsx 在 useEffect 中按 isTauriShell() 切换）。
+ * ==================================================================== */
+
+body.axi-tauri-shell .axi-login-page {
+  min-height: 100vh;
+  padding: 0;
+  background: transparent;
+  color-scheme: light dark;
+}
+
+body.axi-tauri-shell .axi-login-page::before,
+body.axi-tauri-shell .axi-login-page::after,
+body.axi-tauri-shell .axi-login-page__grid {
+  display: none;
+}
+
+body.axi-tauri-shell .axi-login-card {
+  width: auto;
+  max-width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.22),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  color-scheme: light;
+}
+
+body.axi-tauri-shell .axi-login-card::before { display: none; }
+
+body.axi-tauri-shell .axi-login-card__body {
+  height: 100%;
+  min-height: 100%;
+  padding: 36px 32px 24px;
+}
+
+body.axi-tauri-shell .axi-login-card__chrome { display: none; }
+
+@media (max-width: 47rem) {
+  body.axi-tauri-shell .axi-login-card__body {
+    padding: 28px 24px 18px;
+  }
+}

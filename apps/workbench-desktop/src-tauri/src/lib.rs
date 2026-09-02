@@ -14,14 +14,28 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 /// 登录窗关闭全屏按钮（B 站形态：仅 close + minimize 两颗交通灯）。
-/// 注：Tauri 2 没有暴露 setShowsFullScreenButton / setShowsZoomButton。
-/// macOS 上"3 颗 vs 2 颗"交通灯由 `resizable` 决定——
-///   * resizable=true  → 显示 close + minimize + fullscreen + zoom
-///   * resizable=false → 仅显示 close + minimize（B 站形态）
-/// 因此登录窗 config 显式设 `resizable:false` 来获得 2 颗按钮。
-/// 此函数保留为占位，供未来 Tauri 提供原生 API 时启用。
+///
+/// macOS 上 `resizable:false` 已经能去掉 zoom 按钮，但 13+ 全屏按钮仍然显示。
+/// Tauri 2 没有暴露 `setShowsFullScreenButton:`，通过 objc2 msg_send 直接调 NSWindow API。
+/// BOOL 用 i8 编码（macOS BOOL = signed char），避免类型不匹配导致的 app 启动崩溃。
 #[cfg(target_os = "macos")]
-fn hide_fullscreen_button(_handle: &tauri::AppHandle, _label: &str) {}
+fn hide_fullscreen_button(handle: &tauri::AppHandle, label: &str) {
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    if let Some(window) = handle.get_webview_window(label) {
+        if let Ok(ns_window) = window.ns_window() {
+            let ns_window_ptr: *mut AnyObject = ns_window.cast();
+            // -(void)setShowsFullScreenButton:(BOOL)flag; BOOL = i8
+            let result = catch_unwind(AssertUnwindSafe(|| unsafe {
+                let _: () = msg_send![ns_window_ptr, setShowsFullScreenButton: 0_i8];
+            }));
+            if result.is_err() {
+                eprintln!("[shell] failed to hide fullscreen button on '{label}' (panic swallowed)");
+            }
+        }
+    }
+}
 
 #[cfg(not(target_os = "macos"))]
 fn hide_fullscreen_button(_handle: &tauri::AppHandle, _label: &str) {}
@@ -50,6 +64,15 @@ pub fn run() {
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;
             register_ipc_listeners(app.handle().clone());
+            // 登录窗只露 2 颗交通灯（关 + 最小化）：B 站 Mac 客户端形态。
+            // 1) resizable=false 已让 NSWindow 不画 zoom 按钮；
+            // 2) hide_fullscreen_button() 兜底去掉 macOS 13+ 全屏按钮。
+            if let Some(login) = app.get_webview_window("login") {
+                let _ = login.set_resizable(false);
+                let _ = login.set_minimizable(true);
+                let _ = login.set_closable(true);
+                hide_fullscreen_button(app.handle(), "login");
+            }
             Ok(())
         })
         .on_window_event(|window, event| {

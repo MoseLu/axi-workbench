@@ -15,7 +15,10 @@ import {
   webDeviceLoginQrPayload,
   type WebDeviceLoginQr,
 } from '../lib/webDeviceLogin';
+import { emitShellLoginSuccess, isTauriShell } from '../lib/shell';
 import './Login.css';
+
+const TAURI_BODY_CLASS = 'axi-tauri-shell';
 
 type Phase = 'email' | 'code' | 'verifying';
 type LoginMode = 'password' | 'email';
@@ -76,9 +79,25 @@ const Login: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && !didNavigateRef.current) {
       didNavigateRef.current = true;
-      navigate(next, { replace: true });
+      // Mac App（Tauri 壳）下：通知 shell 关 login 窗、开 main 窗；
+      // 纯浏览器下：走 React Router navigate 到 next。
+      if (isTauriShell()) {
+        void emitShellLoginSuccess();
+      } else {
+        navigate(next, { replace: true });
+      }
     }
   }, [isAuthenticated, navigate, next]);
+
+  // Tauri 壳下：在 <body> 上加 class，让 CSS 切换 macOS 形态
+  // （透明背景、隐藏自绘 chrome、卡片 14px 圆角等）。
+  useEffect(() => {
+    if (!isTauriShell() || typeof document === 'undefined') return;
+    document.body.classList.add(TAURI_BODY_CLASS);
+    return () => {
+      document.body.classList.remove(TAURI_BODY_CLASS);
+    };
+  }, []);
 
   // Capability discovery stays local to the Web login surface. Mobile keeps
   // its existing shared AuthProvider contract and does not gain a new request.
@@ -357,11 +376,13 @@ const Login: React.FC = () => {
       <div className="axi-login-page__grid" aria-hidden="true" />
 
       <section className="axi-login-card" aria-labelledby="axi-login-title">
-        <div className="axi-login-card__chrome" aria-hidden="true">
-          <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--close" />
-          <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--minimize" />
-          <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--maximize" />
-        </div>
+        {!isTauriShell() && (
+          <div className="axi-login-card__chrome" aria-hidden="true">
+            <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--close" />
+            <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--minimize" />
+            <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--maximize" />
+          </div>
+        )}
         <div className="axi-login-card__body">
           <section className="axi-login-qr-column" id="axi-login-qr-panel" aria-label="扫码登录">
             <h1 id="axi-login-title">扫描二维码登录</h1>
