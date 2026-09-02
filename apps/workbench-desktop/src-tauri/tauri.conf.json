@@ -49,21 +49,18 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": ["app"],
     "icon": [
       "icons/icon.icns"
     ],
-    "resources": {
-      "/Volumes/code/workspace/projects/axi-workbench/apps/workbench-desktop/workbench-dist": "."
-    },
     "category": "DeveloperTool",
     "shortDescription": "Axi Workbench Mac client",
     "longDescription": "Axi Workbench Mac client — wraps the existing web workbench UI in a native macOS shell (Bilibili-class desktop client shape).",
     "macOS": {
-      "minimumSystemVersion": "10.15",
+      "minimumSystemVersion": "11.0",
       "frameworks": [],
       "providerShortName": null,
-      "signingIdentity": null,
+      "signingIdentity": "-",
       "entitlements": "entitlements/workbench.plist",
       "exceptionDomain": null,
       "dmg": {
