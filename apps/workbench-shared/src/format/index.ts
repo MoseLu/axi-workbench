@@ -52,7 +52,7 @@ export function formatDuration(ms: number): string {
 }
 
 /**
- * M23：相对时间（刚刚 / 3 分钟前 / 昨天 / 3 天前），用 zh-CN。
+ * M28：相对时间（刚刚 / 3 分钟前 / 昨天 / 3 天前），用 zh-CN。
  * 三端都常用：消息列表、任务更新、文件最近编辑。
  */
 export function formatRelativeTime(
@@ -79,4 +79,98 @@ export function formatRelativeTime(
   if (month < 12) return rtf.format(-month, 'month');
   const year = Math.floor(day / 365);
   return rtf.format(-year, 'year');
+}
+
+// ============================================================================
+// M28：Intl.NumberFormat 系列
+// ============================================================================
+
+/** locale 解析：'zh-CN' / 'en-US' / 'de-DE'，fallback zh-CN。 */
+function safeLocale(locale: string | undefined): string {
+  if (typeof locale !== 'string' || locale.length === 0) return 'zh-CN';
+  return locale;
+}
+
+/**
+ * 数字格式化 —— 接受小数位数 + locale。
+ * @example formatNumber(1234.5) === '1,234.5'
+ * @example formatNumber(1234.5, 0, 'de-DE') === '1.234,5'
+ */
+export function formatNumber(
+  value: number,
+  decimals: number = 0,
+  locale: string = 'zh-CN'
+): string {
+  if (!Number.isFinite(value)) return '';
+  try {
+    return new Intl.NumberFormat(safeLocale(locale), {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
+  } catch {
+    return value.toFixed(decimals);
+  }
+}
+
+/**
+ * 百分比格式化 —— 0.834 → "83.4%"。
+ * @example formatPercent(0.834) === '83.4%'
+ */
+export function formatPercent(
+  value: number,
+  decimals: number = 1,
+  locale: string = 'zh-CN'
+): string {
+  if (!Number.isFinite(value)) return '';
+  try {
+    return new Intl.NumberFormat(safeLocale(locale), {
+      style: 'percent',
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
+  } catch {
+    return `${(value * 100).toFixed(decimals)}%`;
+  }
+}
+
+/**
+ * 货币格式化 —— 1234.5 USD → "$1,234.50"
+ * @example formatCurrency(1234.5, 'USD', 'en-US') === '$1,234.50'
+ * @example formatCurrency(1234.5, 'CNY', 'zh-CN') === '¥1,234.50'
+ */
+export function formatCurrency(
+  value: number,
+  currency: string = 'CNY',
+  locale: string = 'zh-CN'
+): string {
+  if (!Number.isFinite(value)) return '';
+  try {
+    return new Intl.NumberFormat(safeLocale(locale), {
+      style: 'currency',
+      currency,
+    }).format(value);
+  } catch {
+    return `${value.toFixed(2)} ${currency}`;
+  }
+}
+
+/**
+ * 紧凑数字 —— 1234567 → "123万"（zh-CN）或 "1.2M"（en-US）。
+ * @example formatCompact(1234567) === '123万' (zh-CN)
+ * @example formatCompact(1234567, 'en-US') === '1.2M'
+ */
+export function formatCompact(
+  value: number,
+  locale: string = 'zh-CN',
+  decimals: number = 1
+): string {
+  if (!Number.isFinite(value)) return '';
+  try {
+    return new Intl.NumberFormat(safeLocale(locale), {
+      notation: 'compact',
+      maximumFractionDigits: decimals,
+    }).format(value);
+  } catch {
+    return String(value);
+  }
 }

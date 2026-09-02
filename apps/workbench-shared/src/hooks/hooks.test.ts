@@ -4,6 +4,7 @@ import { createRef } from 'react';
 
 import {
   useClickOutside,
+  useDebouncedCallback,
   useDebouncedValue,
   useDisclosure,
   useEventListener,
@@ -11,6 +12,7 @@ import {
   useKeyPress,
   useLocalStorage,
   usePrevious,
+  useThrottledCallback,
   useThrottledValue,
   useToggle,
 } from './index';
@@ -248,6 +250,48 @@ describe('@axi/workbench-shared/hooks', () => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
       });
       expect(handler).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('useDebouncedCallback', () => {
+    it('only fires once after the trailing edge', () => {
+      vi.useFakeTimers();
+      const callback = vi.fn();
+      const { result } = renderHook(() => useDebouncedCallback(callback, 100));
+      const debounced = result.current;
+      act(() => {
+        debounced('a');
+        debounced('b');
+        debounced('c');
+      });
+      expect(callback).not.toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith('c');
+    });
+  });
+
+  describe('useThrottledCallback', () => {
+    it('respects the leading edge within a window', () => {
+      vi.useFakeTimers();
+      const callback = vi.fn();
+      const { result } = renderHook(() => useThrottledCallback(callback, 100));
+      const throttled = result.current;
+      act(() => throttled('a'));
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith('a');
+      act(() => throttled('b'));
+      act(() => throttled('c'));
+      // Within window, only the leading call fires
+      expect(callback).toHaveBeenCalledTimes(1);
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+      // After window, latest call fires
+      expect(callback).toHaveBeenCalledTimes(2);
+      expect(callback).toHaveBeenLastCalledWith('c');
     });
   });
 });

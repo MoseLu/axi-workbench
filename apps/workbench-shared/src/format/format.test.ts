@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatBytes,
+  formatCompact,
+  formatCurrency,
   formatDuration,
+  formatNumber,
+  formatPercent,
   formatRelativeTime,
   formatTimestamp,
   formatUnreadCount,
@@ -111,6 +115,58 @@ describe('@axi/workbench-shared/format', () => {
       const future = new Date('2026-09-03T12:00:00Z');
       const out = formatRelativeTime(future, NOW);
       expect(out).toMatch(/\d{4}/); // absolute date format
+    });
+  });
+
+  describe('formatNumber', () => {
+    it('groups thousands with zh-CN locale', () => {
+      expect(formatNumber(1234)).toBe('1,234');
+      expect(formatNumber(1_234_567, 0)).toBe('1,234,567');
+      expect(formatNumber(1234.5, 1)).toBe('1,234.5');
+    });
+
+    it('returns empty for non-finite input', () => {
+      expect(formatNumber(Number.NaN)).toBe('');
+      expect(formatNumber(Number.POSITIVE_INFINITY)).toBe('');
+    });
+
+    it('honors explicit decimals and locale', () => {
+      expect(formatNumber(1234.5, 2, 'de-DE')).toMatch(/1\.234,50/);
+    });
+  });
+
+  describe('formatPercent', () => {
+    it('renders 0..1 as percentage string', () => {
+      expect(formatPercent(0.834)).toBe('83.4%');
+      expect(formatPercent(0.5, 0)).toBe('50%');
+      expect(formatPercent(1)).toBe('100.0%');
+    });
+
+    it('returns empty for non-finite input', () => {
+      expect(formatPercent(Number.NaN)).toBe('');
+    });
+  });
+
+  describe('formatCurrency', () => {
+    it('renders USD / CNY with locale-aware currency symbols', () => {
+      expect(formatCurrency(1234.5, 'USD', 'en-US')).toMatch(/\$1,234\.50/);
+      expect(formatCurrency(1234.5, 'CNY', 'zh-CN')).toMatch(/¥1,234\.50/);
+      expect(formatCurrency(1234.5, 'EUR', 'de-DE')).toMatch(/1\.234,50/);
+    });
+
+    it('returns empty for non-finite input', () => {
+      expect(formatCurrency(Number.NaN)).toBe('');
+    });
+  });
+
+  describe('formatCompact', () => {
+    it('renders compact notation per locale', () => {
+      expect(formatCompact(1_234_567)).toMatch(/万/);
+      expect(formatCompact(1_234_567, 'en-US')).toMatch(/M/);
+    });
+
+    it('returns empty for non-finite input', () => {
+      expect(formatCompact(Number.NaN)).toBe('');
     });
   });
 });

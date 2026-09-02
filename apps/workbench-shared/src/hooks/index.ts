@@ -220,3 +220,80 @@ export function useKeyPress(
     }
   );
 }
+
+/**
+ * M29：防抖一个回调 —— 连续触发只在最后一次后 delayMs 触发一次。
+ * 跨端通用：搜索框实时过滤（避免每个 keystroke 都调 API）、按钮防抖。
+ *
+ * 与 useDebouncedValue 的区别：后者包装值（state），前者包装函数（callback）。
+ */
+export function useDebouncedCallback<TArgs extends unknown[]>(
+  callback: (...args: TArgs) => void,
+  delayMs: number
+): (...args: TArgs) => void {
+  const savedRef = useRef(callback);
+  useEffect(() => {
+    savedRef.current = callback;
+  }, [callback]);
+  const timerRef = useRef<number | undefined>(undefined);
+  useEffect(() => () => {
+    if (timerRef.current !== undefined) window.clearTimeout(timerRef.current);
+  }, []);
+  return (...args: TArgs) => {
+    if (timerRef.current !== undefined) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => savedRef.current(...args), delayMs);
+  };
+}
+
+/**
+ * M29：节流一个回调 —— leading-edge 节流：每次窗口起点立刻触发，
+ * 窗口内的后续调用被压成一次 trailing-edge 调用（取最新参数）。
+ *
+ * @example
+ *   const throttled = useThrottledCallback(track, 100);
+ *   throttled(a); throttled(b); throttled(c);
+ *   // 立即 track(a)，100ms 后 track(c)。中间的 track(b) 被合并。
+ */
+export function useThrottledCallback<TArgs extends unknown[]>(
+  callback: (...args: TArgs) => void,
+  windowMs: number
+): (...args: TArgs) => void {
+  const savedRef = useRef(callback);
+  useEffect(() => {
+    savedRef.current = callback;
+  }, [callback]);
+  const lastTriggerRef = useRef(0);
+  const timerRef = useRef<number | undefined>(undefined);
+  const pendingRef = useRef<{ args: TArgs } | null>(null);
+
+  useEffect(() => () => {
+    if (timerRef.current !== undefined) window.clearTimeout(timerRef.current);
+  }, []);
+
+  return (...args: TArgs) => {
+    const now = Date.now();
+    const elapsed = now - lastTriggerRef.current;
+    if (elapsed >= windowMs) {
+      // 窗口外 → leading edge
+      lastTriggerRef.current = now;
+      pendingRef.current = null;
+      if (timerRef.current !== undefined) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = undefined;
+      }
+      savedRef.current(...args);
+      return;
+    }
+    // 窗口内 → 排队 trailing edge
+    pendingRef.current = { args };
+    if (timerRef.current === undefined) {
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = undefined;
+        lastTriggerRef.current = Date.now();
+        const pending = pendingRef.current;
+        pendingRef.current = null;
+        if (pending) savedRef.current(...pending.args);
+      }, windowMs - elapsed);
+    }
+  };
+}
