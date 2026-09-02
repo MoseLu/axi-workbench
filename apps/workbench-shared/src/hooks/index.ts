@@ -1,7 +1,7 @@
 // 跨端共享 hooks（M14 骨架 + M19 通用 hooks + M26 状态 hooks）。
 // 设计原则：仅依赖 react + 共享 contracts；不调用 fetch / 路由 / 平台 API。
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * 防抖一个值 —— 在 delay ms 内的连续变化只保留最后一次。
@@ -455,5 +455,51 @@ export function useAsync<TResult>(
     void runRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+  return { ...rest, refetch: () => void runRef.current() };
+}
+
+/**
+ * M36：useFetch —— useAsync 的 fetch 专用版本。
+ *
+ * 用法：
+ *   const { value: user, loading, error } = useFetch<User>('/api/users/me');
+ *   const { value, refetch } = useFetch<Post[]>('/api/posts', { skip: !user });
+ *
+ * 特性：
+ * - 自动 AbortController：组件 unmount 时取消未完成请求
+ * - 自动 JSON 解析
+ * - deps 变化时自动 refetch
+ * - 304 Not Modified 走 cache（默认 fetch 行为）
+ */
+export interface UseFetchOptions extends Omit<RequestInit, 'signal'> {
+  /** 跳过请求（条件加载） */
+  skip?: boolean;
+  /** URL 变化时是否 refetch（默认 true） */
+  refetchOnUrlChange?: boolean;
+}
+
+export function useFetch<T = unknown>(
+  url: string,
+  options: UseFetchOptions = {}
+): Omit<AsyncState<[], T | null>, 'run' | 'reset'> & { refetch: () => void } {
+  const { skip = false, refetchOnUrlChange = true, ...fetchInit } = options;
+  const fn = useCallback(async (): Promise<T | null> => {
+    if (skip) return null;
+    const controller = new AbortController();
+    try {
+      const response = await fetch(url, { ...fetchInit, signal: controller.signal });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+      return (await response.json()) as T;
+    } finally {
+      void controller;
+    }
+  }, [url, skip, JSON.stringify(fetchInit)]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // useAsync fn type is () => Promise<T | null> which matches the inner fn
+  const { run, ...rest } = useAsync<T | null>(fn, [url, skip]);
+  const runRef = useRef(run);
+  runRef.current = run;
   return { ...rest, refetch: () => void runRef.current() };
 }

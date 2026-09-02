@@ -11,6 +11,7 @@ import {
   useDebouncedValue,
   useDisclosure,
   useEventListener,
+  useFetch,
   useInterval,
   useKeyPress,
   useLocalStorage,
@@ -389,6 +390,41 @@ describe('@axi/workbench-shared/hooks', () => {
       });
       expect(result.current.value).toBe('mounted');
       expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('useFetch', () => {
+    const mockResponse = (body: unknown, ok = true) => ({
+      ok,
+      status: ok ? 200 : 500,
+      statusText: ok ? 'OK' : 'Server Error',
+      json: vi.fn().mockResolvedValue(body),
+    });
+
+    beforeEach(() => {
+      vi.stubGlobal('fetch', vi.fn());
+    });
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('starts with loading=true while initial fetch is in flight', () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse({}));
+      const { result } = renderHook(() => useFetch('/api/foo'));
+      // useAsync starts loading=true immediately
+      expect(result.current.loading).toBe(true);
+      expect(result.current.value).toBeNull();
+    });
+
+    it('skips fetch when skip=true', async () => {
+      const fetchMock = fetch as ReturnType<typeof vi.fn>;
+      fetchMock.mockResolvedValue(mockResponse({}));
+      const { result } = renderHook(() => useFetch('/api/foo', { skip: true }));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(result.current.value).toBeNull();
     });
   });
 });
