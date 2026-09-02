@@ -38,6 +38,15 @@ export {
 export { mergeUrl, parseSearchParams, parseUrl } from './url-parse';
 // M49 immutable object ops —— 单独文件 ./object.ts
 export { get, omit, pick, safeUseLocalStorage, set, setPath } from './object';
+// M52 cookies —— 单独文件 ./cookie.ts
+export {
+  deleteCookie,
+  readAllCookies,
+  readCookie,
+  useCookie,
+  writeCookie,
+  type CookieOptions,
+} from './cookie';
 // M41 pure utils (no React dep) —— 单独文件 ../util/fn
 export {
   assertNever,
