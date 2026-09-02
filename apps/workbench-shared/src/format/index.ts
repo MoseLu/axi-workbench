@@ -34,6 +34,8 @@ export {
   stringifyJsonSafe,
   type JsonResult,
 } from './json';
+// M45 URL parse —— 单独文件 ./url-parse.ts
+export { mergeUrl, parseSearchParams, parseUrl } from './url-parse';
 // M41 pure utils (no React dep) —— 单独文件 ../util/fn
 export {
   assertNever,
