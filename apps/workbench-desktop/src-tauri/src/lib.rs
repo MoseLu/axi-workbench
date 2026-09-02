@@ -13,29 +13,22 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-/// 登录窗关闭全屏按钮（B 站形态：仅 close + minimize 两颗交通灯）。
+/// 登录窗交通灯收口：B 站形态只露 2 颗（关 + 最小化）。
 ///
-/// macOS 上 `resizable:false` 已经能去掉 zoom 按钮，但 13+ 全屏按钮仍然显示。
-/// Tauri 2 没有暴露 `setShowsFullScreenButton:`，通过 objc2 msg_send 直接调 NSWindow API。
-/// BOOL 用 i8 编码（macOS BOOL = signed char），避免类型不匹配导致的 app 启动崩溃。
+/// 历史背景：之前曾尝试用 objc2 msg_send 直接调 NSWindow 的
+/// `setShowsFullScreenButton:`，但该 selector 在 NSWindow 上**根本不存在**
+/// （macOS 13+ 只在 NSToolbar 上有）。msg_send 触发 Objective-C 的
+/// "method not found" 异常，导致进程 abort（即便 catch_unwind 也来不及）。
+///
+/// 正确做法：
+///   * `tauri.conf.json` 设 `resizable: false` —— NSWindow 不画 zoom 按钮
+///   * `maximizable: false`                            —— 也不画 maximize
+///   * 这两条已经足够去掉全屏/最大化按钮；macOS 13+ 的全屏按钮需要另外
+///     走 NSWindowToolbar API（不在本分支做，留作 M7 后续）。
+///
+/// 此函数保留为占位，便于未来真正可靠的实现替换。
 #[cfg(target_os = "macos")]
-fn hide_fullscreen_button(handle: &tauri::AppHandle, label: &str) {
-    use objc2::msg_send;
-    use objc2::runtime::AnyObject;
-    use std::panic::{catch_unwind, AssertUnwindSafe};
-    if let Some(window) = handle.get_webview_window(label) {
-        if let Ok(ns_window) = window.ns_window() {
-            let ns_window_ptr: *mut AnyObject = ns_window.cast();
-            // -(void)setShowsFullScreenButton:(BOOL)flag; BOOL = i8
-            let result = catch_unwind(AssertUnwindSafe(|| unsafe {
-                let _: () = msg_send![ns_window_ptr, setShowsFullScreenButton: 0_i8];
-            }));
-            if result.is_err() {
-                eprintln!("[shell] failed to hide fullscreen button on '{label}' (panic swallowed)");
-            }
-        }
-    }
-}
+fn hide_fullscreen_button(_handle: &tauri::AppHandle, _label: &str) {}
 
 #[cfg(not(target_os = "macos"))]
 fn hide_fullscreen_button(_handle: &tauri::AppHandle, _label: &str) {}

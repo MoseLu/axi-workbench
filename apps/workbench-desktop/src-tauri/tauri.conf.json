@@ -5,8 +5,8 @@
   "identifier": "com.axi.workbench.desktop",
   "build": {
     "frontendDist": "../workbench-dist",
-    "devUrl": "http://127.0.0.1:5173",
-    "beforeDevCommand": "echo 'Run `pnpm dev:workbench` in another terminal first, then this Tauri window will hot-reload against http://127.0.0.1:5173' && sleep 1",
+    "devUrl": "http://127.0.0.1:5183",
+    "beforeDevCommand": "echo 'Run `pnpm dev:workbench` in another terminal first, then this Tauri window will hot-reload against http://127.0.0.1:5183' && sleep 1",
     "beforeBuildCommand": "pnpm --filter @axi/workbench build && pnpm --filter @axi/workbench-desktop verify:contracts"
   },
   "app": {
@@ -64,7 +64,7 @@
       "frameworks": [],
       "providerShortName": null,
       "signingIdentity": null,
-      "entitlements": null,
+      "entitlements": "entitlements/workbench.plist",
       "exceptionDomain": null,
       "dmg": {
         "background": null,

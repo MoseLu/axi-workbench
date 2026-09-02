@@ -14,8 +14,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
-      // The dev server listens only on IPv4 HTTP http://127.0.0.1:5173.
+      port: 5183,
+      // The dev server listens only on IPv4 HTTP http://127.0.0.1:5183.
+      // 5173 is reserved for the wallpaper project (axi-image-preview); we use 5183 to avoid collisions.
       host: '127.0.0.1',
       strictPort: true,
       fs: {
