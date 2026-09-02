@@ -4,6 +4,8 @@
  * 设计原则：纯函数 / 不可变 / 类型安全。
  */
 
+import { useEffect, useState } from 'react';
+
 /**
  * pick —— 从对象挑选指定 keys，返回新对象（不修改原对象）。
  * @example
@@ -80,3 +82,49 @@ export function get<T = unknown>(
  * setPath —— set 的别名（命名风格与 lodash 一致）。
  */
 export const setPath = set;
+// ============================================================================
+// M50：safe useLocalStorage —— 带 schema 校验 + catch
+// ============================================================================
+
+/**
+ * safeUseLocalStorage —— 带 JSON 校验 + 默认值 fallback。
+ * 解析失败 / schema 不符 → 使用 initialValue + 静默清理 localStorage。
+ *
+ * @example
+ *   const [user, setUser] = safeUseLocalStorage(
+ *     'user',
+ *     { id: '', name: '' },
+ *     (v): v is { id: string; name: string } => typeof v === 'object' && 'id' in v
+ *   );
+ */
+export function safeUseLocalStorage<T>(
+  key: string,
+  initialValue: T,
+  validate: (raw: unknown) => raw is T = (raw): raw is T => raw !== undefined
+): [T, (value: T | ((prev: T) => T)) => void] {
+  const [value, setValue] = useState<T>(() => {
+    if (typeof window === 'undefined') return initialValue;
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw === null) return initialValue;
+      const parsed: unknown = JSON.parse(raw);
+      if (validate(parsed)) return parsed;
+      // Validate failed — clean up and fall back
+      window.localStorage.removeItem(key);
+      return initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // 配额溢出 / 隐私模式 → silent
+    }
+  }, [key, value]);
+
+  return [value, setValue];
+}

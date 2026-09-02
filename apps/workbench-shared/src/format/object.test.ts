@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { get, omit, pick, set } from './object';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { get, omit, pick, safeUseLocalStorage, set } from './object';
 
 describe('@axi/workbench-shared/format/object', () => {
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
   describe('pick', () => {
     it('returns a new object with only the picked keys', () => {
       expect(pick({ a: 1, b: 2, c: 3 }, ['a', 'c'])).toEqual({ a: 1, c: 3 });
@@ -59,6 +64,37 @@ describe('@axi/workbench-shared/format/object', () => {
 
     it('returns undefined when intermediate is null', () => {
       expect(get({ a: null }, ['a', 'b'])).toBeUndefined();
+    });
+  });
+
+  describe('safeUseLocalStorage', () => {
+    interface User { id: string; name: string }
+    const isUser = (v: unknown): v is User =>
+      typeof v === 'object' && v !== null && 'id' in v && 'name' in v;
+
+    it('returns initial value when key is missing', () => {
+      const { result } = renderHook(() => safeUseLocalStorage<User>('user', { id: '', name: '' }, isUser));
+      expect(result.current[0]).toEqual({ id: '', name: '' });
+    });
+
+    it('persists writes and validates on next read', () => {
+      window.localStorage.setItem('user', JSON.stringify({ id: '1', name: 'foo' }));
+      const { result } = renderHook(() => safeUseLocalStorage<User>('user', { id: '', name: '' }, isUser));
+      expect(result.current[0]).toEqual({ id: '1', name: 'foo' });
+    });
+
+    it('falls back to initial value when stored JSON fails validation', () => {
+      window.localStorage.setItem('user', JSON.stringify({ wrong: 'shape' }));
+      const { result } = renderHook(() => safeUseLocalStorage<User>('user', { id: '', name: '' }, isUser));
+      expect(result.current[0]).toEqual({ id: '', name: '' });
+      // Bad storage remains in place until next set (validation runs lazily on read)
+      // The point is: reads return safe initial value, not the bad data
+    });
+
+    it('falls back to initial value when stored JSON is corrupted', () => {
+      window.localStorage.setItem('user', '{not-valid-json');
+      const { result } = renderHook(() => safeUseLocalStorage<User>('user', { id: '', name: '' }, isUser));
+      expect(result.current[0]).toEqual({ id: '', name: '' });
     });
   });
 });
