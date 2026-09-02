@@ -34,6 +34,20 @@ export {
   stringifyJsonSafe,
   type JsonResult,
 } from './json';
+// M41 pure utils (no React dep) —— 单独文件 ../util/fn
+export {
+  assertNever,
+  assertPresent,
+  debounce,
+  once,
+  safeCall,
+  sleep,
+  throttle,
+  tryOr,
+  type DebouncedFn,
+  type SafeResult,
+  type ThrottledFn,
+} from '../util/fn';
 
 export function formatUnreadCount(count: number): string {
   if (!Number.isFinite(count) || count <= 0) return '';
