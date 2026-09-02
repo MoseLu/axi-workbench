@@ -17,6 +17,15 @@ export {
   validateUUID,
   type ValidationResult,
 } from './validate';
+// M35 privacy mask —— 单独文件 ./privacy.ts
+export {
+  mask,
+  maskBankCard,
+  maskEmail,
+  maskIdCard,
+  maskName,
+  maskPhone,
+} from './privacy';
 
 export function formatUnreadCount(count: number): string {
   if (!Number.isFinite(count) || count <= 0) return '';
