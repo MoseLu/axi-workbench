@@ -231,7 +231,112 @@ UI 改动 → **Web 端**；macOS 壳行为（菜单栏 / 托盘 / 单实例 / �
 | 扫码登录 | Q1=三端, Q2=壳（独立窗）, Q3=是 → contracts | Desktop 主导 + web 套壳 |
 | 系统通知 | Q1=web+desktop, Q2=壳, Q3=是 → contracts | Web push → Desktop consume |
 
-- `docs/specs/2026-08-09-multi-surface-admin-positioning/` —— 多端能力清单（PRD + INVENTORY + DESIGN）
+---
+
+## 10. shared 包的"反模式"（什么不要放进来）
+
+`apps/workbench-shared` 是跨端**纯函数 + 通用 hooks** 包。**容易越界**放错地方的内容：
+
+### ❌ 不要放的：UI 组件
+```ts
+// ❌ 错：在 shared 里导出 <Button /> <Modal />
+// 原因：组件依赖 antd / @axi/shell / @axi/widgets；shared 必须零 UI 依赖
+```
+**放哪**：`apps/workbench/src/components/` 或 `shared/axi-ui`（独立 UI 包）。
+
+### ❌ 不要放的：平台 API 调用
+```ts
+// ❌ 错：直接 fetch / Tauri.invoke / WKWebView API
+export async function fetchUser(id) { return fetch(`/api/users/${id}`); }
+export function getTauriWindow() { return window.__TAURI_INTERNALS__; }
+```
+**放哪**：
+- `fetch` 包装 → `apps/workbench/src/lib/api/`
+- Tauri 通信 → `@axi/workbench-desktop`（已在 contracts 路径）
+- 平台特性 → 各端包内
+
+### ❌ 不要放的：路由 / 导航
+```ts
+// ❌ 错：useSearchParams / useNavigate
+import { useSearchParams } from 'react-router-dom';
+```
+**原因**：mobile / desktop 套 web 走 React Router，但 native mobile 不一定用相同 router。
+
+### ❌ 不要放的：业务 DTO
+```ts
+// ❌ 错：把 inbox 消息体放这里
+export interface InboxMessage { id: string; subject: string; body: string; ... }
+```
+**原因**：inbox 是 web 业务领域，不是跨端通用。放 `@axi/workstation-contracts` 或 web 端自己。
+
+### ❌ 不要放的：CSS / class 拼接
+```ts
+// ❌ 错：在 shared 用 tailwindcss / clsx / styled-components
+import clsx from 'clsx';
+```
+**放哪**：web/mobile 各自组装。`cn()` 是唯一例外（零依赖纯函数）。
+
+### ❌ 不要放的：localStorage 业务数据
+```ts
+// ❌ 错：把 "user inbox cache" 放 shared
+export function saveInboxCache(id: string, data: unknown) { localStorage.setItem(...); }
+```
+**放哪**：`@axi/workstation-contracts`（schema）或各端 `lib/cache/`。
+
+### ❌ 不要放的：Tauri IPC payload type
+```ts
+// ❌ 错：把 ShellUnread / ShellNotify 放 shared
+export type ShellUnread = { count: number };
+```
+**放哪**：`@axi/workbench-desktop` 的 `contracts.ts`（端到端 contract，不跨端共享）。
+
+### ❌ 不要放的：环境变量
+```ts
+// ❌ 错：读 process.env / import.meta.env
+export const API_URL = process.env.API_URL;
+```
+**放哪**：`@axi/workstation-contracts` 的 `runtime.ts`，各端启动时注入。
+
+---
+
+## 11. 何时迁移到 shared 包
+
+不是所有东西都该共享。判断标准：
+
+### ✅ 适合共享的
+- **纯函数**：无副作用、无外部依赖、输入 → 输出
+- **通用 hooks**：跨 ≥2 个端都需要的 React hooks
+- **基础类型**：Surface / NavBadge 这种**端无关**的领域类型
+- **格式化工具**：Intl / 时间 / 字节 / class 拼接
+- **校验工具**：email / url / uuid / phone 正则
+
+### ❌ 不适合共享的
+- 仅在**一个端**用 → 直接放那个端
+- 依赖**框架**（antd、react-router、styled-components）→ 放各端自己
+- 依赖**平台 API**（fetch、Tauri、WKWebView）→ 放各端自己
+- **业务 DTO**（消息、订单、任务）→ 放 workstation-contracts
+
+### 迁移流程
+
+1. **发现重复**：在 web/mobile 看到同一函数实现 ≥2 次
+2. **起 PR**：`docs/specs/.../<date>-shared-migration.md` 列函数签名 + 引用点
+3. **抽到 shared**：在新分支 agent/workbench-multi-surface-architecture 实现 + 单测
+4. **改端**：web owner 切到 `from '@axi/workbench-shared'`（或本地 re-export）；mobile 同
+5. **删除重复**：端内 inline 实现删除
+6. **CI 验证**：shared 测试 + 端测试都过
+
+### 当前 shared 包对外 API（46 工具）
+
+| 模块 | 数量 | 工具 |
+| --- | --- | --- |
+| `hooks/` | 17 | useDebouncedValue / useInterval / useThrottledValue / useLocalStorage / useToggle / useDisclosure / usePrevious / useEventListener / useClickOutside / useKeyPress / useDebouncedCallback / useThrottledCallback / useMediaQuery / useWindowSize / useBreakpoint / useAsyncFn / useAsync |
+| `format/` | 24 | formatUnreadCount / formatTimestamp / formatBytes / formatDuration / formatRelativeTime / formatNumber / formatPercent / formatCurrency / formatCompact / truncate / slugify / camelCase / pascalCase / kebabCase / cn / parseQueryString / buildQueryString / buildUrl / validateEmail / validateUrl / validateUUID / validatePhone / validateLength / validateNonEmpty |
+| `assert/` | 4 | assertNever / safeCall / tryOr / assertPresent |
+| `types/` | 6 | NavBadge / NavBadgeDto / toNavBadge / Surface / NavBadgeKind / SafeResult |
+
+---
+
+## 12. 相关文档
 - `docs/specs/2026-09-01-workbench-mac-packaging/` —— Desktop 端 PRD + DESIGN
 - `docs/architecture/source-catalog.md` —— 源码拓扑基线
 - `apps/workbench/README.md` —— Web 端入口
