@@ -14,6 +14,7 @@ import {
   useDocumentTitle,
   useEventListener,
   useFetch,
+  useFirstMount,
   useFocusTrap,
   useHover,
   useInterval,
@@ -22,13 +23,17 @@ import {
   useKeyPress,
   useLocalStorage,
   useMediaQuery,
+  useMounted,
   useNetworkStatus,
   useOnline,
   usePrevious,
+  usePreviousDistinct,
   useReducedMotion,
   useThrottledCallback,
   useThrottledValue,
   useToggle,
+  useUnmount,
+  useUpdateEffect,
   useWindowSize,
 } from './index';
 
@@ -484,6 +489,33 @@ describe('@axi/workbench-shared/hooks', () => {
       expect(result.current).toHaveProperty('effectiveType');
       expect(result.current).toHaveProperty('saveData');
       expect(typeof result.current.saveData).toBe('boolean');
+    });
+  });
+
+  describe('useMounted', () => {
+    it('returns true after mount (initial render = false in SSR, true in client)', () => {
+      // renderHook runs effects synchronously by default in test environments
+      const { result } = renderHook(() => useMounted());
+      expect(result.current).toBe(true);
+    });
+  });
+
+  describe('useUnmount', () => {
+    it('invokes callback on unmount only', () => {
+      const callback = vi.fn();
+      const { unmount } = renderHook(() => useUnmount(callback));
+      expect(callback).not.toHaveBeenCalled();
+      unmount();
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('useFirstMount', () => {
+    it('returns true on first render, false on subsequent', () => {
+      const { result, rerender } = renderHook(() => useFirstMount());
+      expect(result.current).toBe(true);
+      rerender();
+      expect(result.current).toBe(false);
     });
   });
 

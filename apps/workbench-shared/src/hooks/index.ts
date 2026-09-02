@@ -857,3 +857,59 @@ export function usePreviousDistinct<T>(
   }
   return ref.current;
 }
+
+// ============================================================================
+// M46：生命周期 hooks
+// ============================================================================
+
+/**
+ * useMounted —— 组件挂载后 state=true，unmount 不会变回 false（避免 race condition）。
+ * 三端通用：异步回调里判断组件是否还活着，避免 setState on unmounted component。
+ */
+export function useMounted(): boolean {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  return mounted;
+}
+
+/**
+ * useUnmount —— 组件 unmount 时触发一次回调。
+ * 跨端通用：清理定时器、取消订阅、关闭 WebSocket。
+ */
+export function useUnmount(fn: () => void): void {
+  const ref = useRef(fn);
+  useEffect(() => {
+    ref.current = fn;
+  }, [fn]);
+  useEffect(() => () => ref.current(), []);
+}
+
+/**
+ * useUpdateEffect —— 类似 useEffect，但首次 render 不触发（只在 deps 变化时跑）。
+ * 三端通用：响应外部状态变化但不想在 mount 时跑。
+ */
+export function useUpdateEffect(fn: () => void, deps: React.DependencyList): void {
+  const ref = useRef(true);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current = false;
+      return;
+    }
+    return fn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
+
+/**
+ * useFirstMount —— 首次 render 时返回 true，之后 false。
+ * 常用于'只在 mount 时跑一次副作用，update 时不跑'场景（无需 useRef 跟踪）。
+ */
+export function useFirstMount(): boolean {
+  const ref = useRef(true);
+  useEffect(() => {
+    ref.current = false;
+  }, []);
+  return ref.current;
+}
