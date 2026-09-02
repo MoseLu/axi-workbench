@@ -913,3 +913,37 @@ export function useFirstMount(): boolean {
   }, []);
   return ref.current;
 }
+
+// ============================================================================
+// M47：稳定引用 hooks
+// ============================================================================
+
+/**
+ * useStableCallback —— 跨 render 保持 callback identity。
+ * 内部用 ref 包装，每次 render 更新 ref.current 但返回函数 identity 不变。
+ * 解决 useEffect 依赖 callback 时反复 re-run 的问题。
+ *
+ * @example
+ *   const stableHandler = useStableCallback((id) => doSomething(id));
+ *   useEffect(() => { return () => stableHandler('cleanup'); }, [stableHandler]);
+ *   // 上面的 useEffect 不会因 callback 引用变化而反复执行
+ */
+export function useStableCallback<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn
+): (...args: TArgs) => TReturn {
+  const ref = useRef(fn);
+  useEffect(() => {
+    ref.current = fn;
+  }, [fn]);
+  return useCallback((...args: TArgs) => ref.current(...args), []);
+}
+
+/**
+ * useLatestRef —— 保持对最新值的 ref。
+ * 与 useRef + 手动更新等价，但更易读。
+ */
+export function useLatestRef<T>(value: T): React.MutableRefObject<T> {
+  const ref = useRef(value);
+  ref.current = value;
+  return ref;
+}

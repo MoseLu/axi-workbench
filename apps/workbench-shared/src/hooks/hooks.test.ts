@@ -21,6 +21,7 @@ import {
   useIsomorphicLayoutEffect,
   useKeyActivate,
   useKeyPress,
+  useLatestRef,
   useLocalStorage,
   useMediaQuery,
   useMounted,
@@ -29,6 +30,7 @@ import {
   usePrevious,
   usePreviousDistinct,
   useReducedMotion,
+  useStableCallback,
   useThrottledCallback,
   useThrottledValue,
   useToggle,
@@ -516,6 +518,28 @@ describe('@axi/workbench-shared/hooks', () => {
       expect(result.current).toBe(true);
       rerender();
       expect(result.current).toBe(false);
+    });
+  });
+
+  describe('useStableCallback', () => {
+    it('returns the same function identity across renders', () => {
+      const { result, rerender } = renderHook(() => useStableCallback(() => 42));
+      const first = result.current;
+      rerender();
+      const second = result.current;
+      expect(first).toBe(second);
+    });
+
+    it('invokes the latest callback implementation', () => {
+      // Render with closure capturing a mutable value
+      let currentValue = 0;
+      const { result, rerender } = renderHook(() =>
+        useStableCallback(() => currentValue)
+      );
+      expect(result.current()).toBe(0);
+      currentValue = 100;
+      rerender();
+      expect(result.current()).toBe(100);
     });
   });
 
