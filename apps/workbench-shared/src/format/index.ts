@@ -58,7 +58,10 @@ export {
   useFileDownload,
   useMutationObserver,
   useResizeObserver,
+  useWebWorker,
+  useWorkerFunction,
   type ElementSize,
+  type WebWorkerHandle,
 } from './object';
 // M52 cookies —— 单独文件 ./cookie.ts
 export {

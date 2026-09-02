@@ -415,3 +415,69 @@ export function downloadBlob(blob: Blob, filename: string): void {
     URL.revokeObjectURL(url);
   }
 }
+
+// ============================================================================
+// M58：Web Worker 包装
+// ============================================================================
+
+/**
+ * useWebWorker —— 创建 + 管理 Web Worker。
+ * 跨端：仅 web 端（mobile / desktop 不直接用 Worker）。
+ * SSR-safe。
+ *
+ * @example
+ *   const post = useWebWorker('/workers/calc.js');
+ *   post({ a: 1, b: 2 });
+ *   // worker.onmessage = (e) => console.log(e.data)
+ */
+export interface WebWorkerHandle<TIn = unknown, TOut = unknown> {
+  post: (message: TIn) => void;
+  terminate: () => void;
+  worker: Worker | null;
+}
+
+export function useWebWorker<TIn = unknown, TOut = unknown>(
+  urlOrScript: string | URL | (() => void)
+): WebWorkerHandle<TIn, TOut> {
+  const ref = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Worker' in window)) return;
+    if (typeof urlOrScript === 'function') {
+      // Inline script (Blob) mode not directly supported in browsers without URL
+      return;
+    }
+    const worker = new Worker(urlOrScript);
+    ref.current = worker;
+    return () => {
+      worker.terminate();
+      ref.current = null;
+    };
+  }, [urlOrScript]);
+
+  return {
+    post: (message: TIn) => {
+      ref.current?.postMessage(message);
+    },
+    terminate: () => {
+      ref.current?.terminate();
+      ref.current = null;
+    },
+    worker: ref.current,
+  };
+}
+
+/**
+ * useWorkerFunction —— 包装一个函数到 Web Worker（dynamic import 形式）。
+ * 仅用作类型签名占位（实际 worker 创建在 .ts 文件里手动写）。
+ * 跨端：仅 web 端。
+ */
+export function useWorkerFunction<Args extends unknown[], R>(
+  fn: (...args: Args) => R
+): { run: (...args: Args) => Promise<R> } {
+  // 实际实现需要把 fn 序列化到 worker；这里只暴露类型
+  // 推荐：use + 静态 import('*!worker') 形式 + Comlink 库
+  return {
+    run: async (...args: Args) => fn(...args),
+  };
+}
