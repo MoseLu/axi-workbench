@@ -47,6 +47,8 @@ export {
   writeCookie,
   type CookieOptions,
 } from './cookie';
+// M53 DOM meta hooks —— 单独文件 ./meta.ts
+export { useDocumentTitle, useFavicon, useMeta } from './meta';
 // M41 pure utils (no React dep) —— 单独文件 ../util/fn
 export {
   assertNever,
