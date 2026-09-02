@@ -573,3 +573,106 @@ export function useFocusTrap<T extends HTMLElement>(
     return () => el.removeEventListener('keydown', handler);
   }, [ref, enabled]);
 }
+
+// ============================================================================
+// M38：剪贴板 + 系统分享
+// ============================================================================
+
+/**
+ * 复制文本到剪贴板 —— 现代浏览器优先 navigator.clipboard.writeText，
+ * 旧浏览器 fallback 到 textarea + execCommand('copy')。
+ * SSR-safe（typeof window / typeof navigator 检查）。
+ */
+export interface CopyToClipboardResult {
+  ok: boolean;
+  reason?: 'no_clipboard_api' | 'denied' | 'unknown';
+}
+
+export async function copyToClipboard(text: string): Promise<CopyToClipboardResult> {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
+    return { ok: false, reason: 'no_clipboard_api' };
+  }
+  // Modern path
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return { ok: true };
+    } catch (err) {
+      // permission denied or other error; fall through to legacy
+    }
+  }
+  // Legacy fallback: hidden textarea + execCommand
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    ta.style.pointerEvents = 'none';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok ? { ok: true } : { ok: false, reason: 'denied' };
+  } catch {
+    return { ok: false, reason: 'unknown' };
+  }
+}
+
+/**
+ * React hook 包装 —— 暴露 copy() 函数 + 最近一次结果 + 状态机。
+ */
+export function useCopyToClipboard(): {
+  copy: (text: string) => Promise<CopyToClipboardResult>;
+  copied: boolean;
+  error: string | null;
+  reset: () => void;
+} {
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const reset = () => {
+    setCopied(false);
+    setError(null);
+  };
+  const copy = async (text: string) => {
+    const result = await copyToClipboard(text);
+    if (result.ok) {
+      setCopied(true);
+      setError(null);
+    } else {
+      setError(result.reason ?? 'unknown');
+      setCopied(false);
+    }
+    return result;
+  };
+  return { copy, copied, error, reset };
+}
+
+/**
+ * 系统分享 —— 优先 navigator.share（移动端 Web Share API），fallback 复制到剪贴板。
+ * @example
+ *   const share = useShare();
+ *   share({ title: 'Hello', text: 'World', url: 'https://...' });
+ */
+export interface ShareData {
+  title?: string;
+  text?: string;
+  url?: string;
+}
+
+export async function share(data: ShareData): Promise<CopyToClipboardResult> {
+  if (typeof navigator === 'undefined') {
+    return { ok: false, reason: 'no_clipboard_api' };
+  }
+  if (navigator.share && typeof navigator.canShare === 'function' && navigator.canShare(data)) {
+    try {
+      await navigator.share(data);
+      return { ok: true };
+    } catch (err) {
+      // user cancelled or denied
+      return { ok: false, reason: 'denied' };
+    }
+  }
+  // Fallback: build a share string and copy to clipboard
+  const text = [data.title, data.text, data.url].filter(Boolean).join(' — ');
+  return copyToClipboard(text);
+}

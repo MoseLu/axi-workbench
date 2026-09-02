@@ -7,6 +7,7 @@ import {
   useAsyncFn,
   useBreakpoint,
   useClickOutside,
+  useCopyToClipboard,
   useDebouncedCallback,
   useDebouncedValue,
   useDisclosure,
@@ -423,6 +424,35 @@ describe('@axi/workbench-shared/hooks', () => {
       expect(document.title).toBe('New');
       unmount();
       expect(document.title).toBe('New');
+    });
+  });
+
+  describe('useCopyToClipboard', () => {
+    it('uses navigator.clipboard.writeText when available', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      vi.stubGlobal('navigator', { clipboard: { writeText } });
+      const { result } = renderHook(() => useCopyToClipboard());
+      let copyResult: { ok: boolean } | null = null;
+      await act(async () => {
+        copyResult = await result.current.copy('hello');
+      });
+      expect(writeText).toHaveBeenCalledWith('hello');
+      expect(copyResult?.ok).toBe(true);
+      expect(result.current.copied).toBe(true);
+      expect(result.current.error).toBeNull();
+      vi.unstubAllGlobals();
+    });
+
+    it('captures error reason when clipboard denies', async () => {
+      const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+      vi.stubGlobal('navigator', { clipboard: { writeText } });
+      const { result } = renderHook(() => useCopyToClipboard());
+      await act(async () => {
+        await result.current.copy('x');
+      });
+      expect(result.current.copied).toBe(false);
+      expect(result.current.error).toBe('unknown');
+      vi.unstubAllGlobals();
     });
   });
 
