@@ -1,6 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <path fill="#72A7FF" d="M16 2.5 23.8 10.3 17 17.1 9.2 9.3z"/>
-  <path fill="#FF7B84" d="m24.3 10.8 5.2 5.2-7.8 7.8-4.1-4.1z"/>
-  <path fill="#FFD166" d="m16.5 17.6 4.7 4.7-5.2 5.2-7.8-7.8 4.1-4.1z"/>
-  <path fill="#67D891" d="m9.7 9.8 6.8 6.8-4.1 4.1L2.5 16z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="axi-icon-bg" cx="50%" cy="50%" r="72%">
+      <stop offset="0" stop-color="#35445A"/>
+      <stop offset="0.58" stop-color="#1D2939"/>
+      <stop offset="1" stop-color="#0D121A"/>
+    </radialGradient>
+  </defs>
+  <rect x="12" y="12" width="1000" height="1000" rx="260" fill="#090D13"/>
+  <rect x="30" y="30" width="964" height="964" rx="242" fill="url(#axi-icon-bg)"/>
+  <rect x="38" y="38" width="948" height="948" rx="234" fill="none" stroke="#AFC2DE" stroke-opacity="0.18" stroke-width="12"/>
+  <g transform="translate(512 512) scale(26) translate(-16 -16)">
+    <path fill="#72A7FF" d="M16 16 8.25 8.25 11.75 3.5 16 2 20.25 3.5 23.75 8.25z"/>
+  <path fill="#FF7B84" d="M16 16 23.75 8.25 28.5 11.75 30 16 28.5 20.25 23.75 23.75z"/>
+  <path fill="#FFD166" d="M16 16 23.75 23.75 20.25 28.5 16 30 11.75 28.5 8.25 23.75z"/>
+  <path fill="#67D891" d="M16 16 8.25 23.75 3.5 20.25 2 16 3.5 11.75 8.25 8.25z"/>
+  </g>
 </svg>
