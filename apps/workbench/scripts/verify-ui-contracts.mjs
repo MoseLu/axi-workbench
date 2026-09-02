@@ -54,7 +54,8 @@ requireMatch(workbenchIcon, /resolveAxiWorkbenchIcon/, 'Web must render icon sem
 requireMatch(globalSearch, /axiWorkbenchIconMap\.search[\s\S]*axiWorkbenchIconMap\.forward/, 'global search controls must use shared Workbench icon semantics');
 requireMatch(login, /axi-login-card__chrome/, 'Web login must expose the client-style card chrome');
 requireMatch(login, /axi-login-qr-expired-overlay/, 'Web login must own the QR expiry scrim and refresh action');
-requireMatch(login, /axi-login-form--code[\s\S]*OneTimeCodeInput/, 'Web login email flow must use the shared six-slot verification input');
+requireMatch(login, /axi-login-form--email[\s\S]*OneTimeCodeInput/, 'Web login email flow must use the shared six-slot verification input');
+requireMatch(login, /axi-login-form__row--email[\s\S]*axi-login-text-button--send/, 'Web login email row must inline the send-code button on the right edge');
 forbidMatch(login, /sms-verifications|login\/sms|短信登录|手机号/, 'Web login must keep the current email authentication surface');
 forbidMatch(login, /axi-login-qr-status|axi-login-qr-meta|axi-login-card__footer/, 'Web login must not retain removed QR status or footer copy');
 requireMatch(layout, /iconName: axiWorkbenchIconMap\.logout/, 'Web account menu must use the canonical logout icon semantic');
