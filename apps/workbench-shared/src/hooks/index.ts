@@ -447,7 +447,7 @@ export function useAsyncFn<TArgs extends unknown[], TResult>(
 export function useAsync<TResult>(
   fn: () => Promise<TResult>,
   deps: React.DependencyList
-): Omit<AsyncState<[], TResult>, 'run' | 'reset'> & { refetch: () => void } {
+): AsyncState<[], TResult> & { refetch: () => void } {
   const { run, ...rest } = useAsyncFn(fn);
   const runRef = useRef(run);
   runRef.current = run;
@@ -455,7 +455,7 @@ export function useAsync<TResult>(
     void runRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
-  return { ...rest, refetch: () => void runRef.current() };
+  return { ...rest, run: runRef.current, refetch: () => void runRef.current() };
 }
 
 /**
@@ -515,7 +515,13 @@ export function useFetch<T = unknown>(
   const { loading, error, value, run } = useAsync<T | null>(fn, [url, skip]);
   const runRef = useRef(run);
   runRef.current = run;
-  return { loading, error, value, refetch: () => void runRef.current() };
+  return {
+    loading,
+    error,
+    value,
+    refetch: () => void runRef.current(),
+    run: runRef.current,
+  };
 }
 
 // ============================================================================
@@ -825,4 +831,29 @@ export function useNetworkStatus(): NetworkInfo {
     return () => conn.removeEventListener('change', handler);
   }, [online]); // eslint-disable-line react-hooks/exhaustive-deps
   return info;
+}
+// ============================================================================
+// M44：值比较 hooks
+// ============================================================================
+
+/**
+ * usePreviousDistinct —— 类似 usePrevious，但只在值真正"不同"时更新。
+ * 避免 useEffect 收到新对象引用但内容相同的触发。
+ *
+ * @example
+ *   const { count, options } = props;
+ *   const prev = usePreviousDistinct(options, deepEqual);
+ *   useEffect(() => { ... }, [prev]); // 只在 options 真实变化时触发
+ */
+export function usePreviousDistinct<T>(
+  value: T,
+  isEqual: (a: T, b: T) => boolean = Object.is
+): T | undefined {
+  const ref = useRef<T | undefined>(undefined);
+  const [stored, setStored] = useState<T>(value);
+  if (!isEqual(value, stored)) {
+    ref.current = stored;
+    setStored(value);
+  }
+  return ref.current;
 }
