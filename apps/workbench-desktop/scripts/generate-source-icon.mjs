@@ -1,4 +1,4 @@
-// Wrap the Web angular petal mark in a center-symmetric desktop app-icon treatment before rasterization.
+// Wrap the Web angular petal-and-hub mark in a center-symmetric desktop app-icon treatment before rasterization.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -20,10 +20,11 @@ const requiredMarks = [
   'fill="#67D891"',
 ]
 const requiredGeometry = [
-  'd="M16 16 8.25 8.25 11.75 3.5 16 2 20.25 3.5 23.75 8.25z"',
-  'd="M16 16 23.75 8.25 28.5 11.75 30 16 28.5 20.25 23.75 23.75z"',
-  'd="M16 16 23.75 23.75 20.25 28.5 16 30 11.75 28.5 8.25 23.75z"',
-  'd="M16 16 8.25 23.75 3.5 20.25 2 16 3.5 11.75 8.25 8.25z"',
+  'd="M16 13.6 13.1 11.7 11.4 8.2 12.2 4.1 14.2 1.7 16 1 17.8 1.7 19.8 4.1 20.6 8.2 18.9 11.7z"',
+  'transform="rotate(90 16 16)"',
+  'transform="rotate(180 16 16)"',
+  'transform="rotate(270 16 16)"',
+  '<circle cx="16" cy="16" r="3.6"',
 ]
 
 if (
