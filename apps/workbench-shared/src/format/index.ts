@@ -49,6 +49,10 @@ export {
   safeUseLocalStorage,
   set,
   setPath,
+  useElementSize,
+  useMutationObserver,
+  useResizeObserver,
+  type ElementSize,
 } from './object';
 // M52 cookies —— 单独文件 ./cookie.ts
 export {

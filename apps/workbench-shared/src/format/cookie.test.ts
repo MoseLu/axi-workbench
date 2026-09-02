@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import {
   deleteCookie,
@@ -44,7 +44,6 @@ describe('@axi/workbench-shared/format/cookie', () => {
 
     it('returns false in SSR (typeof document === "undefined")', () => {
       const original = globalThis.document;
-      // @ts-expect-error — testing SSR path
       delete (globalThis as { document?: unknown }).document;
       expect(writeCookie('k', 'v')).toBe(false);
       // restore

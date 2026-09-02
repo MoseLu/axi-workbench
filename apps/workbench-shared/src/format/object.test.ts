@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
   get,
@@ -24,7 +24,7 @@ describe('@axi/workbench-shared/format/object', () => {
     });
 
     it('skips keys not present in the source', () => {
-      expect(pick({ a: 1 }, ['a', 'x'] as ('a' | 'x')[])).toEqual({ a: 1 });
+      expect(pick<{ a: number; x?: number }, 'a' | 'x'>({ a: 1 }, ['a', 'x'])).toEqual({ a: 1 });
     });
 
     it('does not mutate the input object', () => {

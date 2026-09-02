@@ -207,7 +207,72 @@ export function invertObject<T extends Record<string, string | number>>(
 ): Record<string, keyof T> {
   const out: Record<string, keyof T> = {};
   (Object.keys(obj) as Array<keyof T>).forEach((key) => {
-    out[obj[key]] = key;
+    out[String(obj[key]) as string] = key;
   });
   return out;
+}
+
+// ============================================================================
+// M55：DOM MutationObserver / ResizeObserver hooks
+// ============================================================================
+
+/**
+ * useMutationObserver —— 监听元素 DOM 变更（属性 / 子节点 / 文本）。
+ * 三端通用：自动响应 DOM 变化、动态内容同步、埋点曝光。
+ * SSR-safe（typeof window 检查）。
+ */
+export function useMutationObserver(
+  ref: React.RefObject<Element>,
+  callback: MutationCallback,
+  options: MutationObserverInit = { childList: true, subtree: false, attributes: false }
+): void {
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('MutationObserver' in window)) return;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new MutationObserver(callback);
+    observer.observe(el, options);
+    return () => observer.disconnect();
+  }, [ref, options.childList, options.subtree, options.attributes, options.characterData]);
+}
+
+/**
+ * useResizeObserver —— 监听元素尺寸变化。
+ * 返回最新尺寸 { width, height }。
+ * SSR-safe。
+ */
+export interface ElementSize {
+  width: number;
+  height: number;
+}
+
+export function useResizeObserver(
+  ref: React.RefObject<Element>,
+  options: ResizeObserverOptions = {}
+): ElementSize {
+  const [size, setSize] = useState<ElementSize>({ width: 0, height: 0 });
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('ResizeObserver' in window)) return;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+    });
+    observer.observe(el, options);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
+}
+
+/**
+ * useElementSize —— useResizeObserver 的便利 wrapper。
+ * 直接传 ref，返回最新尺寸。
+ */
+export function useElementSize<T extends Element>(
+  ref: React.RefObject<T>
+): ElementSize {
+  return useResizeObserver(ref);
 }
