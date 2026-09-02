@@ -1,6 +1,5 @@
-import { act, fireEvent, renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRef } from 'react';
 
 import {
   BREAKPOINTS,
@@ -217,25 +216,27 @@ describe('@axi/workbench-shared/hooks', () => {
   describe('useClickOutside', () => {
     it('fires handler when click is outside the ref element', () => {
       const handler = vi.fn();
-      const inside = document.createElement('div');
-      const insideChild = document.createElement('span');
-      inside.appendChild(insideChild);
-      document.body.appendChild(inside);
-
-      const ref = createRef<HTMLDivElement>();
-      ref.current = inside;
+      // Create an element not in the document tree; ref points to it.
+      const outsideElement = document.createElement('div');
+      const ref = { current: outsideElement };
       renderHook(() => useClickOutside(ref, handler));
-
       act(() => {
         document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       });
+      // document.body is outside ref.current; handler should fire
       expect(handler).toHaveBeenCalled();
+    });
 
+    it('does not fire when click is inside the ref element', () => {
+      const handler = vi.fn();
+      const inside = document.createElement('div');
+      document.body.appendChild(inside);
+      const ref = { current: inside };
+      renderHook(() => useClickOutside(ref, handler));
       act(() => {
-        insideChild.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        inside.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
       });
-      // outside clicks already invoked handler; ensure inside click does NOT add more
-      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).not.toHaveBeenCalled();
     });
   });
 
@@ -309,8 +310,7 @@ describe('@axi/workbench-shared/hooks', () => {
 
     it('uses fallback when window.matchMedia is unavailable', () => {
       const original = window.matchMedia;
-      // @ts-expect-error — testing fallback
-      window.matchMedia = undefined as unknown as typeof window.matchMedia;
+      (window as unknown as { matchMedia: undefined }).matchMedia = undefined;
       const { result } = renderHook(() => useMediaQuery('(max-width: 768px)', true));
       expect(result.current).toBe(true);
       window.matchMedia = original;
@@ -358,7 +358,8 @@ describe('@axi/workbench-shared/hooks', () => {
       const { result } = renderHook(() => useAsyncFn(fn));
       let returned: string | null = null;
       await act(async () => {
-        returned = await result.current.run();
+        const r = await result.current.run();
+        returned = r as string | null;
       });
       expect(returned).toBe('result');
       expect(result.current.loading).toBe(false);

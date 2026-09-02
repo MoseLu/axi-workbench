@@ -5,6 +5,8 @@
 export { camelCase, kebabCase, pascalCase, slugify, truncate } from './string';
 // M20 cn —— 单独文件 ./cn.ts
 export { cn, type CnValue } from './cn';
+// M32 URL utils —— 单独文件 ./url.ts
+export { buildQueryString, parseQueryString, type QueryParam } from './url';
 
 export function formatUnreadCount(count: number): string {
   if (!Number.isFinite(count) || count <= 0) return '';
