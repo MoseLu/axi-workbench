@@ -342,3 +342,126 @@ export const API_URL = process.env.API_URL;
 - `apps/workbench/README.md` —— Web 端入口
 - `apps/workbench-mobile/README.md` —— Mobile 端边界
 - `apps/workbench-desktop/README.md` —— Desktop 端入口
+---
+
+## 12. 如何把 web 代码迁移到 shared 包
+
+### 触发条件
+
+发现 web / mobile 端有**重复实现 ≥ 2 次**的纯函数 / hook / 工具，**或**SPEC 流程中 §4 决策树判断该逻辑该进 shared。
+
+### 6 步迁移流程
+
+```
+1. 识别重复   web/mobile owner 在 §3 看到 ≥2 个端同一函数
+   ↓
+2. 起 SPEC   docs/specs/<date>-shared-migration.md
+   - 列出函数签名（输入 / 输出 / 副作用）
+   - 列出 web / mobile 当前调用点（grep）
+   - 列出边界条件 / 跨端差异
+   ↓
+3. 抽到 shared   PR 到 agent/workbench-multi-surface-architecture
+   - 新增 src/<module>/<file>.ts
+   - 在 src/<module>/index.ts re-export
+   - 在 package.json exports 字段暴露（如果新模块）
+   - 单测覆盖 ≥4 个边界（含 SSR-safe / 跨端差异）
+   ↓
+4. 各端 owner 切   import { fn } from '@axi/workbench-shared'
+   ↓
+5. 删重复实现   端内 inline 删；re-export 可选保留 1 个 release 周期
+   ↓
+6. CI 验证   shared 测试 + 端测试都过；type-check 都过
+```
+
+### 实战示例 1：把 web 端 `useIsMobile` 抽到 shared
+
+**Step 1 识别重复**：
+- `apps/workbench/src/hooks/useIsMobile.ts` (25 行)
+- `apps/workbench-mobile/src/hooks/useIsMobile.ts` (28 行)
+- 几乎相同，只差断点
+
+**Step 2 SPEC**（`docs/specs/2026-09-15-shared-use-is-mobile.md`）：
+```yaml
+hook: useIsMobile(breakpoint: number = 768) → boolean
+useMediaQuery wrapper
+```
+
+**Step 3 抽到 shared**（M30 已经做了类似的 `useMediaQuery` / `useBreakpoint`）：
+- `apps/workbench-shared/src/hooks/index.ts` 已有 `useMediaQuery`
+- 各端 owner 直接用 `useMediaQuery('(max-width: 768px)')` 不再需要 wrapper
+
+**Step 4 切**：web/mobile owner 把 `useIsMobile` 删了，换 `useMediaQuery`
+
+**Step 5 删重复**：本地 import 一并清理
+
+**Step 6 验**：`pnpm --filter @axi/workbench test` + `pnpm --filter @axi/workbench-mobile test`
+
+### 实战示例 2：把 web 端 `navBadges.ts` 的 `dtoToBadge` 抽到 shared
+
+**Step 1 识别**：仅 web 端有，但 mobile / desktop IPC payload type 都基于这个 shape
+
+**Step 2 SPEC**：
+```yaml
+function: toNavBadge(dto?: NavBadgeDto) → NavBadge
+type: NavBadgeDto / NavBadge
+```
+
+**Step 3 抽到 shared**（已做， M21 `apps/workbench-shared/src/types/index.ts`）：
+- `NavBadge` / `NavBadgeDto` / `toNavBadge`
+
+**Step 4 切**：web 端 `navBadges.ts` 的本地 `dtoToBadge` 删，换 `import { toNavBadge } from '@axi/workbench-shared'`
+
+**Step 5 删**：`apps/workbench/src/lib/navBadges.ts` 的本地 `dtoToBadge` 删除
+
+**Step 6 验**：web 133 tests + shared 6 tests 都过
+
+### 迁移 checklist（PR 模板）
+
+```markdown
+## Shared migration: <name>
+
+### What
+- 函数 / hook / type 签名：
+- 是否纯函数：
+- 是否依赖 React：
+- 是否依赖 fetch / Tauri：
+
+### Where used now
+- apps/workbench/<...>
+- apps/workbench-mobile/<...>
+- apps/workbench-desktop/<...>
+
+### Risks
+- [ ] 端内调用方有特殊处理（error swallowing / 缓存 / 转换）？
+- [ ] 跨端类型不严格一致？
+- [ ] SSR / mobile / desktop 任何一端不能用？
+
+### Plan
+- [ ] shared package 加实现 + 单测
+- [ ] web 切换 + 删本地实现
+- [ ] mobile 切换 + 删本地实现
+- [ ] desktop 切换（如需要）
+- [ ] CI 三端 type-check + test 通过
+```
+
+### 什么时候不要迁移
+
+- 仅**一端**用 + 未来不会跨端 → 直接放那端
+- 依赖**框架**（antd / react-router）→ 放各端
+- 依赖**平台 API**（fetch / Tauri / WKWebView）→ 放各端
+- **业务 DTO**（inbox 消息、订单）→ 放 workstation-contracts
+
+详细见 §10 / §11。
+
+---
+
+## 13. 相关文档
+
+- `docs/specs/2026-08-09-multi-surface-admin-positioning/` —— 多端能力清单（PRD + INVENTORY + DESIGN）
+- `docs/specs/2026-09-01-workbench-mac-packaging/` —— Desktop 端 PRD + DESIGN
+- `docs/architecture/source-catalog.md` —— 源码拓扑基线
+- `apps/workbench/README.md` —— Web 端入口
+- `apps/workbench-mobile/README.md` —— Mobile 端边界
+- `apps/workbench-desktop/README.md` —— Desktop 端入口
+- `apps/workbench-shared/README.md` —— Shared 包使用说明
+- `docs/logs/submit/20260902-axi-shared-skeleton-verified.md` —— shared 包验证战报
