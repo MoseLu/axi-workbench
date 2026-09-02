@@ -379,3 +379,81 @@ export function useBreakpoint(): Breakpoint | 'xs' {
   }
   return current;
 }
+
+// ============================================================================
+// M31：异步状态管理 hooks
+// ============================================================================
+
+/**
+ * useAsyncFn —— 把 async 函数包装成 `{ loading, error, value, run }` 四元组。
+ *
+ * 三端通用：消息搜索、用户拉取、设置保存。
+ * **不依赖** TanStack Query / SWR —— 是更底层的 hook，跨端通用。
+ *
+ * 用法：
+ *   const search = useAsyncFn(async (q: string) => fetchJson(`/api/search?q=${q}`));
+ *   search.run('foo'); search.value; search.loading; search.error;
+ */
+export interface AsyncState<TArgs extends unknown[], TResult> {
+  loading: boolean;
+  error: unknown | null;
+  value: TResult | null;
+  run: (...args: TArgs) => Promise<TResult | null>;
+  reset: () => void;
+}
+
+export function useAsyncFn<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => Promise<TResult>
+): AsyncState<TArgs, TResult> {
+  const fnRef = useRef(fn);
+  useEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
+  const [state, setState] = useState<{
+    loading: boolean;
+    error: unknown | null;
+    value: TResult | null;
+  }>({ loading: false, error: null, value: null });
+  const runRef = useRef<(...args: TArgs) => Promise<TResult | null>>();
+  if (!runRef.current) {
+    runRef.current = async (...args: TArgs) => {
+      setState((s) => ({ ...s, loading: true, error: null }));
+      try {
+        const value = await fnRef.current(...args);
+        setState({ loading: false, error: null, value });
+        return value;
+      } catch (error) {
+        setState({ loading: false, error, value: null });
+        return null;
+      }
+    };
+  }
+  return {
+    ...state,
+    run: runRef.current,
+    reset: () => setState({ loading: false, error: null, value: null }),
+  };
+}
+
+/**
+ * useAsync —— 类似 useAsyncFn 但 deps 变化时自动重跑。
+ *
+ * 用法：
+ *   const { value, loading, error } = useAsync(
+ *     () => fetchJson('/api/users/me'),
+ *     []
+ *   );
+ */
+export function useAsync<TResult>(
+  fn: () => Promise<TResult>,
+  deps: React.DependencyList
+): Omit<AsyncState<[], TResult>, 'run' | 'reset'> & { refetch: () => void } {
+  const { run, ...rest } = useAsyncFn(fn);
+  const runRef = useRef(run);
+  runRef.current = run;
+  useEffect(() => {
+    void runRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return { ...rest, refetch: () => void runRef.current() };
+}

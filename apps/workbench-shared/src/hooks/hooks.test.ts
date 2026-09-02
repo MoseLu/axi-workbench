@@ -4,6 +4,8 @@ import { createRef } from 'react';
 
 import {
   BREAKPOINTS,
+  useAsync,
+  useAsyncFn,
   useBreakpoint,
   useClickOutside,
   useDebouncedCallback,
@@ -339,6 +341,53 @@ describe('@axi/workbench-shared/hooks', () => {
         xl: 1280,
         xxl: 1536,
       });
+    });
+  });
+
+  describe('useAsyncFn', () => {
+    it('returns loading=false / value=null initially', () => {
+      const fn = vi.fn().mockResolvedValue(42);
+      const { result } = renderHook(() => useAsyncFn(fn));
+      expect(result.current.loading).toBe(false);
+      expect(result.current.value).toBeNull();
+      expect(result.current.error).toBeNull();
+    });
+
+    it('run() resolves to value and updates state', async () => {
+      const fn = vi.fn().mockResolvedValue('result');
+      const { result } = renderHook(() => useAsyncFn(fn));
+      let returned: string | null = null;
+      await act(async () => {
+        returned = await result.current.run();
+      });
+      expect(returned).toBe('result');
+      expect(result.current.loading).toBe(false);
+      expect(result.current.value).toBe('result');
+    });
+
+    it('captures thrown errors in state', async () => {
+      const fn = vi.fn().mockRejectedValue(new Error('boom'));
+      const { result } = renderHook(() => useAsyncFn(fn));
+      await act(async () => {
+        await result.current.run();
+      });
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect((result.current.error as Error).message).toBe('boom');
+      expect(result.current.value).toBeNull();
+    });
+  });
+
+  describe('useAsync', () => {
+    it('runs once on mount and exposes value', async () => {
+      const fn = vi.fn().mockResolvedValue('mounted');
+      const { result } = renderHook(() => useAsync(fn, []));
+      await act(async () => {
+        // initial run is fire-and-forget; flush microtasks
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(result.current.value).toBe('mounted');
+      expect(fn).toHaveBeenCalledTimes(1);
     });
   });
 });
