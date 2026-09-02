@@ -297,3 +297,85 @@ export function useThrottledCallback<TArgs extends unknown[]>(
     }
   };
 }
+
+// ============================================================================
+// M30：响应式 hooks
+// ============================================================================
+
+/**
+ * CSS media query 监听 —— SSR-safe，window 不可用时返回 query 的静态推断结果。
+ *
+ * @example
+ *   const isMobile = useMediaQuery('(max-width: 768px)');
+ *   const isDark = useMediaQuery('(prefers-color-scheme: dark)');
+ */
+export function useMediaQuery(query: string, fallback: boolean = false): boolean {
+  const getMatch = (): boolean => {
+    if (typeof window === 'undefined' || !window.matchMedia) return fallback;
+    return window.matchMedia(query).matches;
+  };
+  const [matches, setMatches] = useState<boolean>(getMatch);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    setMatches(mql.matches);
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    }
+    // Safari < 14
+    mql.addListener(handler);
+    return () => mql.removeListener(handler);
+  }, [query]);
+  return matches;
+}
+
+/**
+ * 窗口尺寸 —— 用 ResizeObserver 监听 window 尺寸变化。
+ * SSR-safe（typeof window 检查）。
+ */
+export interface WindowSize {
+  width: number;
+  height: number;
+}
+export function useWindowSize(): WindowSize {
+  const getSize = (): WindowSize => {
+    if (typeof window === 'undefined') return { width: 0, height: 0 };
+    return { width: window.innerWidth, height: window.innerHeight };
+  };
+  const [size, setSize] = useState<WindowSize>(getSize);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => setSize(getSize());
+    handler();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return size;
+}
+
+/** 默认断点（参照 Tailwind CSS）。 */
+export const BREAKPOINTS = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  xxl: 1536,
+} as const;
+
+export type Breakpoint = keyof typeof BREAKPOINTS;
+
+/**
+ * 当前断点 —— 返回 >= 当前 viewport 宽度的最大断点 key。
+ * @example viewport 800px → 'md'
+ */
+export function useBreakpoint(): Breakpoint | 'xs' {
+  const { width } = useWindowSize();
+  const entries = Object.entries(BREAKPOINTS) as [Breakpoint, number][];
+  let current: Breakpoint | 'xs' = 'xs';
+  for (const [key, min] of entries) {
+    if (width >= min) current = key;
+  }
+  return current;
+}

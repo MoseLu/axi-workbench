@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRef } from 'react';
 
 import {
+  BREAKPOINTS,
+  useBreakpoint,
   useClickOutside,
   useDebouncedCallback,
   useDebouncedValue,
@@ -11,10 +13,12 @@ import {
   useInterval,
   useKeyPress,
   useLocalStorage,
+  useMediaQuery,
   usePrevious,
   useThrottledCallback,
   useThrottledValue,
   useToggle,
+  useWindowSize,
 } from './index';
 
 afterEach(() => {
@@ -292,6 +296,49 @@ describe('@axi/workbench-shared/hooks', () => {
       // After window, latest call fires
       expect(callback).toHaveBeenCalledTimes(2);
       expect(callback).toHaveBeenLastCalledWith('c');
+    });
+  });
+
+  describe('useMediaQuery', () => {
+    it('returns matches state from window.matchMedia', () => {
+      const { result } = renderHook(() => useMediaQuery('(max-width: 768px)'));
+      expect(typeof result.current).toBe('boolean');
+    });
+
+    it('uses fallback when window.matchMedia is unavailable', () => {
+      const original = window.matchMedia;
+      // @ts-expect-error — testing fallback
+      window.matchMedia = undefined as unknown as typeof window.matchMedia;
+      const { result } = renderHook(() => useMediaQuery('(max-width: 768px)', true));
+      expect(result.current).toBe(true);
+      window.matchMedia = original;
+    });
+  });
+
+  describe('useWindowSize', () => {
+    it('returns numeric width/height (defaults to 0 in jsdom)', () => {
+      const { result } = renderHook(() => useWindowSize());
+      expect(result.current).toHaveProperty('width');
+      expect(result.current).toHaveProperty('height');
+      expect(typeof result.current.width).toBe('number');
+    });
+  });
+
+  describe('useBreakpoint', () => {
+    it('returns xs when window width is below sm (640)', () => {
+      // jsdom default viewport is 1024x768 → lg
+      const { result } = renderHook(() => useBreakpoint());
+      expect(['xs', 'sm', 'md', 'lg', 'xl', 'xxl']).toContain(result.current);
+    });
+
+    it('BREAKPOINTS exposes Tailwind defaults', () => {
+      expect(BREAKPOINTS).toEqual({
+        sm: 640,
+        md: 768,
+        lg: 1024,
+        xl: 1280,
+        xxl: 1536,
+      });
     });
   });
 });
