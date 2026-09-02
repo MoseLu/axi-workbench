@@ -36,6 +36,8 @@ export {
 } from './json';
 // M45 URL parse —— 单独文件 ./url-parse.ts
 export { mergeUrl, parseSearchParams, parseUrl } from './url-parse';
+// M49 immutable object ops —— 单独文件 ./object.ts
+export { get, omit, pick, set, setPath } from './object';
 // M41 pure utils (no React dep) —— 单独文件 ../util/fn
 export {
   assertNever,
