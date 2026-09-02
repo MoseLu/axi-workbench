@@ -240,6 +240,9 @@ importers:
       '@axi/widgets':
         specifier: link:../../../../shared/axi-ui/packages/widgets
         version: link:../../../../shared/axi-ui/packages/widgets
+      '@axi/workbench-desktop':
+        specifier: workspace:*
+        version: link:../workbench-desktop
       '@axi/workbench-foundation':
         specifier: workspace:*
         version: link:../../packages/workbench-foundation
@@ -316,6 +319,12 @@ importers:
       vitest:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@25.9.5)(jiti@1.21.7)(jsdom@29.1.1)(sass@1.100.0)(tsx@4.23.11)
+
+  apps/workbench-desktop:
+    devDependencies:
+      '@tauri-apps/cli':
+        specifier: ^2.11.2
+        version: 2.11.2
 
   apps/workbench-mobile:
     dependencies:

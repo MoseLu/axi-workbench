@@ -1,0 +1,25 @@
+{
+  "name": "@axi/workbench-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Axi Workbench Mac App — Tauri 2 shell that wraps the existing @axi/workbench web UI",
+  "scripts": {
+    "dev": "tauri dev",
+    "dev:workbench": "echo '[workbench-desktop] run `pnpm dev:workbench` in another terminal first, then `pnpm --filter @axi/workbench-desktop dev`'",
+    "build": "tauri build",
+    "build:dmg": "tauri build --bundles dmg",
+    "icon": "tauri icon ./icons/icon.png",
+    "type-check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "verify:contracts": "node scripts/verify-desktop-contracts.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2"
+  },
+  "exports": {
+    "./contracts": "./src/contracts.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

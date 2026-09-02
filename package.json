@@ -29,6 +29,9 @@
     "clean:cache": "turbo run clean:cache && rm -rf .turbo",
     "dev:workbench": "turbo run dev --filter=@axi/workbench --filter=@axi/workstation-control-plane",
     "build:workbench": "turbo run build --filter=@axi/workbench",
+    "dev:desktop": "pnpm --filter @axi/workbench-desktop dev",
+    "build:desktop": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build",
+    "build:desktop:dmg": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build:dmg",
     "type-check:mobile": "pnpm --filter @axi/workbench-mobile type-check"
   },
   "devDependencies": {

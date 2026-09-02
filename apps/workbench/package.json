@@ -20,6 +20,7 @@
     "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
     "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
     "@axi/widgets": "link:../../../../shared/axi-ui/packages/widgets",
+    "@axi/workbench-desktop": "workspace:*",
     "@axi/workbench-foundation": "workspace:*",
     "@axi/workstation-contracts": "workspace:*",
     "@epap/api-client": "workspace:*",

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Workbench",
+  "version": "0.1.0",
+  "identifier": "com.axi.workbench.desktop",
+  "build": {
+    "frontendDist": "../workbench-dist",
+    "devUrl": "http://127.0.0.1:5173",
+    "beforeDevCommand": "echo 'Run `pnpm dev:workbench` in another terminal first, then this Tauri window will hot-reload against http://127.0.0.1:5173' && sleep 1",
+    "beforeBuildCommand": "pnpm --filter @axi/workbench build && pnpm --filter @axi/workbench-desktop verify:contracts"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Workbench — 登录",
+        "label": "login",
+        "width": 900,
+        "height": 600,
+        "minWidth": 720,
+        "minHeight": 540,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "titleBarStyle": "Visible",
+        "visible": true
+      },
+      {
+        "title": "Workbench",
+        "label": "main",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "titleBarStyle": "Visible",
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "icon": [
+      "icons/icon.icns"
+    ],
+    "resources": {
+      "/Volumes/code/workspace/projects/axi-workbench/apps/workbench-desktop/workbench-dist": "."
+    },
+    "category": "DeveloperTool",
+    "shortDescription": "Axi Workbench Mac client",
+    "longDescription": "Axi Workbench Mac client — wraps the existing web workbench UI in a native macOS shell (Bilibili-class desktop client shape).",
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null,
+      "entitlements": null,
+      "exceptionDomain": null,
+      "dmg": {
+        "background": null,
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    }
+  },
+  "plugins": {
+    "globalShortcut": {
+      "shortcuts": [
+        {
+          "name": "show-main-window",
+          "description": "Show or focus the main Workbench window",
+          "shortcut": "CmdOrCtrl+Shift+W"
+        }
+      ]
+    },
+    "singleInstance": {
+      "enabled": true
+    }
+  }
+}

@@ -20,43 +20,14 @@
   padding: var(--space-6);
   overflow: hidden;
   color: var(--palette-gray-900);
-  background: var(--palette-gray-950);
+  background: transparent;
 }
 
-/* 用低对比度的结构纹理模拟工作台场景，前面再叠一层明确的 scrim。 */
-.axi-login-page::before {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background:
-    linear-gradient(116deg, color-mix(in srgb, var(--color-brand) 12%, transparent), transparent 31%),
-    linear-gradient(300deg, color-mix(in srgb, var(--color-info) 10%, transparent), transparent 38%),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--palette-white) 3%, transparent) 0 1px, transparent 1px 64px),
-    linear-gradient(140deg, var(--palette-gray-850) 0%, var(--palette-gray-950) 58%, var(--palette-gray-925) 100%);
-  content: '';
-}
-
-.axi-login-page::after {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: color-mix(in srgb, var(--palette-black) 38%, transparent);
-  box-shadow: inset 0 0 10rem color-mix(in srgb, var(--palette-black) 22%, transparent);
-  content: '';
-  pointer-events: none;
-}
-
+/* Mac App（Tauri 壳）下隐藏三层 web 自绘背景，避免遮住 macOS 桌面穿透。 */
+.axi-login-page::before,
+.axi-login-page::after,
 .axi-login-page__grid {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  opacity: .12;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--palette-white) 7%, transparent) var(--space-px), transparent var(--space-px)),
-    linear-gradient(90deg, color-mix(in srgb, var(--palette-white) 7%, transparent) var(--space-px), transparent var(--space-px));
-  background-size: 4rem 4rem;
-  mask-image: linear-gradient(to bottom, transparent, var(--palette-black) 20%, var(--palette-black) 80%, transparent);
-  pointer-events: none;
+  display: none;
 }
 
 .axi-login-card {
@@ -64,13 +35,15 @@
   width: min(100%, 49.5rem);
   overflow: hidden;
   border: var(--space-px) solid var(--palette-gray-250);
-  border-radius: var(--radius-xs);
+  border-radius: 14px;
   background: var(--palette-white);
   box-shadow: 0 1.75rem 4.5rem color-mix(in srgb, var(--palette-black) 34%, transparent), 0 0 0 var(--space-px) color-mix(in srgb, var(--palette-white) 12%, transparent);
   color-scheme: light;
 }
 
+/* 卡片顶部色条：Mac App 下隐藏（依赖原生 chrome 提供视觉锚点）。 */
 .axi-login-card::before {
+  display: none;
   position: absolute;
   inset: 0 0 auto;
   z-index: 2;
@@ -80,7 +53,7 @@
 }
 
 .axi-login-card__chrome {
-  display: flex;
+  display: none;
   height: 1.625rem;
   box-sizing: border-box;
   align-items: center;
@@ -110,7 +83,7 @@
   height: 22.25rem;
   min-height: 22.25rem;
   box-sizing: border-box;
-  padding: var(--space-4) var(--space-8) var(--space-3);
+  padding: var(--space-6) var(--space-8) var(--space-4);
 }
 
 .axi-login-qr-column {

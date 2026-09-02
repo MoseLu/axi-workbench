@@ -30,6 +30,7 @@ import {
   closeAll,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
+import { emitShellUnread } from '../lib/shell';
 import {
   workbenchDesktopNavGroupsWithKeys,
   workbenchMenuRouteMap,
@@ -101,6 +102,13 @@ const MainLayout: React.FC = () => {
   // Web 顶栏通知角标。
   const tabBadges = useNavBadges(true);
   const unreadCount = tabBadges.unreadTotal;
+
+  // 推未读总数到 Tauri shell（用于 Dock 红点 / 托盘 title）。
+  // 见 docs/specs/2026-09-01-workbench-mac-packaging/DESIGN.md §5。
+  // shell.ts 内置降级：纯浏览器下走 CustomEvent，永不抛错。
+  useEffect(() => {
+    void emitShellUnread(unreadCount);
+  }, [unreadCount]);
 
   useEffect(() => {
     try {

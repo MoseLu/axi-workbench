@@ -32,12 +32,16 @@
 - Start: `make docker-up && make migrate-identity && make migrate-platform`
 - Start: `pnpm dev:workbench`
 - Start: `pnpm dev:mobile`
+- Start: `pnpm dev:desktop` — Tauri 2 壳指向 `http://127.0.0.1:5173`，需先跑 `pnpm dev:workbench`
 - Start: `pnpm --filter @axi/workstation-control-plane start`
 - Start: `pnpm --filter @axi/workstation-communication-gateway start`
 - Health: `pnpm --filter @axi/workstation-control-plane smoke`
 - Health: `python3 infra/fleet-console/scripts/fleetctl.py validate`
 - Verify: `make verify-go`
 - Verify: `make verify-helm`
+- Package Mac App: `pnpm build:desktop` —— 产出 `apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app`
+- Package Mac App + DMG: `pnpm build:desktop:dmg`
+- Notarize Mac App: `apps/workbench-desktop/scripts/notarize.sh`（需 Apple Developer ID）
 - Verify: `pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check`
 - Verify: `pnpm --filter @axi/workbench --filter @axi/workbench-mobile test`
 - Verify: `pnpm --filter @axi/workbench --filter @axi/workbench-mobile build`

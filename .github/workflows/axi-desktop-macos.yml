@@ -1,0 +1,139 @@
+name: Axi Desktop (macOS)
+
+# 触发：打 `axi-workbench/v*` tag 时自动出签名 .dmg；也可手动 dispatch 跑调试构建（不签名）。
+# 产物：apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/
+#       → 上传到对应 GitHub Release 作为下载资产
+
+on:
+  push:
+    tags:
+      - 'axi-workbench/v*'
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: 'Run Apple notarize (requires Apple secrets)'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+# 防止 tag 触发时与 axi-release.yml 抢 push
+concurrency:
+  group: axi-desktop-macos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-macos:
+    name: Build signed .app + .dmg
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      KEYCHAIN_PROFILE: ${{ secrets.APPLE_KEYCHAIN_PROFILE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache cargo registry & target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./apps/workbench-desktop/src-tauri -> target
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web UI
+        run: pnpm --filter @axi/workbench build
+
+      - name: Verify desktop contracts
+        run: pnpm --filter @axi/workbench-desktop verify:contracts
+
+      # 不签名快速构建（仅 workflow_dispatch 且未勾 sign 时）
+      - name: Build unsigned .app + .dmg (debug)
+        if: github.event_name == 'workflow_dispatch' && inputs.sign == false
+        run: |
+          pnpm --filter @axi/workbench-desktop build:dmg
+
+      # 签名 + 公证正式链路
+      - name: Configure Apple notarize keychain profile
+        if: env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != ''
+        run: |
+          set -euo pipefail
+          if [[ -n "${KEYCHAIN_PROFILE:-}" ]]; then
+            # 凭据已通过 GitHub Secret 直接以 notarytool profile 形式提供，无需重建
+            echo "Using pre-configured keychain profile: $KEYCHAIN_PROFILE"
+          else
+            echo "Storing notarytool credentials inline..."
+            xcrun notarytool store-credentials "workbench-desktop-notary" \
+              --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD"
+            echo "KEYCHAIN_PROFILE=workbench-desktop-notary" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build signed .app + .dmg
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.sign == true)
+        run: |
+          set -euo pipefail
+          pnpm --filter @axi/workbench-desktop build:dmg
+
+      - name: Notarize + staple
+        if: env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != ''
+        run: |
+          set -euo pipefail
+          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app"
+          # DMG 路径含 arch 后缀，取第一个匹配
+          DMG_PATH=$(ls apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg | head -n1)
+          if [[ ! -d "$APP_PATH" || ! -f "$DMG_PATH" ]]; then
+            echo "::error::Built bundle missing: $APP_PATH or $DMG_PATH"
+            exit 1
+          fi
+          bash apps/workbench-desktop/scripts/notarize.sh "$APP_PATH" "$DMG_PATH"
+
+      - name: Upload .app + .dmg artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-desktop-macos-${{ github.ref_name }}
+          path: |
+            apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app
+            apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app"
+          DMG_PATH=$(ls apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg | head -n1)
+          # macOS 不允许直接上传 .app 目录，先打成 zip
+          zip -r "Workbench-${TAG}.app.zip" "$APP_PATH"
+          gh release upload "$TAG" \
+            "Workbench-${TAG}.app.zip" \
+            "$DMG_PATH" \
+            --clobber
+          echo "::notice::Uploaded Workbench-${TAG} artifacts to $TAG"
