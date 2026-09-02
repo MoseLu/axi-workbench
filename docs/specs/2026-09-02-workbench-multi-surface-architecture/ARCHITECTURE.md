@@ -161,7 +161,75 @@ UI 改动 → **Web 端**；macOS 壳行为（菜单栏 / 托盘 / 单实例 / �
 
 ---
 
-## 8. 相关文档
+## 9. 决策树实战案例
+
+### 案例 A：未读消息徽章（已实现）
+
+**需求**：消息 tab 显示未读数；Mac App Dock 显示未读红点。
+
+**走决策树**：
+1. 用户在浏览器、Mac App 上用 → **Web + Desktop**
+2. UI 显示在 tab bar / Dock 上 → UI 改 Web + 壳行为改 Desktop
+3. 共享数据流（unread 总数）→ 三端都需要吗？**目前只需要 web + desktop**（mobile 走自己的 IA）
+
+**实际落地**：
+- Web `MainLayout.tsx` 拉 `/api/v1/notifications/nav-badges` → `unreadTotal`
+- Web `MainLayout.tsx` 用 `useEffect` emit `shell://unread { count }` → `@axi/workbench-desktop` contracts
+- Desktop `lib.rs` 监听 `shell://unread` → `apply_unread()` 调 `window.set_badge_label` + `tray.set_title`
+- IPC payload type：`ShellUnread = { count: number }`（@axi/workbench-shared/types 候选放处）
+
+**教训**：
+- 数据源在 Web 端（单一来源）；Desktop 是**镜像**，不主动拉
+- `lib.rs` 改 count 时 Rust 端**不调任何 API**，纯转发 web 状态
+
+### 案例 B：扫码登录（已实现）
+
+**需求**：手机扫桌面端登录窗的二维码确认登录。
+
+**走决策树**：
+1. Web / Mac App / Mobile 都涉及
+2. UI 在 Mac App 登录窗 → UI 走 Desktop（独立窗）+ Web 内容来源
+3. 跨端协议：Desktop 登录窗显示二维码（web 渲染）→ Mobile 扫码 → 后端回调 → Desktop 收到登录成功
+
+**实际落地**：
+- Desktop `tauri.conf.json` 新增 `label: "login"` 窗（900×600 / B 站形态）
+- Web `Login.tsx` 调用 `createWebDeviceLoginQr()` 拉二维码 URL
+- Web `Login.tsx` 轮询 `getWebDeviceLoginQrStatus()` 等待扫描
+- Web `Login.tsx` 检测到 `approved` → 调 `consumeWebDeviceLoginQr()` + `refreshSession()`
+- Web 检测到 `isAuthenticated === true` → emit `shell://login-success`
+- Desktop `lib.rs` 监听 → `switch_to_main()` 关 login 窗、开 main 窗
+- Mobile 走自己的扫描逻辑（不在本多端架构讨论内）
+
+**教训**：
+- Desktop 不重写扫码 UI，直接 1:1 套 web Login.tsx 视觉
+- 协议端点定义在 `@axi/workbench-desktop/contracts`（端到端），不放 `@axi/workbench-shared`（端间共享）
+
+### 案例 C：消息通知（已实现）
+
+**需求**：消息推送；macOS 通知中心弹系统通知；同 tag 1.5s 内合并。
+
+**走决策树**：
+1. Web / Mac App 都要
+2. UI = 系统通知（macOS Notification Center） → 壳行为 = Desktop
+3. 数据 = 消息内容（任何端都可能 push） → 三端共享 protocol，**但只有 Desktop 消费系统通知**
+
+**实际落地**：
+- Web 端在 SSE / WebSocket 收到新消息 → emit `shell://notify { title, body, url?, tag? }`
+- Desktop `lib.rs` 监听 → `deliver_notification()` 调 `tauri-plugin-notification`
+- 同 tag 1.5s 短时窗去重（`NOTIFY_DEDUPE` 静态 `HashMap`）→ 后续推送被吞
+- Mobile 不参与（mobile 走自己的推送通道）
+
+**教训**：
+- 通知协议是**单向**（web → shell），不要反向设计
+- dedupe 在 shell 端做（web 端 debounce 200ms 即可，shell 1.5s 兜底）
+
+### 决策树使用记录
+
+| 案例 | 路径 | 结论 |
+| --- | --- | --- |
+| 未读徽章 | Q1=web+desktop, Q2=UI + 壳, Q3=否 | Web + Desktop 各自负责 |
+| 扫码登录 | Q1=三端, Q2=壳（独立窗）, Q3=是 → contracts | Desktop 主导 + web 套壳 |
+| 系统通知 | Q1=web+desktop, Q2=壳, Q3=是 → contracts | Web push → Desktop consume |
 
 - `docs/specs/2026-08-09-multi-surface-admin-positioning/` —— 多端能力清单（PRD + INVENTORY + DESIGN）
 - `docs/specs/2026-09-01-workbench-mac-packaging/` —— Desktop 端 PRD + DESIGN
