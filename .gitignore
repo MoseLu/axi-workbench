@@ -115,3 +115,12 @@ kubeconfig
 # Misc
 *.tgz
 .cache/
+
+# Workbench Mac App（Tauri 2）本地构建产物
+apps/workbench-desktop/workbench-dist/
+apps/workbench-desktop/src-tauri/gen/
+apps/workbench-desktop/src-tauri/target/
+apps/workbench-desktop/src-tauri/icons/android/
+apps/workbench-desktop/src-tauri/icons/ios/
+apps/workbench-desktop/src-tauri/icons/Square*.png
+apps/workbench-desktop/src-tauri/icons/StoreLogo.png
