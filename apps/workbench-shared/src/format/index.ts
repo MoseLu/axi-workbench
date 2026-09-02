@@ -26,6 +26,14 @@ export {
   maskName,
   maskPhone,
 } from './privacy';
+// M40 JSON utils —— 单独文件 ./json.ts
+export {
+  parseJsonSafe,
+  requireJsonField,
+  safeJsonRoundtrip,
+  stringifyJsonSafe,
+  type JsonResult,
+} from './json';
 
 export function formatUnreadCount(count: number): string {
   if (!Number.isFinite(count) || count <= 0) return '';
