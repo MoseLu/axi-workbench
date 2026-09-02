@@ -149,6 +149,16 @@ UI 改动 → **Web 端**；macOS 壳行为（菜单栏 / 托盘 / 单实例 / �
 
 —— 任意一个你点头，我就在这个分支内做。
 
+### 当前已在 `agent/workbench-multi-surface-architecture` 完成
+
+- ✅ §8.1 把 `apps/workbench-mobile/{android,ios,dist}/` 加入 `.gitignore`（原生工程不应混入 SPA 仓库）
+- 同步在本 SPEC 中维护三端矩阵，避免各端 README 各自漂移
+
+### 跨端相关事项（提醒，不在本分支处理）
+
+- ⚠️ `agent/workbench-desktop` 分支 README 的"5173"端口与 `vite.config.ts` 已修正的"5183"不一致——属于 desktop 分支工作，由 desktop 分支 owner 修。
+- ⚠️ `apps/workbench-mobile/android/` 当前 untracked + 已 gitignore，后续 mobile 团队若要做原生工程应走独立仓库。
+
 ---
 
 ## 8. 相关文档

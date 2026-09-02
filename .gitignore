@@ -124,3 +124,11 @@ apps/workbench-desktop/src-tauri/icons/android/
 apps/workbench-desktop/src-tauri/icons/ios/
 apps/workbench-desktop/src-tauri/icons/Square*.png
 apps/workbench-desktop/src-tauri/icons/StoreLogo.png
+
+# Workbench Mobile 端
+# 原生 Android 工程由 mobile 团队用 Capacitor / 独立工具链生成，
+# 不应混入 Vite SPA 仓库。原生源码若需入版本控制，请走独立仓库
+# （如 workbench-mobile-native）或 monorepo 拆分子目录后再引入。
+apps/workbench-mobile/android/
+apps/workbench-mobile/ios/
+apps/workbench-mobile/dist/
