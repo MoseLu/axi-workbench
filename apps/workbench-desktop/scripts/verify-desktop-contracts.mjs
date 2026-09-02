@@ -14,6 +14,7 @@ const repoRoot = join(desktopDir, '..', '..')
 const workbenchDist = join(repoRoot, 'apps', 'workbench', 'dist')
 const targetDir = join(desktopDir, 'workbench-dist')
 const iconIcns = join(desktopDir, 'src-tauri', 'icons', 'icon.icns')
+const desktopIconSource = join(desktopDir, 'src-tauri', 'icons', 'icon.svg')
 const webIcon = join(repoRoot, 'apps', 'workbench', 'public', 'favicon.svg')
 
 let failed = false
@@ -56,6 +57,17 @@ if (!existsSync(webIcon) || angularPetals.some((path) => !favicon.includes(path)
   failed = true
 } else {
   console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的直线角切花瓣')
+}
+
+const desktopIcon = existsSync(desktopIconSource) ? readFileSync(desktopIconSource, 'utf8') : ''
+if (!existsSync(desktopIconSource)) {
+  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版不存在: ${desktopIconSource}`)
+  failed = true
+} else if (/ d="[^\"]*[CcQqSsAa]/.test(desktopIcon)) {
+  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版不得包含圆弧路径命令: ${desktopIconSource}`)
+  failed = true
+} else {
+  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用直线几何')
 }
 
 if (failed) process.exit(1)
