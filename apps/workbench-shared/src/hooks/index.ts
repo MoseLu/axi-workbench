@@ -481,11 +481,26 @@ export interface UseFetchOptions extends Omit<RequestInit, 'signal'> {
 export function useFetch<T = unknown>(
   url: string,
   options: UseFetchOptions = {}
-): Omit<AsyncState<[], T | null>, 'run' | 'reset'> & { refetch: () => void } {
+): {
+  loading: boolean;
+  error: unknown | null;
+  value: T | null;
+  refetch: () => void;
+} {
   const { skip = false, refetchOnUrlChange = true, ...fetchInit } = options;
+  const controllerRef = useRef<AbortController | null>(null);
+  useEffect(() => () => {
+    // Cancel any in-flight request on unmount or url change
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+      controllerRef.current = null;
+    }
+  }, [url]);
+
   const fn = useCallback(async (): Promise<T | null> => {
     if (skip) return null;
     const controller = new AbortController();
+    controllerRef.current = controller;
     try {
       const response = await fetch(url, { ...fetchInit, signal: controller.signal });
       if (!response.ok) {
@@ -493,13 +508,68 @@ export function useFetch<T = unknown>(
       }
       return (await response.json()) as T;
     } finally {
-      void controller;
+      if (controllerRef.current === controller) controllerRef.current = null;
     }
   }, [url, skip, JSON.stringify(fetchInit)]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // useAsync fn type is () => Promise<T | null> which matches the inner fn
-  const { run, ...rest } = useAsync<T | null>(fn, [url, skip]);
+  const { loading, error, value, run } = useAsync<T | null>(fn, [url, skip]);
   const runRef = useRef(run);
   runRef.current = run;
-  return { ...rest, refetch: () => void runRef.current() };
+  return { loading, error, value, refetch: () => void runRef.current() };
+}
+
+// ============================================================================
+// M37：UI 体验 hooks
+// ============================================================================
+
+/**
+ * document.title 同步 —— 三端通用：详情页、消息、loading 态。
+ * 组件 unmount 时自动恢复原 title。
+ */
+export function useDocumentTitle(title: string, options: { restoreOnUnmount?: boolean } = {}): void {
+  const { restoreOnUnmount = true } = options;
+  useEffect(() => {
+    const previous = typeof document !== 'undefined' ? document.title : '';
+    if (typeof document !== 'undefined') document.title = title;
+    return () => {
+      if (restoreOnUnmount && typeof document !== 'undefined') {
+        document.title = previous;
+      }
+    };
+  }, [title, restoreOnUnmount]);
+}
+
+/**
+ * Modal / Drawer 焦点陷阱 —— 焦点在容器内循环。
+ * Tab 走到最后一个 → 回到第一个；Shift+Tab 走到第一个 → 跳到最后一个。
+ * 跨端通用：所有 modal / drawer / popover 焦点可达性。
+ */
+export function useFocusTrap<T extends HTMLElement>(
+  ref: React.RefObject<T>,
+  enabled: boolean = true
+): void {
+  useEffect(() => {
+    if (!enabled) return;
+    const el = ref.current;
+    if (!el) return;
+    const focusable = el.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first.focus();
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    el.addEventListener('keydown', handler);
+    return () => el.removeEventListener('keydown', handler);
+  }, [ref, enabled]);
 }

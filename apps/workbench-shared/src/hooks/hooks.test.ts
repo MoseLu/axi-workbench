@@ -10,8 +10,10 @@ import {
   useDebouncedCallback,
   useDebouncedValue,
   useDisclosure,
+  useDocumentTitle,
   useEventListener,
   useFetch,
+  useFocusTrap,
   useInterval,
   useKeyPress,
   useLocalStorage,
@@ -390,6 +392,37 @@ describe('@axi/workbench-shared/hooks', () => {
       });
       expect(result.current.value).toBe('mounted');
       expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('useFocusTrap', () => {
+    it('focuses first focusable child on mount', () => {
+      const container = document.createElement('div');
+      const button = document.createElement('button');
+      button.textContent = 'first';
+      container.appendChild(button);
+      document.body.appendChild(container);
+      const ref = { current: container };
+      renderHook(() => useFocusTrap(ref, true));
+      expect(document.activeElement).toBe(button);
+    });
+  });
+
+  describe('useDocumentTitle', () => {
+    it('sets document.title and restores on unmount', () => {
+      const original = document.title;
+      const { unmount } = renderHook(() => useDocumentTitle('Test Page'));
+      expect(document.title).toBe('Test Page');
+      unmount();
+      expect(document.title).toBe(original);
+    });
+
+    it('does not restore when restoreOnUnmount is false', () => {
+      document.title = 'Original';
+      const { unmount } = renderHook(() => useDocumentTitle('New', { restoreOnUnmount: false }));
+      expect(document.title).toBe('New');
+      unmount();
+      expect(document.title).toBe('New');
     });
   });
 

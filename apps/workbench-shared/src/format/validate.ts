@@ -14,7 +14,7 @@ export type ValidationResult<T> =
  * 非空字符串校验
  * @example validateNonEmpty('') → { ok: false, reason: 'empty' }
  */
-export function validateNonEmpty<T = string>(value: unknown): ValidationResult<string> {
+export function validateNonEmpty(value: unknown): ValidationResult<string> {
   if (typeof value !== 'string') return { ok: false, reason: 'not_string' };
   if (value.trim().length === 0) return { ok: false, reason: 'empty' };
   return { ok: true, value };
