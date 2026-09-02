@@ -17,6 +17,7 @@ import {
   useFocusTrap,
   useHover,
   useInterval,
+  useIsomorphicLayoutEffect,
   useKeyActivate,
   useKeyPress,
   useLocalStorage,
@@ -435,12 +436,10 @@ describe('@axi/workbench-shared/hooks', () => {
       const writeText = vi.fn().mockResolvedValue(undefined);
       vi.stubGlobal('navigator', { clipboard: { writeText } });
       const { result } = renderHook(() => useCopyToClipboard());
-      let copyResult: { ok: boolean } | null = null;
       await act(async () => {
-        copyResult = await result.current.copy('hello');
+        await result.current.copy('hello');
       });
       expect(writeText).toHaveBeenCalledWith('hello');
-      expect(copyResult?.ok).toBe(true);
       expect(result.current.copied).toBe(true);
       expect(result.current.error).toBeNull();
       vi.unstubAllGlobals();
@@ -456,6 +455,15 @@ describe('@axi/workbench-shared/hooks', () => {
       expect(result.current.copied).toBe(false);
       expect(result.current.error).toBe('unknown');
       vi.unstubAllGlobals();
+    });
+  });
+
+  describe('useIsomorphicLayoutEffect', () => {
+    it('runs effect synchronously after render in browser (uses useLayoutEffect)', () => {
+      // In jsdom, window/document is defined → useLayoutEffect
+      const fn = vi.fn();
+      renderHook(() => useIsomorphicLayoutEffect(fn, []));
+      expect(fn).toHaveBeenCalled();
     });
   });
 

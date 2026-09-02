@@ -1,7 +1,7 @@
 // 跨端共享 hooks（M14 骨架 + M19 通用 hooks + M26 状态 hooks）。
 // 设计原则：仅依赖 react + 共享 contracts；不调用 fetch / 路由 / 平台 API。
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 /**
  * 防抖一个值 —— 在 delay ms 内的连续变化只保留最后一次。
@@ -486,7 +486,7 @@ export function useFetch<T = unknown>(
   error: unknown | null;
   value: T | null;
   refetch: () => void;
-} {
+} & { run: () => Promise<T | null> } {
   const { skip = false, refetchOnUrlChange = true, ...fetchInit } = options;
   const controllerRef = useRef<AbortController | null>(null);
   useEffect(() => () => {
@@ -741,3 +741,19 @@ export function useKeyActivate(
     }
   };
 }
+
+// ============================================================================
+// M42：SSR-safe 钩子
+// ============================================================================
+
+/**
+ * useIsomorphicLayoutEffect —— SSR 友好的 useLayoutEffect 替代。
+ * - 服务端：useEffect（不会触发 SSR warning）
+ * - 客户端：useLayoutEffect（避免闪烁）
+ *
+ * 跨端通用：移动端 web 端组件 SSR / Next.js / 静态生成时用。
+ */
+export const useIsomorphicLayoutEffect: typeof useEffect =
+  typeof window !== 'undefined' && typeof window.document !== 'undefined'
+    ? useLayoutEffect
+    : useEffect;
