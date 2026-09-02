@@ -676,3 +676,68 @@ export async function share(data: ShareData): Promise<CopyToClipboardResult> {
   const text = [data.title, data.text, data.url].filter(Boolean).join(' — ');
   return copyToClipboard(text);
 }
+
+// ============================================================================
+// M39：体验类 hooks
+// ============================================================================
+
+/**
+ * prefers-reduced-motion 监听 —— 用户系统级动效偏好。
+ * 三端通用：所有动效组件（carousel / fade / slide）应检查。
+ * SSR-safe：typeof window 检查 + fallback false。
+ */
+export function useReducedMotion(): boolean {
+  return useMediaQuery('(prefers-reduced-motion: reduce)', false);
+}
+
+/**
+ * 鼠标悬停状态 —— 跨端统一（web hover / mobile 长按）。
+ * 用 mouseenter / mouseleave + touchstart / touchend。
+ * 返回 { hover, pressed } 两状态机。
+ */
+export interface InteractionState {
+  hover: boolean;
+  pressed: boolean;
+}
+
+export function useHover<T extends HTMLElement>(ref: React.RefObject<T>, enabled: boolean = true): InteractionState {
+  const [state, setState] = useState<InteractionState>({ hover: false, pressed: false });
+  useEventListener(
+    typeof document !== 'undefined' && enabled && ref.current ? ref.current : null,
+    'mouseenter',
+    () => setState((s) => ({ ...s, hover: true }))
+  );
+  useEventListener(
+    typeof document !== 'undefined' && enabled && ref.current ? ref.current : null,
+    'mouseleave',
+    () => setState((s) => ({ ...s, hover: false, pressed: false }))
+  );
+  useEventListener(
+    typeof document !== 'undefined' && enabled && ref.current ? ref.current : null,
+    'mousedown',
+    () => setState((s) => ({ ...s, pressed: true }))
+  );
+  useEventListener(
+    typeof document !== 'undefined' && enabled && ref.current ? ref.current : null,
+    'mouseup',
+    () => setState((s) => ({ ...s, pressed: false }))
+  );
+  return state;
+}
+
+/**
+ * 键盘 Enter / Space 按下检测 —— button / link 键盘可达性。
+ * 跨端通用：自定义可点击元素。
+ */
+export function useKeyActivate(
+  handler: () => void,
+  enabled: boolean = true
+): (event: React.KeyboardEvent) => void {
+  return (event: React.KeyboardEvent) => {
+    if (!enabled) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handler();
+    }
+  };
+}

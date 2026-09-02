@@ -15,11 +15,14 @@ import {
   useEventListener,
   useFetch,
   useFocusTrap,
+  useHover,
   useInterval,
+  useKeyActivate,
   useKeyPress,
   useLocalStorage,
   useMediaQuery,
   usePrevious,
+  useReducedMotion,
   useThrottledCallback,
   useThrottledValue,
   useToggle,
@@ -453,6 +456,50 @@ describe('@axi/workbench-shared/hooks', () => {
       expect(result.current.copied).toBe(false);
       expect(result.current.error).toBe('unknown');
       vi.unstubAllGlobals();
+    });
+  });
+
+  describe('useReducedMotion', () => {
+    it('returns boolean (false in jsdom)', () => {
+      const { result } = renderHook(() => useReducedMotion());
+      expect(typeof result.current).toBe('boolean');
+    });
+  });
+
+  describe('useHover', () => {
+    it('returns initial state (hover: false, pressed: false)', () => {
+      const ref = { current: document.createElement('div') };
+      const { result } = renderHook(() => useHover(ref));
+      expect(result.current).toEqual({ hover: false, pressed: false });
+    });
+  });
+
+  describe('useKeyActivate', () => {
+    it('invokes handler on Enter', () => {
+      const handler = vi.fn();
+      const { result } = renderHook(() => useKeyActivate(handler));
+      act(() => {
+        result.current({ key: 'Enter', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      });
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('invokes handler on Space', () => {
+      const handler = vi.fn();
+      const { result } = renderHook(() => useKeyActivate(handler));
+      act(() => {
+        result.current({ key: ' ', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      });
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('ignores other keys', () => {
+      const handler = vi.fn();
+      const { result } = renderHook(() => useKeyActivate(handler));
+      act(() => {
+        result.current({ key: 'a', preventDefault: vi.fn() } as unknown as React.KeyboardEvent);
+      });
+      expect(handler).not.toHaveBeenCalled();
     });
   });
 
