@@ -22,6 +22,8 @@ import {
   useKeyPress,
   useLocalStorage,
   useMediaQuery,
+  useNetworkStatus,
+  useOnline,
   usePrevious,
   useReducedMotion,
   useThrottledCallback,
@@ -464,6 +466,24 @@ describe('@axi/workbench-shared/hooks', () => {
       const fn = vi.fn();
       renderHook(() => useIsomorphicLayoutEffect(fn, []));
       expect(fn).toHaveBeenCalled();
+    });
+  });
+
+  describe('useOnline', () => {
+    it('defaults to navigator.onLine', () => {
+      const { result } = renderHook(() => useOnline());
+      // jsdom defaults to true
+      expect(typeof result.current).toBe('boolean');
+    });
+  });
+
+  describe('useNetworkStatus', () => {
+    it('returns NetworkInfo with online / effectiveType / saveData', () => {
+      const { result } = renderHook(() => useNetworkStatus());
+      expect(result.current).toHaveProperty('online');
+      expect(result.current).toHaveProperty('effectiveType');
+      expect(result.current).toHaveProperty('saveData');
+      expect(typeof result.current.saveData).toBe('boolean');
     });
   });
 

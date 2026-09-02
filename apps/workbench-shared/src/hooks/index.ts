@@ -757,3 +757,72 @@ export const useIsomorphicLayoutEffect: typeof useEffect =
   typeof window !== 'undefined' && typeof window.document !== 'undefined'
     ? useLayoutEffect
     : useEffect;
+
+// ============================================================================
+// M43：网络 / 在线状态 hooks
+// ============================================================================
+
+/**
+ * 网络连接状态 —— 监听 navigator.onLine。
+ * 三端通用：web 端断网提示、mobile 端离线模式。
+ * SSR-safe：typeof navigator 检查 + 默认 true（在线）。
+ */
+export function useOnline(): boolean {
+  const [online, setOnline] = useState<boolean>(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  return online;
+}
+
+/**
+ * 网络类型估计 —— navigator.connection.effectiveType（4g / 3g / 2g / slow-2g / unknown）。
+ * 三端通用：CDN 资源选择（4g 加载高清图、2g 加载低清图）。
+ * SSR-safe：typeof navigator.connection 检查。
+ */
+export type EffectiveConnectionType = '4g' | '3g' | '2g' | 'slow-2g' | 'unknown';
+
+export interface NetworkInfo {
+  online: boolean;
+  effectiveType: EffectiveConnectionType;
+  downlink?: number;
+  rtt?: number;
+  saveData: boolean;
+}
+
+export function useNetworkStatus(): NetworkInfo {
+  const online = useOnline();
+  const getInfo = (): NetworkInfo => {
+    if (typeof navigator === 'undefined') {
+      return { online: true, effectiveType: 'unknown', saveData: false };
+    }
+    const conn = (navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean } }).connection;
+    return {
+      online,
+      effectiveType: (conn?.effectiveType as EffectiveConnectionType) ?? 'unknown',
+      downlink: conn?.downlink,
+      rtt: conn?.rtt,
+      saveData: conn?.saveData ?? false,
+    };
+  };
+  const [info, setInfo] = useState<NetworkInfo>(getInfo);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const conn = (navigator as Navigator & { connection?: EventTarget & { addEventListener: (k: string, h: () => void) => void; removeEventListener: (k: string, h: () => void) => void } }).connection;
+    if (!conn || typeof conn.addEventListener !== 'function') return;
+    const handler = () => setInfo(getInfo());
+    conn.addEventListener('change', handler);
+    return () => conn.removeEventListener('change', handler);
+  }, [online]); // eslint-disable-line react-hooks/exhaustive-deps
+  return info;
+}
