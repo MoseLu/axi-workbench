@@ -17,6 +17,7 @@ import {
   useFirstMount,
   useFocusTrap,
   useHover,
+  useInViewport,
   useInterval,
   useIsomorphicLayoutEffect,
   useKeyActivate,
@@ -30,6 +31,7 @@ import {
   usePrevious,
   usePreviousDistinct,
   useReducedMotion,
+  useScrollPosition,
   useStableCallback,
   useThrottledCallback,
   useThrottledValue,
@@ -540,6 +542,13 @@ describe('@axi/workbench-shared/hooks', () => {
       currentValue = 100;
       rerender();
       expect(result.current()).toBe(100);
+    });
+  });
+
+  describe('useScrollPosition', () => {
+    it('returns initial { x: 0, y: 0 } in jsdom', () => {
+      const { result } = renderHook(() => useScrollPosition());
+      expect(result.current).toEqual({ x: 0, y: 0 });
     });
   });
 

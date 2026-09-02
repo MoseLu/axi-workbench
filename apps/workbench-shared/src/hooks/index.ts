@@ -947,3 +947,82 @@ export function useLatestRef<T>(value: T): React.MutableRefObject<T> {
   ref.current = value;
   return ref;
 }
+
+// ============================================================================
+// M48：视图 / 滚动 hooks
+// ============================================================================
+
+/**
+ * useInViewport —— 监听元素是否进入视口（IntersectionObserver）。
+ * 三端通用：懒加载、虚拟滚动、动画触发、埋点曝光。
+ * SSR-safe（IntersectionObserver 不可用时返回 false）。
+ */
+export function useInViewport<T extends Element>(
+  ref: React.RefObject<T>,
+  options: { rootMargin?: string; threshold?: number | number[] } = {},
+  enabled: boolean = true
+): boolean {
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!enabled) return;
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin: options.rootMargin, threshold: options.threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref, options.rootMargin, JSON.stringify(options.threshold), enabled]);
+  return inView;
+}
+
+/**
+ * useScrollPosition —— 监听 window scroll。
+ * 三端通用：吸顶导航、滚动到顶部按钮、视差效果。
+ * SSR-safe：typeof window 检查 + 默认 0。
+ */
+export function useScrollPosition(): { x: number; y: number } {
+  const getPos = (): { x: number; y: number } => {
+    if (typeof window === 'undefined') return { x: 0, y: 0 };
+    return {
+      x: window.scrollX ?? window.pageXOffset ?? 0,
+      y: window.scrollY ?? window.pageYOffset ?? 0,
+    };
+  };
+  const [pos, setPos] = useState(getPos);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => setPos(getPos());
+    handler();
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+  return pos;
+}
+
+/**
+ * useElementScroll —— 监听某个 DOM 元素的 scroll（不只 window）。
+ */
+export function useElementScroll<T extends HTMLElement>(
+  ref: React.RefObject<T>
+): { x: number; y: number } {
+  const getPos = (): { x: number; y: number } => {
+    const el = ref.current;
+    if (!el) return { x: 0, y: 0 };
+    return { x: el.scrollLeft, y: el.scrollTop };
+  };
+  const [pos, setPos] = useState(getPos);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const handler = () => setPos(getPos());
+    handler();
+    el.addEventListener('scroll', handler, { passive: true });
+    return () => el.removeEventListener('scroll', handler);
+  }, [ref]);
+  return pos;
+}
