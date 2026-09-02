@@ -321,3 +321,97 @@ export function formatUnit(value: number, unit: string, locale: string = 'zh-CN'
     return `${value} ${unit}`;
   }
 }
+
+// ============================================================================
+// M57：文件下载 / 文本读取
+// ============================================================================
+
+/**
+ * useFileDownload —— 触发浏览器下载（创建 <a download> 元素）。
+ * 跨端通用：导出 CSV、下载报告、保存附件。
+ * SSR-safe。
+ */
+export function useFileDownload(): (url: string, filename?: string) => void {
+  return (url: string, filename?: string) => {
+    if (typeof document === 'undefined') return;
+    const a = document.createElement('a');
+    a.href = url;
+    if (filename) a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+}
+
+/**
+ * useFileText —— 读 File / Blob 为文本。
+ * 三端通用：解析上传的 CSV / JSON / 文本。
+ */
+export function readFileAsText(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof FileReader === 'undefined') {
+      // node fallback: try text() method on Blob (node 18+)
+      if (typeof (file as Blob).text === 'function') {
+        (file as Blob).text()
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+      reject(new Error('FileReader not supported in this environment'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader error'));
+    reader.readAsText(file);
+  });
+}
+
+/**
+ * useFileDataURL —— 读 File / Blob 为 data URL（base64）。
+ * 跨端通用：图片预览、canvas drawImage。
+ */
+export function readFileAsDataURL(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof FileReader === 'undefined') {
+      if (typeof (file as Blob).arrayBuffer === 'function') {
+        (file as Blob).arrayBuffer()
+          .then((buf) => {
+            // node Buffer fallback
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+            resolve(`data:${file.type || 'application/octet-stream'};base64,${btoa(binary)}`);
+          })
+          .catch(reject);
+        return;
+      }
+      reject(new Error('FileReader not supported in this environment'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader error'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * downloadBlob —— 触发浏览器下载任意 Blob（如 CSV / JSON / 二进制）。
+ */
+export function downloadBlob(blob: Blob, filename: string): void {
+  if (typeof document === 'undefined' || typeof URL === 'undefined') return;
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
