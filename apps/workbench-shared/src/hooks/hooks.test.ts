@@ -1,11 +1,18 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createRef } from 'react';
 
 import {
+  useClickOutside,
   useDebouncedValue,
+  useDisclosure,
+  useEventListener,
   useInterval,
+  useKeyPress,
   useLocalStorage,
+  usePrevious,
   useThrottledValue,
+  useToggle,
 } from './index';
 
 afterEach(() => {
@@ -111,6 +118,136 @@ describe('@axi/workbench-shared/hooks', () => {
       window.localStorage.setItem('corrupt', '{not-valid-json');
       const { result } = renderHook(() => useLocalStorage<number>('corrupt', 42));
       expect(result.current[0]).toBe(42);
+    });
+  });
+
+  describe('useToggle', () => {
+    it('starts at false by default', () => {
+      const { result } = renderHook(() => useToggle());
+      expect(result.current[0]).toBe(false);
+    });
+
+    it('respects initial value', () => {
+      const { result } = renderHook(() => useToggle(true));
+      expect(result.current[0]).toBe(true);
+    });
+
+    it('toggle() flips value', () => {
+      const { result } = renderHook(() => useToggle(false));
+      expect(result.current[0]).toBe(false);
+      act(() => result.current[1]());
+      expect(result.current[0]).toBe(true);
+      act(() => result.current[1]());
+      expect(result.current[0]).toBe(false);
+    });
+
+    it('setValue accepts updater function', () => {
+      const { result } = renderHook(() => useToggle(false));
+      act(() => result.current[2]((v) => !v));
+      expect(result.current[0]).toBe(true);
+    });
+  });
+
+  describe('useDisclosure', () => {
+    it('starts closed by default', () => {
+      const { result } = renderHook(() => useDisclosure());
+      expect(result.current.isOpen).toBe(false);
+    });
+
+    it('open / close / toggle work as expected', () => {
+      const { result } = renderHook(() => useDisclosure(false));
+      act(() => result.current.open());
+      expect(result.current.isOpen).toBe(true);
+      act(() => result.current.close());
+      expect(result.current.isOpen).toBe(false);
+      act(() => result.current.toggle());
+      expect(result.current.isOpen).toBe(true);
+    });
+  });
+
+  describe('usePrevious', () => {
+    it('returns undefined on first render', () => {
+      const { result } = renderHook(() => usePrevious('initial'));
+      expect(result.current).toBeUndefined();
+    });
+
+    it('returns the previous value after rerender', () => {
+      const { result, rerender } = renderHook(({ value }) => usePrevious(value), {
+        initialProps: { value: 'a' },
+      });
+      expect(result.current).toBeUndefined();
+      rerender({ value: 'b' });
+      expect(result.current).toBe('a');
+      rerender({ value: 'c' });
+      expect(result.current).toBe('b');
+    });
+  });
+
+  describe('useEventListener', () => {
+    it('attaches and removes a window listener across unmount', () => {
+      const addSpy = vi.spyOn(window, 'addEventListener');
+      const removeSpy = vi.spyOn(window, 'removeEventListener');
+      const handler = vi.fn();
+      const { unmount } = renderHook(() => useEventListener(window, 'resize', handler));
+      expect(addSpy).toHaveBeenCalledWith('resize', handler, undefined);
+      unmount();
+      expect(removeSpy).toHaveBeenCalledWith('resize', handler, undefined);
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+    });
+
+    it('invokes handler when event fires', () => {
+      const handler = vi.fn();
+      renderHook(() => useEventListener(window, 'resize', handler));
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(handler).toHaveBeenCalled();
+    });
+  });
+
+  describe('useClickOutside', () => {
+    it('fires handler when click is outside the ref element', () => {
+      const handler = vi.fn();
+      const inside = document.createElement('div');
+      const insideChild = document.createElement('span');
+      inside.appendChild(insideChild);
+      document.body.appendChild(inside);
+
+      const ref = createRef<HTMLDivElement>();
+      ref.current = inside;
+      renderHook(() => useClickOutside(ref, handler));
+
+      act(() => {
+        document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      });
+      expect(handler).toHaveBeenCalled();
+
+      act(() => {
+        insideChild.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      });
+      // outside clicks already invoked handler; ensure inside click does NOT add more
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('useKeyPress', () => {
+    it('invokes handler on matching keydown', () => {
+      const handler = vi.fn();
+      renderHook(() => useKeyPress('Escape', handler));
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      });
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('ignores non-matching keys', () => {
+      const handler = vi.fn();
+      renderHook(() => useKeyPress('Escape', handler));
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      });
+      expect(handler).not.toHaveBeenCalled();
     });
   });
 });
