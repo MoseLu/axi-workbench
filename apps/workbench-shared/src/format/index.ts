@@ -38,6 +38,8 @@ export {
 export { mergeUrl, parseSearchParams, parseUrl } from './url-parse';
 // M49 immutable object ops —— 单独文件 ./object.ts
 export {
+  formatCurrencyByLocale,
+  formatUnit,
   get,
   invertObject,
   mapKeys,

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
+  formatCurrencyByLocale,
+  formatUnit,
   get,
   invertObject,
   mapKeys,
@@ -109,6 +111,38 @@ describe('@axi/workbench-shared/format/object', () => {
   describe('invertObject', () => {
     it('swaps keys and values', () => {
       expect(invertObject({ a: 1, b: 2 })).toEqual({ 1: 'a', 2: 'b' });
+    });
+  });
+
+  describe('formatCurrencyByLocale', () => {
+    it('uses CNY symbol for zh-CN', () => {
+      const out = formatCurrencyByLocale(100, { 'zh-CN': 'CNY', 'en-US': 'USD' }, 'zh-CN');
+      expect(out).toMatch(/¥|￥/); // Intl 可能输出 ¥ 或 ￥
+    });
+
+    it('uses USD symbol for en-US', () => {
+      const out = formatCurrencyByLocale(100, { 'zh-CN': 'CNY', 'en-US': 'USD' }, 'en-US');
+      expect(out).toMatch(/\$100/);
+    });
+
+    it('falls back to USD for unknown locale', () => {
+      const out = formatCurrencyByLocale(50, { 'zh-CN': 'CNY' }, 'xx-XX');
+      expect(out).toMatch(/50/);
+    });
+
+    it('returns empty for non-finite input', () => {
+      expect(formatCurrencyByLocale(Number.NaN, { 'zh-CN': 'CNY' })).toBe('');
+    });
+  });
+
+  describe('formatUnit', () => {
+    it('formats a value with unit', () => {
+      const out = formatUnit(1024, 'byte');
+      expect(out).toMatch(/1[,.]?024|1024/);
+    });
+
+    it('returns empty for non-finite input', () => {
+      expect(formatUnit(Number.NaN, 'meter')).toBe('');
     });
   });
 

@@ -276,3 +276,48 @@ export function useElementSize<T extends Element>(
 ): ElementSize {
   return useResizeObserver(ref);
 }
+
+// ============================================================================
+// M56：i18n 货币 / 单位
+// ============================================================================
+
+/**
+ * 区域感知的货币格式化 —— 在不同地区用不同 currency code。
+ * @example
+ *   formatCurrencyByLocale(100, { 'zh-CN': 'CNY', 'en-US': 'USD' }, 'zh-CN')
+ *   → '¥100.00'  (zh-CN 用 CNY → ¥)
+ *   formatCurrencyByLocale(100, { 'zh-CN': 'CNY', 'en-US': 'USD' }, 'en-US')
+ *   → '$100.00'  (en-US 用 USD → $)
+ */
+export function formatCurrencyByLocale(
+  value: number,
+  localeCurrencyMap: Record<string, string>,
+  locale: string = 'zh-CN'
+): string {
+  if (!Number.isFinite(value)) return '';
+  const currency = localeCurrencyMap[locale] ?? 'USD';
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(value);
+  } catch {
+    return `${value.toFixed(2)} ${currency}`;
+  }
+}
+
+/**
+ * 单位转换 + 区域 locale 标签。
+ * @example
+ *   formatUnit(1024, 'B') → '1.0 KB' (zh-CN)
+ *   formatUnit(1024, 'B', 'en-US') → '1.0 kB'  (note: lowercase k in en-US)
+ */
+export function formatUnit(value: number, unit: string, locale: string = 'zh-CN'): string {
+  if (!Number.isFinite(value)) return '';
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit,
+      unitDisplay: 'short',
+    }).format(value);
+  } catch {
+    return `${value} ${unit}`;
+  }
+}
