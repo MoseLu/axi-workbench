@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { get, omit, pick, safeUseLocalStorage, set } from './object';
+import {
+  get,
+  invertObject,
+  mapKeys,
+  mapValues,
+  omit,
+  omitBy,
+  pick,
+  pickBy,
+  safeUseLocalStorage,
+  set,
+} from './object';
 
 describe('@axi/workbench-shared/format/object', () => {
   afterEach(() => {
@@ -64,6 +75,40 @@ describe('@axi/workbench-shared/format/object', () => {
 
     it('returns undefined when intermediate is null', () => {
       expect(get({ a: null }, ['a', 'b'])).toBeUndefined();
+    });
+  });
+
+  describe('pickBy', () => {
+    it('keeps entries matching the predicate', () => {
+      expect(pickBy({ a: 1, b: 2, c: 3 }, (v) => v > 1)).toEqual({ b: 2, c: 3 });
+    });
+
+    it('keeps entries with matching key', () => {
+      expect(pickBy({ aaa: 1, bb: 2, ccc: 3 }, (_v, k) => k.length === 2)).toEqual({ bb: 2 });
+    });
+  });
+
+  describe('omitBy', () => {
+    it('drops entries matching the predicate', () => {
+      expect(omitBy({ a: 1, b: 2, c: 3 }, (v) => v > 1)).toEqual({ a: 1 });
+    });
+  });
+
+  describe('mapValues', () => {
+    it('transforms each value', () => {
+      expect(mapValues({ a: 1, b: 2 }, (v) => v * 10)).toEqual({ a: 10, b: 20 });
+    });
+  });
+
+  describe('mapKeys', () => {
+    it('transforms each key', () => {
+      expect(mapKeys({ a: 1, b: 2 }, (k) => k.toUpperCase())).toEqual({ A: 1, B: 2 });
+    });
+  });
+
+  describe('invertObject', () => {
+    it('swaps keys and values', () => {
+      expect(invertObject({ a: 1, b: 2 })).toEqual({ 1: 'a', 2: 'b' });
     });
   });
 

@@ -37,7 +37,19 @@ export {
 // M45 URL parse —— 单独文件 ./url-parse.ts
 export { mergeUrl, parseSearchParams, parseUrl } from './url-parse';
 // M49 immutable object ops —— 单独文件 ./object.ts
-export { get, omit, pick, safeUseLocalStorage, set, setPath } from './object';
+export {
+  get,
+  invertObject,
+  mapKeys,
+  mapValues,
+  omit,
+  omitBy,
+  pick,
+  pickBy,
+  safeUseLocalStorage,
+  set,
+  setPath,
+} from './object';
 // M52 cookies —— 单独文件 ./cookie.ts
 export {
   deleteCookie,
