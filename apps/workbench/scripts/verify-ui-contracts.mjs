@@ -23,6 +23,7 @@ const foundationIcons = read('packages/workbench-foundation/src/icons.ts');
 const workbenchIcon = read('apps/workbench/src/components/WorkbenchIcon.tsx');
 const globalSearch = read('apps/workbench/src/components/Layout/GlobalSearchDialog.tsx');
 const login = read('apps/workbench/src/pages/Login.tsx');
+const favicon = read('apps/workbench/public/favicon.svg');
 
 function readSourceTree(relativeDir) {
   const directory = path.join(root, relativeDir);
@@ -44,6 +45,16 @@ forbidMatch(
 requireMatch(layout, /AxiDashboardShell/, 'desktop must use the shared Axi dashboard shell');
 requireMatch(layout, /AxiAdminSettingsPanel/, 'desktop settings must use the shared settings panel');
 requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared four-color Axi mark');
+requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
+for (const path of [
+  /M16 16 8\.25 8\.25 11\.75 3\.5 16 2 20\.25 3\.5 23\.75 8\.25z/,
+  /M16 16 23\.75 8\.25 28\.5 11\.75 30 16 28\.5 20\.25 23\.75 23\.75z/,
+  /M16 16 23\.75 23\.75 20\.25 28\.5 16 30 11\.75 28\.5 8\.25 23\.75z/,
+  /M16 16 8\.25 23\.75 3\.5 20\.25 2 16 3\.5 11\.75 8\.25 8\.25z/,
+]) {
+  requireMatch(favicon, path, 'Web favicon must keep the four petals center-symmetric');
+}
+forbidMatch(favicon, / d="[^\"]*[CcQqSsAa]/, 'Web favicon must use straight-edged petals without arc commands');
 requireMatch(layout, /topbarPluginActions[\s\S]*axiWorkbenchIconMap\.preferences/, 'Web preferences action must use the shared settings surface');
 requireMatch(breadcrumbs, /axiWorkbenchIconMap/, 'breadcrumbs must resolve through the shared Workbench icon semantics');
 requireMatch(foundationIcons, /notification:/, 'shared semantic icon registry must include notifications');
