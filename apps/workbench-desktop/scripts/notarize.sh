@@ -37,6 +37,16 @@ if [[ ! -d "$BUNDLE_PATH" ]]; then
   fi
 fi
 
+if [[ ! -f "$DMG_PATH" ]]; then
+  echo "[notarize] FAIL: $DMG_PATH 不存在。"
+  exit 1
+fi
+
+echo "[notarize] 校验 .app 签名..."
+codesign --verify --deep --strict --verbose=2 "$BUNDLE_PATH"
+echo "[notarize] 校验 .dmg 签名..."
+codesign --verify --verbose=2 "$DMG_PATH"
+
 if [[ -z "${APPLE_ID:-}" || -z "${APPLE_TEAM_ID:-}" || -z "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]]; then
   echo "[notarize] DRY-RUN: 未提供 APPLE_ID / APPLE_TEAM_ID / APPLE_APP_SPECIFIC_PASSWORD，跳过实际公证。"
   echo "[notarize] DRY-RUN: 准备好后执行："
@@ -56,9 +66,13 @@ xcrun notarytool submit "$DMG_PATH" \
 
 echo "[notarize] 给 .app 打 staple ticket…"
 xcrun stapler staple "$BUNDLE_PATH"
+echo "[notarize] 给 .dmg 打 staple ticket…"
+xcrun stapler staple "$DMG_PATH"
 
 echo "[notarize] 验证公证结果："
 xcrun stapler validate "$BUNDLE_PATH"
-spctl --assess --type execute --verbose=2 "$BUNDLE_PATH" || true
+xcrun stapler validate "$DMG_PATH"
+spctl --assess --type execute --verbose=2 "$BUNDLE_PATH"
+spctl --assess --type open --verbose=2 "$DMG_PATH"
 
 echo "[notarize] DONE"

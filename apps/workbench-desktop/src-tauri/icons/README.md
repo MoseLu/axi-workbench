@@ -1,10 +1,12 @@
-# 占位图标
+# macOS 应用图标
 
-本目录当前为占位资源。`tauri build` 必需 `icons/icon.icns`（macOS）和一组 PNG。
-设计资源就位后，运行：
+`icon.svg` 是桌面端和 Web 端共用的 Axi 四色草标记源文件，内容同步自
+`apps/workbench/public/favicon.svg`。其余 PNG、ICNS 文件由 Tauri 从该 SVG 生成。
+
+更新 Web 标记后，运行：
 
 ```bash
-pnpm --filter @axi/workbench-desktop icon
+pnpm --dir apps/workbench-desktop icon
 ```
 
-并将生成的 `icon.icns / icon.png / 32x32.png / 128x128.png / 128x128@2x.png` 替换本目录占位文件。
+不要直接编辑生成的 PNG 或 ICNS 文件；提交前应确认它们仍来自 Web 端四色草源文件。

@@ -11,7 +11,7 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 | 桌面壳 | **Tauri 2**（Rust + WKWebView） |
 | 复用 UI | `apps/workbench` 的 Vite 构建产物 |
 | 启动开发 | `pnpm dev:desktop` |
-| 打包 .app | `pnpm build:desktop` |
+| 打包 .app | `pnpm build:desktop`（本地 ad hoc 签名） |
 | 打包 .dmg + 公证 | `pnpm build:desktop:dmg` + `apps/workbench-desktop/scripts/notarize.sh` |
 | 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/` |
 
@@ -58,7 +58,7 @@ apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app
 apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_0.1.0_<arch>.dmg
 ```
 
-未经过 Apple 公证的 `.app` 双击会被 Gatekeeper 拦截（提示"无法打开，因为它来自身份不明的开发者"）。本地开发期可以：
+本地构建使用 ad hoc 签名，未经过 Apple 公证的 `.app` 仍可能被 Gatekeeper 拦截（提示“无法打开，因为它来自身份不明的开发者”）。本地开发期可以：
 
 ```bash
 xattr -dr com.apple.quarantine apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app
@@ -84,7 +84,7 @@ xcrun notarytool store-credentials "workbench-desktop-notary" \
   --password  "$APPLE_APP_SPECIFIC_PASSWORD"
 ```
 
-## CI 自动签名（推荐）
+## CI Developer ID 签名与公证（推荐）
 
 `.github/workflows/axi-desktop-macos.yml` 在 `axi-workbench/v*` tag 推送时自动跑：
 
@@ -94,23 +94,27 @@ xcrun notarytool store-credentials "workbench-desktop-notary" \
 4. 调 `notarize.sh` 公证 + staple；
 5. 上传为 workflow artifact，并把 `.dmg` + 打包好的 `.app.zip` 附到对应 GitHub Release。
 
-需在仓库 GitHub Secrets 配：
+需在仓库 GitHub Secrets 配置：
 
 | Secret | 说明 |
 | --- | --- |
 | `APPLE_ID` | Apple Developer 邮箱 |
 | `APPLE_TEAM_ID` | 10 位 Team ID（developer.apple.com → Membership） |
 | `APPLE_APP_SPECIFIC_PASSWORD` | appleid.apple.com → App-Specific Passwords 生成 |
+| `APPLE_CERTIFICATE` | Base64 编码的 Developer ID Application `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | `.p12` 导出密码 |
+| `APPLE_SIGNING_IDENTITY` | 可选；不提供时从导入的证书自动解析 |
 
-未配 Secrets 时 workflow 仍会跑，但只产出未签名 `.dmg`，仅用于本地调试。
+手动 dispatch 且不勾选 `sign` 时使用 ad hoc 签名，方便验证构建产物；tag 发布或手动勾选 `sign` 时必须提供 Developer ID 证书，否则构建会失败，不会产出冒充可分发的未签名包。
 
-## 占位图标
+## 应用图标
 
-当前 `src-tauri/icons/` 下为 1×1 透明 PNG + 最小 ICNS 占位（用于打通打包链路）。设计出图后替换：
+桌面端使用与 Web 端完全一致的四色草标记，源文件为
+`apps/workbench/public/favicon.svg`，桌面端同步副本为
+`src-tauri/icons/icon.svg`。生成全部 Tauri 图标资源：
 
 ```bash
-# 把设计稿 icon.png（≥1024×1024 透明 PNG）放到 icons/ 目录
-pnpm --filter @axi/workbench-desktop icon
+pnpm --dir apps/workbench-desktop icon
 ```
 
 ## 校验脚本

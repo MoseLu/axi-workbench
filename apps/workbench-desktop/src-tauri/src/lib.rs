@@ -1,7 +1,6 @@
 // Workbench Mac App — Tauri 2 shell entry
 // 复用 apps/workbench 的现有 SPA UI，只在外层套 macOS 原生壳。
 
-use std::env;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
     tray::{TrayIconBuilder, TrayIconEvent},
@@ -13,25 +12,10 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-/// 登录窗交通灯收口：B 站形态只露 2 颗（关 + 最小化）。
-///
-/// 历史背景：之前曾尝试用 objc2 msg_send 直接调 NSWindow 的
-/// `setShowsFullScreenButton:`，但该 selector 在 NSWindow 上**根本不存在**
-/// （macOS 13+ 只在 NSToolbar 上有）。msg_send 触发 Objective-C 的
-/// "method not found" 异常，导致进程 abort（即便 catch_unwind 也来不及）。
-///
-/// 正确做法：
-///   * `tauri.conf.json` 设 `resizable: false` —— NSWindow 不画 zoom 按钮
-///   * `maximizable: false`                            —— 也不画 maximize
-///   * 这两条已经足够去掉全屏/最大化按钮；macOS 13+ 的全屏按钮需要另外
-///     走 NSWindowToolbar API（不在本分支做，留作 M7 后续）。
-///
-/// 此函数保留为占位，便于未来真正可靠的实现替换。
-#[cfg(target_os = "macos")]
-fn hide_fullscreen_button(_handle: &tauri::AppHandle, _label: &str) {}
-
-#[cfg(not(target_os = "macos"))]
-fn hide_fullscreen_button(_handle: &tauri::AppHandle, _label: &str) {}
+/// Login closes the application; the main window hides to the tray.
+fn should_hide_on_close(label: &str) -> bool {
+    label != "login"
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -41,10 +25,18 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.unminimize();
-                let _ = window.set_focus();
+            if let Some(main) = app.get_webview_window("main") {
+                if main.is_visible().unwrap_or(false) {
+                    let _ = main.show();
+                    let _ = main.unminimize();
+                    let _ = main.set_focus();
+                    return;
+                }
+            }
+            if let Some(login) = app.get_webview_window("login") {
+                let _ = login.show();
+                let _ = login.unminimize();
+                let _ = login.set_focus();
             }
         }));
     }
@@ -58,22 +50,23 @@ pub fn run() {
             build_tray(app.handle())?;
             register_ipc_listeners(app.handle().clone());
             // 登录窗只露 2 颗交通灯（关 + 最小化）：B 站 Mac 客户端形态。
-            // 1) resizable=false 已让 NSWindow 不画 zoom 按钮；
-            // 2) hide_fullscreen_button() 兜底去掉 macOS 13+ 全屏按钮。
             if let Some(login) = app.get_webview_window("login") {
                 let _ = login.set_resizable(false);
                 let _ = login.set_minimizable(true);
                 let _ = login.set_closable(true);
-                hide_fullscreen_button(app.handle(), "login");
             }
             Ok(())
         })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                // 关闭主窗/登录窗 = 隐藏到托盘（B 站形态）；通过 Tray → Quit 退出。
-                // 注意：不要拦截首次启动时的 close 事件，避免 wry 误判。
-                let _ = window.hide();
-                api.prevent_close();
+                if should_hide_on_close(window.label()) {
+                    // 主窗关闭 = 隐藏到托盘；通过 Tray → Quit 退出。
+                    let _ = window.hide();
+                    api.prevent_close();
+                } else {
+                    // 登录窗关闭 = 明确退出，避免留下无窗口的单实例进程。
+                    window.app_handle().exit(0);
+                }
             }
         })
         .run(tauri::generate_context!())
@@ -456,5 +449,20 @@ fn deliver_notification(
             );
             let _ = window.eval(&js);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_hide_on_close;
+
+    #[test]
+    fn login_close_exits_instead_of_hiding() {
+        assert!(!should_hide_on_close("login"));
+    }
+
+    #[test]
+    fn main_close_stays_in_the_tray() {
+        assert!(should_hide_on_close("main"));
     }
 }

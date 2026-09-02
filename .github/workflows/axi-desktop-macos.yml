@@ -1,6 +1,6 @@
 name: Axi Desktop (macOS)
 
-# 触发：打 `axi-workbench/v*` tag 时自动出签名 .dmg；也可手动 dispatch 跑调试构建（不签名）。
+# 触发：打 `axi-workbench/v*` tag 时自动出 Developer ID 签名 .dmg；也可手动 dispatch 跑本地调试构建（ad hoc 签名）。
 # 产物：apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/
 #       → 上传到对应 GitHub Release 作为下载资产
 
@@ -34,6 +34,9 @@ jobs:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
       KEYCHAIN_PROFILE: ${{ secrets.APPLE_KEYCHAIN_PROFILE }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
 
     steps:
       - name: Checkout
@@ -69,8 +72,53 @@ jobs:
       - name: Verify desktop contracts
         run: pnpm --filter @axi/workbench-desktop verify:contracts
 
-      # 不签名快速构建（仅 workflow_dispatch 且未勾 sign 时）
-      - name: Build unsigned .app + .dmg (debug)
+      - name: Import Apple Developer ID certificate
+        if: env.APPLE_CERTIFICATE != '' && env.APPLE_CERTIFICATE_PASSWORD != ''
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/axi-workbench-developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/axi-workbench-build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+
+          if ! printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH" 2>/dev/null; then
+            printf '%s' "$APPLE_CERTIFICATE" | base64 -D > "$CERT_PATH"
+          fi
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security default-keychain -s "$KEYCHAIN_PATH"
+
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | awk -F '"' '/Developer ID Application:/ { print $2; exit }')"
+          test -n "$IDENTITY"
+          echo "APPLE_SIGNING_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      # 手动调试构建仍校验完整 ad hoc 签名，避免生成无法验证的 bundle。
+      - name: Configure ad hoc signing for manual debug build
+        if: github.event_name == 'workflow_dispatch' && inputs.sign == false
+        run: |
+          if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+            echo 'APPLE_SIGNING_IDENTITY=-' >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate release signing inputs
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.sign == true)
+        run: |
+          set -euo pipefail
+          test -n "${APPLE_CERTIFICATE:-}" || { echo "::error::APPLE_CERTIFICATE is required for release builds"; exit 1; }
+          test -n "${APPLE_CERTIFICATE_PASSWORD:-}" || { echo "::error::APPLE_CERTIFICATE_PASSWORD is required for release builds"; exit 1; }
+          test -n "${APPLE_ID:-}" || { echo "::error::APPLE_ID is required for notarization"; exit 1; }
+          test -n "${APPLE_TEAM_ID:-}" || { echo "::error::APPLE_TEAM_ID is required for notarization"; exit 1; }
+          test -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" || { echo "::error::APPLE_APP_SPECIFIC_PASSWORD is required for notarization"; exit 1; }
+
+      - name: Build ad hoc .app + .dmg (debug)
         if: github.event_name == 'workflow_dispatch' && inputs.sign == false
         run: |
           pnpm --filter @axi/workbench-desktop build:dmg
@@ -99,9 +147,13 @@ jobs:
           pnpm --filter @axi/workbench-desktop build:dmg
 
       - name: Notarize + staple
-        if: env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != ''
+        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.sign == true)) && env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != ''
         run: |
           set -euo pipefail
+          if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+            echo "::error::APPLE_SIGNING_IDENTITY is empty; Developer ID certificate was not imported"
+            exit 1
+          fi
           APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app"
           # DMG 路径含 arch 后缀，取第一个匹配
           DMG_PATH=$(ls apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg | head -n1)
