@@ -26,7 +26,7 @@
   </g>
   <g transform="rotate(240 16 16)" stroke-linecap="round" stroke-linejoin="round">
     <path d="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z" fill="none" stroke="#617C96" stroke-opacity="0.46" stroke-width="0.76" transform="translate(0.16 0.2)"/>
-    <path fill="#01FF1A" stroke="#FFFFFF" stroke-opacity="0.42" stroke-width="0.26" d="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z"/>
+    <path fill="#00E5FF" stroke="#FFFFFF" stroke-opacity="0.42" stroke-width="0.26" d="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z"/>
     <path fill="#FFFFFF" fill-opacity="0.2" stroke="#6B849C" stroke-opacity="0.62" stroke-width="0.7" d="M16 2.05 C14.4 3 13.1 4.6 13 6.3 C12.9 8 14 10 15.3 12.4 C15.55 12.9 15.8 13.45 16 13.95 C16.2 13.45 16.45 12.9 16.7 12.4 C18 10 19.1 8 19 6.3 C18.9 4.6 17.6 3 16 2.05 Z"/>
     <path fill="none" stroke="#FFFFFF" stroke-opacity="0.92" stroke-width="0.24" d="M16 2.05 C14.4 3 13.1 4.6 13 6.3 C12.9 8 14 10 15.3 12.4 C15.55 12.9 15.8 13.45 16 13.95 C16.2 13.45 16.45 12.9 16.7 12.4 C18 10 19.1 8 19 6.3 C18.9 4.6 17.6 3 16 2.05 Z" transform="translate(-0.08 -0.1)"/>
   </g>

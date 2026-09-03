@@ -18,7 +18,7 @@ const requiredMarks = [
   'fill="#FF0167"',
   'fill="#E6FF01"',
   'fill="#67FF01"',
-  'fill="#01FF1A"',
+  'fill="#00E5FF"',
   'fill="#9901FF"',
 ]
 const requiredGeometry = [
