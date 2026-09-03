@@ -50,35 +50,42 @@ const roundedPetals = [
   '#79E6A4',
   '#70E0EE',
   '#C39AFF',
-  'M16 0.25 C12.6 1.65 11.45 4.25 11.95 7 C12.45 9.8 14.05 12.05 15.1 13.65',
-  'M16 2.1 C14.75 2.95 13.75 4.45 13.6 6.25 C13.45 8.35 14.45 10.65 15.35 12.55',
+  'M16 16 L9.95 5.55 C10.75 2.65 13.03 0.6 16 0.42 C18.97 0.6 21.25 2.65 22.05 5.55 Z',
+  'M16 14.85 L12.55 7.2 C13.1 4.8 14.35 2.75 16 1.85 C17.65 2.75 18.9 4.8 19.45 7.2 Z',
+  'stroke="#21364F"',
+  'stroke="#274968"',
+  'stroke-opacity="0.9"',
+  'stroke-width="0.26"',
   'transform="rotate(60 16 16)"',
   'transform="rotate(120 16 16)"',
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  '<circle cx="16" cy="16" r="2.4"',
+  '<circle cx="16" cy="16" r="2.48"',
 ]
 if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path))) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的六色圆润花瓣: ${webIcon}`)
   failed = true
-} else if (/ d="[^\"]*[Aa]/.test(favicon)) {
-  console.error(`[verify-desktop-contracts] FAIL: Web favicon 必须使用规范的贝塞尔圆润轮廓: ${webIcon}`)
+} else if (/<(?:rect|radialGradient)\b|axi-icon-bg/.test(favicon)) {
+  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不得包含不透明背景底板: ${webIcon}`)
   failed = true
 } else {
   console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的六色圆润花瓣')
 }
 
 const desktopIcon = existsSync(desktopIconSource) ? readFileSync(desktopIconSource, 'utf8') : ''
-const desktopIconTreatment = ['scale(30)']
+const desktopIconTreatment = ['scale(31)', 'fill="none"']
 if (!existsSync(desktopIconSource)) {
   console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版不存在: ${desktopIconSource}`)
   failed = true
-} else if ([...roundedPetals, ...desktopIconTreatment].some((path) => !desktopIcon.includes(path))) {
-  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步圆润花瓣几何: ${desktopIconSource}`)
+} else if (
+  [...roundedPetals, ...desktopIconTreatment].some((path) => !desktopIcon.includes(path)) ||
+  /<(?:rect|radialGradient)\b|axi-icon-bg/.test(desktopIcon)
+) {
+  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步透明立体花瓣几何: ${desktopIconSource}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用圆润贝塞尔几何')
+  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用透明立体花瓣几何')
 }
 
 if (failed) process.exit(1)
