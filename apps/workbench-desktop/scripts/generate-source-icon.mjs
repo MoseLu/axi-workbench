@@ -14,12 +14,12 @@ mkdirSync(iconsDir, { recursive: true })
 const svg = readFileSync(webIconPath, 'utf8').trim()
 const requiredMarks = [
   'viewBox="0 0 32 32"',
-  'fill="#A8C9FF"',
-  'fill="#FFB3BA"',
-  'fill="#FFE6A1"',
-  'fill="#A8EBC2"',
-  'fill="#A8EAF0"',
-  'fill="#D2B7FF"',
+  'fill="#0167FF"',
+  'fill="#FF0167"',
+  'fill="#E6FF01"',
+  'fill="#67FF01"',
+  'fill="#01FF1A"',
+  'fill="#9901FF"',
 ]
 const requiredGeometry = [
   'd="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z"',

@@ -58,12 +58,12 @@ for (const path of [
   /transform="rotate\(180 16 16\)"/,
   /transform="rotate\(240 16 16\)"/,
   /transform="rotate\(300 16 16\)"/,
-  /#A8C9FF/,
-  /#FFB3BA/,
-  /#FFE6A1/,
-  /#A8EBC2/,
-  /#A8EAF0/,
-  /#D2B7FF/,
+  /#0167FF/,
+  /#FF0167/,
+  /#E6FF01/,
+  /#67FF01/,
+  /#01FF1A/,
+  /#9901FF/,
   /<circle[^>]*cx="16"[^>]*cy="16"[^>]*r="2\.48"/,
 ]) {
   requireMatch(favicon, path, 'Web favicon must keep six rounded petals center-symmetric');
