@@ -109,7 +109,7 @@ xcrun notarytool store-credentials "workbench-desktop-notary" \
 
 ## 应用图标
 
-桌面端中央标记使用与 Web 端完全一致的六色层叠圆润花瓣，外轮廓与内嵌轮廓围绕一个中心圆核按
+桌面端中央标记使用与 Web 端完全一致的六色大尺寸层叠圆润花瓣，外轮廓与明亮内嵌轮廓互不重叠，围绕一个中心圆核按
 60° 旋转构造；桌面端在外层增加深石墨圆角玻璃底和光学留白。标记源文件为
 `apps/workbench/public/favicon.svg`，`src-tauri/icons/icon.svg` 是由脚本生成的
 桌面应用图标母版。生成全部 Tauri 图标资源：
