@@ -1,4 +1,4 @@
-// Wrap the Web layered petal-and-hub mark in a center-symmetric desktop app-icon treatment before rasterization.
+// Wrap the Web six-color rounded petal-and-hub mark in a center-symmetric desktop app-icon treatment before rasterization.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -18,21 +18,25 @@ const requiredMarks = [
   'fill="#FF7B84"',
   'fill="#FFD166"',
   'fill="#67D891"',
+  'fill="#5FD9E8"',
+  'fill="#B88CFF"',
 ]
 const requiredGeometry = [
-  'd="M16 13.35 13.35 12.1 10.85 8.15 11.6 4.25 14.05 1.55 16 0.85 17.95 1.55 20.4 4.25 21.15 8.15 18.65 12.1z"',
-  'd="M16 11.85 14.55 11.15 12.45 7.8 13 5.1 14.65 3.15 16 2.65 17.35 3.15 19 5.1 19.55 7.8 17.45 11.15z"',
-  'transform="rotate(90 16 16)"',
+  'd="M16 0.35 C14 1.25 12 3.15 11.45 5.65 C10.75 8.75 12.55 11.85 15.1 13.5',
+  'd="M16 2.5 C14.7 3.25 13.55 4.65 13.1 6.45 C12.6 8.55 13.9 10.95 15.35 12.55',
+  'transform="rotate(60 16 16)"',
+  'transform="rotate(120 16 16)"',
   'transform="rotate(180 16 16)"',
-  'transform="rotate(270 16 16)"',
-  '<circle cx="16" cy="16" r="3.6"',
+  'transform="rotate(240 16 16)"',
+  'transform="rotate(300 16 16)"',
+  '<circle cx="16" cy="16" r="2.6"',
 ]
 
 if (
   requiredMarks.some((mark) => !svg.includes(mark)) ||
   requiredGeometry.some((path) => !svg.includes(path))
 ) {
-  throw new Error(`[icon] Web favicon is not the expected symmetric four-color Axi mark: ${webIconPath}`)
+  throw new Error(`[icon] Web favicon is not the expected symmetric six-color Axi mark: ${webIconPath}`)
 }
 
 const mark = svg
@@ -51,7 +55,7 @@ const desktopSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 10
   <rect x="12" y="12" width="1000" height="1000" rx="260" fill="#090D13"/>
   <rect x="30" y="30" width="964" height="964" rx="242" fill="url(#axi-icon-bg)"/>
   <rect x="38" y="38" width="948" height="948" rx="234" fill="none" stroke="#AFC2DE" stroke-opacity="0.18" stroke-width="12"/>
-  <g transform="translate(512 512) scale(26) translate(-16 -16)">
+  <g transform="translate(512 512) scale(30) translate(-16 -16)">
     ${mark}
   </g>
 </svg>
