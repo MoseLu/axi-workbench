@@ -44,20 +44,20 @@ if (!existsSync(iconIcns)) {
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''
 const roundedPetals = [
-  '#72A7FF',
-  '#FF7B84',
-  '#FFD166',
-  '#67D891',
-  '#5FD9E8',
-  '#B88CFF',
-  'M16 0.35 C14 1.25 12 3.15 11.45 5.65 C10.75 8.75 12.55 11.85 15.1 13.5',
-  'M16 2.5 C14.7 3.25 13.55 4.65 13.1 6.45 C12.6 8.55 13.9 10.95 15.35 12.55',
+  '#7FB5FF',
+  '#FF929D',
+  '#FFE07A',
+  '#79E6A4',
+  '#70E0EE',
+  '#C39AFF',
+  'M16 0.25 C12.6 1.65 11.45 4.25 11.95 7 C12.45 9.8 14.05 12.05 15.1 13.65',
+  'M16 2.1 C14.75 2.95 13.75 4.45 13.6 6.25 C13.45 8.35 14.45 10.65 15.35 12.55',
   'transform="rotate(60 16 16)"',
   'transform="rotate(120 16 16)"',
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  '<circle cx="16" cy="16" r="2.6"',
+  '<circle cx="16" cy="16" r="2.4"',
 ]
 if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path))) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的六色圆润花瓣: ${webIcon}`)
