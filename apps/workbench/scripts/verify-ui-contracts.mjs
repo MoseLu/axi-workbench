@@ -44,19 +44,23 @@ forbidMatch(
 );
 requireMatch(layout, /AxiDashboardShell/, 'desktop must use the shared Axi dashboard shell');
 requireMatch(layout, /AxiAdminSettingsPanel/, 'desktop settings must use the shared settings panel');
-requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared four-color Axi mark');
+requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared six-color Axi mark');
 requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
 for (const path of [
-  /M16 13\.35 13\.35 12\.1 10\.85 8\.15 11\.6 4\.25 14\.05 1\.55 16 0\.85 17\.95 1\.55 20\.4 4\.25 21\.15 8\.15 18\.65 12\.1z/,
-  /M16 11\.85 14\.55 11\.15 12\.45 7\.8 13 5\.1 14\.65 3\.15 16 2\.65 17\.35 3\.15 19 5\.1 19\.55 7\.8 17\.45 11\.15z/,
-  /transform="rotate\(90 16 16\)"/,
+  /M16 0\.35 C14 1\.25 12 3\.15 11\.45 5\.65 C10\.75 8\.75 12\.55 11\.85 15\.1 13\.5/,
+  /M16 2\.5 C14\.7 3\.25 13\.55 4\.65 13\.1 6\.45 C12\.6 8\.55 13\.9 10\.95 15\.35 12\.55/,
+  /transform="rotate\(60 16 16\)"/,
+  /transform="rotate\(120 16 16\)"/,
   /transform="rotate\(180 16 16\)"/,
-  /transform="rotate\(270 16 16\)"/,
-  /<circle[^>]*cx="16"[^>]*cy="16"[^>]*r="3\.6"/,
+  /transform="rotate\(240 16 16\)"/,
+  /transform="rotate\(300 16 16\)"/,
+  /#5FD9E8/,
+  /#B88CFF/,
+  /<circle[^>]*cx="16"[^>]*cy="16"[^>]*r="2\.6"/,
 ]) {
-  requireMatch(favicon, path, 'Web favicon must keep the four petals center-symmetric');
+  requireMatch(favicon, path, 'Web favicon must keep six rounded petals center-symmetric');
 }
-forbidMatch(favicon, / d="[^\"]*[CcQqSsAa]/, 'Web favicon must use straight-edged petals without arc commands');
+forbidMatch(favicon, / d="[^\"]*[Aa]/, 'Web favicon must use the canonical cubic petal geometry');
 requireMatch(layout, /topbarPluginActions[\s\S]*axiWorkbenchIconMap\.preferences/, 'Web preferences action must use the shared settings surface');
 requireMatch(breadcrumbs, /axiWorkbenchIconMap/, 'breadcrumbs must resolve through the shared Workbench icon semantics');
 requireMatch(foundationIcons, /notification:/, 'shared semantic icon registry must include notifications');
