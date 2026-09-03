@@ -1,4 +1,4 @@
-// Wrap the Web six-color rounded petal-and-hub mark in a center-symmetric desktop app-icon treatment before rasterization.
+// Scale the Web six-color rounded petal-and-hub mark into a transparent desktop app-icon canvas.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -22,14 +22,18 @@ const requiredMarks = [
   'fill="#C39AFF"',
 ]
 const requiredGeometry = [
-  'd="M16 0.25 C12.6 1.65 11.45 4.25 11.95 7 C12.45 9.8 14.05 12.05 15.1 13.65',
-  'd="M16 2.1 C14.75 2.95 13.75 4.45 13.6 6.25 C13.45 8.35 14.45 10.65 15.35 12.55',
+  'd="M16 16 L9.95 5.55 C10.75 2.65 13.03 0.6 16 0.42 C18.97 0.6 21.25 2.65 22.05 5.55 Z"',
+  'd="M16 14.85 L12.55 7.2 C13.1 4.8 14.35 2.75 16 1.85 C17.65 2.75 18.9 4.8 19.45 7.2 Z"',
+  'stroke="#21364F"',
+  'stroke="#274968"',
+  'stroke-opacity="0.9"',
+  'stroke-width="0.26"',
   'transform="rotate(60 16 16)"',
   'transform="rotate(120 16 16)"',
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  '<circle cx="16" cy="16" r="2.4"',
+  '<circle cx="16" cy="16" r="2.48"',
 ]
 
 if (
@@ -44,18 +48,8 @@ const mark = svg
   .replace(/<\/svg>$/, '')
   .trim()
 
-const desktopSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <defs>
-    <radialGradient id="axi-icon-bg" cx="50%" cy="50%" r="72%">
-      <stop offset="0" stop-color="#35445A"/>
-      <stop offset="0.58" stop-color="#1D2939"/>
-      <stop offset="1" stop-color="#0D121A"/>
-    </radialGradient>
-  </defs>
-  <rect x="12" y="12" width="1000" height="1000" rx="260" fill="#090D13"/>
-  <rect x="30" y="30" width="964" height="964" rx="242" fill="url(#axi-icon-bg)"/>
-  <rect x="38" y="38" width="948" height="948" rx="234" fill="none" stroke="#AFC2DE" stroke-opacity="0.18" stroke-width="12"/>
-  <g transform="translate(512 512) scale(30) translate(-16 -16)">
+const desktopSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <g transform="translate(512 512) scale(31) translate(-16 -16)">
     ${mark}
   </g>
 </svg>

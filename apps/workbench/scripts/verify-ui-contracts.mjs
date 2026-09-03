@@ -47,8 +47,12 @@ requireMatch(layout, /AxiAdminSettingsPanel/, 'desktop settings must use the sha
 requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared six-color Axi mark');
 requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
 for (const path of [
-  /M16 0\.25 C12\.6 1\.65 11\.45 4\.25 11\.95 7 C12\.45 9\.8 14\.05 12\.05 15\.1 13\.65/,
-  /M16 2\.1 C14\.75 2\.95 13\.75 4\.45 13\.6 6\.25 C13\.45 8\.35 14\.45 10\.65 15\.35 12\.55/,
+  /M16 16 L9\.95 5\.55 C10\.75 2\.65 13\.03 0\.6 16 0\.42 C18\.97 0\.6 21\.25 2\.65 22\.05 5\.55 Z/,
+  /M16 14\.85 L12\.55 7\.2 C13\.1 4\.8 14\.35 2\.75 16 1\.85 C17\.65 2\.75 18\.9 4\.8 19\.45 7\.2 Z/,
+  /stroke="#21364F"/,
+  /stroke="#274968"/,
+  /stroke-opacity="0\.9"/,
+  /stroke-width="0\.26"/,
   /transform="rotate\(60 16 16\)"/,
   /transform="rotate\(120 16 16\)"/,
   /transform="rotate\(180 16 16\)"/,
@@ -56,11 +60,11 @@ for (const path of [
   /transform="rotate\(300 16 16\)"/,
   /#70E0EE/,
   /#C39AFF/,
-  /<circle[^>]*cx="16"[^>]*cy="16"[^>]*r="2\.4"/,
+  /<circle[^>]*cx="16"[^>]*cy="16"[^>]*r="2\.48"/,
 ]) {
   requireMatch(favicon, path, 'Web favicon must keep six rounded petals center-symmetric');
 }
-forbidMatch(favicon, / d="[^\"]*[Aa]/, 'Web favicon must use the canonical cubic petal geometry');
+forbidMatch(favicon, /<(?:rect|radialGradient)\b|axi-icon-bg/, 'Web favicon must remain transparent without an icon background');
 requireMatch(layout, /topbarPluginActions[\s\S]*axiWorkbenchIconMap\.preferences/, 'Web preferences action must use the shared settings surface');
 requireMatch(breadcrumbs, /axiWorkbenchIconMap/, 'breadcrumbs must resolve through the shared Workbench icon semantics');
 requireMatch(foundationIcons, /notification:/, 'shared semantic icon registry must include notifications');
