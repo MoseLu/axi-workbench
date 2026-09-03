@@ -43,21 +43,22 @@ if (!existsSync(iconIcns)) {
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''
-const angularPetals = [
-  'M16 13.6 13.1 11.7 11.4 8.2 12.2 4.1 14.2 1.7 16 1 17.8 1.7 19.8 4.1 20.6 8.2 18.9 11.7z',
+const layeredPetals = [
+  'M16 13.35 13.35 12.1 10.85 8.15 11.6 4.25 14.05 1.55 16 0.85 17.95 1.55 20.4 4.25 21.15 8.15 18.65 12.1z',
+  'M16 11.85 14.55 11.15 12.45 7.8 13 5.1 14.65 3.15 16 2.65 17.35 3.15 19 5.1 19.55 7.8 17.45 11.15z',
   'transform="rotate(90 16 16)"',
   'transform="rotate(180 16 16)"',
   'transform="rotate(270 16 16)"',
   '<circle cx="16" cy="16" r="3.6"',
 ]
-if (!existsSync(webIcon) || angularPetals.some((path) => !favicon.includes(path))) {
-  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的四色角切花瓣: ${webIcon}`)
+if (!existsSync(webIcon) || layeredPetals.some((path) => !favicon.includes(path))) {
+  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的四色层叠花瓣: ${webIcon}`)
   failed = true
 } else if (/ d="[^\"]*[CcQqSsAa]/.test(favicon)) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不得包含圆弧路径命令: ${webIcon}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的直线角切花瓣')
+  console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的直线层叠花瓣')
 }
 
 const desktopIcon = existsSync(desktopIconSource) ? readFileSync(desktopIconSource, 'utf8') : ''
