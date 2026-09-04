@@ -1,4 +1,4 @@
-// Scale the Web six-color rounded petal-and-hub mark into a transparent desktop app-icon canvas.
+// Scale the Web twelve-color rounded petal-and-hub mark into a transparent desktop app-icon canvas.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -14,12 +14,19 @@ mkdirSync(iconsDir, { recursive: true })
 const svg = readFileSync(webIconPath, 'utf8').trim()
 const requiredMarks = [
   'viewBox="0 0 32 32"',
-  'stop-color="#0167FF"',
-  'stop-color="#FF0167"',
-  'stop-color="#E6FF01"',
-  'stop-color="#67FF01"',
-  'stop-color="#00E5FF"',
-  'stop-color="#9901FF"',
+  'fill="#0167FF"',
+  'fill="#FF0167"',
+  'fill="#E6FF01"',
+  'fill="#67FF01"',
+  'fill="#00E5FF"',
+  'fill="#9901FF"',
+  'fill="#D14DFF"',
+  'fill="#FF9A3D"',
+  'fill="#C8FF3D"',
+  'fill="#3DFFB0"',
+  'fill="#3D9BFF"',
+  'fill="#8E4DFF"',
+  'fill="#000000"',
 ]
 const requiredGeometry = [
   'd="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z"',
@@ -33,20 +40,19 @@ const requiredGeometry = [
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  'linearGradient id="axi-transition-violet-red"',
-  'linearGradient id="axi-transition-red-yellow"',
-  'linearGradient id="axi-transition-yellow-green"',
-  'linearGradient id="axi-transition-green-cyan"',
-  'linearGradient id="axi-transition-cyan-violet"',
-  'linearGradient id="axi-transition-violet-blue"',
-  'd="M16 16 L15.275 14.744 A0.725 0.725 0 0 1 16.725 14.744 Z"',
+  'data-center="pinwheel"',
+  'data-center-pair="0-180"',
+  'data-center-pair="60-240"',
+  'data-center-pair="120-300"',
+  'd="M14.5 14.7 A1.5 1.5 0 0 1 17.5 14.7 Z"',
+  'd="M16 15.05 L16.82 15.525 L16.82 16.475 L16 16.95 L15.18 16.475 L15.18 15.525 Z"',
 ]
 
 if (
   requiredMarks.some((mark) => !svg.includes(mark)) ||
   requiredGeometry.some((path) => !svg.includes(path))
 ) {
-  throw new Error(`[icon] Web favicon is not the expected symmetric six-color Axi mark: ${webIconPath}`)
+  throw new Error(`[icon] Web favicon is not the expected symmetric twelve-color pinwheel Axi mark: ${webIconPath}`)
 }
 
 const mark = svg

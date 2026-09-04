@@ -64,24 +64,39 @@ for (const path of [
   /#67FF01/,
   /#00E5FF/,
   /#9901FF/,
-  /linearGradient id="axi-transition-violet-red"/,
-  /linearGradient id="axi-transition-red-yellow"/,
-  /linearGradient id="axi-transition-yellow-green"/,
-  /linearGradient id="axi-transition-green-cyan"/,
-  /linearGradient id="axi-transition-cyan-violet"/,
-  /linearGradient id="axi-transition-violet-blue"/,
-  /M16 16 L15\.275 14\.744 A0\.725 0\.725 0 0 1 16\.725 14\.744 Z/,
+  /#D14DFF/,
+  /#FF9A3D/,
+  /#C8FF3D/,
+  /#3DFFB0/,
+  /#3D9BFF/,
+  /#8E4DFF/,
+  /#000000/,
+  /data-center="pinwheel"/,
+  /data-center-pair="0-180"/,
+  /data-center-pair="60-240"/,
+  /data-center-pair="120-300"/,
+  /M14\.5 14\.7 A1\.5 1\.5 0 0 1 17\.5 14\.7 Z/,
+  /M16 15\.05 L16\.82 15\.525 L16\.82 16\.475 L16 16\.95 L15\.18 16\.475 L15\.18 15\.525 Z/,
 ]) {
-  requireMatch(favicon, path, 'Web favicon must keep six rounded petals center-symmetric');
+  requireMatch(favicon, path, 'Web favicon must keep the twelve-color pinwheel center-symmetric');
 }
+requireMatch(favicon, /data-center-pair="0-180">[\s\S]*fill="#8E4DFF"[\s\S]*fill="#3DFFB0"/, 'Web pinwheel pair 0-180 must use blue-red and green-cyan transitions');
+requireMatch(favicon, /data-center-pair="60-240">[\s\S]*fill="#FF9A3D"[\s\S]*fill="#3D9BFF"/, 'Web pinwheel pair 60-240 must use red-yellow and cyan-violet transitions');
+requireMatch(favicon, /data-center-pair="120-300">[\s\S]*fill="#C8FF3D"[\s\S]*fill="#D14DFF"/, 'Web pinwheel pair 120-300 must use yellow-green and violet-blue transitions');
 forbidMatch(favicon, /<(?:rect|radialGradient)\b|axi-icon-bg/, 'Web favicon must remain transparent without an icon background');
 forbidMatch(
   favicon,
   /fill="#FFFFFF" fill-opacity="0\.2"|stroke="#FFFFFF" stroke-opacity="0\.42"|stroke-opacity=/,
   'Web favicon petal double-layer edges must use clean black outlines without translucent duplicate strokes',
 );
-if ((favicon.match(/<path\b/g) ?? []).length !== 18) {
-  throw new Error('Web favicon must contain twelve petal contour paths and six center semicircle paths');
+if ((favicon.match(/<path\b/g) ?? []).length !== 19) {
+  throw new Error('Web favicon must contain twelve petal contour paths, six center semicircle paths, and one center join');
+}
+const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color);
+const outerFills = fills.slice(0, 6);
+const centerFills = fills.slice(6, 12);
+if (new Set([...outerFills, ...centerFills]).size !== 12 || centerFills.some((color) => outerFills.includes(color))) {
+  throw new Error('Web favicon must keep six distinct center transition colors separate from the six petal colors');
 }
 forbidMatch(favicon, /transform="[^"]*translate/, 'Web favicon must not contain offset shadow or duplicate contour transforms');
 forbidMatch(favicon, /<circle\b/, 'Web favicon center must use the interlocking semicircle structure instead of a white circle');
