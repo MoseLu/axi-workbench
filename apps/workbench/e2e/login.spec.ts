@@ -291,17 +291,27 @@ test('desktop shell uses a compact overlay login window', async ({ page }) => {
       bodyHeight: body.getBoundingClientRect().height,
       pageBackground: getComputedStyle(page).backgroundColor,
       cardBackground: getComputedStyle(card).backgroundColor,
+      cardBorder: getComputedStyle(card).border,
+      cardRadius: getComputedStyle(card).borderRadius,
+      cardShadow: getComputedStyle(card).boxShadow,
+      dragRegion: Boolean(document.querySelector('[data-tauri-drag-region]')),
+      dragRegionRect: document.querySelector('[data-tauri-drag-region]')?.getBoundingClientRect().toJSON() ?? null,
     };
   });
 
   expect(layout?.page).toEqual({ width: 800, height: 365 });
-  expect(layout?.card.x).toBeCloseTo(4, 1);
-  expect(layout?.card.y).toBeCloseTo(3.5, 1);
-  expect(layout?.card.width).toBeCloseTo(792, 1);
-  expect(layout?.card.height).toBeCloseTo(358, 1);
-  expect(layout?.bodyHeight).toBeCloseTo(356, 1);
-  expect(layout?.pageBackground).toBe('rgb(247, 247, 247)');
+  expect(layout?.card.x).toBeCloseTo(0, 1);
+  expect(layout?.card.y).toBeCloseTo(0, 1);
+  expect(layout?.card.width).toBeCloseTo(800, 1);
+  expect(layout?.card.height).toBeCloseTo(365, 1);
+  expect(layout?.bodyHeight).toBeCloseTo(365, 1);
+  expect(layout?.pageBackground).toBe('rgb(255, 255, 255)');
   expect(layout?.cardBackground).toBe('rgb(255, 255, 255)');
+  expect(layout?.cardBorder).toBe('0px none rgb(24, 24, 24)');
+  expect(layout?.cardRadius).toBe('0px');
+  expect(layout?.cardShadow).toBe('none');
+  expect(layout?.dragRegion).toBe(true);
+  expect(layout?.dragRegionRect).toMatchObject({ x: 84, y: 0, width: 716, height: 34 });
 });
 
 test('expired QR keeps a readable client-style scrim until the user refreshes it', async ({ page }) => {

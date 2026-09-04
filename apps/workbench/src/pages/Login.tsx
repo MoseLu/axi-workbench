@@ -372,6 +372,11 @@ const Login: React.FC = () => {
 
   return (
     <main className="axi-login-page">
+      <div
+        className="axi-login-drag-region"
+        data-tauri-drag-region
+        aria-hidden="true"
+      />
       <div className="axi-login-page__grid" aria-hidden="true" />
 
       <section className="axi-login-card" aria-labelledby="axi-login-title">

@@ -16,6 +16,9 @@ const targetDir = join(desktopDir, 'workbench-dist')
 const iconIcns = join(desktopDir, 'src-tauri', 'icons', 'icon.icns')
 const desktopIconSource = join(desktopDir, 'src-tauri', 'icons', 'icon.svg')
 const tauriConfig = join(desktopDir, 'src-tauri', 'tauri.conf.json')
+const tauriCapabilities = join(desktopDir, 'src-tauri', 'capabilities', 'default.json')
+const loginPageSource = join(repoRoot, 'apps', 'workbench', 'src', 'pages', 'Login.tsx')
+const loginStylesSource = join(repoRoot, 'apps', 'workbench', 'src', 'pages', 'Login.css')
 const webIcon = join(repoRoot, 'apps', 'workbench', 'public', 'favicon.svg')
 
 let failed = false
@@ -50,15 +53,34 @@ if (
   loginWindow?.height !== 365 ||
   loginWindow?.minWidth !== 800 ||
   loginWindow?.minHeight !== 365 ||
+  loginWindow?.resizable !== true ||
+  loginWindow?.maximizable !== true ||
   loginWindow?.titleBarStyle !== 'Overlay' ||
   loginWindow?.hiddenTitle !== true ||
+  JSON.stringify(loginWindow?.trafficLightPosition) !== JSON.stringify({ x: 16, y: 12 }) ||
   loginWindow?.theme !== 'Light' ||
-  loginWindow?.backgroundColor?.toLowerCase() !== '#f7f7f7'
+  loginWindow?.backgroundColor?.toLowerCase() !== '#ffffff'
 ) {
   console.error(`[verify-desktop-contracts] FAIL: 登录窗口必须是 800x365 的 Web 对齐紧凑画布: ${tauriConfig}`)
   failed = true
 } else {
   console.log('[verify-desktop-contracts] OK: 登录窗口使用 800x365 Overlay 浅色紧凑画布')
+}
+
+const loginPage = existsSync(loginPageSource) ? readFileSync(loginPageSource, 'utf8') : ''
+const loginStyles = existsSync(loginStylesSource) ? readFileSync(loginStylesSource, 'utf8') : ''
+const capabilities = existsSync(tauriCapabilities) ? JSON.parse(readFileSync(tauriCapabilities, 'utf8')) : null
+if (!Array.isArray(capabilities?.windows) || !capabilities.windows.includes('login')) {
+  console.error(`[verify-desktop-contracts] FAIL: login 窗口未被授予标题栏拖拽权限: ${tauriCapabilities}`)
+  failed = true
+} else {
+  console.log('[verify-desktop-contracts] OK: login 窗口位于拖拽权限范围')
+}
+if (!loginPage.includes('data-tauri-drag-region') || !loginStyles.includes('.axi-login-drag-region')) {
+  console.error(`[verify-desktop-contracts] FAIL: 登录窗口缺少可用的 macOS 拖拽区域: ${loginPageSource}`)
+  failed = true
+} else {
+  console.log('[verify-desktop-contracts] OK: 登录窗口提供 Overlay 标题栏拖拽区域')
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''

@@ -49,9 +49,10 @@ pub fn run() {
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;
             register_ipc_listeners(app.handle().clone());
-            // 登录窗只露 2 颗交通灯（关 + 最小化）：B 站 Mac 客户端形态。
+            // 登录窗保留 macOS 标准三颗交通灯，并允许绿色按钮执行原生缩放。
             if let Some(login) = app.get_webview_window("login") {
-                let _ = login.set_resizable(false);
+                let _ = login.set_resizable(true);
+                let _ = login.set_maximizable(true);
                 let _ = login.set_minimizable(true);
                 let _ = login.set_closable(true);
             }

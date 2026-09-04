@@ -223,7 +223,7 @@ tauri-plugin-single-instance 拦截
 
 ### 13.2 目标
 
-1. **G5 — 启动即登录窗**：`.app` 启动只创建 `login` 窗，不创建 `main` 窗；登录窗独立居中、不可最大化、有 macOS 交通灯装饰、无全屏按钮。
+1. **G5 — 启动即登录窗**：`.app` 启动只创建 `login` 窗，不创建 `main` 窗；登录窗为仅承载登录面板的紧凑窗口，保留 macOS 标准三颗可用交通灯，并支持通过 Overlay 标题栏拖拽移动。
 2. **G6 — 登录成功 → 切主窗**：web 端 `useAuth().isAuthenticated` 翻 true 时 emit `shell://login-success`；shell 关闭 login 窗、创建/显示 main 窗。
 3. **G7 — 登录窗可独立关闭**：用户按红钮关 login 窗 = 退出整个 `.app`（不残留后台进程）；与单实例锁 + 关闭到托盘策略不冲突。
 4. **G8 — 已有会话跳过登录**：冷启动时 web 先打 `GET /api/v1/auth/session`；若已认证则不发 `login-success`，shell 直接开 main 窗。
@@ -240,12 +240,12 @@ tauri-plugin-single-instance 拦截
 | 项 | login | main |
 | --- | --- | --- |
 | label | `login` | `main` |
-| 尺寸 | 900×600（web 响应式自适应），min 720×540 | 1280×800（已有） |
+| 尺寸 | 800×365（仅承载登录面板），min 800×365 | 1280×800（已有） |
 | 位置 | 居中 | 居中 |
 | 装饰 | macOS 交通灯可见 | macOS 交通灯可见 |
 | title | `Workbench — 登录` | `Workbench` |
 | resizable | true | true |
-| maximizable | **false**（B 站风格） | true |
+| maximizable | true（保留绿色交通灯） | true |
 | minimizable | true | true |
 | closable | true（关 = 退出 app） | true（关 = 隐藏到托盘，已有） |
 | fullscreen | **false** | false |
@@ -294,7 +294,7 @@ login web 加载 /login
 
 ### 13.8 验收
 
-- [ ] `pnpm build:desktop:dmg` 重出 `.app`；启动 `.app` 只弹 900×600 居中登录窗，无 main 窗。
+- [ ] `pnpm build:desktop:dmg` 重出 `.app`；启动 `.app` 只弹 800×365 居中登录窗，无 main 窗，登录面板无额外外圈留白。
 - [ ] 邮箱/密码登录成功后 → 登录窗关、主窗弹。
 - [ ] 扫码登录成功后 → 同上。
 - [ ] 主窗登出 → 主窗关、登录窗回。

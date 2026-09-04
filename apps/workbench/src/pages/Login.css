@@ -759,14 +759,54 @@
 
 /* 原生窗口只提供标题栏，登录内容与 Web 端保持同一套布局。 */
 
+.axi-login-drag-region {
+  display: none;
+}
+
 /* macOS 登录窗使用标题栏 Overlay：窗口尺寸即为登录面板尺寸，
  * 交通灯浮在卡片上方，Web 端的响应式留白不带入桌面壳。 */
 body.axi-tauri-shell .axi-login-page {
   min-height: 100vh;
   padding: 0;
+  background: var(--palette-white);
+}
+
+body.axi-tauri-shell,
+body.axi-tauri-shell #root {
+  background: var(--palette-white);
 }
 
 body.axi-tauri-shell .axi-login-card {
-  width: min(100%, 49.5rem);
+  width: 100%;
   max-width: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.axi-tauri-shell .axi-login-card__body {
+  height: 100vh;
+  min-height: 100vh;
+  padding: 36px 32px 24px;
+}
+
+body.axi-tauri-shell .axi-login-qr-column,
+body.axi-tauri-shell .axi-login-right {
+  transform: none;
+}
+
+body.axi-tauri-shell .axi-login-drag-region {
+  position: fixed;
+  z-index: 10;
+  display: block;
+  top: 0;
+  right: 0;
+  left: 84px;
+  height: 34px;
+  cursor: grab;
+  -webkit-app-region: drag;
+}
+
+body.axi-tauri-shell .axi-login-drag-region:active {
+  cursor: grabbing;
 }
