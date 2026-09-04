@@ -38,6 +38,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 修正 Android 启动 Logo 的缩放跳变：系统 Splash 与原生品牌 Loading 统一使用 `ic_splash_icon` 的 288dp 画布和同一中心点，使两层可见花瓣边界一致。
 - 优化原生 Android 冷启动交接：新增不依赖 Compose 的 `BrandLoadingView`，系统 Splash 结束后立即绘制六瓣十二色 Logo、提示文案和动态 loading；Compose 工作区在其下方挂载并等待首轮状态与完整绘制帧后移除唯一覆盖层，避免应用内重复 Loading 或业务中间态闪帧。
 - 修正原生 Android 的启动链：移除旧的 Compose 蓝色方块 Loading，改用 `WorkBenchStartupGate` 统一绘制六瓣十二色 Logo、提示文案和 loading 动画；准备完成后移除不透明覆盖层进入已完成首帧的工作区。
 - Android 12+ 系统 Splash 作为平台首帧预览，与 Compose Loading 的中心 Logo 对齐并无缝衔接；网关地址在 Compose Loading 内初始化，避免系统 Splash 停留过久或出现位置跳帧。

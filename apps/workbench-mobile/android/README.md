@@ -50,7 +50,7 @@ android/
 
 ### 启动图标尺寸规则
 
-`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区；`ic_splash_icon.png` 是同一花型针对 Android 12 系统 Splash 图标框额外缩小的版本。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；Android 12+ 的系统 Splash 是平台强制的纯图标启动窗口，随后无缝交给单 Activity 内的原生 `BrandLoadingView`（Logo、提示文案、动画和版本号），Compose 工作区在其下方准备完成后移除该唯一覆盖层，不通过 Splash 路由导航。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
+`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区；`ic_splash_icon.png` 是同一花型针对 Android 12 系统 Splash 图标框额外缩小的版本。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；Android 12+ 的系统 Splash 是平台强制的纯图标启动窗口，随后无缝交给单 Activity 内的原生 `BrandLoadingView`（复用 `ic_splash_icon` 的 288dp 画布、Logo、提示文案、动画和版本号），Compose 工作区在其下方准备完成后移除该唯一覆盖层，不通过 Splash 路由导航。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
 
 ### 1. 打开工程
 ```

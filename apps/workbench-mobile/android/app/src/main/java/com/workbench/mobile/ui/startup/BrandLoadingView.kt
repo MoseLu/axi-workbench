@@ -17,6 +17,8 @@ import kotlin.math.PI
 import kotlin.math.max
 import kotlin.math.sin
 
+private const val SYSTEM_SPLASH_ICON_CANVAS_DP = 288f
+
 /**
  * 首帧原生品牌 Loading。
  *
@@ -31,7 +33,7 @@ class BrandLoadingView @JvmOverloads constructor(
     private val scaledDensity = resources.displayMetrics.scaledDensity
     private val logo: Bitmap = BitmapFactory.decodeResource(
         resources,
-        R.drawable.ic_launcher_foreground
+        R.drawable.ic_splash_icon
     )
     private val imagePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val titlePaint = textPaint(
@@ -75,7 +77,9 @@ class BrandLoadingView @JvmOverloads constructor(
 
         val centerX = width / 2f
         val centerY = height / 2f
-        val logoSize = dp(96f)
+        // 与 Android 12 无图标背景 Splash 的 288dp 画布保持一致。
+        // ic_splash_icon 自身已经包含同一份安全区，因此两层的可见花瓣边界相同。
+        val logoSize = dp(SYSTEM_SPLASH_ICON_CANVAS_DP)
         logoRect.set(
             centerX - logoSize / 2f,
             centerY - logoSize / 2f,
