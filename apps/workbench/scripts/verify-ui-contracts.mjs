@@ -44,7 +44,7 @@ forbidMatch(
 );
 requireMatch(layout, /AxiDashboardShell/, 'desktop must use the shared Axi dashboard shell');
 requireMatch(layout, /AxiAdminSettingsPanel/, 'desktop settings must use the shared settings panel');
-requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared six-color Axi mark');
+requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared twelve-color Axi mark');
 requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
 for (const path of [
   /M16 0\.18 C13\.55 1\.35 11 3\.1 10\.65 5\.3 C10\.65 6\.7 11\.25 7\.75 11\.85 8\.8 L16 16 L20\.15 8\.8 C20\.75 7\.75 21\.35 6\.7 21\.35 5\.3 C21 3\.1 18\.45 1\.35 16 0\.18 Z/,
@@ -71,26 +71,31 @@ for (const path of [
   /#3D9BFF/,
   /#8E4DFF/,
   /#000000/,
-  /data-center="pinwheel"/,
-  /data-center-pair="0-180"/,
-  /data-center-pair="60-240"/,
-  /data-center-pair="120-300"/,
-  /M14\.5 14\.7 A1\.5 1\.5 0 0 1 17\.5 14\.7 Z/,
-  /M16 15\.05 L16\.82 15\.525 L16\.82 16\.475 L16 16\.95 L15\.18 16\.475 L15\.18 15\.525 Z/,
+  /data-center="swirl"/,
+  /data-center-piece="violet-blue"/,
+  /data-center-piece="red-yellow"/,
+  /data-center-piece="yellow-green"/,
+  /data-center-piece="green-cyan"/,
+  /data-center-piece="cyan-violet"/,
+  /data-center-piece="blue-red"/,
+  /M16 16 C17\.65 15\.25 17\.65 12\.3 16 12 A4 4 0 0 1 19\.464 14 C20\.029 15\.579 17\.475 17\.054 16 16 Z/,
 ]) {
-  requireMatch(favicon, path, 'Web favicon must keep the twelve-color pinwheel center-symmetric');
+  requireMatch(favicon, path, 'Web favicon must keep the twelve-color curved swirl center');
 }
-requireMatch(favicon, /data-center-pair="0-180">[\s\S]*fill="#8E4DFF"[\s\S]*fill="#3DFFB0"/, 'Web pinwheel pair 0-180 must use blue-red and green-cyan transitions');
-requireMatch(favicon, /data-center-pair="60-240">[\s\S]*fill="#FF9A3D"[\s\S]*fill="#3D9BFF"/, 'Web pinwheel pair 60-240 must use red-yellow and cyan-violet transitions');
-requireMatch(favicon, /data-center-pair="120-300">[\s\S]*fill="#C8FF3D"[\s\S]*fill="#D14DFF"/, 'Web pinwheel pair 120-300 must use yellow-green and violet-blue transitions');
+requireMatch(favicon, /data-center-piece="violet-blue"[\s\S]*fill="#8E4DFF"/, 'Web swirl must include the violet-blue transition');
+requireMatch(favicon, /data-center-piece="red-yellow"[\s\S]*fill="#FF9A3D"/, 'Web swirl must include the red-yellow transition');
+requireMatch(favicon, /data-center-piece="yellow-green"[\s\S]*fill="#C8FF3D"/, 'Web swirl must include the yellow-green transition');
+requireMatch(favicon, /data-center-piece="green-cyan"[\s\S]*fill="#3DFFB0"/, 'Web swirl must include the green-cyan transition');
+requireMatch(favicon, /data-center-piece="cyan-violet"[\s\S]*fill="#3D9BFF"/, 'Web swirl must include the cyan-violet transition');
+requireMatch(favicon, /data-center-piece="blue-red"[\s\S]*fill="#D14DFF"/, 'Web swirl must include the blue-red transition');
 forbidMatch(favicon, /<(?:rect|radialGradient)\b|axi-icon-bg/, 'Web favicon must remain transparent without an icon background');
 forbidMatch(
   favicon,
   /fill="#FFFFFF" fill-opacity="0\.2"|stroke="#FFFFFF" stroke-opacity="0\.42"|stroke-opacity=/,
   'Web favicon petal double-layer edges must use clean black outlines without translucent duplicate strokes',
 );
-if ((favicon.match(/<path\b/g) ?? []).length !== 19) {
-  throw new Error('Web favicon must contain twelve petal contour paths, six center semicircle paths, and one center join');
+if ((favicon.match(/<path\b/g) ?? []).length !== 18) {
+  throw new Error('Web favicon must contain twelve petal contour paths and six curved center pieces');
 }
 const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color);
 const outerFills = fills.slice(0, 6);
@@ -99,7 +104,7 @@ if (new Set([...outerFills, ...centerFills]).size !== 12 || centerFills.some((co
   throw new Error('Web favicon must keep six distinct center transition colors separate from the six petal colors');
 }
 forbidMatch(favicon, /transform="[^"]*translate/, 'Web favicon must not contain offset shadow or duplicate contour transforms');
-forbidMatch(favicon, /<circle\b/, 'Web favicon center must use the interlocking semicircle structure instead of a white circle');
+forbidMatch(favicon, /<circle\b|M16 15\.05 L16\.82/, 'Web favicon center must use six curved pieces instead of a circle or a geometric join');
 requireMatch(layout, /topbarPluginActions[\s\S]*axiWorkbenchIconMap\.preferences/, 'Web preferences action must use the shared settings surface');
 requireMatch(breadcrumbs, /axiWorkbenchIconMap/, 'breadcrumbs must resolve through the shared Workbench icon semantics');
 requireMatch(foundationIcons, /notification:/, 'shared semantic icon registry must include notifications');

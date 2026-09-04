@@ -43,7 +43,7 @@ if (!existsSync(iconIcns)) {
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''
-const roundedPetals = [
+const requiredIconGeometry = [
   '#0167FF',
   '#FF0167',
   '#E6FF01',
@@ -68,15 +68,17 @@ const roundedPetals = [
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  'data-center="pinwheel"',
-  'data-center-pair="0-180"',
-  'data-center-pair="60-240"',
-  'data-center-pair="120-300"',
-  'M14.5 14.7 A1.5 1.5 0 0 1 17.5 14.7 Z',
-  'M16 15.05 L16.82 15.525 L16.82 16.475 L16 16.95 L15.18 16.475 L15.18 15.525 Z',
+  'data-center="swirl"',
+  'data-center-piece="violet-blue"',
+  'data-center-piece="red-yellow"',
+  'data-center-piece="yellow-green"',
+  'data-center-piece="green-cyan"',
+  'data-center-piece="cyan-violet"',
+  'data-center-piece="blue-red"',
+  'M16 16 C17.65 15.25 17.65 12.3 16 12 A4 4 0 0 1 19.464 14 C20.029 15.579 17.475 17.054 16 16 Z',
 ]
-if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path))) {
-  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的十二色风车花瓣: ${webIcon}`)
+if (!existsSync(webIcon) || requiredIconGeometry.some((path) => !favicon.includes(path))) {
+  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的十二色弧形花心: ${webIcon}`)
   failed = true
 } else if (/<(?:rect|radialGradient)\b|axi-icon-bg/.test(favicon)) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不得包含不透明背景底板: ${webIcon}`)
@@ -84,8 +86,8 @@ if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path)
 } else if (/fill="#FFFFFF" fill-opacity="0.2"|stroke="#FFFFFF" stroke-opacity="0.42"|stroke-opacity=/.test(favicon)) {
   console.error('[verify-desktop-contracts] FAIL: 花瓣双层边缘必须使用干净黑色线条，不得保留白色或透明重影描边')
   failed = true
-} else if ((favicon.match(/<path\b/g) ?? []).length !== 19 || /transform="[^"']*translate/.test(favicon) || /<circle\b/.test(favicon)) {
-  console.error('[verify-desktop-contracts] FAIL: 六瓣花心必须由六个标准半圆和一个干净咬合点组成，不得包含偏移重影线')
+} else if ((favicon.match(/<path\b/g) ?? []).length !== 18 || /transform="[^"']*translate/.test(favicon) || /<circle\b|M16 15\.05 L16\.82/.test(favicon)) {
+  console.error('[verify-desktop-contracts] FAIL: 六瓣花心必须由六个连续弧形花心瓣组成，不得包含圆形或几何咬合点')
   failed = true
 } else {
   const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color)
@@ -95,7 +97,7 @@ if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path)
     console.error('[verify-desktop-contracts] FAIL: 花瓣与花心必须使用互不重复的十二种颜色')
     failed = true
   } else {
-    console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的十二色风车花瓣')
+    console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的十二色弧形花瓣')
   }
 }
 
@@ -105,7 +107,7 @@ if (!existsSync(desktopIconSource)) {
   console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版不存在: ${desktopIconSource}`)
   failed = true
 } else if (
-  [...roundedPetals, ...desktopIconTreatment].some((path) => !desktopIcon.includes(path)) ||
+  [...requiredIconGeometry, ...desktopIconTreatment].some((path) => !desktopIcon.includes(path)) ||
   /<(?:rect|radialGradient|circle)\b|axi-icon-bg/.test(desktopIcon)
 ) {
   console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步透明双线花瓣几何: ${desktopIconSource}`)
