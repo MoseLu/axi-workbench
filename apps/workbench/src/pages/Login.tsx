@@ -18,6 +18,8 @@ import {
 import { emitShellLoginSuccess, isTauriShell } from '../lib/shell';
 import './Login.css';
 
+const TAURI_BODY_CLASS = 'axi-tauri-shell';
+
 type Phase = 'email' | 'code' | 'verifying';
 type LoginMode = 'password' | 'email';
 type DeviceQrStatus = 'creating' | 'waiting_scan' | 'approved' | 'expired' | 'failed';
@@ -86,6 +88,15 @@ const Login: React.FC = () => {
       }
     }
   }, [isAuthenticated, navigate, next]);
+
+  // 紧凑 macOS 登录窗只用 body 标记切换窗口内边距；登录内容本身仍与 Web 共用。
+  useEffect(() => {
+    if (!isTauriShell() || typeof document === 'undefined') return;
+    document.body.classList.add(TAURI_BODY_CLASS);
+    return () => {
+      document.body.classList.remove(TAURI_BODY_CLASS);
+    };
+  }, []);
 
   // Capability discovery stays local to the Web login surface. Mobile keeps
   // its existing shared AuthProvider contract and does not gain a new request.

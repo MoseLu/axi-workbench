@@ -266,6 +266,44 @@ test('email login error banner keeps the card height stable across appearance', 
   expect(Math.abs(afterButtonBottom - beforeButtonBottom)).toBeLessThanOrEqual(0.1);
 });
 
+test('desktop shell uses a compact overlay login window', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 365 });
+  await page.route('**/api/**', (route) => route.fulfill({
+    status: 404,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: 'not mocked' }),
+  }));
+
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: '扫描二维码登录' })).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    document.body.classList.add('axi-tauri-shell');
+    const page = document.querySelector('.axi-login-page');
+    const card = document.querySelector('.axi-login-card');
+    const body = document.querySelector('.axi-login-card__body');
+    if (!page || !card || !body) return null;
+    const pageRect = page.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    return {
+      page: { width: pageRect.width, height: pageRect.height },
+      card: { x: cardRect.x, y: cardRect.y, width: cardRect.width, height: cardRect.height },
+      bodyHeight: body.getBoundingClientRect().height,
+      pageBackground: getComputedStyle(page).backgroundColor,
+      cardBackground: getComputedStyle(card).backgroundColor,
+    };
+  });
+
+  expect(layout?.page).toEqual({ width: 800, height: 365 });
+  expect(layout?.card.x).toBeCloseTo(4, 1);
+  expect(layout?.card.y).toBeCloseTo(3.5, 1);
+  expect(layout?.card.width).toBeCloseTo(792, 1);
+  expect(layout?.card.height).toBeCloseTo(358, 1);
+  expect(layout?.bodyHeight).toBeCloseTo(356, 1);
+  expect(layout?.pageBackground).toBe('rgb(247, 247, 247)');
+  expect(layout?.cardBackground).toBe('rgb(255, 255, 255)');
+});
+
 test('expired QR keeps a readable client-style scrim until the user refreshes it', async ({ page }) => {
   let createCalls = 0;
   const transaction = {

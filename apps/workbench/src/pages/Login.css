@@ -758,3 +758,15 @@
 }
 
 /* 原生窗口只提供标题栏，登录内容与 Web 端保持同一套布局。 */
+
+/* macOS 登录窗使用标题栏 Overlay：窗口尺寸即为登录面板尺寸，
+ * 交通灯浮在卡片上方，Web 端的响应式留白不带入桌面壳。 */
+body.axi-tauri-shell .axi-login-page {
+  min-height: 100vh;
+  padding: 0;
+}
+
+body.axi-tauri-shell .axi-login-card {
+  width: min(100%, 49.5rem);
+  max-width: 100%;
+}

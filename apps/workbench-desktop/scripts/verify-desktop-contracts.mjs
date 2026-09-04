@@ -45,11 +45,20 @@ if (!existsSync(iconIcns)) {
 
 const config = existsSync(tauriConfig) ? JSON.parse(readFileSync(tauriConfig, 'utf8')) : null
 const loginWindow = config?.app?.windows?.find((window) => window.label === 'login')
-if (loginWindow?.theme !== 'Light' || loginWindow?.backgroundColor?.toLowerCase() !== '#f7f7f7') {
-  console.error(`[verify-desktop-contracts] FAIL: 登录窗口必须使用 Web 登录页的浅色画布: ${tauriConfig}`)
+if (
+  loginWindow?.width !== 800 ||
+  loginWindow?.height !== 365 ||
+  loginWindow?.minWidth !== 800 ||
+  loginWindow?.minHeight !== 365 ||
+  loginWindow?.titleBarStyle !== 'Overlay' ||
+  loginWindow?.hiddenTitle !== true ||
+  loginWindow?.theme !== 'Light' ||
+  loginWindow?.backgroundColor?.toLowerCase() !== '#f7f7f7'
+) {
+  console.error(`[verify-desktop-contracts] FAIL: 登录窗口必须是 800x365 的 Web 对齐紧凑画布: ${tauriConfig}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 登录窗口原生背景与 Web 登录画布一致')
+  console.log('[verify-desktop-contracts] OK: 登录窗口使用 800x365 Overlay 浅色紧凑画布')
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''

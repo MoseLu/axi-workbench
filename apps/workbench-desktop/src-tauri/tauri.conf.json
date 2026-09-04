@@ -14,10 +14,10 @@
       {
         "title": "Workbench — 登录",
         "label": "login",
-        "width": 900,
-        "height": 600,
-        "minWidth": 720,
-        "minHeight": 540,
+        "width": 800,
+        "height": 365,
+        "minWidth": 800,
+        "minHeight": 365,
         "resizable": false,
         "fullscreen": false,
         "center": true,
@@ -25,7 +25,8 @@
         "transparent": false,
         "theme": "Light",
         "backgroundColor": "#f7f7f7",
-        "titleBarStyle": "Visible",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "visible": true
       },
       {
