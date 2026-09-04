@@ -40,7 +40,8 @@ android/
         └── res/
             ├── values/                # strings / colors / themes
             ├── values-v31/            # Android 12+ 系统启动页主题
-            ├── drawable-nodpi/        # 启动图标与系统 Splash 的透明六瓣十二色素材
+            ├── drawable-nodpi/        # 启动图标的透明六瓣十二色素材
+            ├── drawable/              # 系统 Splash 的无图标过渡资源
             ├── mipmap-*/               # 带安全边距的旧 Android 密度回退图标
             ├── xml/                   # backup_rules / data_extraction_rules
 ```
@@ -49,7 +50,7 @@ android/
 
 ### 启动图标尺寸规则
 
-`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；Android 12+ 系统启动页使用同一花型的额外缩小版 `ic_splash_icon.png`，Compose loading 使用 launcher 前景的安全区版本。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
+`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；Android 12+ 系统启动页使用 `drawable/ic_splash_blank.xml` 做同色无图标过渡，唯一可见的品牌 Loading 是 Compose `SplashScreen` 的安全区花型。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
 
 ### 1. 打开工程
 ```

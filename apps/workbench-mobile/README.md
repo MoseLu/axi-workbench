@@ -29,7 +29,7 @@ pnpm --filter @axi/workbench-mobile verify:contracts
 
 ### 品牌图标
 
-移动端的浏览器标签图标、主屏图标、原生 Android 启动图标、系统 Splash 与登录页 Logo 使用与 Web 相同的六瓣十二色花型。`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致；Android launcher 使用居中安全边距派生版，Android 12+ 系统 Splash 使用额外缩小的同源素材，避免启动器或系统 Splash 再次放大后裁切花瓣或合成黑色底。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
+移动端的浏览器标签图标、主屏图标、原生 Android 启动图标、系统 Splash 与登录页 Logo 使用与 Web 相同的六瓣十二色花型。`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致；Android launcher 使用居中安全边距派生版，Android 12+ 系统 Splash 只作为同色无图标过渡，唯一可见的品牌 Loading 由 Compose 统一绘制，避免冷启动出现重复图标或系统二次放大。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
 
 ## 真机 Android 工程
 

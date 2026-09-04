@@ -3,9 +3,9 @@
     <style name="Theme.WorkBench" parent="Theme.WorkBench.Base">
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:forceDarkAllowed">false</item>
-        <!-- Android 12+ 系统启动页与 Compose 启动页使用同一份安全区花型。 -->
+        <!-- 系统层只做无品牌过渡，品牌 Loading 统一由 Compose SplashScreen 绘制。 -->
         <item name="android:windowSplashScreenBackground">@color/wechat_chrome_bg</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_blank</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
     </style>
 </resources>
