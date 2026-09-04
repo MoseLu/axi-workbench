@@ -8,7 +8,7 @@
 
 Axi Workbench 不是“七个相同类型的 App”，而是一个混合运行时项目：
 
-1. **真正的用户工作台只有两个独立客户端**：`apps/workbench`（Web）和 `apps/workbench-mobile`（移动端）。它们共享认证、API 合同、语言偏好、设计令牌和 `@axi/workbench-foundation`，不共享页面与布局实现。
+1. **真正的用户工作台只有两个独立客户端**：`apps/workbench`（Web）和 `apps/workbench-mobile`（Web 移动端 + 原生 Android）。它们共享认证、API 合同、语言偏好、设计令牌和 `@axi/workbench-foundation`，不共享页面与布局实现。
 2. **`apps/devsvc-dashboard` 是 Host/运维壳**：它负责本地服务和可挂载应用的启动、展示与状态，不是第三个用户门户。
 3. **`axi-coder`、`verification-inbox`、Fleet Console、App Search、Ollama Menu Assistant 是垂直工具或宿主子应用**，不能因为它们位于 `apps/` 或能被 Host 打开，就把它们都归类成同一套 Dashboard。
 4. **根 `pnpm` workspace 只覆盖一部分源码**。`app-search-system`、`ollama-menu-assistant`、`infra/fleet-console/dashboard`、根 `backend/` 以及 `tools/axi-app-cli` 内部子包都有自己的运行/构建边界，不能用 `pnpm -r` 的结果代替完整源码清单。
@@ -18,7 +18,7 @@ Axi Workbench 不是“七个相同类型的 App”，而是一个混合运行�
 ```mermaid
 flowchart LR
   User[用户] --> Web["apps/workbench\nWeb 管理端"]
-  User --> Mobile["apps/workbench-mobile\n移动端"]
+  User --> Mobile["apps/workbench-mobile\nWeb 移动端 + Android"]
   Host["apps/devsvc-dashboard\nHost / 运维壳"] --> Coder["apps/axi-coder\nHosted 编码工具"]
   Host --> Inbox["apps/verification-inbox\nHosted OTP 工具"]
   Host --> Fleet["infra/fleet-console/dashboard\nFleet Dashboard"]
@@ -41,7 +41,7 @@ flowchart LR
 | 角色 | 路径 | 根 workspace | 主入口/启动事实 | 当前归类 |
 |---|---|---:|---|---|
 | Web 用户端 | `apps/workbench` | 是 | `apps/workbench/src/main.tsx`；`pnpm dev:workbench` | 唯一 Web 管理控制中心；Axi Dashboard Chrome、侧栏、标签、设置以及 C 级复杂管理/治理只属于这里 |
-| 移动用户端 | `apps/workbench-mobile` | 是 | `apps/workbench-mobile/src/main.tsx`；`pnpm dev:mobile` | 唯一移动角色执行/辅助端；独立路由、顶栏、4 个常驻导航项、顶部 Scan 动作和面向 A/B 级任务的移动页面组合 |
+| 移动用户端 | `apps/workbench-mobile`（含 `android/`） | 是（Web package；Android 使用 Gradle） | Web：`apps/workbench-mobile/src/main.tsx`；`pnpm dev:mobile`；Android：`apps/workbench-mobile/android/app/src/main/java/com/workbench/mobile/MainActivity.kt`；`./gradlew :app:installDebug` | 唯一移动角色执行/辅助端；Web 与原生 Android 共享产品契约和 API 边界，各自维护独立 UI 实现 |
 | Host / 运维壳 | `apps/devsvc-dashboard` | 是 | `apps/devsvc-dashboard/src/main.tsx`；`pnpm dev:dashboard`；挂载表见 `config/axi-apps.json` | 本地服务管理和 Axi 应用 Host，不是第二用户门户 |
 | Hosted 编码工具 | `apps/axi-coder` | 是 | `apps/axi-coder/src/main.tsx`；Tauri/Rust shell | 被 Host 挂载的开发工具，拥有自己的页面与原生边界 |
 | Hosted OTP 工具 | `apps/verification-inbox` | 是 | `apps/verification-inbox/src/main.tsx`；真实邮箱能力由 Tauri/Python 边界承载 | 垂直工具，不承担工作台门户职责 |
@@ -51,7 +51,7 @@ flowchart LR
 | 应用脚手架 CLI | `tools/axi-app-cli` | 仅根 wrapper | 顶层 `tools/axi-app-cli/AGENTS.md` / `README.md`；内部另有 workspace | 独立子 monorepo；工具链，不是业务 App |
 | Python 运行时 | `backend/` | 否 | `backend/pyproject.toml`；mini-agent 相关入口 | 根仓库内嵌运行时，尚未纳入根 pnpm 生命周期；不与 `services/*` 混称 |
 
-“根 workspace = 是”只表示该目录有可被根 `pnpm-workspace.yaml` 发现的 package manifest，不表示它是用户入口；“根 workspace = 否”也不表示代码已经废弃。
+“根 workspace = 是”只表示该目录有可被根 `pnpm-workspace.yaml` 发现的 package manifest，不表示它是用户入口；“根 workspace = 否”也不表示代码已经废弃。Android 子工程属于同一 monorepo，但由 Gradle 管理，不是 pnpm package。
 
 ## 根 pnpm workspace 的实际边界
 

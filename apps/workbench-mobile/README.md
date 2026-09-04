@@ -9,6 +9,7 @@
 | 启动 | 仓库根：`pnpm dev:mobile` |
 | 本地 URL | http://127.0.0.1:5174 |
 | 路由 | `/home`、`/projects`、`/workspace`、`/scan`、`/scan/pair`、`/me`、`/inbox`、`/search`、`/login` |
+| 原生 Android | `apps/workbench-mobile/android`；`./gradlew :app:installDebug` |
 
 ## 边界
 
@@ -28,8 +29,17 @@ pnpm --filter @axi/workbench-mobile verify:contracts
 
 ### 品牌图标
 
-移动端的浏览器标签图标、主屏图标与登录页 Logo 使用与 Web 相同的六瓣十二色花型；`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致，PNG 资源由该 SVG 生成。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
+移动端的浏览器标签图标、主屏图标、原生 Android 启动图标与登录页 Logo 使用与 Web 相同的六瓣十二色花型。`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致；Android 使用同一份透明 PNG 作为自适应图标前景和旧系统密度回退。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
 
-## 真机 App 边界
+## 真机 Android 工程
 
-本目录是 Web/Vite 移动端客户端，不是假装成真机原生 App 的 WebView 宿主。当前已安装在真机上的 `com.workbench.mobile.debug` APK 的原生源码不属于本仓库，因此不在这里生成、替换或宣称可以重建该 APK；真机 UI 以设备截图为验收基线，网页移动端只维护同一信息架构与交互契约。
+`apps/workbench-mobile/android` 是 WorkBench 原生 Android 客户端的唯一源码入口，与本目录的 Web/Vite 客户端同属一个移动端产品边界，但保持独立实现，不使用 WebView 伪装原生 App。它维护 Kotlin/Compose UI、CameraX/ML Kit 扫码、API Gateway 会话和真机运行时。
+
+```bash
+cd apps/workbench-mobile/android
+./gradlew test
+./gradlew assembleDebug
+adb shell am start -n com.workbench.mobile.debug/com.workbench.mobile.MainActivity
+```
+
+Debug 构建的 applicationId 为 `com.workbench.mobile.debug`，版本由 `app/build.gradle.kts` 维护。不要在仓库外维护第二份 WorkBench Android 工程。

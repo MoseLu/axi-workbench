@@ -33,6 +33,7 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | --- | --- | --- |
 | Web admin UI | `apps/workbench` | `pnpm --filter @axi/workbench type-check`, `pnpm --filter @axi/workbench test`, `pnpm --filter @axi/workbench build`, `node apps/workbench/scripts/verify-ui-contracts.mjs` |
 | Mobile application UI | `apps/workbench-mobile` | 微信式居中顶栏、加号菜单、四个常驻导航项（Home / Projects / Workspace / Me）、角标和顶部扫码动作；`pnpm --filter @axi/workbench-mobile type-check`, `pnpm --filter @axi/workbench-mobile test`, `pnpm --filter @axi/workbench-mobile build`, `pnpm --filter @axi/workbench-mobile verify:contracts` |
+| Native Android application | `apps/workbench-mobile/android` | Kotlin/Compose 原生客户端、CameraX/ML Kit 扫码、Gateway 会话和真机启动；`./gradlew test`, `./gradlew assembleDebug` |
 | Shared app foundation | `packages/workbench-foundation` | `pnpm --filter @axi/workbench-foundation type-check` |
 | Go API Gateway | `services/api-gateway` | `cd services/api-gateway && go test -race ./...`；验证 JWKS/OIDC state、Bearer audience/scope、HttpOnly session、精确 CORS、安全头剥离、Redis 限流和 OTLP trace continuation |
 | Axi Identity adapter | `services/identity-adapter` | `cd services/identity-adapter && go test -race ./...`；验证 Redis QR 一次性 resume、轮询无 token 泄露、邮箱令牌单次消费，以及 `make verify-identity-mailpit` SMTP smoke |

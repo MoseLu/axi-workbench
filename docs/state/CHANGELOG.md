@@ -6,6 +6,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Added
 
+- 将 WorkBench 原生 Android 客户端收敛到 `apps/workbench-mobile/android`，纳入同一 monorepo 的 Kotlin/Compose 源码、Gradle 工程、测试、API 会话、扫码流程和统一六瓣十二色启动图标；Debug 构建固定对应 `com.workbench.mobile.debug`、版本 `1.0.8 (9)`。
+
 - Added the Personal OS v0.1 Project Queue surface inside Workbench: a
   control-plane SQLite overlay, versioned queue/focus/project contracts,
   Today and Workbench routes, Inspector editing, explicit runtime/warning
