@@ -38,6 +38,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 修正原生 Android 的启动链：Compose loading 不再显示旧的蓝色方块，两阶段启动页统一使用六瓣十二色花型；Android 12+ 系统 Splash 使用额外安全区素材，避免系统放大导致花瓣越界或出现黑色背景。
+
 - `packages/ui` 的 Vitest 浏览器测试链统一到 `vitest` / `@vitest/browser-playwright` / `@vitest/coverage-v8` `4.1.11`，并将 Vite 更新到 `7.3.1`；移除失效的空 `eslint.config.js` 垫片，恢复 legacy ESLint 配置的可执行 lint 入口。`packages/ui` build、4 个测试文件共 13 个测试、lint 均通过；工作区 critical audit 为 0，仍有 10 个 `any` warnings。
 - Replaced Mobile Home, Projects, Workspace and search showcase data with authenticated Control Plane projections. Unpaired, unauthorized and unavailable states now stay explicit rather than rendering static substitutes; Mobile keeps four persistent navigation items and the top Scan action.
 - Revalidated the desktop workbench against official Ctrip eBooking, Jira, GitHub Projects, GitLab Operations and Shopify admin documentation. Removed the incorrectly added Web generic scanner from navigation, search and implementation; the legacy URL now safely returns to the dashboard. Web now exposes an actual Control Plane-backed “运行状态” work surface and a filterable “工作项” queue instead of a mobile-shaped scanner tool or fabricated metrics.

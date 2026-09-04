@@ -5,10 +5,10 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,13 +17,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import com.workbench.mobile.BuildConfig
+import com.workbench.mobile.R
 import com.workbench.mobile.data.network.GatewayEndpointStore
 import com.workbench.mobile.ui.theme.Spacing
 import dagger.hilt.android.EntryPointAccessors
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import com.workbench.mobile.ui.theme.Size
 
@@ -61,38 +63,13 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.s4)
         ) {
-            Box(
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = "Axi Workbench",
                 modifier = Modifier
-                    .size(Size.avatarMd)
-                    .background(
-                        MaterialTheme.colorScheme.primary,
-                        RoundedCornerShape(Spacing.s4)
-                    )
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(Spacing.s3),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.s1)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Spacing.s2)
-                            .background(
-                                MaterialTheme.colorScheme.onPrimary,
-                                RoundedCornerShape(Spacing.s0_5)
-                            )
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Spacing.s2)
-                            .background(
-                                MaterialTheme.colorScheme.onPrimary,
-                                RoundedCornerShape(Spacing.s0_5)
-                            )
-                    )
-                }
-            }
+                    .size(Size.splashBrand),
+                contentScale = ContentScale.Fit
+            )
 
             Text(
                 text = "Axi Workbench",

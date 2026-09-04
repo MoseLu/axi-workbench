@@ -2,8 +2,6 @@
 <resources>
     <color name="brand_primary">#3D5AFE</color>
     <color name="brand_on_primary">#FFFFFF</color>
-    <!-- The canonical flower PNG supplies its own color; keep the adaptive background transparent. -->
-    <color name="ic_launcher_background">#00000000</color>
     <!-- 微信顶栏/页底灰，窗口必须用不透明底色，否则 Activity translucent 叠色发灰 -->
     <color name="wechat_chrome_bg">#EDEDED</color>
     <color name="wechat_ink">#181818</color>
