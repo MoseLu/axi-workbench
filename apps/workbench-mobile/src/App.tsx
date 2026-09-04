@@ -59,7 +59,7 @@ const MobileSurface: React.FC = () => (
 
 export default function App() {
   return (
-    <AxiThemeProvider defaultPreference="system" defaultPresetName="default" storageNamespace="axi.workbench.mobile">
+    <AxiThemeProvider defaultPreference="system" defaultStylePreset="black-gold" storageNamespace="axi.workbench.mobile">
       <MobileSurface />
     </AxiThemeProvider>
   );

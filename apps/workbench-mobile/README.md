@@ -26,6 +26,10 @@ pnpm --filter @axi/workbench-mobile build
 pnpm --filter @axi/workbench-mobile verify:contracts
 ```
 
+### 品牌图标
+
+移动端的浏览器标签图标、主屏图标与登录页 Logo 使用与 Web 相同的六瓣十二色花型；`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致，PNG 资源由该 SVG 生成。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
+
 ## 真机 App 边界
 
 本目录是 Web/Vite 移动端客户端，不是假装成真机原生 App 的 WebView 宿主。当前已安装在真机上的 `com.workbench.mobile.debug` APK 的原生源码不属于本仓库，因此不在这里生成、替换或宣称可以重建该 APK；真机 UI 以设备截图为验收基线，网页移动端只维护同一信息架构与交互契约。

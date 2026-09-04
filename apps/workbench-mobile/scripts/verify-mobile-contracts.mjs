@@ -11,6 +11,7 @@ const forbidMatch = (text, pattern, message) => {
 };
 
 const app = read('src/App.tsx');
+const index = read('index.html');
 const shell = read('src/layouts/MobileShell.tsx');
 const header = read('src/components/MobileHeader.tsx');
 const tabBar = read('src/components/MobileTabBar.tsx');
@@ -30,6 +31,8 @@ const workspace = read('src/pages/FocusPage.tsx');
 const search = read('src/pages/SearchPage.tsx');
 const packageJson = read('package.json');
 const mobileStyles = read('src/styles/wechat-mobile.css');
+const mobileFavicon = read('public/favicon.svg');
+const webFavicon = fs.readFileSync(path.resolve(appRoot, '../workbench/public/favicon.svg'), 'utf8');
 
 requireMatch(app, /MobileShell/, 'mobile application must own an independent shell');
 requireMatch(app, /WorkbenchLocaleProvider[\s\S]*BrowserRouter/, 'mobile application must mount shared locale before its own router');
@@ -44,8 +47,22 @@ forbidMatch(navigation, /\{\s*key:\s*'scan'/, 'scan must not occupy a bottom-nav
 requireMatch(header, /navigate\('\/scan'\)/, 'mobile header plus menu must own the scan entry');
 forbidMatch(header, /wb-mobile-topbar__btn--scan|login\/confirm-web/, 'mobile profile must not add a second top-bar scan affordance; QR flows belong to the scan menu');
 requireMatch(packageJson, /"@axi\/workbench-foundation"/, 'mobile app must consume the shared foundation package');
+requireMatch(index, /rel="icon" type="image\/png" sizes="32x32" href="\/favicon-32\.png"/, 'mobile index must expose the shared 32px brand icon');
+requireMatch(index, /rel="icon" type="image\/png" sizes="48x48" href="\/favicon-48\.png"/, 'mobile index must expose the shared 48px brand icon');
+requireMatch(index, /rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/, 'mobile index must expose the shared SVG brand icon');
+requireMatch(index, /rel="apple-touch-icon" sizes="180x180" href="\/apple-touch-icon\.png"/, 'mobile index must expose the shared home-screen brand icon');
+if (mobileFavicon !== webFavicon) {
+  throw new Error('mobile favicon must remain byte-identical to the Workbench Web flower mark');
+}
+if ((mobileFavicon.match(/<path\b/g) ?? []).length !== 18) {
+  throw new Error('mobile favicon must contain the twelve petal contour paths and six curved center pieces');
+}
+const mobileFills = [...mobileFavicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color);
+if (new Set(mobileFills.slice(0, 12)).size !== 12 || mobileFills.slice(6, 12).some((color) => mobileFills.slice(0, 6).includes(color))) {
+  throw new Error('mobile favicon must preserve the twelve distinct bright brand colors');
+}
 requireMatch(mobileIcons, /AxiSvgIcon[\s\S]*resolveAxiWorkbenchIcon/, 'mobile icons must resolve to the shared Axi SVG registry');
-requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared four-color Axi mark');
+requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared twelve-color Axi mark');
 requireMatch(login, /login\.emailCode/, 'mobile login must offer the QQ Mail verification entry');
 requireMatch(login, /requestEmailCode/, 'mobile login must request a server-side email challenge');
 requireMatch(login, /confirmEmailCode/, 'mobile login must confirm the server-side email challenge');
