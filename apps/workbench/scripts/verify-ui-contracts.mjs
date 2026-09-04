@@ -78,7 +78,7 @@ for (const path of [
   /data-center-piece="green-cyan"/,
   /data-center-piece="cyan-violet"/,
   /data-center-piece="blue-red"/,
-  /M16 16 C17\.65 15\.25 17\.65 12\.3 16 12 A4 4 0 0 1 19\.464 14 C20\.029 15\.579 17\.475 17\.054 16 16 Z/,
+  /M16 16 C17\.073 15\.513 17\.073 13\.595 16 13\.4 A2\.6 2\.6 0 0 1 18\.252 14\.7 C18\.619 15\.726 16\.959 16\.685 16 16 Z/,
 ]) {
   requireMatch(favicon, path, 'Web favicon must keep the twelve-color curved swirl center');
 }
