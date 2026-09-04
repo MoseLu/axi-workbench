@@ -1,31 +1,36 @@
 package com.workbench.mobile
 
-import android.app.Activity
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Bundle
-import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.window.SplashScreenView
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.annotation.RequiresApi
 import androidx.core.view.WindowCompat
 import com.workbench.mobile.data.network.GatewayEndpointStore
+import com.workbench.mobile.ui.startup.BrandLoadingView
 import com.workbench.mobile.ui.startup.WorkBenchStartupGate
 import com.workbench.mobile.ui.theme.WorkBenchTheme
 import dagger.hilt.android.AndroidEntryPoint
-import java.lang.reflect.Proxy
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var gatewayEndpointStore: GatewayEndpointStore
+
+    private lateinit var startupRoot: FrameLayout
+    private lateinit var startupLoadingView: BrandLoadingView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -39,41 +44,68 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         enforceOpaqueWindow()
 
-        // 立即挂载唯一可见的品牌 Loading，让 Android 12 系统 Splash
-        // 无缝交给 Compose；网关恢复在 Loading 内完成，避免系统 Logo 停留过久。
-        setContent {
+        // 先用不依赖 Compose 的原生 View 绘制完整品牌 Loading，让系统 Splash
+        // 结束后立即进入同一页；Compose 工作区在首帧之后挂载到它的下方。
+        showNativeStartup()
+    }
+
+    private fun showNativeStartup() {
+        startupLoadingView = BrandLoadingView(this)
+        startupRoot = FrameLayout(this).apply {
+            setBackgroundColor(getColor(R.color.wechat_chrome_bg))
+            addView(
+                startupLoadingView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        setContentView(startupRoot)
+
+        // 让原生品牌页先完成一次真实绘制，随后再启动 Compose，避免冷启动时
+        // Compose 首次组合把系统图标层独占在屏幕上约一秒。
+        startupRoot.postOnAnimation { mountComposeContent() }
+    }
+
+    private fun mountComposeContent() {
+        if (isFinishing || isDestroyed) return
+
+        val composeView = ComposeView(this).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+        // Compose 工作区在底层渲染，原生品牌 Loading 保持在最上层直到 ready。
+        startupRoot.addView(composeView, 0)
+        composeView.setContent {
             WorkBenchTheme {
                 Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     WorkBenchStartupGate(
-                        onStartup = gatewayEndpointStore::hydrate
+                        onStartup = gatewayEndpointStore::hydrate,
+                        onReady = ::dismissNativeStartup
                     )
                 }
             }
         }
     }
 
-    @Suppress("PrivateApi")
-    private fun removePlatformSplashExitAnimation() {
-        val splashScreen = Activity::class.java.getMethod("getSplashScreen").invoke(this)
-        val listenerClass = Class.forName("android.window.SplashScreen\$OnExitAnimationListener")
-        val listener = Proxy.newProxyInstance(
-            listenerClass.classLoader,
-            arrayOf(listenerClass)
-        ) { _, method, args ->
-            if (method.name == "onSplashScreenExit") {
-                val splashView = args?.firstOrNull() as? View
-                splashView?.javaClass?.getMethod("remove")?.invoke(splashView)
-            }
-            null
+    private fun dismissNativeStartup() {
+        if (::startupLoadingView.isInitialized && startupLoadingView.parent != null) {
+            startupRoot.removeView(startupLoadingView)
         }
-        splashScreen.javaClass
-            .getMethod("setOnExitAnimationListener", listenerClass)
-            .invoke(splashScreen, listener)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun removePlatformSplashExitAnimation() {
+        getSplashScreen().setOnExitAnimationListener { splashScreenView: SplashScreenView ->
+            splashScreenView.remove()
+        }
     }
 
     private fun enforceOpaqueWindow() {
