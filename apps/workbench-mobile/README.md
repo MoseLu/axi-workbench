@@ -29,7 +29,7 @@ pnpm --filter @axi/workbench-mobile verify:contracts
 
 ### 品牌图标
 
-移动端的浏览器标签图标、主屏图标、原生 Android 启动图标与登录页 Logo 使用与 Web 相同的六瓣十二色花型。`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致；Android 使用同一份透明 PNG 作为自适应图标前景和旧系统密度回退。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
+移动端的浏览器标签图标、主屏图标、原生 Android 启动图标与登录页 Logo 使用与 Web 相同的六瓣十二色花型。`public/favicon.svg` 必须与 `apps/workbench/public/favicon.svg` 保持一致；Android 使用该透明 PNG 的居中安全边距派生版作为普通位图启动图标，避免自适应图标前景层被启动器再次放大后裁切花瓣或合成黑色底。移动端 UI 内的 Logo 继续通过 `@axi/core` 共享组件渲染。
 
 ## 真机 Android 工程
 

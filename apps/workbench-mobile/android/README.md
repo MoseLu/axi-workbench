@@ -39,13 +39,16 @@ android/
         │       └── AppModule.kt
         └── res/
             ├── values/                # strings / colors / themes
-            ├── drawable-nodpi/        # 透明六瓣十二色启动图标前景
-            ├── mipmap-*/               # 旧 Android 版本密度回退图标
+            ├── drawable-nodpi/        # 带安全边距的透明六瓣十二色前景
+            ├── mipmap-*/               # 带安全边距的旧 Android 密度回退图标
             ├── xml/                   # backup_rules / data_extraction_rules
-            └── mipmap-anydpi-v26/     # 启动图标
 ```
 
 ## 在 Android Studio 中打开
+
+### 启动图标尺寸规则
+
+`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
 
 ### 1. 打开工程
 ```
