@@ -23,6 +23,8 @@
         "center": true,
         "decorations": true,
         "transparent": false,
+        "theme": "Light",
+        "backgroundColor": "#f7f7f7",
         "titleBarStyle": "Visible",
         "visible": true
       },

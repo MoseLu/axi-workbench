@@ -58,7 +58,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const rect = (selector: string) => {
       const element = document.querySelector(selector);
       const box = element?.getBoundingClientRect();
-      return box ? { top: box.top, bottom: box.bottom, height: box.height } : null;
+      return box ? { top: box.top, bottom: box.bottom, width: box.width, height: box.height } : null;
     };
     const right = rect('.axi-login-right');
     const tabs = rect('.axi-login-right__tabs');
@@ -67,6 +67,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const rightCenter = right ? (right.top + right.bottom) / 2 : null;
     return {
       cardTop: rect('.axi-login-card')?.top ?? null,
+      cardWidth: rect('.axi-login-card')?.width ?? null,
       cardHeight: rect('.axi-login-card')?.height ?? null,
       cardBottom: rect('.axi-login-card')?.bottom ?? null,
       bodyHeight: rect('.axi-login-card__body')?.height ?? null,
@@ -85,6 +86,31 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // The email row and the OTP row share the same height so the two visible
   // input rows visually align (1px row borders explain the 2px delta).
   expect(Math.abs((layout.emailRow?.height ?? 0) - (layout.codeRow?.height ?? 0))).toBeLessThanOrEqual(8);
+
+  // The Tauri login window reuses this exact Web surface. The page must own
+  // the viewport background so the dark application body cannot form a frame.
+  const surfaces = await page.evaluate(() => {
+    const page = document.querySelector('.axi-login-page');
+    const card = document.querySelector('.axi-login-card');
+    const body = document.querySelector('.axi-login-card__body');
+    if (!page || !card || !body) return null;
+    const cardRect = card.getBoundingClientRect();
+    const bodyRect = body.getBoundingClientRect();
+    return {
+      pageBackground: getComputedStyle(page).backgroundColor,
+      cardWidth: cardRect.width,
+      cardHeight: cardRect.height,
+      bodyHeight: bodyRect.height,
+      cardBackground: getComputedStyle(card).backgroundColor,
+    };
+  });
+  expect(surfaces).toEqual({
+    pageBackground: 'rgb(247, 247, 247)',
+    cardWidth: layout.cardWidth,
+    cardHeight: layout.cardHeight,
+    bodyHeight: layout.bodyHeight,
+    cardBackground: 'rgb(255, 255, 255)',
+  });
 
   const baseline = layout;
   await expect(page.getByRole('tab', { name: '邮箱登录' })).toHaveAttribute('aria-selected', 'true');

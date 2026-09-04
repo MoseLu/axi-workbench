@@ -15,6 +15,7 @@ const workbenchDist = join(repoRoot, 'apps', 'workbench', 'dist')
 const targetDir = join(desktopDir, 'workbench-dist')
 const iconIcns = join(desktopDir, 'src-tauri', 'icons', 'icon.icns')
 const desktopIconSource = join(desktopDir, 'src-tauri', 'icons', 'icon.svg')
+const tauriConfig = join(desktopDir, 'src-tauri', 'tauri.conf.json')
 const webIcon = join(repoRoot, 'apps', 'workbench', 'public', 'favicon.svg')
 
 let failed = false
@@ -40,6 +41,15 @@ if (!existsSync(iconIcns)) {
   failed = true
 } else {
   console.log(`[verify-desktop-contracts] OK: icon.icns 已就位`)
+}
+
+const config = existsSync(tauriConfig) ? JSON.parse(readFileSync(tauriConfig, 'utf8')) : null
+const loginWindow = config?.app?.windows?.find((window) => window.label === 'login')
+if (loginWindow?.theme !== 'Light' || loginWindow?.backgroundColor?.toLowerCase() !== '#f7f7f7') {
+  console.error(`[verify-desktop-contracts] FAIL: 登录窗口必须使用 Web 登录页的浅色画布: ${tauriConfig}`)
+  failed = true
+} else {
+  console.log('[verify-desktop-contracts] OK: 登录窗口原生背景与 Web 登录画布一致')
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''
