@@ -57,7 +57,7 @@ const requiredIconGeometry = [
   '#3D9BFF',
   '#8E4DFF',
   '#000000',
-  'M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z',
+  'M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L14.976 14.223 A2.05 2.05 0 0 1 17.024 14.223 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z',
   'M16 2.05 C14.4 3 13.1 4.6 13 6.3 C12.9 8 14 10 15.3 12.4 C15.55 12.9 15.8 13.45 16 13.95 C16.2 13.45 16.45 12.9 16.7 12.4 C18 10 19.1 8 19 6.3 C18.9 4.6 17.6 3 16 2.05 Z',
   'stroke="#000000"',
   'stroke-width="0.28"',
@@ -75,7 +75,7 @@ const requiredIconGeometry = [
   'data-center-piece="green-cyan"',
   'data-center-piece="cyan-violet"',
   'data-center-piece="blue-red"',
-  'M16 16 C17.073 15.513 17.073 13.595 16 13.4 A2.6 2.6 0 0 1 18.252 14.7 C18.619 15.726 16.959 16.685 16 16 Z',
+  'M16 16 C16.805 15.635 16.805 14.196 16 14.05 A1.95 1.95 0 0 1 17.689 15.025 C17.964 15.795 16.719 16.514 16 16 Z',
 ]
 if (!existsSync(webIcon) || requiredIconGeometry.some((path) => !favicon.includes(path))) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的十二色弧形花心: ${webIcon}`)
@@ -87,7 +87,7 @@ if (!existsSync(webIcon) || requiredIconGeometry.some((path) => !favicon.include
   console.error('[verify-desktop-contracts] FAIL: 花瓣双层边缘必须使用干净黑色线条，不得保留白色或透明重影描边')
   failed = true
 } else if ((favicon.match(/<path\b/g) ?? []).length !== 18 || /transform="[^"']*translate/.test(favicon) || /<circle\b|M16 15\.05 L16\.82/.test(favicon)) {
-  console.error('[verify-desktop-contracts] FAIL: 六瓣花心必须由六个连续弧形花心瓣组成，不得包含圆形或几何咬合点')
+  console.error('[verify-desktop-contracts] FAIL: 六瓣花心必须由六个连续弧形花心瓣组成，且花瓣根部不得被中心覆盖')
   failed = true
 } else {
   const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color)
