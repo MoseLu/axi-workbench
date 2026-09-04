@@ -64,7 +64,13 @@ for (const path of [
   /#67FF01/,
   /#00E5FF/,
   /#9901FF/,
-  /<circle[^>]*cx="16"[^>]*cy="16"[^>]*r="2\.2"/,
+  /linearGradient id="axi-transition-violet-red"/,
+  /linearGradient id="axi-transition-red-yellow"/,
+  /linearGradient id="axi-transition-yellow-green"/,
+  /linearGradient id="axi-transition-green-cyan"/,
+  /linearGradient id="axi-transition-cyan-violet"/,
+  /linearGradient id="axi-transition-violet-blue"/,
+  /M16 16 L15\.275 14\.744 A0\.725 0\.725 0 0 1 16\.725 14\.744 Z/,
 ]) {
   requireMatch(favicon, path, 'Web favicon must keep six rounded petals center-symmetric');
 }
@@ -74,10 +80,11 @@ forbidMatch(
   /fill="#FFFFFF" fill-opacity="0\.2"|stroke="#FFFFFF" stroke-opacity="0\.42"|stroke-opacity=/,
   'Web favicon petal double-layer edges must use clean black outlines without translucent duplicate strokes',
 );
-if ((favicon.match(/<path\b/g) ?? []).length !== 12) {
-  throw new Error('Web favicon must contain exactly two contour paths for each of six petals');
+if ((favicon.match(/<path\b/g) ?? []).length !== 18) {
+  throw new Error('Web favicon must contain twelve petal contour paths and six center semicircle paths');
 }
 forbidMatch(favicon, /transform="[^"]*translate/, 'Web favicon must not contain offset shadow or duplicate contour transforms');
+forbidMatch(favicon, /<circle\b/, 'Web favicon center must use the interlocking semicircle structure instead of a white circle');
 requireMatch(layout, /topbarPluginActions[\s\S]*axiWorkbenchIconMap\.preferences/, 'Web preferences action must use the shared settings surface');
 requireMatch(breadcrumbs, /axiWorkbenchIconMap/, 'breadcrumbs must resolve through the shared Workbench icon semantics');
 requireMatch(foundationIcons, /notification:/, 'shared semantic icon registry must include notifications');

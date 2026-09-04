@@ -14,12 +14,12 @@ mkdirSync(iconsDir, { recursive: true })
 const svg = readFileSync(webIconPath, 'utf8').trim()
 const requiredMarks = [
   'viewBox="0 0 32 32"',
-  'fill="#0167FF"',
-  'fill="#FF0167"',
-  'fill="#E6FF01"',
-  'fill="#67FF01"',
-  'fill="#00E5FF"',
-  'fill="#9901FF"',
+  'stop-color="#0167FF"',
+  'stop-color="#FF0167"',
+  'stop-color="#E6FF01"',
+  'stop-color="#67FF01"',
+  'stop-color="#00E5FF"',
+  'stop-color="#9901FF"',
 ]
 const requiredGeometry = [
   'd="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z"',
@@ -33,7 +33,13 @@ const requiredGeometry = [
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  '<circle cx="16" cy="16" r="2.2"',
+  'linearGradient id="axi-transition-violet-red"',
+  'linearGradient id="axi-transition-red-yellow"',
+  'linearGradient id="axi-transition-yellow-green"',
+  'linearGradient id="axi-transition-green-cyan"',
+  'linearGradient id="axi-transition-cyan-violet"',
+  'linearGradient id="axi-transition-violet-blue"',
+  'd="M16 16 L15.275 14.744 A0.725 0.725 0 0 1 16.725 14.744 Z"',
 ]
 
 if (
