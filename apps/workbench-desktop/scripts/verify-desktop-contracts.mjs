@@ -53,18 +53,15 @@ const roundedPetals = [
   'M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z',
   'M16 2.05 C14.4 3 13.1 4.6 13 6.3 C12.9 8 14 10 15.3 12.4 C15.55 12.9 15.8 13.45 16 13.95 C16.2 13.45 16.45 12.9 16.7 12.4 C18 10 19.1 8 19 6.3 C18.9 4.6 17.6 3 16 2.05 Z',
   'stroke="#000000"',
-  'fill="none" stroke="#000000" stroke-opacity="0.52"',
-  'stroke-opacity="0.94"',
-  'stroke-width="0.18"',
-  'stroke-width="0.22"',
-  'transform="translate(0.36 0.36)"',
-  'transform="translate(-0.36 -0.36)"',
+  'stroke-width="0.28"',
+  'stroke-linecap="round"',
+  'stroke-linejoin="round"',
   'transform="rotate(60 16 16)"',
   'transform="rotate(120 16 16)"',
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  '<circle cx="16" cy="16" r="2.48"',
+  '<circle cx="16" cy="16" r="2.2"',
 ]
 if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path))) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的六色圆润花瓣: ${webIcon}`)
@@ -72,8 +69,11 @@ if (!existsSync(webIcon) || roundedPetals.some((path) => !favicon.includes(path)
 } else if (/<(?:rect|radialGradient)\b|axi-icon-bg/.test(favicon)) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不得包含不透明背景底板: ${webIcon}`)
   failed = true
-} else if (/fill="#FFFFFF" fill-opacity="0.2"|stroke="#FFFFFF" stroke-opacity="0.42"/.test(favicon)) {
-  console.error('[verify-desktop-contracts] FAIL: 花瓣双层边缘必须使用黑色线条，不得保留白色内层或外描边')
+} else if (/fill="#FFFFFF" fill-opacity="0.2"|stroke="#FFFFFF" stroke-opacity="0.42"|stroke-opacity=/.test(favicon)) {
+  console.error('[verify-desktop-contracts] FAIL: 花瓣双层边缘必须使用干净黑色线条，不得保留白色或透明重影描边')
+  failed = true
+} else if ((favicon.match(/<path\b/g) ?? []).length !== 12 || /transform="[^"']*translate/.test(favicon)) {
+  console.error('[verify-desktop-contracts] FAIL: 花瓣必须恰好由六瓣各两条轮廓组成，不得包含偏移重影线')
   failed = true
 } else {
   console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的六色圆润花瓣')
@@ -88,10 +88,10 @@ if (!existsSync(desktopIconSource)) {
   [...roundedPetals, ...desktopIconTreatment].some((path) => !desktopIcon.includes(path)) ||
   /<(?:rect|radialGradient)\b|axi-icon-bg/.test(desktopIcon)
 ) {
-  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步透明立体花瓣几何: ${desktopIconSource}`)
+  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步透明双线花瓣几何: ${desktopIconSource}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用透明立体花瓣几何')
+  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用透明双线花瓣几何')
 }
 
 if (failed) process.exit(1)
