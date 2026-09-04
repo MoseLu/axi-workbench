@@ -125,12 +125,11 @@ apps/workbench-desktop/src-tauri/icons/ios/
 apps/workbench-desktop/src-tauri/icons/Square*.png
 apps/workbench-desktop/src-tauri/icons/StoreLogo.png
 
-# Workbench Mobile Android monorepo source
+# Workbench Mobile Web and native Android runtime state
 apps/workbench-mobile/android/.idea/
 apps/workbench-mobile/android/.gradle/
 apps/workbench-mobile/android/**/build/
 apps/workbench-mobile/android/local.properties
 apps/workbench-mobile/android/.kotlin/
-!apps/workbench-mobile/android/gradle/
-!apps/workbench-mobile/android/gradle/wrapper/
-!apps/workbench-mobile/android/gradle/wrapper/gradle-wrapper.jar
+apps/workbench-mobile/ios/
+apps/workbench-mobile/dist/
