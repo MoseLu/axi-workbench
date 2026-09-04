@@ -1,4 +1,4 @@
-// Scale the Web twelve-color rounded petal-and-hub mark into a transparent desktop app-icon canvas.
+// Scale the Web twelve-color rounded petal-and-swirl mark into a transparent desktop app-icon canvas.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -26,7 +26,6 @@ const requiredMarks = [
   'fill="#3DFFB0"',
   'fill="#3D9BFF"',
   'fill="#8E4DFF"',
-  'fill="#000000"',
 ]
 const requiredGeometry = [
   'd="M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L16 16 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z"',
@@ -40,19 +39,21 @@ const requiredGeometry = [
   'transform="rotate(180 16 16)"',
   'transform="rotate(240 16 16)"',
   'transform="rotate(300 16 16)"',
-  'data-center="pinwheel"',
-  'data-center-pair="0-180"',
-  'data-center-pair="60-240"',
-  'data-center-pair="120-300"',
-  'd="M14.5 14.7 A1.5 1.5 0 0 1 17.5 14.7 Z"',
-  'd="M16 15.05 L16.82 15.525 L16.82 16.475 L16 16.95 L15.18 16.475 L15.18 15.525 Z"',
+  'data-center="swirl"',
+  'data-center-piece="violet-blue"',
+  'data-center-piece="red-yellow"',
+  'data-center-piece="yellow-green"',
+  'data-center-piece="green-cyan"',
+  'data-center-piece="cyan-violet"',
+  'data-center-piece="blue-red"',
+  'd="M16 16 C17.65 15.25 17.65 12.3 16 12 A4 4 0 0 1 19.464 14 C20.029 15.579 17.475 17.054 16 16 Z"',
 ]
 
 if (
   requiredMarks.some((mark) => !svg.includes(mark)) ||
   requiredGeometry.some((path) => !svg.includes(path))
 ) {
-  throw new Error(`[icon] Web favicon is not the expected symmetric twelve-color pinwheel Axi mark: ${webIconPath}`)
+  throw new Error(`[icon] Web favicon is not the expected symmetric twelve-color swirl Axi mark: ${webIconPath}`)
 }
 
 const mark = svg
