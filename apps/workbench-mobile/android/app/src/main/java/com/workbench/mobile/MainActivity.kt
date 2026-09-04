@@ -13,27 +13,40 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
+import com.workbench.mobile.data.network.GatewayEndpointStore
 import com.workbench.mobile.ui.navigation.WorkBenchNavHost
 import com.workbench.mobile.ui.theme.WorkBenchTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var gatewayEndpointStore: GatewayEndpointStore
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Edge-to-edge 只负责系统栏 inset；窗口本身保持不透明，
         // 否则 ActivityRecord.translucent=true，深色会被叠浅（截图对照根因）。
         enableEdgeToEdge()
         enforceOpaqueWindow()
-        setContent {
-            WorkBenchTheme {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    WorkBenchNavHost()
+
+        // Android 12+ 系统 Splash 直接承担唯一的品牌开屏；首帧前恢复网关，
+        // 避免首个请求与本地配置读取并发，完成后直接进入工作区。
+        lifecycleScope.launch {
+            gatewayEndpointStore.hydrate()
+            setContent {
+                WorkBenchTheme {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        WorkBenchNavHost()
+                    }
                 }
             }
         }

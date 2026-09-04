@@ -25,7 +25,6 @@ android/
         │   │   ├── theme/             # Color / Type / Shape / Theme
         │   │   ├── navigation/        # WorkBenchNavHost
         │   │   └── screens/
-        │   │       ├── splash/        # 启动页
         │   │       ├── scan/          # 扫码登录（CameraX + ML Kit）★核心
         │   │       ├── manual/        # 手动 Token 登录
         │   │       ├── home/          # 主页 Dashboard
@@ -41,7 +40,7 @@ android/
             ├── values/                # strings / colors / themes
             ├── values-v31/            # Android 12+ 系统启动页主题
             ├── drawable-nodpi/        # 启动图标的透明六瓣十二色素材
-            ├── drawable/              # 系统 Splash 的无图标过渡资源
+            ├── drawable-nodpi/        # 启动图标与系统 Splash 的透明六瓣十二色素材
             ├── mipmap-*/               # 带安全边距的旧 Android 密度回退图标
             ├── xml/                   # backup_rules / data_extraction_rules
 ```
@@ -50,7 +49,7 @@ android/
 
 ### 启动图标尺寸规则
 
-`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；Android 12+ 系统启动页使用 `drawable/ic_splash_blank.xml` 做同色无图标过渡，唯一可见的品牌 Loading 是 Compose `SplashScreen` 的安全区花型。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
+`drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区；`ic_splash_icon.png` 是同一花型针对 Android 12 系统 Splash 图标框额外缩小的版本。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；系统 Splash 直接显示 `ic_splash_icon.png`，首帧随后进入工作区，不再有独立 Compose Splash 页面。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
 
 ### 1. 打开工程
 ```
@@ -120,7 +119,7 @@ adb shell am start -n com.workbench.mobile.debug/com.workbench.mobile.MainActivi
 ## 验收清单
 
 - [x] 编译通过
-- [x] 启动页 1.5s 后自动跳转
+- [x] Android 系统 Splash 直接显示品牌花型，准备完成后进入工作区
 - [x] 扫码页真实调起后置摄像头
 - [x] 识别二维码后震动 + 跳转主页
 - [x] 主页 2×2 数据网格 + 最近项目

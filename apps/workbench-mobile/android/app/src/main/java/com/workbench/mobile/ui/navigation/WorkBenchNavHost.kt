@@ -25,7 +25,6 @@ import com.workbench.mobile.ui.screens.scan.ScanScreen
 import com.workbench.mobile.ui.screens.scanresult.ScanResultScreen
 import com.workbench.mobile.ui.screens.search.SearchScreen
 import com.workbench.mobile.ui.screens.settings.SettingsScreen
-import com.workbench.mobile.ui.screens.splash.SplashScreen
 import com.workbench.mobile.ui.screens.workspace.WorkspaceScreen
 import com.workbench.mobile.ui.screens.workspace.WorkspaceGroupScreen
 import com.workbench.mobile.ui.screens.workspace.PendingWorkScreen
@@ -34,7 +33,6 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 
 object Routes {
-    const val SPLASH = "splash"
     const val HOME = "home"
     const val SCAN = "scan"
     const val SCAN_RESULT = "scan_result/{value}"
@@ -80,18 +78,8 @@ fun WorkBenchNavHost() {
 
     NavHost(
         navController = nav,
-        startDestination = Routes.SPLASH
+        startDestination = Routes.WORKSPACE
     ) {
-        composable(Routes.SPLASH) {
-            SplashScreen(
-                onReady = {
-                    nav.navigate(Routes.WORKSPACE) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
-                }
-            )
-        }
-
         composable(Routes.HOME) {
             HomeScreen(
                 onScanClick = { nav.navigate(Routes.SCAN) },
