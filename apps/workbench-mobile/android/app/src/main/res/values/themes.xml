@@ -16,4 +16,7 @@
     </style>
 
     <style name="Theme.WorkBench" parent="Theme.WorkBench.Base" />
+
+    <!-- Android 12+ 的系统启动主题；退出后直接交给 Compose 品牌加载层。 -->
+    <style name="Theme.WorkBench.Starting" parent="Theme.WorkBench" />
 </resources>

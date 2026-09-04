@@ -3,7 +3,9 @@
     <style name="Theme.WorkBench" parent="Theme.WorkBench.Base">
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:forceDarkAllowed">false</item>
-        <!-- Android 12+ 系统 Splash 是唯一的品牌开屏，首帧直接进入工作区。 -->
+    </style>
+
+    <style name="Theme.WorkBench.Starting" parent="Theme.WorkBench">
         <item name="android:windowSplashScreenBackground">@color/wechat_chrome_bg</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_icon</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>

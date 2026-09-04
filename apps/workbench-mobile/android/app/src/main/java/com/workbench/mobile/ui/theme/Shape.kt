@@ -84,6 +84,10 @@ object Size {
     val avatarMd: Dp = 64.dp
     val avatarLg: Dp = 68.dp
     val avatarRow: Dp = 72.dp
+    /** 单一品牌 Loading 图标容器，包含 Android 图标的透明安全区。 */
+    val splashBrand: Dp = 96.dp
+    /** 品牌 Loading 文案相对屏幕中心的固定位置，避免系统 Splash 交接时跳帧。 */
+    val splashDetailsOffset: Dp = 128.dp
     val bubbleW: Dp = 120.dp
     val bubbleArrowH: Dp = 7.dp
     val bubbleArrowW: Dp = 12.dp

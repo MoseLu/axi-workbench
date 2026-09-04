@@ -29,6 +29,8 @@ import com.workbench.mobile.ui.screens.workspace.WorkspaceScreen
 import com.workbench.mobile.ui.screens.workspace.WorkspaceGroupScreen
 import com.workbench.mobile.ui.screens.workspace.PendingWorkScreen
 import com.workbench.mobile.ui.screens.workspace.WorkspaceViewModel
+import com.workbench.mobile.data.repository.WorkspaceLoadState
+import kotlinx.coroutines.flow.first
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -66,14 +68,25 @@ object Routes {
 }
 
 @Composable
-fun WorkBenchNavHost() {
+fun WorkBenchNavHost(
+    workspaceViewModel: WorkspaceViewModel = hiltViewModel(),
+    onInitialWorkspaceReady: () -> Unit = {}
+) {
     val nav = rememberNavController()
     // 工作区事实属于导航图共享状态，而不是每页各建一个同步器。
-    val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
     val backStackEntry by nav.currentBackStackEntryAsState()
 
     LaunchedEffect(backStackEntry?.destination?.route) {
         workspaceViewModel.ensureFresh()
+    }
+
+    LaunchedEffect(Unit) {
+        workspaceViewModel.state.first { state ->
+            state !is WorkspaceLoadState.Loading || state.snapshot != null
+        }
+        // 仅在工作区首轮状态已落定后通知启动层；启动层随后再等待绘制帧，
+        // 因此不会把“正在同步”或未完成布局的中间态暴露为闪帧。
+        onInitialWorkspaceReady()
     }
 
     NavHost(

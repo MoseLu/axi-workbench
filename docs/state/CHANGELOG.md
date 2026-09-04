@@ -38,8 +38,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
-- 修正原生 Android 的启动链：移除旧的 Compose 蓝色方块 Loading，并将 Android 12+ 系统 Splash 设为唯一的品牌开屏；系统直接显示带安全区的六瓣十二色花型，准备完成后进入工作区。
-- 将网关地址恢复移到首帧前初始化，避免删除独立 Compose Splash 后首个请求与本地配置读取并发。
+- 修正原生 Android 的启动链：移除旧的 Compose 蓝色方块 Loading，改用 `WorkBenchStartupGate` 统一绘制六瓣十二色 Logo、提示文案和 loading 动画；准备完成后移除不透明覆盖层进入已完成首帧的工作区。
+- Android 12+ 系统 Splash 作为平台首帧预览，与 Compose Loading 的中心 Logo 对齐并无缝衔接；网关地址在 Compose Loading 内初始化，避免系统 Splash 停留过久或出现位置跳帧。
 
 - `packages/ui` 的 Vitest 浏览器测试链统一到 `vitest` / `@vitest/browser-playwright` / `@vitest/coverage-v8` `4.1.11`，并将 Vite 更新到 `7.3.1`；移除失效的空 `eslint.config.js` 垫片，恢复 legacy ESLint 配置的可执行 lint 入口。`packages/ui` build、4 个测试文件共 13 个测试、lint 均通过；工作区 critical audit 为 0，仍有 10 个 `any` warnings。
 - Replaced Mobile Home, Projects, Workspace and search showcase data with authenticated Control Plane projections. Unpaired, unauthorized and unavailable states now stay explicit rather than rendering static substitutes; Mobile keeps four persistent navigation items and the top Scan action.
