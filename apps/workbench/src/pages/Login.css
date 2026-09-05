@@ -116,13 +116,14 @@
 .axi-login-qr-frame {
   position: relative;
   display: grid;
-  width: 9.625rem;
-  height: 9.625rem;
+  width: 10.75rem;
+  height: 10.75rem;
   box-sizing: border-box;
   place-items: center;
-  padding: 0;
+  padding: var(--space-2);
   border: var(--space-px) solid var(--palette-gray-250);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
   background: var(--palette-white);
 }
 

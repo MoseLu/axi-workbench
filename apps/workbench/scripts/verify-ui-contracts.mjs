@@ -166,7 +166,8 @@ requireMatch(
   /\.axi-login-card\s*\{[\s\S]*?color-scheme:\s*light;/,
   'login card must scope native controls to the light color scheme',
 );
-requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?padding:\s*0;/, 'login QR frame must not add a second inset around the code');
+requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?padding:\s*var\(--space-2\);/, 'login QR frame must preserve the client-style white inset around the code');
+requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?border-radius:\s*var\(--radius-sm\);/, 'login QR frame must preserve rounded outer corners');
 requireMatch(loginCss, /\.axi-login-qr-frame \.ant-qrcode\s*\{[\s\S]*?border:\s*0 !important;/, 'login QR must not render a nested Ant Design border');
 requireMatch(loginCss, /\.axi-login-card__body\s*\{[\s\S]*?height:\s*22\.25rem;[\s\S]*?min-height:\s*22\.25rem;/, 'login body must preserve a fixed desktop height across login states');
 requireMatch(loginCss, /\.axi-login-right\s*\{[\s\S]*?grid-template-rows:\s*2rem 16rem;/, 'login right rail must use a fixed desktop track');

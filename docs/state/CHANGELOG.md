@@ -38,6 +38,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 进一步对齐登录二维码容器：保留二维码本体四周约 8px 的均匀白边，并恢复 8px 圆角外框，避免在去除重复边框时把客户端需要的安全边距一并移除。
 - 收紧登录二维码容器：移除 Ant Design QRCode 的嵌套边框和外层二次内缩，只保留单层细边界，避免二维码周围出现多余留白。
 - 统一 macOS 桌面包的产品名为 `Axi 工作台`，同步 Dock/应用列表元数据、`.app`/`.dmg` 产物路径、CI 上传和公证脚本，避免旧的 `Workbench` 名称继续出现在系统中。
 - Routed packaged macOS Tauri `/api/*` traffic through the native Rust Gateway transport, including `tauri://` / `tauri.localhost` origins, HttpOnly session-cookie retention, HTTPS support, and a local/shared-domain allowlist; the desktop release build now targets `workbench.axiomaticworld.com` without weakening WebView ATS policy.
