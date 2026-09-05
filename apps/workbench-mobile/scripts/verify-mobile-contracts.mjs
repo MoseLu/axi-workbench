@@ -2,6 +2,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const appRoot = path.resolve(import.meta.dirname, '..');
+// Favicon 几何契约单源:apps/workbench-shared/src/brand/favicon-geometry.json。
+// mobile 必须保持与 web / desktop 同样的 totalPaths 路径 + uniqueOuterPlusCenterColors
+// 种互不重复 fill 色 + outer/center 分组;改了 favicon SVG 必须同步 JSON。
+const faviconGeometryPath = path.resolve(
+  appRoot,
+  '../workbench-shared/src/brand/favicon-geometry.json',
+);
+if (!fs.existsSync(faviconGeometryPath)) {
+  throw new Error(
+    `missing favicon geometry contract at ${faviconGeometryPath}`,
+  );
+}
+const faviconGeometry = JSON.parse(fs.readFileSync(faviconGeometryPath, 'utf8'));
+const requiredTotalPaths = faviconGeometry.invariants.totalPaths;
+const requiredUniqueColors = faviconGeometry.invariants.uniqueOuterPlusCenterColors;
+const requiredOuterColors = faviconGeometry.invariants.uniqueOuterColors;
+
 const read = (file) => fs.readFileSync(path.join(appRoot, file), 'utf8');
 const requireMatch = (text, pattern, message) => {
   if (!pattern.test(text)) throw new Error(message);
@@ -64,12 +81,19 @@ requireMatch(startupView, /R\.string\.app_name[\s\S]*R\.string\.startup_preparin
 if (mobileFavicon !== webFavicon) {
   throw new Error('mobile favicon must remain byte-identical to the Workbench Web flower mark');
 }
-if ((mobileFavicon.match(/<path\b/g) ?? []).length !== 18) {
-  throw new Error('mobile favicon must contain the twelve petal contour paths and six curved center pieces');
+// 12 路径、12 种互不重复 fill 色、外 6 + 心 6 的契约从 favicon-geometry.json 读,
+// 与 verify-desktop-contracts.mjs 同源。
+if ((mobileFavicon.match(/<path\b/g) ?? []).length !== requiredTotalPaths) {
+  throw new Error(`mobile favicon must contain ${requiredTotalPaths} paths (twelve petal contours + six curved center pieces)`);
 }
 const mobileFills = [...mobileFavicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color);
-if (new Set(mobileFills.slice(0, 12)).size !== 12 || mobileFills.slice(6, 12).some((color) => mobileFills.slice(0, 6).includes(color))) {
-  throw new Error('mobile favicon must preserve the twelve distinct bright brand colors');
+if (
+  new Set(mobileFills.slice(0, requiredUniqueColors)).size !== requiredUniqueColors ||
+  mobileFills
+    .slice(requiredOuterColors, requiredUniqueColors)
+    .some((color) => mobileFills.slice(0, requiredOuterColors).includes(color))
+) {
+  throw new Error(`mobile favicon must preserve ${requiredUniqueColors} distinct bright brand colors`);
 }
 requireMatch(mobileIcons, /AxiSvgIcon[\s\S]*resolveAxiWorkbenchIcon/, 'mobile icons must resolve to the shared Axi SVG registry');
 requireMatch(login, /AxiLogoMark/, 'mobile login must use the shared twelve-color Axi mark');

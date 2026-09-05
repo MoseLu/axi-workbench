@@ -11,6 +11,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const desktopDir = join(__dirname, '..')
 const repoRoot = join(desktopDir, '..', '..')
 
+// Favicon 几何契约单源:apps/workbench-shared/src/brand/favicon-geometry.json。
+// 改了 favicon SVG 必须同步这个 JSON,否则 desktop + mobile 双端 verify 会 fail。
+const faviconGeometryPath = join(
+  repoRoot,
+  'apps',
+  'workbench-shared',
+  'src',
+  'brand',
+  'favicon-geometry.json',
+)
+const faviconGeometry = existsSync(faviconGeometryPath)
+  ? JSON.parse(readFileSync(faviconGeometryPath, 'utf8'))
+  : null
+
 const workbenchDist = join(repoRoot, 'apps', 'workbench', 'dist')
 const targetDir = join(desktopDir, 'workbench-dist')
 const iconIcns = join(desktopDir, 'src-tauri', 'icons', 'icon.icns')
@@ -120,57 +134,57 @@ if (
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''
-const requiredIconGeometry = [
-  '#0167FF',
-  '#FF0167',
-  '#E6FF01',
-  '#67FF01',
-  '#00E5FF',
-  '#9901FF',
-  '#D14DFF',
-  '#FF9A3D',
-  '#C8FF3D',
-  '#3DFFB0',
-  '#3D9BFF',
-  '#8E4DFF',
-  '#000000',
-  'M16 0.18 C13.55 1.35 11 3.1 10.65 5.3 C10.65 6.7 11.25 7.75 11.85 8.8 L14.976 14.223 A2.05 2.05 0 0 1 17.024 14.223 L20.15 8.8 C20.75 7.75 21.35 6.7 21.35 5.3 C21 3.1 18.45 1.35 16 0.18 Z',
-  'M16 2.05 C14.4 3 13.1 4.6 13 6.3 C12.9 8 14 10 15.3 12.4 C15.55 12.9 15.8 13.45 16 13.95 C16.2 13.45 16.45 12.9 16.7 12.4 C18 10 19.1 8 19 6.3 C18.9 4.6 17.6 3 16 2.05 Z',
-  'stroke="#000000"',
-  'stroke-width="0.28"',
-  'stroke-linecap="round"',
-  'stroke-linejoin="round"',
-  'transform="rotate(60 16 16)"',
-  'transform="rotate(120 16 16)"',
-  'transform="rotate(180 16 16)"',
-  'transform="rotate(240 16 16)"',
-  'transform="rotate(300 16 16)"',
-  'data-center="swirl"',
-  'data-center-piece="violet-blue"',
-  'data-center-piece="red-yellow"',
-  'data-center-piece="yellow-green"',
-  'data-center-piece="green-cyan"',
-  'data-center-piece="cyan-violet"',
-  'data-center-piece="blue-red"',
-  'M16 16 C16.805 15.635 16.805 14.196 16 14.05 A1.95 1.95 0 0 1 17.689 15.025 C17.964 15.795 16.719 16.514 16 16 Z',
-]
-if (!existsSync(webIcon) || requiredIconGeometry.some((path) => !favicon.includes(path))) {
+// 几何契约来自 apps/workbench-shared/src/brand/favicon-geometry.json,与 mobile 端共用同源。
+const requiredIconGeometry = faviconGeometry
+  ? [
+      ...faviconGeometry.fills,
+      faviconGeometry.pathAnchors.outerPetal,
+      faviconGeometry.pathAnchors.petalVein,
+      `stroke="${faviconGeometry.stroke}"`,
+      `stroke-width="${faviconGeometry.strokeWidth}"`,
+      `stroke-linecap="${faviconGeometry.strokeLinecap}"`,
+      `stroke-linejoin="${faviconGeometry.strokeLinejoin}"`,
+      ...faviconGeometry.petalTransforms,
+      faviconGeometry.centerSwirlAttribute,
+      ...faviconGeometry.centerPieceAnchors,
+      faviconGeometry.pathAnchors.centerPetal,
+    ]
+  : null
+const forbiddenWebElements = faviconGeometry
+  ? new RegExp(faviconGeometry.invariants.forbiddenWebElementsPattern)
+  : null
+const forbiddenWebFills = faviconGeometry
+  ? new RegExp(faviconGeometry.invariants.forbiddenWebFillsPattern)
+  : null
+const forbiddenDesktopLayout = faviconGeometry
+  ? new RegExp(faviconGeometry.invariants.forbiddenDesktopLayoutPattern)
+  : null
+if (!existsSync(webIcon) || !faviconGeometry || requiredIconGeometry.some((path) => !favicon.includes(path))) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的十二色弧形花心: ${webIcon}`)
   failed = true
-} else if (/<(?:rect|radialGradient)\b|axi-icon-bg/.test(favicon)) {
+} else if (forbiddenWebElements.test(favicon)) {
   console.error(`[verify-desktop-contracts] FAIL: Web favicon 不得包含不透明背景底板: ${webIcon}`)
   failed = true
-} else if (/fill="#FFFFFF" fill-opacity="0.2"|stroke="#FFFFFF" stroke-opacity="0.42"|stroke-opacity=/.test(favicon)) {
+} else if (forbiddenWebFills.test(favicon)) {
   console.error('[verify-desktop-contracts] FAIL: 花瓣双层边缘必须使用干净黑色线条，不得保留白色或透明重影描边')
   failed = true
-} else if ((favicon.match(/<path\b/g) ?? []).length !== 18 || /transform="[^"']*translate/.test(favicon) || /<circle\b|M16 15\.05 L16\.82/.test(favicon)) {
+} else if (
+  (favicon.match(/<path\b/g) ?? []).length !== faviconGeometry.invariants.totalPaths ||
+  forbiddenDesktopLayout.test(favicon)
+) {
   console.error('[verify-desktop-contracts] FAIL: 六瓣花心必须由六个连续弧形花心瓣组成，且花瓣根部不得被中心覆盖')
   failed = true
 } else {
   const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color)
-  const outerFills = fills.slice(0, 6)
-  const centerFills = fills.slice(6, 12)
-  if (new Set([...outerFills, ...centerFills]).size !== 12 || centerFills.some((color) => outerFills.includes(color))) {
+  const outerFills = fills.slice(0, faviconGeometry.invariants.uniqueOuterColors)
+  const centerFills = fills.slice(
+    faviconGeometry.invariants.uniqueOuterColors,
+    faviconGeometry.invariants.uniqueOuterColors + faviconGeometry.invariants.uniqueCenterColors,
+  )
+  if (
+    new Set([...outerFills, ...centerFills]).size !== faviconGeometry.invariants.uniqueOuterPlusCenterColors ||
+    centerFills.some((color) => outerFills.includes(color))
+  ) {
     console.error('[verify-desktop-contracts] FAIL: 花瓣与花心必须使用互不重复的十二种颜色')
     failed = true
   } else {
@@ -179,13 +193,19 @@ if (!existsSync(webIcon) || requiredIconGeometry.some((path) => !favicon.include
 }
 
 const desktopIcon = existsSync(desktopIconSource) ? readFileSync(desktopIconSource, 'utf8') : ''
-const desktopIconTreatment = ['scale(31)', 'fill="none"']
+const desktopIconTreatment = faviconGeometry
+  ? [...faviconGeometry.invariants.requiredDesktopTreatments]
+  : ['scale(31)', 'fill="none"']
+const forbiddenDesktopElements = faviconGeometry
+  ? new RegExp(faviconGeometry.invariants.forbiddenDesktopElementsPattern)
+  : null
 if (!existsSync(desktopIconSource)) {
   console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版不存在: ${desktopIconSource}`)
   failed = true
 } else if (
-  [...requiredIconGeometry, ...desktopIconTreatment].some((path) => !desktopIcon.includes(path)) ||
-  /<(?:rect|radialGradient|circle)\b|axi-icon-bg/.test(desktopIcon)
+  !faviconGeometry ||
+  [...requiredIconGeometry, ...desktopIconTreatment].some((entry) => !desktopIcon.includes(entry)) ||
+  forbiddenDesktopElements.test(desktopIcon)
 ) {
   console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步透明双线花瓣几何: ${desktopIconSource}`)
   failed = true
