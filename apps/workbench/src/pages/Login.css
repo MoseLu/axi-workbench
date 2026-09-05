@@ -606,12 +606,13 @@
  * makes the complete address read as one field while preventing free-form
  * domain input. */
 .axi-login-form .axi-login-email-suffix {
-  flex: 0 1 8.75rem;
-  width: 8.75rem;
-  max-width: 42%;
+  flex: 0 1 6rem;
+  width: 6rem;
+  max-width: 30%;
+  min-width: 0;
   min-height: 2.625rem;
   box-sizing: border-box;
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-2);
   border: 0;
   border-left: var(--space-px) solid var(--palette-gray-200);
   border-radius: 0;

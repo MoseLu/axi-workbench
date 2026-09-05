@@ -126,6 +126,13 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toBeVisible();
   await page.locator('#axi-login-email-suffix').selectOption('163.com');
   await expect(page.locator('#axi-login-email-suffix')).toHaveValue('163.com');
+  const emailFieldSizing = await page.evaluate(() => {
+    const input = document.querySelector('#axi-login-email')?.getBoundingClientRect();
+    const suffix = document.querySelector('#axi-login-email-suffix')?.getBoundingClientRect();
+    return { inputWidth: input?.width ?? 0, suffixWidth: suffix?.width ?? 0 };
+  });
+  expect(emailFieldSizing.inputWidth).toBeGreaterThan(emailFieldSizing.suffixWidth);
+  expect(emailFieldSizing.suffixWidth).toBeLessThanOrEqual(102);
   // The "获取验证码" button is now embedded inside the email input row on the right edge.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toBeVisible();
   const emailRowBorders = await page.evaluate(() => {
