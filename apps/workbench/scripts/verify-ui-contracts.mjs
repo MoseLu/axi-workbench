@@ -127,6 +127,7 @@ requireMatch(workbenchIcon, /resolveAxiWorkbenchIcon/, 'Web must render icon sem
 requireMatch(globalSearch, /axiWorkbenchIconMap\.search[\s\S]*axiWorkbenchIconMap\.forward/, 'global search controls must use shared Workbench icon semantics');
 requireMatch(login, /axi-login-card__chrome/, 'Web login must expose the client-style card chrome');
 requireMatch(login, /axi-login-qr-expired-overlay/, 'Web login must own the QR expiry scrim and refresh action');
+requireMatch(login, /<QRCode[\s\S]*?bordered=\{false\}/, 'Web login QR must avoid a nested Ant Design border');
 requireMatch(login, /axi-login-form--email[\s\S]*OneTimeCodeInput/, 'Web login email flow must use the shared six-slot verification input');
 requireMatch(login, /axi-login-form__row--email[\s\S]*axi-login-text-button--send/, 'Web login email row must inline the send-code button on the right edge');
 forbidMatch(login, /sms-verifications|login\/sms|短信登录|手机号/, 'Web login must keep the current email authentication surface');
@@ -165,6 +166,8 @@ requireMatch(
   /\.axi-login-card\s*\{[\s\S]*?color-scheme:\s*light;/,
   'login card must scope native controls to the light color scheme',
 );
+requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?padding:\s*0;/, 'login QR frame must not add a second inset around the code');
+requireMatch(loginCss, /\.axi-login-qr-frame \.ant-qrcode\s*\{[\s\S]*?border:\s*0 !important;/, 'login QR must not render a nested Ant Design border');
 requireMatch(loginCss, /\.axi-login-card__body\s*\{[\s\S]*?height:\s*22\.25rem;[\s\S]*?min-height:\s*22\.25rem;/, 'login body must preserve a fixed desktop height across login states');
 requireMatch(loginCss, /\.axi-login-right\s*\{[\s\S]*?grid-template-rows:\s*2rem 16rem;/, 'login right rail must use a fixed desktop track');
 requireMatch(loginCss, /\.axi-login-banner-slot\s*\{[\s\S]*?position:\s*absolute;[\s\S]*?bottom:\s*0;/, 'login feedback must not reflow the desktop form track');

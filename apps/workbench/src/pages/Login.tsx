@@ -407,6 +407,7 @@ const Login: React.FC = () => {
                     color="#111827"
                     bgColor="#ffffff"
                     errorLevel="M"
+                    bordered={false}
                     status="active"
                   />
                 ) : (
