@@ -11,7 +11,7 @@ export interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({
   icon,
-  title = 'MPMS',
+  title = 'Axi',
   collapsed = false,
   onClick,
   className = '',

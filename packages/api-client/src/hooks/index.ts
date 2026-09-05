@@ -7,48 +7,29 @@ import type {
   TaskEvent,
   AgentTask,
   ApprovalRequest,
-  LoginInput,
-  RegisterInput,
-  TokenResponse,
-  User,
   Project,
   ProjectListResponse,
-  Task,
-  TaskListResponse,
+  WorkflowEngineApproval,
+  WorkflowEngineExecution,
+  WorkflowEngineWorkflow,
+  PersonalOsFocusResponse,
+  PersonalOsFocusUpdate,
+  PersonalOsProjectPatch,
+  PersonalOsProjectResponse,
+  PersonalOsQueueEnvelope,
+  PersonalOsView,
 } from "@axi/workstation-contracts"
 import type { AxiosRequestConfig } from "axios"
-
-// ============================================
-// Auth Hooks
-// ============================================
-
-export const useLogin = () => {
-  return useMutation({
-    mutationFn: (data: LoginInput) =>
-      apiClient.post<TokenResponse>("/api/v1/auth/login", data).then((res) => res.data),
-  })
-}
-
-export const useRegister = () => {
-  return useMutation({
-    mutationFn: (data: RegisterInput) =>
-      apiClient.post<TokenResponse>("/api/v1/auth/register", data).then((res) => res.data),
-  })
-}
-
-export const useCurrentUser = (options?: AxiosRequestConfig) => {
-  return useQuery({
-    queryKey: ["currentUser"],
-    queryFn: () =>
-      apiClient.get<User>("/api/v1/auth/me", options).then((res) => res.data),
-  })
-}
 
 // ============================================
 // Project Hooks
 // ============================================
 
-export const useProjects = (params?: { page?: number; pageSize?: number }, options?: AxiosRequestConfig) => {
+/**
+ * Compatibility read model backed by the retiring Spring/H2 core-service.
+ * New work must use useTenantProjects from ./platform instead.
+ */
+export const useLegacyProjects = (params?: { page?: number; pageSize?: number }, options?: AxiosRequestConfig) => {
   return useQuery({
     queryKey: ["projects", params],
     queryFn: () =>
@@ -58,7 +39,8 @@ export const useProjects = (params?: { page?: number; pageSize?: number }, optio
   })
 }
 
-export const useProject = (id: string, options?: AxiosRequestConfig) => {
+/** @deprecated Use tenant-scoped platform hooks for new code. */
+export const useLegacyProject = (id: string, options?: AxiosRequestConfig) => {
   return useQuery({
     queryKey: ["project", id],
     queryFn: () =>
@@ -67,104 +49,8 @@ export const useProject = (id: string, options?: AxiosRequestConfig) => {
   })
 }
 
-export const useCreateProject = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (data: Partial<Project>) =>
-      apiClient.post<Project>("/api/v1/projects", data).then((res) => res.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] })
-    },
-  })
-}
-
-export const useUpdateProject = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, ...data }: { id: string } & Partial<Project>) =>
-      apiClient
-        .put<Project>(`/api/v1/projects/${id}`, data)
-        .then((res) => res.data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] })
-      queryClient.invalidateQueries({ queryKey: ["project", variables.id] })
-    },
-  })
-}
-
-export const useDeleteProject = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.delete(`/api/v1/projects/${id}`).then((res) => res.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] })
-    },
-  })
-}
-
-// ============================================
-// Task Hooks
-// ============================================
-
-export const useTasks = (
-  params?: { projectId?: string; page?: number; pageSize?: number },
-  options?: AxiosRequestConfig
-) => {
-  return useQuery({
-    queryKey: ["tasks", params],
-    queryFn: () =>
-      apiClient
-        .get<TaskListResponse>("/api/v1/tasks", { params, ...options })
-        .then((res) => res.data),
-  })
-}
-
-export const useTask = (id: string, options?: AxiosRequestConfig) => {
-  return useQuery({
-    queryKey: ["task", id],
-    queryFn: () =>
-      apiClient.get<Task>(`/api/v1/tasks/${id}`, options).then((res) => res.data),
-    enabled: !!id,
-  })
-}
-
-export const useCreateTask = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (data: Partial<Task>) =>
-      apiClient.post<Task>("/api/v1/tasks", data).then((res) => res.data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      if (variables.projectId) {
-        queryClient.invalidateQueries({ queryKey: ["tasks", { projectId: variables.projectId }] })
-      }
-    },
-  })
-}
-
-export const useUpdateTask = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, ...data }: { id: string } & Partial<Task>) =>
-      apiClient.put<Task>(`/api/v1/tasks/${id}`, data).then((res) => res.data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["task", variables.id] })
-    },
-  })
-}
-
-export const useDeleteTask = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.delete(`/api/v1/tasks/${id}`).then((res) => res.data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-    },
-  })
-}
+// Mutation and task hooks for /api/v1/projects and /api/v1/tasks were removed
+// intentionally: the legacy core-service is read-only compatibility only.
 
 // ============================================
 // Control Plane Hooks
@@ -177,6 +63,157 @@ export const useControlSnapshot = (options?: AxiosRequestConfig) => {
       controlPlaneClient
         .get<ControlSnapshot>("/snapshot", options)
         .then((res) => res.data),
+    // Control plane is a local process; brief restarts should recover without a hard empty state.
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10_000,
+  })
+}
+
+const personalOsQueryKey = ["personalOs"] as const
+
+export const usePersonalOsQueue = (
+  params: { view?: PersonalOsView; query?: string; partition?: string } = {},
+  options?: AxiosRequestConfig,
+) => {
+  return useQuery({
+    queryKey: [...personalOsQueryKey, "queue", params],
+    queryFn: () =>
+      controlPlaneClient
+        .get<PersonalOsQueueEnvelope>("/personal-os/queue", { ...options, params: { ...params, ...(options?.params || {}) } })
+        .then((res) => res.data),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10_000,
+  })
+}
+
+export const usePersonalOsProject = (projectId: string, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...personalOsQueryKey, "project", projectId],
+    enabled: Boolean(projectId),
+    queryFn: () =>
+      controlPlaneClient
+        .get<PersonalOsProjectResponse>(`/personal-os/projects/${encodeURIComponent(projectId)}`, options)
+        .then((res) => res.data),
+    retry: 1,
+    staleTime: 10_000,
+  })
+}
+
+export const useUpdatePersonalOsProject = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, ...patch }: PersonalOsProjectPatch & { projectId: string }) =>
+      controlPlaneClient
+        .patch<PersonalOsProjectResponse>(`/personal-os/projects/${encodeURIComponent(projectId)}`, patch)
+        .then((res) => res.data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [...personalOsQueryKey, "queue"] })
+      queryClient.invalidateQueries({ queryKey: [...personalOsQueryKey, "project", variables.projectId] })
+      if (data?.project?.id) {
+        queryClient.setQueryData([...personalOsQueryKey, "project", data.project.id], data)
+      }
+    },
+  })
+}
+
+export const usePersonalOsFocus = (options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...personalOsQueryKey, "focus"],
+    queryFn: () =>
+      controlPlaneClient
+        .get<PersonalOsFocusResponse>("/personal-os/focus", options)
+        .then((res) => res.data),
+    retry: 2,
+    staleTime: 10_000,
+  })
+}
+
+export const useUpdatePersonalOsFocus = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: PersonalOsFocusUpdate) =>
+      controlPlaneClient
+        .put<PersonalOsFocusResponse>("/personal-os/focus", input)
+        .then((res) => res.data),
+    onSuccess: (data) => {
+      queryClient.setQueryData([...personalOsQueryKey, "focus"], data)
+      queryClient.invalidateQueries({ queryKey: [...personalOsQueryKey, "queue"] })
+    },
+  })
+}
+
+// ============================================
+// Workflow Engine Hooks
+// ============================================
+
+const workflowEngineQueryKey = ["workflowEngine"] as const
+
+/**
+ * Workflow Engine stays behind the authenticated API Gateway.  Browser code
+ * never talks to the Python service's internal address directly.
+ */
+export const useWorkflowEngineWorkflows = (options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...workflowEngineQueryKey, "workflows"],
+    queryFn: () =>
+      apiClient
+        .get<WorkflowEngineWorkflow[]>("/api/v1/workflows", options)
+        .then((res) => res.data),
+    retry: 1,
+    staleTime: 10_000,
+  })
+}
+
+export const useWorkflowEngineExecution = (workflowId: string, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...workflowEngineQueryKey, "execution", workflowId],
+    enabled: Boolean(workflowId),
+    queryFn: () =>
+      apiClient
+        .get<WorkflowEngineExecution>(`/api/v1/workflows/${encodeURIComponent(workflowId)}/execution`, options)
+        .then((res) => res.data),
+    retry: 1,
+  })
+}
+
+export const useWorkflowEngineApprovals = (workflowId: string, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: [...workflowEngineQueryKey, "approvals", workflowId],
+    enabled: Boolean(workflowId),
+    queryFn: () =>
+      apiClient
+        .get<WorkflowEngineApproval[]>(`/api/v1/workflows/${encodeURIComponent(workflowId)}/approvals`, options)
+        .then((res) => res.data),
+    retry: 1,
+  })
+}
+
+export const useDecideWorkflowEngineApproval = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ approvalId, comment, decision, workflowId }: {
+      approvalId: string
+      comment?: string
+      decision: "approved" | "rejected"
+      workflowId: string
+    }) =>
+      apiClient
+        .post<WorkflowEngineExecution>(
+          `/api/v1/workflows/${encodeURIComponent(workflowId)}/approvals/${encodeURIComponent(approvalId)}`,
+          { comment, decision },
+        )
+        .then((res) => res.data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [...workflowEngineQueryKey, "workflows"] })
+      queryClient.invalidateQueries({ queryKey: [...workflowEngineQueryKey, "execution", variables.workflowId] })
+      queryClient.invalidateQueries({ queryKey: [...workflowEngineQueryKey, "approvals", variables.workflowId] })
+    },
   })
 }
 

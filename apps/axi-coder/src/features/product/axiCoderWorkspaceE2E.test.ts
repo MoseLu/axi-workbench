@@ -51,14 +51,14 @@ describe("Axi Coder workspace E2E contract", () => {
         "mac-desktop-client",
         "mobile-companion-client",
         "cli-orchestration",
-        "agent-task-execution",
+        "agent-task-console",
         "model-routing-adapter",
         "terminal-sessions",
         "artifact-review",
       ]),
     );
     expect(axiCoder.consumes).toEqual(
-      expect.arrayContaining(["axi-workbench", "axi-agent", "axi-model-gateway", "axi-accounts", "axi-notify"]),
+      expect.arrayContaining(["axi-workbench", "axi-agent-platform", "axi-model-gateway", "axi-accounts", "axi-notify"]),
     );
     expect(axiCoder.completion).toMatchObject({
       stage: "building",

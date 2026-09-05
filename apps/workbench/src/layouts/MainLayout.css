@@ -1,0 +1,430 @@
+/*
+ * Desktop dashboard chrome
+ *
+ * The shared shell intentionally uses quiet, frameless icon controls as its
+ * default. WorkBench follows the denser Cool-Admin-style desktop language:
+ * toolbar controls are visibly framed, route tabs read as compact controls,
+ * and breadcrumbs use the dedicated compact card treatment from the legacy
+ * WorkBench shell.
+ * Keep this override scoped to the web shell. The independent mobile app owns
+ * its own visual system and never imports this stylesheet.
+ */
+.workbench-axi-shell {
+  /* Cool-Admin 的控件与顶栏共用同一层背景，不使用抬高一层的卡片表面。 */
+  --workbench-chrome-control-bg: var(--axi-layout-surface, var(--axi-bg-surface));
+  --workbench-chrome-control-hover: var(--axi-layout-hover, var(--axi-bg-page));
+  --workbench-chrome-control-border: var(--axi-layout-control-border, var(--axi-border));
+  --workbench-chrome-border: var(--axi-layout-border, var(--axi-border));
+  --workbench-chrome-radius: calc(var(--space-1) + var(--space-0_5));
+  --workbench-chrome-control-size: var(--axi-layout-icon-button-size, var(--size-icon-lg));
+  --workbench-chrome-bar-size: var(--axi-layout-toolbar-height, var(--size-bar));
+}
+
+.workbench-axi-shell .axi-topbar {
+  background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
+  border-bottom-color: var(--workbench-chrome-border);
+}
+
+.workbench-axi-shell .axi-topbar__left,
+.workbench-axi-shell .axi-topbar__right,
+.workbench-axi-shell .axi-dashboard-topbar-plugins {
+  gap: var(--space-2_5);
+}
+
+/* 品牌区域使用完整的 Axi 标记，并让品牌组合始终在侧栏宽度内水平居中。 */
+.workbench-axi-shell .axi-sidebar-brand {
+  justify-content: center;
+  padding-inline: 12px;
+  text-align: left;
+}
+
+.workbench-axi-shell .axi-sidebar-brand__logo {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+.workbench-axi-shell .workbench-axi-brand-mark {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+/* 共享四色标记由 token 分别提供深浅主题可读的绿色。 */
+.workbench-axi-shell .workbench-axi-brand-mark {
+  filter: none;
+}
+
+/* Personal OS keeps the shared shell, with its compact two-entry menu centered
+ * as a product surface instead of introducing a second sidebar implementation. */
+.workbench-axi-shell--personal-os .axi-sidebar-brand {
+  justify-content: center;
+}
+
+.workbench-axi-shell--personal-os .axi-side-menu {
+  padding-inline: var(--space-2_5);
+}
+
+.workbench-axi-shell--personal-os .axi-side-submenu,
+.workbench-axi-shell--personal-os .axi-side-item {
+  justify-content: center;
+}
+
+.workbench-axi-shell--personal-os .axi-side-submenu {
+  padding-inline: var(--space-2);
+}
+
+.workbench-axi-shell--personal-os .axi-side-item {
+  padding-inline: var(--space-2);
+}
+
+/*
+ * Web global search follows the Art-style framed trigger: it is a deliberate
+ * 160px command affordance in the desktop topbar. Its height intentionally
+ * matches the 26px icon buttons beside it; mobile owns a separate search page.
+ */
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger {
+  width: 160px;
+  min-width: 160px;
+  height: var(--workbench-chrome-control-size);
+  min-height: var(--workbench-chrome-control-size);
+  box-sizing: border-box;
+  padding: 0 var(--axi-space-2-5, 10px);
+  border-radius: var(--workbench-chrome-radius);
+  background: transparent;
+}
+
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger__label {
+  font-size: var(--axi-font-size-xs, 12px);
+  font-weight: var(--axi-font-weight-normal, 400);
+}
+
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger kbd {
+  height: 20px;
+  min-width: 0;
+  padding-inline: 6px;
+  border-radius: var(--axi-radius-sm, 4px);
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only {
+  width: var(--workbench-chrome-control-size);
+  min-width: var(--workbench-chrome-control-size);
+  height: var(--workbench-chrome-control-size);
+  min-height: var(--workbench-chrome-control-size);
+  border: 1px solid var(--workbench-chrome-control-border);
+  border-radius: var(--workbench-chrome-radius);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-bg);
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only:hover:not(:disabled):not([aria-disabled="true"]),
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only:hover:not(:disabled):not([aria-disabled="true"]) {
+  border-color: var(--workbench-chrome-control-border);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-hover);
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only:focus-visible,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only:focus-visible {
+  border-color: var(--axi-primary);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-hover);
+  outline: none;
+}
+
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only.is-active,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only.is-active {
+  border-color: var(--axi-primary);
+  color: var(--axi-text);
+  background: color-mix(in srgb, var(--axi-primary), transparent 84%);
+}
+
+.workbench-axi-shell .axi-tabbar {
+  gap: var(--space-2);
+  padding-inline: var(--space-2_5);
+  background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
+  border-bottom-color: var(--workbench-chrome-border);
+}
+
+.workbench-axi-shell .axi-tabbar__leading,
+.workbench-axi-shell .axi-tabbar__actions {
+  gap: var(--space-2_5);
+}
+
+.workbench-axi-shell .axi-route-tabs {
+  gap: var(--space-2_5);
+}
+
+.workbench-axi-shell .axi-route-tab {
+  height: var(--workbench-chrome-control-size);
+  min-height: var(--workbench-chrome-control-size);
+  border-color: var(--workbench-chrome-control-border);
+  border-radius: var(--workbench-chrome-radius);
+  padding-inline: var(--space-2);
+  color: var(--axi-muted);
+  background: var(--workbench-chrome-control-bg);
+}
+
+.workbench-axi-shell .axi-route-tab:hover:not(.is-active) {
+  border-color: var(--axi-primary);
+  color: var(--axi-text);
+  background: var(--workbench-chrome-control-hover);
+}
+
+.workbench-axi-shell .axi-route-tab.is-active {
+  border-color: var(--axi-primary);
+  color: var(--axi-text-inverse);
+  background: var(--axi-primary);
+}
+
+.workbench-axi-shell .axi-breadcrumb-bar {
+  /* 历史 WorkBench 面包屑：独立卡片项 + 中间竖向分隔符。 */
+  height: 39px;
+  min-height: 39px;
+  padding: var(--axi-space-2, 5px) var(--space-2_5);
+  background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
+  border-bottom-color: var(--workbench-chrome-border);
+}
+
+.workbench-axi-shell .axi-breadcrumb {
+  height: var(--workbench-chrome-control-size);
+  color: var(--axi-muted);
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-medium, 500);
+}
+
+.workbench-axi-shell .axi-breadcrumb-item {
+  max-width: 180px;
+  height: var(--workbench-chrome-control-size);
+  border: 1px solid color-mix(in srgb, var(--axi-text) 15%, transparent);
+  border-radius: var(--radius-xs);
+  padding-inline: var(--space-2);
+  color: var(--axi-muted);
+  background: var(--workbench-chrome-control-bg);
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-normal, 400);
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-link:hover {
+  border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
+  color: var(--axi-text);
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-link:focus-visible {
+  border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
+  color: var(--axi-text);
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+  outline: 2px solid var(--axi-primary);
+  outline-offset: 2px;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-link:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-current {
+  border-color: color-mix(in srgb, var(--axi-primary) 30%, transparent);
+  color: var(--axi-text);
+  background: color-mix(in srgb, var(--axi-primary) 8%, transparent);
+  font-weight: var(--axi-font-weight-normal, 400);
+}
+
+.workbench-axi-shell .axi-breadcrumb-item.is-current .axi-breadcrumb-item__icon {
+  color: var(--axi-primary);
+}
+
+.workbench-axi-shell .axi-breadcrumb-separator {
+  margin-inline: var(--space-2);
+  color: var(--axi-muted);
+  font-size: var(--axi-font-size-sm, 13px);
+  opacity: 0.4;
+}
+.workbench-floating-tool-panel {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+  padding: var(--axi-space-3, 14px) var(--axi-space-4, 16px);
+  color: var(--axi-text, #1f2937);
+  background: var(--axi-bg-surface, #fff);
+  border: 1px solid var(--axi-border, rgba(15, 23, 42, .12));
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .16);
+  font-size: var(--axi-font-size-xs, 12px);
+}
+
+.workbench-floating-tool-panel span {
+  color: var(--axi-muted, #64748b);
+}
+
+/* 顶栏插件列表：保持与截图中的紧凑、深色描边图标按钮同一套密度。 */
+.workbench-axi-shell .workbench-plugin-list-popover {
+  width: 272px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.workbench-plugin-list {
+  color: var(--axi-text, #e5e7eb);
+}
+
+.workbench-plugin-list__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--axi-border, rgba(148, 163, 184, .18));
+}
+
+.workbench-plugin-list__header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.workbench-plugin-list__header strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workbench-plugin-list__header span {
+  color: var(--axi-muted, #94a3b8);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.workbench-plugin-list__header > svg {
+  flex: 0 0 auto;
+  color: var(--axi-primary, #60a5fa);
+}
+
+.workbench-plugin-list__items {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+}
+
+.workbench-plugin-list__item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--axi-text, #e5e7eb);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workbench-plugin-list__item:hover,
+.workbench-plugin-list__item:focus-visible {
+  background: var(--axi-layout-hover, rgba(148, 163, 184, .12));
+  outline: none;
+}
+
+.workbench-plugin-list__item span {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-plugin-list__item em {
+  color: var(--axi-success, #34d399);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.workbench-system-settings-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workbench-system-settings-title svg {
+  color: var(--axi-primary, #60a5fa);
+}
+
+.workbench-system-settings__hint {
+  margin: 0 0 16px;
+  color: var(--axi-muted, #64748b);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.workbench-system-settings__items {
+  display: grid;
+  gap: 8px;
+}
+
+.workbench-system-settings__item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--axi-border, rgba(148, 163, 184, .2));
+  border-radius: 10px;
+  color: var(--axi-text, #1f2937);
+  background: var(--axi-bg-surface, #fff);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.workbench-system-settings__item:hover,
+.workbench-system-settings__item:focus-visible {
+  border-color: color-mix(in srgb, var(--axi-primary, #60a5fa) 55%, var(--axi-border, #cbd5e1));
+  background: var(--axi-layout-hover, #f8fafc);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.workbench-system-settings__item-icon {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--axi-primary, #2563eb);
+  background: color-mix(in srgb, var(--axi-primary, #60a5fa) 12%, transparent);
+}
+
+.workbench-system-settings__item-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.workbench-system-settings__item-copy strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workbench-system-settings__item-copy small {
+  overflow: hidden;
+  color: var(--axi-muted, #64748b);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-system-settings__item > svg {
+  color: var(--axi-muted, #64748b);
+}
+
+@media (max-width: 560px) {
+  .workbench-system-settings-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .workbench-system-settings-modal .ant-modal-content {
+    padding: 18px;
+  }
+}

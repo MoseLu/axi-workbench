@@ -46,6 +46,9 @@ Thumbs.db
 # Turbo
 .turbo/
 .omx/
+.superpowers/
+.workbuddy/
+docs/superpowers/
 
 # pnpm
 .pnpm-store/
@@ -112,3 +115,21 @@ kubeconfig
 # Misc
 *.tgz
 .cache/
+
+# Workbench Mac App（Tauri 2）本地构建产物
+apps/workbench-desktop/workbench-dist/
+apps/workbench-desktop/src-tauri/gen/
+apps/workbench-desktop/src-tauri/target/
+apps/workbench-desktop/src-tauri/icons/android/
+apps/workbench-desktop/src-tauri/icons/ios/
+apps/workbench-desktop/src-tauri/icons/Square*.png
+apps/workbench-desktop/src-tauri/icons/StoreLogo.png
+
+# Workbench Mobile Web and native Android runtime state
+apps/workbench-mobile/android/.idea/
+apps/workbench-mobile/android/.gradle/
+apps/workbench-mobile/android/**/build/
+apps/workbench-mobile/android/local.properties
+apps/workbench-mobile/android/.kotlin/
+apps/workbench-mobile/ios/
+apps/workbench-mobile/dist/

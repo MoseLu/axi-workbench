@@ -1,0 +1,129 @@
+.wb-account-page {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--axi-space-5, 20px);
+  background: var(--axi-layout-surface, var(--axi-bg-page));
+  border-radius: var(--axi-radius-lg, 6px);
+}
+
+.wb-account-page__panel {
+  min-height: 100%;
+}
+
+.wb-account-page h1 {
+  margin: 0 0 var(--axi-space-5, 30px);
+  color: var(--axi-text, #f5f7fb);
+  font-size: var(--axi-font-size-md, 15px);
+  font-weight: var(--axi-font-weight-semibold, 600);
+  line-height: 1.4;
+}
+
+.wb-account-page__form {
+  width: min(400px, 100%);
+}
+
+.wb-account-page__form .ant-form-item-label > label {
+  color: var(--axi-text, #f5f7fb);
+}
+
+.wb-account-page__form .ant-form-item-extra {
+  color: var(--axi-muted, rgba(255, 255, 255, 0.58));
+  font-size: var(--axi-font-size-xs, 12px);
+  line-height: 1.5;
+}
+
+.wb-account-page__avatar-field {
+  display: flex;
+  align-items: center;
+  gap: var(--axi-space-3, 12px);
+}
+
+.wb-account-page__avatar-control {
+  position: relative;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+}
+
+.wb-account-page__avatar-preview-trigger {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.wb-account-page__avatar-preview-trigger:focus-visible {
+  outline: 2px solid var(--axi-primary, #4169e1);
+  outline-offset: 3px;
+}
+
+.wb-account-page__avatar-preview-trigger:hover .wb-account-page__avatar {
+  filter: brightness(1.08);
+}
+
+.wb-account-page__avatar-edit {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--axi-layout-surface, var(--axi-bg-page));
+  border-radius: 50%;
+  padding: 0;
+  color: var(--axi-text-inverse, #fff);
+  background: var(--axi-primary, #4169e1);
+  box-shadow: 0 1px 4px color-mix(in srgb, #000 42%, transparent);
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.wb-account-page__avatar-edit:hover {
+  filter: brightness(1.08);
+  transform: scale(1.06);
+}
+
+.wb-account-page__avatar-edit:focus-visible {
+  outline: 2px solid var(--axi-primary, #4169e1);
+  outline-offset: 2px;
+}
+
+.wb-account-page__avatar {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--axi-text, #f5f7fb) 8%, transparent);
+}
+
+.wb-account-page__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wb-account-page__form .ant-input[readonly] {
+  color: var(--axi-muted, rgba(255, 255, 255, 0.58));
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-account-page__avatar-edit {
+    transition: none;
+  }
+}

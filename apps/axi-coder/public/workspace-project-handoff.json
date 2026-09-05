@@ -1,0 +1,1152 @@
+{
+  "schemaVersion": "2026-06-11",
+  "generatedAt": "2026-08-31T16:07:29.218Z",
+  "source": "infra/axi-workspace-governance/workspace.json",
+  "summary": {
+    "total": 22,
+    "verified": 22,
+    "documented": 0,
+    "stale": 0,
+    "unready": 0
+  },
+  "projects": [
+    {
+      "id": "ai-resource-orchestration",
+      "name": "资源调度中心",
+      "path": "/Volumes/code/workspace/products/ai-resource-orchestration",
+      "kind": "product",
+      "lifecycle": "active-local",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/ai-resource-orchestration/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/ai-resource-orchestration/docs/HANDOFF.md",
+      "graphId": "ai-resource-orchestration",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Local-first conversational resource orchestration workbench with a standalone five-category gateway, provider-backed discovery, MiniMax bridges, and deterministic validation.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev",
+          "pnpm --filter @resource-broker/gateway start"
+        ],
+        "health": [
+          "test -f apps/workbench/index.html",
+          "curl -sSf http://127.0.0.1:5177/",
+          "curl -sSf http://127.0.0.1:8787/health/live"
+        ],
+        "verify": [
+          "pnpm typecheck",
+          "pnpm test",
+          "pnpm build",
+          "pnpm --filter @resource-broker/contracts test",
+          "pnpm --filter @resource-broker/gateway test -- test/resource-search.test.ts"
+        ],
+        "smoke": [
+          "test -f apps/workbench/public/favicon.svg",
+          "curl -sSf http://127.0.0.1:5177/",
+          "curl -sSf http://127.0.0.1:8787/memory/settings",
+          "curl -sSf http://127.0.0.1:8787/sessions?dateKey=2026-08-29",
+          "node --test scripts/gateway-ha/gateway-ha.test.mjs",
+          "curl -sS -X POST http://127.0.0.1:8787/resource/search -H \"content-type: application/json\" -H \"x-request-id: smoke-resource-search\" -d '{\"query\":\"cat\",\"resourceKinds\":[\"image\"]}'"
+        ]
+      },
+      "currentWork": {
+        "todo": "TASK.md",
+        "milestone": "PRD.md",
+        "active": [
+          "Validate provider-backed image, knowledge, web-search, and generated-image flows.",
+          "Keep deterministic validation ahead of presentation and future processors.",
+          "Standalone gateway routes image/document/project/ui/icon through controlled adapters with fallback, timeout, breaker, backpressure, cache, health, metrics, and drain semantics.",
+          "Image-search cascade: 本地图库 → 网络搜索找参考 → 合成 prompt → 生成；fixture 仅作 VITE_FIXTURE_MODE 显式兜底。",
+          "W1-W4 acceptance sync: L1/L1b/L2/L3 verified; L4 production HA remains undeclared.",
+          "Local memory MVP MEM-MVP-001..022 is implemented: default-off single-instance JSON memory, gateway boundary, planner context, idle policy, redaction, management UI, and browser smoke are complete; multi-instance memory consistency remains Phase 2.",
+          "Lightweight session management SES-MVP-001..023 is implemented: date-grouped daily/manual sessions, same-day resume, independent session store/API, bounded conversation context, overlay drawer; user entries persist before dispatch and in-flight runs mark interrupted on pagehide."
+        ],
+        "knownFailures": [
+          "Axi Docs source-lock drift and legacy Chinese batch drift remain inherited workspace baselines.",
+          "Gateway L4 production evidence remains undeclared for the real sandbox-token outage drill, 30-day production monitoring, and SRE plus owner sign-off; local L1/L1b/L2/L3 evidence is complete.",
+          "Memory Phase 2 remains outside the MVP: multi-instance memory consistency, cloud or cross-device sync, embedding retrieval, model-based consolidation, and Codex private-memory integration.",
+          "Session Phase 2 remains outside the MVP: multi-instance shared session store, cloud or cross-device sync, embedding/search, and Codex private session files."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-29"
+    },
+    {
+      "id": "axi-agent-platform",
+      "name": "Axi Agent Platform",
+      "path": "/Volumes/code/workspace/projects/axi-agent-platform",
+      "kind": "project",
+      "lifecycle": "active-canonical",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-agent-platform/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-agent-platform/docs/HANDOFF.md",
+      "graphId": "axi-agent-platform",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Multi-agent collaboration platform combining a FastAPI backend, React dashboard, SubAgent worktree isolation, an MCP model swarm, and the Axi Todo tool.",
+      "commands": {
+        "setup": [
+          "python -m venv backend/venv && backend/venv/bin/pip install -r backend/requirements.txt",
+          "pnpm --dir frontend install",
+          "pnpm --dir apps/desktop-glass-ui install",
+          "pnpm --dir infra/axi-agent-mcp install",
+          "pnpm --dir tools/axi-todo install"
+        ],
+        "start": [
+          "cd backend && uvicorn app.main:app --reload",
+          "pnpm --dir frontend dev",
+          "pnpm --dir apps/desktop-glass-ui dev",
+          "docker compose up -d"
+        ],
+        "health": [
+          "curl -fsS http://127.0.0.1:8000/health",
+          "curl -fsS http://127.0.0.1:8000/"
+        ],
+        "verify": [
+          "cd backend && pytest tests/",
+          "pnpm --dir frontend build",
+          "pnpm --dir apps/desktop-glass-ui build",
+          "pnpm --dir infra/axi-agent-mcp test",
+          "pnpm --dir tools/axi-todo verify"
+        ],
+        "smoke": [
+          "PYTHONPATH=backend uv run --python 3.12 --with-requirements backend/requirements.txt python -m pytest -q backend/tests/test_code_isolation_manager.py backend/tests/test_runtime_api_smoke.py"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "SubAgent worktree lifecycle coverage",
+          "SubAgent dashboard hardening",
+          "Axi Todo integration",
+          "Axi Todo PRD continuity mode",
+          "README mirror parity"
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-artboard",
+      "name": "Axi Artboard",
+      "path": "/Volumes/code/workspace/products/axi-artboard",
+      "kind": "product",
+      "lifecycle": "feature-stage",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/axi-artboard/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/axi-artboard/docs/HANDOFF.md",
+      "graphId": "axi-artboard",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Single-page canvas / artboard frontend for the Axi Spun-out Products line.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev"
+        ],
+        "health": [
+          "test -f index.html"
+        ],
+        "verify": [
+          "pnpm build"
+        ],
+        "smoke": [
+          "pnpm dev --port 3000"
+        ]
+      },
+      "currentWork": {
+        "todo": "AGENTS.md",
+        "milestone": "AGENTS.md",
+        "active": [
+          "Maintain canvas / artboard frontend."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-docs",
+      "name": "Axi Docs",
+      "path": "/Volumes/code/workspace/projects/axi-docs",
+      "kind": "project",
+      "lifecycle": "active-canonical",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-docs/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-docs/docs/HANDOFF.md",
+      "graphId": "axi-docs",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
+      "commands": {
+        "setup": [
+          "pnpm --dir app install --frozen-lockfile"
+        ],
+        "start": [
+          "pnpm --dir app dev",
+          "pnpm --dir app mcp:http"
+        ],
+        "health": [
+          "pnpm --dir app docs:check",
+          "pnpm --dir app source:check"
+        ],
+        "verify": [
+          "pnpm --dir app verify",
+          "pnpm --dir app test:run",
+          "pnpm --dir app rule:check"
+        ],
+        "smoke": [
+          "pnpm --dir app docs:check",
+          "pnpm --dir app verify"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Keep the project documentation contract and generated dossier coverage complete.",
+          "Maintain workspace registry coverage and locked documentation sources.",
+          "Continue the VitePress-aligned reader experience and source governance milestone."
+        ],
+        "knownFailures": [
+          "TODO.md records remaining security, asynchronous I/O, CORS, architecture, UX, and test-coverage work.",
+          "Live Blinko, AI analysis, and OSS integrations require their corresponding external services and credentials."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-22"
+    },
+    {
+      "id": "axi-feishu-codex-bridge",
+      "name": "Axi Feishu Codex Bridge",
+      "path": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
+      "kind": "tool",
+      "lifecycle": "active-tool-local-runtime",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/HANDOFF.md",
+      "graphId": "axi-feishu-codex-bridge",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/state/VERIFICATION.md"
+      ],
+      "summary": "Local Feishu IM bridge that routes messages to Codex CLI, Codex App WebSocket, or Codex Plus CDP execution surfaces and returns replies to Feishu.",
+      "commands": {
+        "setup": [
+          "python3 -m venv .venv",
+          ".venv/bin/pip install -r requirements.txt",
+          "cp .env.example .env"
+        ],
+        "start": [
+          "PYTHONPATH=src .venv/bin/uvicorn codex_feishu_bridge.app:app --reload --host 0.0.0.0 --port 8787",
+          "./run-channel.sh"
+        ],
+        "health": [
+          "curl --fail http://127.0.0.1:8787/healthz"
+        ],
+        "verify": [
+          "PYTHONPATH=src .venv/bin/python -m unittest discover -s tests"
+        ],
+        "smoke": [
+          "PYTHONPATH=src .venv/bin/python -m unittest discover -s tests"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Complete end-to-end smoke coverage for all three Codex execution surfaces.",
+          "Add CI coverage for the unittest discovery command.",
+          "Add a no-dispatch dry-run mode to the channel runner."
+        ],
+        "knownFailures": [
+          "Live Feishu end-to-end checks require valid credentials and an authorized bot.",
+          "Memory features are not fully healthy when PostgreSQL or Ollama is unavailable."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-image-preview",
+      "name": "Axi Image Preview",
+      "path": "/Volumes/code/workspace/projects/axi-image-preview",
+      "kind": "project",
+      "lifecycle": "active-canonical",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-image-preview/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-image-preview/docs/HANDOFF.md",
+      "graphId": "axi-image-preview",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Browser preview app for the Axi Image Preview target — wallpaper gallery, MCP-backed my-wallpapers writes, and CSS-to-SCSS migration.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev"
+        ],
+        "health": [
+          "test -f index.html"
+        ],
+        "verify": [
+          "pnpm build"
+        ],
+        "smoke": [
+          "pnpm dev --port 3001"
+        ]
+      },
+      "currentWork": {
+        "todo": "TODO.md",
+        "milestone": "MILESTONE.md",
+        "active": [
+          "Migrate CSS to SCSS across the gallery components.",
+          "Deduplicate wallpaper uploads via sha256.",
+          "Refresh my-wallpapers on silent reload."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-notify",
+      "name": "Axi Notify",
+      "path": "/Volumes/code/workspace/projects/axi-notify",
+      "kind": "project",
+      "lifecycle": "active-canonical",
+      "owner": "hubu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-notify/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-notify/docs/HANDOFF.md",
+      "graphId": "axi-notify",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-notify/VERIFICATION.md"
+      ],
+      "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
+      "commands": {
+        "setup": [
+          "cd relay-server && go mod download",
+          "pnpm --dir android-app install",
+          "./scripts/write-android-local-properties.sh"
+        ],
+        "start": [
+          "make run-relay-local",
+          "make android-debug"
+        ],
+        "health": [
+          "curl -fsS http://127.0.0.1:8080/healthz"
+        ],
+        "verify": [
+          "make test-relay",
+          "make smoke-relay-local",
+          "make android-agent-verify",
+          "git check-ignore android-app/app/google-services.json"
+        ],
+        "smoke": [
+          "make smoke-relay-local"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Desktop badge and unread summary",
+          "Compose and React Native dynamic material pipeline",
+          "Security hardening for credentials and debug bootstrap",
+          "OpenAPI and design-token CI gates"
+        ],
+        "knownFailures": [
+          "Desktop numeric badges remain launcher and OEM dependent even when the notification record is present.",
+          "Several planned security, health, schema, and Android tests listed in TODO.md are not implemented yet."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-pet",
+      "name": "Axi Pet",
+      "path": "/Volumes/code/workspace/projects/axi-pet",
+      "kind": "project",
+      "lifecycle": "active-local",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-pet/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-pet/docs/HANDOFF.md",
+      "graphId": "axi-pet",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet/docs/state/VERIFICATION.md"
+      ],
+      "summary": "A large Project AIRI-derived monorepo for browser, Electron, mobile, server, plugin, rendering, and bot surfaces for LLM-driven virtual characters.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev"
+        ],
+        "health": [
+          "curl -fsS http://127.0.0.1:5173/"
+        ],
+        "verify": [
+          "pnpm test:run && pnpm typecheck"
+        ],
+        "smoke": [
+          "pnpm -F @proj-airi/stage-web typecheck && pnpm -F @proj-airi/stage-web build"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Keep the root documentation suite complete and current.",
+          "Align verification guidance with the real monorepo surfaces.",
+          "Preserve upstream namespace and cross-package ownership boundaries."
+        ],
+        "knownFailures": [
+          "Root PRD, TDD, INDEX, and MILESTONE content still contains generic early-bootstrap language.",
+          "Full monorepo verification is expensive; onboarding smoke is scoped to Stage Web.",
+          "Feature services can require external providers and untracked credentials."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-pet-desktop",
+      "name": "Axi Pet Desktop",
+      "path": "/Volumes/code/workspace/projects/axi-pet-desktop",
+      "kind": "project",
+      "lifecycle": "active-local",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-pet-desktop/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-pet-desktop/docs/HANDOFF.md",
+      "graphId": "axi-pet-desktop",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "macOS desktop runtime for the Axi Pet virtual companion; Electron shell plus React frontend.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev"
+        ],
+        "health": [
+          "test -f apps/desktop-pet/electron.vite.config.ts"
+        ],
+        "verify": [
+          "pnpm typecheck",
+          "pnpm -F @axi-pet-desktop/desktop-pet test:run"
+        ],
+        "smoke": [
+          "pnpm -F @axi-pet-desktop/desktop-pet e2e:linux"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Maintain the Electron shell + React frontend sync.",
+          "Keep the desktop runtime aligned with the Web companion."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-proxy-companion",
+      "name": "Axi Proxy Companion",
+      "path": "/Volumes/code/workspace/tools/axi-proxy-companion",
+      "kind": "tool",
+      "lifecycle": "active-tool",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/tools/axi-proxy-companion/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/tools/axi-proxy-companion/docs/HANDOFF.md",
+      "graphId": "axi-proxy-companion",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-proxy-companion/docs/state/VERIFICATION.md"
+      ],
+      "summary": "Native macOS AppKit companion that starts, stops, inspects, and reports traffic for registered local proxy backends without changing the macOS system proxy.",
+      "commands": {
+        "setup": [
+          "swift --version",
+          "Ensure the selected backend run script and sing-box runtime exist under the documented Application Support path."
+        ],
+        "start": [
+          "swift run AxiProxyCompanion"
+        ],
+        "health": [
+          "Use the app dashboard to check the selected backend local port and traffic API.",
+          "For PROXYCLOUD check 127.0.0.1:7891 and 127.0.0.1:17991; for EdgeTunnel check 127.0.0.1:2080 and 127.0.0.1:17992."
+        ],
+        "verify": [
+          "swift build",
+          "rg -n \"networksetup|HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|launchctl\" Sources/ must return no matches",
+          "for f in README.md README.zh-CN.md AGENTS.md CHANGELOG.md TODO.md MILESTONE.md INDEX.md PRD.md TDD.md; do test -f \"$f\" || exit 1; done"
+        ],
+        "smoke": [
+          "swift build"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Keep the zero-context manifest aligned with backend definitions, local ports, runtime paths, and secret boundaries.",
+          "Add visual regression coverage for the native dashboard when a suitable framework is adopted."
+        ],
+        "knownFailures": [
+          "No automated unit-test or UI-test target is configured.",
+          "Runtime health depends on backend scripts and sing-box installations outside the repository.",
+          "Cloudflare Worker deployment and EdgeTunnel installation require operator-provided local credentials and are not safe onboarding smoke tests."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-registry",
+      "name": "Axi Local Registry",
+      "path": "/Volumes/code/workspace/infra/axi-registry",
+      "kind": "infra",
+      "lifecycle": "active-infra",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/infra/axi-registry/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/infra/axi-registry/docs/HANDOFF.md",
+      "graphId": "axi-registry",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/infra/axi-registry/docs/state/VERIFICATION.md"
+      ],
+      "summary": "Local-only Verdaccio registry for authenticated publication and local consumption of @axi/* runtime packages.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm start"
+        ],
+        "health": [
+          "pnpm health"
+        ],
+        "verify": [
+          "node -e \"JSON.parse(require('fs').readFileSync('docs/project-docs.manifest.json','utf8'))\"",
+          "for f in README.md README.zh-CN.md AGENTS.md CHANGELOG.md TODO.md MILESTONE.md INDEX.md PRD.md TDD.md; do test -f \"$f\" || exit 1; done"
+        ],
+        "smoke": [
+          "test -f config/config.yaml && test -f scripts/health.mjs"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Keep the zero-context manifest aligned with actual commands and package contracts.",
+          "Keep verification evidence fresh after runtime or documentation changes."
+        ],
+        "knownFailures": [
+          "package.json does not define test or build scripts; documentation verification and the live health smoke are the current safe gates."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-rules",
+      "name": "Axi Rules",
+      "path": "/Volumes/code/workspace/projects/axi-rules",
+      "kind": "shared",
+      "lifecycle": "active-shared-provider",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-rules/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-rules/docs/HANDOFF.md",
+      "graphId": "axi-rules",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Local authority for Axi agent routing, memory, safety, verification, and generated project/rule indexes, with a React visualization of the memory pipeline.",
+      "commands": {
+        "setup": [
+          "pnpm --dir frontend install --frozen-lockfile"
+        ],
+        "start": [
+          "pnpm --dir frontend dev"
+        ],
+        "health": [
+          "python3 scripts/validate-index.py"
+        ],
+        "verify": [
+          "make rules",
+          "python3 scripts/test-handoff-workflow.py --self-test",
+          "python3 scripts/test-audit-frontend-testing.py",
+          "python3 scripts/audit-frontend-testing.py --all --strict",
+          "pnpm --dir frontend typecheck",
+          "pnpm --dir frontend test",
+          "pnpm --dir frontend e2e",
+          "pnpm --dir frontend build"
+        ],
+        "smoke": [
+          "python3 scripts/validate-index.py",
+          "python3 scripts/test-handoff-workflow.py --self-test"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Ship and harden scripts/handoff-workflow.py as the AR-HANDOFF-004 mechanical gate.",
+          "Keep generated indexes synchronized with rule and workspace changes.",
+          "Keep AR-HANDOFF-004 aligned with workspace-project onboard, handoff-check, and handoff-workflow.",
+          "Maintain the behavior-first frontend testing standard, local contracts, and strict audit."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-17"
+    },
+    {
+      "id": "axi-skills",
+      "name": "Axi Skills",
+      "path": "/Volumes/code/workspace/shared/axi-skills",
+      "kind": "shared",
+      "lifecycle": "active-shared-provider",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/shared/axi-skills/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/shared/axi-skills/docs/HANDOFF.md",
+      "graphId": "axi-skills",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
+      "commands": {
+        "setup": [
+          "python3 --version"
+        ],
+        "start": [
+          "scripts/install-global-links.sh"
+        ],
+        "health": [
+          "python3 scripts/verify.py"
+        ],
+        "verify": [
+          "python3 scripts/verify.py",
+          "python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff"
+        ],
+        "smoke": [
+          "python3 scripts/verify.py",
+          "python3 scripts/test_skill_loading_policy.py"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state.",
+          "Keep the generated skill index and i18n batch manifest aligned with skills/.",
+          "Preserve skills/ as the runtime source of truth and keep skills.zh/ out of runtime loading."
+        ],
+        "knownFailures": [
+          "Full translation validation across every batch is intentionally heavier than the safe onboarding smoke.",
+          "skills.zh/ is git-ignored and must not be treated as runtime source."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-soul-world",
+      "name": "Axi Soul World",
+      "path": "/Volumes/code/workspace/products/axi-soul-world",
+      "kind": "product",
+      "lifecycle": "active-product",
+      "owner": "Mose",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/axi-soul-world/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/axi-soul-world/docs/HANDOFF.md",
+      "graphId": "axi-soul-world",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "A multi-surface local-first product: core backend in this repo, Axi Mood on Android, and an admin Web (later Mac) that logs in by phone QR scan.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [
+          "test -f README.md && test -f PRD.md && test -f BACKEND_CONTRACT.md && test -f docs/architecture/three-surface-bff.md"
+        ],
+        "verify": [
+          "git diff --check",
+          "test -f axi-soul-api/README.md && test -f apps/web-admin/index.html && test -f apps/web-bff/README.md",
+          "cd apps/android && ./gradlew :app:checkDesignTokens",
+          "cd apps/android && ./gradlew :app:testDebugUnitTest",
+          "cargo test --manifest-path axi-auth-helper/Cargo.toml",
+          "cd axi-soul-api && cmake --preset mac-arm64-clang-debug && cmake --build --preset mac-arm64-clang-debug && ctest --preset mac-arm64-clang-debug --output-on-failure"
+        ],
+        "smoke": [
+          "test -f apps/android/gradlew && test -f axi-auth-helper/Cargo.toml && test -f apps/web-admin/index.html"
+        ]
+      },
+      "currentWork": {
+        "todo": "TODO.md",
+        "milestone": "IMPLEMENTATION_PLAN.md",
+        "active": [
+          "W1-W8 restricted delivery is integrated in dev and origin/dev at merge 795a804; the W5-W8 topic head b9dfef3 is its second parent.",
+          "W9 object-store readiness/revalidation implementation and its two contract targets are integrated into dev; the controlled PG/S3-compatible profile remains opt-in and owner-gated.",
+          "W10 SQLite media/profile repositories, replay fixtures, and MediaBank residual guard are integrated into dev; real-device replay, upgrade, offline, UI-tree, and logcat evidence remain incomplete.",
+          "W11 QR secure-session adapter/orchestrator, standard encoder, Activity wiring, and JVM tests are integrated into dev; keep Web pairing separate from Android LAN AuthServer and keep sync_enabled=false by default.",
+          "W12 local implementation is complete on codex/w12-sync-operations (worker/DLQ/readback/status contracts); controlled W9/W10/W11 gates, owner ADR decisions, staging restore and production acceptance remain blocked."
+        ],
+        "knownFailures": [
+          "Vendor object storage credentials, bucket policy, and controlled PostgreSQL profile are not available; W9 cannot be exercised against a real S3-compatible/PG environment in this session.",
+          "Formal identity provider, session persistence, domain/TLS certificate, cookie policy, CORS/CSRF, and real browser-to-device E2E evidence remain unverified for W11.",
+          "No controlled Android device with camera/photo permissions is available for the W10 replay/upgrade/offline screenshots, UI tree, and logcat evidence.",
+          "W12 staging restore, real server-side outbox profile, owner ADR decisions and controlled device/deployment evidence remain unverified; local worker/readback/DLQ implementation is covered by the W12 report."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-25"
+    },
+    {
+      "id": "axi-tauri-starter",
+      "name": "Axi Tauri Starter",
+      "path": "/Volumes/code/workspace/shared/axi-tauri-starter",
+      "kind": "shared",
+      "lifecycle": "active-shared-reference",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/HANDOFF.md",
+      "graphId": "axi-tauri-starter",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/docs/state/VERIFICATION.md"
+      ],
+      "summary": "Shared reference for Tauri 2 desktop-shell layout, command conventions, and reusable npm, pnpm, Cargo, and Rust cache bootstrap.",
+      "commands": {
+        "setup": [
+          "source scripts/tauri-env.sh"
+        ],
+        "start": [
+          "source scripts/tauri-env.sh"
+        ],
+        "health": [
+          "bash -n scripts/tauri-env.sh && test -f scripts/tauri-env.sh"
+        ],
+        "verify": [
+          "rg -n \"TODO|PRD|TDD\" docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md"
+        ],
+        "smoke": [
+          "bash -n scripts/tauri-env.sh"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Keep the root documentation suite current.",
+          "Keep cache-bootstrap verification aligned with the shell script."
+        ],
+        "knownFailures": [
+          "The documentation baseline milestone is still marked in progress.",
+          "This reference does not provide a runnable Tauri application by design."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-ui",
+      "name": "Axi UI",
+      "path": "/Volumes/code/workspace/shared/axi-ui",
+      "kind": "shared",
+      "lifecycle": "active-shared-provider",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/shared/axi-ui/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/shared/axi-ui/docs/HANDOFF.md",
+      "graphId": "axi-ui",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Canonical Axi Black Gold design tokens and theme runtime, plus shared React primitives, shell, settings, CRUD, widgets, addons, and Vite tooling published as @axi packages.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm --dir gallery dev"
+        ],
+        "health": [
+          "pnpm check:file-lines && pnpm typecheck"
+        ],
+        "verify": [
+          "pnpm test"
+        ],
+        "smoke": [
+          "pnpm check:file-lines && pnpm typecheck"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Own the canonical Black Gold preset in @axi/tokens and @axi/core.",
+          "Own the Black Gold UI management backend and typed resource catalogs in gallery.",
+          "Retire axi-design while excluding its Archive and HR routes/runtime.",
+          "Keep the root documentation suite current.",
+          "Keep verification commands aligned with the workspace packages.",
+          "Continue additive package hardening without breaking @axi contracts.",
+          "Keep public API, package versions, and local release evidence synchronized through maintain-axi-ui-docs."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-video-downloader",
+      "name": "Axi Video Downloader",
+      "path": "/Volumes/code/workspace/tools/axi-video-downloader",
+      "kind": "tool",
+      "lifecycle": "active-tool",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/tools/axi-video-downloader/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/tools/axi-video-downloader/docs/HANDOFF.md",
+      "graphId": "axi-video-downloader",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Local Python tool that coordinates a Flask UI, Android device automation, mitmproxy capture, downloads, and SQLite tracking for personal-device video capture.",
+      "commands": {
+        "setup": [
+          "python3.12 -m venv .venv312",
+          "source .venv312/bin/activate",
+          "pip install -r requirements.txt"
+        ],
+        "start": [
+          "python app.py"
+        ],
+        "health": [
+          "Open http://localhost:5000 and request /api/status after the Flask app starts."
+        ],
+        "verify": [
+          "python3 -m py_compile app.py main.py config.py database.py adb_controller.py mitm_proxy.py uicontroller.py __init__.py modules/*.py utils/*.py",
+          "for f in README.md README.zh-CN.md AGENTS.md CHANGELOG.md TODO.md MILESTONE.md INDEX.md PRD.md TDD.md; do test -f \"$f\" || exit 1; done"
+        ],
+        "smoke": [
+          "python3 -m py_compile app.py main.py config.py database.py adb_controller.py mitm_proxy.py uicontroller.py __init__.py modules/*.py utils/*.py"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Keep the zero-context manifest aligned with the actual Python entrypoints and hardware prerequisites.",
+          "Add a small automated pytest smoke test without requiring a connected device."
+        ],
+        "knownFailures": [
+          "The project is not a Git repository; edit it in place and do not initialize Git.",
+          "Full runtime smoke depends on local Python dependencies, ADB, a configured Android device, and a trusted mitmproxy certificate.",
+          ".env.example documents variables that config.py does not currently load into its static defaults.",
+          "There is no automated pytest suite yet."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-workbench",
+      "name": "Axi Workbench",
+      "path": "/Volumes/code/workspace/projects/axi-workbench",
+      "kind": "project",
+      "lifecycle": "active-canonical",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-workbench/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-workbench/docs/HANDOFF.md",
+      "graphId": "axi-workbench",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "make docker-up && make migrate-identity && make migrate-platform",
+          "pnpm dev:workbench",
+          "pnpm dev:mobile",
+          "pnpm --filter @axi/workstation-control-plane start",
+          "pnpm --filter @axi/workstation-communication-gateway start"
+        ],
+        "health": [
+          "pnpm --filter @axi/workstation-control-plane smoke",
+          "python3 infra/fleet-console/scripts/fleetctl.py validate"
+        ],
+        "verify": [
+          "make verify-go",
+          "make verify-helm",
+          "pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check",
+          "pnpm --filter @axi/workbench --filter @axi/workbench-mobile test",
+          "pnpm --filter @axi/workbench --filter @axi/workbench-mobile build",
+          "node apps/workbench/scripts/verify-ui-contracts.mjs",
+          "pnpm --filter @axi/workbench-mobile verify:contracts",
+          "pnpm check:boundaries"
+        ],
+        "smoke": [
+          "pnpm --filter @axi/workstation-control-plane smoke"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Align verification commands with the real project stack",
+          "Implement the role-oriented multi-surface product contract: Web control center, Mobile role execution and professional tools; reconcile capability/action-policy ownership and navigation terminology while keeping the two app compositions independent",
+          "Preserve ownership and cross-project boundaries",
+          "Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment"
+        ],
+        "knownFailures": [
+          "The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.",
+          "No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; cluster end-to-end acceptance remains external."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-07"
+    },
+    {
+      "id": "axi-workspace-governance",
+      "name": "Axi Workspace Governance",
+      "path": "/Volumes/code/workspace/infra/axi-workspace-governance",
+      "kind": "axi-workspace-governance",
+      "lifecycle": "active-governance",
+      "owner": "",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/HANDOFF.md",
+      "graphId": "axi-workspace-governance",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
+      ],
+      "summary": "Workspace registry, relationship graph, generated catalog, zero-context handoff checks, and governance audit scripts.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [],
+        "health": [
+          "pnpm workspace:audit"
+        ],
+        "verify": [
+          "pnpm handoff:test",
+          "pnpm completion:test"
+        ],
+        "smoke": [
+          "pnpm handoff:test && pnpm completion:test"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/state/TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
+          "Maintain the task-execution-routing/v1 workflow-first contract."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "ielts-vocab",
+      "name": "IELTS Vocabulary",
+      "path": "/Volumes/code/workspace/products/ielts-vocab",
+      "kind": "product",
+      "lifecycle": "active-product",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/ielts-vocab/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/ielts-vocab/docs/HANDOFF.md",
+      "graphId": "ielts-vocab",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [
+        "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/ielts-vocab/docs/state/VERIFICATION.md"
+      ],
+      "summary": "Full-stack IELTS vocabulary learning product with web, mobile, shared client packages, gateway, split backend services, speech, and production operations.",
+      "commands": {
+        "setup": [
+          "./scripts/setup-mac-runtime.sh && pnpm install"
+        ],
+        "start": [
+          "./start-project.sh"
+        ],
+        "health": [
+          "curl --fail http://127.0.0.1:8000/health"
+        ],
+        "verify": [
+          "pnpm --dir frontend verify:repo-guards"
+        ],
+        "smoke": [
+          "pnpm --dir frontend verify:repo-guards"
+        ]
+      },
+      "currentWork": {
+        "todo": "backend/TODO.md",
+        "milestone": "docs/project-audit-2026-03-31.md",
+        "active": [
+          "Keep the deployed split backend stable.",
+          "Complete final remote release, preflight, smoke, bounded storage drill, and closeout documentation."
+        ],
+        "knownFailures": [
+          "Final remote release and bounded storage drill remain outstanding.",
+          "Visual regression coverage for frontend components is not yet established."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "sports-management",
+      "name": "体育管理应用",
+      "path": "/Volumes/code/workspace/projects/axi-sports-management-app",
+      "kind": "project",
+      "lifecycle": "active-product",
+      "owner": "hubu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/HANDOFF.md",
+      "graphId": "sports-management",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Quasar and Vue 3 sports-management application skeleton with Pinia, Vue Router, Vue I18n, and a Capacitor Android wrapper; the backend directory is only a placeholder.",
+      "commands": {
+        "setup": [
+          "pnpm install"
+        ],
+        "start": [
+          "pnpm dev"
+        ],
+        "health": [
+          "curl -fsS http://127.0.0.1:9000/"
+        ],
+        "verify": [
+          "pnpm lint && pnpm build"
+        ],
+        "smoke": [
+          "pnpm lint && pnpm build"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Maintain a parseable, evidence-backed root documentation suite.",
+          "Keep Quasar lint and build clean.",
+          "Define future i18n, visual regression, and native-shell hardening work."
+        ],
+        "knownFailures": [
+          "The unit-test script is a placeholder and no unit-test framework is wired.",
+          "The backend directory has no real service contract.",
+          "The application currently ships only the en-US locale."
+        ]
+      },
+      "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "story-graph",
+      "name": "Story Graph",
+      "path": "/Volumes/code/workspace/products/story-graph",
+      "kind": "product",
+      "lifecycle": "active-product",
+      "owner": "Mose",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/products/story-graph/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/products/story-graph/docs/HANDOFF.md",
+      "graphId": "story-graph",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Evidence-driven local novel relationship graph workbench with a Python pipeline, SQLite evidence store, and React/Vite viewer.",
+      "commands": {
+        "setup": [
+          "pnpm --dir app install"
+        ],
+        "start": [
+          "pnpm --dir app run dev"
+        ],
+        "health": [
+          "test -f db/graph.db"
+        ],
+        "verify": [
+          "python3 -m unittest -q tests/test_evidence_pipeline.py",
+          "python3 -m unittest -q tests/test_event_features.py",
+          "node --test app/server/evidence-store.test.mjs",
+          "pnpm --dir app run build",
+          "pnpm --dir app run tokens:check",
+          "pnpm --dir app run tokens:consistency"
+        ],
+        "smoke": [
+          "test -f app/package.json && test -f db/graph.db"
+        ]
+      },
+      "currentWork": {
+        "todo": "TODO.md",
+        "milestone": "docs/state/MILESTONE.md",
+        "active": [
+          "多代叙事图谱 v2 已完成：默认长卷只读取证据闭环的叙事事件，使用主线地图、五段式账本与人物/组织/地点档案解释人物变化；待证实体与关系停留在审核队列。",
+          "PRD v3 + 文档 scaffolding（本次迭代）：新增 TODO.md / docs/state/TODO.md / docs/state/MILESTONE.md；CHANGE.md 顶部加 ## Unreleased + Re-verified at: 2026-08-05；manifest 补 docs_entrypoints / documents；提交日志 docs/logs/submit/2026-08-05-doc-v3-batch-submit.md。",
+          "Run the focused verification commands from the canonical workspace path.",
+          "Retire the rollback checkout only after owner acceptance.",
+          "Tighten `tailwind.config.ts` `content` glob to stop scanning `node_modules`."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-08-05"
+    }
+  ]
+}

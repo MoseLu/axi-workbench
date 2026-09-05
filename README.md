@@ -20,43 +20,59 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 - **Axi Dashboard Apps**：可以在 DevSvc Dashboard 中打开的应用。
 - **Axi Resources**：服务、合同、工具、shared runtime 和本地基础设施的完整能力索引。
 
+## 生产后端演进（2026-08）
+
+用户应用是两个独立部署的客户端：**Web 是完整的后台管理控制中心，移动端是面向待办、告警和受控单对象执行的角色化辅助管理端**。再高专业度或物理操作保留在 DevSvc/Fleet 等专用工具中。两端拥有各自的 UI、路由和交互；共享的仅是 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。详细的产品架构、动作分级和公开案例参照见 [`docs/state/PRD.md`](docs/state/PRD.md)。
+
+- `api-gateway`（Go + Gin）是唯一业务 API 入口，使用 ZITADEL JWKS、HttpOnly 会话、Redis 限流、追踪关联和无请求体审计日志。
+- `identity-adapter`（Go + Gin）承接邮件验证、扫码登录事务和 EPS 身份映射；短期二维码事务在 Redis，长期验证/映射数据在 PostgreSQL。
+- `platform-core`（Go + Gin）是模块化租户核心，包含成员/RBAC、偏好、字典、项目、任务、Outbox 与 PostgreSQL RLS。
+- `workflow-engine`、`notification-service`、`file-service` 已接入同一 Gateway/Helm 内部拓扑；workflow 与 notification 已落 PostgreSQL 持久化和 migration Job，notification 还具备可恢复 delivery worker 与 SMTP，file 已支持生产 S3/MinIO + PostgreSQL 元数据及短时预签名 URL，分别保留 Python/Go/Python 专职边界，workflow 异步编排、Kafka 事件消费与文件处理链仍在迁移。
+- `auth-service` 和 Spring/H2 `core-service` 只保留为迁移兼容来源，不是生产身份或业务数据 owner。
+
+部署说明位于 [`infra/helm/README.md`](infra/helm/README.md)，架构决策位于 [`docs/adr/0001-zitadel-gin-platform-core.md`](docs/adr/0001-zitadel-gin-platform-core.md)。
+
 ## Current Structure
+
+源码目录同时包含用户端、Host、Hosted 子应用、垂直工具和多种运行时；不要把 `apps/` 下的目录数量当成门户数量。当前角色、根 pnpm membership、主入口和后续整理边界以 [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md) 为准。
 
 ```text
 axi-workbench/
 ├── apps/
-│   ├── web-portal/            # 主 Web 门户
-│   ├── devsvc-dashboard/      # 本地服务管理和 Axi 应用 host
-│   ├── axi-coder/             # Axi 开发工作台
+│   ├── workbench/             # ★ Web 管理端（独立 Axi Dashboard 应用）
+│   ├── workbench-mobile/      # ★ 移动端应用（Web/Vite + 原生 Android monorepo 子工程）
+│   ├── devsvc-dashboard/      # 本地服务管理和 Axi 应用 host（运维壳，非第二门户）
+│   ├── axi-coder/             # 编码工具（可被 host 挂载）
 │   ├── verification-inbox/    # 验证码收件箱
-│   ├── app-search-system/     # Docs/Search 控制与展示
-│   └── ollama-menu-assistant/ # macOS Ollama 菜单助手
+│   ├── app-search-system/     # 嵌入式多运行时 Docs/Search 工具（非根 pnpm member）
+│   └── ollama-menu-assistant/ # macOS Swift 菜单助手（非 Node Dashboard）
 ├── packages/
 │   ├── api-client/
-│   ├── axi-rag/
-│   ├── desktop/
+│   ├── axi-rag/                # 当前源码目录，尚未纳入根 pnpm package 生命周期
 │   ├── schemas/
 │   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口
 │   ├── types/
-│   ├── ui/
-│   ├── utils/
-│   └── web/
+│   ├── ui/                    # legacy layout（仅 workbench 过渡期）
+│   ├── workbench-foundation/  # Web / 移动端共享认证与语言状态
+│   └── utils/
 ├── services/
-│   ├── api-gateway/
-│   ├── auth-service/
-│   ├── core-service/
+│   ├── api-gateway/            # Go/Gin 唯一业务 API 入口
+│   ├── identity-adapter/        # Go/Gin Axi Identity 适配边界
+│   ├── platform-core/           # Go/Gin 租户与业务模块核心
+│   ├── auth-service/            # 原型兼容，不进入生产身份链路
+│   ├── core-service/            # Spring/H2 只读迁移兼容
 │   ├── file-service/
 │   ├── notification-service/
 │   ├── communication-gateway/
 │   ├── control-plane/
 │   └── workflow-engine/
 ├── ai/
-├── backend/
+├── backend/                    # 嵌入式 Python runtime（非根 pnpm member）
 ├── docs/
 ├── infra/
-│   └── fleet-console/
+│   └── fleet-console/           # 物理服务层工具；dashboard 不属于根 apps package 集合
 ├── tools/
-│   └── axi-app-cli/
+│   └── axi-app-cli/             # 独立嵌套 monorepo 的脚手架 CLI
 ├── docker-compose.yml
 ├── pnpm-workspace.yaml
 └── turbo.json
@@ -65,7 +81,7 @@ axi-workbench/
 ## Tech Stack
 
 - Frontend: React 18 + TypeScript + Vite + Turborepo
-- Backend: Go, Java Spring Boot, Python FastAPI
+- Backend: Go/Gin + ZITADEL OIDC；Python/Node 专职能力；Spring/H2 仅迁移兼容
 - AI: LangChain, Qdrant, RAG, Multi-Agent
 - Infrastructure: PostgreSQL, Redis, Kafka, MinIO, Kubernetes, Terraform
 
@@ -73,12 +89,22 @@ axi-workbench/
 
 ```bash
 pnpm install
-pnpm run dev
-pnpm run dev:web
+# ★ Web 管理端
+pnpm run dev:workbench
+# ★ 移动端应用
+pnpm run dev:mobile
+# 本地运维 Host（可选）
+pnpm run dev:dashboard
 pnpm run build
 pnpm run test
 pnpm run lint
+# 后端本地依赖与迁移（容器内 8080，宿主机网关 8088）
+make docker-up
+make migrate-identity
+make migrate-platform
 ```
+
+打开：Web `http://127.0.0.1:5173` · 移动端 `http://127.0.0.1:5174`。
 
 ## Governance Notes
 

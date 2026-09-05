@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-file
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: file-service
+spec:
+  replicas: {{ .Values.fileService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: file-service
+  template:
+    metadata:
+      labels:
+        {{- include "axi-workbench-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: file-service
+    spec:
+      serviceAccountName: {{ include "axi-workbench-platform.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: file-service
+          image: "{{ .Values.fileService.image.repository }}:{{ default .Chart.AppVersion .Values.fileService.image.tag }}"
+          imagePullPolicy: {{ .Values.fileService.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8085
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "axi-workbench-platform.fullname" . }}-config
+          env:
+            - name: FILE_INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_INTERNAL_SERVICE_TOKEN
+            - name: FILE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_DATABASE_URL
+            - name: FILE_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_S3_ACCESS_KEY_ID
+            - name: FILE_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret }}
+                  key: FILE_S3_SECRET_ACCESS_KEY
+          volumeMounts:
+            - name: file-storage
+              mountPath: {{ .Values.fileService.storagePath }}
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /files/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /files/ready
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.fileService.resources | nindent 12 }}
+      volumes:
+        - name: file-storage
+          {{- if and .Values.fileService.persistence.enabled (eq .Values.fileService.storageBackend "local") }}
+          persistentVolumeClaim:
+            claimName: {{ include "axi-workbench-platform.fullname" . }}-files
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir: {}

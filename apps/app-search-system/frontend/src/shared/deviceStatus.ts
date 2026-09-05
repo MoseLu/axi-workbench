@@ -15,10 +15,10 @@ export function getDeviceStatusMeta(status?: string) {
 
   switch (normalized) {
     case 'logged_in':
-      return { status: normalized, label: '已登录', color: '#22c55e' };
+      return { status: normalized, label: '已登录', color: 'var(--axi-success, #22c55e)' };
     case 'online':
-      return { status: normalized, label: '在线', color: '#f59e0b' };
+      return { status: normalized, label: '在线', color: 'var(--axi-warning, #f59e0b)' };
     default:
-      return { status: normalized, label: '离线', color: '#94a3b8' };
+      return { status: normalized, label: '离线', color: 'var(--axi-text-muted, #94a3b8)' };
   }
 }

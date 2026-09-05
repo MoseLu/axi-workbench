@@ -1,0 +1,26 @@
+{
+  "name": "@axi/workbench-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Axi Workbench Mac App — Tauri 2 shell that wraps the existing @axi/workbench web UI",
+  "scripts": {
+    "dev": "node scripts/dev-desktop.mjs",
+    "dev:split": "tauri dev",
+    "dev:workbench": "echo '[workbench-desktop] run `pnpm dev:workbench` in another terminal first, then `pnpm --filter @axi/workbench-desktop dev:split`'",
+    "build": "node scripts/build-macos.mjs",
+    "build:dmg": "node scripts/build-macos.mjs --bundles dmg",
+    "icon": "node scripts/generate-source-icon.mjs && tauri icon ./src-tauri/icons/icon.svg --output ./src-tauri/icons",
+    "type-check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "verify:contracts": "node scripts/verify-desktop-contracts.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2"
+  },
+  "exports": {
+    "./contracts": "./src/contracts.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

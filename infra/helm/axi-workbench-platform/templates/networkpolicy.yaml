@@ -1,0 +1,147 @@
+{{- if .Values.networkPolicy.enabled }}
+# The business services only accept cluster-internal traffic. Egress remains
+# open deliberately: the gateway must reach the external OIDC issuer and the
+# adapters must reach PostgreSQL, Redis, SMTP, DNS and delivery endpoints.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-gateway-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace | quote }}
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: platform-core
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-identity-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: identity-adapter
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-platform-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: platform-core
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-workflow-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: workflow-engine
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8083
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-notification-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-service
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8084
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-file-ingress
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: file-service
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "axi-workbench-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: file-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "axi-workbench-platform.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8085
+{{- end }}

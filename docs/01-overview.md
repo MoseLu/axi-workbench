@@ -6,21 +6,24 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 
 > EPAP 不是一个单体应用，而是一套**多前端、多后端、多 AI 能力协同**的工作空间生态系统，所有子系统在统一的 Monorepo 框架下协同演进。
 
+> **当前生产后端口径（2026-08）**：以 [`ADR-0001`](./adr/0001-zitadel-gin-platform-core.md) 为准。ZITADEL 是中央 OIDC Issuer，Go/Gin `api-gateway` 是唯一业务 API 入口，`identity-adapter` 与模块化 `platform-core` 承担身份编排和租户业务；本章以下未标注“当前”的旧 EPAP/Spring 方案仅作历史设计参考。
+
 ---
 
 ## 1.2 核心能力矩阵
 
 | 能力域 | 子系统 | 技术栈 | 状态 |
 |--------|--------|--------|------|
-| 前端展示 | web-portal / admin-dashboard | React + TS + Vite + Turbo | 规划中 |
-| 移动端 | mobile-app | Taro + React + TS | 规划中 |
-| 组件体系 | design-system | Storybook + Radix UI | 规划中 |
-| API 网关 | api-gateway | Go + Gin | 规划中 |
-| 认证授权 | auth-service | Go + JWT + OAuth2 | 规划中 |
-| 核心业务 | core-service | Java 21 + Spring Boot 3 | 规划中 |
-| 工作流 | workflow-engine | Python + FastAPI + Celery | 规划中 |
-| 消息通知 | notification-service | Go + Kafka | 规划中 |
-| 文件处理 | file-service | Python + S3 | 规划中 |
+| 前端展示 | `apps/workbench`（桌面 Web） | React + TS + Vite + Axi UI | 已接入 |
+| 移动端 | `apps/workbench-mobile`（独立应用） | React + TS + Vite + 微信式移动端壳 | 已接入 |
+| 组件体系 | `shared/axi-ui` | Axi Core / Shell / Settings / Tokens | 已接入 |
+| API 网关 | api-gateway | Go + Gin + ZITADEL JWKS + Redis | 已实现（待集群验收） |
+| 身份适配 | identity-adapter | Go + Gin + ZITADEL + SMTP | 已实现（待集群验收） |
+| 平台核心 | platform-core | Go + Gin + PostgreSQL RLS + Outbox | 已实现（待集群验收） |
+| 原型兼容 | auth-service / core-service | Go JWT / Spring H2 | 只读迁移兼容 |
+| 工作流 | workflow-engine | Python + FastAPI + PostgreSQL | 已接入网关（持久化、原子执行认领、Outbox 事件收件、租约派发 worker、退避重试、安全结构化条件、并行编排、步骤超时、受白名单保护的 HTTP 外部任务和可挂起恢复的人工审批已实现） |
+| 消息通知 | notification-service | Go + Gin + PostgreSQL + SMTP + Kafka（可选） | 已接入网关（收件箱、已读状态、delivery worker、Outbox 幂等接收、SMTP、核心/工作流/文件/安全事件模板和仅在显式配置 broker 时启用的 Kafka Fetch/Commit 消费已实现） |
+| 文件处理 | file-service | Python + FastAPI + S3/MinIO + PostgreSQL + ClamAV + Pillow | 已接入网关（对象/元数据、SHA-256、预签名 URL、可配置 ClamAV INSTREAM 扫描和主体隔离的 WebP 缩略图已实现） |
 | 知识检索 | knowledge-base (RAG) | Python + Qdrant + LangChain | 规划中 |
 | 智能协作 | agent-platform | Python + Anthropic SDK | 规划中 |
 | 文档站点 | docs | Docusaurus 3 | 规划中 |
@@ -72,9 +75,9 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | 服务 | 端口 |
 |------|------|
 | api-gateway | 8080 |
-| auth-service HTTP | 8081 |
-| auth-service gRPC | 9081 |
-| core-service | 8082 |
+| identity-adapter | 8081 |
+| platform-core | 8082 |
+| api-gateway（宿主机开发映射） | 8088 |
 | workflow-engine | 8083 |
 | notification-service | 8084 |
 | file-service | 8085 |
@@ -82,8 +85,7 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | knowledge-base gRPC | 9090 |
 | agent-platform | 8091 |
 | docs site | 3000 |
-| web-portal (dev) | 5173 |
-| admin-dashboard (dev) | 5174 |
+| workbench（Web + 移动 Web dev） | 5173 |
 | Storybook | 6006 |
 | PostgreSQL | 5432 |
 | Redis | 6379 |
@@ -104,6 +106,18 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | dev | 集成测试 | K8s dev namespace | 自动刷新的种子数据 |
 | staging | 预发布验证 | K8s staging namespace | 生产数据镜像（脱敏） |
 | production | 生产环境 | K8s prod namespace | 真实数据，全备份 |
+
+## 1.7 多端后台覆盖范围
+
+用户后台按应用而非视口拆分：
+
+- **桌面 Web（控制中心）**：`apps/workbench` 是独立的 Axi Dashboard 完整后台管理端，负责 C 级复杂配置、全量查询、批量操作、流程编排和审计；拥有侧边栏、顶栏插件、标签栏、面包屑、主题切换和设置面板。
+- **移动端（角色执行/辅助端）**：`apps/workbench-mobile` 是独立的移动辅助管理应用，负责 A 级个人待办/状态和经动作政策允许的 B 级单对象确认、扫码审批与个人设置；它不导入 Web Dashboard 壳，也不承担 C 级组织/全量后台配置。当前基线为 Home / Projects / Workspace / Me 四个常驻导航项，加一个顶部 Scan 动作。
+- **共享层**：只共享 Axi Identity 会话协议、相对 API/Schema 合同、语言偏好、设计令牌、服务端动作政策和审计事实。两个应用不共享页面、路由或布局组件。
+- **扫码语义**：Web 扫码用于通用识别与结果处理；移动端扫码用于受控审批确认。二者的权限、审计和验收不能合并。
+- **Host 与垂直工具**：`apps/devsvc-dashboard` 是本地运维 Host；Axi Coder、Fleet、App Search 等为 D 级专用工具，不属于用户后台一级信息架构。
+
+完整的产品任务分工、跨端交接与阶段路线以 [`docs/state/PRD.md`](./state/PRD.md) 为准。
 
 ---
 

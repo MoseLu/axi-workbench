@@ -142,10 +142,10 @@ export function useTerminalWorkbench({ activeRoute, busy, onBusyChange, onNaviga
       lineHeight: 1.18,
       scrollback: 6000,
       theme: {
-        background: "#0b0f16",
-        cursor: "#ffffff",
-        foreground: "#e6edf3",
-        selectionBackground: "#244f8f",
+        background: "var(--axi-bg-page, #0b0f16)",
+        cursor: "var(--axi-text-inverse, #ffffff)",
+        foreground: "var(--axi-text, #e6edf3)",
+        selectionBackground: "var(--axi-primary, #244f8f)",
       },
     });
     const fit = new FitAddon();

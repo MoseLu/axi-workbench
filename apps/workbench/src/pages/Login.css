@@ -1,0 +1,811 @@
+/*
+ * Workbench 登录页：Web 与桌面壳共用同一套浅色登录画布和客户端登录面板。
+ * 页面画布始终覆盖 WebView，避免深色工作台 body 背景从卡片外露出黑边。
+ */
+.axi-login-page {
+  --axi-bg-surface: var(--palette-white);
+  --axi-bg-elevated: var(--palette-gray-50);
+  --axi-border: var(--palette-gray-250);
+  --axi-text: var(--palette-gray-900);
+  --axi-text-secondary: var(--palette-gray-600);
+  --axi-text-muted: var(--palette-gray-400);
+  --axi-muted: var(--palette-gray-500);
+  --axi-warning: var(--color-brand);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 100svh;
+  box-sizing: border-box;
+  place-items: center;
+  padding: var(--space-6);
+  overflow: hidden;
+  color: var(--palette-gray-900);
+  background: var(--palette-gray-100);
+}
+
+/* 登录页只保留单一画布，不再叠加独立的伪背景。 */
+.axi-login-page::before,
+.axi-login-page::after,
+.axi-login-page__grid {
+  display: none;
+}
+
+.axi-login-card {
+  position: relative;
+  width: min(100%, 49.5rem);
+  overflow: hidden;
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: 14px;
+  background: var(--palette-white);
+  box-shadow: 0 1.75rem 4.5rem color-mix(in srgb, var(--palette-black) 34%, transparent), 0 0 0 var(--space-px) color-mix(in srgb, var(--palette-white) 12%, transparent);
+  color-scheme: light;
+}
+
+/* 卡片顶部色条：Mac App 下隐藏（依赖原生 chrome 提供视觉锚点）。 */
+.axi-login-card::before {
+  display: none;
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  height: var(--space-px);
+  background: color-mix(in srgb, var(--color-brand) 72%, var(--palette-white));
+  content: '';
+}
+
+.axi-login-card__chrome {
+  display: none;
+  height: 1.625rem;
+  box-sizing: border-box;
+  align-items: center;
+  gap: var(--space-1_5);
+  padding-inline: var(--space-3_5);
+  border-bottom: var(--space-px) solid var(--palette-gray-150);
+  background: var(--palette-white);
+}
+
+.axi-login-card__chrome-dot {
+  display: block;
+  width: .625rem;
+  height: .625rem;
+  border: var(--space-px) solid color-mix(in srgb, var(--palette-gray-900) 12%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--palette-gray-200);
+}
+
+.axi-login-card__chrome-dot--close { background: var(--palette-gray-200); }
+.axi-login-card__chrome-dot--minimize { background: var(--palette-gray-150); }
+.axi-login-card__chrome-dot--maximize { background: var(--palette-gray-125); }
+
+.axi-login-card__body {
+  display: grid;
+  grid-template-columns: minmax(14rem, .72fr) var(--space-px) minmax(20rem, 1.28fr);
+  gap: var(--space-6);
+  height: 22.25rem;
+  min-height: 22.25rem;
+  box-sizing: border-box;
+  padding: var(--space-6) var(--space-8) var(--space-4);
+}
+
+.axi-login-qr-column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: var(--space-1_5);
+  text-align: center;
+  transform: translateX(var(--space-4));
+}
+
+.axi-login-qr-column h1 {
+  margin: 0 0 var(--space-5);
+  color: var(--palette-gray-700);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.35;
+}
+
+.axi-login-card__divider {
+  align-self: center;
+  width: var(--space-px);
+  height: 13.75rem;
+  background: var(--palette-gray-200);
+}
+
+.axi-login-qr-frame {
+  position: relative;
+  display: grid;
+  width: 10.75rem;
+  height: 10.75rem;
+  box-sizing: border-box;
+  place-items: center;
+  padding: var(--space-2);
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--palette-white);
+}
+
+.axi-login-qr-hover {
+  position: relative;
+  display: grid;
+  border-radius: var(--radius-xs);
+  cursor: help;
+}
+
+.axi-login-qr-hover:focus-visible {
+  outline: calc(var(--space-px) * 2) solid var(--color-brand);
+  outline-offset: var(--space-1);
+}
+
+.axi-login-qr-tooltip {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  place-items: end center;
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: var(--radius-xs);
+  background: var(--palette-white);
+  box-shadow: 0 var(--space-2) var(--space-5) color-mix(in srgb, var(--palette-black) 18%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  transform: translateY(var(--space-1));
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.axi-login-qr-tooltip img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.axi-login-qr-tooltip__label {
+  position: absolute;
+  right: var(--space-2);
+  top: var(--space-2);
+  left: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--palette-white);
+  background: color-mix(in srgb, var(--palette-gray-900) 72%, transparent);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+}
+
+.axi-login-qr-hover:hover .axi-login-qr-tooltip,
+.axi-login-qr-hover:focus-visible .axi-login-qr-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.axi-login-qr-frame.is-error {
+  border-color: color-mix(in srgb, var(--color-danger) 38%, var(--palette-gray-250));
+  background: color-mix(in srgb, var(--color-danger-bg) 55%, var(--palette-white));
+}
+
+/* 二维码失效时覆盖 QR 本体，保留底层码点但降低对比度，行为与客户端二维码态一致。 */
+.axi-login-qr-expired-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 0;
+  border-radius: inherit;
+  color: var(--palette-gray-600);
+  background: color-mix(in srgb, var(--palette-white) 86%, transparent);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition: background 140ms ease;
+}
+
+.axi-login-qr-expired-overlay:hover,
+.axi-login-qr-expired-overlay:focus-visible {
+  background: color-mix(in srgb, var(--palette-white) 93%, transparent);
+}
+
+.axi-login-qr-expired-overlay__icon {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-bottom: var(--space-1);
+  color: var(--color-info);
+  font-size: 1.5rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.axi-login-qr-expired-overlay__icon::before {
+  content: '\21BB';
+}
+
+.axi-login-qr-expired-overlay__title {
+  color: var(--palette-gray-600);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+
+.axi-login-qr-expired-overlay__hint {
+  color: var(--palette-gray-500);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.axi-login-qr-frame .ant-qrcode {
+  width: 9.5rem !important;
+  height: 9.5rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--palette-white) !important;
+}
+
+.axi-login-qr-frame .ant-qrcode canvas,
+.axi-login-qr-frame .ant-qrcode img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.axi-login-qr-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  color: var(--color-brand);
+}
+
+.axi-login-qr-loading span {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: currentColor;
+  animation: axi-login-qr-pulse 1s ease-in-out infinite;
+}
+
+.axi-login-qr-loading span:nth-child(2) { animation-delay: 120ms; }
+.axi-login-qr-loading span:nth-child(3) { animation-delay: 240ms; }
+
+.axi-login-qr-instruction {
+  margin: var(--space-3) 0 var(--space-2);
+  color: var(--palette-gray-500);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.axi-login-qr-instruction strong {
+  color: var(--color-brand);
+  font-weight: var(--font-weight-medium);
+}
+
+.axi-login-banner--qr {
+  width: min(100%, 15rem);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.axi-login-right {
+  display: grid;
+  grid-template-rows: 2rem 16rem;
+  min-width: 0;
+  min-height: 0;
+  align-content: center;
+  justify-items: center;
+  row-gap: 2.25rem;
+  transform: translateX(-var(--space-1));
+}
+
+.axi-login-right__tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  min-height: 2rem;
+  margin-bottom: 0;
+}
+
+.axi-login-right__tabs button,
+.axi-login-text-button,
+.axi-login-button {
+  font: inherit;
+}
+
+.axi-login-right__tabs button {
+  position: relative;
+  padding: 0 0 var(--space-2);
+  border: 0;
+  color: var(--palette-gray-500);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.35;
+}
+
+.axi-login-right__tabs button.is-active { color: var(--palette-gray-700); }
+
+.axi-login-right__tabs button.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand);
+  content: '';
+}
+
+.axi-login-right__tabs button.is-disabled {
+  color: var(--palette-gray-700);
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.axi-login-right__tabs > span {
+  color: var(--palette-gray-250);
+  font-size: var(--text-lg);
+}
+
+.axi-login-right__tabs button:focus-visible,
+.axi-login-text-button:focus-visible,
+.axi-login-button:focus-visible {
+  outline: calc(var(--space-px) * 2) solid var(--color-brand);
+  outline-offset: var(--space-1);
+}
+
+.axi-login-right__body {
+  position: relative;
+  display: block;
+  width: min(24rem, 100%);
+  height: 16rem;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.axi-login-banner-slot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  height: 2.75rem;
+  min-height: 0;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.axi-login-banner {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.axi-login-banner.axi-banner--compact .ant-alert-content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.axi-login-banner.axi-banner--compact .ant-alert-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.axi-login-form-slot {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: stretch;
+}
+
+.axi-login-form {
+  position: relative;
+  display: grid;
+  height: 100%;
+  box-sizing: border-box;
+  align-content: start;
+  gap: var(--space-3);
+}
+
+/* Password and email forms share the same row width (21.125rem) so the two
+ * visible input rows stay aligned when the user switches tabs. */
+.axi-login-form--password {
+  gap: var(--space-3);
+}
+
+/* The code form has an extra message row; keep its fields above the shared submit baseline. */
+.axi-login-form--code {
+  gap: var(--space-1);
+}
+
+.axi-login-form--code .axi-one-time-code {
+  margin: 0;
+}
+
+.axi-login-form h2 {
+  margin: 0;
+  color: var(--palette-gray-700);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+
+/* Labels remain in the accessibility tree; the compact client layout uses placeholders. */
+.axi-login-form > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.axi-login-form input:not(.axi-one-time-code__input) {
+  width: 100%;
+  min-height: 2.625rem;
+  box-sizing: border-box;
+  padding: 0 var(--space-3_5);
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: var(--radius-xs);
+  color: var(--palette-gray-900);
+  background: var(--palette-white);
+  font: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.axi-login-form input:not(.axi-one-time-code__input)::placeholder {
+  color: var(--palette-gray-350);
+}
+
+.axi-login-form input:not(.axi-one-time-code__input):focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
+}
+
+.axi-login-form input:not(.axi-one-time-code__input):autofill {
+  color: var(--palette-gray-900);
+  background-color: var(--palette-white);
+  -webkit-text-fill-color: var(--palette-gray-900);
+  caret-color: var(--palette-gray-900);
+  box-shadow: 0 0 0 1000px var(--palette-white) inset;
+}
+
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill,
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill:hover,
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill:focus,
+.axi-login-form input:not(.axi-one-time-code__input):-webkit-autofill:active {
+  -webkit-text-fill-color: var(--palette-gray-900);
+  caret-color: var(--palette-gray-900);
+  background-color: var(--palette-white);
+  -webkit-box-shadow: 0 0 0 1000px var(--palette-white) inset;
+  box-shadow: 0 0 0 1000px var(--palette-white) inset;
+}
+
+.axi-login-form input:not(.axi-one-time-code__input):disabled {
+  cursor: wait;
+  opacity: .62;
+}
+
+.axi-login-form__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--palette-gray-500);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.axi-login-form__row strong {
+  color: var(--palette-gray-700);
+  font-weight: var(--font-weight-medium);
+}
+
+.axi-login-form__row--muted {
+  color: var(--palette-gray-400);
+  font-size: var(--text-xs);
+}
+
+/* Password row: full-width input that shares the email form's row footprint. */
+.axi-login-form__row--input {
+  width: 21.125rem;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.axi-login-form__row--input input {
+  width: 100%;
+}
+
+/* Email row: input on the left, embedded "获取验证码" button on the right edge of the same row.
+ * The row's total width matches the 6-slot OTP row (6 × 3rem + 5 × 0.625rem = 21.125rem). */
+.axi-login-form__row--email {
+  width: 21.125rem;
+  max-width: 100%;
+  gap: 0;
+  border: var(--space-px) solid var(--palette-gray-250);
+  border-radius: var(--radius-xs);
+  background: var(--palette-white);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+  margin-inline: auto;
+}
+
+.axi-login-form__row--email:focus-within {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
+}
+
+/* Match the generic form-input selector's specificity so its border cannot
+ * reopen the seam between the email field and the send-code action. */
+.axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input) {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input):focus {
+  border: 0;
+  box-shadow: none;
+}
+
+.axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input):-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--palette-white) inset;
+  box-shadow: 0 0 0 1000px var(--palette-white) inset;
+}
+
+/* OTP row: 6 fixed-size rounded-rectangle slots; total width matches the email row. */
+.axi-login-form__row--code {
+  display: flex;
+  width: 21.125rem;
+  max-width: 100%;
+  padding: 0;
+  justify-content: center;
+  margin-inline: auto;
+}
+
+.axi-login-form__hint {
+  display: block;
+  color: var(--palette-gray-400);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.axi-login-form .axi-one-time-code {
+  width: auto;
+  margin: 0;
+  grid-template-columns: repeat(6, 3rem);
+  gap: var(--space-2_5);
+}
+
+.axi-login-form .axi-one-time-code__input {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border-color: var(--palette-gray-250);
+  border-radius: var(--radius-sm);
+  color: var(--palette-gray-900);
+  background: var(--palette-white);
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.axi-login-form .axi-one-time-code__input:focus {
+  border-color: var(--color-brand);
+  background: var(--palette-white);
+  box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
+}
+
+.axi-login-text-button {
+  padding: 0;
+  border: 0;
+  color: var(--color-brand);
+  background: transparent;
+  cursor: pointer;
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+.axi-login-text-button:hover:not(:disabled) { color: var(--color-brand-hover); }
+.axi-login-text-button:disabled { cursor: not-allowed; opacity: .55; }
+
+/* "获取验证码" sits inside the email row; no separator so the row reads as one surface. */
+.axi-login-text-button--send {
+  flex: 0 0 auto;
+  height: 100%;
+  min-height: 2.625rem;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.axi-login-text-button--send:disabled {
+  color: var(--palette-gray-350);
+  opacity: 1;
+}
+
+.axi-login-button {
+  position: absolute;
+  right: auto;
+  top: 8.5rem;
+  bottom: auto;
+  left: 50%;
+  display: inline-flex;
+  width: 11.75rem;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  margin-top: 0;
+  padding-inline: var(--space-4);
+  border: var(--space-px) solid transparent;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  color: var(--color-on-primary);
+  background: var(--color-brand);
+  transform: translateX(-50%);
+  box-shadow: 0 var(--space-2) var(--space-5) color-mix(in srgb, var(--color-brand) 18%, transparent);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  transition: background 140ms ease, box-shadow 140ms ease, color 140ms ease;
+}
+
+.axi-login-button:hover:not(:disabled) {
+  background: var(--color-brand-hover);
+  box-shadow: 0 var(--space-2) var(--space-5) color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+.axi-login-button:disabled { cursor: not-allowed; opacity: .55; }
+
+@keyframes axi-login-qr-pulse {
+  0%, 100% { opacity: .35; transform: scale(.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 47rem) {
+  .axi-login-page {
+    place-items: start center;
+    overflow: auto;
+    padding: var(--space-6) var(--space-4) 3rem;
+  }
+
+  .axi-login-card__body {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    height: auto;
+    min-height: auto;
+    padding: var(--space-6);
+  }
+
+  .axi-login-card__divider {
+    width: 100%;
+    height: var(--space-px);
+  }
+
+  .axi-login-qr-column {
+    justify-content: center;
+    padding-top: 0;
+    transform: none;
+  }
+
+  .axi-login-right {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    transform: none;
+  }
+
+  .axi-login-right__tabs { margin-bottom: var(--space-6); }
+  .axi-login-right__body {
+    width: min(24rem, 100%);
+    height: auto;
+  }
+  .axi-login-banner-slot {
+    position: static;
+    height: auto;
+  }
+  .axi-login-banner { height: auto; }
+  .axi-login-banner.axi-banner--compact .ant-alert-description {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+  .axi-login-form-slot { height: auto; }
+  .axi-login-form-slot { justify-content: flex-start; }
+  .axi-login-form {
+    height: auto;
+    align-content: normal;
+  }
+  .axi-login-button {
+    position: static;
+    transform: none;
+    margin-top: var(--space-2);
+  }
+}
+
+@media (max-width: 28rem) {
+  .axi-login-page { padding-right: var(--space-3); padding-left: var(--space-3); }
+  .axi-login-card__body { padding: var(--space-5) var(--space-4); }
+  .axi-login-card__chrome { padding-inline: var(--space-3); }
+  .axi-login-right__tabs { gap: var(--space-4); }
+  .axi-login-right__tabs button { font-size: var(--text-md); }
+  .axi-login-button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axi-login-qr-loading span { animation: none; }
+}
+
+/* 原生窗口只提供标题栏，登录内容与 Web 端保持同一套布局。 */
+
+.axi-login-drag-region {
+  display: none;
+}
+
+/* macOS 登录窗使用标题栏 Overlay：窗口尺寸即为登录面板尺寸，
+ * 交通灯浮在卡片上方，Web 端的响应式留白不带入桌面壳。 */
+body.axi-tauri-shell .axi-login-page {
+  min-height: 100vh;
+  padding: 0;
+  background: var(--palette-white);
+}
+
+body.axi-tauri-shell,
+body.axi-tauri-shell #root {
+  background: var(--palette-white);
+}
+
+body.axi-tauri-shell .axi-login-card {
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.axi-tauri-shell .axi-login-card__body {
+  height: 100vh;
+  min-height: 100vh;
+  padding: 36px 32px 24px;
+}
+
+body.axi-tauri-shell .axi-login-qr-column,
+body.axi-tauri-shell .axi-login-right {
+  transform: none;
+}
+
+body.axi-tauri-shell .axi-login-drag-region {
+  position: fixed;
+  z-index: 10;
+  display: block;
+  top: 0;
+  right: 0;
+  left: 84px;
+  height: 34px;
+  cursor: default;
+  -webkit-app-region: drag;
+}

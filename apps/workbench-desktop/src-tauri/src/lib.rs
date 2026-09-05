@@ -1,0 +1,700 @@
+// Workbench Mac App — Tauri 2 shell entry
+// 复用 apps/workbench 的现有 SPA UI，只在外层套 macOS 原生壳。
+
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
+    tray::{TrayIconBuilder, TrayIconEvent},
+    AppHandle, Emitter, Listener, Manager, WindowEvent,
+};
+
+use serde::Deserialize;
+use serde::Serialize;
+use std::collections::HashMap;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+use tauri::State;
+
+const APP_NAME: &str = "Axi 工作台";
+const DEFAULT_GATEWAY_BASE_URL: &str = "http://127.0.0.1:8088";
+const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
+
+#[derive(Default)]
+struct GatewaySession {
+    cookie: Mutex<Option<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GatewayProxyRequest {
+    method: String,
+    path: String,
+    headers: HashMap<String, String>,
+    body: Option<String>,
+    #[serde(rename = "baseUrl")]
+    base_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct GatewayProxyResponse {
+    status: u16,
+    headers: HashMap<String, String>,
+    body: String,
+}
+
+fn is_allowed_workbench_domain(host: &str) -> bool {
+    host == WORKBENCH_PUBLIC_HOST
+}
+
+fn is_allowed_gateway_base_url(url: &reqwest::Url) -> bool {
+    let host = match url.host_str() {
+        Some(host) => host,
+        None => return false,
+    };
+    if !url.username().is_empty()
+        || url.password().is_some()
+        || url.query().is_some()
+        || url.fragment().is_some()
+    {
+        return false;
+    }
+
+    match url.scheme() {
+        "http" => {
+            matches!(host, "localhost" | "127.0.0.1" | "::1")
+                && url.port_or_known_default() == Some(8088)
+        }
+        "https" => is_allowed_workbench_domain(host) && matches!(url.port(), None | Some(443)),
+        _ => false,
+    }
+}
+
+fn resolve_gateway_url(base_url: Option<&str>, path: &str) -> Result<reqwest::Url, String> {
+    let raw_path = path.split_once('?').map_or(path, |(value, _)| value);
+    if raw_path.contains("..")
+        || raw_path.to_ascii_lowercase().contains("%2e")
+        || raw_path.contains('\\')
+        || path.contains('#')
+    {
+        return Err("invalid gateway path".to_string());
+    }
+
+    let path_url = reqwest::Url::parse(&format!("http://gateway.invalid{path}"))
+        .map_err(|_| "invalid gateway path".to_string())?;
+    let request_path = path_url.path();
+    if !(request_path == "/api" || request_path.starts_with("/api/"))
+        || path_url.fragment().is_some()
+    {
+        return Err("invalid gateway path".to_string());
+    }
+
+    let base = base_url
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(DEFAULT_GATEWAY_BASE_URL)
+        .trim_end_matches('/');
+    let mut base_url =
+        reqwest::Url::parse(base).map_err(|_| "invalid gateway base URL".to_string())?;
+    if !is_allowed_gateway_base_url(&base_url) || !matches!(base_url.path(), "" | "/") {
+        return Err("gateway base URL is not allowed".to_string());
+    }
+
+    base_url.set_path(path_url.path());
+    base_url.set_query(path_url.query());
+    Ok(base_url)
+}
+
+#[tauri::command]
+async fn proxy_gateway_request(
+    request: GatewayProxyRequest,
+    session: State<'_, GatewaySession>,
+) -> Result<GatewayProxyResponse, String> {
+    let method = reqwest::Method::from_bytes(request.method.as_bytes())
+        .map_err(|_| "invalid gateway method".to_string())?;
+    let target_url = resolve_gateway_url(request.base_url.as_deref(), &request.path)?;
+    let client = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|error| format!("gateway client failed: {error}"))?;
+    let mut builder = client.request(method, target_url);
+
+    for (name, value) in request.headers {
+        if matches!(
+            name.to_ascii_lowercase().as_str(),
+            "origin" | "host" | "cookie" | "content-length"
+        ) {
+            continue;
+        }
+        builder = builder.header(name, value);
+    }
+
+    if let Some(cookie) = session
+        .cookie
+        .lock()
+        .map_err(|_| "gateway session lock failed")?
+        .clone()
+    {
+        builder = builder.header("Cookie", cookie);
+    }
+    if let Some(body) = request.body {
+        builder = builder.body(body);
+    }
+
+    let response = builder
+        .send()
+        .await
+        .map_err(|error| format!("gateway request failed: {error}"))?;
+    let status = response.status().as_u16();
+    let response_headers = response.headers().clone();
+    let body = response
+        .text()
+        .await
+        .map_err(|error| format!("gateway response failed: {error}"))?;
+
+    if let Some(set_cookie) = response_headers
+        .get("set-cookie")
+        .and_then(|value| value.to_str().ok())
+    {
+        let cookie = set_cookie
+            .split(';')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        let mut stored_cookie = session
+            .cookie
+            .lock()
+            .map_err(|_| "gateway session lock failed")?;
+        if cookie.is_empty() || set_cookie.to_ascii_lowercase().contains("max-age=0") {
+            *stored_cookie = None;
+        } else {
+            *stored_cookie = Some(cookie);
+        }
+    }
+    if request.path.ends_with("/logout") {
+        *session
+            .cookie
+            .lock()
+            .map_err(|_| "gateway session lock failed")? = None;
+    }
+
+    let mut headers = HashMap::new();
+    for name in ["content-type", "cache-control", "x-request-id"] {
+        if let Some(value) = response_headers
+            .get(name)
+            .and_then(|value| value.to_str().ok())
+        {
+            headers.insert(name.to_string(), value.to_string());
+        }
+    }
+
+    Ok(GatewayProxyResponse {
+        status,
+        headers,
+        body,
+    })
+}
+
+#[cfg(test)]
+mod gateway_tests {
+    use super::resolve_gateway_url;
+
+    #[test]
+    fn allows_local_gateway() {
+        let url = resolve_gateway_url(None, "/api/v1/auth/session").expect("local URL");
+        assert_eq!(url.as_str(), "http://127.0.0.1:8088/api/v1/auth/session");
+    }
+
+    #[test]
+    fn allows_shared_https_subdomain() {
+        let url = resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com"),
+            "/api/v1/auth/session",
+        )
+        .expect("shared domain URL");
+        assert_eq!(
+            url.as_str(),
+            "https://workbench.axiomaticworld.com/api/v1/auth/session"
+        );
+    }
+
+    #[test]
+    fn rejects_untrusted_gateway_target() {
+        assert!(
+            resolve_gateway_url(Some("https://example.com"), "/api/v1/auth/session").is_err()
+        );
+        assert!(
+            resolve_gateway_url(Some("http://127.0.0.1:9090"), "/api/v1/auth/session").is_err()
+        );
+        assert!(resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com"),
+            "/api/v1/../secret"
+        )
+        .is_err());
+        assert!(resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com"),
+            "/api/v1/search?q=two..dots"
+        )
+        .is_ok());
+        assert!(resolve_gateway_url(
+            Some("https://other.axiomaticworld.com"),
+            "/api/v1/auth/session"
+        )
+        .is_err());
+    }
+}
+
+/// Login closes the application; the main window hides to the tray.
+fn should_hide_on_close(label: &str) -> bool {
+    label != "login"
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    let mut builder = tauri::Builder::default();
+
+    // 单实例锁：第二次启动激活已有窗口，不开新进程
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(main) = app.get_webview_window("main") {
+                if main.is_visible().unwrap_or(false) {
+                    let _ = main.show();
+                    let _ = main.unminimize();
+                    let _ = main.set_focus();
+                    return;
+                }
+            }
+            if let Some(login) = app.get_webview_window("login") {
+                let _ = login.show();
+                let _ = login.unminimize();
+                let _ = login.set_focus();
+            }
+        }));
+    }
+
+    builder
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
+        .manage(GatewaySession::default())
+        .invoke_handler(tauri::generate_handler![proxy_gateway_request])
+        .setup(|app| {
+            build_app_menu(app.handle())?;
+            build_tray(app.handle())?;
+            register_ipc_listeners(app.handle().clone());
+            // 登录窗是固定尺寸的特殊登录页面，只保留关闭和最小化交通灯。
+            if let Some(login) = app.get_webview_window("login") {
+                let _ = login.set_resizable(false);
+                let _ = login.set_maximizable(false);
+                let _ = login.set_minimizable(true);
+                let _ = login.set_closable(true);
+            }
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if should_hide_on_close(window.label()) {
+                    // 主窗关闭 = 隐藏到托盘；通过 Tray → Quit 退出。
+                    let _ = window.hide();
+                    api.prevent_close();
+                } else {
+                    // 登录窗关闭 = 明确退出，避免留下无窗口的单实例进程。
+                    window.app_handle().exit(0);
+                }
+            }
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running Workbench Mac App");
+}
+
+fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
+    // App 菜单
+    let app_about = MenuItemBuilder::with_id("app_about", format!("关于 {APP_NAME}")).build(app)?;
+    let app_hide = MenuItemBuilder::with_id("app_hide", format!("隐藏 {APP_NAME}"))
+        .accelerator("CmdOrCtrl+H")
+        .build(app)?;
+    let app_quit = MenuItemBuilder::with_id("app_quit", format!("退出 {APP_NAME}"))
+        .accelerator("CmdOrCtrl+Q")
+        .build(app)?;
+    let app_menu = SubmenuBuilder::new(app, APP_NAME)
+        .item(&app_about)
+        .separator()
+        .item(&app_hide)
+        .item(&app_quit)
+        .build()?;
+
+    // File 菜单
+    let file_new = MenuItemBuilder::with_id("file_new", "新建标签页")
+        .accelerator("CmdOrCtrl+T")
+        .build(app)?;
+    let file_close = MenuItemBuilder::with_id("file_close", "关闭窗口")
+        .accelerator("CmdOrCtrl+W")
+        .build(app)?;
+    let file_menu = SubmenuBuilder::new(app, "文件")
+        .item(&file_new)
+        .separator()
+        .item(&file_close)
+        .build()?;
+
+    // Edit 菜单（标准 macOS 编辑动作，壳层只发事件给 web）
+    let edit_undo = MenuItemBuilder::with_id("edit_undo", "撤销")
+        .accelerator("CmdOrCtrl+Z")
+        .build(app)?;
+    let edit_redo = MenuItemBuilder::with_id("edit_redo", "重做")
+        .accelerator("Shift+CmdOrCtrl+Z")
+        .build(app)?;
+    let edit_cut = MenuItemBuilder::with_id("edit_cut", "剪切")
+        .accelerator("CmdOrCtrl+X")
+        .build(app)?;
+    let edit_copy = MenuItemBuilder::with_id("edit_copy", "拷贝")
+        .accelerator("CmdOrCtrl+C")
+        .build(app)?;
+    let edit_paste = MenuItemBuilder::with_id("edit_paste", "粘贴")
+        .accelerator("CmdOrCtrl+V")
+        .build(app)?;
+    let edit_select_all = MenuItemBuilder::with_id("edit_select_all", "全选")
+        .accelerator("CmdOrCtrl+A")
+        .build(app)?;
+    let edit_menu = SubmenuBuilder::new(app, "编辑")
+        .item(&edit_undo)
+        .item(&edit_redo)
+        .separator()
+        .item(&edit_cut)
+        .item(&edit_copy)
+        .item(&edit_paste)
+        .item(&edit_select_all)
+        .build()?;
+
+    // View 菜单
+    let view_reload = MenuItemBuilder::with_id("view_reload", "重新加载")
+        .accelerator("CmdOrCtrl+R")
+        .build(app)?;
+    let view_toggle_devtools = MenuItemBuilder::with_id("view_toggle_devtools", "切换开发者工具")
+        .accelerator("Alt+CmdOrCtrl+I")
+        .build(app)?;
+    let view_menu = SubmenuBuilder::new(app, "视图")
+        .item(&view_reload)
+        .item(&view_toggle_devtools)
+        .build()?;
+
+    // Window 菜单
+    let window_minimize = MenuItemBuilder::with_id("window_minimize", "最小化")
+        .accelerator("CmdOrCtrl+M")
+        .build(app)?;
+    let window_zoom = MenuItemBuilder::with_id("window_zoom", "缩放").build(app)?;
+    let window_menu = SubmenuBuilder::new(app, "窗口")
+        .item(&window_minimize)
+        .item(&window_zoom)
+        .build()?;
+
+    let menu = MenuBuilder::new(app)
+        .item(&app_menu)
+        .item(&file_menu)
+        .item(&edit_menu)
+        .item(&view_menu)
+        .item(&window_menu)
+        .build()?;
+
+    app.set_menu(menu)?;
+
+    app.on_menu_event(|app, event| match event.id().as_ref() {
+        "app_quit" => {
+            app.exit(0);
+        }
+        "app_hide" => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.hide();
+            }
+        }
+        "view_reload" => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.eval("window.location.reload()");
+            }
+        }
+        "view_toggle_devtools" => {
+            #[cfg(debug_assertions)]
+            if let Some(window) = app.get_webview_window("main") {
+                if window.is_devtools_open() {
+                    window.close_devtools();
+                } else {
+                    window.open_devtools();
+                }
+            }
+        }
+        "window_minimize" => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.minimize();
+            }
+        }
+        "window_zoom" => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.maximize();
+            }
+        }
+        id => {
+            // 其余事件透传给 web 端，web 可监听 `native-menu` 自定义事件
+            let _ = app.emit("native-menu", id.to_string());
+        }
+    });
+
+    Ok(())
+}
+
+fn build_tray(app: &AppHandle) -> tauri::Result<()> {
+    let show_item = MenuItemBuilder::with_id("tray_show", "显示工作台").build(app)?;
+    let hide_item = MenuItemBuilder::with_id("tray_hide", "隐藏工作台").build(app)?;
+    let quit_item = MenuItemBuilder::with_id("tray_quit", "退出").build(app)?;
+    let tray_menu = MenuBuilder::new(app)
+        .item(&show_item)
+        .item(&hide_item)
+        .separator()
+        .item(&quit_item)
+        .build()?;
+
+    let _tray = TrayIconBuilder::with_id("main-tray")
+        .tooltip(APP_NAME)
+        .menu(&tray_menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "tray_show" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            "tray_hide" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
+            "tray_quit" => {
+                app.exit(0);
+            }
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::DoubleClick { .. } = event {
+                if let Some(window) = tray.app_handle().get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        })
+        .build(app)?;
+
+    Ok(())
+}
+
+// ===== IPC: web → shell =====
+// 协议定义见 apps/workbench-desktop/src/contracts.ts 与
+// docs/specs/2026-09-01-workbench-mac-packaging/DESIGN.md §3。
+//
+// 当前实现：
+//   * shell://unread   → 更新 macOS Dock 红点 + 托盘 title
+//   * shell://notify   → 推 macOS 系统通知（点击后唤起主窗口 + 跳 url）
+//
+// 所有失败均静默降级（不弹错误 UI，不影响 SPA 体验）。
+
+#[derive(Deserialize)]
+struct ShellUnreadPayload {
+    count: i64,
+}
+
+#[derive(Deserialize)]
+struct ShellNotifyPayload {
+    title: String,
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    url: Option<String>,
+    /// 同 tag 通知合并（M5 引入 macOS UNNotificationRequest.identifier 后启用）。
+    #[allow(dead_code)]
+    #[serde(default)]
+    tag: Option<String>,
+}
+
+#[derive(Deserialize, Default)]
+struct ShellLoginFailedPayload {
+    #[serde(default)]
+    reason: Option<String>,
+}
+
+fn register_ipc_listeners(app: AppHandle) {
+    let app_for_unread = app.clone();
+    app.listen("shell://unread", move |event| {
+        let payload: ShellUnreadPayload = match serde_json::from_str(event.payload()) {
+            Ok(p) => p,
+            Err(err) => {
+                eprintln!("[shell] shell://unread payload parse error: {err}");
+                return;
+            }
+        };
+        if payload.count < 0 {
+            eprintln!("[shell] shell://unread negative count ignored: {}", payload.count);
+            return;
+        }
+        let count = payload.count as u64;
+        apply_unread(&app_for_unread, count);
+    });
+
+    let app_for_notify = app.clone();
+    app.listen("shell://notify", move |event| {
+        let payload: ShellNotifyPayload = match serde_json::from_str(event.payload()) {
+            Ok(p) => p,
+            Err(err) => {
+                eprintln!("[shell] shell://notify payload parse error: {err}");
+                return;
+            }
+        };
+        let title = payload.title.trim();
+        if title.is_empty() {
+            return;
+        }
+        deliver_notification(
+            &app_for_notify,
+            title,
+            &payload.body,
+            payload.url.as_deref(),
+            payload.tag.as_deref(),
+        );
+    });
+
+    // shell://login-success：登录窗 → 主窗。
+    let app_for_login = app.clone();
+    app.listen("shell://login-success", move |_event| {
+        switch_to_main(&app_for_login);
+    });
+
+    // shell://login-failed：仅记录，不做 UI 行为（web 端已自带错误态）。
+    let _ = app.listen("shell://login-failed", move |event| {
+        let payload: ShellLoginFailedPayload =
+            serde_json::from_str(event.payload()).unwrap_or_default();
+        if let Some(reason) = payload.reason {
+            eprintln!("[shell] login failed: {reason}");
+        }
+    });
+
+    // shell://logout：主窗 → 登录窗。
+    let app_for_logout = app.clone();
+    app.listen("shell://logout", move |_event| {
+        switch_to_login(&app_for_logout);
+    });
+}
+
+/// 关闭 login 窗、显示 main 窗；如 main 已存在只 show。
+fn switch_to_main(app: &AppHandle) {
+    if let Some(login) = app.get_webview_window("login") {
+        let _ = login.hide();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.unminimize();
+        let _ = main.set_focus();
+    } else {
+        eprintln!("[shell] main window missing in tauri.conf.json");
+    }
+}
+
+/// 关闭 main 窗、显示 login 窗。
+fn switch_to_login(app: &AppHandle) {
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.hide();
+    }
+    if let Some(login) = app.get_webview_window("login") {
+        let _ = login.show();
+        let _ = login.unminimize();
+        let _ = login.set_focus();
+    }
+}
+
+fn apply_unread(app: &AppHandle, count: u64) {
+    // macOS Dock 红点（Tauri 2 提供 `set_badge_label`）
+    if let Some(window) = app.get_webview_window("main") {
+        let label = if count == 0 { None } else { Some(count.to_string()) };
+        let _ = window.set_badge_label(label);
+    }
+    // 托盘 title（macOS 菜单栏图标右侧显示）
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let title = if count == 0 {
+            APP_NAME.to_string()
+        } else {
+            format!("{APP_NAME} ({count})")
+        };
+        let _ = tray.set_title(Some(&title));
+    }
+}
+
+/// 同 tag 通知在 `MERGE_WINDOW` 内的后续推送会被**丢弃**（保留最后一次）。
+/// macOS 11+ 已不再支持直接覆盖系统通知，因此采用"短时窗去重"策略：
+/// 收到新通知时，若同 tag 在窗口内已经发过，跳过本次；让最近一条自然送达。
+/// 实战中 web 端应保证高频更新走 debounce（200ms 级），shell 端此窗口兜底。
+const MERGE_WINDOW: Duration = Duration::from_millis(1500);
+
+static NOTIFY_DEDUPE: once_cell::sync::Lazy<Mutex<HashMap<String, Instant>>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
+
+fn deliver_notification(
+    app: &AppHandle,
+    title: &str,
+    body: &str,
+    url: Option<&str>,
+    tag: Option<&str>,
+) {
+    if let Some(tag) = tag {
+        let mut map = NOTIFY_DEDUPE.lock().expect("NOTIFY_DEDUPE poisoned");
+        let now = Instant::now();
+        if let Some(prev) = map.get(tag) {
+            if now.duration_since(*prev) < MERGE_WINDOW {
+                // 窗口内已有同 tag 推送，吞掉本次；保留 last-seen。
+                map.insert(tag.to_string(), now);
+                return;
+            }
+        }
+        map.insert(tag.to_string(), now);
+        // 定期清理过期 entry，避免长跑内存增长
+        map.retain(|_, t| now.duration_since(*t) < MERGE_WINDOW * 4);
+    }
+
+    use tauri_plugin_notification::NotificationExt;
+
+    let title_owned = title.to_string();
+    let body_owned = body.to_string();
+    let url_owned = url.map(|u| u.to_string());
+
+    let result = app
+        .notification()
+        .builder()
+        .title(title_owned)
+        .body(body_owned)
+        .show();
+
+    if let Err(err) = result {
+        eprintln!("[shell] notification failed: {err}");
+        return;
+    }
+
+    // 同步唤起主窗口（macOS 系统通知出现在通知中心，不强制抢焦点）；
+    // 若用户点击通知，再次触发 focus。
+    if let Some(window) = app.get_webview_window("main") {
+        if let Some(target) = url_owned {
+            let js = format!(
+                "window.history.pushState({{}}, '', {json}); window.dispatchEvent(new PopStateEvent('popstate'));",
+                json = serde_json::json!(target),
+            );
+            let _ = window.eval(&js);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_hide_on_close;
+
+    #[test]
+    fn login_close_exits_instead_of_hiding() {
+        assert!(!should_hide_on_close("login"));
+    }
+
+    #[test]
+    fn main_close_stays_in_the_tray() {
+        assert!(should_hide_on_close("main"));
+    }
+}

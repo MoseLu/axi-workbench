@@ -1,0 +1,34 @@
+.axi-one-time-code {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.axi-one-time-code__input {
+  min-width: 0;
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--axi-radius-lg, 8px);
+  color: var(--axi-text, #f8fafc);
+  background: rgba(255, 255, 255, 0.04);
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 21px;
+  font-weight: var(--axi-font-weight-semibold, 650);
+  line-height: 1;
+  outline: none;
+  text-align: center;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.axi-one-time-code__input:focus {
+  border-color: var(--axi-primary);
+  background: color-mix(in srgb, var(--axi-primary) 10%, rgba(255, 255, 255, 0.04));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--axi-primary) 20%, transparent);
+}
+
+.axi-one-time-code__input:disabled {
+  cursor: wait;
+  opacity: .6;
+}

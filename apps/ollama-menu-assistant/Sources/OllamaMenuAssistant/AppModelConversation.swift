@@ -5,6 +5,39 @@ private let conversationDetailCacheEntryByteLimit = 12_000_000
 private let conversationDetailCacheTotalByteLimit = 36_000_000
 private let conversationDetailSkeletonDelayNanoseconds: UInt64 = 80_000_000
 
+enum ArchivedConversationProjectFilter: Equatable, Hashable {
+    case all
+    case noProject
+    case project(UUID)
+}
+
+enum ArchivedConversationSortOption: String, CaseIterable, Identifiable {
+    case updatedAt
+    case createdAt
+    case titleAscending
+
+    var id: String { rawValue }
+
+    func title(language: AppLanguage) -> String {
+        switch self {
+        case .updatedAt:
+            language == .english ? "Updated" : "更新时间"
+        case .createdAt:
+            language == .english ? "Created" : "创建时间"
+        case .titleAscending:
+            language == .english ? "Title A-Z" : "按标题顺序"
+        }
+    }
+
+    var systemName: String {
+        switch self {
+        case .updatedAt: "clock.arrow.circlepath"
+        case .createdAt: "calendar"
+        case .titleAscending: "textformat.abc"
+        }
+    }
+}
+
 extension AppModel {
     func selectModel(named name: String) {
         applySelectedModel(name)
@@ -109,11 +142,96 @@ extension AppModel {
     }
 
     func archivedConversations() -> [StoredConversation] {
-        conversations
+        archivedConversations(
+            matching: "",
+            projectFilter: .all,
+            sortOption: .updatedAt
+        )
+    }
+
+    func archivedConversations(
+        matching query: String,
+        projectFilter: ArchivedConversationProjectFilter,
+        sortOption: ArchivedConversationSortOption
+    ) -> [StoredConversation] {
+        let normalizedQuery = normalizedArchivedConversationQuery(query)
+
+        return conversations
             .filter(\.isArchived)
+            .filter { archivedConversation($0, matchesProjectFilter: projectFilter) }
+            .filter { archivedConversation($0, matchesQuery: normalizedQuery) }
             .sorted { lhs, rhs in
-                lhs.updatedAt > rhs.updatedAt
+                sortArchivedConversations(lhs, rhs, by: sortOption)
             }
+    }
+
+    private func archivedConversation(
+        _ conversation: StoredConversation,
+        matchesProjectFilter filter: ArchivedConversationProjectFilter
+    ) -> Bool {
+        switch filter {
+        case .all:
+            true
+        case .noProject:
+            conversation.projectID == nil
+        case .project(let projectID):
+            conversation.projectID == projectID
+        }
+    }
+
+    private func archivedConversation(
+        _ conversation: StoredConversation,
+        matchesQuery query: String
+    ) -> Bool {
+        guard !query.isEmpty else {
+            return true
+        }
+
+        let projectName = conversation.projectID
+            .flatMap { projectID in projects.first { $0.id == projectID }?.name } ?? ""
+        let searchableParts = [
+            ChatDisplayText.parse(conversation.title).body,
+            conversation.title,
+            conversation.model,
+            projectName,
+        ] + conversation.messages.map { ChatDisplayText.parse($0.content).body }
+
+        return searchableParts.contains { part in
+            normalizedArchivedConversationQuery(part).contains(query)
+        }
+    }
+
+    private func sortArchivedConversations(
+        _ lhs: StoredConversation,
+        _ rhs: StoredConversation,
+        by sortOption: ArchivedConversationSortOption
+    ) -> Bool {
+        switch sortOption {
+        case .updatedAt:
+            if lhs.updatedAt != rhs.updatedAt {
+                return lhs.updatedAt > rhs.updatedAt
+            }
+            return lhs.id.uuidString < rhs.id.uuidString
+        case .createdAt:
+            if lhs.createdAt != rhs.createdAt {
+                return lhs.createdAt > rhs.createdAt
+            }
+            return lhs.id.uuidString < rhs.id.uuidString
+        case .titleAscending:
+            let lhsTitle = ChatDisplayText.parse(lhs.title).body
+            let rhsTitle = ChatDisplayText.parse(rhs.title).body
+            let comparison = lhsTitle.localizedStandardCompare(rhsTitle)
+            if comparison != .orderedSame {
+                return comparison == .orderedAscending
+            }
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+    }
+
+    private func normalizedArchivedConversationQuery(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
     }
 
     func selectProject(_ project: ConversationProject) {

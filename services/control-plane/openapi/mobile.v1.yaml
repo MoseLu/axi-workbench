@@ -1,0 +1,1369 @@
+openapi: 3.0.3
+info:
+  title: Axi Workstation Control Plane — Mobile v1
+  version: 1.0.0
+  description: |
+    DevHub / Axi Mobile stage-B machine-readable contract for the mobile
+    client. Project actions use a uniform six-field contract
+    (idempotencyKey, projectId, actionType, plus deviceId from the bearer
+    token, auditEvent on the response side, and approvalRef when the route
+    is the legacy approvals-decision endpoint). Destructive actions return
+    202 with `status: pending_approval` so a paired device does not retry.
+
+    Approval QR scans deliberately use a separate two-step contract: an
+    opaque `axi://approval/scan_*` URI is resolved by the server first, then
+    the client submits only a decision, idempotency key, and the server-bound
+    handoff correlation id. Project, action, and approval identifiers never
+    come from the scanner client.
+
+    This spec is intentionally hand-written so we do not introduce a
+    zod-to-json-schema dependency just to render the contract. The
+    canonical schema source remains `packages/schemas/src/entities/control-plane.ts`; whenever a zod schema changes there, mirror the change here in the same commit.
+servers:
+  - url: http://127.0.0.1:8092
+    description: Local control plane (default CONTROL_PLANE_PORT)
+  - url: https://control-plane.axiomaticworld.local
+    description: Cluster-internal control plane (not exposed externally)
+tags:
+  - name: pairing
+    description: Device pairing, nonce refresh, token issuance, and revocation
+  - name: workspace
+    description: Read-only workspace projection endpoints
+  - name: jobs
+    description: Mobile job creation, cancellation, and approval bridging
+  - name: approvals
+    description: Server-resolved domain approval scans and cross-surface handoff
+paths:
+  /mobile/v1/pair/start:
+    post:
+      tags: [pairing]
+      summary: Begin device pairing (no auth required)
+      operationId: startPair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairStartRequest'
+      responses:
+        '200':
+          description: Pairing code issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairStartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/qr/scan:
+    post:
+      tags: [pairing]
+      summary: Register a phone after it scans a one-time Web pairing QR
+      description: |
+        This route is reachable only through the API Gateway service identity.
+        The phone submits an opaque Web-owned transaction and one-time scan
+        bearer alongside its Android Keystore public key. A successful scan
+        does not activate the device: it only creates a pending pairing that
+        the same authenticated Web owner must explicitly confirm. The response
+        never echoes the scan bearer.
+      operationId: scanWebPairing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QrPairScanRequest'
+      responses:
+        '200':
+          description: Phone registered as pending Web owner confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrPairScanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/web-login/qr/scan:
+    post:
+      tags: [pairing]
+      summary: Approve a computer login QR from an already paired phone
+      description: |
+        The phone must first hold an active Control Plane device bearer and
+        the device must have been explicitly bound to the same Web owner via
+        the Web settings QR flow. The camera payload has only a one-time scan
+        bearer; the browser poll credential and owner identity are never sent
+        to the phone. The API Gateway receives the resulting owner grant on a
+        private hop and is the only component that writes the browser cookie.
+      operationId: approveWebLoginQr
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebLoginQrScanRequest'
+      responses:
+        '200':
+          description: The authenticated mobile device approved this computer login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebLoginQrScanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/confirm:
+    post:
+      tags: [pairing]
+      summary: Exchange pairing code for a registered deviceId
+      operationId: confirmPair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairConfirmRequest'
+      responses:
+        '200':
+          description: Device registered; nonce issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairConfirmResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/status:
+    post:
+      tags: [pairing]
+      summary: Poll a Web-approved device pairing
+      description: |
+        The mobile app supplies the opaque pairing transaction and its
+        short-lived code. Before an authenticated Web owner approves that
+        exact code, the response remains `pending`; the deviceId is disclosed
+        only after approval and is still insufficient to mint a token without
+        a signature from the registered device key.
+      operationId: pairingStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairStatusRequest'
+      responses:
+        '200':
+          description: Pairing is pending Web approval or has been approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/auth/token:
+    post:
+      tags: [pairing]
+      summary: Exchange a signed single-use nonce for a short-lived HS256 access token
+      operationId: issueAccessToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Access token issued (TTL 1h)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/auth/nonce:
+    post:
+      tags: [pairing]
+      summary: Request a single-use nonce for /auth/token re-signing
+      operationId: requestAuthNonce
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NonceRequest'
+      responses:
+        '200':
+          description: Nonce issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/auth/owner-token:
+    post:
+      tags: [pairing]
+      summary: Upgrade a paired device to owner scope using owner proof
+      operationId: issueOwnerToken
+      description: |
+        Out-of-band upgrade path for a trusted paired device to obtain a JWT
+        carrying the `owner` scope. The caller must present the
+        `X-Axi-Owner-Token` header and a freshly signed nonce carrying a
+        valid `ownerProof` computed as HMAC-SHA256(ownerApprovalSecret, nonce).
+        This is the only legal way a mobile bearer can carry the `owner`
+        scope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnerTokenRequest'
+      responses:
+        '200':
+          description: Owner access token issued (TTL 1h)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Owner token header missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileActionError'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/pair/revoke:
+    post:
+      tags: [pairing]
+      summary: Revoke a paired device (soft; tokens become 401)
+      operationId: revokeDevice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        '200':
+          description: Device revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/PairingDisabled'
+  /mobile/v1/workspace:
+    get:
+      tags: [workspace]
+      summary: Mobile workspace projection (only explicit HTTPS previews)
+      operationId: mobileSnapshot
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Workspace snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileWorkspaceSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/projects/{id}:
+    get:
+      tags: [workspace]
+      summary: Mobile projection for a single project
+      operationId: mobileProject
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileProjectCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/jobs:
+    post:
+      tags: [jobs]
+      summary: Create a control-plane job from a mobile action
+      operationId: createMobileJob
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileActionRequest'
+      responses:
+        '202':
+          description: Job accepted (executed or pending_approval) or replayed
+          headers:
+            X-Idempotency-Replay:
+              description: Set to "true" when the response is a cache replay
+              schema:
+                type: string
+                enum: ['true', 'false']
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MobileJobAccepted'
+                  - $ref: '#/components/schemas/MobileJobPendingApproval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/jobs/{id}/cancel:
+    post:
+      tags: [jobs]
+      summary: Cancel a running job
+      operationId: cancelMobileJob
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileActionRequest'
+      responses:
+        '200':
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileJobCancelResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/approvals/{id}/decision:
+    post:
+      tags: [jobs]
+      summary: Legacy direct approval decision (migration only)
+      description: New mobile clients must use the server-resolved approval-scan routes instead.
+      operationId: decideLegacyMobileApproval
+      deprecated: true
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegacyMobileApprovalDecision'
+      responses:
+        '200':
+          description: Decision applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileApprovalDecisionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/approval-scans/resolve:
+    post:
+      tags: [approvals]
+      summary: Resolve an opaque domain approval scan on the server
+      operationId: resolveMobileApprovalScan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalScanResolveRequest'
+      responses:
+        '200':
+          description: Current policy-approved preview for explicit user confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalScanPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Approval state changed after the QR code was issued
+        '410':
+          description: Approval scan expired
+  /mobile/v1/approval-scans/{scanId}/decision:
+    post:
+      tags: [approvals]
+      summary: Submit an explicit decision for a server-resolved approval scan
+      operationId: decideMobileApprovalScan
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: scanId
+          required: true
+          schema:
+            type: string
+            pattern: '^scan_[A-Za-z0-9_-]{8,}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileApprovalDecision'
+      responses:
+        '200':
+          description: Domain approval decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalScanDecisionResponse'
+        '202':
+          description: C/D decision was handed off to Web rather than executed on Mobile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalScanDecisionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Scan expired or approval state changed before submission
+        '422':
+          description: Decision or handoff correlation is not valid for this scan
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: HS256
+      description: |
+        Short-lived HS256 access token minted by /mobile/v1/auth/token.
+        TTL 1h. The static AXI_MOBILE_OWNER_TOKEN fallback is honoured
+        only when AXI_MOBILE_PAIRING_ENABLED is not 'true'.
+  responses:
+    BadRequest:
+      description: Missing required field(s) or unparsable body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+    Unauthorized:
+      description: Bearer token missing / expired / revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+    NotFound:
+      description: Project / job / approval not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+    PairingDisabled:
+      description: Pairing is not configured on this server (AXI_MOBILE_TOKEN_SECRET missing)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MobileActionError'
+  schemas:
+    MobileActionError:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error:
+          type: string
+          minLength: 1
+        message:
+          type: string
+    PairStartRequest:
+      type: object
+      required: [publicKeyHex, deviceName]
+      additionalProperties: false
+      properties:
+        publicKeyHex:
+          type: string
+          minLength: 64
+          maxLength: 512
+          pattern: '^[0-9a-fA-F]+$'
+          description: |
+            Hex-encoded device public key. Legacy Ed25519 records use a
+            raw 32-byte key (64 hex chars); Android Keystore ES256 records
+            use a P-256 SPKI DER key. The private key never leaves the device.
+        publicKeyAlgorithm:
+          type: string
+          enum: [Ed25519, ES256]
+          default: Ed25519
+          description: |
+            Declares the signing key format. Current Android clients send
+            ES256 because Android Keystore guarantees EC P-256 signing;
+            absent means legacy Ed25519 for backward compatibility.
+        deviceName:
+          type: string
+          minLength: 1
+        clientInfo:
+          type: object
+          additionalProperties: true
+    PairStartResponse:
+      type: object
+      required: [ok, pairingId, code, codeExpiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        pairingId:
+          type: string
+          pattern: '^pair_[A-Za-z0-9_-]{36}$'
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        codeExpiresAt:
+          type: integer
+          description: Unix epoch seconds (5-minute TTL by default)
+    QrPairScanRequest:
+      type: object
+      required: [webPairingId, scanToken, publicKeyHex, publicKeyAlgorithm, deviceName]
+      additionalProperties: false
+      properties:
+        webPairingId:
+          type: string
+          pattern: '^webpair_[A-Za-z0-9_-]{16,}$'
+          description: Opaque transaction created by the authenticated Web owner.
+        scanToken:
+          type: string
+          minLength: 32
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+          description: One-time bearer encoded only into the short-lived QR image.
+        publicKeyHex:
+          type: string
+          minLength: 64
+          maxLength: 512
+          pattern: '^[0-9a-fA-F]+$'
+          description: Android Keystore ES256 SPKI public key; its private half never leaves the device.
+        publicKeyAlgorithm:
+          type: string
+          enum: [ES256]
+        deviceName:
+          type: string
+          minLength: 1
+          maxLength: 200
+    QrPairScanResponse:
+      type: object
+      required: [ok, pairingId, code, expiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        pairingId:
+          type: string
+          pattern: '^pair_[A-Za-z0-9_-]{36}$'
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Opaque local polling credential retained on the phone only; not shown to the Web owner.
+        expiresAt:
+          type: integer
+          description: Unix epoch milliseconds; approval is possible only before this timestamp.
+    WebLoginQrScanRequest:
+      type: object
+      required: [webLoginId, scanToken]
+      additionalProperties: false
+      properties:
+        webLoginId:
+          type: string
+          pattern: '^weblogin_[A-Za-z0-9_-]{16,}$'
+          description: Opaque computer-login transaction created through the Gateway.
+        scanToken:
+          type: string
+          minLength: 32
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+          description: One-time scanner bearer; it is not a browser cookie or mobile access token.
+    WebLoginQrScanResponse:
+      type: object
+      required: [ok, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        status:
+          type: string
+          enum: [approved]
+    PairConfirmRequest:
+      type: object
+      required: [pairingId, code, ownerApprovalToken]
+      additionalProperties: false
+      properties:
+        pairingId:
+          type: string
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        ownerApprovalToken:
+          type: string
+          description: |
+            HMAC-SHA256(AXI_OWNER_PAIR_APPROVAL_SECRET, `${pairingId}:${code}`)
+            returned by the owner's side-channel.  Without this token the
+            pairing cannot activate a device; the 6-digit code is treated
+            as a low-entropy shared secret only, never as the sole proof.
+          minLength: 64
+          maxLength: 64
+    PairConfirmResponse:
+      type: object
+      required: [ok, deviceId, status, nonce]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        deviceId:
+          type: string
+          pattern: '^dev_[A-Za-z0-9_-]{36}$'
+        status:
+          type: string
+          enum: [active]
+        nonce:
+          $ref: '#/components/schemas/NonceResponse'
+    PairStatusRequest:
+      type: object
+      required: [pairingId, code]
+      additionalProperties: false
+      properties:
+        pairingId:
+          type: string
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+    PairStatusResponse:
+      type: object
+      required: [ok, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        status:
+          type: string
+          enum: [pending, approved]
+        expiresAt:
+          type: integer
+          description: Present while status is pending; Unix epoch seconds.
+        deviceId:
+          type: string
+          description: Present only after the authenticated Web owner approves this pairing.
+          pattern: '^dev_[A-Za-z0-9_-]{36}$'
+    TokenRequest:
+      type: object
+      required: [deviceId, nonceId, nonce, signatureHex]
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+        nonceId:
+          type: string
+        nonce:
+          type: string
+        signatureHex:
+          type: string
+          description: |
+            Signature of `nonce` produced with the registered device private
+            key: 128 hex chars for legacy Ed25519, or bounded DER ECDSA
+            output for Android Keystore ES256. The runtime chooses the
+            verifier from the server-registered publicKeyAlgorithm only.
+          minLength: 2
+          maxLength: 512
+    TokenResponse:
+      type: object
+      required: [ok, accessToken, expiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        accessToken:
+          type: string
+          description: HS256 JWT
+        expiresAt:
+          type: integer
+    NonceResponse:
+      type: object
+      required: [nonceId, nonce, expiresAt]
+      additionalProperties: false
+      properties:
+        nonceId:
+          type: string
+        nonce:
+          type: string
+        expiresAt:
+          type: integer
+    NonceRequest:
+      type: object
+      required: [deviceId]
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+    OwnerTokenRequest:
+      type: object
+      required: [deviceId, nonceId, nonce, signatureHex, ownerProof]
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+        nonceId:
+          type: string
+        nonce:
+          type: string
+        signatureHex:
+          type: string
+          description: |
+            Signature of `nonce` produced with the registered device private
+            key, validated according to publicKeyAlgorithm from /pair/start.
+          minLength: 2
+          maxLength: 512
+        ownerProof:
+          type: string
+          description: |
+            HMAC-SHA256(ownerApprovalSecret, nonce).  Proves the caller
+            possesses the shared owner-approval secret.  64 lowercase
+            hex chars.
+          minLength: 64
+          maxLength: 64
+
+    OwnerTokenResponse:
+      type: object
+      required: [ok, accessToken, expiresAt]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        accessToken:
+          type: string
+          description: HS256 JWT carrying the `owner` scope
+        expiresAt:
+          type: integer
+
+    RevokeRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        deviceId:
+          type: string
+        reason:
+          type: string
+    RevokeResponse:
+      type: object
+      required: [ok, deviceId, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        deviceId:
+          type: string
+        status:
+          type: string
+          enum: [revoked]
+    MobileActionRequest:
+      type: object
+      required:
+        - idempotencyKey
+        - projectId
+        - actionId
+        - actionType
+      additionalProperties: false
+      properties:
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+        projectId:
+          type: string
+        actionId:
+          type: string
+          description: Stable action identifier projected from the current mobile project card.
+        actionType:
+          type: string
+    LegacyMobileApprovalDecision:
+      allOf:
+        - $ref: '#/components/schemas/MobileActionRequest'
+        - type: object
+          required: [decision, approvalRef]
+          additionalProperties: false
+          properties:
+            decision:
+              type: string
+              enum: [approved, rejected]
+            decisionText:
+              type: string
+            approvalRef:
+              type: string
+              description: |
+                The approvalId of the pending approval; must equal the
+                path parameter.
+    ApprovalScanResolveRequest:
+      type: object
+      required: [scanToken]
+      additionalProperties: false
+      properties:
+        scanToken:
+          type: string
+          pattern: '^scan_[A-Za-z0-9_-]{8,}$'
+          description: Opaque token extracted from axi://approval/scan_*; never a project or approval id.
+    ApprovalScanObject:
+      type: object
+      required: [type, id, projectId, actionId, actionType]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum: [approval]
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        actionId:
+          type: string
+          nullable: true
+        actionType:
+          type: string
+          nullable: true
+    ApprovalScanPreview:
+      type: object
+      required: [ok, scanId, approvalId, object, impact, riskLevel, currentStatus, availableDecisions, expiresAt, handoffCorrelationId]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        scanId:
+          type: string
+          pattern: '^scan_[A-Za-z0-9_-]{8,}$'
+        approvalId:
+          type: string
+        object:
+          $ref: '#/components/schemas/ApprovalScanObject'
+        impact:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        currentStatus:
+          type: string
+          enum: [pending]
+        availableDecisions:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [approved, rejected, handoff]
+        expiresAt:
+          type: string
+          format: date-time
+        handoffCorrelationId:
+          type: string
+          pattern: '^handoff:scan_[A-Za-z0-9_-]{8,}$'
+    MobileApprovalDecision:
+      type: object
+      required: [decision, idempotencyKey, handoffCorrelationId]
+      additionalProperties: false
+      properties:
+        decision:
+          type: string
+          enum: [approved, rejected, handoff]
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 200
+          pattern: '^[A-Za-z0-9_-]+$'
+        handoffCorrelationId:
+          type: string
+          pattern: '^handoff:scan_[A-Za-z0-9_-]{8,}$'
+          description: Must equal the correlation identifier returned by this scan preview.
+    HandoffContext:
+      type: object
+      required: [id, handoffCorrelationId, sourceSurface, targetSurface, status, approvalId, object, impact, riskLevel, createdAt]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: '^handoff_[A-Za-z0-9-]{36}$'
+        handoffCorrelationId:
+          type: string
+        sourceSurface:
+          type: string
+          enum: [mobile, web]
+        targetSurface:
+          type: string
+          enum: [mobile, web, specialist]
+        status:
+          type: string
+          enum: [pending, opened, completed, rejected]
+        approvalId:
+          type: string
+          nullable: true
+        object:
+          $ref: '#/components/schemas/ApprovalScanObject'
+        impact:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        createdAt:
+          type: string
+          format: date-time
+        openedAt:
+          type: string
+          format: date-time
+        openedBy:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        finalAction:
+          type: object
+          required: [outcome, performedBy, occurredAt]
+          additionalProperties: false
+          properties:
+            outcome:
+              type: string
+            performedBy:
+              type: string
+            occurredAt:
+              type: string
+              format: date-time
+    ApprovalScanDecisionResponse:
+      type: object
+      required: [ok, status]
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        status:
+          type: string
+          enum: [approved, rejected, handed_off]
+        handoffCorrelationId:
+          type: string
+        handoff:
+          $ref: '#/components/schemas/HandoffContext'
+        approval:
+          type: object
+          additionalProperties: true
+    MobileJobAccepted:
+      type: object
+      required: [ignored, accepted, job]
+      additionalProperties: false
+      properties:
+        ignored:
+          type: boolean
+        accepted:
+          type: boolean
+        job:
+          $ref: '#/components/schemas/JobSummary'
+        latestEvent:
+          type: object
+          additionalProperties: true
+    MobileJobPendingApproval:
+      type: object
+      required: [status, approvalId, riskLevel, actionSummary]
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum: [pending_approval]
+        approvalId:
+          type: string
+          pattern: '^apr_[A-Za-z0-9-]{36}$'
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        actionSummary:
+          type: string
+    MobileJobCancelResponse:
+      type: object
+      required: [id, status]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [cancelled, completed, failed]
+    MobileApprovalDecisionResponse:
+      type: object
+      required: [id, status]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [approved, rejected]
+        decisionText:
+          type: string
+        dispatchedJobId:
+          type: string
+          nullable: true
+          description: Set when an approved mobile_pairing approval triggers a real job; null when rejected.
+    JobSummary:
+      type: object
+      required: [id, status, summary]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        health:
+          type: string
+          enum: [healthy, attention, blocked, stale, unknown]
+        summary:
+          type: string
+    MobileProjectCard:
+      type: object
+      required: [id, name, kind, status, health, reasonCode, summary, architecture, phase, preview, actions, source]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+        status:
+          type: string
+        health:
+          type: string
+          enum: [healthy, attention, blocked, stale, unknown]
+        reasonCode:
+          type: string
+        summary:
+          type: string
+        architecture:
+          type: object
+          additionalProperties: false
+          properties:
+            provides:
+              type: array
+              items:
+                type: string
+            consumes:
+              type: array
+              items:
+                type: string
+            contracts:
+              type: array
+              items:
+                type: string
+        phase:
+          type: string
+        lastVerifiedAt:
+          type: string
+          nullable: true
+        capabilities:
+          type: array
+          items:
+            type: string
+        progress:
+          $ref: '#/components/schemas/ProjectProgress'
+        configuration:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectConfigurationGroup'
+        preview:
+          $ref: '#/components/schemas/MobilePreview'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileAction'
+        source:
+          type: string
+          enum: [workspace.graph]
+    WorkspaceSummary:
+      type: object
+      required: [total, healthy, attention, blocked, stale, unknown]
+      additionalProperties: false
+      properties:
+        total:
+          type: integer
+        healthy:
+          type: integer
+        attention:
+          type: integer
+        blocked:
+          type: integer
+        stale:
+          type: integer
+        unknown:
+          type: integer
+    AttentionItem:
+      type: object
+      required: [id, projectId, severity, type, reasonCode, title, summary, updatedAt]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        type:
+          type: string
+        reasonCode:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        updatedAt:
+          type: string
+    ProjectProgress:
+      type: object
+      required: [stage, confidence, summary, updatedAt, evidenceCount, remaining]
+      additionalProperties: false
+      properties:
+        stage:
+          type: string
+        confidence:
+          type: string
+        summary:
+          type: string
+        updatedAt:
+          type: string
+          nullable: true
+        evidenceCount:
+          type: integer
+        remaining:
+          type: array
+          items:
+            type: string
+    ProjectConfigurationFact:
+      type: object
+      required: [key, label, value]
+      additionalProperties: false
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        value:
+          type: string
+    ProjectConfigurationGroup:
+      type: object
+      required: [id, title, facts]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        facts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectConfigurationFact'
+    MobileWorkspaceSnapshot:
+      type: object
+      required: [generatedAt, source, summary, attentionItems, projects, runningTasks, recentTasks, approvals]
+      additionalProperties: false
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [workspace.graph]
+        summary:
+          $ref: '#/components/schemas/WorkspaceSummary'
+        attentionItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttentionItem'
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileProjectCard'
+        runningTasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileRunningTask'
+        recentTasks:
+          type: array
+          description: Recently completed, failed, or cancelled managed mobile-visible tasks. These are results, not pending work.
+          items:
+            $ref: '#/components/schemas/MobileRunningTask'
+        approvals:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalSummary'
+    MobilePreview:
+      type: object
+      required:
+        - mode
+        - url
+        - allowEmbedded
+        - coverUrl
+        - infoPageUrl
+        - fallbackMessage
+      additionalProperties: false
+      properties:
+        mode:
+          type: string
+          enum:
+            - none
+            - embedded_web
+            - external_web
+        url:
+          type: string
+          nullable: true
+          description: HTTPS URL only; null when mode is "none"
+        allowEmbedded:
+          type: boolean
+        coverUrl:
+          type: string
+          nullable: true
+        infoPageUrl:
+          type: string
+          nullable: true
+        fallbackMessage:
+          type: string
+          nullable: true
+    MobileAction:
+      type: object
+      required: [actionId, commandId, label, intent, autoExecutable, actionType, executionMode, riskLevel, summary]
+      additionalProperties: false
+      properties:
+        actionId:
+          type: string
+        commandId:
+          type: string
+        label:
+          type: string
+        intent:
+          type: string
+        autoExecutable:
+          type: boolean
+        actionType:
+          type: string
+        executionMode:
+          type: string
+          enum: [immediate, requires_approval]
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        summary:
+          type: string
+    MobileRunningTask:
+      type: object
+      required: [id, projectId, status, reasonCode, summary, actionType, updatedAt]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        status:
+          type: string
+        reasonCode:
+          type: string
+        summary:
+          type: string
+        actionType:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    ApprovalSummary:
+      type: object
+      required: [id, status, actionSummary, riskLevel]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+          nullable: true
+        actionId:
+          type: string
+          nullable: true
+        actionType:
+          type: string
+          nullable: true
+        source:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, expired]
+        actionSummary:
+          type: string
+        riskLevel:
+          type: string
+          enum: [low, medium, high, destructive]
+        createdAt:
+          type: string
+          format: date-time

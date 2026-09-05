@@ -1,0 +1,226 @@
+# This chart owns the Axi business API plane only. PostgreSQL, Redis and
+# ZITADEL are provisioned independently and referenced through Kubernetes
+# Secrets. Production values must override every example domain and image tag.
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+gateway:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-api-gateway
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Web, mobile callback and Gateway API share one project subdomain. Other
+  # Axi products use their own subdomains under axiomaticworld.com.
+  publicBaseURL: https://workbench.axiomaticworld.com
+  oidc:
+    issuerURL: https://id.axi.example.com
+    clientID: axi-workbench-web
+    apiAudience: axi-workbench-api
+    requiredAccessTokenScopes:
+      - axi.api
+    callbackURL: https://workbench.axiomaticworld.com/api/v1/auth/oidc/callback
+    allowedReturnURLs:
+      - https://workbench.axiomaticworld.com/auth/callback
+  cors:
+    allowedOrigins:
+      - https://workbench.axiomaticworld.com
+  session:
+    cookieName: axi_session
+    cookieDomain: ""
+    ttl: 8h
+  emailLogin:
+    ownerEmail: ""
+    subject: ""
+  rateLimitPerMinute: 120
+
+identityAdapter:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-identity-adapter
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8081
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  qrTransactionTTL: 2m
+  emailVerificationTTL: 15m
+  emailVerificationMaxAttempts: 5
+  ownerEmail: ""
+  zitadelCustomLoginURL: https://id.axi.example.com/ui/v2/login
+
+platformCore:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-platform-core
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8082
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  outbox:
+    # Keep the worker off for a chart-only install. Production values should
+    # enable it and point deliveryURL at the gateway internal event route.
+    workerEnabled: false
+    pollInterval: 5s
+    deliveryURL: ""
+
+workflowEngine:
+  # Workflow definitions and execution claims are stored in PostgreSQL.
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-workflow-engine
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8083
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  maxConcurrentWorkflows: 10
+  stepTimeoutSeconds: 300
+  dispatchLeaseSeconds: 360
+  dispatchPollIntervalSeconds: 1
+  maxDispatchAttempts: 10
+  dispatchRetryBaseSeconds: 5
+  dispatchRetryMaxSeconds: 300
+  httpAllowedHosts: ""
+  httpMaxResponseBytes: 1048576
+
+notificationService:
+  # Notification records are stored in PostgreSQL. Delivery workers remain
+  # deliberately local until an idempotent event consumer is enabled.
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-notification-service
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8084
+  kafkaBrokers: ""
+  kafkaTopic: axi.platform.events
+  kafkaGroupID: axi-notification-service
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+fileService:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/axiomaticworld/axi-workbench-file-service
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    port: 8085
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  storagePath: /var/lib/axi/files
+  storageBackend: local
+  s3EndpointURL: ""
+  s3Bucket: ""
+  s3Region: us-east-1
+  presignedURLTTLSeconds: 900
+  maxFileSize: 104857600
+  thumbnailEnabled: true
+  thumbnailMaxWidth: 320
+  thumbnailMaxHeight: 320
+  thumbnailQuality: 85
+  # Production must set this to clamav and provide a reachable ClamAV daemon.
+  virusScanBackend: disabled
+  clamavHost: 127.0.0.1
+  clamavPort: 3310
+  virusScanTimeoutSeconds: 30
+  persistence:
+    # Used only with storageBackend=local; production S3 does not mount a PVC.
+    enabled: true
+    accessModes:
+      - ReadWriteMany
+    size: 20Gi
+    storageClassName: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: workbench.axiomaticworld.com
+  tls:
+    enabled: true
+    secretName: axi-workbench-api-tls
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx
+
+observability:
+  otlpEndpoint: ""
+  logLevel: info
+
+# The existing Secret is created by External Secrets, Sealed Secrets, or the
+# cluster operator. It never belongs in Git. See infra/helm/README.md.
+secrets:
+  existingSecret: axi-workbench-runtime
+  create: false
+  values: {}
+
+migrations:
+  enabled: true
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600

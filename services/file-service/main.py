@@ -1,34 +1,36 @@
 """File Service API - Entry Point."""
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-from config import ensure_storage_directory, settings
-from routers.files import router as files_router
+from config import ensure_storage_directory, settings, validate_settings
+from routers.files import router as files_router, set_file_service
+from service import build_file_service
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    validate_settings()
+    if settings.storage_backend.lower() == "local":
+        ensure_storage_directory()
+    service = await build_file_service(settings)
+    set_file_service(service)
+    try:
+        yield
+    finally:
+        await service.close()
+        set_file_service(None)
+
 
 app = FastAPI(
     title="File Service API",
     description="API for file upload, download, and management",
     version="1.0.0",
-)
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    lifespan=lifespan,
 )
 
 # Include routers
 app.include_router(files_router)
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    """Initialize application on startup."""
-    ensure_storage_directory()
 
 
 @app.get("/")

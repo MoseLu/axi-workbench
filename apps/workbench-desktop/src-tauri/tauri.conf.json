@@ -1,0 +1,98 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Axi 工作台",
+  "version": "0.1.0",
+  "identifier": "com.axi.workbench.desktop",
+  "build": {
+    "frontendDist": "../workbench-dist",
+    "devUrl": "http://127.0.0.1:5183",
+    "beforeDevCommand": "echo 'Run `pnpm dev:workbench` in another terminal first, then this Tauri window will hot-reload against http://127.0.0.1:5183' && sleep 1",
+    "beforeBuildCommand": "pnpm --filter @axi/workbench build && pnpm --filter @axi/workbench-desktop verify:contracts"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Axi 工作台 — 登录",
+        "label": "login",
+        "width": 800,
+        "height": 365,
+        "minWidth": 800,
+        "minHeight": 365,
+        "resizable": false,
+        "maximizable": false,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "theme": "Light",
+        "backgroundColor": "#ffffff",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 13, "y": 26 },
+        "visible": true
+      },
+      {
+        "title": "Axi 工作台",
+        "label": "main",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true,
+        "maximizable": true,
+        "minimizable": true,
+        "closable": true,
+        "fullscreen": false,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "titleBarStyle": "Visible",
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "icon": [
+      "icons/icon.icns"
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "Axi Workbench Mac client",
+    "longDescription": "Axi Workbench Mac client — wraps the existing web workbench UI in a native macOS shell (Bilibili-class desktop client shape).",
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "frameworks": [],
+      "infoPlist": "Info.plist",
+      "providerShortName": null,
+      "signingIdentity": "-",
+      "entitlements": "entitlements/workbench.plist",
+      "exceptionDomain": null,
+      "dmg": {
+        "background": null,
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    }
+  },
+  "plugins": {
+    "globalShortcut": {
+      "shortcuts": [
+        {
+          "name": "show-main-window",
+          "description": "Show or focus the main Workbench window",
+          "shortcut": "CmdOrCtrl+Shift+W"
+        }
+      ]
+    },
+    "singleInstance": {
+      "enabled": true
+    }
+  }
+}

@@ -77,7 +77,7 @@ export default function DisplayImageGrid({ results, onSelect }: Props) {
             }}
           >
             {/* 预览图 */}
-            <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#1e293b' }}>
+            <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: 'var(--axi-text, #1e293b)' }}>
               <img
                 src={getImgSrc(r.previewPath)}
                 alt={r.job_name || ''}
@@ -93,11 +93,11 @@ export default function DisplayImageGrid({ results, onSelect }: Props) {
                 {r.job_name || r.pdf_name || '—'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: '#94a3b8' }}>
+                <span style={{ fontSize: 13, color: 'var(--axi-text-muted, #94a3b8)' }}>
                   共 {r.totalPages} 页
                 </span>
                 {r.category && (
-                  <span style={{ fontSize: 11, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
+                  <span style={{ fontSize: 11, color: 'var(--axi-text-muted, #64748b)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>
                     {r.category}
                   </span>
                 )}
@@ -123,7 +123,7 @@ export default function DisplayImageGrid({ results, onSelect }: Props) {
             onClick={() => setViewer(null)}
             style={{
               position: 'fixed', top: 20, right: 24,
-              background: 'rgba(255,255,255,0.9)', color: '#333',
+              background: 'rgba(255,255,255,0.9)', color: 'var(--axi-text-secondary, #333)',
               border: 'none', cursor: 'pointer', padding: 10, borderRadius: 8,
               zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}

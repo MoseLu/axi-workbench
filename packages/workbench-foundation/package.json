@@ -1,0 +1,33 @@
+{
+  "name": "@axi/workbench-foundation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth.tsx",
+    "./icons": "./src/icons.ts",
+    "./locale": "./src/locale.tsx"
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/workstation-contracts": "workspace:*"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@types/react": "^18.2.43",
+    "react": "^18.2.0",
+    "typescript": "^5.3.3"
+  },
+  "description": "Shared session and locale foundation for independent Axi Workbench applications"
+}
