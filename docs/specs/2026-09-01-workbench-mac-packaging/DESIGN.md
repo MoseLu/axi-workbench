@@ -243,6 +243,8 @@ tauri-plugin-single-instance 拦截
 | 尺寸 | 800×365（仅承载登录面板），min 800×365 | 1280×800（已有） |
 | 位置 | 居中 | 居中 |
 | 装饰 | macOS 交通灯可见 | macOS 交通灯可见 |
+| 交通灯 | Overlay inset `x=13,y=26`，位置与 Bilibili 原生窗口一致 | 系统默认 |
+| 拖拽 | 顶部空白区原生拖拽，保持普通箭头指针；业务控件保留自身点击指针 | 系统默认 |
 | title | `Workbench — 登录` | `Workbench` |
 | resizable | true | true |
 | maximizable | true（保留绿色交通灯） | true |
@@ -250,6 +252,8 @@ tauri-plugin-single-instance 拦截
 | closable | true（关 = 退出 app） | true（关 = 隐藏到托盘，已有） |
 | fullscreen | **false** | false |
 | 启动可见 | **true**（默认） | **false**（默认），登录成功后 show |
+
+登录窗口的 macOS bundle 使用 `src-tauri/Info.plist` 声明 `zh-Hans` 为开发区域，保证绿色交通灯的系统弹出菜单使用中文。
 
 ### 13.5 IPC 新增事件
 

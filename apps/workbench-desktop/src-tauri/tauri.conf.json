@@ -28,7 +28,7 @@
         "backgroundColor": "#ffffff",
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
-        "trafficLightPosition": { "x": 16, "y": 12 },
+        "trafficLightPosition": { "x": 13, "y": 26 },
         "visible": true
       },
       {
@@ -64,6 +64,7 @@
     "macOS": {
       "minimumSystemVersion": "11.0",
       "frameworks": [],
+      "infoPlist": "Info.plist",
       "providerShortName": null,
       "signingIdentity": "-",
       "entitlements": "entitlements/workbench.plist",

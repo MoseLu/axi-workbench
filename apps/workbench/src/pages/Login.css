@@ -803,10 +803,6 @@ body.axi-tauri-shell .axi-login-drag-region {
   right: 0;
   left: 84px;
   height: 34px;
-  cursor: grab;
+  cursor: default;
   -webkit-app-region: drag;
-}
-
-body.axi-tauri-shell .axi-login-drag-region:active {
-  cursor: grabbing;
 }

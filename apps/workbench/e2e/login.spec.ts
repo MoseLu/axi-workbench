@@ -295,6 +295,7 @@ test('desktop shell uses a compact overlay login window', async ({ page }) => {
       cardRadius: getComputedStyle(card).borderRadius,
       cardShadow: getComputedStyle(card).boxShadow,
       dragRegion: Boolean(document.querySelector('[data-tauri-drag-region]')),
+      dragRegionCursor: getComputedStyle(document.querySelector('[data-tauri-drag-region]')!).cursor,
       dragRegionRect: document.querySelector('[data-tauri-drag-region]')?.getBoundingClientRect().toJSON() ?? null,
     };
   });
@@ -311,6 +312,7 @@ test('desktop shell uses a compact overlay login window', async ({ page }) => {
   expect(layout?.cardRadius).toBe('0px');
   expect(layout?.cardShadow).toBe('none');
   expect(layout?.dragRegion).toBe(true);
+  expect(layout?.dragRegionCursor).toBe('default');
   expect(layout?.dragRegionRect).toMatchObject({ x: 84, y: 0, width: 716, height: 34 });
 });
 

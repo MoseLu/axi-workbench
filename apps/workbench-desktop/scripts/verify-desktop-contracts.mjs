@@ -16,6 +16,7 @@ const targetDir = join(desktopDir, 'workbench-dist')
 const iconIcns = join(desktopDir, 'src-tauri', 'icons', 'icon.icns')
 const desktopIconSource = join(desktopDir, 'src-tauri', 'icons', 'icon.svg')
 const tauriConfig = join(desktopDir, 'src-tauri', 'tauri.conf.json')
+const macosInfoPlist = join(desktopDir, 'src-tauri', 'Info.plist')
 const tauriCapabilities = join(desktopDir, 'src-tauri', 'capabilities', 'default.json')
 const loginPageSource = join(repoRoot, 'apps', 'workbench', 'src', 'pages', 'Login.tsx')
 const loginStylesSource = join(repoRoot, 'apps', 'workbench', 'src', 'pages', 'Login.css')
@@ -57,7 +58,7 @@ if (
   loginWindow?.maximizable !== true ||
   loginWindow?.titleBarStyle !== 'Overlay' ||
   loginWindow?.hiddenTitle !== true ||
-  JSON.stringify(loginWindow?.trafficLightPosition) !== JSON.stringify({ x: 16, y: 12 }) ||
+  JSON.stringify(loginWindow?.trafficLightPosition) !== JSON.stringify({ x: 13, y: 26 }) ||
   loginWindow?.theme !== 'Light' ||
   loginWindow?.backgroundColor?.toLowerCase() !== '#ffffff'
 ) {
@@ -65,6 +66,20 @@ if (
   failed = true
 } else {
   console.log('[verify-desktop-contracts] OK: 登录窗口使用 800x365 Overlay 浅色紧凑画布')
+}
+
+const plist = existsSync(macosInfoPlist) ? readFileSync(macosInfoPlist, 'utf8') : ''
+if (
+  config?.bundle?.macOS?.infoPlist !== 'Info.plist' ||
+  !existsSync(macosInfoPlist) ||
+  !plist.includes('<key>CFBundleDevelopmentRegion</key>') ||
+  !plist.includes('<string>zh-Hans</string>') ||
+  !plist.includes('<key>CFBundleLocalizations</key>')
+) {
+  console.error(`[verify-desktop-contracts] FAIL: macOS 应用包必须声明中文 AppKit 本地化: ${macosInfoPlist}`)
+  failed = true
+} else {
+  console.log('[verify-desktop-contracts] OK: macOS 应用包声明 zh-Hans 本地化')
 }
 
 const loginPage = existsSync(loginPageSource) ? readFileSync(loginPageSource, 'utf8') : ''
@@ -76,7 +91,12 @@ if (!Array.isArray(capabilities?.windows) || !capabilities.windows.includes('log
 } else {
   console.log('[verify-desktop-contracts] OK: login 窗口位于拖拽权限范围')
 }
-if (!loginPage.includes('data-tauri-drag-region') || !loginStyles.includes('.axi-login-drag-region')) {
+if (
+  !loginPage.includes('data-tauri-drag-region') ||
+  !loginStyles.includes('.axi-login-drag-region') ||
+  !loginStyles.includes('cursor: default') ||
+  /cursor:\s*(?:grab|grabbing)\b/.test(loginStyles)
+) {
   console.error(`[verify-desktop-contracts] FAIL: 登录窗口缺少可用的 macOS 拖拽区域: ${loginPageSource}`)
   failed = true
 } else {
