@@ -31,15 +31,43 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 
 ## 本地开发
 
-```bash
-# 终端 A：先跑 web 端 dev server（Tauri 窗口的 web 内容源）
-pnpm --filter @axi/workbench dev
+### 一键启动（推荐）
 
-# 终端 B：起 Tauri 窗口，指向终端 A 的 dev URL
+```bash
+pnpm --filter @axi/workbench-desktop dev
+# 或
 pnpm dev:desktop
 ```
 
-第一次 `pnpm dev:desktop` 会触发 `cargo` 拉依赖，需要几分钟。
+`scripts/dev-desktop.mjs` 会自动拉起 vite（监听 `127.0.0.1:5183`）+ Tauri dev 两个进程，
+等端口就绪后再起 Tauri WebView；Ctrl+C 一并退出。
+
+### 手动双终端（高级）
+
+如果需要分别看 vite 和 tauri 的日志：
+
+```bash
+# 终端 A：web 端 dev server（Tauri 窗口的 web 内容源）
+pnpm dev:workbench
+
+# 终端 B：等终端 A 输出 ready 后再起 Tauri 窗口
+pnpm --filter @axi/workbench-desktop dev:split
+```
+
+也可以打印这两条命令方便复制：
+
+```bash
+node apps/workbench-desktop/scripts/dev-desktop.mjs --print-only
+```
+
+### 注意
+
+- **端口冲突**：`5183` 已被其他项目占用时 vite 启动失败（`EADDRINUSE`），释放端口或改
+  `apps/workbench/vite.config.ts` 的 `server.port` 后同步修改 `apps/workbench-desktop/src-tauri/tauri.conf.json` 的
+  `devUrl`。
+- **Tauri 系统要求**：macOS 11+、Xcode Command Line Tools（`xcode-select --install`）、
+  rustup 工具链（`cargo` / `rustc` ≥ 1.77）。
+- 第一次 `tauri dev` 会触发 `cargo` 拉依赖，需要几分钟。
 
 ## 打包 .app / .dmg
 
