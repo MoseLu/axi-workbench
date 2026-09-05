@@ -1,6 +1,7 @@
 import { expect, test } from 'playwright/test';
 
 test('renders the web login journey in a real browser', async ({ page }) => {
+  const requestedEmails: string[] = [];
   const transaction = {
     ok: true,
     webLoginId: 'weblogin_render_123456789',
@@ -37,6 +38,8 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     });
   });
   await page.route('**/api/v1/auth/email-verifications', async (route) => {
+    const payload = route.request().postDataJSON() as { email?: string };
+    requestedEmails.push(payload.email ?? '');
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -115,6 +118,14 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   const baseline = layout;
   await expect(page.getByRole('tab', { name: '邮箱登录' })).toHaveAttribute('aria-selected', 'true');
   await page.locator('#axi-login-email').fill('render@example.com');
+  // A pasted full address is reduced to the editable local part; the domain
+  // can only come from the fixed select options.
+  await expect(page.locator('#axi-login-email')).toHaveValue('render');
+  await expect(page.locator('#axi-login-email-suffix')).toHaveValue('qq.com');
+  await expect(page.locator('#axi-login-email-suffix option')).toHaveCount(5);
+  await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toBeVisible();
+  await page.locator('#axi-login-email-suffix').selectOption('163.com');
+  await expect(page.locator('#axi-login-email-suffix')).toHaveValue('163.com');
   // The "获取验证码" button is now embedded inside the email input row on the right edge.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toBeVisible();
   const emailRowBorders = await page.evaluate(() => {
@@ -131,6 +142,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   });
   expect(emailRowBorders).toEqual({ rowRight: '1px', inputLeft: '0px', inputRight: '0px', buttonLeft: '0px' });
   await page.getByRole('button', { name: '获取验证码' }).click();
+  expect(requestedEmails[0]).toBe('render@163.com');
   // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
   await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
@@ -187,6 +199,9 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // back at its initial "请先获取验证码" hint.
   await page.getByRole('tab', { name: '密码登录' }).click();
   await expect(page.locator('#axi-login-password')).toBeVisible();
+  await expect(page.locator('#axi-login-password-email-suffix')).toHaveValue('163.com');
+  await page.locator('#axi-login-password-email').fill('password@example.com');
+  await expect(page.locator('#axi-login-password-email')).toHaveValue('password');
   const passwordLayout = await page.evaluate(() => {
     const rect = (selector: string) => {
       const element = document.querySelector(selector);
@@ -218,7 +233,9 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // armed. The OTP slots must reject non-digit input and only enable the
   // button when exactly 6 digits are entered.
   await page.locator('#axi-login-email').fill('render-final@example.com');
+  await page.locator('#axi-login-email-suffix').selectOption('outlook.com');
   await page.getByRole('button', { name: '获取验证码' }).click();
+  expect(requestedEmails[requestedEmails.length - 1]).toBe('render-final@outlook.com');
   await expect(page.getByRole('button', { name: '登录' })).toBeDisabled();
   await page.locator('.axi-one-time-code__input').first().fill('x');
   await expect(page.locator('.axi-one-time-code__input').first()).toHaveValue('');
@@ -264,6 +281,49 @@ test('email login error banner keeps the card height stable across appearance', 
   const afterButtonBottom = await button.evaluate((node) => node.getBoundingClientRect().bottom);
   expect(Math.abs(afterHeight - beforeHeight)).toBeLessThanOrEqual(2);
   expect(Math.abs(afterButtonBottom - beforeButtonBottom)).toBeLessThanOrEqual(0.1);
+});
+
+test('keeps a QR creation failure stable until the user retries', async ({ page }) => {
+  let createCalls = 0;
+  const transaction = {
+    ok: true,
+    webLoginId: 'weblogin_retry_123456789',
+    scanToken: 'scan_token_retry_1234567890123456789012345678',
+    pollToken: 'poll_token_retry_1234567890123456789012345678',
+    expiresAt: Math.floor(Date.now() / 1000) + 60,
+  };
+
+  await page.route('**/api/v1/auth/session*', (route) => route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ authenticated: false }),
+  }));
+  await page.route('**/api/v1/auth/methods*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ passwordLogin: false }),
+  }));
+  await page.route('**/api/v1/auth/device-login/qr', (route) => {
+    createCalls += 1;
+    return route.fulfill(createCalls === 1
+      ? { status: 503, contentType: 'application/json', body: JSON.stringify({ error: '网关暂不可用' }) }
+      : { status: 200, contentType: 'application/json', body: JSON.stringify(transaction) });
+  });
+  await page.route('**/api/v1/auth/device-login/qr/*', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, status: 'waiting_scan', expiresAt: transaction.expiresAt }),
+  }));
+
+  await page.goto('/login');
+  await expect(page.locator('.axi-login-qr-error')).toBeVisible();
+  await expect(page.locator('.axi-login-qr-error__title')).toHaveText('二维码暂时不可用');
+  await page.waitForTimeout(3_000);
+  expect(createCalls).toBe(1);
+
+  await page.getByRole('button', { name: '重新生成' }).click();
+  await expect.poll(() => createCalls).toBe(2);
+  await expect(page.getByLabel('电脑登录二维码')).toBeVisible();
 });
 
 test('desktop shell uses a compact overlay login window', async ({ page }) => {
@@ -376,4 +436,35 @@ test('expired QR keeps a readable client-style scrim until the user refreshes it
 
   await overlay.click();
   await expect.poll(() => createCalls).toBeGreaterThan(1);
+});
+
+test('keeps the controlled email field and OTP slots within a compact mobile viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.route('**/api/**', (route) => route.fulfill({
+    status: 404,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: 'not mocked' }),
+  }));
+
+  await page.goto('/login');
+  await expect(page.locator('#axi-login-email')).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    const selectors = [
+      '.axi-login-form__row--email',
+      '.axi-login-form__row--code',
+      '.axi-one-time-code__input:last-child',
+    ];
+    return {
+      viewportWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      rightEdges: selectors.map((selector) => document.querySelector(selector)?.getBoundingClientRect().right ?? null),
+    };
+  });
+
+  expect(layout.documentScrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  for (const rightEdge of layout.rightEdges) {
+    expect(rightEdge ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(layout.viewportWidth + 0.5);
+  }
 });

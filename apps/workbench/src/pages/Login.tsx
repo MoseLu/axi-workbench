@@ -29,7 +29,19 @@ type AuthMethodsResponse = { passwordLogin?: boolean };
 const RESEND_COOLDOWN_SECONDS = 60;
 const QR_POLL_INTERVAL_MS = 3_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_LOCAL_PART_PATTERN = /^[^\s@]+$/;
+const EMAIL_SUFFIX_OPTIONS = [
+  'qq.com',
+  '163.com',
+  'gmail.com',
+  'outlook.com',
+  'axi.workbench.dev',
+] as const;
+type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
+const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
+
+const normalizeEmailLocalPart = (value: string) => value.split('@', 1)[0].replace(/\s/g, '');
 
 /**
  * Web 登录入口。
@@ -56,7 +68,8 @@ const Login: React.FC = () => {
   const [loginMode, setLoginMode] = useState<LoginMode>('email');
   const [passwordLoginEnabled, setPasswordLoginEnabled] = useState(false);
   const [phase, setPhase] = useState<Phase>('email');
-  const [email, setEmail] = useState('');
+  const [emailLocalPart, setEmailLocalPart] = useState('');
+  const [emailSuffix, setEmailSuffix] = useState<EmailSuffix>(DEFAULT_EMAIL_SUFFIX);
   const [password, setPassword] = useState('');
   const [code, setCode] = useState<OneTimeCode | string>(() => createOneTimeCode());
   const [sentTo, setSentTo] = useState('');
@@ -132,13 +145,7 @@ const Login: React.FC = () => {
   // 二维码始终在左侧启动；其轮询凭证只留在内存中。
   useEffect(() => {
     if (deviceQr || deviceQrCreatingRef.current) return undefined;
-    if (deviceQrStatus === 'failed') {
-      const retryTimer = window.setTimeout(() => {
-        setDeviceQrStatus('creating');
-        setQrError(null);
-      }, 2_500);
-      return () => window.clearTimeout(retryTimer);
-    }
+    if (deviceQrStatus === 'failed') return undefined;
     deviceQrCreatingRef.current = true;
     setDeviceQrStatus('creating');
     setQrError(null);
@@ -203,24 +210,12 @@ const Login: React.FC = () => {
     };
   }, [deviceQr, deviceQrStatus, refreshSession]);
 
-  // 服务异常自动重试；二维码明确过期时保留蒙层，交给用户点击刷新。
-  useEffect(() => {
-    if (!deviceQr || !['expired', 'failed'].includes(deviceQrStatus) || qrSubmitting) return undefined;
-    if (deviceQrStatus === 'expired') return undefined;
-    const refreshTimer = window.setTimeout(() => {
-      deviceQrConsumingRef.current = false;
-      setDeviceQr(null);
-      setDeviceQrStatus('creating');
-      setQrError(null);
-    }, 2_500);
-    return () => window.clearTimeout(refreshTimer);
-  }, [deviceQr, deviceQrStatus, qrSubmitting]);
-
-  const trimmedEmail = email.trim().toLowerCase();
-  const emailIsValid = EMAIL_PATTERN.test(trimmedEmail);
+  const trimmedEmailLocalPart = normalizeEmailLocalPart(emailLocalPart).trim().toLowerCase();
+  const trimmedEmail = trimmedEmailLocalPart ? `${trimmedEmailLocalPart}@${emailSuffix}` : '';
+  const emailIsValid = EMAIL_LOCAL_PART_PATTERN.test(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
   const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
   const canResend = emailIsValid && cooldown <= 0 && !submitting && Boolean(sentTo);
-  const canVerify = emailIsValid && codeIsValid && !submitting && Boolean(challengeId);
+  const canVerify = emailIsValid && codeIsValid && !submitting && Boolean(challengeId) && sentTo === trimmedEmail;
 
   const handleSendCode = async () => {
     if (submitting || sessionLoading) return;
@@ -370,6 +365,12 @@ const Login: React.FC = () => {
   const appName = t('app.name');
   const qrOverlayTitle = deviceQrStatus === 'expired' ? '二维码已过期' : '二维码加载失败';
   const qrOverlayHint = deviceQrStatus === 'expired' ? '请点击刷新' : '请点击重试';
+  const refreshDeviceQr = () => {
+    deviceQrConsumingRef.current = false;
+    setDeviceQr(null);
+    setDeviceQrStatus('creating');
+    setQrError(null);
+  };
 
   return (
     <main className="axi-login-page">
@@ -410,6 +411,11 @@ const Login: React.FC = () => {
                     bordered={false}
                     status="active"
                   />
+                ) : deviceQrStatus === 'failed' ? (
+                  <div className="axi-login-qr-error" role="status">
+                    <span className="axi-login-qr-error__title">二维码暂时不可用</span>
+                    <button type="button" onClick={refreshDeviceQr}>重新生成</button>
+                  </div>
                 ) : (
                   <div className="axi-login-qr-loading"><span /><span /><span /></div>
                 )}
@@ -418,12 +424,7 @@ const Login: React.FC = () => {
                     type="button"
                     className="axi-login-qr-expired-overlay"
                     aria-label={`${qrOverlayTitle}，${qrOverlayHint}`}
-                    onClick={() => {
-                      deviceQrConsumingRef.current = false;
-                      setDeviceQr(null);
-                      setDeviceQrStatus('creating');
-                      setQrError(null);
-                    }}
+                    onClick={refreshDeviceQr}
                   >
                     <span className="axi-login-qr-expired-overlay__icon" aria-hidden="true" />
                     <span className="axi-login-qr-expired-overlay__title">{qrOverlayTitle}</span>
@@ -484,18 +485,30 @@ const Login: React.FC = () => {
                 {loginMode === 'password' && (
                 <form className="axi-login-form axi-login-form--password" onSubmit={handlePasswordLogin} noValidate>
                   <label htmlFor="axi-login-password-email">{t('auth.email')}</label>
-                  <div className="axi-login-form__row axi-login-form__row--input">
+                  <div className="axi-login-form__row axi-login-form__row--email axi-login-form__row--password-email">
                     <input
                       id="axi-login-password-email"
-                      name="email"
-                      type="email"
-                      autoComplete="username"
+                      name="email-local-part"
+                      type="text"
+                      inputMode="email"
+                      autoComplete="off"
                       required
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="you@axi.workbench.dev"
+                      value={emailLocalPart}
+                      onChange={(event) => setEmailLocalPart(normalizeEmailLocalPart(event.target.value))}
+                      placeholder={t('auth.email.localPartPlaceholder')}
                       disabled={passwordSubmitting}
                     />
+                    <select
+                      id="axi-login-password-email-suffix"
+                      name="email-suffix"
+                      className="axi-login-email-suffix"
+                      aria-label={t('auth.email.suffixLabel')}
+                      value={emailSuffix}
+                      onChange={(event) => setEmailSuffix(event.target.value as EmailSuffix)}
+                      disabled={passwordSubmitting}
+                    >
+                      {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
+                    </select>
                   </div>
                   <label htmlFor="axi-login-password">密码</label>
                   <div className="axi-login-form__row axi-login-form__row--input">
@@ -515,7 +528,7 @@ const Login: React.FC = () => {
                   <button
                     className="axi-login-button axi-login-button--primary"
                     type="submit"
-                    disabled={passwordSubmitting || sessionLoading || !email.trim() || !password}
+                    disabled={passwordSubmitting || sessionLoading || !emailIsValid || !password}
                   >
                     {passwordSubmitting ? '登录中…' : '登录'}
                   </button>
@@ -528,15 +541,27 @@ const Login: React.FC = () => {
                   <div className="axi-login-form__row axi-login-form__row--email">
                     <input
                       id="axi-login-email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
+                      name="email-local-part"
+                      type="text"
+                      inputMode="email"
+                      autoComplete="off"
                       required
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="you@axi.workbench.dev"
+                      value={emailLocalPart}
+                      onChange={(event) => setEmailLocalPart(normalizeEmailLocalPart(event.target.value))}
+                      placeholder={t('auth.email.localPartPlaceholder')}
                       disabled={submitting}
                     />
+                    <select
+                      id="axi-login-email-suffix"
+                      name="email-suffix"
+                      className="axi-login-email-suffix"
+                      aria-label={t('auth.email.suffixLabel')}
+                      value={emailSuffix}
+                      onChange={(event) => setEmailSuffix(event.target.value as EmailSuffix)}
+                      disabled={submitting}
+                    >
+                      {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
+                    </select>
                     <button
                       type="button"
                       className="axi-login-text-button axi-login-text-button--send"

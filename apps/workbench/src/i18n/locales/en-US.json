@@ -501,5 +501,7 @@
   "personalOs.inspector.provides": "Provides",
   "personalOs.inspector.consumes": "Consumes",
   "personalOs.inspector.consumers": "Consumers",
-  "auth.email": "Email"
+  "auth.email": "Email",
+  "auth.email.localPartPlaceholder": "Email prefix",
+  "auth.email.suffixLabel": "Email suffix"
 }

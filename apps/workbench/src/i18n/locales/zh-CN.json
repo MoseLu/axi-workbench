@@ -501,5 +501,7 @@
   "personalOs.inspector.provides": "提供能力",
   "personalOs.inspector.consumes": "消费依赖",
   "personalOs.inspector.consumers": "消费方",
-  "auth.email": "邮箱"
+  "auth.email": "邮箱",
+  "auth.email.localPartPlaceholder": "邮箱前缀",
+  "auth.email.suffixLabel": "邮箱后缀"
 }
