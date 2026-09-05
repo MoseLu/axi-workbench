@@ -158,9 +158,9 @@ jobs:
             echo "::error::APPLE_SIGNING_IDENTITY is empty; Developer ID certificate was not imported"
             exit 1
           fi
-          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app"
+          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app"
           # DMG 路径含 arch 后缀，取第一个匹配
-          DMG_PATH=$(ls apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg | head -n1)
+          DMG_PATH=$(ls "apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_"*.dmg | head -n1)
           if [[ ! -d "$APP_PATH" || ! -f "$DMG_PATH" ]]; then
             echo "::error::Built bundle missing: $APP_PATH or $DMG_PATH"
             exit 1
@@ -172,8 +172,8 @@ jobs:
         with:
           name: workbench-desktop-macos-${{ github.ref_name }}
           path: |
-            apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app
-            apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg
+            apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app
+            apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_*.dmg
           if-no-files-found: error
           retention-days: 14
 
@@ -184,12 +184,12 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app"
-          DMG_PATH=$(ls apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_*.dmg | head -n1)
+          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app"
+          DMG_PATH=$(ls "apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_"*.dmg | head -n1)
           # macOS 不允许直接上传 .app 目录，先打成 zip
-          zip -r "Workbench-${TAG}.app.zip" "$APP_PATH"
+          zip -r "Axi-Workbench-${TAG}.app.zip" "$APP_PATH"
           gh release upload "$TAG" \
-            "Workbench-${TAG}.app.zip" \
+            "Axi-Workbench-${TAG}.app.zip" \
             "$DMG_PATH" \
             --clobber
           echo "::notice::Uploaded Workbench-${TAG} artifacts to $TAG"

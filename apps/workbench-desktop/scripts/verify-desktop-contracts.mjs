@@ -65,6 +65,7 @@ const config = existsSync(tauriConfig) ? JSON.parse(readFileSync(tauriConfig, 'u
 const loginWindow = config?.app?.windows?.find((window) => window.label === 'login')
 const mainWindow = config?.app?.windows?.find((window) => window.label === 'main')
 if (
+  config?.productName !== 'Axi 工作台' ||
   loginWindow?.title !== 'Axi 工作台 — 登录' ||
   loginWindow?.width !== 800 ||
   loginWindow?.height !== 365 ||
@@ -78,7 +79,7 @@ if (
   loginWindow?.theme !== 'Light' ||
   loginWindow?.backgroundColor?.toLowerCase() !== '#ffffff'
 ) {
-  console.error(`[verify-desktop-contracts] FAIL: 登录窗口必须是 800x365 的 Web 对齐紧凑画布: ${tauriConfig}`)
+  console.error(`[verify-desktop-contracts] FAIL: 应用名称或登录窗口必须符合中文客户端契约: ${tauriConfig}`)
   failed = true
 } else {
   console.log('[verify-desktop-contracts] OK: 登录窗口使用固定 800x365 Overlay 浅色紧凑画布')

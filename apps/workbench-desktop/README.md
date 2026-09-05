@@ -13,7 +13,7 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 | 启动开发 | `pnpm dev:desktop` |
 | 打包 .app | `pnpm build:desktop`（本地 ad hoc 签名） |
 | 打包 .dmg + 公证 | `pnpm build:desktop:dmg` + `apps/workbench-desktop/scripts/notarize.sh` |
-| 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/` |
+| 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/`（应用名为 `Axi 工作台`） |
 
 ## Gateway 地址
 
@@ -99,14 +99,14 @@ pnpm build:desktop:dmg
 产物路径：
 
 ```
-apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app
-apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_0.1.0_<arch>.dmg
+apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app
+apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_0.1.0_<arch>.dmg
 ```
 
 本地构建使用 ad hoc 签名，未经过 Apple 公证的 `.app` 仍可能被 Gatekeeper 拦截（提示“无法打开，因为它来自身份不明的开发者”）。本地开发期可以：
 
 ```bash
-xattr -dr com.apple.quarantine apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app
+xattr -dr com.apple.quarantine 'apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app'
 ```
 
 ## Apple 公证
@@ -116,8 +116,8 @@ APPLE_ID=you@example.com \
 APPLE_TEAM_ID=ABCDE12345 \
 APPLE_APP_SPECIFIC_PASSWORD=abcd-efgh-ijkl-mnop \
 ./apps/workbench-desktop/scripts/notarize.sh \
-  apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app \
-  apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_0.1.0_<arch>.dmg
+  'apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app' \
+  'apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_0.1.0_<arch>.dmg'
 ```
 
 第一次使用前需在 Keychain 注册 `workbench-desktop-notary` profile：

@@ -38,6 +38,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 统一 macOS 桌面包的产品名为 `Axi 工作台`，同步 Dock/应用列表元数据、`.app`/`.dmg` 产物路径、CI 上传和公证脚本，避免旧的 `Workbench` 名称继续出现在系统中。
 - Routed packaged macOS Tauri `/api/*` traffic through the native Rust Gateway transport, including `tauri://` / `tauri.localhost` origins, HttpOnly session-cookie retention, HTTPS support, and a local/shared-domain allowlist; the desktop release build now targets `workbench.axiomaticworld.com` without weakening WebView ATS policy.
 - Separated Workbench mobile Gateway defaults by build type: Debug remains configurable for emulator/LAN development, while Android Release defaults to `https://workbench.axiomaticworld.com/api/v1/`.
 - 修正 Android 启动 Logo 的缩放跳变：系统 Splash 与原生品牌 Loading 统一使用 `ic_splash_icon` 的 288dp 画布和同一中心点，使两层可见花瓣边界一致。

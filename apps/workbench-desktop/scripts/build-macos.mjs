@@ -13,7 +13,9 @@ import { tmpdir } from 'node:os'
 
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const bundleRoot = resolve(packageRoot, 'src-tauri/target/release/bundle')
-const appPath = resolve(packageRoot, 'src-tauri/target/release/bundle/macos/Workbench.app')
+const appBundleName = 'Axi 工作台.app'
+const dmgPrefix = 'Axi 工作台_'
+const appPath = resolve(packageRoot, `src-tauri/target/release/bundle/macos/${appBundleName}`)
 const args = process.argv.slice(2)
 const isCi = process.env.CI === 'true' || process.env.CI === '1'
 const configuredIdentity = process.env.APPLE_SIGNING_IDENTITY?.trim()
@@ -81,7 +83,7 @@ function tauriBuild(target) {
 function findDmg() {
   const dmgDir = join(bundleRoot, 'dmg')
   const candidates = readdirSync(dmgDir)
-    .filter((name) => name.startsWith('Workbench_') && name.endsWith('.dmg'))
+    .filter((name) => name.startsWith(dmgPrefix) && name.endsWith('.dmg'))
     .map((name) => join(dmgDir, name))
     .sort((left, right) => statSync(right).mtimeMs - statSync(left).mtimeMs)
 
@@ -130,7 +132,7 @@ function verifyDmg(dmgPath) {
   }
 
   try {
-    verifyApp(join(mountPath, 'Workbench.app'))
+    verifyApp(join(mountPath, appBundleName))
   } finally {
     const detach = spawnSync('hdiutil', ['detach', mountPath], {
       cwd: packageRoot,
@@ -144,11 +146,11 @@ function verifyDmg(dmgPath) {
 }
 
 const stagingRoot = wantsDmg ? mkdtempSync(join(tmpdir(), 'axi-workbench-app-')) : null
-const stagedAppPath = stagingRoot ? join(stagingRoot, 'Workbench.app') : null
+const stagedAppPath = stagingRoot ? join(stagingRoot, appBundleName) : null
 
 try {
   if (wantsDmg) {
-    // Tauri 清理 DMG 打包后的 macos/Workbench.app，先保留已验签版本。
+    // Tauri 清理 DMG 打包后的 macos/Axi 工作台.app，先保留已验签版本。
     tauriBuild('app')
     verifyApp(appPath)
     cpSync(appPath, stagedAppPath, { recursive: true })

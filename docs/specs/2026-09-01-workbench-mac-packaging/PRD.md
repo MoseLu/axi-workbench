@@ -112,7 +112,7 @@ docs/HANDOFF.md                      # 更新：新增 Mac App 启动段
 ## 8. 验收标准
 
 - [ ] `pnpm dev:desktop` 在 macOS 本地启动 Tauri 窗口，窗口内可见与浏览器一致的 `apps/workbench` UI。
-- [ ] `pnpm build:desktop` 产出 `apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app`。
+- [ ] `pnpm build:desktop` 产出 `apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app`，并在 macOS Dock/应用列表显示 `Axi 工作台`。
 - [ ] `pnpm build:desktop -- --bundles dmg` 产出可分发的 `.dmg`。
 - [ ] 二次启动应用，激活已有窗口（验证单实例锁）。
 - [ ] `⌘⇧W` 在应用未聚焦时唤起主窗口。

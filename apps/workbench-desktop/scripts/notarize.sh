@@ -11,8 +11,8 @@
 
 set -euo pipefail
 
-BUNDLE_PATH="${1:-apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app}"
-DMG_PATH="${2:-apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Workbench_0.1.0_aarch64.dmg}"
+BUNDLE_PATH="${1:-apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app}"
+DMG_PATH="${2:-apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_0.1.0_aarch64.dmg}"
 
 echo "[notarize] bundle: $BUNDLE_PATH"
 echo "[notarize] dmg:    $DMG_PATH"
@@ -23,9 +23,9 @@ if [[ ! -d "$BUNDLE_PATH" ]]; then
   if [[ -f "$DMG_PATH" ]]; then
     echo "[notarize] 尝试从 .dmg 抽出 .app..."
     MNT=$(hdiutil attach -nobrowse -readonly "$DMG_PATH" 2>/dev/null | awk '/\/Volumes\// {print $NF}' | head -n1)
-    if [[ -n "$MNT" && -d "$MNT/Workbench.app" ]]; then
+    if [[ -n "$MNT" && -d "$MNT/Axi 工作台.app" ]]; then
       mkdir -p "$(dirname "$BUNDLE_PATH")"
-      cp -R "$MNT/Workbench.app" "$BUNDLE_PATH"
+      cp -R "$MNT/Axi 工作台.app" "$BUNDLE_PATH"
       hdiutil detach "$MNT" >/dev/null 2>&1 || true
       echo "[notarize] 已从 .dmg 抽出 .app 到 $BUNDLE_PATH"
     else

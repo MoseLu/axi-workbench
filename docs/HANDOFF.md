@@ -39,7 +39,7 @@
 - Health: `python3 infra/fleet-console/scripts/fleetctl.py validate`
 - Verify: `make verify-go`
 - Verify: `make verify-helm`
-- Package Mac App: `pnpm build:desktop` —— 产出 `apps/workbench-desktop/src-tauri/target/release/bundle/macos/Workbench.app`
+- Package Mac App: `pnpm build:desktop` —— 产出 `apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app`
 - Package Mac App + DMG: `pnpm build:desktop:dmg`
 - Notarize Mac App: `apps/workbench-desktop/scripts/notarize.sh`（需 Apple Developer ID）
 - Verify: `pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check`
