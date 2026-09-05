@@ -37,6 +37,10 @@ jobs:
       APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
       APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
       APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      # tauri.conf.json runs beforeBuildCommand again during bundling; keep the
+      # public API base in the whole job so that second build cannot fall back
+      # to the local loopback address.
+      VITE_API_BASE_URL: ${{ vars.WORKBENCH_PUBLIC_ORIGIN || 'https://workbench.axiomaticworld.com' }}
 
     steps:
       - name: Checkout

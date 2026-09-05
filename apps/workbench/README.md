@@ -45,6 +45,13 @@ owner-only 能力：`EMAIL_LOGIN_OWNER_EMAIL` 为空时在本地开发脚本中�
 `SMTP_USERNAME`，并使用 `EMAIL_LOGIN_SUBJECT`（默认 `audit-user`）作为稳定主体；
 生产环境仍必须显式注入这两个变量。
 
+## 公网域名
+
+Workbench 的公网入口使用 `https://workbench.axiomaticworld.com`，与其他 Axi
+产品通过不同子域名共享父域 `axiomaticworld.com`。生产 Web 构建应将
+`VITE_API_BASE_URL` 注入为该同源地址；本机开发保持默认的回环 Gateway，不要把
+公网地址写入本地 `.env`。
+
 ## 与其它 apps 的关系
 
 | App | 是否用户工作台 |

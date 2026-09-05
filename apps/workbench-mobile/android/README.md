@@ -52,6 +52,12 @@ android/
 
 `drawable-nodpi/ic_launcher_foreground.png` 与各 `mipmap-*` 图标均来自桌面端权威素材 `apps/workbench-desktop/src-tauri/icons/icon.png`，花型按 76% 比例居中放置，四周保持透明安全区；`ic_splash_icon.png` 是同一花型针对 Android 12 系统 Splash 图标框额外缩小的版本。启动器入口使用普通位图资源，不使用会二次缩放透明前景的 `adaptive-icon` 包装；Android 12+ 的系统 Splash 是平台强制的纯图标启动窗口，随后无缝交给单 Activity 内的原生 `BrandLoadingView`（复用 `ic_splash_icon` 的 288dp 画布、Logo、提示文案、动画和版本号），Compose 工作区在其下方准备完成后移除该唯一覆盖层，不通过 Splash 路由导航。不要把未留边距的原始 PNG 直接替换到这些资源中，否则部分启动器会裁切花瓣或生成黑色底。
 
+Android Gateway 地址按构建类型区分：Debug 默认使用模拟器宿主机
+`http://10.0.2.2:8088/api/v1/`，可用 `local.properties` 的 `api.base.url` 覆盖为
+局域网地址；Release 默认使用项目公网入口
+`https://workbench.axiomaticworld.com/api/v1/`，可用
+`-Papi.release.base.url=https://<project-host>/api/v1/` 做受控发布覆盖。
+
 ### 1. 打开工程
 ```
 Android Studio → Open → 选择 `apps/workbench-mobile/android`

@@ -8,11 +8,239 @@ use tauri::{
 };
 
 use serde::Deserialize;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+use tauri::State;
 
 const APP_NAME: &str = "Axi 工作台";
+const DEFAULT_GATEWAY_BASE_URL: &str = "http://127.0.0.1:8088";
+const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
+
+#[derive(Default)]
+struct GatewaySession {
+    cookie: Mutex<Option<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GatewayProxyRequest {
+    method: String,
+    path: String,
+    headers: HashMap<String, String>,
+    body: Option<String>,
+    #[serde(rename = "baseUrl")]
+    base_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct GatewayProxyResponse {
+    status: u16,
+    headers: HashMap<String, String>,
+    body: String,
+}
+
+fn is_allowed_workbench_domain(host: &str) -> bool {
+    host == WORKBENCH_PUBLIC_HOST
+}
+
+fn is_allowed_gateway_base_url(url: &reqwest::Url) -> bool {
+    let host = match url.host_str() {
+        Some(host) => host,
+        None => return false,
+    };
+    if !url.username().is_empty()
+        || url.password().is_some()
+        || url.query().is_some()
+        || url.fragment().is_some()
+    {
+        return false;
+    }
+
+    match url.scheme() {
+        "http" => {
+            matches!(host, "localhost" | "127.0.0.1" | "::1")
+                && url.port_or_known_default() == Some(8088)
+        }
+        "https" => is_allowed_workbench_domain(host) && matches!(url.port(), None | Some(443)),
+        _ => false,
+    }
+}
+
+fn resolve_gateway_url(base_url: Option<&str>, path: &str) -> Result<reqwest::Url, String> {
+    let raw_path = path.split_once('?').map_or(path, |(value, _)| value);
+    if raw_path.contains("..")
+        || raw_path.to_ascii_lowercase().contains("%2e")
+        || raw_path.contains('\\')
+        || path.contains('#')
+    {
+        return Err("invalid gateway path".to_string());
+    }
+
+    let path_url = reqwest::Url::parse(&format!("http://gateway.invalid{path}"))
+        .map_err(|_| "invalid gateway path".to_string())?;
+    let request_path = path_url.path();
+    if !(request_path == "/api" || request_path.starts_with("/api/"))
+        || path_url.fragment().is_some()
+    {
+        return Err("invalid gateway path".to_string());
+    }
+
+    let base = base_url
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or(DEFAULT_GATEWAY_BASE_URL)
+        .trim_end_matches('/');
+    let mut base_url =
+        reqwest::Url::parse(base).map_err(|_| "invalid gateway base URL".to_string())?;
+    if !is_allowed_gateway_base_url(&base_url) || !matches!(base_url.path(), "" | "/") {
+        return Err("gateway base URL is not allowed".to_string());
+    }
+
+    base_url.set_path(path_url.path());
+    base_url.set_query(path_url.query());
+    Ok(base_url)
+}
+
+#[tauri::command]
+async fn proxy_gateway_request(
+    request: GatewayProxyRequest,
+    session: State<'_, GatewaySession>,
+) -> Result<GatewayProxyResponse, String> {
+    let method = reqwest::Method::from_bytes(request.method.as_bytes())
+        .map_err(|_| "invalid gateway method".to_string())?;
+    let target_url = resolve_gateway_url(request.base_url.as_deref(), &request.path)?;
+    let client = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|error| format!("gateway client failed: {error}"))?;
+    let mut builder = client.request(method, target_url);
+
+    for (name, value) in request.headers {
+        if matches!(
+            name.to_ascii_lowercase().as_str(),
+            "origin" | "host" | "cookie" | "content-length"
+        ) {
+            continue;
+        }
+        builder = builder.header(name, value);
+    }
+
+    if let Some(cookie) = session
+        .cookie
+        .lock()
+        .map_err(|_| "gateway session lock failed")?
+        .clone()
+    {
+        builder = builder.header("Cookie", cookie);
+    }
+    if let Some(body) = request.body {
+        builder = builder.body(body);
+    }
+
+    let response = builder
+        .send()
+        .await
+        .map_err(|error| format!("gateway request failed: {error}"))?;
+    let status = response.status().as_u16();
+    let response_headers = response.headers().clone();
+    let body = response
+        .text()
+        .await
+        .map_err(|error| format!("gateway response failed: {error}"))?;
+
+    if let Some(set_cookie) = response_headers
+        .get("set-cookie")
+        .and_then(|value| value.to_str().ok())
+    {
+        let cookie = set_cookie
+            .split(';')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        let mut stored_cookie = session
+            .cookie
+            .lock()
+            .map_err(|_| "gateway session lock failed")?;
+        if cookie.is_empty() || set_cookie.to_ascii_lowercase().contains("max-age=0") {
+            *stored_cookie = None;
+        } else {
+            *stored_cookie = Some(cookie);
+        }
+    }
+    if request.path.ends_with("/logout") {
+        *session
+            .cookie
+            .lock()
+            .map_err(|_| "gateway session lock failed")? = None;
+    }
+
+    let mut headers = HashMap::new();
+    for name in ["content-type", "cache-control", "x-request-id"] {
+        if let Some(value) = response_headers
+            .get(name)
+            .and_then(|value| value.to_str().ok())
+        {
+            headers.insert(name.to_string(), value.to_string());
+        }
+    }
+
+    Ok(GatewayProxyResponse {
+        status,
+        headers,
+        body,
+    })
+}
+
+#[cfg(test)]
+mod gateway_tests {
+    use super::resolve_gateway_url;
+
+    #[test]
+    fn allows_local_gateway() {
+        let url = resolve_gateway_url(None, "/api/v1/auth/session").expect("local URL");
+        assert_eq!(url.as_str(), "http://127.0.0.1:8088/api/v1/auth/session");
+    }
+
+    #[test]
+    fn allows_shared_https_subdomain() {
+        let url = resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com"),
+            "/api/v1/auth/session",
+        )
+        .expect("shared domain URL");
+        assert_eq!(
+            url.as_str(),
+            "https://workbench.axiomaticworld.com/api/v1/auth/session"
+        );
+    }
+
+    #[test]
+    fn rejects_untrusted_gateway_target() {
+        assert!(
+            resolve_gateway_url(Some("https://example.com"), "/api/v1/auth/session").is_err()
+        );
+        assert!(
+            resolve_gateway_url(Some("http://127.0.0.1:9090"), "/api/v1/auth/session").is_err()
+        );
+        assert!(resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com"),
+            "/api/v1/../secret"
+        )
+        .is_err());
+        assert!(resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com"),
+            "/api/v1/search?q=two..dots"
+        )
+        .is_ok());
+        assert!(resolve_gateway_url(
+            Some("https://other.axiomaticworld.com"),
+            "/api/v1/auth/session"
+        )
+        .is_err());
+    }
+}
 
 /// Login closes the application; the main window hides to the tray.
 fn should_hide_on_close(label: &str) -> bool {
@@ -46,7 +274,8 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
-        .invoke_handler(tauri::generate_handler![])
+        .manage(GatewaySession::default())
+        .invoke_handler(tauri::generate_handler![proxy_gateway_request])
         .setup(|app| {
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;

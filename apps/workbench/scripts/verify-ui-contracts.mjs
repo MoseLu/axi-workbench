@@ -15,6 +15,7 @@ const breadcrumbs = read('apps/workbench/src/lib/breadcrumbs.ts');
 const navigation = read('apps/workbench/src/lib/navigationRegistry.ts');
 const app = read('apps/workbench/src/App.tsx');
 const main = read('apps/workbench/src/main.tsx');
+const tauriGateway = read('apps/workbench/src/lib/tauriGateway.ts');
 const webShellCss = read('apps/workbench/src/layouts/MainLayout.css');
 const tokens = read('apps/workbench/src/styles/tokens.css');
 const loginCss = read('apps/workbench/src/pages/Login.css');
@@ -52,6 +53,10 @@ requireMatch(layout, /title: isPersonalOsRoute \? t\('personalOs\.shell\.brand'\
 requireMatch(index, /<title>Axi 工作台<\/title>/, 'Web document title must use the Chinese product name by default');
 requireMatch(zhLocale, /"app\.name": "Axi 工作台"/, 'Chinese Web locale must define the product name');
 requireMatch(enLocale, /"app\.name": "Axi Workbench"/, 'English Web locale must define the product name');
+requireMatch(main, /installTauriGatewayFetch\(\)/, 'desktop Web shell must install the native Gateway transport before React starts');
+requireMatch(tauriGateway, /proxy_gateway_request/, 'desktop Web shell must route Gateway requests through the native Tauri command');
+requireMatch(tauriGateway, /tauri\.localhost|url\.protocol === ['"]tauri:/, 'desktop Web shell must recognize the packaged Tauri origin');
+requireMatch(tauriGateway, /baseUrl: resolveNativeGatewayBaseURL\(\)/, 'desktop Web shell must pass the selected Gateway base URL to native transport');
 requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
 for (const path of [
   /M16 0\.18 C13\.55 1\.35 11 3\.1 10\.65 5\.3 C10\.65 6\.7 11\.25 7\.75 11\.85 8\.8 L14\.976 14\.223 A2\.05 2\.05 0 0 1 17\.024 14\.223 L20\.15 8\.8 C20\.75 7\.75 21\.35 6\.7 21\.35 5\.3 C21 3\.1 18\.45 1\.35 16 0\.18 Z/,

@@ -38,21 +38,21 @@ gateway:
     limits:
       cpu: 500m
       memory: 512Mi
-  publicBaseURL: https://api.axi.example.com
+  # Web, mobile callback and Gateway API share one project subdomain. Other
+  # Axi products use their own subdomains under axiomaticworld.com.
+  publicBaseURL: https://workbench.axiomaticworld.com
   oidc:
     issuerURL: https://id.axi.example.com
     clientID: axi-workbench-web
     apiAudience: axi-workbench-api
     requiredAccessTokenScopes:
       - axi.api
-    callbackURL: https://api.axi.example.com/api/v1/auth/oidc/callback
+    callbackURL: https://workbench.axiomaticworld.com/api/v1/auth/oidc/callback
     allowedReturnURLs:
-      - https://web.axi.example.com/auth/callback
-      - https://m.axi.example.com/auth/callback
+      - https://workbench.axiomaticworld.com/auth/callback
   cors:
     allowedOrigins:
-      - https://web.axi.example.com
-      - https://m.axi.example.com
+      - https://workbench.axiomaticworld.com
   session:
     cookieName: axi_session
     cookieDomain: ""
@@ -196,7 +196,7 @@ ingress:
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-  host: api.axi.example.com
+  host: workbench.axiomaticworld.com
   tls:
     enabled: true
     secretName: axi-workbench-api-tls

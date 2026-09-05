@@ -104,7 +104,11 @@ if (
   !plist.includes('<string>zh-Hans</string>') ||
   !plist.includes('<key>CFBundleLocalizations</key>') ||
   !/<key>CFBundleDisplayName<\/key>\s*<string>Axi 工作台<\/string>/.test(plist) ||
-  !/<key>CFBundleName<\/key>\s*<string>Axi 工作台<\/string>/.test(plist)
+  !/<key>CFBundleName<\/key>\s*<string>Axi 工作台<\/string>/.test(plist) ||
+  !/<key>NSAppTransportSecurity<\/key>[\s\S]*?<key>NSAllowsLocalNetworking<\/key>\s*<true\/>/.test(plist) ||
+  /<key>NSAllowsArbitraryLoadsInWebContent<\/key>\s*<true\/>/.test(plist) ||
+  !/<key>NSExceptionDomains<\/key>[\s\S]*?<key>localhost<\/key>[\s\S]*?<key>NSExceptionAllowsInsecureHTTPLoads<\/key>\s*<true\/>/.test(plist) ||
+  !/<key>127\.0\.0\.1<\/key>[\s\S]*?<key>NSExceptionAllowsInsecureHTTPLoads<\/key>\s*<true\/>/.test(plist)
 ) {
   console.error(`[verify-desktop-contracts] FAIL: macOS 应用包必须声明中文 AppKit 本地化: ${macosInfoPlist}`)
   failed = true

@@ -95,7 +95,10 @@ helm test axi-workbench --namespace axi-workbench
 - QR 轮询只返回事务状态，审批和一次性 resume 均由内部身份边界处理，绝不返回 JWT。ZITADEL custom-login 完成请求必须打到 https://api…/api/v1/internal/zitadel/qr/transactions/{id}/complete；网关转发到 ClusterIP identity-adapter，适配器再校验 X-Axi-Zitadel-Webhook，不能绕过网关直接公开适配器。
 - Outbox 是至少一次投递：记录有五分钟租约、指数退避和第十次失败后的死信标记。启用 `platformCore.outbox.workerEnabled` 后，投递 URL 应指向 `http://<release>-axi-workbench-platform-gateway:8080/api/v1/internal/events`；Gateway 再扇出到 notification/workflow 的 `/internal/events`，两端先持久化 `X-Axi-Event-ID` 再确认，任何一个消费者失败都会让平台事件重试。
 
-生产 Web 与移动端分别构建，但都必须在各自的构建环境注入同一 VITE_API_BASE_URL=https://api… 。网关仅对 gateway.cors.allowedOrigins 的精确 HTTPS Origin 发送携带 cookie 的 CORS 响应。
+生产 Web 与移动端分别构建，但都必须在各自的构建环境注入项目同源地址，例如
+`VITE_API_BASE_URL=https://workbench.axiomaticworld.com`。Web 静态站点与本 Chart
+的 Gateway Ingress 应共享这个项目子域名，由入口按 `/api` 与静态文件分流；网关仅
+对 `gateway.cors.allowedOrigins` 的精确 HTTPS Origin 发送携带 cookie 的 CORS 响应。
 - 跨租户读写要同时被 gateway 身份注入、platform-core 成员检查和 PostgreSQL RLS 拒绝。
 - Gateway、identity-adapter、platform-core 会在 `OTEL_EXPORTER_OTLP_ENDPOINT` 配置后通过 OTLP/HTTP 导出服务端 Span；notification/Python 专职服务先沿用结构化日志和网关注入的 `traceparent`，各自 OTel exporter 仍待补齐。部署前仍需接入环境的 Collector，并用真实 OIDC/SMTP/数据库故障演练完成上线验收。
 

@@ -131,6 +131,15 @@ Debug 构建的 applicationId 为 `com.workbench.mobile.debug`，版本由 `app/
 - **任何"加新能力"的提案**：先填这份矩阵的空白单元格，再开 PR。提案里必须写出：这个能力归哪一端、它与现有行的边界如何、是否会触碰 `verify-mobile-contracts.mjs` 的禁止规则。
 - **跨端一致性**：mobile JS 与 Kotlin 都通过 `resolveGatewayURL(/api/v1/mobile/...)` 走 API Gateway，不要在 client 侧另起 endpoint。
 
+### 公网 Gateway
+
+移动端部署在 Workbench 项目入口时使用 `https://workbench.axiomaticworld.com`。
+Vite 移动端跟随当前站点的同源 `/api`；原生 Android 的 Release 构建默认使用
+`https://workbench.axiomaticworld.com/api/v1/`，Debug 构建仍可通过
+`api.base.url`（`local.properties` 或 `-Papi.base.url=...`）覆盖为模拟器或局域网
+Gateway。Release 覆盖值使用 `-Papi.release.base.url=...`，不要把控制面端口直接写入
+客户端配置。
+
 ## 相关链接
 
 - `apps/workbench-mobile/scripts/verify-mobile-contracts.mjs` — mobile JS 侧契约强制器

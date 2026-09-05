@@ -15,6 +15,23 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 | 打包 .dmg + 公证 | `pnpm build:desktop:dmg` + `apps/workbench-desktop/scripts/notarize.sh` |
 | 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/` |
 
+## Gateway 地址
+
+本机开发默认使用 `http://127.0.0.1:8088`。打包后的 Tauri WebView 不直接从
+`tauri://` / `tauri.localhost` 发起 Gateway 请求，而是由 Rust 原生层转发，
+因此登录二维码、轮询和 HttpOnly 会话 cookie 走同一条稳定链路。
+
+公网构建时注入项目子域名，例如：
+
+```bash
+VITE_API_BASE_URL=https://workbench.axiomaticworld.com pnpm --filter @axi/workbench build
+```
+
+原生层只接受本地 `:8088`，或精确的 `https://workbench.axiomaticworld.com`；不会
+接受任意外部 URL，也不会把会话 cookie 发给父域下的其他项目。该主机应与 Web
+静态站点共用同一入口，使 `/api/*`
+和页面同源。正式启用前，需要为该子域名配置 DNS 与覆盖该主机名的 HTTPS 证书。
+
 ## 与其他端的关系
 
 | 端 | 路径 | 形态 | 是否复用 |

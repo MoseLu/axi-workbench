@@ -24,6 +24,12 @@ fun endpointProperty(name: String, fallback: String): String {
     return if (rawValue.endsWith("/")) rawValue else "$rawValue/"
 }
 
+val debugGatewayBaseUrl = endpointProperty("api.base.url", "http://10.0.2.2:8088/api/v1/")
+val releaseGatewayBaseUrl = endpointProperty(
+    "api.release.base.url",
+    "https://workbench.axiomaticworld.com/api/v1/"
+)
+
 android {
     namespace = "com.workbench.mobile"
     compileSdk = 34
@@ -38,15 +44,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        // 所有真机流量都经 API Gateway；控制面端口不能作为 App 配置。
-        // Gradle property 优先，其次 local.properties。安装后也可以在 App 设置中
-        // 更换同一局域网下的网关地址，不依赖 ADB reverse/forward。
-        val gatewayBaseUrl = endpointProperty("api.base.url", "http://10.0.2.2:8088/api/v1/")
-        buildConfigField("String", "GATEWAY_BASE_URL", "\"$gatewayBaseUrl\"")
     }
 
     buildTypes {
         release {
+            buildConfigField("String", "GATEWAY_BASE_URL", "\"$releaseGatewayBaseUrl\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -55,6 +57,8 @@ android {
             )
         }
         debug {
+            // Debug 优先使用 local.properties/Gradle 的局域网地址；无配置时指向模拟器宿主机。
+            buildConfigField("String", "GATEWAY_BASE_URL", "\"$debugGatewayBaseUrl\"")
             applicationIdSuffix = ".debug"
             isDebuggable = true
         }
