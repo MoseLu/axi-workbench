@@ -14,9 +14,13 @@ type TauriWindow = Window & {
 };
 
 const GATEWAY_HOSTNAMES = new Set(['localhost', '127.0.0.1']);
-const DEFAULT_GATEWAY_BASE_URL = 'http://127.0.0.1:8088';
-const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {};
+const LOCAL_GATEWAY_BASE_URL = 'http://127.0.0.1:8088';
+const PACKAGED_GATEWAY_BASE_URL = 'https://workbench.axiomaticworld.com';
+const metaEnv = (import.meta as ImportMeta & {
+  env?: { PROD?: boolean; VITE_API_BASE_URL?: string };
+}).env || {};
 const configuredGatewayBaseURL = metaEnv.VITE_API_BASE_URL?.trim() || '';
+const defaultGatewayBaseURL = metaEnv.PROD ? PACKAGED_GATEWAY_BASE_URL : LOCAL_GATEWAY_BASE_URL;
 
 export function isPackagedTauriOrigin(pageURL: string): boolean {
   try {
@@ -39,7 +43,7 @@ export function shouldUseNativeGatewayRequest(requestURL: string, pageURL: strin
 }
 
 export function resolveNativeGatewayBaseURL(value = configuredGatewayBaseURL): string {
-  return value.trim() || DEFAULT_GATEWAY_BASE_URL;
+  return value.trim() || defaultGatewayBaseURL;
 }
 
 /**

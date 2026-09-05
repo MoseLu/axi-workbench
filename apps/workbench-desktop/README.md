@@ -17,15 +17,21 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 
 ## Gateway 地址
 
-本机开发默认使用 `http://127.0.0.1:8088`。打包后的 Tauri WebView 不直接从
-`tauri://` / `tauri.localhost` 发起 Gateway 请求，而是由 Rust 原生层转发，
+本机开发默认使用 `http://127.0.0.1:8088`。打包后的正式 macOS App 默认使用
+`https://workbench.axiomaticworld.com`，不依赖本机 Gateway 进程。Tauri WebView
+不直接从 `tauri://` / `tauri.localhost` 发起 Gateway 请求，而是由 Rust 原生层转发，
 因此登录二维码、轮询和 HttpOnly 会话 cookie 走同一条稳定链路。
 
 公网构建时注入项目子域名，例如：
 
 ```bash
-VITE_API_BASE_URL=https://workbench.axiomaticworld.com pnpm --filter @axi/workbench build
+pnpm --filter @axi/workbench-desktop build
 ```
+
+`build-macos.mjs` 会自动把正式包的 `VITE_API_BASE_URL` 固定为公网地址，并在打包
+校验中确认公网地址已经注入，避免正式包使用 `127.0.0.1:8088`。只有明确设置
+`AXI_DESKTOP_ALLOW_LOCAL_GATEWAY=true VITE_API_BASE_URL=http://127.0.0.1:8088`
+时，才允许生成仅供本机调试的本地 Gateway 包。
 
 原生层只接受本地 `:8088`，或精确的 `https://workbench.axiomaticworld.com`；不会
 接受任意外部 URL，也不会把会话 cookie 发给父域下的其他项目。该主机应与 Web

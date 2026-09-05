@@ -20,6 +20,42 @@ const args = process.argv.slice(2)
 const isCi = process.env.CI === 'true' || process.env.CI === '1'
 const configuredIdentity = process.env.APPLE_SIGNING_IDENTITY?.trim()
 const signingIdentity = configuredIdentity || (isCi ? '' : '-')
+const defaultPackagedGatewayBaseURL = 'https://workbench.axiomaticworld.com'
+const allowLocalGateway = process.env.AXI_DESKTOP_ALLOW_LOCAL_GATEWAY === 'true'
+
+function normalizePackagedGatewayBaseURL(value) {
+  let url
+  try {
+    url = new URL(value)
+  } catch {
+    throw new Error(`[macos-build] invalid VITE_API_BASE_URL: ${value}`)
+  }
+
+  const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  const isPublic = url.protocol === 'https:'
+    && url.hostname === 'workbench.axiomaticworld.com'
+    && (url.port === '' || url.port === '443')
+  const isAllowedLocal = allowLocalGateway
+    && url.protocol === 'http:'
+    && isLoopback
+    && (url.port === '' || url.port === '8088')
+
+  if ((!isPublic && !isAllowedLocal) || url.username || url.password || url.search || url.hash || !['', '/'].includes(url.pathname)) {
+    throw new Error(
+      `[macos-build] packaged Gateway must use ${defaultPackagedGatewayBaseURL}; `
+      + 'set AXI_DESKTOP_ALLOW_LOCAL_GATEWAY=true only for an explicit local debug bundle',
+    )
+  }
+
+  return url.origin
+}
+
+const packagedGatewayBaseURL = normalizePackagedGatewayBaseURL(
+  process.env.VITE_API_BASE_URL?.trim() || defaultPackagedGatewayBaseURL,
+)
+process.env.VITE_API_BASE_URL = packagedGatewayBaseURL
+process.env.AXI_DESKTOP_PACKAGE = 'true'
+console.log(`[macos-build] packaged Gateway base URL: ${packagedGatewayBaseURL}`)
 
 function run(command, commandArgs) {
   const result = spawnSync(command, commandArgs, {

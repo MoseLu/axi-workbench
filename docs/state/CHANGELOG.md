@@ -38,6 +38,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 修正 macOS 桌面包的 Gateway 目标：正式打包默认注入 `https://workbench.axiomaticworld.com`，并在产物校验中确认公网地址已生效，避免可分发 App 运行时使用 `127.0.0.1:8088`；本地 Gateway 仅能通过显式调试开关使用。
+- 增强桌面 Gateway 默认值：生产 Web 构建即使未显式注入环境变量也优先使用公网地址，开发构建仍保留本地回环地址。
 - 进一步对齐登录二维码容器：保留二维码本体四周约 8px 的均匀白边，并恢复 8px 圆角外框，避免在去除重复边框时把客户端需要的安全边距一并移除。
 - 收紧登录二维码容器：移除 Ant Design QRCode 的嵌套边框和外层二次内缩，只保留单层细边界，避免二维码周围出现多余留白。
 - 统一 macOS 桌面包的产品名为 `Axi 工作台`，同步 Dock/应用列表元数据、`.app`/`.dmg` 产物路径、CI 上传和公证脚本，避免旧的 `Workbench` 名称继续出现在系统中。

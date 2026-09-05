@@ -3,7 +3,7 @@
 //  2. 落地为 workbench-dist/ 软链接或拷贝，供 Tauri frontendDist 使用；
 //  3. src-tauri/icons/icon.icns 必须存在。
 
-import { existsSync, mkdirSync, cpSync, rmSync, statSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, cpSync, rmSync, statSync, readFileSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -38,6 +38,19 @@ const webIcon = join(repoRoot, 'apps', 'workbench', 'public', 'favicon.svg')
 
 let failed = false
 
+function readTextFiles(root, output = []) {
+  if (!existsSync(root)) return output
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const path = join(root, entry.name)
+    if (entry.isDirectory()) {
+      readTextFiles(path, output)
+    } else if (/\.(?:css|html|js|json|map)$/u.test(entry.name)) {
+      output.push(readFileSync(path, 'utf8'))
+    }
+  }
+  return output
+}
+
 if (!existsSync(workbenchDist)) {
   console.error(
     `[verify-desktop-contracts] FAIL: ${workbenchDist} 不存在。请先跑 \`pnpm --filter @axi/workbench build\`。`,
@@ -53,6 +66,23 @@ if (existsSync(targetDir)) {
 mkdirSync(targetDir, { recursive: true })
 cpSync(workbenchDist, targetDir, { recursive: true })
 console.log(`[verify-desktop-contracts] OK: 已镜像 web dist -> workbench-dist/`)
+
+if (process.env.AXI_DESKTOP_PACKAGE === 'true') {
+  const packagedGatewayBaseURL = process.env.VITE_API_BASE_URL?.trim()
+  const packagedFiles = readTextFiles(workbenchDist)
+  const packagedSource = packagedFiles.join('\n')
+  if (
+    packagedGatewayBaseURL !== 'https://workbench.axiomaticworld.com'
+    || !packagedSource.includes(packagedGatewayBaseURL)
+  ) {
+    console.error(
+      '[verify-desktop-contracts] FAIL: 可分发 macOS 包必须将 Gateway 固定为公网 HTTPS，不能残留本地 8088 地址',
+    )
+    failed = true
+  } else {
+    console.log('[verify-desktop-contracts] OK: 打包产物使用公网 Gateway，未残留本地回环地址')
+  }
+}
 
 if (!existsSync(iconIcns)) {
   console.error(`[verify-desktop-contracts] FAIL: ${iconIcns} 不存在`)
