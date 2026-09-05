@@ -216,6 +216,29 @@ const Login: React.FC = () => {
   const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
   const canResend = emailIsValid && cooldown <= 0 && !submitting && Boolean(sentTo);
   const canVerify = emailIsValid && codeIsValid && !submitting && Boolean(challengeId) && sentTo === trimmedEmail;
+  const canEnterCode = Boolean(challengeId) && sentTo === trimmedEmail;
+
+  const resetEmailChallenge = () => {
+    setCode(createOneTimeCode());
+    setChallengeId('');
+    setSentTo('');
+    setExpiresAt(null);
+    setCooldown(0);
+  };
+
+  const handleEmailLocalPartChange = (value: string) => {
+    setEmailLocalPart(normalizeEmailLocalPart(value));
+    resetEmailChallenge();
+    setError(null);
+    setHint(null);
+  };
+
+  const handleEmailSuffixChange = (value: string) => {
+    setEmailSuffix(value as EmailSuffix);
+    resetEmailChallenge();
+    setError(null);
+    setHint(null);
+  };
 
   const handleSendCode = async () => {
     if (submitting || sessionLoading) return;
@@ -232,6 +255,7 @@ const Login: React.FC = () => {
       setChallengeId(result.challengeId);
       setExpiresAt(result.expiresAt || null);
       setCooldown(RESEND_COOLDOWN_SECONDS);
+      setCode(createOneTimeCode());
       setHint(t('auth.login.codeSentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
@@ -340,11 +364,7 @@ const Login: React.FC = () => {
 
   const handleChangeEmail = () => {
     setPhase('email');
-    setCode(createOneTimeCode());
-    setChallengeId('');
-    setSentTo('');
-    setExpiresAt(null);
-    setCooldown(0);
+    resetEmailChallenge();
     setError(null);
     setHint(null);
   };
@@ -352,11 +372,7 @@ const Login: React.FC = () => {
   const handleLoginModeChange = (mode: LoginMode) => {
     setLoginMode(mode);
     setPhase('email');
-    setCode(createOneTimeCode());
-    setChallengeId('');
-    setSentTo('');
-    setExpiresAt(null);
-    setCooldown(0);
+    resetEmailChallenge();
     setError(null);
     setHint(null);
   };
@@ -494,21 +510,24 @@ const Login: React.FC = () => {
                       autoComplete="off"
                       required
                       value={emailLocalPart}
-                      onChange={(event) => setEmailLocalPart(normalizeEmailLocalPart(event.target.value))}
+                      onChange={(event) => handleEmailLocalPartChange(event.target.value)}
                       placeholder={t('auth.email.localPartPlaceholder')}
                       disabled={passwordSubmitting}
                     />
-                    <select
-                      id="axi-login-password-email-suffix"
-                      name="email-suffix"
-                      className="axi-login-email-suffix"
-                      aria-label={t('auth.email.suffixLabel')}
-                      value={emailSuffix}
-                      onChange={(event) => setEmailSuffix(event.target.value as EmailSuffix)}
-                      disabled={passwordSubmitting}
-                    >
-                      {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
-                    </select>
+                    <div className="axi-login-email-suffix-wrap">
+                      <select
+                        id="axi-login-password-email-suffix"
+                        name="email-suffix"
+                        className="axi-login-email-suffix"
+                        aria-label={t('auth.email.suffixLabel')}
+                        value={emailSuffix}
+                        onChange={(event) => handleEmailSuffixChange(event.target.value)}
+                        disabled={passwordSubmitting}
+                      >
+                        {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
+                      </select>
+                      <span className="axi-login-email-suffix-chevron" aria-hidden="true" />
+                    </div>
                   </div>
                   <label htmlFor="axi-login-password">密码</label>
                   <div className="axi-login-form__row axi-login-form__row--input">
@@ -547,28 +566,31 @@ const Login: React.FC = () => {
                       autoComplete="off"
                       required
                       value={emailLocalPart}
-                      onChange={(event) => setEmailLocalPart(normalizeEmailLocalPart(event.target.value))}
+                      onChange={(event) => handleEmailLocalPartChange(event.target.value)}
                       placeholder={t('auth.email.localPartPlaceholder')}
                       disabled={submitting}
                     />
-                    <select
-                      id="axi-login-email-suffix"
-                      name="email-suffix"
-                      className="axi-login-email-suffix"
-                      aria-label={t('auth.email.suffixLabel')}
-                      value={emailSuffix}
-                      onChange={(event) => setEmailSuffix(event.target.value as EmailSuffix)}
-                      disabled={submitting}
-                    >
-                      {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
-                    </select>
+                    <div className="axi-login-email-suffix-wrap">
+                      <select
+                        id="axi-login-email-suffix"
+                        name="email-suffix"
+                        className="axi-login-email-suffix"
+                        aria-label={t('auth.email.suffixLabel')}
+                        value={emailSuffix}
+                        onChange={(event) => handleEmailSuffixChange(event.target.value)}
+                        disabled={submitting}
+                      >
+                        {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
+                      </select>
+                      <span className="axi-login-email-suffix-chevron" aria-hidden="true" />
+                    </div>
                   </div>
 
                   <label htmlFor="axi-login-otp-first">{t('auth.login.codeLabel')}</label>
                   <div className="axi-login-form__row axi-login-form__row--code">
                     <OneTimeCodeInput
                       ariaLabelledBy="axi-login-otp-first"
-                      disabled={submitting}
+                      disabled={submitting || !canEnterCode}
                       firstInputRef={codeInputRef}
                       value={code}
                       onChange={setCode}

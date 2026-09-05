@@ -604,16 +604,25 @@
 /* The domain is a controlled choice. Keeping it in the same bordered row
  * makes the complete address read as one field while preventing free-form
  * domain input. */
-.axi-login-form .axi-login-email-suffix {
+.axi-login-form .axi-login-email-suffix-wrap {
+  position: relative;
   flex: 0 1 6rem;
   width: 6rem;
   max-width: 30%;
   min-width: 0;
   min-height: 2.625rem;
   box-sizing: border-box;
-  padding: 0 var(--space-2);
-  border: 0;
   border-left: var(--space-px) solid var(--palette-gray-200);
+}
+
+.axi-login-form .axi-login-email-suffix {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 2.625rem;
+  box-sizing: border-box;
+  padding: 0 1.5rem 0 var(--space-2);
+  border: 0;
   border-radius: 0;
   color: var(--palette-gray-700);
   background: transparent;
@@ -621,6 +630,7 @@
   font: inherit;
   font-size: var(--text-sm);
   outline: none;
+  appearance: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -630,8 +640,29 @@
   opacity: .62;
 }
 
-.axi-login-form .axi-login-email-suffix:focus {
+.axi-login-form .axi-login-email-suffix-wrap:focus-within {
   border-left-color: var(--color-brand);
+}
+
+.axi-login-form .axi-login-email-suffix-chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--space-2);
+  width: .4rem;
+  height: .4rem;
+  box-sizing: border-box;
+  border-right: 1.5px solid var(--palette-gray-500);
+  border-bottom: 1.5px solid var(--palette-gray-500);
+  pointer-events: none;
+  transform: translateY(-70%) rotate(45deg);
+}
+
+.axi-login-form .axi-login-email-suffix:disabled ~ .axi-login-email-suffix-chevron {
+  opacity: .62;
+}
+
+.axi-login-form .axi-login-email-suffix-wrap:focus-within .axi-login-email-suffix-chevron {
+  border-color: var(--color-brand);
 }
 
 .axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input):focus {

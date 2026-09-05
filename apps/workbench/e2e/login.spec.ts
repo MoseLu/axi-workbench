@@ -124,6 +124,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await expect(page.locator('#axi-login-email-suffix')).toHaveValue('qq.com');
   await expect(page.locator('#axi-login-email-suffix option')).toHaveCount(5);
   await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toBeVisible();
+  await expect(page.locator('.axi-login-email-suffix-chevron')).toHaveCount(1);
   await page.locator('#axi-login-email-suffix').selectOption('163.com');
   await expect(page.locator('#axi-login-email-suffix')).toHaveValue('163.com');
   const emailFieldSizing = await page.evaluate(() => {
@@ -140,19 +141,33 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   const emailRowBorders = await page.evaluate(() => {
     const row = document.querySelector('.axi-login-form__row--email');
     const input = row?.querySelector('input');
+    const suffixWrap = row?.querySelector('.axi-login-email-suffix-wrap');
     const suffix = row?.querySelector('select');
-    if (!row || !input || !suffix) return null;
+    if (!row || !input || !suffixWrap || !suffix) return null;
     return {
       rowRight: getComputedStyle(row).borderRightWidth,
       inputLeft: getComputedStyle(input).borderLeftWidth,
       inputRight: getComputedStyle(input).borderRightWidth,
+      suffixWrapLeft: getComputedStyle(suffixWrap).borderLeftWidth,
       suffixLeft: getComputedStyle(suffix).borderLeftWidth,
+      suffixAppearance: getComputedStyle(suffix).appearance,
+      suffixRadius: getComputedStyle(suffix).borderRadius,
     };
   });
-  expect(emailRowBorders).toEqual({ rowRight: '1px', inputLeft: '0px', inputRight: '0px', suffixLeft: '1px' });
+  expect(emailRowBorders).toEqual({
+    rowRight: '1px',
+    inputLeft: '0px',
+    inputRight: '0px',
+    suffixWrapLeft: '1px',
+    suffixLeft: '0px',
+    suffixAppearance: 'none',
+    suffixRadius: '0px',
+  });
+  await expect(page.locator('.axi-one-time-code__input').first()).toBeDisabled();
   await page.getByRole('button', { name: '获取验证码' }).click();
   expect(requestedEmails[0]).toBe('render@163.com');
   await expect(page.locator('.axi-login-form__row--code .axi-login-text-button--send')).toHaveText(/^\d+s$/);
+  await expect(page.locator('.axi-one-time-code__input').first()).toBeEnabled();
   // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
   await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
@@ -205,6 +220,12 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   expect(Math.abs((emailCodeLayout.emailRowWidth ?? 0) - (emailCodeLayout.codeRowWidth ?? 0))).toBeLessThanOrEqual(0.1);
   expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(50.1);
   expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
+
+  // Changing the address invalidates the previous challenge and locks the
+  // code slots again until the new address requests a code.
+  await page.locator('#axi-login-email').fill('changed@example.com');
+  await expect(page.locator('#axi-login-email')).toHaveValue('changed');
+  await expect(page.locator('.axi-one-time-code__input').first()).toBeDisabled();
 
   // Switching to the password tab and back keeps the card height stable.
   // The challengeId is intentionally not preserved across tab switches to
@@ -281,6 +302,7 @@ test('email login error banner keeps the card height stable across appearance', 
   await expect(bannerSlot.locator('.axi-banner')).toHaveCount(0);
 
   await page.locator('#axi-login-email').fill('broken@example.com');
+  await expect(page.locator('.axi-one-time-code__input').first()).toBeDisabled();
   await page.getByRole('button', { name: '获取验证码' }).click();
 
   const banner = bannerSlot.locator('.axi-banner');
