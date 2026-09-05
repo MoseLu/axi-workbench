@@ -77,6 +77,7 @@ const Login: React.FC = () => {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [emailCodeSubmitting, setEmailCodeSubmitting] = useState(false);
   const [passwordSubmitting, setPasswordSubmitting] = useState(false);
   const [qrSubmitting, setQrSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,9 +213,22 @@ const Login: React.FC = () => {
 
   const trimmedEmailLocalPart = normalizeEmailLocalPart(emailLocalPart).trim().toLowerCase();
   const trimmedEmail = trimmedEmailLocalPart ? `${trimmedEmailLocalPart}@${emailSuffix}` : '';
-  const emailIsValid = EMAIL_LOCAL_PART_PATTERN.test(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
+  const emailSuffixIsSelected = EMAIL_SUFFIX_OPTIONS.includes(emailSuffix);
+  const emailIsValid = emailSuffixIsSelected && EMAIL_LOCAL_PART_PATTERN.test(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
   const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
-  const canResend = emailIsValid && cooldown <= 0 && !submitting && Boolean(sentTo);
+  const hasCurrentEmailChallenge = Boolean(sentTo) && sentTo === trimmedEmail;
+  const isEmailCodeCoolingDown = hasCurrentEmailChallenge && cooldown > 0;
+  const canResend = emailIsValid && cooldown <= 0 && !submitting && !sessionLoading && hasCurrentEmailChallenge;
+  const canRequestCode = emailIsValid && !submitting && !sessionLoading && !isEmailCodeCoolingDown;
+  const emailCodeButtonState = emailCodeSubmitting
+    ? 'sending'
+    : isEmailCodeCoolingDown
+      ? 'cooldown'
+      : canResend
+        ? 'resend'
+        : canRequestCode
+          ? 'request'
+          : 'disabled';
   const canVerify = emailIsValid && codeIsValid && !submitting && Boolean(challengeId) && sentTo === trimmedEmail;
   const canEnterCode = Boolean(challengeId) && sentTo === trimmedEmail;
 
@@ -242,6 +256,7 @@ const Login: React.FC = () => {
 
   const handleSendCode = async () => {
     if (submitting || sessionLoading) return;
+    if (isEmailCodeCoolingDown) return;
     if (!emailIsValid) {
       setError(t('auth.login.invalidEmail'));
       return;
@@ -249,6 +264,7 @@ const Login: React.FC = () => {
     setError(null);
     setHint(null);
     setSubmitting(true);
+    setEmailCodeSubmitting(true);
     try {
       const result = await requestEmailCode(trimmedEmail);
       setSentTo(trimmedEmail);
@@ -261,6 +277,7 @@ const Login: React.FC = () => {
       const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
       setError(message);
     } finally {
+      setEmailCodeSubmitting(false);
       setSubmitting(false);
     }
   };
@@ -343,10 +360,11 @@ const Login: React.FC = () => {
   };
 
   const handleResend = async () => {
-    if (!canResend) return;
+    if (!canResend || sentTo !== trimmedEmail) return;
     setError(null);
     setHint(null);
     setSubmitting(true);
+    setEmailCodeSubmitting(true);
     try {
       const result = await requestEmailCode(sentTo);
       setChallengeId(result.challengeId);
@@ -358,6 +376,7 @@ const Login: React.FC = () => {
       const message = caught instanceof Error ? caught.message : t('auth.login.resendFailed');
       setError(message);
     } finally {
+      setEmailCodeSubmitting(false);
       setSubmitting(false);
     }
   };
@@ -597,16 +616,21 @@ const Login: React.FC = () => {
                     />
                     <button
                       type="button"
-                      className="axi-login-text-button axi-login-text-button--send axi-login-code-send"
-                      onClick={handleSendCode}
-                      disabled={!emailIsValid || submitting || sessionLoading || (cooldown > 0 && sentTo === trimmedEmail)}
-                      title={cooldown > 0 && sentTo === trimmedEmail ? `${cooldown}s 后可重新发送` : t('auth.login.requestCode')}
+                      className={`axi-login-text-button axi-login-text-button--send axi-login-code-send${canResend ? ' is-resend' : ''}`}
+                      onClick={canResend ? handleResend : handleSendCode}
+                      disabled={!canRequestCode}
+                      title={isEmailCodeCoolingDown ? `${cooldown}s 后可重新发送` : canResend ? t('auth.login.resendCode') : t('auth.login.requestCode')}
+                      aria-live="polite"
+                      aria-atomic="true"
+                      data-email-code-state={emailCodeButtonState}
                     >
-                      {submitting
+                      {emailCodeSubmitting
                         ? t('auth.login.sending')
-                        : cooldown > 0 && sentTo === trimmedEmail
+                        : isEmailCodeCoolingDown
                           ? `${cooldown}s`
-                          : t('auth.login.requestCode')}
+                          : canResend
+                            ? t('auth.login.resendCode')
+                            : t('auth.login.requestCode')}
                     </button>
                   </div>
 

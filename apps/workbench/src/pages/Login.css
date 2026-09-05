@@ -753,6 +753,38 @@
   opacity: 1;
 }
 
+.axi-login-code-send {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--space-2);
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-decoration-thickness: var(--space-px);
+  text-underline-offset: 3px;
+  transition: color 140ms ease, text-decoration-color 140ms ease;
+}
+
+.axi-login-code-send:hover:not(:disabled) {
+  color: var(--color-brand-hover);
+  text-decoration-line: underline;
+}
+
+.axi-login-code-send:active:not(:disabled) {
+  color: var(--color-brand-hover);
+}
+
+.axi-login-code-send.is-resend:not(:disabled) {
+  font-weight: var(--font-weight-semibold);
+}
+
+.axi-login-code-send:disabled {
+  color: var(--palette-gray-350);
+  cursor: not-allowed;
+}
+
 .axi-login-button {
   position: absolute;
   right: auto;

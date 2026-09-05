@@ -94,6 +94,7 @@
   "auth.login.sending": "Sending…",
   "auth.login.verifying": "Verifying…",
   "auth.login.requestCode": "Get verification code",
+  "auth.login.resendCode": "Get again",
   "auth.login.codeLabel": "Verification code",
   "auth.login.changeEmail": "Use a different email",
   "auth.login.sentTo": "Sent to",

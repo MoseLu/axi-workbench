@@ -40,6 +40,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await page.route('**/api/v1/auth/email-verifications', async (route) => {
     const payload = route.request().postDataJSON() as { email?: string };
     requestedEmails.push(payload.email ?? '');
+    if (requestedEmails.length === 1) await new Promise((resolve) => setTimeout(resolve, 150));
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -50,6 +51,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     });
   });
 
+  await page.clock.install();
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: '扫描二维码登录' })).toBeVisible();
   await expect(page.getByRole('tablist', { name: '登录方式' })).toBeVisible();
@@ -117,6 +119,25 @@ test('renders the web login journey in a real browser', async ({ page }) => {
 
   const baseline = layout;
   await expect(page.getByRole('tab', { name: '邮箱登录' })).toHaveAttribute('aria-selected', 'true');
+  const sendButton = page.locator('.axi-login-code-send');
+  await expect(sendButton).toBeDisabled();
+  await expect(sendButton).toHaveAttribute('data-email-code-state', 'disabled');
+  const disabledSendPresentation = await sendButton.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    return {
+      color: style.color,
+      fontWeight: style.fontWeight,
+      width: box.width,
+      height: box.height,
+    };
+  });
+  expect(disabledSendPresentation).toEqual({
+    color: 'rgb(178, 178, 178)',
+    fontWeight: '500',
+    width: 88,
+    height: 36,
+  });
   await page.locator('#axi-login-email').fill('render@example.com');
   // A pasted full address is reduced to the editable local part; the domain
   // can only come from the fixed select options.
@@ -137,7 +158,25 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // The first row is only the address field; the send action belongs beside
   // the six OTP slots on the second row.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toHaveCount(0);
-  await expect(page.locator('.axi-login-form__row--code .axi-login-text-button--send')).toHaveText('获取验证码');
+  await expect(sendButton).toHaveText('获取验证码');
+  await expect(sendButton).toBeEnabled();
+  await expect(sendButton).toHaveAttribute('data-email-code-state', 'request');
+  const enabledSendPresentation = await sendButton.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.color,
+      fontWeight: style.fontWeight,
+      background: style.backgroundColor,
+      width: element.getBoundingClientRect().width,
+      height: element.getBoundingClientRect().height,
+    };
+  });
+  expect(enabledSendPresentation.fontWeight).toBe('500');
+  expect(enabledSendPresentation.background).toBe('rgba(0, 0, 0, 0)');
+  expect(enabledSendPresentation.width).toBe(88);
+  expect(enabledSendPresentation.height).toBe(36);
+  await sendButton.hover();
+  await expect.poll(async () => sendButton.evaluate((element) => getComputedStyle(element).textDecorationLine)).toContain('underline');
   const emailRowBorders = await page.evaluate(() => {
     const row = document.querySelector('.axi-login-form__row--email');
     const input = row?.querySelector('input');
@@ -164,10 +203,24 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     suffixRadius: '0px',
   });
   await expect(page.locator('.axi-one-time-code__input').first()).toBeDisabled();
-  await page.getByRole('button', { name: '获取验证码' }).click();
+  await sendButton.click();
   expect(requestedEmails[0]).toBe('render@163.com');
-  await expect(page.locator('.axi-login-form__row--code .axi-login-text-button--send')).toHaveText(/^\d+s$/);
+  await expect(sendButton).toHaveText('发送中…');
+  await expect(sendButton).toBeDisabled();
+  await expect(sendButton).toHaveAttribute('data-email-code-state', 'sending');
+  await expect(sendButton).toHaveText(/^\d+s$/);
+  await expect(sendButton).toBeDisabled();
+  await expect(sendButton).toHaveAttribute('data-email-code-state', 'cooldown');
   await expect(page.locator('.axi-one-time-code__input').first()).toBeEnabled();
+  await page.clock.runFor('01:00');
+  await expect(sendButton).toBeEnabled();
+  await expect(sendButton).toHaveText('重新获取');
+  await expect(sendButton).toHaveAttribute('data-email-code-state', 'resend');
+  await expect(sendButton).toHaveClass(/is-resend/);
+  await sendButton.click();
+  expect(requestedEmails[1]).toBe('render@163.com');
+  await expect(sendButton).toHaveText(/^\d+s$/);
+  await expect(sendButton).toBeDisabled();
   // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
   await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
