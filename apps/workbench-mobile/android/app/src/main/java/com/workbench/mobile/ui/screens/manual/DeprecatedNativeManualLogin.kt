@@ -31,12 +31,28 @@ import com.workbench.mobile.ui.theme.Radius
 import com.workbench.mobile.ui.theme.Size
 
 /**
- * 邮箱密码登录（扫码前的 App 端登录）
- * 新流程：
- *   1. App 用邮箱密码登录 → 拿到 access_token + refresh_token
- *   2. App 用 access_token 调 /auth/qrcode/confirm 把 Web 端的 QR 会话授权给自己
- *   3. Web 端轮询拿到 tokens → 自动登录
+ * DEPRECATED native email + password login screen.
+ *
+ * See `apps/workbench-mobile/docs/decisions/0001-kotlin-manual-login.md`.
+ *
+ * The supported mobile login path is the JS surface in
+ * `apps/workbench-mobile/src/pages/LoginPage.tsx`, which uses
+ * `requestEmailCode` + `confirmEmailCode` (opaque email challenge) and an
+ * Ed25519-paired device confirmation via
+ * `apps/workbench-mobile/src/lib/mobileControl.ts`. That path is guarded by
+ * `scripts/verify-mobile-contracts.mjs`.
+ *
+ * This Compose screen is intentionally NOT registered in
+ * `WorkBenchNavHost.kt` and has no caller. It is kept on disk so a future
+ * contributor can see what was removed and so the contract guard can flag any
+ * attempt to re-introduce a password field on the Kotlin side. Do not wire
+ * this back into the navigation graph; doing so will break the
+ * mobile-login parity invariant.
  */
+@Deprecated(
+    message = "Kotlin email/password login is deprecated. Use the mobile JS LoginPage (email challenge) path. See docs/decisions/0001-kotlin-manual-login.md.",
+    level = DeprecationLevel.WARNING
+)
 data class EmailLoginState(
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -44,6 +60,10 @@ data class EmailLoginState(
 )
 
 @HiltViewModel
+@Deprecated(
+    message = "Kotlin email/password login is deprecated. See docs/decisions/0001-kotlin-manual-login.md.",
+    level = DeprecationLevel.WARNING
+)
 class EmailLoginViewModel @Inject constructor(
     private val authApi: AuthApi,
     private val tokenStore: TokenStore
@@ -86,6 +106,10 @@ class EmailLoginViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Deprecated(
+    message = "Kotlin manual login is deprecated. See docs/decisions/0001-kotlin-manual-login.md.",
+    level = DeprecationLevel.WARNING
+)
 fun ManualLoginScreen(
     onLoginSuccess: () -> Unit,
     onBack: () -> Unit,

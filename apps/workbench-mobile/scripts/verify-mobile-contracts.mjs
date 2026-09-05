@@ -15,6 +15,8 @@ const index = read('index.html');
 const mobileLocale = read('src/i18n.ts');
 const nativeStrings = fs.readFileSync(path.join(appRoot, 'android/app/src/main/res/values/strings.xml'), 'utf8');
 const startupView = read('android/app/src/main/java/com/workbench/mobile/ui/startup/BrandLoadingView.kt');
+const deprecatedNativeManualLogin = read('android/app/src/main/java/com/workbench/mobile/ui/screens/manual/DeprecatedNativeManualLogin.kt');
+const loginKotlinDir = path.join(appRoot, 'android/app/src/main/java/com/workbench/mobile/ui/screens/manual');
 const shell = read('src/layouts/MobileShell.tsx');
 const header = read('src/components/MobileHeader.tsx');
 const tabBar = read('src/components/MobileTabBar.tsx');
@@ -78,6 +80,23 @@ requireMatch(login, /challengeId/, 'mobile login must retain the opaque challeng
 requireMatch(login, /one-time-code/, 'mobile login must expose Android one-time-code autofill');
 forbidMatch(login, /beginLogin/, 'mobile email-code entry must not silently redirect into OIDC');
 forbidMatch(login, /password/i, 'mobile login must not reintroduce a password flow');
+
+// Kotlin 端登录契约（与 docs/decisions/0001-kotlin-manual-login.md 对齐）。
+// 历史 Kotlin 登录实现被保留为 DeprecatedNativeManualLogin.kt，但它不能从导航图
+// 触发；如果未来有人重新挂载到 NavHost，或新建第二个 Kotlin 登录文件，CI 会拦截。
+const KOTLIN_DEPRECATED_LOGIN_BASENAMES = new Set(['DeprecatedNativeManualLogin.kt']);
+requireMatch(deprecatedNativeManualLogin, /@Deprecated\(/, 'deprecated native manual login must be marked @Deprecated');
+const kotlinLoginFiles = fs.readdirSync(loginKotlinDir)
+  .filter((name) => name.endsWith('.kt'))
+  .map((name) => ({ name, text: read(`android/app/src/main/java/com/workbench/mobile/ui/screens/manual/${name}`) }));
+const activeKotlinLogin = kotlinLoginFiles.filter(({ name }) => !KOTLIN_DEPRECATED_LOGIN_BASENAMES.has(name));
+if (activeKotlinLogin.length > 0) {
+  const offenders = activeKotlinLogin.map(({ name }) => name).join(', ');
+  throw new Error(`mobile Kotlin manual login directory must only contain DeprecatedNativeManualLogin.kt (found: ${offenders}); see docs/decisions/0001-kotlin-manual-login.md`);
+}
+for (const { name, text } of activeKotlinLogin) {
+  forbidMatch(text, /password/i, `${name} must not reintroduce a Kotlin-side password flow`);
+}
 requireMatch(header, /MobileIcon className="wb-mobile-topbar__plus" name="plus"/, 'mobile header must render the shared plus glyph inside its mobile-only circular affordance');
 requireMatch(mobileStyles, /\.wb-mobile-topbar__plus svg[\s\S]*width:\s*10px/, 'mobile plus affordance must size the shared SVG inside its mobile-only circle');
 requireMatch(scan, /parseApprovalScanPayload[\s\S]*resolveMobileApprovalScan/, 'top-level Scan must resolve an opaque domain approval URI through the control plane');
