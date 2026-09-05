@@ -367,6 +367,7 @@ const Login: React.FC = () => {
   };
 
   const banner = error || (sessionError && (phase === 'verifying' || loginMode === 'password') ? sessionError : null);
+  const appName = t('app.name');
   const qrOverlayTitle = deviceQrStatus === 'expired' ? '二维码已过期' : '二维码加载失败';
   const qrOverlayHint = deviceQrStatus === 'expired' ? '请点击刷新' : '请点击重试';
 
@@ -392,8 +393,8 @@ const Login: React.FC = () => {
             <h1 id="axi-login-title">扫描二维码登录</h1>
             <div
               className="axi-login-qr-hover"
-              title="请使用 Axi WorkBench 手机端扫描二维码登录"
-              aria-label="使用 Axi WorkBench 手机端扫描二维码登录"
+              title={`请使用 ${appName} 手机端扫描二维码登录`}
+              aria-label={`使用 ${appName} 手机端扫描二维码登录`}
               role="img"
               tabIndex={0}
             >
@@ -435,7 +436,7 @@ const Login: React.FC = () => {
               </span>
             </div>
             <p className="axi-login-qr-instruction">
-              请使用 <strong>Axi WorkBench 手机端</strong><br />
+              请使用 <strong>{appName} 手机端</strong><br />
               扫码登录或确认本机登录
             </p>
             {qrError && deviceQrStatus === 'failed' && (

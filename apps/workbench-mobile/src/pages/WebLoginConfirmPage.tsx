@@ -1,6 +1,7 @@
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileIcon } from '../components/MobileIcons';
+import { useMobileI18n } from '../i18n';
 import { approveMobileWebLoginQr } from '../lib/mobileControl';
 import { parseWebLoginQrPayload } from '../lib/webLoginQr';
 
@@ -16,6 +17,7 @@ function detector() {
 /** Identity-only scanner, intentionally outside the domain approval Scan route. */
 export default function WebLoginConfirmPage() {
   const navigate = useNavigate();
+  const { t } = useMobileI18n();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number>();
@@ -75,5 +77,5 @@ export default function WebLoginConfirmPage() {
   };
 
   useEffect(() => stop, [stop]);
-  return <main className="axi-mobile-login axi-mobile-login--confirm-web"><div className="axi-mobile-login__brand"><span>Axi WorkBench</span></div><div className="axi-mobile-login__copy"><p>身份登录</p><h1>确认网页登录</h1><small>这是一次性 Identity 登录确认，不是领域审批。</small></div><section className="axi-mobile-login__form"><video ref={videoRef} className="wb-login-confirm-video" autoPlay muted playsInline /><p role="status">{message}</p>{error ? <p className="axi-mobile-login__error" role="alert">{error}</p> : null}<button type="button" disabled={opening} onClick={() => void start()}>{opening ? '正在处理…' : '打开相机'}</button><label className="axi-mobile-login__file">从相册选择<input type="file" hidden accept="image/*" onChange={(event) => void readImage(event)} /></label><button type="button" className="axi-mobile-login__secondary" onClick={() => navigate('/home')}><MobileIcon name="back" size={16} />返回工作台</button></section></main>;
+  return <main className="axi-mobile-login axi-mobile-login--confirm-web"><div className="axi-mobile-login__brand"><span>{t('app.name')}</span></div><div className="axi-mobile-login__copy"><p>身份登录</p><h1>确认网页登录</h1><small>这是一次性 Identity 登录确认，不是领域审批。</small></div><section className="axi-mobile-login__form"><video ref={videoRef} className="wb-login-confirm-video" autoPlay muted playsInline /><p role="status">{message}</p>{error ? <p className="axi-mobile-login__error" role="alert">{error}</p> : null}<button type="button" disabled={opening} onClick={() => void start()}>{opening ? '正在处理…' : '打开相机'}</button><label className="axi-mobile-login__file">从相册选择<input type="file" hidden accept="image/*" onChange={(event) => void readImage(event)} /></label><button type="button" className="axi-mobile-login__secondary" onClick={() => navigate('/home')}><MobileIcon name="back" size={16} />返回工作台</button></section></main>;
 }

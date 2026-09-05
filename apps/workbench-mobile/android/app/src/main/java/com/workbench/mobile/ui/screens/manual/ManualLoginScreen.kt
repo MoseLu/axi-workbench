@@ -123,7 +123,7 @@ fun ManualLoginScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.s6)
         ) {
             Text(
-                text = "使用 Axi Workbench 账号登录",
+                text = "使用 Axi 工作台账号登录",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )

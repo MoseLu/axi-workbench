@@ -3,8 +3,12 @@
 <plist version="1.0">
 <dict>
 	<!-- Keep AppKit's native window-control menus aligned with the Chinese UI. -->
+	<key>CFBundleDisplayName</key>
+	<string>Axi 工作台</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>zh-Hans</string>
+	<key>CFBundleName</key>
+	<string>Axi 工作台</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>zh-Hans</string>

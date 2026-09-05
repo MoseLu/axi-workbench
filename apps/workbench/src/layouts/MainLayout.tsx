@@ -500,7 +500,7 @@ const MainLayout: React.FC = () => {
         brand={{
           logo: <AxiLogoMark size={24} className="workbench-axi-brand-mark" />,
           subtitle: isPersonalOsRoute ? t('personalOs.shell.subtitle') : undefined,
-          title: isPersonalOsRoute ? t('personalOs.shell.brand') : 'Axi WorkBench',
+          title: isPersonalOsRoute ? t('personalOs.shell.brand') : t('app.name'),
         }}
         breadcrumbs={settings.breadcrumb ? desktopBreadcrumbs : []}
         breadcrumbLabel={t('layout.breadcrumbLabel')}

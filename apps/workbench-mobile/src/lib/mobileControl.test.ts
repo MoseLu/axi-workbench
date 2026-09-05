@@ -210,7 +210,7 @@ describe('mobile control transport', () => {
       webPairingId: 'webpair_1234567890abcdef',
       scanToken: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345',
       publicKeyAlgorithm: 'Ed25519',
-      deviceName: 'Axi Workbench Mobile',
+      deviceName: 'Axi 工作台移动端',
     }));
     expect(scanBody.publicKeyHex).toMatch(/^[0-9a-f]{64}$/);
     expect(Object.keys(scanBody).sort()).toEqual([

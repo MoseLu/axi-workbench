@@ -12,14 +12,14 @@
   "app": {
     "windows": [
       {
-        "title": "Workbench — 登录",
+        "title": "Axi 工作台 — 登录",
         "label": "login",
         "width": 800,
         "height": 365,
         "minWidth": 800,
         "minHeight": 365,
-        "resizable": true,
-        "maximizable": true,
+        "resizable": false,
+        "maximizable": false,
         "fullscreen": false,
         "center": true,
         "decorations": true,
@@ -32,13 +32,16 @@
         "visible": true
       },
       {
-        "title": "Workbench",
+        "title": "Axi 工作台",
         "label": "main",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,
         "minHeight": 640,
         "resizable": true,
+        "maximizable": true,
+        "minimizable": true,
+        "closable": true,
         "fullscreen": false,
         "center": true,
         "decorations": true,

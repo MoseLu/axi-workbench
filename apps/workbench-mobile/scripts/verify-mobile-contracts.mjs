@@ -12,6 +12,9 @@ const forbidMatch = (text, pattern, message) => {
 
 const app = read('src/App.tsx');
 const index = read('index.html');
+const mobileLocale = read('src/i18n.ts');
+const nativeStrings = fs.readFileSync(path.join(appRoot, 'android/app/src/main/res/values/strings.xml'), 'utf8');
+const startupView = read('android/app/src/main/java/com/workbench/mobile/ui/startup/BrandLoadingView.kt');
 const shell = read('src/layouts/MobileShell.tsx');
 const header = read('src/components/MobileHeader.tsx');
 const tabBar = read('src/components/MobileTabBar.tsx');
@@ -51,6 +54,11 @@ requireMatch(index, /rel="icon" type="image\/png" sizes="32x32" href="\/favicon-
 requireMatch(index, /rel="icon" type="image\/png" sizes="48x48" href="\/favicon-48\.png"/, 'mobile index must expose the shared 48px brand icon');
 requireMatch(index, /rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/, 'mobile index must expose the shared SVG brand icon');
 requireMatch(index, /rel="apple-touch-icon" sizes="180x180" href="\/apple-touch-icon\.png"/, 'mobile index must expose the shared home-screen brand icon');
+requireMatch(index, /<title>Axi 工作台<\/title>/, 'mobile document title must use the Chinese product name by default');
+requireMatch(mobileLocale, /'zh-CN':\s*\{[\s\S]*?'app\.name': 'Axi 工作台'/, 'Chinese mobile locale must define the product name');
+requireMatch(mobileLocale, /'en-US':\s*\{[\s\S]*?'app\.name': 'Axi Workbench'/, 'English mobile locale must define the product name');
+requireMatch(nativeStrings, /<string name="app_name">Axi 工作台<\/string>/, 'Android launcher must use the Chinese product name');
+requireMatch(startupView, /R\.string\.app_name[\s\S]*R\.string\.startup_preparing_workspace/, 'Android startup loading must use localized app resources');
 if (mobileFavicon !== webFavicon) {
   throw new Error('mobile favicon must remain byte-identical to the Workbench Web flower mark');
 }

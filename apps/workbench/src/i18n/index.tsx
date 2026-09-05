@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import {
   WorkbenchLocaleProvider,
   useWorkbenchLocale,
@@ -33,6 +33,10 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const I18nDictionaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { locale, setLocale } = useWorkbenchLocale();
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.title = messages[locale]['app.name'] ?? document.title;
+  }, [locale]);
 
   const value = useMemo<I18nContextValue>(() => {
     const dict = messages[locale];

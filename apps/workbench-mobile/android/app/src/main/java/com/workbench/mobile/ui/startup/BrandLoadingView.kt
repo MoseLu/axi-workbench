@@ -68,7 +68,7 @@ class BrandLoadingView @JvmOverloads constructor(
 
     init {
         setBackgroundColor(context.getColor(R.color.wechat_chrome_bg))
-        contentDescription = "Axi Workbench，正在准备工作区"
+        contentDescription = context.getString(R.string.app_name) + "，" + context.getString(R.string.startup_preparing_workspace)
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
 
@@ -89,8 +89,8 @@ class BrandLoadingView @JvmOverloads constructor(
         canvas.drawBitmap(logo, null, logoRect, imagePaint)
 
         val titleBaseline = centerY + dp(98f)
-        canvas.drawText("Axi Workbench", centerX, titleBaseline, titlePaint)
-        canvas.drawText("正在准备工作区…", centerX, titleBaseline + dp(35f), messagePaint)
+        canvas.drawText(context.getString(R.string.app_name), centerX, titleBaseline, titlePaint)
+        canvas.drawText(context.getString(R.string.startup_preparing_workspace), centerX, titleBaseline + dp(35f), messagePaint)
 
         val dotsY = titleBaseline + dp(68f)
         for (index in 0..2) {

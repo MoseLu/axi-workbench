@@ -290,8 +290,10 @@ async function requestOwnerPairApproval(pairingId: string, code: string): Promis
   }
 }
 
+const DEFAULT_MOBILE_DEVICE_NAME = 'Axi 工作台移动端';
+
 /** Starts pairing; the non-extractable Ed25519 private key is persisted only after owner confirmation. */
-export async function startMobileDevicePairing(deviceName = 'Axi Workbench Mobile'): Promise<{ pairingId: string; expiresAt: number | null }> {
+export async function startMobileDevicePairing(deviceName = DEFAULT_MOBILE_DEVICE_NAME): Promise<{ pairingId: string; expiresAt: number | null }> {
   const keyPair = await generateDeviceKeyPair();
   const response = await mobileFetch<{ pairingId: string; code: string; codeExpiresAt?: number }>('/pair/start', {
     method: 'POST',
@@ -309,7 +311,7 @@ export type MobileQrPairingResult = {
 /** Registers the current device key after a Web-owned QR has been scanned. */
 export async function scanMobilePairingQr(
   payload: { webPairingId: string; scanToken: string },
-  deviceName = 'Axi Workbench Mobile',
+  deviceName = DEFAULT_MOBILE_DEVICE_NAME,
 ): Promise<MobileQrPairingResult> {
   const keyPair = await generateDeviceKeyPair();
   const response = await mobileFetch<{ pairingId: string; code: string; expiresAt: number }>('/pair/qr/scan', {

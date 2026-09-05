@@ -49,13 +49,15 @@ if (!existsSync(iconIcns)) {
 
 const config = existsSync(tauriConfig) ? JSON.parse(readFileSync(tauriConfig, 'utf8')) : null
 const loginWindow = config?.app?.windows?.find((window) => window.label === 'login')
+const mainWindow = config?.app?.windows?.find((window) => window.label === 'main')
 if (
+  loginWindow?.title !== 'Axi 工作台 — 登录' ||
   loginWindow?.width !== 800 ||
   loginWindow?.height !== 365 ||
   loginWindow?.minWidth !== 800 ||
   loginWindow?.minHeight !== 365 ||
-  loginWindow?.resizable !== true ||
-  loginWindow?.maximizable !== true ||
+  loginWindow?.resizable !== false ||
+  loginWindow?.maximizable !== false ||
   loginWindow?.titleBarStyle !== 'Overlay' ||
   loginWindow?.hiddenTitle !== true ||
   JSON.stringify(loginWindow?.trafficLightPosition) !== JSON.stringify({ x: 13, y: 26 }) ||
@@ -65,7 +67,19 @@ if (
   console.error(`[verify-desktop-contracts] FAIL: 登录窗口必须是 800x365 的 Web 对齐紧凑画布: ${tauriConfig}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 登录窗口使用 800x365 Overlay 浅色紧凑画布')
+  console.log('[verify-desktop-contracts] OK: 登录窗口使用固定 800x365 Overlay 浅色紧凑画布')
+}
+if (
+  mainWindow?.title !== 'Axi 工作台' ||
+  mainWindow?.resizable !== true ||
+  mainWindow?.maximizable !== true ||
+  mainWindow?.minimizable !== true ||
+  mainWindow?.closable !== true
+) {
+  console.error(`[verify-desktop-contracts] FAIL: 主应用窗口必须保留可放缩和绿色缩放能力: ${tauriConfig}`)
+  failed = true
+} else {
+  console.log('[verify-desktop-contracts] OK: 主应用窗口保留可放缩和绿色缩放能力')
 }
 
 const plist = existsSync(macosInfoPlist) ? readFileSync(macosInfoPlist, 'utf8') : ''
@@ -74,7 +88,9 @@ if (
   !existsSync(macosInfoPlist) ||
   !plist.includes('<key>CFBundleDevelopmentRegion</key>') ||
   !plist.includes('<string>zh-Hans</string>') ||
-  !plist.includes('<key>CFBundleLocalizations</key>')
+  !plist.includes('<key>CFBundleLocalizations</key>') ||
+  !/<key>CFBundleDisplayName<\/key>\s*<string>Axi 工作台<\/string>/.test(plist) ||
+  !/<key>CFBundleName<\/key>\s*<string>Axi 工作台<\/string>/.test(plist)
 ) {
   console.error(`[verify-desktop-contracts] FAIL: macOS 应用包必须声明中文 AppKit 本地化: ${macosInfoPlist}`)
   failed = true

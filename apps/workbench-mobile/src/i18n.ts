@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { type WorkbenchLocale, useWorkbenchLocale } from '@axi/workbench-foundation';
 
 const messages = {
   'zh-CN': {
-    'app.name': 'Axi WorkBench',
+    'app.name': 'Axi 工作台',
     'nav.home': '概览',
     'nav.projects': '工作',
     'nav.workspace': '待处理',
@@ -63,7 +63,7 @@ const messages = {
     'search.placeholder': '搜索项目、消息和工作区',
     'search.recent': '最近访问',
     'search.noResults': '没有匹配的内容',
-    'search.item.workbench.title': 'Axi WorkBench',
+    'search.item.workbench.title': 'Axi 工作台',
     'search.item.workbench.subtitle': '项目 · 设计系统整理',
     'search.item.storyGraph.title': 'Story Graph',
     'search.item.storyGraph.subtitle': '项目 · 时间线校对',
@@ -105,7 +105,7 @@ const messages = {
     'scan.authRequired': '移动端会话已失效，请先用 QQ 邮箱验证码登录。',
   },
   'en-US': {
-    'app.name': 'Axi WorkBench',
+    'app.name': 'Axi Workbench',
     'nav.home': 'Overview',
     'nav.projects': 'Work',
     'nav.workspace': 'Pending',
@@ -165,7 +165,7 @@ const messages = {
     'search.placeholder': 'Search projects, messages, or workspace',
     'search.recent': 'Recent',
     'search.noResults': 'No matching content',
-    'search.item.workbench.title': 'Axi WorkBench',
+    'search.item.workbench.title': 'Axi Workbench',
     'search.item.workbench.subtitle': 'Project · Design system cleanup',
     'search.item.storyGraph.title': 'Story Graph',
     'search.item.storyGraph.subtitle': 'Project · Timeline evidence review',
@@ -213,6 +213,9 @@ export type MobileCopyKey = keyof (typeof messages)['zh-CN'];
 export function useMobileI18n() {
   const { locale, setLocale } = useWorkbenchLocale();
   const dictionary = messages[locale as WorkbenchLocale];
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.title = dictionary['app.name'];
+  }, [dictionary]);
   const t = useCallback((key: MobileCopyKey) => dictionary[key], [dictionary]);
   return { locale, setLocale, t };
 }

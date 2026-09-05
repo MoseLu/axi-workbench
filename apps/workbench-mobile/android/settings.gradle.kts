@@ -21,5 +21,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WorkBench"
+rootProject.name = "Axi 工作台"
 include(":app")

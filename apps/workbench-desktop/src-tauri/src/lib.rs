@@ -12,6 +12,8 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+const APP_NAME: &str = "Axi 工作台";
+
 /// Login closes the application; the main window hides to the tray.
 fn should_hide_on_close(label: &str) -> bool {
     label != "login"
@@ -49,10 +51,10 @@ pub fn run() {
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;
             register_ipc_listeners(app.handle().clone());
-            // 登录窗保留 macOS 标准三颗交通灯，并允许绿色按钮执行原生缩放。
+            // 登录窗是固定尺寸的特殊登录页面，只保留关闭和最小化交通灯。
             if let Some(login) = app.get_webview_window("login") {
-                let _ = login.set_resizable(true);
-                let _ = login.set_maximizable(true);
+                let _ = login.set_resizable(false);
+                let _ = login.set_maximizable(false);
                 let _ = login.set_minimizable(true);
                 let _ = login.set_closable(true);
             }
@@ -76,14 +78,14 @@ pub fn run() {
 
 fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
     // App 菜单
-    let app_about = MenuItemBuilder::with_id("app_about", "About Workbench").build(app)?;
-    let app_hide = MenuItemBuilder::with_id("app_hide", "Hide Workbench")
+    let app_about = MenuItemBuilder::with_id("app_about", format!("关于 {APP_NAME}")).build(app)?;
+    let app_hide = MenuItemBuilder::with_id("app_hide", format!("隐藏 {APP_NAME}"))
         .accelerator("CmdOrCtrl+H")
         .build(app)?;
-    let app_quit = MenuItemBuilder::with_id("app_quit", "Quit Workbench")
+    let app_quit = MenuItemBuilder::with_id("app_quit", format!("退出 {APP_NAME}"))
         .accelerator("CmdOrCtrl+Q")
         .build(app)?;
-    let app_menu = SubmenuBuilder::new(app, "Workbench")
+    let app_menu = SubmenuBuilder::new(app, APP_NAME)
         .item(&app_about)
         .separator()
         .item(&app_hide)
@@ -91,38 +93,38 @@ fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         .build()?;
 
     // File 菜单
-    let file_new = MenuItemBuilder::with_id("file_new", "New Tab")
+    let file_new = MenuItemBuilder::with_id("file_new", "新建标签页")
         .accelerator("CmdOrCtrl+T")
         .build(app)?;
-    let file_close = MenuItemBuilder::with_id("file_close", "Close Window")
+    let file_close = MenuItemBuilder::with_id("file_close", "关闭窗口")
         .accelerator("CmdOrCtrl+W")
         .build(app)?;
-    let file_menu = SubmenuBuilder::new(app, "File")
+    let file_menu = SubmenuBuilder::new(app, "文件")
         .item(&file_new)
         .separator()
         .item(&file_close)
         .build()?;
 
     // Edit 菜单（标准 macOS 编辑动作，壳层只发事件给 web）
-    let edit_undo = MenuItemBuilder::with_id("edit_undo", "Undo")
+    let edit_undo = MenuItemBuilder::with_id("edit_undo", "撤销")
         .accelerator("CmdOrCtrl+Z")
         .build(app)?;
-    let edit_redo = MenuItemBuilder::with_id("edit_redo", "Redo")
+    let edit_redo = MenuItemBuilder::with_id("edit_redo", "重做")
         .accelerator("Shift+CmdOrCtrl+Z")
         .build(app)?;
-    let edit_cut = MenuItemBuilder::with_id("edit_cut", "Cut")
+    let edit_cut = MenuItemBuilder::with_id("edit_cut", "剪切")
         .accelerator("CmdOrCtrl+X")
         .build(app)?;
-    let edit_copy = MenuItemBuilder::with_id("edit_copy", "Copy")
+    let edit_copy = MenuItemBuilder::with_id("edit_copy", "拷贝")
         .accelerator("CmdOrCtrl+C")
         .build(app)?;
-    let edit_paste = MenuItemBuilder::with_id("edit_paste", "Paste")
+    let edit_paste = MenuItemBuilder::with_id("edit_paste", "粘贴")
         .accelerator("CmdOrCtrl+V")
         .build(app)?;
-    let edit_select_all = MenuItemBuilder::with_id("edit_select_all", "Select All")
+    let edit_select_all = MenuItemBuilder::with_id("edit_select_all", "全选")
         .accelerator("CmdOrCtrl+A")
         .build(app)?;
-    let edit_menu = SubmenuBuilder::new(app, "Edit")
+    let edit_menu = SubmenuBuilder::new(app, "编辑")
         .item(&edit_undo)
         .item(&edit_redo)
         .separator()
@@ -133,23 +135,23 @@ fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
         .build()?;
 
     // View 菜单
-    let view_reload = MenuItemBuilder::with_id("view_reload", "Reload")
+    let view_reload = MenuItemBuilder::with_id("view_reload", "重新加载")
         .accelerator("CmdOrCtrl+R")
         .build(app)?;
-    let view_toggle_devtools = MenuItemBuilder::with_id("view_toggle_devtools", "Toggle Developer Tools")
+    let view_toggle_devtools = MenuItemBuilder::with_id("view_toggle_devtools", "切换开发者工具")
         .accelerator("Alt+CmdOrCtrl+I")
         .build(app)?;
-    let view_menu = SubmenuBuilder::new(app, "View")
+    let view_menu = SubmenuBuilder::new(app, "视图")
         .item(&view_reload)
         .item(&view_toggle_devtools)
         .build()?;
 
     // Window 菜单
-    let window_minimize = MenuItemBuilder::with_id("window_minimize", "Minimize")
+    let window_minimize = MenuItemBuilder::with_id("window_minimize", "最小化")
         .accelerator("CmdOrCtrl+M")
         .build(app)?;
-    let window_zoom = MenuItemBuilder::with_id("window_zoom", "Zoom").build(app)?;
-    let window_menu = SubmenuBuilder::new(app, "Window")
+    let window_zoom = MenuItemBuilder::with_id("window_zoom", "缩放").build(app)?;
+    let window_menu = SubmenuBuilder::new(app, "窗口")
         .item(&window_minimize)
         .item(&window_zoom)
         .build()?;
@@ -208,9 +210,9 @@ fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
 }
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let show_item = MenuItemBuilder::with_id("tray_show", "Show Workbench").build(app)?;
-    let hide_item = MenuItemBuilder::with_id("tray_hide", "Hide Workbench").build(app)?;
-    let quit_item = MenuItemBuilder::with_id("tray_quit", "Quit").build(app)?;
+    let show_item = MenuItemBuilder::with_id("tray_show", "显示工作台").build(app)?;
+    let hide_item = MenuItemBuilder::with_id("tray_hide", "隐藏工作台").build(app)?;
+    let quit_item = MenuItemBuilder::with_id("tray_quit", "退出").build(app)?;
     let tray_menu = MenuBuilder::new(app)
         .item(&show_item)
         .item(&hide_item)
@@ -219,7 +221,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .build()?;
 
     let _tray = TrayIconBuilder::with_id("main-tray")
-        .tooltip("Workbench")
+        .tooltip(APP_NAME)
         .menu(&tray_menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
@@ -383,9 +385,9 @@ fn apply_unread(app: &AppHandle, count: u64) {
     // 托盘 title（macOS 菜单栏图标右侧显示）
     if let Some(tray) = app.tray_by_id("main-tray") {
         let title = if count == 0 {
-            "Workbench".to_string()
+            APP_NAME.to_string()
         } else {
-            format!("Workbench ({count})")
+            format!("{APP_NAME} ({count})")
         };
         let _ = tray.set_title(Some(&title));
     }

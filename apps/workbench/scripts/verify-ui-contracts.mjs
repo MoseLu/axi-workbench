@@ -24,6 +24,9 @@ const workbenchIcon = read('apps/workbench/src/components/WorkbenchIcon.tsx');
 const globalSearch = read('apps/workbench/src/components/Layout/GlobalSearchDialog.tsx');
 const login = read('apps/workbench/src/pages/Login.tsx');
 const favicon = read('apps/workbench/public/favicon.svg');
+const index = read('apps/workbench/index.html');
+const zhLocale = read('apps/workbench/src/i18n/locales/zh-CN.json');
+const enLocale = read('apps/workbench/src/i18n/locales/en-US.json');
 
 function readSourceTree(relativeDir) {
   const directory = path.join(root, relativeDir);
@@ -45,6 +48,10 @@ forbidMatch(
 requireMatch(layout, /AxiDashboardShell/, 'desktop must use the shared Axi dashboard shell');
 requireMatch(layout, /AxiAdminSettingsPanel/, 'desktop settings must use the shared settings panel');
 requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared twelve-color Axi mark');
+requireMatch(layout, /title: isPersonalOsRoute \? t\('personalOs\.shell\.brand'\) : t\('app\.name'\)/, 'Web brand title must come from the locale dictionary');
+requireMatch(index, /<title>Axi 工作台<\/title>/, 'Web document title must use the Chinese product name by default');
+requireMatch(zhLocale, /"app\.name": "Axi 工作台"/, 'Chinese Web locale must define the product name');
+requireMatch(enLocale, /"app\.name": "Axi Workbench"/, 'English Web locale must define the product name');
 requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
 for (const path of [
   /M16 0\.18 C13\.55 1\.35 11 3\.1 10\.65 5\.3 C10\.65 6\.7 11\.25 7\.75 11\.85 8\.8 L14\.976 14\.223 A2\.05 2\.05 0 0 1 17\.024 14\.223 L20\.15 8\.8 C20\.75 7\.75 21\.35 6\.7 21\.35 5\.3 C21 3\.1 18\.45 1\.35 16 0\.18 Z/,
