@@ -562,19 +562,6 @@ const Login: React.FC = () => {
                     >
                       {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
                     </select>
-                    <button
-                      type="button"
-                      className="axi-login-text-button axi-login-text-button--send"
-                      onClick={handleSendCode}
-                      disabled={!emailIsValid || submitting || sessionLoading || (cooldown > 0 && sentTo === trimmedEmail)}
-                      title={cooldown > 0 && sentTo === trimmedEmail ? `${cooldown}s 后可重新发送` : t('auth.login.requestCode')}
-                    >
-                      {submitting
-                        ? t('auth.login.sending')
-                        : cooldown > 0 && sentTo === trimmedEmail
-                          ? `${cooldown}s`
-                          : t('auth.login.requestCode')}
-                    </button>
                   </div>
 
                   <label htmlFor="axi-login-otp-first">{t('auth.login.codeLabel')}</label>
@@ -586,6 +573,19 @@ const Login: React.FC = () => {
                       value={code}
                       onChange={setCode}
                     />
+                    <button
+                      type="button"
+                      className="axi-login-text-button axi-login-text-button--send axi-login-code-send"
+                      onClick={handleSendCode}
+                      disabled={!emailIsValid || submitting || sessionLoading || (cooldown > 0 && sentTo === trimmedEmail)}
+                      title={cooldown > 0 && sentTo === trimmedEmail ? `${cooldown}s 后可重新发送` : t('auth.login.requestCode')}
+                    >
+                      {submitting
+                        ? t('auth.login.sending')
+                        : cooldown > 0 && sentTo === trimmedEmail
+                          ? `${cooldown}s`
+                          : t('auth.login.requestCode')}
+                    </button>
                   </div>
 
                   <button

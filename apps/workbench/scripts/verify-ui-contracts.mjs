@@ -129,7 +129,8 @@ requireMatch(login, /axi-login-card__chrome/, 'Web login must expose the client-
 requireMatch(login, /axi-login-qr-expired-overlay/, 'Web login must own the QR expiry scrim and refresh action');
 requireMatch(login, /<QRCode[\s\S]*?bordered=\{false\}/, 'Web login QR must avoid a nested Ant Design border');
 requireMatch(login, /axi-login-form--email[\s\S]*OneTimeCodeInput/, 'Web login email flow must use the shared six-slot verification input');
-requireMatch(login, /axi-login-form__row--email[\s\S]*axi-login-text-button--send/, 'Web login email row must inline the send-code button on the right edge');
+requireMatch(login, /axi-login-form__row--code[\s\S]*axi-login-text-button--send/, 'Web login code row must place the send-code action beside the six slots');
+forbidMatch(login, /axi-login-form__row--email(?:(?!axi-login-form__row--code)[\s\S])*axi-login-text-button--send/, 'Web login email row must keep the send-code action out of the suffix field');
 forbidMatch(login, /sms-verifications|login\/sms|短信登录|手机号/, 'Web login must keep the current email authentication surface');
 forbidMatch(login, /axi-login-qr-status|axi-login-qr-meta|axi-login-card__footer/, 'Web login must not retain removed QR status or footer copy');
 requireMatch(layout, /iconName: axiWorkbenchIconMap\.logout/, 'Web account menu must use the canonical logout icon semantic');

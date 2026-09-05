@@ -133,23 +133,26 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   });
   expect(emailFieldSizing.inputWidth).toBeGreaterThan(emailFieldSizing.suffixWidth);
   expect(emailFieldSizing.suffixWidth).toBeLessThanOrEqual(102);
-  // The "获取验证码" button is now embedded inside the email input row on the right edge.
-  await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toBeVisible();
+  // The first row is only the address field; the send action belongs beside
+  // the six OTP slots on the second row.
+  await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toHaveCount(0);
+  await expect(page.locator('.axi-login-form__row--code .axi-login-text-button--send')).toHaveText('获取验证码');
   const emailRowBorders = await page.evaluate(() => {
     const row = document.querySelector('.axi-login-form__row--email');
     const input = row?.querySelector('input');
-    const button = row?.querySelector('button');
-    if (!row || !input || !button) return null;
+    const suffix = row?.querySelector('select');
+    if (!row || !input || !suffix) return null;
     return {
       rowRight: getComputedStyle(row).borderRightWidth,
       inputLeft: getComputedStyle(input).borderLeftWidth,
       inputRight: getComputedStyle(input).borderRightWidth,
-      buttonLeft: getComputedStyle(button).borderLeftWidth,
+      suffixLeft: getComputedStyle(suffix).borderLeftWidth,
     };
   });
-  expect(emailRowBorders).toEqual({ rowRight: '1px', inputLeft: '0px', inputRight: '0px', buttonLeft: '0px' });
+  expect(emailRowBorders).toEqual({ rowRight: '1px', inputLeft: '0px', inputRight: '0px', suffixLeft: '1px' });
   await page.getByRole('button', { name: '获取验证码' }).click();
   expect(requestedEmails[0]).toBe('render@163.com');
+  await expect(page.locator('.axi-login-form__row--code .axi-login-text-button--send')).toHaveText(/^\d+s$/);
   // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
   await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
   await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
@@ -177,7 +180,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const rect = (selector: string) => {
       const element = document.querySelector(selector);
       const box = element?.getBoundingClientRect();
-      return box ? { top: box.top, bottom: box.bottom, height: box.height } : null;
+      return box ? { top: box.top, bottom: box.bottom, width: box.width, height: box.height } : null;
     };
     return {
       cardTop: rect('.axi-login-card')?.top ?? null,
@@ -188,6 +191,8 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       buttonBottom: rect('.axi-login-button')?.bottom ?? null,
       emailRow: rect('.axi-login-form__row--email') ?? null,
       codeRow: rect('.axi-login-form__row--code') ?? null,
+      emailRowWidth: rect('.axi-login-form__row--email')?.width ?? null,
+      codeRowWidth: rect('.axi-login-form__row--code')?.width ?? null,
       firstInputWidth: rect('.axi-one-time-code__input')?.width ?? null,
       firstInputHeight: rect('.axi-one-time-code__input')?.height ?? null,
       lastInputBottom: rect('.axi-one-time-code__input:last-child')?.bottom ?? null,
@@ -197,6 +202,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     expect(Math.abs((emailCodeLayout[key] ?? 999) - (baseline[key] ?? 0))).toBeLessThanOrEqual(0.1);
   }
   expect(Math.abs((emailCodeLayout.emailRow?.height ?? 0) - (emailCodeLayout.codeRow?.height ?? 0))).toBeLessThanOrEqual(8);
+  expect(Math.abs((emailCodeLayout.emailRowWidth ?? 0) - (emailCodeLayout.codeRowWidth ?? 0))).toBeLessThanOrEqual(0.1);
   expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(50.1);
   expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
 
