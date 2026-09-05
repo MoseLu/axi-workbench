@@ -71,16 +71,22 @@ if (process.env.AXI_DESKTOP_PACKAGE === 'true') {
   const packagedGatewayBaseURL = process.env.VITE_API_BASE_URL?.trim()
   const packagedFiles = readTextFiles(workbenchDist)
   const packagedSource = packagedFiles.join('\n')
+  const allowLocalGateway = process.env.AXI_DESKTOP_ALLOW_LOCAL_GATEWAY === 'true'
+  const allowedGateway = packagedGatewayBaseURL === 'https://workbench.axiomaticworld.com'
+    || (allowLocalGateway && (
+      packagedGatewayBaseURL === 'http://127.0.0.1:8088'
+      || packagedGatewayBaseURL === 'https://workbench.axiomaticworld.com:8443'
+    ))
   if (
-    packagedGatewayBaseURL !== 'https://workbench.axiomaticworld.com'
+    !allowedGateway
     || !packagedSource.includes(packagedGatewayBaseURL)
   ) {
     console.error(
-      '[verify-desktop-contracts] FAIL: 可分发 macOS 包必须将 Gateway 固定为公网 HTTPS，不能残留本地 8088 地址',
+      '[verify-desktop-contracts] FAIL: macOS 包的 Gateway 地址不符合公网或显式本地调试契约',
     )
     failed = true
   } else {
-    console.log('[verify-desktop-contracts] OK: 打包产物使用公网 Gateway，未残留本地回环地址')
+    console.log(`[verify-desktop-contracts] OK: Gateway 地址已注入 (${packagedGatewayBaseURL})`)
   }
 }
 

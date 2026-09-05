@@ -38,6 +38,34 @@ pnpm --filter @axi/workbench-desktop build
 静态站点共用同一入口，使 `/api/*`
 和页面同源。正式启用前，需要为该子域名配置 DNS 与覆盖该主机名的 HTTPS 证书。
 
+### 本机 HTTPS 部署
+
+本机调试时，可在 `/etc/hosts` 中将域名指向回环地址（该系统文件需要管理员权限）：
+
+```text
+127.0.0.1 workbench.axiomaticworld.com
+```
+
+先构建 Web，再用下载目录中的证书启动本机 HTTPS 入口：
+
+```bash
+pnpm --filter @axi/workbench build
+WORKBENCH_TLS_CERT_FILE=/Users/mose/Downloads/27080427_workbench.axiomaticworld.com_nginx/workbench.axiomaticworld.com.pem \
+WORKBENCH_TLS_KEY_FILE=/Users/mose/Downloads/27080427_workbench.axiomaticworld.com_nginx/workbench.axiomaticworld.com.key \
+pnpm --filter @axi/workbench serve:local
+```
+
+入口地址为 `https://workbench.axiomaticworld.com:8443`，`/api/*` 会反代到本机
+Gateway `:8088`。本机调试桌面包可使用：
+
+```bash
+AXI_DESKTOP_ALLOW_LOCAL_GATEWAY=true \
+VITE_API_BASE_URL=https://workbench.axiomaticworld.com:8443 \
+pnpm --filter @axi/workbench-desktop build
+```
+
+证书和私钥只从本地环境变量读取，不应复制到仓库或提交 Git。
+
 ## 与其他端的关系
 
 | 端 | 路径 | 形态 | 是否复用 |

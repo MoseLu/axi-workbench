@@ -35,10 +35,10 @@ function normalizePackagedGatewayBaseURL(value) {
   const isPublic = url.protocol === 'https:'
     && url.hostname === 'workbench.axiomaticworld.com'
     && (url.port === '' || url.port === '443')
-  const isAllowedLocal = allowLocalGateway
-    && url.protocol === 'http:'
-    && isLoopback
-    && (url.port === '' || url.port === '8088')
+  const isAllowedLocal = allowLocalGateway && (
+    (url.protocol === 'http:' && isLoopback && (url.port === '' || url.port === '8088'))
+    || (url.protocol === 'https:' && url.hostname === 'workbench.axiomaticworld.com' && url.port === '8443')
+  )
 
   if ((!isPublic && !isAllowedLocal) || url.username || url.password || url.search || url.hash || !['', '/'].includes(url.pathname)) {
     throw new Error(

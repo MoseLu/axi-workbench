@@ -10,6 +10,7 @@ use tauri::{
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::State;
@@ -17,6 +18,7 @@ use tauri::State;
 const APP_NAME: &str = "Axi 工作台";
 const DEFAULT_GATEWAY_BASE_URL: &str = "http://127.0.0.1:8088";
 const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
+const LOCAL_HTTPS_PORT: u16 = 8443;
 
 #[derive(Default)]
 struct GatewaySession {
@@ -62,7 +64,8 @@ fn is_allowed_gateway_base_url(url: &reqwest::Url) -> bool {
             matches!(host, "localhost" | "127.0.0.1" | "::1")
                 && url.port_or_known_default() == Some(8088)
         }
-        "https" => is_allowed_workbench_domain(host) && matches!(url.port(), None | Some(443)),
+        "https" => is_allowed_workbench_domain(host)
+            && matches!(url.port(), None | Some(443) | Some(LOCAL_HTTPS_PORT)),
         _ => false,
     }
 }
@@ -109,9 +112,18 @@ async fn proxy_gateway_request(
     let method = reqwest::Method::from_bytes(request.method.as_bytes())
         .map_err(|_| "invalid gateway method".to_string())?;
     let target_url = resolve_gateway_url(request.base_url.as_deref(), &request.path)?;
-    let client = reqwest::Client::builder()
+    let mut client_builder = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(5))
-        .timeout(Duration::from_secs(30))
+        .timeout(Duration::from_secs(30));
+    if target_url.port() == Some(LOCAL_HTTPS_PORT) {
+        client_builder = client_builder
+            .no_proxy()
+            .resolve(
+                WORKBENCH_PUBLIC_HOST,
+                SocketAddr::from(([127, 0, 0, 1], LOCAL_HTTPS_PORT)),
+            );
+    }
+    let client = client_builder
         .build()
         .map_err(|error| format!("gateway client failed: {error}"))?;
     let mut builder = client.request(method, target_url);
@@ -217,6 +229,19 @@ mod gateway_tests {
     }
 
     #[test]
+    fn allows_local_https_gateway() {
+        let url = resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com:8443"),
+            "/api/v1/auth/session",
+        )
+        .expect("local HTTPS URL");
+        assert_eq!(
+            url.as_str(),
+            "https://workbench.axiomaticworld.com:8443/api/v1/auth/session"
+        );
+    }
+
+    #[test]
     fn rejects_untrusted_gateway_target() {
         assert!(
             resolve_gateway_url(Some("https://example.com"), "/api/v1/auth/session").is_err()
@@ -236,6 +261,11 @@ mod gateway_tests {
         .is_ok());
         assert!(resolve_gateway_url(
             Some("https://other.axiomaticworld.com"),
+            "/api/v1/auth/session"
+        )
+        .is_err());
+        assert!(resolve_gateway_url(
+            Some("https://workbench.axiomaticworld.com:8444"),
             "/api/v1/auth/session"
         )
         .is_err());
