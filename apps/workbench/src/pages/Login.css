@@ -460,6 +460,11 @@
   gap: var(--space-3);
 }
 
+/* Keep the email, code, and submit rows on one deliberate vertical rhythm. */
+.axi-login-form--email {
+  gap: var(--space-4);
+}
+
 /* The code form has an extra message row; keep its fields above the shared submit baseline. */
 .axi-login-form--code {
   gap: var(--space-1);
@@ -589,6 +594,15 @@
   box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
 }
 
+.axi-login-form__row--email.is-invalid {
+  border-color: var(--color-danger);
+}
+
+.axi-login-form__row--email.is-invalid:focus-within {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-danger) 13%, transparent);
+}
+
 /* Match the generic form-input selector's specificity so its border cannot
  * reopen the seam between the email field and the send-code action. */
 .axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input) {
@@ -606,9 +620,9 @@
  * domain input. */
 .axi-login-form .axi-login-email-suffix-wrap {
   position: relative;
-  flex: 0 1 6rem;
-  width: 6rem;
-  max-width: 30%;
+  flex: 0 1 10rem;
+  width: 10rem;
+  max-width: 48%;
   min-width: 0;
   min-height: 2.625rem;
   box-sizing: border-box;
@@ -621,7 +635,7 @@
   height: 100%;
   min-height: 2.625rem;
   box-sizing: border-box;
-  padding: 0 1.5rem 0 var(--space-2);
+  padding: 0 1.75rem 0 var(--space-2);
   border: 0;
   border-radius: 0;
   color: var(--palette-gray-700);
@@ -813,6 +827,10 @@
   transition: background 140ms ease, box-shadow 140ms ease, color 140ms ease;
 }
 
+.axi-login-form--email .axi-login-button {
+  top: 7rem;
+}
+
 .axi-login-button:hover:not(:disabled) {
   background: var(--color-brand-hover);
   box-shadow: 0 var(--space-2) var(--space-5) color-mix(in srgb, var(--color-brand) 25%, transparent);
@@ -899,7 +917,7 @@
   .axi-login-button {
     position: static;
     transform: none;
-    margin-top: var(--space-2);
+    margin-top: 0;
   }
 }
 

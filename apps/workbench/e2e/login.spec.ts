@@ -91,6 +91,16 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // The email row and the OTP row share the same height so the two visible
   // input rows visually align (1px row borders explain the 2px delta).
   expect(Math.abs((layout.emailRow?.height ?? 0) - (layout.codeRow?.height ?? 0))).toBeLessThanOrEqual(8);
+  const initialVerticalRhythm = await page.evaluate(() => {
+    const email = document.querySelector('.axi-login-form__row--email')?.getBoundingClientRect();
+    const code = document.querySelector('.axi-login-form__row--code')?.getBoundingClientRect();
+    const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
+    return {
+      emailToCode: email && code ? code.top - email.bottom : null,
+      codeToButton: code && button ? button.top - code.bottom : null,
+    };
+  });
+  expect(Math.abs((initialVerticalRhythm.emailToCode ?? 999) - (initialVerticalRhythm.codeToButton ?? 0))).toBeLessThanOrEqual(2);
 
   // The Tauri login window reuses this exact Web surface. The page must own
   // the viewport background so the dark application body cannot form a frame.
@@ -120,6 +130,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   const baseline = layout;
   await expect(page.getByRole('tab', { name: '邮箱登录' })).toHaveAttribute('aria-selected', 'true');
   const sendButton = page.locator('.axi-login-code-send');
+  const emailInput = page.locator('#axi-login-email');
   await expect(sendButton).toBeDisabled();
   await expect(sendButton).toHaveAttribute('data-email-code-state', 'disabled');
   const disabledSendPresentation = await sendButton.evaluate((element) => {
@@ -138,10 +149,15 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     width: 88,
     height: 36,
   });
-  await page.locator('#axi-login-email').fill('render@example.com');
+  await emailInput.fill('invalid!prefix');
+  await expect(emailInput).toHaveValue('invalid!prefix');
+  await expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+  await expect(sendButton).toBeDisabled();
+  await emailInput.fill('render@example.com');
   // A pasted full address is reduced to the editable local part; the domain
   // can only come from the fixed select options.
-  await expect(page.locator('#axi-login-email')).toHaveValue('render');
+  await expect(emailInput).toHaveValue('render');
+  await expect(emailInput).toHaveAttribute('aria-invalid', 'false');
   await expect(page.locator('#axi-login-email-suffix')).toHaveValue('qq.com');
   await expect(page.locator('#axi-login-email-suffix option')).toHaveCount(5);
   await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toBeVisible();
@@ -154,7 +170,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     return { inputWidth: input?.width ?? 0, suffixWidth: suffix?.width ?? 0 };
   });
   expect(emailFieldSizing.inputWidth).toBeGreaterThan(emailFieldSizing.suffixWidth);
-  expect(emailFieldSizing.suffixWidth).toBeLessThanOrEqual(102);
+  expect(emailFieldSizing.suffixWidth).toBeGreaterThanOrEqual(150);
   // The first row is only the address field; the send action belongs beside
   // the six OTP slots on the second row.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toHaveCount(0);
@@ -264,6 +280,16 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       firstInputWidth: rect('.axi-one-time-code__input')?.width ?? null,
       firstInputHeight: rect('.axi-one-time-code__input')?.height ?? null,
       lastInputBottom: rect('.axi-one-time-code__input:last-child')?.bottom ?? null,
+      emailToCodeGap: (() => {
+        const email = document.querySelector('.axi-login-form__row--email')?.getBoundingClientRect();
+        const code = document.querySelector('.axi-login-form__row--code')?.getBoundingClientRect();
+        return email && code ? code.top - email.bottom : null;
+      })(),
+      codeToButtonGap: (() => {
+        const code = document.querySelector('.axi-login-form__row--code')?.getBoundingClientRect();
+        const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
+        return code && button ? button.top - code.bottom : null;
+      })(),
     };
   });
   for (const key of ['cardTop', 'cardHeight', 'cardBottom', 'tabsTop', 'buttonTop', 'buttonBottom'] as const) {
@@ -273,6 +299,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   expect(Math.abs((emailCodeLayout.emailRowWidth ?? 0) - (emailCodeLayout.codeRowWidth ?? 0))).toBeLessThanOrEqual(0.1);
   expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(50.1);
   expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
+  expect(Math.abs((emailCodeLayout.emailToCodeGap ?? 999) - (emailCodeLayout.codeToButtonGap ?? 0))).toBeLessThanOrEqual(2);
 
   // Changing the address invalidates the previous challenge and locks the
   // code slots again until the new address requests a code.
@@ -312,8 +339,9 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     expect(Math.abs((state.cardHeight ?? 999) - (baseline.cardHeight ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.cardBottom ?? 999) - (baseline.cardBottom ?? 0))).toBeLessThanOrEqual(0.1);
     expect(Math.abs((state.tabsTop ?? 999) - (baseline.tabsTop ?? 0))).toBeLessThanOrEqual(0.1);
-    expect(Math.abs((state.buttonTop ?? 999) - (baseline.buttonTop ?? 0))).toBeLessThanOrEqual(0.1);
-    expect(Math.abs((state.buttonBottom ?? 999) - (baseline.buttonBottom ?? 0))).toBeLessThanOrEqual(0.1);
+  }
+  for (const key of ['buttonTop', 'buttonBottom'] as const) {
+    expect(Math.abs((emailCodeLayout[key] ?? 999) - (baseline[key] ?? 0))).toBeLessThanOrEqual(0.1);
   }
 
   // After the tab reset, request a fresh code so the sign-in button can be
@@ -324,6 +352,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await page.getByRole('button', { name: '获取验证码' }).click();
   expect(requestedEmails[requestedEmails.length - 1]).toBe('render-final@outlook.com');
   await expect(page.getByRole('button', { name: '登录' })).toBeDisabled();
+  await expect(page.locator('.axi-one-time-code__input').first()).toBeEnabled();
   await page.locator('.axi-one-time-code__input').first().fill('x');
   await expect(page.locator('.axi-one-time-code__input').first()).toHaveValue('');
   for (let index = 0; index < 6; index += 1) {

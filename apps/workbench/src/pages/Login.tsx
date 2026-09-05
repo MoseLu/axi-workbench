@@ -29,7 +29,9 @@ type AuthMethodsResponse = { passwordLogin?: boolean };
 const RESEND_COOLDOWN_SECONDS = 60;
 const QR_POLL_INTERVAL_MS = 3_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const EMAIL_LOCAL_PART_PATTERN = /^[^\s@]+$/;
+// Keep the editable prefix in the common unquoted mailbox form. This avoids
+// accepting punctuation that the configured mailbox providers will reject.
+const EMAIL_LOCAL_PART_PATTERN = /^[A-Za-z0-9](?:(?:[A-Za-z0-9_-]|\.(?=[A-Za-z0-9]))*[A-Za-z0-9])?$/;
 const EMAIL_SUFFIX_OPTIONS = [
   'qq.com',
   '163.com',
@@ -41,7 +43,7 @@ type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
 
-const normalizeEmailLocalPart = (value: string) => value.split('@', 1)[0].replace(/\s/g, '');
+const normalizeEmailLocalPart = (value: string) => value.split('@', 1)[0].trim();
 
 /**
  * Web 登录入口。
@@ -215,6 +217,7 @@ const Login: React.FC = () => {
   const trimmedEmail = trimmedEmailLocalPart ? `${trimmedEmailLocalPart}@${emailSuffix}` : '';
   const emailSuffixIsSelected = EMAIL_SUFFIX_OPTIONS.includes(emailSuffix);
   const emailIsValid = emailSuffixIsSelected && EMAIL_LOCAL_PART_PATTERN.test(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
+  const emailFieldIsInvalid = emailLocalPart.length > 0 && !emailIsValid;
   const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
   const hasCurrentEmailChallenge = Boolean(sentTo) && sentTo === trimmedEmail;
   const isEmailCodeCoolingDown = hasCurrentEmailChallenge && cooldown > 0;
@@ -520,7 +523,7 @@ const Login: React.FC = () => {
                 {loginMode === 'password' && (
                 <form className="axi-login-form axi-login-form--password" onSubmit={handlePasswordLogin} noValidate>
                   <label htmlFor="axi-login-password-email">{t('auth.email')}</label>
-                  <div className="axi-login-form__row axi-login-form__row--email axi-login-form__row--password-email">
+                  <div className={`axi-login-form__row axi-login-form__row--email axi-login-form__row--password-email${emailFieldIsInvalid ? ' is-invalid' : ''}`}>
                     <input
                       id="axi-login-password-email"
                       name="email-local-part"
@@ -531,6 +534,10 @@ const Login: React.FC = () => {
                       value={emailLocalPart}
                       onChange={(event) => handleEmailLocalPartChange(event.target.value)}
                       placeholder={t('auth.email.localPartPlaceholder')}
+                      maxLength={64}
+                      pattern={EMAIL_LOCAL_PART_PATTERN.source}
+                      aria-invalid={emailFieldIsInvalid}
+                      spellCheck={false}
                       disabled={passwordSubmitting}
                     />
                     <div className="axi-login-email-suffix-wrap">
@@ -576,7 +583,7 @@ const Login: React.FC = () => {
               {loginMode === 'email' && (
                 <form className="axi-login-form axi-login-form--email" onSubmit={(event) => event.preventDefault()} noValidate>
                   <label htmlFor="axi-login-email">{t('auth.email')}</label>
-                  <div className="axi-login-form__row axi-login-form__row--email">
+                  <div className={`axi-login-form__row axi-login-form__row--email${emailFieldIsInvalid ? ' is-invalid' : ''}`}>
                     <input
                       id="axi-login-email"
                       name="email-local-part"
@@ -587,6 +594,10 @@ const Login: React.FC = () => {
                       value={emailLocalPart}
                       onChange={(event) => handleEmailLocalPartChange(event.target.value)}
                       placeholder={t('auth.email.localPartPlaceholder')}
+                      maxLength={64}
+                      pattern={EMAIL_LOCAL_PART_PATTERN.source}
+                      aria-invalid={emailFieldIsInvalid}
+                      spellCheck={false}
                       disabled={submitting}
                     />
                     <div className="axi-login-email-suffix-wrap">
