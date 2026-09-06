@@ -17,9 +17,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { request as httpRequest } from "node:http";
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 
 import { createControlPlane } from "../src/control-plane.mjs";
 import { createControlPlaneHttpServer } from "../src/server.mjs";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ---------- schema helpers ----------
 
@@ -610,7 +614,7 @@ test("schema validators reject drift from the mobile JS contract", () => {
   // Drift 1: server starts returning `expiresAtMs` instead of `codeExpiresAt`.
   const dropped = {
     ok: true,
-    pairingId: "pair_Z3q9rW2x4y6A8b1Cd2Ef3Gh4Ij5Kl7Mn8Pq9Rs",
+    pairingId: "pair_BPNDekvGPwv02yTjR_U3YRBN8g0_Y1Ysnml7",
     code: "042857",
     expiresAtMs: 1735689600000,
   };
@@ -618,7 +622,7 @@ test("schema validators reject drift from the mobile JS contract", () => {
   // Drift 2: server returns an extra unknown field under closed schema.
   const extra = {
     ok: true,
-    pairingId: "pair_Z3q9rW2x4y6A8b1Cd2Ef3Gh4Ij5Kl7Mn8Pq9Rs",
+    pairingId: "pair_BPNDekvGPwv02yTjR_U3YRBN8g0_Y1Ysnml7",
     code: "042857",
     codeExpiresAt: 1735689600,
     debugTrace: "leak",
@@ -651,85 +655,94 @@ test("schema validators reject drift from the mobile JS contract", () => {
 
 // ---------- live runtime cases ----------
 
-test("runtime: /mobile/v1/pair/start response matches PairStartResponse", async (t) => {
-  const { server } = await startControlPlane();
-  t.after(() => new Promise((resolve) => server.close(resolve)));
-  const result = await fetchJson(server, "POST", "/mobile/v1/pair/start", {
-    publicKeyHex: "00".repeat(32),
-    deviceName: "ci-android",
-  });
-  assert.equal(result.status, 200);
-  assertMatches("PairStartResponse", result.body, PairStartResponseSchema);
-});
-
-test("runtime: /mobile/v1/pair/qr/scan response matches QrPairScanResponse", async (t) => {
+async function withControlPlane(run) {
   const { server, controlPlane } = await startControlPlane();
-  t.after(() => new Promise((resolve) => server.close(resolve)));
-  // The QR scan route is only reachable through the gateway credential; the
-  // real path the server exposes here is direct for local tests.
-  const webPairingId = "webpair_" + "a".repeat(20);
-  const scanToken = "scan_" + "b".repeat(20);
-  const result = await fetchJson(
-    server,
-    "POST",
-    "/mobile/v1/pair/qr/scan",
-    {
-      webPairingId,
-      scanToken,
-      publicKeyHex: "00".repeat(64),
-      publicKeyAlgorithm: "Ed25519",
-      deviceName: "ci-android",
-    },
-    { "x-axi-internal-credential": "ci-only" },
-  );
-  // The QR scan route may legitimately fail because the server cannot mint
-  // webPairingId outside the gateway. We only assert that *if* it returns
-  // 200, the body matches our schema. The contract check protects the success
-  // path against drift; the failure path is covered by mobile-routes.test.mjs.
-  if (result.status === 200) {
-    assertMatches("QrPairScanResponse", result.body, QrPairScanResponseSchema);
-  } else {
-    assert.ok(result.body?.error, "failure responses must carry an `error` field");
+  try {
+    return await run({ server, controlPlane });
+  } finally {
+    await new Promise((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
   }
-  assert.ok(controlPlane);
+}
+
+test("runtime: /mobile/v1/pair/start response matches PairStartResponse", async () => {
+  await withControlPlane(async ({ server }) => {
+    const result = await fetchJson(server, "POST", "/mobile/v1/pair/start", {
+      publicKeyHex: "00".repeat(32),
+      deviceName: "ci-android",
+    });
+    assert.equal(result.status, 200);
+    assertMatches("PairStartResponse", result.body, PairStartResponseSchema);
+  });
 });
 
-test("runtime: /mobile/v1/workspace snapshot matches MobileWorkspaceSnapshot", async (t) => {
-  const { server } = await startControlPlane();
-  t.after(() => new Promise((resolve) => server.close(resolve)));
-  const result = await fetchJson(server, "GET", "/mobile/v1/workspace", undefined, {
-    Authorization: "Bearer test-owner",
+test("runtime: /mobile/v1/pair/qr/scan response matches QrPairScanResponse", async () => {
+  await withControlPlane(async ({ server }) => {
+    // The QR scan route is only reachable through the API Gateway which
+    // rewrites /api/v1/mobile/* to /internal/mobile/v1/* and injects its
+    // service credential. Without a real gateway the scan always returns a
+    // 401/400 — that path is covered by mobile-routes.test.mjs. Here we only
+    // assert the success body shape using the fixture when the route returns
+    // 200, otherwise we require a structured error body.
+    const result = await fetchJson(
+      server,
+      "POST",
+      "/internal/mobile/v1/pair/qr/scan",
+      {
+        webPairingId: "webpair_" + "a".repeat(20),
+        scanToken: "scan_" + "b".repeat(20),
+        publicKeyHex: "00".repeat(64),
+        publicKeyAlgorithm: "Ed25519",
+        deviceName: "ci-android",
+      },
+      // No gateway token means the gateway gate rejects with 401 — the response
+      // body must always carry an `error` field; the fixture still proves the
+      // success-path contract is intact.
+    );
+    if (result.status === 200) {
+      assertMatches("QrPairScanResponse", result.body, QrPairScanResponseSchema);
+    } else {
+      assert.ok(typeof result.body?.error === "string", "failure responses must carry a string `error` field");
+    }
   });
-  assert.equal(result.status, 200);
-  assertMatches("MobileWorkspaceSnapshot", result.body, MobileWorkspaceSnapshotSchema);
 });
 
-test("runtime: /mobile/v1/approval-scans/resolve preview matches ApprovalScanPreview", async (t) => {
-  const { server, controlPlane } = await startControlPlane();
-  t.after(() => new Promise((resolve) => server.close(resolve)));
-
-  // Seed a pending approval, then create a scan, then resolve it via the
-  // HTTP route and assert the response shape.
-  const created = controlPlane.createMobileProjectAction({
-    idempotencyKey: "mobile_schema_scan_seed",
-    projectId: "sample-app",
-    actionId: "diagnose",
-    actionType: "project_diagnosis",
-    deviceId: "dev_test-owner",
+test("runtime: /mobile/v1/workspace snapshot matches MobileWorkspaceSnapshot", async () => {
+  await withControlPlane(async ({ server }) => {
+    const result = await fetchJson(server, "GET", "/mobile/v1/workspace", undefined, {
+      Authorization: "Bearer test-owner",
+    });
+    assert.equal(result.status, 200);
+    assertMatches("MobileWorkspaceSnapshot", result.body, MobileWorkspaceSnapshotSchema);
   });
-  assert.equal(created.status, "pending_approval");
-  const scan = controlPlane.createApprovalScan({ approvalId: created.approvalId });
-  assert.equal(scan.ok, true);
+});
 
-  const result = await fetchJson(
-    server,
-    "POST",
-    "/mobile/v1/approval-scans/resolve",
-    { scanToken: scan.scanId },
-    { Authorization: "Bearer test-owner" },
-  );
-  assert.equal(result.status, 200);
-  assertMatches("ApprovalScanPreview", result.body, ApprovalScanPreviewSchema);
+test("runtime: /mobile/v1/approval-scans/resolve preview matches ApprovalScanPreview", async () => {
+  await withControlPlane(async ({ server, controlPlane }) => {
+    // Seed a pending approval, then create a scan, then resolve it via the
+    // HTTP route and assert the response shape.
+    const created = controlPlane.createMobileProjectAction({
+      idempotencyKey: "mobile_schema_scan_seed",
+      projectId: "sample-app",
+      actionId: "diagnose",
+      actionType: "project_diagnosis",
+      deviceId: "dev_test-owner",
+    });
+    assert.equal(created.status, "pending_approval");
+    const scan = controlPlane.createApprovalScan({ approvalId: created.approvalId });
+    assert.equal(scan.ok, true);
+
+    const result = await fetchJson(
+      server,
+      "POST",
+      "/mobile/v1/approval-scans/resolve",
+      { scanToken: scan.scanId },
+      { Authorization: "Bearer test-owner" },
+    );
+    assert.equal(result.status, 200);
+    assertMatches("ApprovalScanPreview", result.body, ApprovalScanPreviewSchema);
+  });
 });
 
 test("schema version stamp is recorded so stale failures can be triaged", () => {
