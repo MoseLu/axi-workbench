@@ -188,10 +188,11 @@ xcrun notarytool store-credentials "workbench-desktop-notary" \
 
 ## 应用图标
 
-桌面端中央标记使用与 Web 端完全一致的六色大尺寸层叠圆润花瓣，六瓣沿径向边界相接、不留间距且不互相覆盖；外轮廓阴影、内层压边和高光线构成立体线条，围绕一个中心圆核按
-60° 旋转构造。图标画布保持透明，不附加深色圆角方底。标记源文件为
-`apps/workbench/public/favicon.svg`，`src-tauri/icons/icon.svg` 是由脚本生成的
-桌面应用图标母版。生成全部 Tauri 图标资源：
+桌面 Dock 图标使用 `apps/workbench/src/assets/brand/ip-as-logo/` 中
+`selected.json` 指定的 IP 栅格；`src-tauri/icons/icon-source.png` 是 Tauri
+图标母版。几何十二色花瓣仍保留在 `apps/workbench/public/favicon.svg`，并由脚本
+同步为 `src-tauri/icons/icon.svg` 以通过几何契约，不再作为 Dock 输入。
+生成全部 Tauri 图标资源：
 
 ```bash
 pnpm --dir apps/workbench-desktop icon

@@ -78,7 +78,6 @@ if (!signingIdentity) {
 }
 
 run(process.execPath, ['scripts/generate-source-icon.mjs'])
-run('pnpm', ['exec', 'tauri', 'icon', 'src-tauri/icons/icon.svg', '--output', 'src-tauri/icons'])
 
 const configOverlay = JSON.stringify({
   bundle: {

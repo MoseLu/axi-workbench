@@ -1,0 +1,10 @@
+{
+  "id": "A1",
+  "file": "A1.jpg",
+  "direction": "A",
+  "emergence": "lower-left",
+  "ipColors": ["#0167FF", "#FF0167"],
+  "background": "#E8DCC8",
+  "width": 1024,
+  "height": 1024
+}
