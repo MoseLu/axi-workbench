@@ -158,44 +158,45 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // can only come from the fixed select options.
   await expect(emailInput).toHaveValue('render');
   await expect(emailInput).toHaveAttribute('aria-invalid', 'false');
-  await expect(page.locator('#axi-login-email-suffix')).toHaveValue('qq.com');
-  await expect(page.locator('#axi-login-email-suffix option')).toHaveCount(4);
-  await expect(page.locator('#axi-login-email-suffix option')).toHaveText([
+  const suffixCombobox = page.getByRole('combobox', { name: '邮箱后缀' });
+  await expect(suffixCombobox).toBeVisible();
+  await expect(suffixCombobox).toHaveAttribute('data-value', 'qq.com');
+  await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-value')).toHaveText('@qq.com');
+  await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-chevron')).toHaveCount(1);
+  await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-wrap')).not.toHaveClass(/is-open/);
+  await suffixCombobox.click();
+  await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-wrap')).toHaveClass(/is-open/);
+  await expect.poll(async () => page.locator('.axi-login-form--email .axi-login-email-suffix-chevron').evaluate((element) => getComputedStyle(element).transform)).toContain('matrix');
+  await expect(page.getByRole('option')).toHaveText([
     '@qq.com',
     '@163.com',
     '@gmail.com',
     '@outlook.com',
   ]);
-  await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toBeVisible();
-  await expect(page.locator('.axi-login-email-suffix-chevron')).toHaveCount(1);
-  await page.locator('#axi-login-email-suffix').selectOption('163.com');
-  await expect(page.locator('#axi-login-email-suffix')).toHaveValue('163.com');
+  await page.getByRole('option', { name: '@163.com' }).click();
+  await expect(suffixCombobox).toHaveAttribute('data-value', '163.com');
   await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-value')).toHaveText('@163.com');
+  await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-wrap')).not.toHaveClass(/is-open/);
   const emailFieldSizing = await page.evaluate(() => {
     const input = document.querySelector('#axi-login-email')?.getBoundingClientRect();
     const wrap = document.querySelector('.axi-login-form--email .axi-login-email-suffix-wrap');
-    const value = wrap?.querySelector('.axi-login-email-suffix-value');
-    if (!input || !wrap || !value) return null;
-    const range = document.createRange();
-    range.selectNodeContents(value);
-    const textBox = range.getBoundingClientRect();
-    const wrapBox = wrap.getBoundingClientRect();
+    const suffix = wrap?.querySelector('.axi-login-email-suffix');
+    if (!input || !wrap || !suffix) return null;
     return {
       inputWidth: input.width,
-      suffixWidth: wrapBox.width,
-      suffixRatio: wrapBox.width / (input.width + wrapBox.width),
-      leftGap: textBox.left - wrapBox.left,
-      rightGap: wrapBox.right - textBox.right,
-      justifyContent: getComputedStyle(value).justifyContent,
+      suffixWidth: wrap.getBoundingClientRect().width,
+      suffixRatio: wrap.getBoundingClientRect().width / (input.width + wrap.getBoundingClientRect().width),
+      display: getComputedStyle(suffix).display,
+      wrapBackground: getComputedStyle(wrap).backgroundColor,
     };
   });
   expect(emailFieldSizing).not.toBeNull();
   expect(emailFieldSizing?.inputWidth ?? 0).toBeGreaterThan(emailFieldSizing?.suffixWidth ?? 999);
-  expect(emailFieldSizing?.suffixWidth ?? 0).toBeGreaterThanOrEqual(128);
-  expect(emailFieldSizing?.suffixWidth ?? 999).toBeLessThanOrEqual(160);
-  expect(emailFieldSizing?.suffixRatio ?? 1).toBeLessThanOrEqual(0.48);
-  expect(emailFieldSizing?.justifyContent).toBe('center');
-  expect(Math.abs((emailFieldSizing?.leftGap ?? 0) - (emailFieldSizing?.rightGap ?? 99))).toBeLessThanOrEqual(2);
+  expect(emailFieldSizing?.suffixWidth ?? 0).toBeGreaterThanOrEqual(96);
+  expect(emailFieldSizing?.suffixWidth ?? 999).toBeLessThanOrEqual(140);
+  expect(emailFieldSizing?.suffixRatio ?? 1).toBeLessThanOrEqual(0.45);
+  expect(['flex', 'inline-flex']).toContain(emailFieldSizing?.display);
+  expect(emailFieldSizing?.wrapBackground).not.toBe('rgba(0, 0, 0, 0)');
   // The first row is only the address field; the send action belongs beside
   // the six OTP slots on the second row.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toHaveCount(0);
@@ -222,7 +223,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const row = document.querySelector('.axi-login-form__row--email');
     const input = row?.querySelector('input');
     const suffixWrap = row?.querySelector('.axi-login-email-suffix-wrap');
-    const suffix = row?.querySelector('select');
+    const suffix = row?.querySelector('.axi-login-email-suffix');
     if (!row || !input || !suffixWrap || !suffix) return null;
     return {
       rowRight: getComputedStyle(row).borderRightWidth,
@@ -230,7 +231,6 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       inputRight: getComputedStyle(input).borderRightWidth,
       suffixWrapLeft: getComputedStyle(suffixWrap).borderLeftWidth,
       suffixLeft: getComputedStyle(suffix).borderLeftWidth,
-      suffixAppearance: getComputedStyle(suffix).appearance,
       suffixRadius: getComputedStyle(suffix).borderRadius,
     };
   });
@@ -240,7 +240,6 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     inputRight: '0px',
     suffixWrapLeft: '1px',
     suffixLeft: '0px',
-    suffixAppearance: 'none',
     suffixRadius: '0px',
   });
   await expect(page.locator('.axi-one-time-code__input').first()).toBeDisabled();
@@ -338,7 +337,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // back at its initial "请先获取验证码" hint.
   await page.getByRole('tab', { name: '密码登录' }).click();
   await expect(page.locator('#axi-login-password')).toBeVisible();
-  await expect(page.locator('#axi-login-password-email-suffix')).toHaveValue('163.com');
+  await expect(page.locator('#axi-login-password-email-suffix')).toHaveAttribute('data-value', '163.com');
   await page.locator('#axi-login-password-email').fill('password@example.com');
   await expect(page.locator('#axi-login-password-email')).toHaveValue('password');
   const passwordLayout = await page.evaluate(() => {
@@ -373,7 +372,10 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   // armed. The OTP slots must reject non-digit input and only enable the
   // button when exactly 6 digits are entered.
   await page.locator('#axi-login-email').fill('render-final@example.com');
-  await page.locator('#axi-login-email-suffix').selectOption('outlook.com');
+  await page.getByRole('combobox', { name: '邮箱后缀' }).click();
+  await page.getByRole('option', { name: '@outlook.com' }).click();
+  await expect(page.getByRole('option')).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toHaveAttribute('data-value', 'outlook.com');
   await page.getByRole('button', { name: '获取验证码' }).click();
   expect(requestedEmails[requestedEmails.length - 1]).toBe('render-final@outlook.com');
   await expect(page.getByRole('button', { name: '登录' })).toBeDisabled();
@@ -381,7 +383,11 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await page.locator('.axi-one-time-code__input').first().fill('x');
   await expect(page.locator('.axi-one-time-code__input').first()).toHaveValue('');
   for (let index = 0; index < 6; index += 1) {
-    await page.locator('.axi-one-time-code__input').nth(index).fill(String(index + 1));
+    const slot = page.locator('.axi-one-time-code__input').nth(index);
+    await slot.click();
+    await page.keyboard.press(String(index + 1));
+    await page.clock.runFor(16);
+    await expect(slot).toHaveValue(String(index + 1));
   }
   await expect(page.getByRole('button', { name: '登录' })).toBeEnabled();
 });

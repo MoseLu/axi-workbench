@@ -187,23 +187,23 @@ requireMatch(
 );
 requireMatch(
   loginCss,
-  /\.axi-login-form__row--email\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*9rem;/,
-  'login email suffix must stay a compact 9rem append instead of taking the larger column',
+  /\.axi-login-form__row--email\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*auto;/,
+  'login email suffix must size like an Element append instead of a fixed majority column',
 );
 forbidMatch(
   loginCss,
-  /minmax\(11rem,\s*1\.2fr\)|minmax\(0,\s*\.8fr\)/,
-  'login email suffix must not reserve a majority grid column',
+  /minmax\(11rem,\s*1\.2fr\)|minmax\(0,\s*\.8fr\)|\s9rem;/,
+  'login email suffix must not reserve a majority or fixed 9rem grid column',
 );
 requireMatch(
   loginCss,
-  /\.axi-login-form \.axi-login-email-suffix-value\s*\{[\s\S]*?justify-content:\s*center;/,
-  'login email suffix value must be horizontally centered in the append',
+  /\.axi-login-email-suffix-wrap\.is-open \.axi-login-email-suffix-chevron\s*\{[\s\S]*?transform:\s*rotate\(180deg\);/,
+  'login email suffix caret must rotate when the selector is open',
 );
 requireMatch(
   login,
-  /className="axi-login-email-suffix-value"/,
-  'login email suffix must render a centered overlay because native select text cannot be reliably centered',
+  /role="listbox"/,
+  'login email suffix must be a real selector menu, not a decorative overlay on a native select',
 );
 forbidMatch(webShellCss, /wb-mobile-shell|wb-desktop-topbar|body\.wb-desktop-body|AppLayout/, 'Web shell CSS must not own a mobile shell or legacy desktop layout');
 

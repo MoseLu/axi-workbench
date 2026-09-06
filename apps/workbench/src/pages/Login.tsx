@@ -45,6 +45,81 @@ type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
 
+function EmailSuffixSelect({
+  id,
+  value,
+  disabled,
+  label,
+  onChange,
+}: {
+  id: string;
+  value: EmailSuffix;
+  disabled?: boolean;
+  label: string;
+  onChange: (value: EmailSuffix) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const listId = `${id}-list`;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className={`axi-login-email-suffix-wrap${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        id={id}
+        className="axi-login-email-suffix"
+        role="combobox"
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        data-value={value}
+        disabled={disabled}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="axi-login-email-suffix-value">@{value}</span>
+        <svg className="axi-login-email-suffix-chevron" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M2.4 4.2 L6 8 L9.6 4.2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open ? (
+        <ul id={listId} className="axi-login-email-suffix-menu" role="listbox" aria-label={label}>
+          {EMAIL_SUFFIX_OPTIONS.map((suffix) => (
+            <li
+              key={suffix}
+              role="option"
+              aria-selected={suffix === value}
+              className={`axi-login-email-suffix-option${suffix === value ? ' is-selected' : ''}`}
+              onClick={() => {
+                onChange(suffix);
+                setOpen(false);
+              }}
+            >
+              @{suffix}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Web 登录入口。
  *
@@ -250,8 +325,8 @@ const Login: React.FC = () => {
     setHint(null);
   };
 
-  const handleEmailSuffixChange = (value: string) => {
-    setEmailSuffix(value as EmailSuffix);
+  const handleEmailSuffixChange = (value: EmailSuffix) => {
+    setEmailSuffix(value);
     resetEmailChallenge();
     setError(null);
     setHint(null);
@@ -540,21 +615,13 @@ const Login: React.FC = () => {
                       spellCheck={false}
                       disabled={passwordSubmitting}
                     />
-                    <div className="axi-login-email-suffix-wrap">
-                      <select
-                        id="axi-login-password-email-suffix"
-                        name="email-suffix"
-                        className="axi-login-email-suffix"
-                        aria-label={t('auth.email.suffixLabel')}
-                        value={emailSuffix}
-                        onChange={(event) => handleEmailSuffixChange(event.target.value)}
-                        disabled={passwordSubmitting}
-                      >
-                        {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
-                      </select>
-                      <span className="axi-login-email-suffix-value" aria-hidden="true">@{emailSuffix}</span>
-                      <span className="axi-login-email-suffix-chevron" aria-hidden="true" />
-                    </div>
+                    <EmailSuffixSelect
+                      id="axi-login-password-email-suffix"
+                      value={emailSuffix}
+                      disabled={passwordSubmitting}
+                      label={t('auth.email.suffixLabel')}
+                      onChange={handleEmailSuffixChange}
+                    />
                   </div>
                   <label htmlFor="axi-login-password">密码</label>
                   <div className="axi-login-form__row axi-login-form__row--input">
@@ -601,21 +668,13 @@ const Login: React.FC = () => {
                       spellCheck={false}
                       disabled={submitting}
                     />
-                    <div className="axi-login-email-suffix-wrap">
-                      <select
-                        id="axi-login-email-suffix"
-                        name="email-suffix"
-                        className="axi-login-email-suffix"
-                        aria-label={t('auth.email.suffixLabel')}
-                        value={emailSuffix}
-                        onChange={(event) => handleEmailSuffixChange(event.target.value)}
-                        disabled={submitting}
-                      >
-                        {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
-                      </select>
-                      <span className="axi-login-email-suffix-value" aria-hidden="true">@{emailSuffix}</span>
-                      <span className="axi-login-email-suffix-chevron" aria-hidden="true" />
-                    </div>
+                    <EmailSuffixSelect
+                      id="axi-login-email-suffix"
+                      value={emailSuffix}
+                      disabled={submitting}
+                      label={t('auth.email.suffixLabel')}
+                      onChange={handleEmailSuffixChange}
+                    />
                   </div>
 
                   <label htmlFor="axi-login-otp-first">{t('auth.login.codeLabel')}</label>
