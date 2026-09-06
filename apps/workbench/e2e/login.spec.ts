@@ -159,7 +159,13 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await expect(emailInput).toHaveValue('render');
   await expect(emailInput).toHaveAttribute('aria-invalid', 'false');
   await expect(page.locator('#axi-login-email-suffix')).toHaveValue('qq.com');
-  await expect(page.locator('#axi-login-email-suffix option')).toHaveCount(5);
+  await expect(page.locator('#axi-login-email-suffix option')).toHaveCount(4);
+  await expect(page.locator('#axi-login-email-suffix option')).toHaveText([
+    '@qq.com',
+    '@163.com',
+    '@gmail.com',
+    '@outlook.com',
+  ]);
   await expect(page.getByRole('combobox', { name: '邮箱后缀' })).toBeVisible();
   await expect(page.locator('.axi-login-email-suffix-chevron')).toHaveCount(1);
   await page.locator('#axi-login-email-suffix').selectOption('163.com');

@@ -40,7 +40,6 @@ const EMAIL_SUFFIX_OPTIONS = [
   '163.com',
   'gmail.com',
   'outlook.com',
-  'axi.workbench.dev',
 ] as const;
 type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';

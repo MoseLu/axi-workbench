@@ -65,7 +65,7 @@ func renderVerificationCodeHTML(p VerificationCodeParams, logoSource string) str
 		p.TimezoneLabel = ""
 	}
 	if p.HelpURL == "" {
-		p.HelpURL = "https://axi.workbench.dev/help"
+		p.HelpURL = "https://workbench.axiomaticworld.com/help"
 	}
 	if p.IgnoreNote == "" {
 		p.IgnoreNote = "如果您没有请求此验证码，请忽略此邮件。"

@@ -114,6 +114,16 @@ func TestRenderVerificationCodePreviewHTMLUsesOfficialLogoDataURL(t *testing.T) 
 	}
 }
 
+func TestRenderVerificationCodeHTMLUsesCanonicalWorkbenchHelpURLByDefault(t *testing.T) {
+	html := RenderVerificationCodeHTML(VerificationCodeParams{
+		Code:      "123456",
+		ExpiresAt: time.Date(2026, 8, 8, 12, 0, 0, 0, time.UTC),
+	})
+	if !strings.Contains(html, `href="https://workbench.axiomaticworld.com/help"`) {
+		t.Fatal("default help link should use the canonical Workbench domain")
+	}
+}
+
 func TestRenderVerificationCodeText(t *testing.T) {
 	params := VerificationCodeParams{
 		Brand:     "Axi Workbench",

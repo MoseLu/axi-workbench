@@ -14,7 +14,7 @@ func main() {
 		Purpose:   "login",
 		Code:      "632557",
 		ExpiresAt: time.Now().UTC().Add(15 * time.Minute),
-		HelpURL:   "https://axi.workbench.dev/help",
+		HelpURL:   "https://workbench.axiomaticworld.com/help",
 	}
 	html := email.RenderVerificationCodePreviewHTML(params)
 	text := email.RenderVerificationCodeText(params)
