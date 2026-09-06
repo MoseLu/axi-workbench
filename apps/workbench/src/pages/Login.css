@@ -576,8 +576,11 @@
   width: 100%;
 }
 
-/* Email row: the prefix and the controlled suffix share one compact field. */
+/* Email row: reserve the larger share for the controlled suffix. The 11rem
+ * floor keeps the longest configured domain readable even on narrow screens. */
 .axi-login-form__row--email {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(11rem, 1.2fr);
   width: 21.125rem;
   max-width: 100%;
   box-sizing: border-box;
@@ -606,9 +609,8 @@
 /* Match the generic form-input selector's specificity so its border cannot
  * reopen the seam between the email field and the send-code action. */
 .axi-login-form .axi-login-form__row--email input:not(.axi-one-time-code__input) {
-  width: auto;
+  width: 100%;
   min-width: 0;
-  flex: 1 1 auto;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -620,9 +622,8 @@
  * domain input. */
 .axi-login-form .axi-login-email-suffix-wrap {
   position: relative;
-  flex: 0 1 10rem;
-  width: 10rem;
-  max-width: 48%;
+  width: auto;
+  max-width: none;
   min-width: 0;
   min-height: 2.625rem;
   box-sizing: border-box;

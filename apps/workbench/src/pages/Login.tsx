@@ -9,6 +9,12 @@ import { useI18n } from '../i18n';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
 import { createOneTimeCode, oneTimeCodeValue, type OneTimeCode } from '../lib/oneTimeCode';
 import {
+  EMAIL_LOCAL_PART_MAX_LENGTH,
+  EMAIL_LOCAL_PART_PATTERN,
+  isValidEmailLocalPart,
+  normalizeEmailLocalPart,
+} from '../lib/emailValidation';
+import {
   consumeWebDeviceLoginQr,
   createWebDeviceLoginQr,
   getWebDeviceLoginQrStatus,
@@ -29,9 +35,6 @@ type AuthMethodsResponse = { passwordLogin?: boolean };
 const RESEND_COOLDOWN_SECONDS = 60;
 const QR_POLL_INTERVAL_MS = 3_000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Keep the editable prefix in the common unquoted mailbox form. This avoids
-// accepting punctuation that the configured mailbox providers will reject.
-const EMAIL_LOCAL_PART_PATTERN = /^[A-Za-z0-9](?:(?:[A-Za-z0-9_-]|\.(?=[A-Za-z0-9]))*[A-Za-z0-9])?$/;
 const EMAIL_SUFFIX_OPTIONS = [
   'qq.com',
   '163.com',
@@ -42,8 +45,6 @@ const EMAIL_SUFFIX_OPTIONS = [
 type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
-
-const normalizeEmailLocalPart = (value: string) => value.split('@', 1)[0].trim();
 
 /**
  * Web 登录入口。
@@ -216,7 +217,7 @@ const Login: React.FC = () => {
   const trimmedEmailLocalPart = normalizeEmailLocalPart(emailLocalPart).trim().toLowerCase();
   const trimmedEmail = trimmedEmailLocalPart ? `${trimmedEmailLocalPart}@${emailSuffix}` : '';
   const emailSuffixIsSelected = EMAIL_SUFFIX_OPTIONS.includes(emailSuffix);
-  const emailIsValid = emailSuffixIsSelected && EMAIL_LOCAL_PART_PATTERN.test(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
+  const emailIsValid = emailSuffixIsSelected && isValidEmailLocalPart(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
   const emailFieldIsInvalid = emailLocalPart.length > 0 && !emailIsValid;
   const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
   const hasCurrentEmailChallenge = Boolean(sentTo) && sentTo === trimmedEmail;
@@ -534,7 +535,7 @@ const Login: React.FC = () => {
                       value={emailLocalPart}
                       onChange={(event) => handleEmailLocalPartChange(event.target.value)}
                       placeholder={t('auth.email.localPartPlaceholder')}
-                      maxLength={64}
+                      maxLength={EMAIL_LOCAL_PART_MAX_LENGTH}
                       pattern={EMAIL_LOCAL_PART_PATTERN.source}
                       aria-invalid={emailFieldIsInvalid}
                       spellCheck={false}
@@ -594,7 +595,7 @@ const Login: React.FC = () => {
                       value={emailLocalPart}
                       onChange={(event) => handleEmailLocalPartChange(event.target.value)}
                       placeholder={t('auth.email.localPartPlaceholder')}
-                      maxLength={64}
+                      maxLength={EMAIL_LOCAL_PART_MAX_LENGTH}
                       pattern={EMAIL_LOCAL_PART_PATTERN.source}
                       aria-invalid={emailFieldIsInvalid}
                       spellCheck={false}

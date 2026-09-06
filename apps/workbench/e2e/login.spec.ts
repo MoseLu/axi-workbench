@@ -167,10 +167,15 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   const emailFieldSizing = await page.evaluate(() => {
     const input = document.querySelector('#axi-login-email')?.getBoundingClientRect();
     const suffix = document.querySelector('#axi-login-email-suffix')?.getBoundingClientRect();
-    return { inputWidth: input?.width ?? 0, suffixWidth: suffix?.width ?? 0 };
+    return {
+      inputWidth: input?.width ?? 0,
+      suffixWidth: suffix?.width ?? 0,
+      suffixRatio: input && suffix ? suffix.width / (input.width + suffix.width) : 0,
+    };
   });
-  expect(emailFieldSizing.inputWidth).toBeGreaterThan(emailFieldSizing.suffixWidth);
-  expect(emailFieldSizing.suffixWidth).toBeGreaterThanOrEqual(150);
+  expect(emailFieldSizing.suffixWidth).toBeGreaterThan(emailFieldSizing.inputWidth);
+  expect(emailFieldSizing.suffixWidth).toBeGreaterThanOrEqual(190);
+  expect(emailFieldSizing.suffixRatio).toBeGreaterThanOrEqual(0.58);
   // The first row is only the address field; the send action belongs beside
   // the six OTP slots on the second row.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toHaveCount(0);
