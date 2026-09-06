@@ -116,6 +116,10 @@ kubeconfig
 *.tgz
 .cache/
 
+# Workbench Web Playwright artifacts
+apps/workbench/test-results/
+apps/workbench/playwright-report/
+
 # Workbench Mac App（Tauri 2）本地构建产物
 apps/workbench-desktop/workbench-dist/
 apps/workbench-desktop/src-tauri/gen/
