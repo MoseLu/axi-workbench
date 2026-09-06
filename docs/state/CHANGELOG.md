@@ -38,7 +38,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
-- 调整 Web/Tauri 登录面板的邮箱地址组合输入：后缀选择区扩展到更大的受控列并保证长域名可读；前缀限制为常见邮箱 local-part 格式，拒绝特殊字符、非法点边界和超长值，非法输入不会触发验证码或密码登录。
+- 收紧 Web/Tauri 登录面板邮箱后缀为 9rem 的紧凑 append，并用居中叠层显示当前域名；原生 `<select>` 在 App/WebKit 下无法可靠水平居中。前缀仍限制为常见邮箱 local-part 格式，拒绝特殊字符、非法点边界和超长值，非法输入不会触发验证码或密码登录。
 
 - 修正 macOS 桌面包的 Gateway 目标：正式打包默认注入 `https://workbench.axiomaticworld.com`，并在产物校验中确认公网地址已生效，避免可分发 App 运行时使用 `127.0.0.1:8088`；本地 Gateway 仅能通过显式调试开关使用。
 - 增强桌面 Gateway 默认值：生产 Web 构建即使未显式注入环境变量也优先使用公网地址，开发构建仍保留本地回环地址。

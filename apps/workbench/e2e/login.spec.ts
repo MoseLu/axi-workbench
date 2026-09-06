@@ -170,18 +170,32 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await expect(page.locator('.axi-login-email-suffix-chevron')).toHaveCount(1);
   await page.locator('#axi-login-email-suffix').selectOption('163.com');
   await expect(page.locator('#axi-login-email-suffix')).toHaveValue('163.com');
+  await expect(page.locator('.axi-login-form--email .axi-login-email-suffix-value')).toHaveText('@163.com');
   const emailFieldSizing = await page.evaluate(() => {
     const input = document.querySelector('#axi-login-email')?.getBoundingClientRect();
-    const suffix = document.querySelector('#axi-login-email-suffix')?.getBoundingClientRect();
+    const wrap = document.querySelector('.axi-login-form--email .axi-login-email-suffix-wrap');
+    const value = wrap?.querySelector('.axi-login-email-suffix-value');
+    if (!input || !wrap || !value) return null;
+    const range = document.createRange();
+    range.selectNodeContents(value);
+    const textBox = range.getBoundingClientRect();
+    const wrapBox = wrap.getBoundingClientRect();
     return {
-      inputWidth: input?.width ?? 0,
-      suffixWidth: suffix?.width ?? 0,
-      suffixRatio: input && suffix ? suffix.width / (input.width + suffix.width) : 0,
+      inputWidth: input.width,
+      suffixWidth: wrapBox.width,
+      suffixRatio: wrapBox.width / (input.width + wrapBox.width),
+      leftGap: textBox.left - wrapBox.left,
+      rightGap: wrapBox.right - textBox.right,
+      justifyContent: getComputedStyle(value).justifyContent,
     };
   });
-  expect(emailFieldSizing.suffixWidth).toBeGreaterThan(emailFieldSizing.inputWidth);
-  expect(emailFieldSizing.suffixWidth).toBeGreaterThanOrEqual(190);
-  expect(emailFieldSizing.suffixRatio).toBeGreaterThanOrEqual(0.58);
+  expect(emailFieldSizing).not.toBeNull();
+  expect(emailFieldSizing?.inputWidth ?? 0).toBeGreaterThan(emailFieldSizing?.suffixWidth ?? 999);
+  expect(emailFieldSizing?.suffixWidth ?? 0).toBeGreaterThanOrEqual(128);
+  expect(emailFieldSizing?.suffixWidth ?? 999).toBeLessThanOrEqual(160);
+  expect(emailFieldSizing?.suffixRatio ?? 1).toBeLessThanOrEqual(0.48);
+  expect(emailFieldSizing?.justifyContent).toBe('center');
+  expect(Math.abs((emailFieldSizing?.leftGap ?? 0) - (emailFieldSizing?.rightGap ?? 99))).toBeLessThanOrEqual(2);
   // The first row is only the address field; the send action belongs beside
   // the six OTP slots on the second row.
   await expect(page.locator('.axi-login-form__row--email .axi-login-text-button--send')).toHaveCount(0);

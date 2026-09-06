@@ -552,6 +552,7 @@ const Login: React.FC = () => {
                       >
                         {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
                       </select>
+                      <span className="axi-login-email-suffix-value" aria-hidden="true">@{emailSuffix}</span>
                       <span className="axi-login-email-suffix-chevron" aria-hidden="true" />
                     </div>
                   </div>
@@ -612,6 +613,7 @@ const Login: React.FC = () => {
                       >
                         {EMAIL_SUFFIX_OPTIONS.map((suffix) => <option key={suffix} value={suffix}>@{suffix}</option>)}
                       </select>
+                      <span className="axi-login-email-suffix-value" aria-hidden="true">@{emailSuffix}</span>
                       <span className="axi-login-email-suffix-chevron" aria-hidden="true" />
                     </div>
                   </div>

@@ -576,11 +576,11 @@
   width: 100%;
 }
 
-/* Email row: reserve the larger share for the controlled suffix. The 11rem
- * floor keeps the longest configured domain readable even on narrow screens. */
+/* Email row: prefix keeps the remaining width. The suffix is a compact
+ * append sized for the longest allowlisted domain plus the chevron. */
 .axi-login-form__row--email {
   display: grid;
-  grid-template-columns: minmax(0, .8fr) minmax(11rem, 1.2fr);
+  grid-template-columns: minmax(0, 1fr) 9rem;
   width: 21.125rem;
   max-width: 100%;
   box-sizing: border-box;
@@ -622,8 +622,8 @@
  * domain input. */
 .axi-login-form .axi-login-email-suffix-wrap {
   position: relative;
-  width: auto;
-  max-width: none;
+  width: 9rem;
+  max-width: 9rem;
   min-width: 0;
   min-height: 2.625rem;
   box-sizing: border-box;
@@ -636,18 +636,24 @@
   height: 100%;
   min-height: 2.625rem;
   box-sizing: border-box;
-  padding: 0 1.75rem 0 var(--space-2);
+  padding: 0 1.5rem;
   border: 0;
   border-radius: 0;
-  color: var(--palette-gray-700);
+  color: transparent;
   background: transparent;
   cursor: pointer;
   font: inherit;
   font-size: var(--text-sm);
   outline: none;
   appearance: none;
+  -webkit-text-fill-color: transparent;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.axi-login-form .axi-login-email-suffix option {
+  color: var(--palette-gray-700);
+  -webkit-text-fill-color: var(--palette-gray-700);
 }
 
 .axi-login-form .axi-login-email-suffix:disabled {
@@ -657,6 +663,21 @@
 
 .axi-login-form .axi-login-email-suffix-wrap:focus-within {
   border-left-color: var(--color-brand);
+}
+
+.axi-login-form .axi-login-email-suffix-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 1.5rem;
+  box-sizing: border-box;
+  color: var(--palette-gray-700);
+  font-size: var(--text-sm);
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .axi-login-form .axi-login-email-suffix-chevron {
@@ -672,6 +693,7 @@
   transform: translateY(-70%) rotate(45deg);
 }
 
+.axi-login-form .axi-login-email-suffix:disabled ~ .axi-login-email-suffix-value,
 .axi-login-form .axi-login-email-suffix:disabled ~ .axi-login-email-suffix-chevron {
   opacity: .62;
 }
