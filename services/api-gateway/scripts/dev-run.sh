@@ -25,6 +25,19 @@ export PLATFORM_CORE_URL="${PLATFORM_CORE_URL:-http://127.0.0.1:8082}"
 export CONTROL_PLANE_URL="${CONTROL_PLANE_URL:-http://127.0.0.1:8092}"
 export GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN="${GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN:-${CONTROL_PLANE_INTERNAL_SERVICE_TOKEN:-axi-development-internal-token}}"
 
+# Tauri 2 uses a custom local origin for the packaged macOS WebView instead of
+# the browser origins above. Keep this in the launcher so an explicit
+# workspace service profile cannot silently make the desktop login QR fail
+# with a CORS 403.
+if [[ "${ENVIRONMENT}" == "development" ]]; then
+  for desktop_origin in "http://tauri.localhost" "tauri://localhost"; do
+    if [[ ",${CORS_ALLOWED_ORIGINS:-}," != *,"${desktop_origin}",* ]]; then
+      CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:+${CORS_ALLOWED_ORIGINS},}${desktop_origin}"
+    fi
+  done
+  export CORS_ALLOWED_ORIGINS
+fi
+
 # The Gateway is the only ingress for device-paired Mobile requests. Refuse a
 # misleading local startup when its control plane is not listening yet: a 502
 # after the phone has opened is much harder to diagnose than a clear launch

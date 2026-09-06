@@ -178,7 +178,14 @@ func Load() (*Config, error) {
 		},
 		Log: LogConfig{Level: getEnv("API_GATEWAY_LOG_LEVEL", getEnv("LOG_LEVEL", "info"))},
 		CORS: CORSConfig{
-			AllowedOrigins: getEnvSlice("CORS_ALLOWED_ORIGINS", []string{"http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://localhost:5173", "http://localhost:5174"}),
+			AllowedOrigins: getEnvSlice("CORS_ALLOWED_ORIGINS", []string{
+				"http://127.0.0.1:5173",
+				"http://127.0.0.1:5174",
+				"http://localhost:5173",
+				"http://localhost:5174",
+				"http://tauri.localhost",
+				"tauri://localhost",
+			}),
 			AllowedMethods: getEnvSlice("CORS_ALLOWED_METHODS", []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}),
 			AllowedHeaders: getEnvSlice("CORS_ALLOWED_HEADERS", []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Request-ID", "X-Axi-QR-Poll-Token"}),
 		},

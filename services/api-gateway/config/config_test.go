@@ -245,6 +245,29 @@ func TestValidateSessionPolicy(t *testing.T) {
 	}
 }
 
+func TestDevelopmentDefaultsIncludeTauriOrigins(t *testing.T) {
+	t.Setenv("ENVIRONMENT", "development")
+	t.Setenv("CORS_ALLOWED_ORIGINS", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	for _, want := range []string{"http://tauri.localhost", "tauri://localhost"} {
+		found := false
+		for _, origin := range cfg.CORS.AllowedOrigins {
+			if origin == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("AllowedOrigins missing %q: %v", want, cfg.CORS.AllowedOrigins)
+		}
+	}
+}
+
 func TestValidateRequiresRedisForDurableSessions(t *testing.T) {
 	cfg := sessionConfigForTest()
 	cfg.Identity.RequireDurableSessionStore = true

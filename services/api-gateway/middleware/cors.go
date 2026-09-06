@@ -25,6 +25,9 @@ func CORS(allowedOrigins, allowedMethods, allowedHeaders []string) gin.HandlerFu
 		c.Header("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
 		c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ", "))
 		c.Header("Access-Control-Max-Age", "3600")
+		if strings.EqualFold(c.GetHeader("Access-Control-Request-Private-Network"), "true") {
+			c.Header("Access-Control-Allow-Private-Network", "true")
+		}
 
 		// Handle preflight requests
 		if c.Request.Method == "OPTIONS" {

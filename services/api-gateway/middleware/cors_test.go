@@ -33,3 +33,25 @@ func TestCORSOnlyAllowsExplicitOriginsWithCredentials(t *testing.T) {
 		t.Fatalf("blocked status = %d, want %d", blocked.Code, http.StatusForbidden)
 	}
 }
+
+func TestCORSAllowsPrivateNetworkPreflightWhenRequested(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(CORS([]string{"http://tauri.localhost"}, []string{"POST"}, []string{"Content-Type"}))
+	router.POST("/api/v1/auth/device-login/qr", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+	preflight := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodOptions, "/api/v1/auth/device-login/qr", nil)
+	request.Header.Set("Origin", "http://tauri.localhost")
+	request.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	request.Header.Set("Access-Control-Request-Headers", "content-type")
+	request.Header.Set("Access-Control-Request-Private-Network", "true")
+	router.ServeHTTP(preflight, request)
+
+	if preflight.Code != http.StatusNoContent {
+		t.Fatalf("preflight status = %d, want %d", preflight.Code, http.StatusNoContent)
+	}
+	if got := preflight.Header().Get("Access-Control-Allow-Private-Network"); got != "true" {
+		t.Fatalf("private network header = %q, want true", got)
+	}
+}
