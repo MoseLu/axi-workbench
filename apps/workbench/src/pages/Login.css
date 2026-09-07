@@ -395,9 +395,10 @@
   outline-offset: var(--space-1);
 }
 
-/* One 8pt column: fields 12px apart, CTA 16px below the last field, banner
- * 8px below the button. Banner width matches the field column so it does not
- * hang wider than the inputs. */
+/* Fields and the CTA stay a tight 8pt stack. The compact banner docks to the
+ * bottom of the 16rem column so even a two-line message sits low, not under
+ * the button. Slot min-height matches two compact lines so 1-line and 2-line
+ * share the same top. */
 .axi-login-right__body {
   position: relative;
   display: flex;
@@ -407,7 +408,8 @@
   height: 16rem;
   box-sizing: border-box;
   min-width: 0;
-  gap: var(--space-2);
+  gap: 0;
+  padding-bottom: var(--space-1);
 }
 
 .axi-login-banner-slot {
@@ -415,9 +417,10 @@
   display: flex;
   width: 21.125rem;
   max-width: 100%;
-  min-height: 2.5rem;
+  min-height: 2.25rem;
   height: auto;
-  max-height: 4.5rem;
+  max-height: 3.25rem;
+  margin-top: auto;
   align-items: flex-start;
   overflow: visible;
   flex: 0 0 auto;
@@ -433,8 +436,17 @@
 
 .axi-login-banner.axi-banner--compact.ant-alert {
   align-items: flex-start;
+  min-height: 0;
   height: auto;
+  padding: 4px 10px;
   overflow: visible;
+  font-size: var(--text-xs);
+}
+
+.axi-login-banner.axi-banner--compact .ant-alert-icon {
+  margin-top: 1px;
+  margin-inline-end: 6px;
+  font-size: 12px;
 }
 
 .axi-login-banner.axi-banner--compact .ant-alert-content {
@@ -447,7 +459,8 @@
   text-overflow: clip;
   white-space: normal;
   word-break: break-word;
-  line-height: 1.4;
+  font-size: var(--text-xs);
+  line-height: 1.35;
 }
 
 .axi-login-form-slot {
@@ -934,7 +947,9 @@
   .axi-login-banner-slot {
     width: min(21.125rem, 100%);
     height: auto;
+    min-height: 0;
     max-height: none;
+    margin-top: var(--space-3);
   }
   .axi-login-banner { height: auto; }
   .axi-login-banner.axi-banner--compact .ant-alert-description {
