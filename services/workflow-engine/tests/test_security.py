@@ -341,3 +341,36 @@ def test_waiting_bounded_agent_workflow_can_be_cancelled_without_resuming_effect
         if hasattr(repository, "approvals"):
             repository.approvals.clear()
         settings.internal_service_token = original_token
+
+
+def test_rest_execution_aliases_match_legacy_rpc_paths() -> None:
+    settings = get_settings()
+    original_token = settings.internal_service_token
+    settings.internal_service_token = "workflow-test-token"
+    headers = {
+        "X-Axi-Internal-Token": "workflow-test-token",
+        "X-Axi-Subject": "alice",
+    }
+    try:
+        with TestClient(app) as client:
+            created = client.post(
+                "/workflows",
+                headers=headers,
+                json={"name": "REST alias workflow", "steps": []},
+            )
+            workflow_id = created.json()["id"]
+            executed = client.post(f"/workflows/{workflow_id}/executions", headers=headers)
+            current = client.get(f"/workflows/{workflow_id}/executions/current", headers=headers)
+            legacy = client.get(f"/workflows/{workflow_id}/execution", headers=headers)
+        assert created.status_code == 201
+        assert executed.status_code == 200
+        assert current.status_code == 200
+        assert legacy.status_code == 200
+        assert current.json() == legacy.json()
+    finally:
+        from routers.workflows import workflows_db, executing_workflows
+
+        workflows_db.clear()
+        executing_workflows.clear()
+        settings.internal_service_token = original_token
+

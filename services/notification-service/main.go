@@ -51,7 +51,9 @@ func main() {
 		// Static path before /:id
 		api.GET("/nav-badges", notificationHandler.GetNavBadges)
 		api.PUT("/read-all", notificationHandler.MarkAllRead)
+		api.POST("/read-receipts", notificationHandler.MarkAllRead)
 		api.PUT("/:id/read", notificationHandler.MarkRead)
+		api.PATCH("/:id", notificationHandler.MarkRead)
 	}
 	r.POST("/internal/events", middleware.RequireInternalEvent(cfg), notificationHandler.ConsumeEvent)
 

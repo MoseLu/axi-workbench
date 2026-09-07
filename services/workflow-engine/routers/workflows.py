@@ -187,6 +187,7 @@ async def delete_workflow(
 
 
 @router.post("/{workflow_id}/execute", response_model=WorkflowExecution)
+@router.post("/{workflow_id}/executions", response_model=WorkflowExecution)
 async def execute_workflow(
     workflow_id: UUID,
     subject: str = Depends(require_gateway_identity),
@@ -222,6 +223,7 @@ async def execute_workflow(
 
 
 @router.post("/{workflow_id}/approvals/{approval_id}", response_model=WorkflowExecution)
+@router.patch("/{workflow_id}/approvals/{approval_id}", response_model=WorkflowExecution)
 async def decide_workflow_approval(
     workflow_id: UUID,
     approval_id: UUID,
@@ -277,6 +279,7 @@ async def list_workflow_approvals(
 
 
 @router.post("/{workflow_id}/cancel", response_model=WorkflowExecution)
+@router.post("/{workflow_id}/cancellations", response_model=WorkflowExecution)
 async def cancel_workflow_execution(
     workflow_id: UUID,
     comment: str | None = None,
@@ -316,6 +319,7 @@ async def cancel_workflow_execution(
 
 
 @router.get("/{workflow_id}/execution", response_model=WorkflowExecution)
+@router.get("/{workflow_id}/executions/current", response_model=WorkflowExecution)
 async def get_workflow_execution(
     workflow_id: UUID,
     subject: str = Depends(require_gateway_identity),
