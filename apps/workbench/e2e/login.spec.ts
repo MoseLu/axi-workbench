@@ -252,18 +252,6 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await expect(sendButton).toBeDisabled();
   await expect(sendButton).toHaveAttribute('data-email-code-state', 'cooldown');
   await expect(page.locator('.axi-one-time-code__input').first()).toBeEnabled();
-  await page.clock.runFor('01:00');
-  await expect(sendButton).toBeEnabled();
-  await expect(sendButton).toHaveText('重新获取');
-  await expect(sendButton).toHaveAttribute('data-email-code-state', 'resend');
-  await expect(sendButton).toHaveClass(/is-resend/);
-  await sendButton.click();
-  expect(requestedEmails[1]).toBe('render@163.com');
-  await expect(sendButton).toHaveText(/^\d+s$/);
-  await expect(sendButton).toBeDisabled();
-  // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
-  await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
-  await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
   const bannerPresentation = await page.evaluate(() => {
     const banner = document.querySelector('.axi-login-banner--hint');
     const description = banner?.querySelector('.ant-alert-description');
@@ -276,13 +264,29 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       padding: bannerStyle.padding,
       background: bannerStyle.backgroundColor,
       descriptionWhiteSpace: descriptionStyle.whiteSpace,
-      descriptionOverflow: descriptionStyle.overflow,
+      text: description.textContent ?? '',
+      truncated: description.scrollWidth > description.clientWidth + 1,
     };
   });
   expect(bannerPresentation?.className ?? '').toMatch(/axi-banner--compact/);
-  expect(bannerPresentation?.height ?? 999).toBeLessThanOrEqual(44.1);
+  expect(bannerPresentation?.height ?? 999).toBeLessThanOrEqual(76);
   expect(bannerPresentation?.padding).toBe('8px 12px');
   expect(bannerPresentation?.background).not.toBe('rgb(17, 26, 44)');
+  expect(bannerPresentation?.descriptionWhiteSpace).toBe('normal');
+  expect(bannerPresentation?.text).toContain('垃圾邮件');
+  expect(bannerPresentation?.truncated).toBe(false);
+  await page.clock.runFor('01:00');
+  await expect(sendButton).toBeEnabled();
+  await expect(sendButton).toHaveText('重新获取');
+  await expect(sendButton).toHaveAttribute('data-email-code-state', 'resend');
+  await expect(sendButton).toHaveClass(/is-resend/);
+  await sendButton.click();
+  expect(requestedEmails[1]).toBe('render@163.com');
+  await expect(sendButton).toHaveText(/^\d+s$/);
+  await expect(sendButton).toBeDisabled();
+  // The 6-slot OTP input shows up immediately on the email panel — no phase switch.
+  await expect(page.locator('.axi-one-time-code__input')).toHaveCount(6);
+  await expect(page.locator('.axi-login-form__row--code')).toBeVisible();
 
   const emailCodeLayout = await page.evaluate(() => {
     const rect = (selector: string) => {

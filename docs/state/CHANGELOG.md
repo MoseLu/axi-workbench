@@ -38,6 +38,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 登录验证码提示 banner 允许换行完整显示「QQ 邮箱可能在垃圾邮件中」，不再单行截断。
+
 - Web、Mobile 与共享客户端改走 REST 资源路径：会话用 `/sessions/current`、`/sessions`、`/sessions/email`、`/sessions/device-qr/:id`；通知用 `PATCH /notifications/:id` 与 `POST /notifications/read-receipts`；控制面/工作流/配对的 cancel、decision、run、confirm、nonce、token 改名词路径。旧 RPC 路径仍由 Gateway 兼容。
 
 - Gateway 第二轮 REST：拆掉 `/control-plane/*` 与 `/mobile/*` 的 `Any` catch-all，改成显式方法/路径 allowlist；登录 `confirm`/`consume` 以及 QR `resume`、邮件校验 `confirm` 增加名词资源别名（`/sessions/email`、`/sessions/device-qr/:id`、`/email-verifications/:id/redemptions`、`/qr/transactions/:id/resumptions`），旧 RPC 路径保留。CONNECT/TRACE 与未登记路径返回 404，不再穿透到 Control Plane。
