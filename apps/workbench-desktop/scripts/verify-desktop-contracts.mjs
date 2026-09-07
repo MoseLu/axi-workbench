@@ -29,17 +29,6 @@ const workbenchDist = join(repoRoot, 'apps', 'workbench', 'dist')
 const targetDir = join(desktopDir, 'workbench-dist')
 const iconIcns = join(desktopDir, 'src-tauri', 'icons', 'icon.icns')
 const desktopIconSource = join(desktopDir, 'src-tauri', 'icons', 'icon.svg')
-const desktopRasterSource = join(desktopDir, 'src-tauri', 'icons', 'icon-source.png')
-const ipSelectedPath = join(
-  repoRoot,
-  'apps',
-  'workbench',
-  'src',
-  'assets',
-  'brand',
-  'ip-as-logo',
-  'selected.json',
-)
 const tauriConfig = join(desktopDir, 'src-tauri', 'tauri.conf.json')
 const macosInfoPlist = join(desktopDir, 'src-tauri', 'Info.plist')
 const tauriCapabilities = join(desktopDir, 'src-tauri', 'capabilities', 'default.json')
@@ -242,15 +231,6 @@ if (!existsSync(webIcon) || !faviconGeometry || requiredIconGeometry.some((path)
   } else {
     console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的十二色弧形花瓣')
   }
-}
-
-if (!existsSync(ipSelectedPath) || !existsSync(desktopRasterSource)) {
-  console.error(
-    `[verify-desktop-contracts] FAIL: Dock raster source missing: ${ipSelectedPath} -> ${desktopRasterSource}`,
-  )
-  failed = true
-} else {
-  console.log('[verify-desktop-contracts] OK: Dock raster source is the selected ip-as-logo candidate')
 }
 
 const desktopIcon = existsSync(desktopIconSource) ? readFileSync(desktopIconSource, 'utf8') : ''

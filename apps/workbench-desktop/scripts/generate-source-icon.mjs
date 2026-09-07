@@ -1,71 +1,15 @@
-// Keep the geometric twelve-color SVG as a contract mother file, and generate
-// the Dock / tab raster set from the selected ip-as-logo candidate.
+// Scale the Web twelve-color rounded petal-and-swirl mark into a transparent desktop app-icon canvas.
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const desktopRoot = join(__dirname, '..')
-const workbenchRoot = join(__dirname, '..', '..', 'workbench')
-const mobileRoot = join(__dirname, '..', '..', 'workbench-mobile')
-const webIconPath = join(workbenchRoot, 'public', 'favicon.svg')
-const webPublicDir = join(workbenchRoot, 'public')
-const mobilePublicDir = join(mobileRoot, 'public')
-const ipDir = join(workbenchRoot, 'src', 'assets', 'brand', 'ip-as-logo')
-const selectedPath = join(ipDir, 'selected.json')
-const iconsDir = join(desktopRoot, 'src-tauri', 'icons')
+const webIconPath = join(__dirname, '..', '..', 'workbench', 'public', 'favicon.svg')
+const iconsDir = join(__dirname, '..', 'src-tauri', 'icons')
 const desktopIconPath = join(iconsDir, 'icon.svg')
-const rasterSourcePath = join(iconsDir, 'icon-source.png')
 
 mkdirSync(iconsDir, { recursive: true })
-
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    ...options,
-  })
-  if (result.error) throw result.error
-  if (result.status !== 0) {
-    throw new Error(
-      `[icon] ${command} ${args.join(' ')} failed (${result.status}): ${result.stderr || result.stdout}`,
-    )
-  }
-  return result
-}
-
-function convertPng(src, dest, size) {
-  run('sips', ['-s', 'format', 'png', '-z', String(size), String(size), src, '--out', dest])
-}
-
-if (!existsSync(selectedPath)) {
-  throw new Error(`[icon] missing ip-as-logo selection: ${selectedPath}`)
-}
-
-const selected = JSON.parse(readFileSync(selectedPath, 'utf8'))
-const selectedImage = join(ipDir, selected.file)
-if (!existsSync(selectedImage)) {
-  throw new Error(`[icon] missing selected ip-as-logo image: ${selectedImage}`)
-}
-
-convertPng(selectedImage, rasterSourcePath, 1024)
-convertPng(selectedImage, join(webPublicDir, 'favicon-32.png'), 32)
-convertPng(selectedImage, join(webPublicDir, 'favicon-48.png'), 48)
-convertPng(selectedImage, join(webPublicDir, 'apple-touch-icon.png'), 180)
-
-if (existsSync(mobilePublicDir)) {
-  for (const name of ['favicon-32.png', 'favicon-48.png', 'apple-touch-icon.png']) {
-    copyFileSync(join(webPublicDir, name), join(mobilePublicDir, name))
-  }
-}
-
-run('pnpm', ['exec', 'tauri', 'icon', rasterSourcePath, '--output', iconsDir], {
-  cwd: desktopRoot,
-  stdio: 'inherit',
-  encoding: 'utf8',
-})
 
 const svg = readFileSync(webIconPath, 'utf8').trim()
 const requiredMarks = [
@@ -125,5 +69,4 @@ const desktopSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 10
 `
 
 writeFileSync(desktopIconPath, desktopSvg)
-console.log(`[icon] raster ${selected.id} (${selectedImage}) -> ${rasterSourcePath}`)
-console.log(`[icon] synced geometric mark ${webIconPath} -> ${desktopIconPath}`)
+console.log(`[icon] synced ${webIconPath} -> ${desktopIconPath}`)
