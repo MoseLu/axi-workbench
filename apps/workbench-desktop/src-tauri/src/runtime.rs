@@ -56,14 +56,23 @@ pub fn local_gateway_listening() -> bool {
     TcpStream::connect_timeout(&address, Duration::from_millis(400)).is_ok()
 }
 
-fn repaired_path() -> std::ffi::OsString {
-    let extras = [
+pub fn repaired_path() -> std::ffi::OsString {
+    let mut parts: Vec<String> = Vec::new();
+    if let Ok(home) = std::env::var("HOME") {
+        for extra in [".local/bin", ".cargo/bin", "go/bin"] {
+            parts.push(format!("{home}/{extra}"));
+        }
+    }
+    for extra in [
         "/opt/homebrew/bin",
         "/usr/local/bin",
         "/usr/bin",
         "/bin",
-    ];
-    let mut parts: Vec<String> = extras.iter().map(|value| (*value).to_string()).collect();
+        "/usr/sbin",
+        "/sbin",
+    ] {
+        parts.push(extra.to_string());
+    }
     if let Ok(existing) = std::env::var("PATH") {
         for item in existing.split(':') {
             if !item.is_empty() && !parts.iter().any(|known| known == item) {
@@ -72,6 +81,16 @@ fn repaired_path() -> std::ffi::OsString {
         }
     }
     parts.join(":").into()
+}
+
+pub fn find_bin(name: &str) -> PathBuf {
+    for dir in std::env::split_paths(&repaired_path()) {
+        let candidate = dir.join(name);
+        if candidate.is_file() {
+            return candidate;
+        }
+    }
+    PathBuf::from(name)
 }
 
 fn wait_for_local_gateway(timeout: Duration) -> bool {
@@ -97,7 +116,8 @@ impl LocalRuntime {
             return Err(format!("missing desktop runtime script: {}", script.display()));
         }
 
-        let child = Command::new("node")
+        let node = find_bin("node");
+        let child = Command::new(&node)
             .arg(&script)
             .arg("--supervise")
             .current_dir(root)
@@ -107,7 +127,9 @@ impl LocalRuntime {
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .spawn()
-            .map_err(|error| format!("failed to spawn desktop runtime: {error}"))?;
+            .map_err(|error| {
+                format!("failed to spawn desktop runtime with {}: {error}", node.display())
+            })?;
 
         {
             let mut slot = self
@@ -146,6 +168,21 @@ mod tests {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
         assert!(is_workbench_root(&root));
         assert!(discover_workspace_root().is_some());
+    }
+
+    #[test]
+    fn repaired_path_includes_user_local_bin() {
+        let path = super::repaired_path();
+        let path = path.to_string_lossy();
+        assert!(
+            path.contains("/.local/bin") || path.contains("/opt/homebrew/bin"),
+            "GUI-launched PATH must include a user or Homebrew bin dir, got {path}"
+        );
+        let node = super::find_bin("node");
+        assert!(
+            node.is_file() || node == std::path::Path::new("node"),
+            "find_bin(node) should resolve a real binary when one exists"
+        );
     }
 
     #[test]

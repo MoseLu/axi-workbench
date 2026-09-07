@@ -319,11 +319,24 @@ pub fn run() {
         .setup(|app| {
             if let Some(root) = runtime::discover_workspace_root() {
                 let runtime = app.state::<LocalRuntime>();
-                match runtime.ensure_from_workspace(&root) {
-                    Ok(()) => eprintln!(
-                        "[workbench-desktop] local Gateway ready at http://127.0.0.1:8088"
-                    ),
-                    Err(error) => eprintln!("[workbench-desktop] local runtime: {error}"),
+                runtime.prefer_local.store(true, std::sync::atomic::Ordering::SeqCst);
+                if runtime::local_gateway_listening() {
+                    eprintln!(
+                        "[workbench-desktop] local Gateway already listening at http://127.0.0.1:8088"
+                    );
+                } else {
+                    let handle = app.handle().clone();
+                    std::thread::spawn(move || {
+                        let runtime = handle.state::<LocalRuntime>();
+                        match runtime.ensure_from_workspace(&root) {
+                            Ok(()) => eprintln!(
+                                "[workbench-desktop] local Gateway ready at http://127.0.0.1:8088"
+                            ),
+                            Err(error) => {
+                                eprintln!("[workbench-desktop] local runtime: {error}")
+                            }
+                        }
+                    });
                 }
             }
             build_app_menu(app.handle())?;

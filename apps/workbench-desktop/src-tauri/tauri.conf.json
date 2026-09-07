@@ -6,7 +6,7 @@
   "build": {
     "frontendDist": "../workbench-dist",
     "devUrl": "http://127.0.0.1:5183",
-    "beforeDevCommand": "echo 'Run `pnpm dev:workbench` in another terminal first, then this Tauri window will hot-reload against http://127.0.0.1:5183' && sleep 1",
+    "beforeDevCommand": "echo '[workbench-desktop] use `pnpm dev:desktop` so the local API plane starts with the window' && sleep 1",
     "beforeBuildCommand": "pnpm --filter @axi/workbench build && pnpm --filter @axi/workbench-desktop verify:contracts"
   },
   "app": {
