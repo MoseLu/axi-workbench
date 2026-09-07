@@ -591,10 +591,6 @@ const Login: React.FC = () => {
             </div>
 
             <div className={`axi-login-right__body is-${loginMode}`}>
-              <div className="axi-login-banner-slot" aria-live="polite">
-                {banner && <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
-                {!banner && hint && <AxiBanner compact tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
-              </div>
               <div className="axi-login-form-slot">
                 {loginMode === 'password' && (
                 <form className="axi-login-form axi-login-form--password" onSubmit={handlePasswordLogin} noValidate>
@@ -718,6 +714,10 @@ const Login: React.FC = () => {
                 </form>
               )}
 
+              </div>
+              <div className="axi-login-banner-slot" aria-live="polite">
+                {banner && <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
+                {!banner && hint && <AxiBanner compact tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
               </div>
             </div>
           </section>

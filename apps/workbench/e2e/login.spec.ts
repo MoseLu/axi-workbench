@@ -68,8 +68,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const right = rect('.axi-login-right');
     const tabs = rect('.axi-login-right__tabs');
     const form = rect('.axi-login-form');
-    const groupCenter = tabs && form ? (tabs.top + form.bottom) / 2 : null;
-    const rightCenter = right ? (right.top + right.bottom) / 2 : null;
+    const banner = rect('.axi-login-banner-slot');
     return {
       cardTop: rect('.axi-login-card')?.top ?? null,
       cardWidth: rect('.axi-login-card')?.width ?? null,
@@ -79,7 +78,8 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       tabsTop: tabs?.top ?? null,
       buttonTop: form ? rect('.axi-login-button')?.top ?? null : null,
       buttonBottom: form ? rect('.axi-login-button')?.bottom ?? null : null,
-      centerOffset: groupCenter !== null && rightCenter !== null ? Math.abs(groupCenter - rightCenter) : null,
+      bannerBottom: banner?.bottom ?? null,
+      rightBottom: right?.bottom ?? null,
       emailRow: rect('.axi-login-form__row--email') ?? null,
       codeRow: rect('.axi-login-form__row--code') ?? null,
     };
@@ -87,7 +87,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
 
   expect(layout.cardHeight ?? 999).toBeLessThan(420);
   expect(Math.abs((layout.bodyHeight ?? 999) - 356)).toBeLessThanOrEqual(0.1);
-  expect(layout.centerOffset ?? 999).toBeLessThanOrEqual(1);
+  expect((layout.bannerBottom ?? 999)).toBeLessThanOrEqual((layout.rightBottom ?? 0) + 0.5);
   // The email row and the OTP row share the same height so the two visible
   // input rows visually align (1px row borders explain the 2px delta).
   expect(Math.abs((layout.emailRow?.height ?? 0) - (layout.codeRow?.height ?? 0))).toBeLessThanOrEqual(8);
@@ -100,7 +100,10 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       codeToButton: code && button ? button.top - code.bottom : null,
     };
   });
-  expect(Math.abs((initialVerticalRhythm.emailToCode ?? 999) - (initialVerticalRhythm.codeToButton ?? 0))).toBeLessThanOrEqual(2);
+  expect(initialVerticalRhythm.emailToCode ?? 999).toBeGreaterThanOrEqual(10);
+  expect(initialVerticalRhythm.emailToCode ?? 999).toBeLessThanOrEqual(14);
+  expect(initialVerticalRhythm.codeToButton ?? 999).toBeGreaterThanOrEqual(14);
+  expect(initialVerticalRhythm.codeToButton ?? 999).toBeLessThanOrEqual(18);
 
   // The Tauri login window reuses this exact Web surface. The page must own
   // the viewport background so the dark application body cannot form a frame.
@@ -278,12 +281,16 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   const hintPlacement = await page.evaluate(() => {
     const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
     const slot = document.querySelector('.axi-login-banner-slot')?.getBoundingClientRect();
+    const email = document.querySelector('.axi-login-form__row--email')?.getBoundingClientRect();
     return {
       gap: button && slot ? slot.top - button.bottom : null,
+      bannerWidth: slot?.width ?? null,
+      emailWidth: email?.width ?? null,
     };
   });
-  expect(hintPlacement.gap ?? 999).toBeGreaterThanOrEqual(4);
-  expect(hintPlacement.gap ?? 999).toBeLessThanOrEqual(48);
+  expect(hintPlacement.gap ?? 999).toBeGreaterThanOrEqual(6);
+  expect(hintPlacement.gap ?? 999).toBeLessThanOrEqual(12);
+  expect(Math.abs((hintPlacement.bannerWidth ?? 0) - (hintPlacement.emailWidth ?? 999))).toBeLessThanOrEqual(1);
   await page.clock.runFor('01:00');
   await expect(sendButton).toBeEnabled();
   await expect(sendButton).toHaveText('重新获取');
@@ -336,7 +343,10 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   expect(Math.abs((emailCodeLayout.emailRowWidth ?? 0) - (emailCodeLayout.codeRowWidth ?? 0))).toBeLessThanOrEqual(0.1);
   expect(emailCodeLayout.firstInputHeight ?? 999).toBeLessThanOrEqual(50.1);
   expect((emailCodeLayout.lastInputBottom ?? 999) + 8).toBeLessThanOrEqual(emailCodeLayout.buttonTop ?? 0);
-  expect(Math.abs((emailCodeLayout.emailToCodeGap ?? 999) - (emailCodeLayout.codeToButtonGap ?? 0))).toBeLessThanOrEqual(2);
+  expect(emailCodeLayout.emailToCodeGap ?? 999).toBeGreaterThanOrEqual(10);
+  expect(emailCodeLayout.emailToCodeGap ?? 999).toBeLessThanOrEqual(14);
+  expect(emailCodeLayout.codeToButtonGap ?? 999).toBeGreaterThanOrEqual(14);
+  expect(emailCodeLayout.codeToButtonGap ?? 999).toBeLessThanOrEqual(18);
 
   // Changing the address invalidates the previous challenge and locks the
   // code slots again until the new address requests a code.
@@ -357,8 +367,11 @@ test('renders the web login journey in a real browser', async ({ page }) => {
     const rect = (selector: string) => {
       const element = document.querySelector(selector);
       const box = element?.getBoundingClientRect();
-      return box ? { top: box.top, bottom: box.bottom, height: box.height } : null;
+      return box ? { top: box.top, bottom: box.bottom, height: box.height, width: box.width } : null;
     };
+    const email = document.querySelector('.axi-login-form__row--email')?.getBoundingClientRect();
+    const password = document.querySelector('.axi-login-form__row--input')?.getBoundingClientRect();
+    const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
     return {
       cardTop: rect('.axi-login-card')?.top ?? null,
       cardHeight: rect('.axi-login-card')?.height ?? null,
@@ -366,8 +379,14 @@ test('renders the web login journey in a real browser', async ({ page }) => {
       tabsTop: rect('.axi-login-right__tabs')?.top ?? null,
       buttonTop: rect('.axi-login-button')?.top ?? null,
       buttonBottom: rect('.axi-login-button')?.bottom ?? null,
+      emailToPasswordGap: email && password ? password.top - email.bottom : null,
+      passwordToButtonGap: password && button ? button.top - password.bottom : null,
     };
   });
+  expect(passwordLayout.emailToPasswordGap ?? 999).toBeGreaterThanOrEqual(10);
+  expect(passwordLayout.emailToPasswordGap ?? 999).toBeLessThanOrEqual(14);
+  expect(passwordLayout.passwordToButtonGap ?? 999).toBeGreaterThanOrEqual(14);
+  expect(passwordLayout.passwordToButtonGap ?? 999).toBeLessThanOrEqual(18);
 
   await page.getByRole('tab', { name: '邮箱登录' }).click();
   await expect(page.locator('#axi-login-email')).toBeVisible();
@@ -448,8 +467,8 @@ test('email login error banner keeps the card height stable across appearance', 
     const slot = document.querySelector('.axi-login-banner-slot')?.getBoundingClientRect();
     return { gap: submit && slot ? slot.top - submit.bottom : null };
   });
-  expect(errorPlacement.gap ?? 999).toBeGreaterThanOrEqual(4);
-  expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(48);
+  expect(errorPlacement.gap ?? 999).toBeGreaterThanOrEqual(6);
+  expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(12);
 });
 
 test('password login localizes gateway Not Found under the submit button', async ({ page }) => {
@@ -488,8 +507,8 @@ test('password login localizes gateway Not Found under the submit button', async
     const slot = document.querySelector('.axi-login-banner-slot')?.getBoundingClientRect();
     return { gap: submit && slot ? slot.top - submit.bottom : null };
   });
-  expect(errorPlacement.gap ?? 999).toBeGreaterThanOrEqual(4);
-  expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(48);
+  expect(errorPlacement.gap ?? 999).toBeGreaterThanOrEqual(6);
+  expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(12);
 });
 
 test('keeps a QR creation failure stable until the user retries', async ({ page }) => {
