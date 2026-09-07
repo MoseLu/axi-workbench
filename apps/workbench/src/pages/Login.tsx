@@ -361,7 +361,7 @@ const Login: React.FC = () => {
   };
 
   const loginWithPassword = async (loginEmail: string, loginPassword: string): Promise<boolean> => {
-    const response = await fetch(resolveGatewayURL('/api/v1/auth/login/password'), {
+    const response = await fetch(resolveGatewayURL('/api/v1/sessions'), {
       method: 'POST',
       credentials: 'include',
       headers: {

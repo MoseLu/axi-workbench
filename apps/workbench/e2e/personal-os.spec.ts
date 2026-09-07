@@ -99,7 +99,7 @@ for (const viewport of [
     await page.route('**/api/**', async (route) => {
       await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'not mocked' }) });
     });
-    await page.route('**/api/v1/auth/session*', async (route) => {
+    await page.route('**/api/v1/sessions/current*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

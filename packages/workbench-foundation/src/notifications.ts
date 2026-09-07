@@ -125,8 +125,8 @@ export async function fetchNotifications(options: {
 export async function markNotificationRead(id: string, signal?: AbortSignal): Promise<WorkbenchNotification> {
   const notificationID = id.trim();
   if (!notificationID) throw new Error('notification id is required');
-  const payload = await requestJSON(`/api/v1/notifications/${encodeURIComponent(notificationID)}/read`, {
-    method: 'PUT',
+  const payload = await requestJSON(`/api/v1/notifications/${encodeURIComponent(notificationID)}`, {
+    method: 'PATCH',
     signal,
   });
   return decodeNotification(payload);
@@ -134,8 +134,8 @@ export async function markNotificationRead(id: string, signal?: AbortSignal): Pr
 
 /** Persists read transitions for every unread notification visible to the subject. */
 export async function markAllNotificationsRead(signal?: AbortSignal): Promise<number> {
-  const payload = await requestJSON('/api/v1/notifications/read-all', {
-    method: 'PUT',
+  const payload = await requestJSON('/api/v1/notifications/read-receipts', {
+    method: 'POST',
     signal,
   });
   if (!isRecord(payload) || typeof payload.marked !== 'number') {

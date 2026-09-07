@@ -76,13 +76,13 @@ describe('mobile control transport', () => {
       if (url.endsWith('/api/v1/control-plane/mobile/pair-approval')) {
         return new Response(JSON.stringify({ ownerApprovalToken: 'a'.repeat(64) }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/pair/confirm')) {
+      if (url.endsWith('/api/v1/mobile/pair/confirmations')) {
         return new Response(JSON.stringify({ deviceId: 'dev_test01', nonce: { nonceId: 'nonce_test', nonce: 'nonce-value' } }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+      if (url.endsWith('/api/v1/mobile/auth/nonces')) {
         return new Response(JSON.stringify({ nonceId: 'nonce_test', nonce: 'nonce-value' }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/auth/token')) {
+      if (url.endsWith('/api/v1/mobile/auth/tokens')) {
         return new Response(JSON.stringify({ accessToken: 'jwt-test', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
       }
       return new Response(JSON.stringify({ error: 'unexpected route' }), { status: 404 });
@@ -117,10 +117,10 @@ describe('mobile control transport', () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
-      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+      if (url.endsWith('/api/v1/mobile/auth/nonces')) {
         return new Response(JSON.stringify({ nonceId: 'nonce_restore', nonce: 'restore-value' }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/auth/token')) {
+      if (url.endsWith('/api/v1/mobile/auth/tokens')) {
         return new Response(JSON.stringify({ accessToken: 'jwt-restored', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
       }
       return new Response(JSON.stringify({ error: 'unexpected route' }), { status: 404 });
@@ -131,8 +131,8 @@ describe('mobile control transport', () => {
     expect(restored).toMatchObject({ deviceId: 'dev_restore01' });
     expect(keyPair.privateKey.extractable).toBe(false);
     expect(calls.map((call) => call.url)).toEqual([
-      expect.stringContaining('/api/v1/mobile/auth/nonce'),
-      expect.stringContaining('/api/v1/mobile/auth/token'),
+      expect.stringContaining('/api/v1/mobile/auth/nonces'),
+      expect.stringContaining('/api/v1/mobile/auth/tokens'),
     ]);
     const tokenBody = JSON.parse(String(calls[1].init?.body));
     expect(tokenBody).toMatchObject({ deviceId: 'dev_restore01', nonceId: 'nonce_restore', nonce: 'restore-value' });
@@ -152,10 +152,10 @@ describe('mobile control transport', () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
-      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+      if (url.endsWith('/api/v1/mobile/auth/nonces')) {
         return new Response(JSON.stringify({ nonceId: 'nonce_web_login', nonce: 'web-login-value' }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/auth/token')) {
+      if (url.endsWith('/api/v1/mobile/auth/tokens')) {
         return new Response(JSON.stringify({ accessToken: 'jwt-web-login', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
       }
       if (url.endsWith('/api/v1/mobile/web-login/qr/scan')) {
@@ -192,10 +192,10 @@ describe('mobile control transport', () => {
         statusCalls += 1;
         return new Response(JSON.stringify(statusCalls === 1 ? { status: 'pending' } : { status: 'approved', deviceId: 'dev_qr_test' }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/auth/nonce')) {
+      if (url.endsWith('/api/v1/mobile/auth/nonces')) {
         return new Response(JSON.stringify({ nonceId: 'nonce_qr_test', nonce: 'nonce-value' }), { status: 200 });
       }
-      if (url.endsWith('/api/v1/mobile/auth/token')) {
+      if (url.endsWith('/api/v1/mobile/auth/tokens')) {
         return new Response(JSON.stringify({ accessToken: 'jwt-qr-test', expiresAt: Math.floor(Date.now() / 1000) + 3600 }), { status: 200 });
       }
       return new Response(JSON.stringify({ error: 'unexpected route' }), { status: 404 });

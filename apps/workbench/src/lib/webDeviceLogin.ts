@@ -122,7 +122,7 @@ export async function consumeWebDeviceLoginQr(
   fetcher: typeof fetch = fetch,
 ): Promise<{ authenticated: true }> {
   assertTransaction(transaction);
-  const response = await fetcher(resolveGatewayURL(`/api/v1/auth/device-login/qr/${transaction.webLoginId}/consume`), {
+  const response = await fetcher(resolveGatewayURL(`/api/v1/sessions/device-qr/${transaction.webLoginId}`), {
     method: 'POST',
     credentials: 'include',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Axi-QR-Poll-Token': transaction.pollToken },

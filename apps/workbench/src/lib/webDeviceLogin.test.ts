@@ -52,7 +52,7 @@ describe('Web device QR login', () => {
     const consumeFetcher = vi.fn(async () => new Response(JSON.stringify({ authenticated: true }), { status: 200 }));
     await expect(consumeWebDeviceLoginQr(transaction, consumeFetcher)).resolves.toEqual({ authenticated: true });
     expect(consumeFetcher).toHaveBeenCalledWith(
-      expect.stringContaining(`/api/v1/auth/device-login/qr/${transaction.webLoginId}/consume`),
+      expect.stringContaining(`/api/v1/sessions/device-qr/${transaction.webLoginId}`),
       expect.objectContaining({
         method: 'POST',
         credentials: 'include',

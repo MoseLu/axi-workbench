@@ -176,7 +176,7 @@ export const useWorkflowEngineExecution = (workflowId: string, options?: AxiosRe
     enabled: Boolean(workflowId),
     queryFn: () =>
       apiClient
-        .get<WorkflowEngineExecution>(`/api/v1/workflows/${encodeURIComponent(workflowId)}/execution`, options)
+        .get<WorkflowEngineExecution>(`/api/v1/workflows/${encodeURIComponent(workflowId)}/executions/current`, options)
         .then((res) => res.data),
     retry: 1,
   })
@@ -204,7 +204,7 @@ export const useDecideWorkflowEngineApproval = () => {
       workflowId: string
     }) =>
       apiClient
-        .post<WorkflowEngineExecution>(
+        .patch<WorkflowEngineExecution>(
           `/api/v1/workflows/${encodeURIComponent(workflowId)}/approvals/${encodeURIComponent(approvalId)}`,
           { comment, decision },
         )
@@ -235,7 +235,7 @@ export const useRunControlCommand = () => {
   return useMutation({
     mutationFn: (commandId: string) =>
       controlPlaneClient
-        .post<ControlRun>(`/commands/${encodeURIComponent(commandId)}/run`)
+        .post<ControlRun>(`/commands/${encodeURIComponent(commandId)}/runs`)
         .then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })
@@ -301,7 +301,7 @@ export const useCancelControlJob = () => {
   return useMutation({
     mutationFn: (jobId: string) =>
       controlPlaneClient
-        .post<ControlJob>(`/jobs/${encodeURIComponent(jobId)}/cancel`)
+        .post<ControlJob>(`/jobs/${encodeURIComponent(jobId)}/cancellations`)
         .then((res) => res.data),
     onSuccess: (job) => {
       queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })
@@ -316,7 +316,7 @@ export const useCancelAgentTask = () => {
   return useMutation({
     mutationFn: (taskId: string) =>
       controlPlaneClient
-        .post<AgentTask>(`/agent-tasks/${encodeURIComponent(taskId)}/cancel`)
+        .post<AgentTask>(`/agent-tasks/${encodeURIComponent(taskId)}/cancellations`)
         .then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })
@@ -329,7 +329,7 @@ export const useDecideApproval = () => {
   return useMutation({
     mutationFn: ({ id, decision, decisionText }: { id: string; decision: "approved" | "rejected"; decisionText?: string }) =>
       controlPlaneClient
-        .post<ApprovalRequest>(`/approvals/${encodeURIComponent(id)}/decision`, { decision, decisionText })
+        .post<ApprovalRequest>(`/approvals/${encodeURIComponent(id)}/decisions`, { decision, decisionText })
         .then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })

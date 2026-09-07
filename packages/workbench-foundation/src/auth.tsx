@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await fetch(resolveGatewayURL('/api/v1/auth/session'), {
+      const response = await fetch(resolveGatewayURL('/api/v1/sessions/current'), {
         credentials: 'include',
         headers: { Accept: 'application/json' },
       });
@@ -219,7 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch(resolveGatewayURL('/api/v1/auth/login/email/confirm'), {
+      const response = await fetch(resolveGatewayURL('/api/v1/sessions/email'), {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -251,8 +251,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(resolveGatewayURL('/api/v1/auth/logout'), {
-        method: 'POST',
+      await fetch(resolveGatewayURL('/api/v1/sessions/current'), {
+        method: 'DELETE',
         credentials: 'include',
       });
     } finally {

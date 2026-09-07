@@ -370,12 +370,12 @@ export async function completeScannedMobilePairing(): Promise<MobileDeviceSessio
 }
 
 async function exchangeDeviceNonce(device: PersistedDeviceKey): Promise<ActiveSession> {
-  const nonce = await mobileFetch<{ nonceId: string; nonce: string }>('/auth/nonce', {
+  const nonce = await mobileFetch<{ nonceId: string; nonce: string }>('/auth/nonces', {
     method: 'POST',
     body: JSON.stringify({ deviceId: device.deviceId }),
   }, { requiresDevice: false });
   const signatureHex = await signNonce(device.privateKey, nonce.nonce);
-  const token = await mobileFetch<{ accessToken: string; expiresAt: number }>('/auth/token', {
+  const token = await mobileFetch<{ accessToken: string; expiresAt: number }>('/auth/tokens', {
     method: 'POST',
     body: JSON.stringify({ deviceId: device.deviceId, nonceId: nonce.nonceId, nonce: nonce.nonce, signatureHex }),
   }, { requiresDevice: false });
@@ -411,7 +411,7 @@ export async function restoreMobileDeviceSession(): Promise<MobileDeviceSession 
 export async function confirmMobileDevicePairing(code: string): Promise<MobileDeviceSession> {
   if (!pendingPairing) throw new MobileControlError('pairing_not_started');
   const ownerApprovalToken = await requestOwnerPairApproval(pendingPairing.pairingId, code);
-  const confirmed = await mobileFetch<{ deviceId: string; nonce: { nonceId: string; nonce: string } }>('/pair/confirm', {
+  const confirmed = await mobileFetch<{ deviceId: string; nonce: { nonceId: string; nonce: string } }>('/pair/confirmations', {
     method: 'POST',
     body: JSON.stringify({ pairingId: pendingPairing.pairingId, code: code.trim(), ownerApprovalToken }),
   }, { requiresDevice: false });
@@ -466,7 +466,7 @@ export async function resolveMobileApprovalScan(scanToken: string): Promise<Appr
 }
 
 export async function decideMobileApprovalScan(scanId: string, decision: ApprovalScanPreview['availableDecisions'][number], handoffCorrelationId: string) {
-  return mobileFetch(`/approval-scans/${encodeURIComponent(scanId)}/decision`, {
+  return mobileFetch(`/approval-scans/${encodeURIComponent(scanId)}/decisions`, {
     method: 'POST',
     body: JSON.stringify({ decision, idempotencyKey: crypto.randomUUID(), handoffCorrelationId }),
   });

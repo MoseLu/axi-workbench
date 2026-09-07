@@ -11,23 +11,23 @@ describe('tauriGateway routing', () => {
     'http://tauri.localhost/login',
   ])('recognizes the packaged Tauri origin: %s', (pageURL) => {
     expect(isPackagedTauriOrigin(pageURL)).toBe(true);
-    expect(shouldUseNativeGatewayRequest('/api/v1/auth/session', pageURL)).toBe(true);
+    expect(shouldUseNativeGatewayRequest('/api/v1/sessions/current', pageURL)).toBe(true);
   });
 
   it('keeps Vite browser requests on the browser proxy', () => {
-    expect(shouldUseNativeGatewayRequest('/api/v1/auth/session', 'http://127.0.0.1:5183/login')).toBe(false);
+    expect(shouldUseNativeGatewayRequest('/api/v1/sessions/current', 'http://127.0.0.1:5183/login')).toBe(false);
   });
 
   it('keeps an explicit local Gateway URL available to the native adapter', () => {
     expect(shouldUseNativeGatewayRequest(
-      'http://127.0.0.1:8088/api/v1/auth/session',
+      'http://127.0.0.1:8088/api/v1/sessions/current',
       'http://127.0.0.1:5183/login',
     )).toBe(true);
   });
 
   it('does not hijack remote browser requests', () => {
     expect(shouldUseNativeGatewayRequest(
-      'https://workbench.axiomaticworld.com/api/v1/auth/session',
+      'https://workbench.axiomaticworld.com/api/v1/sessions/current',
       'https://workbench.axiomaticworld.com/login',
     )).toBe(false);
   });

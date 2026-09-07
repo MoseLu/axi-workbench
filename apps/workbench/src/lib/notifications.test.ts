@@ -45,8 +45,8 @@ describe('notification API client', () => {
     await expect(markNotificationRead('notification/1')).resolves.toMatchObject({ read: true });
     await expect(markAllNotificationsRead()).resolves.toBe(4);
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, expect.stringMatching(/\/api\/v1\/notifications\/notification%2F1\/read$/), expect.objectContaining({ method: 'PUT', credentials: 'include' }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, expect.stringMatching(/\/api\/v1\/notifications\/read-all$/), expect.objectContaining({ method: 'PUT', credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(1, expect.stringMatching(/\/api\/v1\/notifications\/notification%2F1$/), expect.objectContaining({ method: 'PATCH', credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, expect.stringMatching(/\/api\/v1\/notifications\/read-receipts$/), expect.objectContaining({ method: 'POST', credentials: 'include' }));
   });
 
   it('surfaces a gateway error instead of inventing notification data', async () => {

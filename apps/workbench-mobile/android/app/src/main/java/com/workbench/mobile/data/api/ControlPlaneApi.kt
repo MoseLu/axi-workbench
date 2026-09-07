@@ -35,10 +35,10 @@ interface ControlPlaneApi {
     @POST("mobile/pair/status")
     suspend fun pairingStatus(@Body request: com.workbench.mobile.data.api.dto.PairingStatusRequest): com.workbench.mobile.data.api.dto.PairingStatusResponse
 
-    @POST("mobile/auth/nonce")
+    @POST("mobile/auth/nonces")
     suspend fun requestNonce(@Body request: WorkspaceNonceRequest): WorkspaceNonceResponse
 
-    @POST("mobile/auth/token")
+    @POST("mobile/auth/tokens")
     suspend fun exchangeToken(@Body request: ControlPlaneTokenRequest): ControlPlaneTokenResponse
 
     @GET("mobile/workspace")
@@ -47,7 +47,7 @@ interface ControlPlaneApi {
     @POST("mobile/jobs")
     suspend fun submitProjectAction(@Body request: MobileActionRequest): MobileActionResult
 
-    @POST("mobile/approvals/{approvalId}/decision")
+    @POST("mobile/approvals/{approvalId}/decisions")
     suspend fun decideProjectApproval(
         @Path("approvalId") approvalId: String,
         @Body request: MobileApprovalDecisionRequest

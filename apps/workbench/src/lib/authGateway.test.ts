@@ -31,6 +31,6 @@ describe('normalizeGatewayBaseURL', () => {
 
 describe('resolveGatewayURL', () => {
   it('removes a configured trailing slash only while joining the request path', () => {
-    expect(resolveGatewayURL('/api/v1/auth/session', 'https://api.axi.example/')).toBe('https://api.axi.example/api/v1/auth/session');
+    expect(resolveGatewayURL('/api/v1/sessions/current', 'https://api.axi.example/')).toBe('https://api.axi.example/api/v1/sessions/current');
   });
 });

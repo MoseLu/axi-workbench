@@ -38,6 +38,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- Web、Mobile 与共享客户端改走 REST 资源路径：会话用 `/sessions/current`、`/sessions`、`/sessions/email`、`/sessions/device-qr/:id`；通知用 `PATCH /notifications/:id` 与 `POST /notifications/read-receipts`；控制面/工作流/配对的 cancel、decision、run、confirm、nonce、token 改名词路径。旧 RPC 路径仍由 Gateway 兼容。
+
 - Gateway 第二轮 REST：拆掉 `/control-plane/*` 与 `/mobile/*` 的 `Any` catch-all，改成显式方法/路径 allowlist；登录 `confirm`/`consume` 以及 QR `resume`、邮件校验 `confirm` 增加名词资源别名（`/sessions/email`、`/sessions/device-qr/:id`、`/email-verifications/:id/redemptions`、`/qr/transactions/:id/resumptions`），旧 RPC 路径保留。CONNECT/TRACE 与未登记路径返回 404，不再穿透到 Control Plane。
 
 - 将 Web/Tauri 登录面板邮箱后缀改成 Element 风格的复合输入 append：灰色选择器、内容宽度、可开合菜单，以及打开时旋转的小箭头。前缀仍限制为常见邮箱 local-part 格式，拒绝特殊字符、非法点边界和超长值，非法输入不会触发验证码或密码登录。

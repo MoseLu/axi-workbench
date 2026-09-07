@@ -13,7 +13,7 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   await page.route('**/api/**', async (route) => {
     await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'not mocked' }) });
   });
-  await page.route('**/api/v1/auth/session*', async (route) => {
+  await page.route('**/api/v1/sessions/current*', async (route) => {
     await route.fulfill({
       status: 401,
       contentType: 'application/json',
@@ -441,7 +441,7 @@ test('keeps a QR creation failure stable until the user retries', async ({ page 
     expiresAt: Math.floor(Date.now() / 1000) + 60,
   };
 
-  await page.route('**/api/v1/auth/session*', (route) => route.fulfill({
+  await page.route('**/api/v1/sessions/current*', (route) => route.fulfill({
     status: 401,
     contentType: 'application/json',
     body: JSON.stringify({ authenticated: false }),
@@ -534,7 +534,7 @@ test('expired QR keeps a readable client-style scrim until the user refreshes it
     expiresAt: Math.floor(Date.now() / 1000) + 60,
   };
 
-  await page.route('**/api/v1/auth/session*', (route) => route.fulfill({
+  await page.route('**/api/v1/sessions/current*', (route) => route.fulfill({
     status: 401,
     contentType: 'application/json',
     body: JSON.stringify({ authenticated: false }),

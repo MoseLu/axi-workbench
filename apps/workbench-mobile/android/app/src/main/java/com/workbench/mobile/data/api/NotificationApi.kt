@@ -2,7 +2,8 @@ package com.workbench.mobile.data.api
 
 import com.workbench.mobile.data.api.dto.NavBadgesResponse
 import retrofit2.http.GET
-import retrofit2.http.PUT
+import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 /**
@@ -20,9 +21,9 @@ interface NotificationApi {
     @GET("notifications/nav-badges")
     suspend fun getNavBadges(): NavBadgesResponse
 
-    @PUT("notifications/{id}/read")
+    @PATCH("notifications/{id}")
     suspend fun markRead(@Path("id") id: String)
 
-    @PUT("notifications/read-all")
+    @POST("notifications/read-receipts")
     suspend fun markAllRead()
 }
