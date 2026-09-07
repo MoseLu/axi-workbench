@@ -357,7 +357,7 @@ export function createControlPlaneHttpServer({
         if (r.ok) controlPlane.pairing.audit({ event: "mobile_web_login_qr_approved", webLoginId: body.webLoginId, deviceId: auth.deviceId });
         return sendJson(res, r.ok ? 200 : 400, r, url);
       }
-      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/confirm") {
+      if (req.method === "POST" && (url.pathname === "/mobile/v1/pair/confirm" || url.pathname === "/mobile/v1/pair/confirmations")) {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const body = await readJsonBody(req);
         const r = controlPlane.pairing.confirmPair(body || {});
@@ -369,7 +369,7 @@ export function createControlPlaneHttpServer({
         const r = controlPlane.pairing.pairingStatus(body || {});
         return sendJson(res, r.ok ? 200 : 400, r, url);
       }
-      if (req.method === "POST" && url.pathname === "/mobile/v1/auth/token") {
+      if (req.method === "POST" && (url.pathname === "/mobile/v1/auth/token" || url.pathname === "/mobile/v1/auth/tokens")) {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const body = await readJsonBody(req);
         const r = controlPlane.pairing.exchangeNonceForAccessToken(body || {});
@@ -377,13 +377,13 @@ export function createControlPlaneHttpServer({
       }
       // A nonce is safe to issue without a bearer token: only a device that
       // still owns the registered secret can sign it and obtain a token.
-      if (req.method === "POST" && url.pathname === "/mobile/v1/auth/nonce") {
+      if (req.method === "POST" && (url.pathname === "/mobile/v1/auth/nonce" || url.pathname === "/mobile/v1/auth/nonces")) {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const body = await readJsonBody(req);
         const r = controlPlane.pairing.requestAuthNonce({ deviceId: body?.deviceId });
         return sendJson(res, r.ok ? 200 : 400, r, url);
       }
-      if (req.method === "POST" && url.pathname === "/mobile/v1/pair/revoke") {
+      if (req.method === "POST" && (url.pathname === "/mobile/v1/pair/revoke" || url.pathname === "/mobile/v1/pair/revocations")) {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const auth = authenticate(req, controlPlane, { pairingRequired, mobileOwnerToken });
         if (!auth.ok) return sendJson(res, 401, { error: auth.error }, url);
@@ -397,7 +397,7 @@ export function createControlPlaneHttpServer({
       // ownerApprovalSecret via the `X-Axi-Owner-Token` header, plus a
       // freshly signed nonce from the device private key.  This is the
       // only legal way a mobile bearer can carry the `owner` scope.
-        if (req.method === "POST" && url.pathname === "/mobile/v1/auth/owner-token") {
+        if (req.method === "POST" && (url.pathname === "/mobile/v1/auth/owner-token" || url.pathname === "/mobile/v1/auth/owner-tokens")) {
         if (!controlPlane.pairing) return sendJson(res, 503, { error: "pairing not configured" }, url);
         const presented = req.headers["x-axi-owner-token"] || "";
         if (!ownerApprovalSecret) return sendJson(res, 503, { error: "owner approval secret not configured" }, url);
@@ -445,7 +445,7 @@ export function createControlPlaneHttpServer({
         controlPlane.recordMobileAudit({ auditKind: "approval_scan_previewed", deviceId: auth.deviceId, approvalRef: preview.approvalId, handoffCorrelationId: preview.handoffCorrelationId, status: "previewed" });
         return sendJson(res, 200, preview, url);
       }
-      const mobileApprovalScanDecisionMatch = url.pathname.match(/^\/mobile\/v1\/approval-scans\/([^/]+)\/decision$/);
+      const mobileApprovalScanDecisionMatch = url.pathname.match(/^\/mobile\/v1\/approval-scans\/([^/]+)\/(?:decision|decisions)$/);
       if (req.method === "POST" && mobileApprovalScanDecisionMatch) {
         if (!hasOwnerScope(auth.scopes)) return sendJson(res, 403, { error: "owner scope required for approval scan decisions" }, url);
         const body = await readJsonBody(req);
@@ -492,7 +492,7 @@ export function createControlPlaneHttpServer({
         controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionId: body.actionId, actionType: body.actionType, approvalRef, status: approvalRef ? "pending_approval" : "executed" });
         return sendJson(res, 202, result, url);
       }
-      const mobileCancelMatch = url.pathname.match(/^\/mobile\/v1\/jobs\/([^/]+)\/cancel$/);
+      const mobileCancelMatch = url.pathname.match(/^\/mobile\/v1\/jobs\/([^/]+)\/(?:cancel|cancellations)$/);
       if (req.method === "POST" && mobileCancelMatch) {
         if (!hasOwnerScope(auth.scopes)) return sendJson(res, 403, { error: "owner scope required to cancel mobile jobs" }, url);
         const body = await readJsonBody(req);
@@ -512,7 +512,7 @@ export function createControlPlaneHttpServer({
         controlPlane.recordMobileAudit({ deviceId: auth.deviceId, idempotencyKey: body.idempotencyKey, projectId: body.projectId, actionType: "cancel_job", approvalRef: null, status: job ? "executed" : "not_found" });
         return sendJson(res, status, responseBody, url);
       }
-      const mobileApprovalMatch = url.pathname.match(/^\/mobile\/v1\/approvals\/([^/]+)\/decision$/);
+      const mobileApprovalMatch = url.pathname.match(/^\/mobile\/v1\/approvals\/([^/]+)\/(?:decision|decisions)$/);
       if (req.method === "POST" && mobileApprovalMatch) {
         if (!hasOwnerScope(auth.scopes)) return sendJson(res, 403, { error: "owner scope required to decide mobile approvals" }, url);
         const body = await readJsonBody(req);
@@ -564,7 +564,7 @@ export function createControlPlaneHttpServer({
     if (req.method === "GET" && jobArtifactsMatch) {
       return sendJson(res, 200, controlPlane.getJobArtifacts(decodeURIComponent(jobArtifactsMatch[1])), url);
     }
-    const cancelJobMatch = url.pathname.match(/^\/jobs\/([^/]+)\/cancel$/);
+    const cancelJobMatch = url.pathname.match(/^\/jobs\/([^/]+)\/(?:cancel|cancellations)$/);
     if (req.method === "POST" && cancelJobMatch) {
       const job = controlPlane.cancelJob(decodeURIComponent(cancelJobMatch[1]));
       return sendJson(res, job ? 200 : 404, job || { error: "job not found" }, url);
@@ -579,12 +579,12 @@ export function createControlPlaneHttpServer({
       const task = controlPlane.getAgentTask(decodeURIComponent(agentTaskMatch[1]));
       return sendJson(res, task ? 200 : 404, task || { error: "agent task not found" }, url);
     }
-    const cancelTaskMatch = url.pathname.match(/^\/agent-tasks\/([^/]+)\/cancel$/);
+    const cancelTaskMatch = url.pathname.match(/^\/agent-tasks\/([^/]+)\/(?:cancel|cancellations)$/);
     if (req.method === "POST" && cancelTaskMatch) {
       const task = controlPlane.cancelAgentTask(decodeURIComponent(cancelTaskMatch[1]));
       return sendJson(res, task ? 200 : 404, task || { error: "agent task not found" }, url);
     }
-    const approvalMatch = url.pathname.match(/^\/approvals\/([^/]+)\/decision$/);
+    const approvalMatch = url.pathname.match(/^\/approvals\/([^/]+)\/(?:decision|decisions)$/);
     if (req.method === "POST" && approvalMatch) {
       const decision = controlPlane.decideApproval({
         id: decodeURIComponent(approvalMatch[1]),
@@ -592,7 +592,7 @@ export function createControlPlaneHttpServer({
       });
       return sendJson(res, decision ? 200 : 404, decision || { error: "approval not found" }, url);
     }
-    const commandMatch = url.pathname.match(/^\/commands\/([^/]+)\/run$/);
+    const commandMatch = url.pathname.match(/^\/commands\/([^/]+)\/(?:run|runs)$/);
     if (req.method === "POST" && commandMatch) {
       const run = controlPlane.runCommand(decodeURIComponent(commandMatch[1]));
       return sendJson(res, run ? 200 : 404, run || { error: "command not found" }, url);

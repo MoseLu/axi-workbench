@@ -38,6 +38,8 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- Gateway 第二轮 REST：拆掉 `/control-plane/*` 与 `/mobile/*` 的 `Any` catch-all，改成显式方法/路径 allowlist；登录 `confirm`/`consume` 以及 QR `resume`、邮件校验 `confirm` 增加名词资源别名（`/sessions/email`、`/sessions/device-qr/:id`、`/email-verifications/:id/redemptions`、`/qr/transactions/:id/resumptions`），旧 RPC 路径保留。CONNECT/TRACE 与未登记路径返回 404，不再穿透到 Control Plane。
+
 - 将 Web/Tauri 登录面板邮箱后缀改成 Element 风格的复合输入 append：灰色选择器、内容宽度、可开合菜单，以及打开时旋转的小箭头。前缀仍限制为常见邮箱 local-part 格式，拒绝特殊字符、非法点边界和超长值，非法输入不会触发验证码或密码登录。
 
 - 修正 macOS 桌面包的 Gateway 目标：正式打包默认注入 `https://workbench.axiomaticworld.com`，并在产物校验中确认公网地址已生效，避免可分发 App 运行时使用 `127.0.0.1:8088`；本地 Gateway 仅能通过显式调试开关使用。

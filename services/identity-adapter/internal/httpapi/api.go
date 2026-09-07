@@ -61,9 +61,11 @@ func (a *API) Router() *gin.Engine {
 	auth.POST("/qr/transactions", a.startQRTransaction)
 	auth.GET("/qr/transactions/:id", a.pollQRTransaction)
 	auth.POST("/qr/transactions/:id/resume", a.resumeQRTransaction)
+	auth.POST("/qr/transactions/:id/resumptions", a.resumeQRTransaction)
 	auth.POST("/qr/transactions/:id/approve", a.requireInternal(), a.approveQRTransaction)
 	auth.POST("/email-verifications", a.requestEmailVerification)
 	auth.POST("/email-verifications/confirm", a.confirmEmailVerification)
+	auth.POST("/email-verifications/:id/redemptions", a.confirmEmailVerification)
 	auth.GET("/eps/links/:provider", a.requireInternal(), a.getEPSIdentityLink)
 	auth.PUT("/eps/links/:provider", a.requireInternal(), a.putEPSIdentityLink)
 
@@ -353,7 +355,7 @@ func (a *API) requestEmailVerification(c *gin.Context) {
 }
 
 type confirmEmailVerification struct {
-	ChallengeID string `json:"challengeId" binding:"required"`
+	ChallengeID string `json:"challengeId"`
 	Token       string `json:"token" binding:"required"`
 	Purpose     string `json:"purpose" binding:"required"`
 }
@@ -367,6 +369,14 @@ func (a *API) confirmEmailVerification(c *gin.Context) {
 	request.ChallengeID = strings.TrimSpace(request.ChallengeID)
 	request.Token = strings.TrimSpace(request.Token)
 	request.Purpose = strings.TrimSpace(request.Purpose)
+	if pathID := strings.TrimSpace(c.Param("id")); pathID != "" {
+		if request.ChallengeID == "" {
+			request.ChallengeID = pathID
+		} else if request.ChallengeID != pathID {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "challengeId must match the path"})
+			return
+		}
+	}
 	if request.ChallengeID == "" || request.Purpose == "" || !numericCodePattern.MatchString(request.Token) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "challengeId, purpose and a six-digit verification token are required"})
 		return

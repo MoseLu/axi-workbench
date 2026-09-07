@@ -196,6 +196,73 @@ func TestEmailVerificationBindsChallengePurposeAndAttemptBudget(t *testing.T) {
 	}
 }
 
+func TestRESTEmailVerificationRedemptionAndQRResumptionAliases(t *testing.T) {
+	current := time.Date(2026, 8, 7, 1, 0, 0, 0, time.UTC)
+	sender := &captureSender{}
+	router := newTestRouter(&current, sender)
+
+	request := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications", map[string]string{
+		"email":   "owner@axi.test",
+		"purpose": "login",
+	}, nil)
+	if request.Code != http.StatusAccepted || len(sender.messages) != 1 {
+		t.Fatalf("email request = %d, messages=%d", request.Code, len(sender.messages))
+	}
+	match := regexp.MustCompile(`(?m)^[ \t]*([0-9]{6})[ \t]*$`).FindStringSubmatch(sender.messages[0].Text)
+	if len(match) != 2 {
+		t.Fatalf("could not extract test verification token from message")
+	}
+	var requested struct {
+		ChallengeID string `json:"challengeId"`
+	}
+	decodeJSON(t, request, &requested)
+	mismatch := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/"+requested.ChallengeID+"/redemptions", map[string]string{
+		"challengeId": "other-challenge",
+		"purpose":     "login",
+		"token":       match[1],
+	}, nil)
+	if mismatch.Code != http.StatusBadRequest {
+		t.Fatalf("mismatched redemption challenge = %d, want %d", mismatch.Code, http.StatusBadRequest)
+	}
+	confirm := performJSON(t, router, http.MethodPost, "/api/v1/auth/email-verifications/"+requested.ChallengeID+"/redemptions", map[string]string{
+		"purpose": "login",
+		"token":   match[1],
+	}, nil)
+	if confirm.Code != http.StatusOK {
+		t.Fatalf("REST email redemption = %d, body=%s", confirm.Code, confirm.Body.String())
+	}
+
+	start := performJSON(t, router, http.MethodPost, "/api/v1/auth/qr/transactions", map[string]string{
+		"clientId":            "axi-workbench-web",
+		"redirectUri":         "https://web.axi.test/auth/callback",
+		"codeChallenge":       strings.Repeat("c", 43),
+		"codeChallengeMethod": "S256",
+	}, nil)
+	var started struct {
+		TransactionID string `json:"transactionId"`
+		QRPayload     string `json:"qrPayload"`
+		PollToken     string `json:"pollToken"`
+	}
+	decodeJSON(t, start, &started)
+	payloadURL, err := url.Parse(started.QRPayload)
+	if err != nil {
+		t.Fatalf("parse QR payload: %v", err)
+	}
+	approval := performJSON(t, router, http.MethodPost, "/api/v1/auth/qr/transactions/"+started.TransactionID+"/approve", map[string]string{"ticket": payloadURL.Query().Get("ticket")}, map[string]string{
+		"X-Axi-Internal-Token": "gateway-test-token",
+		"X-Axi-Subject":        "zitadel-subject-1",
+	})
+	if approval.Code != http.StatusAccepted {
+		t.Fatalf("approve QR status = %d, body=%s", approval.Code, approval.Body.String())
+	}
+	resume := performJSON(t, router, http.MethodPost, "/api/v1/auth/qr/transactions/"+started.TransactionID+"/resumptions", nil, map[string]string{
+		"X-Axi-QR-Poll-Token": started.PollToken,
+	})
+	if resume.Code != http.StatusOK {
+		t.Fatalf("REST QR resumption = %d, body=%s", resume.Code, resume.Body.String())
+	}
+}
+
 func TestQRTransactionExpiresBeforeApproval(t *testing.T) {
 	current := time.Date(2026, 8, 7, 1, 0, 0, 0, time.UTC)
 	sender := &captureSender{}

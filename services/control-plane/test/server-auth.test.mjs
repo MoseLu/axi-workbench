@@ -110,10 +110,14 @@ test("core HTTP rejects /snapshot, /jobs, /approvals, /commands, /runs without A
     ["GET", "/jobs/x/events"],
     ["GET", "/jobs/x/artifacts"],
     ["POST", "/jobs/x/cancel"],
+    ["POST", "/jobs/x/cancellations"],
     ["GET", "/agent-tasks/x"],
     ["POST", "/agent-tasks/x/cancel"],
+    ["POST", "/agent-tasks/x/cancellations"],
     ["POST", "/approvals/x/decision"],
+    ["POST", "/approvals/x/decisions"],
     ["POST", "/commands/x/run"],
+    ["POST", "/commands/x/runs"],
     ["GET", "/runs/x"],
   ];
   for (const [method, url] of endpoints) {
@@ -136,6 +140,23 @@ test("core HTTP accepts /snapshot with the configured coreApiToken bearer", asyn
   assert.equal(r.status, 200, `expected 200, got ${r.status}: ${r.body}`);
   const body = JSON.parse(r.body);
   assert.ok(body.axiResources || body.resources, "snapshot shape");
+});
+
+test("REST noun aliases match legacy RPC control-plane action paths", async () => {
+  const { server } = fixture();
+  const headers = { authorization: "Bearer core-token-test-value" };
+  const pairs = [
+    ["/jobs/missing/cancel", "/jobs/missing/cancellations"],
+    ["/agent-tasks/missing/cancel", "/agent-tasks/missing/cancellations"],
+    ["/approvals/missing/decision", "/approvals/missing/decisions"],
+    ["/commands/missing/run", "/commands/missing/runs"],
+  ];
+  for (const [rpcPath, restPath] of pairs) {
+    const rpc = await invokeServer(server, { method: "POST", url: rpcPath, headers, body: {} });
+    const rest = await invokeServer(server, { method: "POST", url: restPath, headers, body: {} });
+    assert.equal(rest.status, rpc.status, `${restPath} status ${rest.status} != ${rpcPath} ${rpc.status}`);
+    assert.equal(rest.body, rpc.body, `${restPath} body drifted from ${rpcPath}`);
+  }
 });
 
 test("internal gateway web route accepts /snapshot with its service identity", async () => {

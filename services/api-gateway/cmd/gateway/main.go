@@ -163,12 +163,15 @@ func setupRouter(
 	auth.POST("/qr/transactions", proxyHandler.ProxyToIdentity())
 	auth.GET("/qr/transactions/:id", proxyHandler.ProxyToIdentity())
 	auth.POST("/qr/transactions/:id/resume", proxyHandler.ProxyToIdentity())
+	auth.POST("/qr/transactions/:id/resumptions", proxyHandler.ProxyToIdentity())
 	auth.POST("/email-verifications", proxyHandler.ProxyToIdentity())
 	auth.POST("/email-verifications/confirm", proxyHandler.ProxyToIdentity())
+	auth.POST("/email-verifications/:id/redemptions", proxyHandler.ProxyToIdentity())
 	// Login-with-email: confirm the one-time token through the identity-adapter
 	// and issue a browser session. Replaces the OIDC code-exchange step for
 	// environments that use SMTP delivery instead of an external IdP.
 	auth.POST("/login/email/confirm", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
+	v1.POST("/sessions/email", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
 	// Password login uses the configured bcrypt owner hash and issues the same
 	// durable browser session as email and device login.
 	auth.POST("/login/password", handlers.PasswordLogin(identityService))
@@ -178,6 +181,7 @@ func setupRouter(
 	auth.POST("/device-login/qr", mobileControl.ProxyPublicWebLogin())
 	auth.GET("/device-login/qr/:id", mobileControl.ProxyPublicWebLogin())
 	auth.POST("/device-login/qr/:id/consume", mobileControl.ConsumeWebLogin(identityService))
+	v1.POST("/sessions/device-qr/:id", mobileControl.ConsumeWebLogin(identityService))
 	// ZITADEL custom-login completes a QR transaction through the public
 	// gateway. The adapter still checks its webhook secret; this path preserves
 	// the sole-Ingress and ClusterIP-only identity-adapter topology.
@@ -196,13 +200,13 @@ func setupRouter(
 	protected.POST("/handoffs/:id", mobileControl.ProxyWebHandoff())
 	// Web control-plane calls stay same-origin and carry the browser session;
 	// the proxy injects the service credential and verified subject.
-	protected.Any("/control-plane/*path", mobileControl.ProxyWebControl())
+	registerWebControlPlaneRoutes(protected, mobileControl.ProxyWebControl())
 
 	// Device-paired Mobile traffic carries a short-lived Control Plane bearer,
 	// rather than a browser OIDC credential.  It remains behind this Gateway;
 	// the downstream verifies the device token after this proxy strips spoofed
 	// internal headers and attaches the Gateway credential.
-	v1.Any("/mobile/*path", mobileControl.Proxy())
+	registerMobileControlRoutes(v1, mobileControl.Proxy())
 
 	// Platform Core routes are tenant-aware. The tenant ID comes from the path;
 	// Platform Core also checks membership and RLS, so a forged client header
