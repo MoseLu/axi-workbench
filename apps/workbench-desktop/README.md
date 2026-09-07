@@ -15,6 +15,21 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 | 打包 .dmg + 公证 | `pnpm build:desktop:dmg` + `apps/workbench-desktop/scripts/notarize.sh` |
 | 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/`（应用名为 `Axi 工作台`） |
 
+## 一键启动
+
+桌面端按 Codex App / 哔哩哔哩客户端的方式启动：**打开 App 即可**，不要再另开终端跑后端。
+
+- 本机仓库还在时（`tauri dev`、从本仓库打的调试包），壳层会探测 `127.0.0.1:8088`；没起来就拉起 control-plane、identity-adapter、platform-core、api-gateway，并在需要时执行 `docker compose up -d`。进程作为 sidecar 挂在 App 下面，退出 App 时一并停掉。
+- 正式包打到公网 `https://workbench.axiomaticworld.com` 时走哔哩哔哩模型：云端 API，不拉本机后端。若本机 Gateway 已经在听，壳层仍优先走 `127.0.0.1:8088`，方便同一台开发机双击 `/Applications` 里的包。
+
+开发一键入口：
+
+```bash
+pnpm dev:desktop
+```
+
+会同时拉起本机 API 平面、Vite 和 Tauri 窗口。
+
 ## Gateway 地址
 
 本机开发默认使用 `http://127.0.0.1:8088`。打包后的正式 macOS App 默认使用

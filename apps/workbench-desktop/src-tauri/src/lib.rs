@@ -15,6 +15,9 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::State;
 
+mod runtime;
+use runtime::LocalRuntime;
+
 const APP_NAME: &str = "Axi 工作台";
 const DEFAULT_GATEWAY_BASE_URL: &str = "http://127.0.0.1:8088";
 const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
@@ -108,10 +111,16 @@ fn resolve_gateway_url(base_url: Option<&str>, path: &str) -> Result<reqwest::Ur
 async fn proxy_gateway_request(
     request: GatewayProxyRequest,
     session: State<'_, GatewaySession>,
+    runtime: State<'_, LocalRuntime>,
 ) -> Result<GatewayProxyResponse, String> {
     let method = reqwest::Method::from_bytes(request.method.as_bytes())
         .map_err(|_| "invalid gateway method".to_string())?;
-    let target_url = resolve_gateway_url(request.base_url.as_deref(), &request.path)?;
+    let target_url = resolve_gateway_url(
+        runtime
+            .preferred_base_url(request.base_url.as_deref())
+            .as_deref(),
+        &request.path,
+    )?;
     let mut client_builder = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(30));
@@ -305,8 +314,18 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .manage(GatewaySession::default())
+        .manage(LocalRuntime::default())
         .invoke_handler(tauri::generate_handler![proxy_gateway_request])
         .setup(|app| {
+            if let Some(root) = runtime::discover_workspace_root() {
+                let runtime = app.state::<LocalRuntime>();
+                match runtime.ensure_from_workspace(&root) {
+                    Ok(()) => eprintln!(
+                        "[workbench-desktop] local Gateway ready at http://127.0.0.1:8088"
+                    ),
+                    Err(error) => eprintln!("[workbench-desktop] local runtime: {error}"),
+                }
+            }
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;
             register_ipc_listeners(app.handle().clone());

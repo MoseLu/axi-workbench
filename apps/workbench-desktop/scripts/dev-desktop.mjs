@@ -25,12 +25,14 @@ const args = process.argv.slice(2)
 const WEB_URL = 'http://127.0.0.1:5183'
 const WEB_HOST = '127.0.0.1'
 const WEB_PORT = 5183
-const READY_TIMEOUT_MS = 30_000
+const GATEWAY_PORT = 8088
+const READY_TIMEOUT_MS = 60_000
 const PROBE_INTERVAL_MS = 250
 
 const printOnly = args.includes('--print-only')
 
 const WEB_CMD = ['pnpm', ['dev:workbench']]
+const RUNTIME_CMD = ['node', ['scripts/ensure-local-runtime.mjs', '--supervise']]
 const TAURI_CMD = ['pnpm', ['--filter', '@axi/workbench-desktop', 'dev:split']]
 
 function fmtCommand([command, commandArgs]) {
@@ -38,9 +40,10 @@ function fmtCommand([command, commandArgs]) {
 }
 
 if (printOnly) {
-  console.log('[dev-desktop] manual two-terminal commands:')
-  console.log(`  terminal A: ${fmtCommand(WEB_CMD)}`)
-  console.log(`  terminal B: ${fmtCommand(TAURI_CMD)}`)
+  console.log('[dev-desktop] one-click process set:')
+  console.log(`  runtime: ${fmtCommand(RUNTIME_CMD)}`)
+  console.log(`  web:     ${fmtCommand(WEB_CMD)}`)
+  console.log(`  tauri:   ${fmtCommand(TAURI_CMD)}`)
   process.exit(0)
 }
 
@@ -61,16 +64,14 @@ function probePort(host, port) {
   })
 }
 
-async function waitForWeb(timeoutMs) {
+async function waitForPort(port, label, timeoutMs) {
   const startedAt = Date.now()
-  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const ok = await probePort(WEB_HOST, WEB_PORT)
+    const ok = await probePort(WEB_HOST, port)
     if (ok) return Date.now() - startedAt
     if (Date.now() - startedAt > timeoutMs) {
       throw new Error(
-        `[dev-desktop] timed out after ${timeoutMs}ms waiting for ${WEB_URL}. ` +
-          'Make sure `pnpm dev:workbench` boots vite without errors and nothing else is occupying 5183.',
+        `[dev-desktop] timed out after ${timeoutMs}ms waiting for ${label} on ${WEB_HOST}:${port}.`,
       )
     }
     await new Promise((r) => setTimeout(r, PROBE_INTERVAL_MS))
@@ -134,12 +135,17 @@ function spawnStep(label, [command, commandArgs], cwd) {
 }
 
 async function main() {
+  console.log(`[dev-desktop] starting local API plane: ${fmtCommand(RUNTIME_CMD)}`)
+  spawnStep('runtime', RUNTIME_CMD, packageRoot)
   console.log(`[dev-desktop] starting web dev: ${fmtCommand(WEB_CMD)}`)
   console.log(`[dev-desktop] web dev URL: ${WEB_URL}`)
   spawnStep('web', WEB_CMD, projectRoot)
 
-  const waited = await waitForWeb(READY_TIMEOUT_MS)
-  console.log(`[dev-desktop] web dev ready after ${waited}ms; starting tauri: ${fmtCommand(TAURI_CMD)}`)
+  const waitedWeb = await waitForPort(WEB_PORT, WEB_URL, READY_TIMEOUT_MS)
+  const waitedGateway = await waitForPort(GATEWAY_PORT, 'local Gateway', READY_TIMEOUT_MS)
+  console.log(
+    `[dev-desktop] web ready after ${waitedWeb}ms, gateway ready after ${waitedGateway}ms; starting tauri: ${fmtCommand(TAURI_CMD)}`,
+  )
 
   spawnStep('tauri', TAURI_CMD, packageRoot)
 }
