@@ -21,6 +21,7 @@ import {
   webDeviceLoginQrPayload,
   type WebDeviceLoginQr,
 } from '../lib/webDeviceLogin';
+import { localizeLoginError } from '../lib/localizeLoginError';
 import { emitShellLoginSuccess, isTauriShell } from '../lib/shell';
 import './Login.css';
 
@@ -44,22 +45,6 @@ const EMAIL_SUFFIX_OPTIONS = [
 type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
-
-function localizeLoginError(message: string, t: (key: string) => string): string {
-  const text = message.trim();
-  if (!text) return t('auth.login.sendFailed');
-  const lower = text.toLowerCase();
-  if (
-    lower.includes('temporarily unavailable')
-    || lower.includes('identity service')
-    || lower.includes('identity persistence')
-    || lower.includes('session store unavailable')
-  ) {
-    return t('auth.login.identityUnavailable');
-  }
-  if (/发送验证码失败/.test(text)) return t('auth.login.sendFailed');
-  return text;
-}
 
 function EmailSuffixSelect({
   id,

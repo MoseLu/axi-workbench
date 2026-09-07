@@ -91,6 +91,8 @@
   "auth.login.resentHint": "Verification code resent.",
   "auth.login.sendFailed": "Failed to send the verification code",
   "auth.login.identityUnavailable": "The identity service is temporarily unavailable. Please try again later.",
+  "auth.login.requestFailed": "Login failed. Please try again later.",
+  "auth.login.invalidCredentials": "Incorrect email or password.",
   "auth.login.resendFailed": "Failed to resend",
   "auth.login.sending": "Sending…",
   "auth.login.verifying": "Verifying…",

@@ -452,6 +452,46 @@ test('email login error banner keeps the card height stable across appearance', 
   expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(48);
 });
 
+test('password login localizes gateway Not Found under the submit button', async ({ page }) => {
+  await page.route('**/api/v1/auth/methods*', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ passwordLogin: true }),
+    });
+  });
+  await page.route('**/api/v1/sessions', (route) => {
+    if (route.request().method() !== 'POST') {
+      route.fallback();
+      return;
+    }
+    route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Not Found' }),
+    });
+  });
+
+  await page.goto('/login');
+  await page.getByRole('tab', { name: '密码登录' }).click();
+  await page.locator('#axi-login-password-email').fill('broken@example.com');
+  await page.locator('#axi-login-password').fill('wrong-password');
+  await page.getByRole('button', { name: '登录' }).click();
+
+  const banner = page.locator('.axi-login-banner-slot .axi-banner');
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText('登录失败，请稍后重试');
+  await expect(banner).not.toContainText('Not Found');
+
+  const errorPlacement = await page.evaluate(() => {
+    const submit = document.querySelector('.axi-login-button')?.getBoundingClientRect();
+    const slot = document.querySelector('.axi-login-banner-slot')?.getBoundingClientRect();
+    return { gap: submit && slot ? slot.top - submit.bottom : null };
+  });
+  expect(errorPlacement.gap ?? 999).toBeGreaterThanOrEqual(4);
+  expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(48);
+});
+
 test('keeps a QR creation failure stable until the user retries', async ({ page }) => {
   let createCalls = 0;
   const transaction = {
