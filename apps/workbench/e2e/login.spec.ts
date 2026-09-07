@@ -275,6 +275,15 @@ test('renders the web login journey in a real browser', async ({ page }) => {
   expect(bannerPresentation?.descriptionWhiteSpace).toBe('normal');
   expect(bannerPresentation?.text).toContain('垃圾邮件');
   expect(bannerPresentation?.truncated).toBe(false);
+  const hintPlacement = await page.evaluate(() => {
+    const button = document.querySelector('.axi-login-button')?.getBoundingClientRect();
+    const slot = document.querySelector('.axi-login-banner-slot')?.getBoundingClientRect();
+    return {
+      gap: button && slot ? slot.top - button.bottom : null,
+    };
+  });
+  expect(hintPlacement.gap ?? 999).toBeGreaterThanOrEqual(4);
+  expect(hintPlacement.gap ?? 999).toBeLessThanOrEqual(48);
   await page.clock.runFor('01:00');
   await expect(sendButton).toBeEnabled();
   await expect(sendButton).toHaveText('重新获取');
@@ -405,7 +414,7 @@ test('email login error banner keeps the card height stable across appearance', 
     route.fulfill({
       status: 400,
       contentType: 'application/json',
-      body: JSON.stringify({ error: '邮箱验证未开启' }),
+      body: JSON.stringify({ error: 'identity service temporarily unavailable' }),
     });
   });
 
@@ -425,14 +434,22 @@ test('email login error banner keeps the card height stable across appearance', 
   const banner = bannerSlot.locator('.axi-banner');
   await expect(banner).toBeVisible();
   await expect(banner).toHaveClass(/axi-banner--tone-danger/);
+  await expect(banner).toContainText('身份服务暂时不可用');
 
   // Wait a frame for layout to settle, then assert the card height has not
-  // shifted more than 2px (banner uses a fixed-height row in the grid).
+  // shifted more than 2px. The banner is pinned under the submit button.
   await page.waitForTimeout(150);
   const afterHeight = await card.evaluate((node) => node.getBoundingClientRect().height);
   const afterButtonBottom = await button.evaluate((node) => node.getBoundingClientRect().bottom);
   expect(Math.abs(afterHeight - beforeHeight)).toBeLessThanOrEqual(2);
   expect(Math.abs(afterButtonBottom - beforeButtonBottom)).toBeLessThanOrEqual(0.1);
+  const errorPlacement = await page.evaluate(() => {
+    const submit = document.querySelector('.axi-login-button')?.getBoundingClientRect();
+    const slot = document.querySelector('.axi-login-banner-slot')?.getBoundingClientRect();
+    return { gap: submit && slot ? slot.top - submit.bottom : null };
+  });
+  expect(errorPlacement.gap ?? 999).toBeGreaterThanOrEqual(4);
+  expect(errorPlacement.gap ?? 999).toBeLessThanOrEqual(48);
 });
 
 test('keeps a QR creation failure stable until the user retries', async ({ page }) => {

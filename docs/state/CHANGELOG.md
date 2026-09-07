@@ -39,6 +39,7 @@ All notable local changes to Axi Workbench are tracked here.
 ### Changed
 
 - 登录验证码提示 banner 允许换行完整显示「QQ 邮箱可能在垃圾邮件中」，不再单行截断。
+- 登录 banner 固定在提交按钮下方，不再随文案长短贴底或上移；身份服务英文错误映射为「身份服务暂时不可用，请稍后重试」。
 
 - Web、Mobile 与共享客户端改走 REST 资源路径：会话用 `/sessions/current`、`/sessions`、`/sessions/email`、`/sessions/device-qr/:id`；通知用 `PATCH /notifications/:id` 与 `POST /notifications/read-receipts`；控制面/工作流/配对的 cancel、decision、run、confirm、nonce、token 改名词路径。旧 RPC 路径仍由 Gateway 兼容。
 

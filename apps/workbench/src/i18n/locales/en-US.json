@@ -90,6 +90,7 @@
   "auth.login.codeSentHint": "We sent the code to your email. Check the spam folder if you don't see it.",
   "auth.login.resentHint": "Verification code resent.",
   "auth.login.sendFailed": "Failed to send the verification code",
+  "auth.login.identityUnavailable": "The identity service is temporarily unavailable. Please try again later.",
   "auth.login.resendFailed": "Failed to resend",
   "auth.login.sending": "Sending…",
   "auth.login.verifying": "Verifying…",

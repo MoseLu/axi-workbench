@@ -406,16 +406,21 @@
 
 .axi-login-banner-slot {
   position: absolute;
+  top: 10.25rem;
   right: 0;
-  bottom: 0;
+  bottom: auto;
   left: 0;
   z-index: 1;
   display: flex;
   min-height: 2.75rem;
   height: auto;
-  max-height: 4.75rem;
-  align-items: flex-end;
+  max-height: 4.5rem;
+  align-items: flex-start;
   overflow: visible;
+}
+
+.axi-login-right__body.is-password .axi-login-banner-slot {
+  top: 11.5rem;
 }
 
 .axi-login-banner {
@@ -945,7 +950,9 @@
   }
   .axi-login-banner-slot {
     position: static;
+    top: auto;
     height: auto;
+    max-height: none;
   }
   .axi-login-banner { height: auto; }
   .axi-login-banner.axi-banner--compact .ant-alert-description {

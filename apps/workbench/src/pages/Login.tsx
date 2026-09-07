@@ -45,6 +45,22 @@ type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
 
+function localizeLoginError(message: string, t: (key: string) => string): string {
+  const text = message.trim();
+  if (!text) return t('auth.login.sendFailed');
+  const lower = text.toLowerCase();
+  if (
+    lower.includes('temporarily unavailable')
+    || lower.includes('identity service')
+    || lower.includes('identity persistence')
+    || lower.includes('session store unavailable')
+  ) {
+    return t('auth.login.identityUnavailable');
+  }
+  if (/发送验证码失败/.test(text)) return t('auth.login.sendFailed');
+  return text;
+}
+
 function EmailSuffixSelect({
   id,
   value,
@@ -353,7 +369,7 @@ const Login: React.FC = () => {
       setHint(t('auth.login.codeSentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
-      setError(message);
+      setError(localizeLoginError(message, t));
     } finally {
       setEmailCodeSubmitting(false);
       setSubmitting(false);
@@ -398,7 +414,7 @@ const Login: React.FC = () => {
       const ok = await loginWithPassword(trimmedEmail, password);
       if (!ok) setError('密码登录失败，请检查邮箱和密码。');
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : '密码登录失败，请检查邮箱和密码。');
+      setError(caught instanceof Error ? localizeLoginError(caught.message, t) : '密码登录失败，请检查邮箱和密码。');
     } finally {
       setPasswordSubmitting(false);
     }
@@ -430,7 +446,7 @@ const Login: React.FC = () => {
       setError(t('auth.login.codeInvalid'));
       setPhase('code');
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : t('auth.login.codeInvalid'));
+      setError(caught instanceof Error ? localizeLoginError(caught.message, t) : t('auth.login.codeInvalid'));
       setPhase('code');
     } finally {
       setSubmitting(false);
@@ -452,7 +468,7 @@ const Login: React.FC = () => {
       setHint(t('auth.login.resentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.resendFailed');
-      setError(message);
+      setError(localizeLoginError(message, t));
     } finally {
       setEmailCodeSubmitting(false);
       setSubmitting(false);
@@ -589,7 +605,7 @@ const Login: React.FC = () => {
               </button>
             </div>
 
-            <div className="axi-login-right__body">
+            <div className={`axi-login-right__body is-${loginMode}`}>
               <div className="axi-login-banner-slot" aria-live="polite">
                 {banner && <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
                 {!banner && hint && <AxiBanner compact tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
