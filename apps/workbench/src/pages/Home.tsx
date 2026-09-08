@@ -1,10 +1,12 @@
 import React from 'react';
+import { useI18n } from '../i18n';
 
 const Home: React.FC = () => {
+  const { t } = useI18n();
   return (
     <div style={{ padding: 24 }}>
       <h1 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16 }}>
-        Welcome to Axi Workstation
+        {t("home.title")}
       </h1>
       <p style={{ color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.6 }}>
         Enterprise Project Automation Platform - Your central hub for project management,

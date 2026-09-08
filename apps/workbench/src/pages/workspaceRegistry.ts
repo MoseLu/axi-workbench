@@ -58,7 +58,7 @@ const runtimePresentation: Record<string, { label: string; summary: string }> = 
     summary: '用于本地桌面会话的运行环境；不可用时会使用命令行执行器。',
   },
   axi_agent: {
-    label: 'Axi Agent 服务',
+    label: 'registry.axiAgent',
     summary: '受限的 Agent 服务运行环境。',
   },
 };
