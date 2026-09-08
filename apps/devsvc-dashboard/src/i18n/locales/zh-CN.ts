@@ -10,6 +10,7 @@ Object.assign(zhCN, {
   "search.placeholder.devsvc": "搜索菜单、Axi 应用、服务、项目",
   "resources.column.axiResources": "Axi 资源",
   "resources.column.appReclaim": "Axi 应用收归",
+  "axi-resources": "Axi 资源",
   "resources.column.axiEntry": "Axi 入口",
   "legal.brand.name": "Axi 工作台",
   "legal.terms.title": "Axi 工作台服务条款",

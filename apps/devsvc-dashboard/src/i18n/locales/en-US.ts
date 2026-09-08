@@ -5,6 +5,7 @@ const enUS = {
   "search.placeholder.devsvc": "Search menus, Axi apps, services, and projects",
   "resources.column.axiResources": "Axi Resources",
   "resources.column.appReclaim": "Axi App Ownership",
+  "axi-resources": "Axi Resources",
   "resources.column.axiEntry": "Axi Entry",
   "legal.brand.name": "Axi Workbench",
   "legal.terms.title": "Axi Workbench Terms of Service",
