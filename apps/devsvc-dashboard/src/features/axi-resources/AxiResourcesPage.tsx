@@ -45,7 +45,7 @@ export function AxiResourcesPage() {
 
   const columns = useMemo<any[]>(() => [
     {
-      title: t("Axi 资源"),
+      title: t("resources.column.axiResources"),
       children: [
         {
           title: t("名称"),
@@ -67,7 +67,7 @@ export function AxiResourcesPage() {
       ]
     },
     {
-      title: t("Axi 应用收归"),
+      title: t("resources.column.appReclaim"),
       children: [
         {
           title: t("状态"),
@@ -84,7 +84,7 @@ export function AxiResourcesPage() {
           render: (value: string) => <AxiTag className="metric-tag" effect="light" round type="info">{t(surfaceLabels[value] || value)}</AxiTag>
         },
         {
-          title: t("Axi 入口"),
+          title: t("resources.column.axiEntry"),
           dataIndex: "dashboardRoute",
           align: "center" as const,
           width: 150,

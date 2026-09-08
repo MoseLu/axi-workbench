@@ -90,7 +90,7 @@ export const navGroups: NavGroup[] = [
   {
     key: "workspace-ops",
     icon: navIcon("workbench"),
-    label: "工作区运维",
+    label: "workspace-ops",
     children: [
       { key: "/overview", icon: navIcon("stats"), label: "概览" },
       { key: "/services", icon: navIcon("component"), label: "服务" }
@@ -99,7 +99,7 @@ export const navGroups: NavGroup[] = [
   {
     key: "release-observe",
     icon: navIcon("activity"),
-    label: "发布观测",
+    label: "release-observe",
     children: [
       { key: "/deploy", icon: navIcon("upload"), label: "上线" },
       { key: "/alerts", icon: navIcon("notice"), label: "告警" }
@@ -108,19 +108,19 @@ export const navGroups: NavGroup[] = [
   {
     key: "infrastructure",
     icon: navIcon("database"),
-    label: "基础设施",
+    label: "infrastructure",
     children: [{ key: "/servers", icon: navIcon("device"), label: "服务器" }]
   },
   {
     key: "axi-apps",
     icon: axiAppsIcon(),
-    label: "Axi 应用",
+    label: "axi-apps",
     children: []
   },
   {
     key: "axi-resources",
     icon: navIcon("database"),
-    label: "Axi 资源",
+    label: "axi-resources",
     children: [{ key: "/axi-resources", icon: navIcon("database"), label: "资源索引" }]
   }
 ];
@@ -261,7 +261,7 @@ export function makeRouteTab(key: NavRouteKey, t: AppTFunction, apps: HostedApp[
     return {
       key,
       title: hostedRouteTitle(key, apps, t),
-      group: match?.app ? hostedAppTitle(match.app, t) : t("Axi 应用")
+      group: match?.app ? hostedAppTitle(match.app, t) : t("axi-apps")
     };
   }
   const resource = findAxiResourceByRoute(key, resources);
@@ -269,7 +269,7 @@ export function makeRouteTab(key: NavRouteKey, t: AppTFunction, apps: HostedApp[
     return {
       key,
       title: resource ? t(resource.title) : axiResourceIdFromRoute(key) || t("资源索引"),
-      group: t("Axi 资源")
+      group: t("axi-resources")
     };
   }
   const route = navRouteItems[key];
@@ -286,7 +286,7 @@ export function makeBreadcrumbItems(key: NavRouteKey, t: AppTFunction, apps: Hos
   if (key.startsWith("/apps/")) {
     const match = findHostedMenuMatch(key, apps);
     return [
-      { className: "breadcrumb-scope-host", key: "axi-apps", title: t("Axi 应用"), icon: axiAppsIcon(), scope: "host" },
+      { className: "breadcrumb-scope-host", key: "axi-apps", title: t("axi-apps"), icon: axiAppsIcon(), scope: "host" },
       match?.app ? {
         className: "breadcrumb-scope-host",
         key: match.app.appId,
@@ -308,7 +308,7 @@ export function makeBreadcrumbItems(key: NavRouteKey, t: AppTFunction, apps: Hos
   const resource = findAxiResourceByRoute(key, resources);
   if (resource || key.startsWith("/axi-resources")) {
     return [
-      { className: "breadcrumb-scope-host", key: "axi-resources", title: t("Axi 资源"), icon: navIcon("database"), scope: "host" },
+      { className: "breadcrumb-scope-host", key: "axi-resources", title: t("axi-resources"), icon: navIcon("database"), scope: "host" },
       {
         className: "breadcrumb-scope-host",
         key: "axi-resources-index",
