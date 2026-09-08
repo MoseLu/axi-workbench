@@ -186,6 +186,27 @@
   background: var(--panel, #ffffff);
 }
 
+.hosted-app-boundary {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  right: 12px;
+  max-width: min(520px, calc(100% - 24px));
+  padding: 8px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--axi-layout-control-border, var(--axi-border)), transparent 10%);
+  border-radius: 7px;
+  color: var(--axi-muted);
+  background: color-mix(in srgb, var(--axi-layout-surface, var(--panel)), transparent 5%);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.hosted-app-boundary strong { color: var(--axi-text); }
+
 .hosted-app-frame {
   display: block;
   width: 100%;

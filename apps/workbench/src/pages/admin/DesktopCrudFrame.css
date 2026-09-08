@@ -1,0 +1,209 @@
+.wb-crud-page {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  padding: var(--axi-space-3, 12px) var(--axi-space-3, 14px) var(--axi-space-5, 20px);
+  color: var(--axi-text, #f5f7fb);
+}
+
+.wb-crud-page__layout {
+  min-height: 100%;
+  gap: var(--axi-space-3, 12px);
+}
+
+.wb-crud-page__layout .axi-crud-layout__body > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+/* loading / 空态不参与 body 的高度拉伸；按自身 min-height 撑开，才能在内部 grid 里居中 */
+.wb-crud-page__layout .axi-crud-layout__body > .wb-control-plane-state {
+  flex: 0 0 auto;
+  align-self: center;
+  width: auto;
+}
+
+.wb-crud-page__layout .axi-crud-layout__body {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--axi-space-2-5, 10px);
+}
+
+/* 无 footer 时隐藏空分页行；有 footer 时展示 Cool Admin 底栏 */
+.wb-crud-page__layout > .axi-crud-row--pagination:not(:has(.wb-crud-page__footer, :not(:empty))) {
+  display: none;
+}
+
+.wb-crud-page__layout > .axi-crud-row--pagination:has(.axi-crud-layout__footer:empty) {
+  display: none;
+}
+
+.wb-crud-page__layout .axi-crud-layout__footer:not(:empty) {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.wb-crud-page__context {
+  color: var(--axi-text, #f5f7fb);
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-semibold, 600);
+}
+
+/* —— Cool Admin 密度：工具栏 —— */
+.wb-crud-page .axi-crud-layout__toolbar {
+  min-height: 40px;
+  gap: var(--axi-space-2-5, 10px);
+}
+
+.wb-crud-page .axi-crud-layout__toolbar-start,
+.wb-crud-page .axi-crud-layout__toolbar-end,
+.wb-crud-page .axi-crud-layout__action-group,
+.wb-crud-page .axi-crud-layout__filter-fields,
+.wb-crud-page .axi-crud-layout__filter-actions {
+  gap: var(--axi-space-2, 8px);
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-btn {
+  height: 32px;
+  padding-inline: 14px;
+  font-size: var(--axi-font-size-sm, 13px);
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-select {
+  min-width: 140px;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-input-affix-wrapper,
+.wb-crud-page .axi-crud-layout__toolbar .ant-input {
+  width: 220px;
+  height: 32px;
+}
+
+.wb-crud-action-cluster,
+.wb-crud-search-cluster,
+.wb-crud-query-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--axi-space-2, 8px);
+}
+
+.wb-crud-query-cluster .ant-select {
+  flex: 0 0 140px;
+  width: 140px;
+}
+
+.wb-crud-search-cluster .ant-input-affix-wrapper,
+.wb-crud-search-cluster .ant-input,
+.wb-crud-query-cluster .ant-input-affix-wrapper,
+.wb-crud-query-cluster .ant-input {
+  width: 220px;
+}
+
+.wb-crud-page__readonly-hint {
+  color: var(--axi-muted, rgba(255, 255, 255, 0.5));
+  font-size: var(--axi-font-size-xs, 12px);
+  line-height: 32px;
+  white-space: nowrap;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
+  height: 32px;
+}
+
+/* —— 表格组 —— */
+.wb-crud-page .axi-table-group,
+.wb-crud-page .axi-filter-group {
+  border-color: var(--axi-layout-border, var(--axi-border));
+  border-radius: var(--axi-radius-lg, 8px);
+  background: var(--axi-layout-surface, var(--axi-bg-surface));
+  overflow: hidden;
+}
+
+.wb-crud-page .axi-table-group__header,
+.wb-crud-page .axi-filter-group__header {
+  min-height: 40px;
+  padding-inline: 12px;
+}
+
+.wb-crud-page .axi-table-group__title {
+  font-size: var(--axi-font-size-sm, 14px);
+  font-weight: var(--axi-font-weight-semibold, 600);
+}
+
+.wb-crud-page .axi-table-group__description {
+  font-size: var(--axi-font-size-xs, 12px);
+}
+
+/* 行操作：编辑 / 删除 双按钮密度 */
+.wb-crud-page .axi-table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--axi-space-1, 4px);
+}
+
+.wb-crud-page .axi-table-action {
+  height: 28px;
+  padding: 0 var(--axi-space-2-5, 10px);
+  border-radius: var(--axi-radius-sm, 4px);
+  font-size: var(--axi-font-size-sm, 13px);
+  line-height: 26px;
+  border: 1px solid var(--axi-layout-border, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--axi-text, #f5f7fb);
+  cursor: pointer;
+}
+
+.wb-crud-page .axi-table-action.is-tone-primary {
+  color: var(--axi-color-primary, #3b82f6);
+  border-color: color-mix(in srgb, var(--axi-color-primary, #3b82f6) 45%, transparent);
+}
+
+.wb-crud-page .axi-table-action.is-tone-danger {
+  color: var(--axi-color-danger, #f87171);
+  border-color: color-mix(in srgb, var(--axi-color-danger, #f87171) 40%, transparent);
+}
+
+.wb-crud-page .ant-btn-link {
+  padding-inline: 4px;
+}
+
+/* 表格内分页贴 Cool Admin：右对齐、共 N 条 */
+.wb-crud-page .ant-pagination {
+  margin: var(--axi-space-3, 12px) var(--axi-space-3, 12px) var(--axi-space-1, 4px) !important;
+  justify-content: flex-end;
+}
+
+.wb-crud-page .ant-table-wrapper .ant-table-pagination {
+  padding-inline: 4px;
+}
+
+.wb-control-plane-state {
+  display: grid;
+  min-height: min(420px, calc(100vh - 200px));
+  align-content: center;
+  justify-items: center;
+  gap: var(--axi-space-2, 8px);
+  padding: var(--axi-space-6, 28px);
+  color: var(--axi-muted, rgba(255, 255, 255, .58));
+  text-align: center;
+}
+
+.wb-control-plane-state .ant-empty {
+  margin: 0;
+}
+
+.wb-control-plane-state strong {
+  color: var(--axi-text, #f5f7fb);
+  font-size: var(--axi-font-size-sm, 15px);
+  font-weight: var(--axi-font-weight-semibold, 600);
+}
+
+.wb-control-plane-state p {
+  max-width: 360px;
+  margin: 0;
+  font-size: var(--axi-font-size-sm, 13px);
+  line-height: 1.6;
+}

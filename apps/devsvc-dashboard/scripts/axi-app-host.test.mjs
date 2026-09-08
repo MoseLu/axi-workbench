@@ -70,3 +70,15 @@ test("registry loader reads the renamed dashboard config path by default", () =>
   const registry = loadAxiAppRegistry(workspaceRoot);
   assert.deepEqual(registry.map((app) => app.appId), dashboardAppIds);
 });
+
+test("D-level specialist entries declare owner, authorization, audit, and fallback without becoming host actions", () => {
+  for (const registry of [defaultAxiAppRegistry("/workspace"), loadAxiAppRegistry("/workspace", path.join(projectRoot, "config", "axi-apps.json"))]) {
+    for (const appId of ["axi-fleet-console", "axi-coder", "axi-verification-inbox"]) {
+      const boundary = registry.find((app) => app.appId === appId)?.executionBoundary;
+      assert.ok(boundary?.owner, `${appId} owner`);
+      assert.ok(boundary?.authorization, `${appId} authorization`);
+      assert.ok(boundary?.audit, `${appId} audit`);
+      assert.ok(boundary?.fallback, `${appId} fallback`);
+    }
+  }
+});

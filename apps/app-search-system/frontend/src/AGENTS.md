@@ -44,7 +44,7 @@ React 组件源码目录，包含 control（管理端）和 display（展示端�
 | AGENTS.md | `./AGENTS.md` | 源码目录 AI 文档（当前 L4） |
 | AGENTS.md (parent) | `../AGENTS.md` | 前端模块文档（L3） |
 | TODO.md (inherited) | `../../TODO.md` | 前端模块任务（L3） |
-| MILESTONES.md (inherited) | `../../MILESTONES.md` | 前端模块里程碑（L3） |
+| MILESTONE.md (inherited) | `../../MILESTONE.md` | 前端模块里程碑（L3） |
 | AGENTS.md (root) | `../../../AGENTS.md` | 项目根文档（L2） |
 | TODO.md (root, inherited) | `../../../TODO.md` | 全项目任务（继承自 L2） |
-| MILESTONES.md (root, inherited) | `../../../MILESTONES.md` | 全项目里程碑（继承自 L2） |
+| MILESTONE.md (root, inherited) | `../../../MILESTONE.md` | 全项目里程碑（继承自 L2） |

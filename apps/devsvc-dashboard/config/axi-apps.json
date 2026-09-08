@@ -2,6 +2,12 @@
   {
     "appId": "axi-fleet-console",
     "title": "Axi Fleet Console",
+    "executionBoundary": {
+      "owner": "Fleet Console（物理服务层）",
+      "authorization": "Fleet 自身授权与高风险确认",
+      "audit": "Fleet 操作审计",
+      "fallback": "服务不可用时仅显示状态，不在 Host 复刻执行按钮"
+    },
     "icon": "database",
     "cwd": "${workspaceRoot}/projects/axi-workbench/infra/fleet-console/dashboard",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm run dev -- --host 127.0.0.1 --port ${port} --strictPort",
@@ -72,6 +78,12 @@
   {
     "appId": "axi-coder",
     "title": "Axi Coder",
+    "executionBoundary": {
+      "owner": "Axi Coder（受管开发运行时）",
+      "authorization": "Coder 任务政策与运行时授权",
+      "audit": "Coder 任务、工具与产物审计",
+      "fallback": "不可用时保留受控入口与错误状态，不由 Host 执行任务"
+    },
     "icon": "workbench",
     "cwd": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
@@ -155,6 +167,12 @@
   {
     "appId": "axi-verification-inbox",
     "title": "Axi Verification Inbox",
+    "executionBoundary": {
+      "owner": "Verification Inbox / 原生邮件桥接",
+      "authorization": "收件箱自身账号与邮件访问授权",
+      "audit": "验证读取与操作审计",
+      "fallback": "原生桥接不可用时仅报告不可用，不把邮件动作复制到 Host"
+    },
     "icon": "auth",
     "cwd": "${workspaceRoot}/projects/axi-workbench/apps/verification-inbox",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm run dev -- --host 127.0.0.1 --port ${port} --strictPort",

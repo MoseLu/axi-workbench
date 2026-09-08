@@ -15,6 +15,10 @@ class FileInfo(BaseModel):
     created_at: datetime = Field(..., description="File creation timestamp")
     modified_at: datetime = Field(..., description="File last modification timestamp")
     content_type: Optional[str] = Field(None, description="MIME content type")
+    checksum_sha256: Optional[str] = Field(None, description="SHA-256 checksum of the uploaded object")
+    thumbnail_available: bool = Field(False, description="Whether a derived thumbnail is available")
+    thumbnail_width: Optional[int] = Field(None, description="Generated thumbnail width in pixels")
+    thumbnail_height: Optional[int] = Field(None, description="Generated thumbnail height in pixels")
 
     class Config:
         from_attributes = True
@@ -27,6 +31,10 @@ class FileUploadResponse(BaseModel):
     path: str = Field(..., description="Relative path to uploaded file")
     size: int = Field(..., description="File size in bytes")
     message: str = Field(..., description="Success message")
+    checksum_sha256: Optional[str] = Field(None, description="SHA-256 checksum of the uploaded object")
+    thumbnail_available: bool = Field(False, description="Whether a derived thumbnail is available")
+    thumbnail_width: Optional[int] = Field(None, description="Generated thumbnail width in pixels")
+    thumbnail_height: Optional[int] = Field(None, description="Generated thumbnail height in pixels")
 
 
 class FileListResponse(BaseModel):
@@ -41,6 +49,13 @@ class DeleteResponse(BaseModel):
 
     message: str = Field(..., description="Success message")
     deleted_file: str = Field(..., description="Name of deleted file")
+
+
+class PresignedURLResponse(BaseModel):
+    """Short-lived object-storage download URL."""
+
+    url: str = Field(..., description="Short-lived download URL")
+    expires_in: int = Field(..., description="URL lifetime in seconds")
 
 
 class HealthResponse(BaseModel):

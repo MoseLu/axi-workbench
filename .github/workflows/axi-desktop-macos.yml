@@ -1,0 +1,195 @@
+name: Axi Desktop (macOS)
+
+# 触发：打 `axi-workbench/v*` tag 时自动出 Developer ID 签名 .dmg；也可手动 dispatch 跑本地调试构建（ad hoc 签名）。
+# 产物：apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/
+#       → 上传到对应 GitHub Release 作为下载资产
+
+on:
+  push:
+    tags:
+      - 'axi-workbench/v*'
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: 'Run Apple notarize (requires Apple secrets)'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+# 防止 tag 触发时与 axi-release.yml 抢 push
+concurrency:
+  group: axi-desktop-macos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-macos:
+    name: Build signed .app + .dmg
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      KEYCHAIN_PROFILE: ${{ secrets.APPLE_KEYCHAIN_PROFILE }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      # tauri.conf.json runs beforeBuildCommand again during bundling; keep the
+      # public API base in the whole job so that second build cannot fall back
+      # to the local loopback address.
+      VITE_API_BASE_URL: ${{ vars.WORKBENCH_PUBLIC_ORIGIN || 'https://workbench.axiomaticworld.com' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache cargo registry & target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./apps/workbench-desktop/src-tauri -> target
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web UI
+        run: pnpm --filter @axi/workbench build
+
+      - name: Verify desktop contracts
+        run: pnpm --filter @axi/workbench-desktop verify:contracts
+
+      - name: Import Apple Developer ID certificate
+        if: env.APPLE_CERTIFICATE != '' && env.APPLE_CERTIFICATE_PASSWORD != ''
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/axi-workbench-developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/axi-workbench-build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+
+          if ! printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_PATH" 2>/dev/null; then
+            printf '%s' "$APPLE_CERTIFICATE" | base64 -D > "$CERT_PATH"
+          fi
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security default-keychain -s "$KEYCHAIN_PATH"
+
+          IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | awk -F '"' '/Developer ID Application:/ { print $2; exit }')"
+          test -n "$IDENTITY"
+          echo "APPLE_SIGNING_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+
+      # 手动调试构建仍校验完整 ad hoc 签名，避免生成无法验证的 bundle。
+      - name: Configure ad hoc signing for manual debug build
+        if: github.event_name == 'workflow_dispatch' && inputs.sign == false
+        run: |
+          if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+            echo 'APPLE_SIGNING_IDENTITY=-' >> "$GITHUB_ENV"
+          fi
+
+      - name: Validate release signing inputs
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.sign == true)
+        run: |
+          set -euo pipefail
+          test -n "${APPLE_CERTIFICATE:-}" || { echo "::error::APPLE_CERTIFICATE is required for release builds"; exit 1; }
+          test -n "${APPLE_CERTIFICATE_PASSWORD:-}" || { echo "::error::APPLE_CERTIFICATE_PASSWORD is required for release builds"; exit 1; }
+          test -n "${APPLE_ID:-}" || { echo "::error::APPLE_ID is required for notarization"; exit 1; }
+          test -n "${APPLE_TEAM_ID:-}" || { echo "::error::APPLE_TEAM_ID is required for notarization"; exit 1; }
+          test -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" || { echo "::error::APPLE_APP_SPECIFIC_PASSWORD is required for notarization"; exit 1; }
+
+      - name: Build ad hoc .app + .dmg (debug)
+        if: github.event_name == 'workflow_dispatch' && inputs.sign == false
+        run: |
+          pnpm --filter @axi/workbench-desktop build:dmg
+
+      # 签名 + 公证正式链路
+      - name: Configure Apple notarize keychain profile
+        if: env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != ''
+        run: |
+          set -euo pipefail
+          if [[ -n "${KEYCHAIN_PROFILE:-}" ]]; then
+            # 凭据已通过 GitHub Secret 直接以 notarytool profile 形式提供，无需重建
+            echo "Using pre-configured keychain profile: $KEYCHAIN_PROFILE"
+          else
+            echo "Storing notarytool credentials inline..."
+            xcrun notarytool store-credentials "workbench-desktop-notary" \
+              --apple-id "$APPLE_ID" \
+              --team-id "$APPLE_TEAM_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD"
+            echo "KEYCHAIN_PROFILE=workbench-desktop-notary" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build signed .app + .dmg
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.sign == true)
+        run: |
+          set -euo pipefail
+          pnpm --filter @axi/workbench-desktop build:dmg
+
+      - name: Notarize + staple
+        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.sign == true)) && env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != ''
+        run: |
+          set -euo pipefail
+          if [[ -z "${APPLE_SIGNING_IDENTITY:-}" ]]; then
+            echo "::error::APPLE_SIGNING_IDENTITY is empty; Developer ID certificate was not imported"
+            exit 1
+          fi
+          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app"
+          # DMG 路径含 arch 后缀，取第一个匹配
+          DMG_PATH=$(ls "apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_"*.dmg | head -n1)
+          if [[ ! -d "$APP_PATH" || ! -f "$DMG_PATH" ]]; then
+            echo "::error::Built bundle missing: $APP_PATH or $DMG_PATH"
+            exit 1
+          fi
+          bash apps/workbench-desktop/scripts/notarize.sh "$APP_PATH" "$DMG_PATH"
+
+      - name: Upload .app + .dmg artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-desktop-macos-${{ github.ref_name }}
+          path: |
+            apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app
+            apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          APP_PATH="apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app"
+          DMG_PATH=$(ls "apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_"*.dmg | head -n1)
+          # macOS 不允许直接上传 .app 目录，先打成 zip
+          zip -r "Axi-Workbench-${TAG}.app.zip" "$APP_PATH"
+          gh release upload "$TAG" \
+            "Axi-Workbench-${TAG}.app.zip" \
+            "$DMG_PATH" \
+            --clobber
+          echo "::notice::Uploaded Workbench-${TAG} artifacts to $TAG"

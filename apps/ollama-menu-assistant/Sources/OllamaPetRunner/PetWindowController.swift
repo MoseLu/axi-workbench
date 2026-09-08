@@ -35,8 +35,13 @@ final class PetWindowController: NSObject {
 
     private let petDirectoryURL: URL
     private let instanceID: String
+    private let groupID: String
     private var slotIndex: Int
     private var slotCount: Int
+    private var language: PetRunnerLanguage
+    private var dragMode: PetRunnerDragMode
+    private var activeGroupDragSessionID: String?
+    private var activeGroupDragSenderID: String?
     private let allowsDirectionalRunning: Bool
     private let defaults: UserDefaults
     private let panel: PetPanel
@@ -51,15 +56,21 @@ final class PetWindowController: NSObject {
     init(
         petDirectoryURL: URL = PetAssetLoader.defaultPetDirectory,
         instanceID: String = "default",
+        groupID: String = PetRunnerIPC.groupID,
         slotIndex: Int = 0,
         slotCount: Int = 1,
+        language: PetRunnerLanguage = .current,
+        dragMode: PetRunnerDragMode? = nil,
         allowsDirectionalRunning: Bool = true,
         defaults: UserDefaults = .standard
     ) {
         self.petDirectoryURL = petDirectoryURL
         self.instanceID = instanceID
+        self.groupID = groupID
         self.slotIndex = min(max(slotIndex, 0), 2)
         self.slotCount = min(max(slotCount, 1), 3)
+        self.language = language
+        self.dragMode = dragMode ?? PetAssetLoader.selectedPetDragMode
         self.allowsDirectionalRunning = allowsDirectionalRunning
         self.defaults = defaults
         self.petView = PetSpriteView(
@@ -75,6 +86,9 @@ final class PetWindowController: NSObject {
         configurePanel()
         configureInteractions()
         startGroupInteractionObserver()
+        startGroupCommandObserver()
+        startGroupDragObserver()
+        startLanguageObserver()
         startFormationUpdateObserver()
     }
 
@@ -170,12 +184,15 @@ final class PetWindowController: NSObject {
             guard let self else {
                 return
             }
-            wanderModel.beginDragging()
-            petView.setLoopingState(.dragging)
+            beginDragging()
         }
 
         view.onDragMoved = { [weak self] origin in
-            self?.moveWindow(to: origin, persist: false)
+            guard let self else {
+                return
+            }
+            moveWindow(to: origin, persist: false)
+            publishGroupDragMoveIfNeeded()
         }
 
         view.onDragEnded = { [weak self] in
@@ -183,6 +200,7 @@ final class PetWindowController: NSObject {
                 return
             }
             moveWindow(to: panel.frame.origin, persist: true)
+            publishGroupDragEndIfNeeded()
             wanderModel.endDragging(resumeDelay: 1)
         }
 
@@ -192,21 +210,35 @@ final class PetWindowController: NSObject {
     }
 
     @objc private func toggleWandering(_ sender: Any?) {
-        wanderModel.setPaused(!wanderModel.isPaused)
-        petView.setLoopingState(.idle)
+        let command: PetRunnerIPC.Command = wanderModel.isPaused ? .resume : .pause
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func comeHere(_ sender: Any?) {
-        runToClick(at: NSEvent.mouseLocation)
+        let command = PetRunnerIPC.Command.runToCursor
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func reloadPetFromMenu(_ sender: Any?) {
-        reloadPet()
+        let command = PetRunnerIPC.Command.reload
+        publishGroupCommand(command)
+        applyGroupCommand(command)
     }
 
     @objc private func quit(_ sender: Any?) {
-        persistPosition()
-        NSApp.terminate(sender)
+        let command = PetRunnerIPC.Command.quit
+        publishGroupCommand(command)
+        applyGroupCommand(command)
+    }
+
+    @objc private func selectIndividualDragMode(_ sender: Any?) {
+        setDragMode(.individual, publish: true)
+    }
+
+    @objc private func selectAllPetsDragMode(_ sender: Any?) {
+        setDragMode(.allPets, publish: true)
     }
 
     @objc private func handleGroupInteraction(_ notification: Notification) {
@@ -223,6 +255,85 @@ final class PetWindowController: NSObject {
         clickTargetVisibleFrame = nil
         wanderModel.interruptForInteraction()
         petView.playOnce(groupReactionState)
+    }
+
+    @objc private func handleGroupCommand(_ notification: Notification) {
+        guard slotCount > 1,
+              stringValue(notification.userInfo?[PetRunnerIPC.groupIDKey]) == groupID,
+              let rawCommand = stringValue(notification.userInfo?[PetRunnerIPC.commandKey]),
+              let command = PetRunnerIPC.Command(rawValue: rawCommand),
+              stringValue(notification.userInfo?[PetRunnerIPC.senderInstanceIDKey]) != instanceID
+        else {
+            return
+        }
+
+        let requestedDragMode = stringValue(notification.userInfo?[PetRunnerIPC.dragModeKey])
+            .flatMap(PetRunnerDragMode.init(rawValue:))
+        guard command != .setDragMode || requestedDragMode != nil else {
+            return
+        }
+
+        applyGroupCommand(command, dragMode: requestedDragMode)
+    }
+
+    @objc private func handleGroupDrag(_ notification: Notification) {
+        guard slotCount > 1,
+              stringValue(notification.userInfo?[PetRunnerIPC.groupIDKey]) == groupID,
+              let senderID = stringValue(notification.userInfo?[PetRunnerIPC.senderInstanceIDKey]),
+              senderID != instanceID,
+              let sessionID = stringValue(notification.userInfo?[PetRunnerIPC.dragSessionIDKey]),
+              let rawEvent = stringValue(notification.userInfo?[PetRunnerIPC.dragEventKey]),
+              let event = PetRunnerIPC.DragEvent(rawValue: rawEvent)
+        else {
+            return
+        }
+
+        switch event {
+        case .began:
+            activeGroupDragSessionID = sessionID
+            activeGroupDragSenderID = senderID
+            clickTargetVisibleFrame = nil
+            wanderModel.beginDragging()
+            petView.setLoopingState(.dragging)
+        case .moved:
+            guard activeGroupDragSessionID == sessionID,
+                  activeGroupDragSenderID == senderID,
+                  let anchor = pointValue(
+                      x: notification.userInfo?[PetRunnerIPC.dragAnchorXKey],
+                      y: notification.userInfo?[PetRunnerIPC.dragAnchorYKey]
+                  )
+            else {
+                return
+            }
+            moveGroupWindow(around: anchor)
+        case .ended:
+            guard activeGroupDragSessionID == sessionID,
+                  activeGroupDragSenderID == senderID
+            else {
+                return
+            }
+            if let anchor = pointValue(
+                x: notification.userInfo?[PetRunnerIPC.dragAnchorXKey],
+                y: notification.userInfo?[PetRunnerIPC.dragAnchorYKey]
+            ) {
+                moveGroupWindow(around: anchor)
+            }
+            activeGroupDragSessionID = nil
+            activeGroupDragSenderID = nil
+            clickTargetVisibleFrame = nil
+            wanderModel.endDragging(resumeDelay: 1)
+            petView.setLoopingState(.idle)
+        }
+    }
+
+    @objc private func handleLanguageUpdate(_ notification: Notification) {
+        guard stringValue(notification.userInfo?[PetRunnerIPC.groupIDKey]) == groupID,
+              let rawLanguage = stringValue(notification.userInfo?[PetRunnerIPC.languageKey])
+        else {
+            return
+        }
+
+        language = PetRunnerLanguage.resolved(from: rawLanguage)
     }
 
     @objc private func handleFormationUpdate(_ notification: Notification) {
@@ -255,16 +366,36 @@ final class PetWindowController: NSObject {
 
     private func showContextMenu(for event: NSEvent) {
         let menu = NSMenu()
-        let pauseTitle = wanderModel.isPaused ? "Resume Movement" : "Pause Movement"
+        let labels = PetRunnerMenuLabels(language: language)
+        let pauseTitle = wanderModel.isPaused ? labels.resumeMovement : labels.pauseMovement
         menu.addItem(NSMenuItem(title: pauseTitle, action: #selector(toggleWandering(_:)), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Run To Cursor", action: #selector(comeHere(_:)), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Reload Pet", action: #selector(reloadPetFromMenu(_:)), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: labels.runToCursor, action: #selector(comeHere(_:)), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: labels.reloadPet, action: #selector(reloadPetFromMenu(_:)), keyEquivalent: ""))
+        let dragModeMenuItem = NSMenuItem(title: labels.dragMode, action: nil, keyEquivalent: "")
+        let dragModeMenu = NSMenu(title: labels.dragMode)
+        let individualDragItem = NSMenuItem(
+            title: labels.individualDrag,
+            action: #selector(selectIndividualDragMode(_:)),
+            keyEquivalent: ""
+        )
+        individualDragItem.state = dragMode == .individual ? .on : .off
+        dragModeMenu.addItem(individualDragItem)
+        let allPetsDragItem = NSMenuItem(
+            title: labels.allPetsDrag,
+            action: #selector(selectAllPetsDragMode(_:)),
+            keyEquivalent: ""
+        )
+        allPetsDragItem.state = dragMode == .allPets ? .on : .off
+        dragModeMenu.addItem(allPetsDragItem)
+        dragModeMenuItem.submenu = dragModeMenu
+        menu.addItem(dragModeMenuItem)
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit(_:)), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: labels.quit, action: #selector(quit(_:)), keyEquivalent: ""))
 
         for item in menu.items {
             item.target = self
+            item.submenu?.items.forEach { $0.target = self }
         }
 
         NSMenu.popUpContextMenu(menu, with: event, for: petView)
@@ -328,6 +459,33 @@ final class PetWindowController: NSObject {
         )
     }
 
+    private func startGroupCommandObserver() {
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleGroupCommand(_:)),
+            name: PetRunnerIPC.groupCommandNotificationName,
+            object: nil
+        )
+    }
+
+    private func startGroupDragObserver() {
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleGroupDrag(_:)),
+            name: PetRunnerIPC.groupDragNotificationName,
+            object: nil
+        )
+    }
+
+    private func startLanguageObserver() {
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(handleLanguageUpdate(_:)),
+            name: PetRunnerIPC.languageUpdateNotificationName,
+            object: nil
+        )
+    }
+
     private func startFormationUpdateObserver() {
         DistributedNotificationCenter.default().addObserver(
             self,
@@ -348,6 +506,125 @@ final class PetWindowController: NSObject {
             userInfo: [GroupInteraction.senderKey: instanceID],
             deliverImmediately: true
         )
+    }
+
+    private func publishGroupCommand(
+        _ command: PetRunnerIPC.Command,
+        dragMode: PetRunnerDragMode? = nil
+    ) {
+        guard slotCount > 1 else {
+            return
+        }
+
+        PetRunnerIPC.publishGroupCommand(
+            command,
+            groupID: groupID,
+            senderInstanceID: instanceID,
+            dragMode: dragMode
+        )
+    }
+
+    private func applyGroupCommand(
+        _ command: PetRunnerIPC.Command,
+        dragMode: PetRunnerDragMode? = nil
+    ) {
+        switch command {
+        case .pause:
+            wanderModel.setPaused(true)
+            petView.setLoopingState(.idle)
+        case .resume:
+            wanderModel.setPaused(false)
+            petView.setLoopingState(.idle)
+        case .runToCursor:
+            runToClick(at: NSEvent.mouseLocation)
+        case .reload:
+            reloadPet()
+        case .quit:
+            persistPosition()
+            NSApp.terminate(nil)
+        case .setDragMode:
+            guard let dragMode else {
+                return
+            }
+            setDragMode(dragMode, publish: false)
+        }
+    }
+
+    private func setDragMode(_ nextMode: PetRunnerDragMode, publish: Bool) {
+        guard dragMode != nextMode else {
+            return
+        }
+
+        dragMode = nextMode
+        defaults.set(nextMode.rawValue, forKey: PetRunnerIPC.dragModeDefaultsKey)
+        if publish {
+            publishGroupCommand(.setDragMode, dragMode: nextMode)
+        }
+    }
+
+    private func beginDragging() {
+        activeGroupDragSessionID = nil
+        activeGroupDragSenderID = nil
+        wanderModel.beginDragging()
+        petView.setLoopingState(.dragging)
+
+        guard dragMode == .allPets, slotCount > 1 else {
+            return
+        }
+
+        let sessionID = UUID().uuidString
+        activeGroupDragSessionID = sessionID
+        activeGroupDragSenderID = instanceID
+        PetRunnerIPC.publishGroupDrag(
+            .began,
+            groupID: groupID,
+            senderInstanceID: instanceID,
+            sessionID: sessionID
+        )
+    }
+
+    private func publishGroupDragMoveIfNeeded() {
+        guard dragMode == .allPets,
+              let sessionID = activeGroupDragSessionID,
+              activeGroupDragSenderID == instanceID,
+              slotCount > 1
+        else {
+            return
+        }
+
+        PetRunnerIPC.publishGroupDrag(
+            .moved,
+            groupID: groupID,
+            senderInstanceID: instanceID,
+            sessionID: sessionID,
+            anchor: formationAnchor(for: panel.frame.origin)
+        )
+    }
+
+    private func publishGroupDragEndIfNeeded() {
+        guard dragMode == .allPets,
+              let sessionID = activeGroupDragSessionID,
+              activeGroupDragSenderID == instanceID,
+              slotCount > 1
+        else {
+            return
+        }
+
+        PetRunnerIPC.publishGroupDrag(
+            .ended,
+            groupID: groupID,
+            senderInstanceID: instanceID,
+            sessionID: sessionID,
+            anchor: formationAnchor(for: panel.frame.origin)
+        )
+        activeGroupDragSessionID = nil
+        activeGroupDragSenderID = nil
+    }
+
+    private func moveGroupWindow(around anchor: CGPoint) {
+        let visibleFrame = screen(containing: anchor)?.visibleFrame ?? currentVisibleFrame()
+        let arrangedOrigin = formationOrigin(around: anchor, visibleFrame: visibleFrame)
+        moveWindow(to: arrangedOrigin, persist: false, visibleFrame: visibleFrame)
     }
 
     private var groupReactionState: PetAnimationState {
@@ -485,6 +762,36 @@ final class PetWindowController: NSObject {
         }
         if let stringValue = value as? String {
             return Int(stringValue)
+        }
+        return nil
+    }
+
+    private func stringValue(_ value: Any?) -> String? {
+        if let stringValue = value as? String {
+            return stringValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.stringValue
+        }
+        return nil
+    }
+
+    private func pointValue(x: Any?, y: Any?) -> CGPoint? {
+        guard let x = doubleValue(x), let y = doubleValue(y) else {
+            return nil
+        }
+        return CGPoint(x: x, y: y)
+    }
+
+    private func doubleValue(_ value: Any?) -> Double? {
+        if let doubleValue = value as? Double {
+            return doubleValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.doubleValue
+        }
+        if let stringValue = value as? String {
+            return Double(stringValue)
         }
         return nil
     }

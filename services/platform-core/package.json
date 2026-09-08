@@ -1,0 +1,11 @@
+{
+  "name": "@axi/platform-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Axi modular Go platform core for tenants, RBAC, preferences, dictionaries, projects, and tasks",
+  "scripts": {
+    "dev": "go run ./cmd/platform-core",
+    "build": "go build -o bin/platform-core ./cmd/platform-core",
+    "test": "go test -race ./..."
+  }
+}

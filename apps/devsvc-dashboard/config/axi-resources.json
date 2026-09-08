@@ -140,6 +140,21 @@
     "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime."
   },
   {
+    "id": "axi-rules",
+    "title": "Axi Rules",
+    "kind": "shared-rule-index",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-rules",
+    "dashboardRoute": "/axi-resources/axi-rules",
+    "capabilities": [
+      "agent-routing-rules",
+      "workspace-rule-index",
+      "memory-source-precedence"
+    ],
+    "notes": "Workspace rule authority is surfaced from the shared workspace graph; policy ownership remains with Axi Rules."
+  },
+  {
     "id": "axi-image-preview",
     "title": "Axi Image Preview",
     "kind": "image-preview-app",

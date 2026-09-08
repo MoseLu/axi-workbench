@@ -5,11 +5,14 @@
   "description": "Axi Workbench - canonical workbench monorepo for control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI",
   "scripts": {
     "dev": "turbo run dev",
-    "dev:web": "turbo run dev --filter=web-portal",
+    "dev:web": "pnpm run dev:workbench",
+    "dev:mobile": "turbo run dev --filter=@axi/workbench-mobile",
     "dev:ui": "turbo run dev --filter=@epap/ui",
-    "dev:desktop": "turbo run dev --filter=desktop",
+    "dev:dashboard": "pnpm --dir apps/devsvc-dashboard dev",
+    "dev:coder": "pnpm --dir apps/axi-coder dev",
     "build": "turbo run build",
-    "build:web": "turbo run build --filter=web-portal",
+    "build:web": "pnpm run build:workbench",
+    "build:mobile": "turbo run build --filter=@axi/workbench-mobile",
     "build:ui": "turbo run build --filter=@epap/ui",
     "build:schemas": "turbo run build --filter=@axi/workstation-contracts",
     "build:types": "turbo run build --filter=@epap/types",
@@ -17,14 +20,34 @@
     "build:api-client": "turbo run build --filter=@epap/api-client",
     "test": "turbo run test",
     "test:workstation": "pnpm --filter @axi/workstation-contracts test && pnpm --filter @axi/workstation-communication-gateway test && pnpm --filter @axi/workstation-control-plane test",
+    "test:mobile": "pnpm --filter @axi/workbench-mobile test",
+    "check:boundaries": "node scripts/check-workbench-boundaries.mjs",
+    "check:capabilities": "node scripts/verify-capability-inventory.mjs",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean && rm -rf node_modules",
-    "clean:cache": "turbo run clean:cache && rm -rf .turbo"
+    "clean:cache": "turbo run clean:cache && rm -rf .turbo",
+    "dev:workbench": "turbo run dev --filter=@axi/workbench --filter=@axi/workstation-control-plane",
+    "build:workbench": "turbo run build --filter=@axi/workbench",
+    "dev:desktop": "pnpm --filter @axi/workbench-desktop dev",
+    "build:desktop": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build",
+    "build:desktop:dmg": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build:dmg",
+    "type-check:mobile": "pnpm --filter @axi/workbench-mobile type-check"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
     "typescript": "^5.3.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@<1.1.18": "1.1.18",
+      "js-yaml@>=3.0.0 <3.15.1": "3.15.1",
+      "js-yaml@>=4.0.0 <4.3.1": "4.3.1",
+      "postcss@<=8.5.22": "8.5.23",
+      "react-router@>=7.12.0 <7.18.2": "7.18.2",
+      "nanoid@<3.3.16": "3.3.16",
+      "nanoid@<3.3.17": "3.3.17"
+    }
   },
   "engines": {
     "node": ">=18.0.0",

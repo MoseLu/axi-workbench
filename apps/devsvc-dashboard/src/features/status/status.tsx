@@ -78,6 +78,11 @@ export function statusTagType(value: string): AxiTagType {
   return "primary";
 }
 
+/**
+ * @deprecated StatusChip is a thin presentation wrapper around `<AxiTag>`
+ * that adds a status-dot prefix. Prefer `<AxiTag>` directly when you do not
+ * need the dot decoration; otherwise keep this wrapper for visual parity.
+ */
 export function StatusChip({ label, value }: { label?: string; value: string }) {
   const { t } = useTranslation();
   return (
@@ -111,6 +116,10 @@ export function metricTagType(value: ReactNode): AxiTagType {
   return metricTagTypes[text] || "info";
 }
 
+/**
+ * @deprecated MetricTag is a thin wrapper around `<AxiTag>`. Use `<AxiTag>`
+ * directly with the inferred `type` value to avoid the extra import.
+ */
 export function MetricTag({ children, color, type }: { children: ReactNode; color?: string; type?: AxiTagType }) {
   return <AxiTag className="metric-tag" color={color} effect="light" round type={type || metricTagType(children)}>{children}</AxiTag>;
 }

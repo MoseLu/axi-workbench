@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -11,17 +12,22 @@ func CORS(allowedOrigins, allowedMethods, allowedHeaders []string) gin.HandlerFu
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 
-		// Check if origin is allowed
-		if isOriginAllowed(origin, allowedOrigins) {
+		if origin != "" {
+			if !isOriginAllowed(origin, allowedOrigins) {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
 			c.Header("Access-Control-Allow-Origin", origin)
-		} else if len(allowedOrigins) > 0 && allowedOrigins[0] == "*" {
-			c.Header("Access-Control-Allow-Origin", "*")
+			c.Header("Vary", "Origin")
+			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 
 		c.Header("Access-Control-Allow-Methods", strings.Join(allowedMethods, ", "))
 		c.Header("Access-Control-Allow-Headers", strings.Join(allowedHeaders, ", "))
-		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Max-Age", "3600")
+		if strings.EqualFold(c.GetHeader("Access-Control-Request-Private-Network"), "true") {
+			c.Header("Access-Control-Allow-Private-Network", "true")
+		}
 
 		// Handle preflight requests
 		if c.Request.Method == "OPTIONS" {
@@ -39,18 +45,8 @@ func isOriginAllowed(origin string, allowedOrigins []string) bool {
 	}
 
 	for _, allowed := range allowedOrigins {
-		if allowed == "*" {
-			return true
-		}
 		if strings.EqualFold(allowed, origin) {
 			return true
-		}
-		// Support wildcard subdomains
-		if strings.HasPrefix(allowed, "*.") {
-			suffix := allowed[1:]
-			if strings.HasSuffix(origin, suffix) {
-				return true
-			}
 		}
 	}
 

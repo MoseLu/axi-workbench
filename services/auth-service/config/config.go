@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	JWT      JWTConfig
-	Database DatabaseConfig
+	Server      ServerConfig
+	JWT         JWTConfig
+	Database    DatabaseConfig
+	OAuthSecret string
 }
 
 type ServerConfig struct {
@@ -51,6 +52,7 @@ func Load() *Config {
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			DBName:   getEnv("DB_NAME", "auth_db"),
 		},
+		OAuthSecret: getEnv("OAUTH_QR_SECRET", "axi-workbench-qr-secret-change-me"),
 	}
 }
 

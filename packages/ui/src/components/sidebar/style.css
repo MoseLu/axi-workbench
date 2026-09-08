@@ -1,8 +1,9 @@
-/* ========== Single-column Menu ========== */
+/* ========== Single-column Menu (Cool Admin 风格) ========== */
 .mpms-menu {
   padding: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  background: var(--mpms-sidebar-bg);
 }
 
 .mpms-menu.is-collapsed .mpms-menu__item {
@@ -14,24 +15,25 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 40px;
-  padding: 0 12px;
-  color: var(--mpms-text-secondary);
+  height: 48px;
+  padding: 0 21px;
+  color: var(--mpms-sidebar-text-secondary, #b3b8c2);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, background-color 0.2s;
   white-space: nowrap;
   overflow: hidden;
   user-select: none;
+  font-size: 14px;
 }
 
 .mpms-menu__item:hover {
-  color: var(--mpms-text-primary);
-  background: var(--mpms-hover-bg);
+  color: var(--mpms-sidebar-text-primary, #f5f6f8);
+  background-color: var(--mpms-sidebar-hover-bg, rgba(255, 255, 255, 0.06));
 }
 
 .mpms-menu__item.is-active {
-  color: var(--mpms-primary-color);
-  background: rgba(65, 101, 215, 0.1);
+  color: #ffffff;
+  background-color: var(--mpms-primary-color, #4165d7);
 }
 
 .mpms-menu__item.is-disabled {
@@ -44,6 +46,8 @@
   align-items: center;
   flex-shrink: 0;
   font-size: 16px;
+  color: inherit;
+  transition: color 0.2s;
 }
 
 .mpms-menu__item-label {
@@ -57,153 +61,4 @@
   font-size: 12px;
   transition: transform 0.2s;
   opacity: 0.5;
-}
-
-.mpms-menu__item-arrow.is-open {
-  transform: rotate(90deg);
-}
-
-.mpms-menu__sub {
-  overflow: hidden;
-}
-
-/* ========== Dual Menu ========== */
-.mpms-dual-menu {
-  display: flex;
-  height: 100%;
-}
-
-.mpms-dual-menu__rail {
-  width: 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 0;
-  gap: 4px;
-  overflow-y: auto;
-  border-right: 1px solid var(--mpms-border-color);
-  flex-shrink: 0;
-}
-
-.mpms-dual-menu__rail-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 52px;
-  padding: 8px 0;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--mpms-text-secondary);
-  transition: all 0.2s;
-  user-select: none;
-}
-
-.mpms-dual-menu__rail-item:hover {
-  color: var(--mpms-text-primary);
-  background: var(--mpms-hover-bg);
-}
-
-.mpms-dual-menu__rail-item.is-active {
-  color: var(--mpms-primary-color);
-  background: rgba(65, 101, 215, 0.1);
-}
-
-.mpms-dual-menu__rail-icon {
-  font-size: 18px;
-}
-
-.mpms-dual-menu__rail-label {
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 48px;
-  text-align: center;
-}
-
-.mpms-dual-menu__panel {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 0;
-}
-
-.mpms-dual-menu__panel-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 38px;
-  padding: 0 12px;
-  color: var(--mpms-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-}
-
-.mpms-dual-menu__panel-item:hover {
-  color: var(--mpms-text-primary);
-  background: var(--mpms-hover-bg);
-}
-
-.mpms-dual-menu__panel-item.is-active {
-  color: var(--mpms-primary-color);
-}
-
-.mpms-dual-menu__panel-icon {
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.mpms-dual-menu__panel-label {
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ========== Top Menu ========== */
-.mpms-top-menu {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0 8px;
-}
-
-.mpms-top-menu__item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 6px;
-  color: var(--mpms-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-  user-select: none;
-  font-size: 14px;
-}
-
-.mpms-top-menu__item:hover {
-  color: var(--mpms-text-primary);
-  background: var(--mpms-hover-bg);
-}
-
-.mpms-top-menu__item.is-active {
-  color: var(--mpms-primary-color);
-  background: rgba(65, 101, 215, 0.1);
-}
-
-.mpms-top-menu__item.is-disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.mpms-top-menu__item-icon {
-  font-size: 14px;
-  flex-shrink: 0;
 }

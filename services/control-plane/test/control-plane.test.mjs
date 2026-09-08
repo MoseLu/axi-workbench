@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createControlPlane } from "../src/control-plane.mjs";
@@ -135,6 +135,26 @@ test("builds a six-layer snapshot and Axi resource view from workspace graph plu
   assert.ok(snapshot.axiResources.doc_source.some((item) => item.resourceId === "axi-docs"));
   const run = await controlPlane.query({ text: "列出资源", senderId: "u", conversationId: "c", dryRun: true });
   assert.match(run.summary, /Axi 资源视图/);
+});
+
+test("builds a safe mobile projection and only exposes explicitly declared HTTPS previews", () => {
+  const root = makeWorkspace();
+  const graphPath = join(root, "workspace.graph.json");
+  const graph = JSON.parse(readFileSync(graphPath, "utf8"));
+  graph.projects["ielts-vocab"].mobile = {
+    summary: "移动学习产品",
+    preview: { mode: "embedded_web", url: "https://preview.example.test", allowEmbedded: true },
+  };
+  graph.projects["cockpit-tools"].mobile = { preview: { mode: "embedded_web", url: "http://unsafe.example.test", allowEmbedded: true } };
+  writeFileSync(graphPath, JSON.stringify(graph));
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache") });
+  const mobile = controlPlane.mobileSnapshot();
+  const previewProject = mobile.projects.find((project) => project.id === "ielts-vocab");
+  const blockedProject = mobile.projects.find((project) => project.id === "cockpit-tools");
+  assert.equal(previewProject.preview.mode, "embedded_web");
+  assert.equal(previewProject.preview.url, "https://preview.example.test");
+  assert.equal(blockedProject.preview.mode, "none");
+  assert.equal(blockedProject.preview.url, null);
 });
 
 test("blocks destructive natural language requests", async () => {

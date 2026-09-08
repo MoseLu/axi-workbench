@@ -3,7 +3,21 @@ import enUS from "./en-US";
 const zhCN = Object.fromEntries(Object.keys(enUS).map((key) => [key, key])) as Record<keyof typeof enUS, string>;
 
 Object.assign(zhCN, {
+  "workspace-ops": "工作区运维",
+  "release-observe": "发布观测",
+  "infrastructure": "基础设施",
   "Axi DevSvc Dashboard": "Axi 服务面板",
+  "search.placeholder.devsvc": "搜索菜单、Axi 应用、服务、项目",
+  "resources.column.axiResources": "Axi 资源",
+  "resources.column.appReclaim": "Axi 应用收归",
+  "axi-resources": "Axi 资源",
+  "resources.column.axiEntry": "Axi 入口",
+  "legal.brand.name": "Axi 工作台",
+  "legal.terms.title": "Axi 工作台服务条款",
+  "legal.privacy.title": "Axi 工作台隐私政策",
+  "legal.terms.welcome": "欢迎使用 Axi 工作台。登录或继续使用本产品，即表示你已阅读、理解并同意遵守本服务条款及适用法律法规。",
+  "legal.terms.serviceContent": "Axi 工作台提供项目管理、工作流、通知、设备配对和相关工作台能力，具体功能以当前产品版本为准。",
+  "legal.privacy.intro": "本政策说明 Axi 工作台在提供登录、会话、项目和设备配对服务时，如何处理与保护相关信息。",
   "Axi Fleet Console": "Axi 资产运维",
   "Axi Coder": "Axi 编码器",
   "Axi Verification Inbox": "Axi 验证收件箱",

@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-gateway
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "axi-workbench-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+  ports:
+    - name: http
+      port: {{ .Values.gateway.service.port }}
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-identity
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: identity-adapter
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "axi-workbench-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: identity-adapter
+  ports:
+    - name: http
+      port: {{ .Values.identityAdapter.service.port }}
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-platform
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: platform-core
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "axi-workbench-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: platform-core
+  ports:
+    - name: http
+      port: {{ .Values.platformCore.service.port }}
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-workflow
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-engine
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "axi-workbench-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: workflow-engine
+  ports:
+    - name: http
+      port: {{ .Values.workflowEngine.service.port }}
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-notification
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-service
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "axi-workbench-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-service
+  ports:
+    - name: http
+      port: {{ .Values.notificationService.service.port }}
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-file
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: file-service
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "axi-workbench-platform.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: file-service
+  ports:
+    - name: http
+      port: {{ .Values.fileService.service.port }}
+      targetPort: http
+      protocol: TCP

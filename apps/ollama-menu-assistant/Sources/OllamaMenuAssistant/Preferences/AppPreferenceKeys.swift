@@ -76,4 +76,29 @@ enum AppPreferenceKeys {
         static let memoryEnabled = "settings.personalization.memoryEnabled"
         static let skipToolAssistedMemory = "settings.personalization.skipToolAssistedMemory"
     }
+
+    enum AgentPlatform {
+        static let provider = "settings.agentPlatform.provider"
+        static let minimaxAPIKey = "settings.agentPlatform.minimax.apiKey"
+        static let minimaxAPIURL = "settings.agentPlatform.minimax.apiURL"
+        static let minimaxDefaultModel = "settings.agentPlatform.minimax.defaultModel"
+        static let openAIAPIKey = "settings.agentPlatform.openai.apiKey"
+        static let openAIDefaultModel = "settings.agentPlatform.openai.defaultModel"
+        static let qwenAPIKey = "settings.agentPlatform.qwen.apiKey"
+        static let qwenAPIURL = "settings.agentPlatform.qwen.apiURL"
+        static let qwenDefaultModel = "settings.agentPlatform.qwen.defaultModel"
+        static let defaultTemperature = "settings.agentPlatform.runtime.defaultTemperature"
+        static let defaultMaxTokens = "settings.agentPlatform.runtime.defaultMaxTokens"
+        static let maxAgents = "settings.agentPlatform.runtime.maxAgents"
+        static let repositoryPath = "settings.agentPlatform.worktree.repositoryPath"
+        static let maxWorktrees = "settings.agentPlatform.worktree.maxWorktrees"
+        static let maxParallelAgents = "settings.agentPlatform.worktree.maxParallelAgents"
+        static let defaultBaseBranch = "settings.agentPlatform.worktree.defaultBaseBranch"
+        static let worktreesCleanupHours = "settings.agentPlatform.worktree.cleanupHours"
+        static let mcpCommand = "settings.agentPlatform.mcp.command"
+        static let mcpArguments = "settings.agentPlatform.mcp.arguments"
+        static let mcpCWD = "settings.agentPlatform.mcp.cwd"
+        static let mcpTimeoutSeconds = "settings.agentPlatform.mcp.timeoutSeconds"
+        static let mcpProtocolVersion = "settings.agentPlatform.mcp.protocolVersion"
+    }
 }

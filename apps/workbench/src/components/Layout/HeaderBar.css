@@ -1,0 +1,76 @@
+/* ========== Topbar Tools Layout ========== */
+.app-topbar__tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+/* ========== Legacy classes (now provided by @epap/ui TopbarIconButton / UserDropdown) ========== */
+/* These are kept for backwards-compat reference; current MainLayout uses TopbarIconButton directly */
+.app-topbar__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--axi-layout-border);
+  border-radius: var(--axi-radius-md, 6px);
+  background: var(--axi-layout-chrome-bg);
+  color: var(--axi-text);
+  font-size: var(--axi-font-size-sm, 14px);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--axi-space-2, 8px) 0 4px;
+  border-radius: var(--axi-radius-sm, 4px);
+  cursor: pointer;
+  height: 28px;
+}
+
+.app-topbar__user:hover {
+  background: var(--axi-layout-hover);
+}
+
+.app-topbar__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--axi-primary);
+  color: var(--color-bg-card);
+  font-size: var(--axi-font-size-sm, 13px);
+}
+
+.app-topbar__username {
+  font-size: var(--axi-font-size-sm, 13px);
+  color: var(--axi-text);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-topbar__user-arrow {
+  font-size: 10px;
+  color: var(--axi-text-secondary);
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .app-topbar__username {
+    display: none;
+  }
+  .app-topbar__user-arrow {
+    display: none;
+  }
+}

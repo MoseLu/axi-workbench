@@ -1,4 +1,17 @@
 # 第六章 基础设施与运维设计
+## 6.0 当前可部署基线（2026-08）
+
+当前实现不再使用本章后续示例中的泛化 `eap-*` Kubernetes 目录作为生产来源。可执行入口是 [`infra/helm/axi-workbench-platform`](../infra/helm/axi-workbench-platform)：
+
+- NGINX Ingress + cert-manager 只把 `/api` 公开给 `api-gateway`；identity 与 platform Service 均为 ClusterIP。
+- pre-install/pre-upgrade Helm Job 分别执行 identity 与 platform migration；运行时容器不自动迁移数据库。
+- `axi_platform_app` 为 `NOBYPASSRLS`，迁移 Job 使用只存在于 Job Secret 的 `PLATFORM_MIGRATION_DATABASE_URL`；业务表均有 `tenant_id` 与 RLS。
+- Runtime Secret 通过 External/Sealed Secret 注入 OIDC、Redis、PostgreSQL、SMTP、内部 token 和 ZITADEL webhook 密钥；真实值不进入 Chart 或前端。
+- Chart 提供 PDB、非 root/read-only 容器、NetworkPolicy 和 OTLP/HTTP trace export；三项 Go 服务会继续 W3C `traceparent` 并在配置 Collector 时实际导出服务端 Span。本地 Compose 用 `scripts/init-db.sql` 创建开发数据库角色，Mailpit 用于 SMTP 集成验收。
+- Web 与移动端为独立构建产物；生产分别注入同一 HTTPS VITE_API_BASE_URL，Gateway 只对精确白名单 Origin 允许带 cookie 的 CORS。ZITADEL QR 回调仍经 Gateway 转发，identity-adapter 不暴露 Ingress。
+- ZITADEL 采用官方 Helm Chart，生产禁用 bundled PostgreSQL；参考 [`infra/helm/zitadel-values.example.yaml`](../infra/helm/zitadel-values.example.yaml) 与官方文档。
+
+安装顺序、Secret 键、数据库角色和验收步骤见 [`infra/helm/README.md`](../infra/helm/README.md)。以下章节是保留的历史运维蓝图，不应覆盖本节。
 
 ## 6.1 本地开发环境 — Docker Compose
 

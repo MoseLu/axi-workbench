@@ -43,4 +43,4 @@ SOP 静态资源目录，存放生产作业标准文档（图片、PDF），按�
 | AGENTS.md | `./AGENTS.md` | 资源目录 AI 文档（当前） |
 | AGENTS.md (parent) | `../AGENTS.md` | 项目根文档（L2） |
 | TODO.md (inherited) | `../TODO.md` | 全项目任务（继承自父级 L2） |
-| MILESTONES.md (inherited) | `../MILESTONES.md` | 全项目里程碑（继承自父级 L2） |
+| MILESTONE.md (inherited) | `../MILESTONE.md` | 全项目里程碑（继承自父级 L2） |

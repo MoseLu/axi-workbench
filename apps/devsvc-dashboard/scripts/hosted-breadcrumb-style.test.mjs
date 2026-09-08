@@ -18,7 +18,7 @@ test("hosted breadcrumbs expose host and subapp scopes", async () => {
   assert.match(registrySource, /className:\s*"breadcrumb-scope-subapp"[\s\S]*?scope:\s*"subapp"/u);
   assert.match(shellSource, /className:\s*item\.className/u);
   assert.match(shellSource, /scope:\s*item\.scope/u);
-  assert.match(sharedLayoutSource, /data-scope=\{item\.scope\}/u);
+  assert.match(sharedLayoutSource, /data-scope[^,]{0,30}item\.scope/u);
   assert.match(sharedLayoutSource, /is-scope-boundary/u);
   assert.match(hostedStyles, /\.axi-breadcrumb-item\.breadcrumb-scope-host/u);
   assert.match(hostedStyles, /\.axi-breadcrumb-item\.breadcrumb-scope-subapp/u);

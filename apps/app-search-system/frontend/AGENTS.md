@@ -79,10 +79,10 @@ Display 客户端修复分支，已完成后端打包脚本更新。
 |------|------|------|
 | AGENTS.md | `./AGENTS.md` | 前端目录 AI 文档（当前） |
 | TODO.md | `./TODO.md` | 前端模块任务（L3） |
-| MILESTONES.md | `./MILESTONES.md` | 前端模块里程碑（L3） |
+| MILESTONE.md | `./MILESTONE.md` | 前端模块里程碑（L3） |
 | AGENTS.md (parent) | `../AGENTS.md` | 项目根文档（L2） |
 | TODO.md (parent) | `../TODO.md` | 全项目任务（L2） |
-| MILESTONES.md (parent) | `../MILESTONES.md` | 全项目里程碑（L2） |
+| MILESTONE.md (parent) | `../MILESTONE.md` | 全项目里程碑（L2） |
 
 ### Quick Commands
 ```bash

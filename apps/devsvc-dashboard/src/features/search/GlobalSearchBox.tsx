@@ -173,7 +173,7 @@ export function GlobalSearchBox({
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              placeholder={t("搜索菜单、Axi 应用、服务、项目")}
+              placeholder={t("search.placeholder.devsvc")}
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               onKeyDown={(event) => {

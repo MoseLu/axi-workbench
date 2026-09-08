@@ -18,7 +18,7 @@ export * from './sizes';
 export * from './animation';
 
 // Import color tokens for themes
-import { defaultDarkColors, defaultLightColors } from './colors';
+import { defaultLightColors } from './colors';
 
 // Import generate functions for use in this file
 import { generateColorCSSVariables } from './colors';

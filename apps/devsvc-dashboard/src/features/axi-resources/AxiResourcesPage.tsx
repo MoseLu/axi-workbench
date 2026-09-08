@@ -5,8 +5,9 @@ import { useTranslation } from "react-i18next";
 
 import { useTableToolbarSlot } from "../../app-shell/toolbarSlot";
 import { AxiTable } from "@axi/crud";
+import { AxiTag } from "@axi/core";
 import { api, requestErrorMessage } from "../../lib/api";
-import { MetricTag, StatusChip } from "../status/status";
+import { metricTagType, StatusChip } from "../status/status";
 import type { AxiResource, AxiResourcesPayload } from "./axiResources";
 
 const surfaceLabels: Record<string, string> = {
@@ -44,7 +45,7 @@ export function AxiResourcesPage() {
 
   const columns = useMemo<any[]>(() => [
     {
-      title: t("Axi 资源"),
+      title: t("resources.column.axiResources"),
       children: [
         {
           title: t("名称"),
@@ -61,12 +62,12 @@ export function AxiResourcesPage() {
           title: t("类型"),
           dataIndex: "kind",
           width: 150,
-          render: (value: string) => <MetricTag>{t(value)}</MetricTag>
+          render: (value: string) => <AxiTag className="metric-tag" effect="light" round type={metricTagType(value)}>{t(value)}</AxiTag>
         }
       ]
     },
     {
-      title: t("Axi 应用收归"),
+      title: t("resources.column.appReclaim"),
       children: [
         {
           title: t("状态"),
@@ -80,10 +81,10 @@ export function AxiResourcesPage() {
           dataIndex: "surface",
           align: "center" as const,
           width: 130,
-          render: (value: string) => <MetricTag>{t(surfaceLabels[value] || value)}</MetricTag>
+          render: (value: string) => <AxiTag className="metric-tag" effect="light" round type="info">{t(surfaceLabels[value] || value)}</AxiTag>
         },
         {
-          title: t("Axi 入口"),
+          title: t("resources.column.axiEntry"),
           dataIndex: "dashboardRoute",
           align: "center" as const,
           width: 150,
@@ -92,7 +93,7 @@ export function AxiResourcesPage() {
               {t("打开")}
             </AntButton>
           ) : (
-            <MetricTag>{t("资源索引")}</MetricTag>
+            <AxiTag className="metric-tag" effect="light" round type="info">{t("资源索引")}</AxiTag>
           )
         }
       ]
@@ -117,7 +118,7 @@ export function AxiResourcesPage() {
           width: 260,
           render: (values?: string[]) => (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-              {(values || []).slice(0, 4).map((value) => <MetricTag key={value}>{t(value)}</MetricTag>)}
+              {(values || []).slice(0, 4).map((value) => <AxiTag key={value} className="metric-tag" effect="light" round type={metricTagType(value)}>{t(value)}</AxiTag>)}
             </div>
           )
         },

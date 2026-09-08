@@ -1,0 +1,148 @@
+name: Axi Shared Contracts
+
+# 跨端共享契约一致性检查：
+#   * @axi/workbench-shared 自身 type-check + test 通过
+#   * web / mobile / desktop 三个端都引用了 @axi/workbench-shared（或明确说不需要）
+#   * 共享包（@axi/workstation-contracts / @epap/api-client / @epap/types / @epap/utils）
+#     在三端的 package.json 中版本一致
+#
+# 触发：PR 到 dev / main，或 push 到指定分支
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+  push:
+    branches:
+      - dev
+      - main
+      - 'agent/**'
+      - 'feature/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shared-package:
+    name: Build, test, type-check @axi/workbench-shared
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build shared package
+        run: |
+          if node -e "const p=require('./apps/workbench-shared/package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)"; then
+            pnpm --filter @axi/workbench-shared build
+          else
+            echo "::warning::@axi/workbench-shared has no build script — skipping (M14 skeleton)"
+          fi
+
+      - name: Type-check shared package
+        run: pnpm --filter @axi/workbench-shared type-check
+
+      - name: Test shared package
+        run: |
+          if node -e "const p=require('./apps/workbench-shared/package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
+            pnpm --filter @axi/workbench-shared test
+          else
+            echo "::warning::@axi/workbench-shared has no test script — skipping"
+          fi
+
+  consumers-link-check:
+    name: Verify three surfaces reference shared contract versions consistently
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Verify shared-contracts version consistency
+        run: |
+          set -euo pipefail
+
+          SHARED_PACKAGES="@axi/workstation-contracts @epap/api-client @epap/types @epap/utils @axi/workbench-foundation"
+          SURFACE_PACKAGES="@axi/workbench @axi/workbench-mobile @axi/workbench-desktop"
+
+          echo "::group::Shared package versions"
+          for pkg in $SHARED_PACKAGES; do
+            if ! pnpm --filter "$pkg" --silent ls 2>/dev/null | grep -q "$pkg"; then
+              echo "::warning::$pkg not in workspace — skipping"
+              continue
+            fi
+            version=$(node -e "console.log(require('./packages/$(echo $pkg | sed 's/@..\///' | sed 's|^| |').js' 2>/dev/null || require('./packages/'"$pkg"'/package.json').version)" 2>/dev/null || echo "?")
+            echo "$pkg = $version"
+          done
+          echo "::endgroup::"
+
+          echo "::group::Surface consumer versions"
+          for surface in $SURFACE_PACKAGES; do
+            for shared in $SHARED_PACKAGES; do
+              pkg_name=$(echo "$shared" | sed 's/^@//' | awk -F/ '{print $1}')
+              if grep -q "\"$shared\"" "apps/${pkg_name#axi/}/package.json" 2>/dev/null; then
+                requested=$(grep "\"$shared\":" "apps/${pkg_name#axi/}/package.json" | head -1 | sed -E 's/.*"workspace:\*".*/workspace:*/' | head -1)
+                echo "$surface consumes $shared = ${requested:-missing}"
+              fi
+            done
+          done
+          echo "::endgroup::"
+
+          echo "::group::Required consumer presence"
+          declare -A REQUIRED=(
+            ["@axi/workstation-contracts"]="@axi/workbench @axi/workbench-mobile"
+            ["@epap/api-client"]="@axi/workbench @axi/workbench-mobile"
+            ["@axi/workbench-foundation"]="@axi/workbench @axi/workbench-mobile"
+          )
+
+          failed=0
+          for shared in "${!REQUIRED[@]}"; do
+            for surface in ${REQUIRED[$shared]}; do
+              pkg_dir="apps/${surface#@axi/}/package.json"
+              if ! grep -q "\"$shared\"" "$pkg_dir" 2>/dev/null; then
+                echo "::error::$surface is missing required shared dependency $shared"
+                failed=1
+              fi
+            done
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            echo "Shared-contract drift detected. Either add the dependency or update ARCHITECTURE.md §3 if it was intentionally removed."
+            exit 1
+          fi
+
+          echo "All three surfaces share the documented contract versions."

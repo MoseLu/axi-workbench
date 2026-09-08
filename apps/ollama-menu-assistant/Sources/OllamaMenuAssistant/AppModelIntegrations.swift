@@ -106,6 +106,8 @@ extension AppModel {
 
     func applyPetSelections(_ selections: [PetSelection]) async {
         let roster = PetRoster(selections: selections)
+        let language = AppLanguage.current(defaults: defaults)
+        PetRunnerIPC.publishLanguage(language)
         do {
             if roster.selections.isEmpty {
                 petRunnerController.terminate()
@@ -115,7 +117,8 @@ extension AppModel {
                         id: selection.id,
                         petDirectoryURL: petDirectoryURL(for: selection),
                         slotIndex: index,
-                        slotCount: PetFormationSlots.slotCount
+                        slotCount: PetFormationSlots.slotCount,
+                        language: language
                     )
                 }
                 try await petRunnerController.launchPets(requests)

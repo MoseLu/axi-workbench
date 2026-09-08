@@ -1,0 +1,13 @@
+apiVersion: v2
+name: axi-workbench-platform
+description: Axi Workbench API gateway, identity adapter, and modular Go platform core.
+type: application
+version: 0.1.0
+appVersion: "2026.08"
+keywords:
+  - axi
+  - workbench
+  - gateway
+  - zitadel
+maintainers:
+  - name: AxiomaticWorld

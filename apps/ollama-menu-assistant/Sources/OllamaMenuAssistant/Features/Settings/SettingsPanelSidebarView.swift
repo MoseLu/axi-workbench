@@ -4,6 +4,7 @@ struct SettingsPanelSidebarView: View {
     let selectedSection: SettingsSection
     let language: AppLanguage
     let isTranslucent: Bool
+    let topInset: CGFloat
     let onBack: () -> Void
     let onSelect: (SettingsSection) -> Void
 
@@ -32,7 +33,7 @@ struct SettingsPanelSidebarView: View {
             .frame(width: SettingsPanelMetrics.sidebarContentWidth, alignment: .leading)
         }
         .padding(.horizontal, SettingsPanelMetrics.sidebarHorizontalPadding)
-        .padding(.top, SettingsPanelMetrics.sidebarTopPadding)
+        .padding(.top, topInset)
         .frame(width: SettingsPanelMetrics.sidebarWidth, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .topLeading)
         .fixedSize(horizontal: true, vertical: false)
