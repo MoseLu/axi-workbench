@@ -145,7 +145,7 @@ const RoleList: React.FC = () => {
     const slug = `${slugBase}-${Date.now().toString(36).slice(-4)}`;
     try {
       const tenant = await createTenant.mutateAsync({
-        name: 'Axi Workbench',
+        name: t('legal.brand.name'),
         slug,
       });
       setTenantId(tenant.id);
