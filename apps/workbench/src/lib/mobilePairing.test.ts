@@ -40,6 +40,7 @@ describe('Web QR mobile pairing', () => {
     webPairingId: 'webpair_a8e4d721-388a-4b17-90fa-170a91dd9e4d',
     scanToken: 'Q4TkWcT5OmmuZECnsYBEEipOFGT4K0J9pKX1vTcrdOw',
     expiresAt: 1_800_000_000_000,
+    gatewayUrl: 'http://192.168.1.8:8088/api/v1/',
   };
 
   it('creates an owner-bound one-time QR transaction through the authenticated gateway', async () => {
@@ -61,6 +62,7 @@ describe('Web QR mobile pairing', () => {
       kind: 'axi-mobile-pair-v1',
       webPairingId: pairing.webPairingId,
       scanToken: pairing.scanToken,
+      gatewayUrl: pairing.gatewayUrl,
     });
   });
 

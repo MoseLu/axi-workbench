@@ -1,6 +1,7 @@
 /** 浏览器端个人信息本地存储（localStorage） */
 
 import defaultAvatarSrc from '../../../assets/avatar-me.jpg';
+import { isValidUsername, resolveUsername } from '@axi/workbench-foundation';
 
 export type UserProfile = {
   nickname: string;
@@ -45,7 +46,11 @@ const DEFAULT_PROFILE: UserProfile = {
 };
 
 function displayName(identity?: ProfileIdentity | null): string {
-  return identity?.name?.trim() || identity?.email?.split('@')[0] || identity?.id || '用户';
+  return resolveUsername({
+    candidate: identity?.name,
+    email: identity?.email,
+    subject: identity?.id,
+  });
 }
 
 export function profileFallbackFromIdentity(identity?: ProfileIdentity | null): Partial<UserProfile> {
@@ -59,8 +64,9 @@ export function profileFallbackFromIdentity(identity?: ProfileIdentity | null): 
 }
 
 /**
- * 使用认证会话填充未设置的资料，并把旧版写入的演示昵称和邮箱迁移出去。
- * 用户主动保存过的值仍会优先保留。
+ * 使用认证会话填充资料，并把旧版写入的演示昵称和邮箱迁移出去。
+ * 用户名以服务端认证身份为准；本地存储只作为无身份上下文和头像等
+ * Workbench 本地资料的兼容镜像。
  */
 export function loadProfile(identity?: ProfileIdentity | null): UserProfile {
   const fallback = profileFallbackFromIdentity(identity);
@@ -68,12 +74,16 @@ export function loadProfile(identity?: ProfileIdentity | null): UserProfile {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { ...DEFAULT_PROFILE, ...fallback };
     const stored = JSON.parse(raw) as Partial<UserProfile>;
+    const storedNickname = typeof stored.nickname === 'string' ? stored.nickname.trim() : '';
+    const safeStoredNickname = isValidUsername(storedNickname) ? storedNickname : '';
     return {
       ...DEFAULT_PROFILE,
       ...fallback,
       ...stored,
       email: stored.email === 'zhangsan@workbench.dev' && fallback.email ? fallback.email : stored.email || fallback.email || '',
-      nickname: stored.nickname === '张三' && fallback.nickname ? fallback.nickname : stored.nickname || fallback.nickname || '用户',
+      nickname: stored.nickname === '张三' && fallback.nickname
+        ? fallback.nickname
+        : fallback.nickname || safeStoredNickname || '用户',
       status: stored.status === '正常' && fallback.status ? fallback.status : stored.status || fallback.status || '',
       workbenchId: stored.workbenchId || fallback.workbenchId || '',
     };
@@ -84,6 +94,9 @@ export function loadProfile(identity?: ProfileIdentity | null): UserProfile {
 
 export function saveProfile(patch: Partial<UserProfile>, identity?: ProfileIdentity | null): UserProfile {
   const next = { ...loadProfile(identity), ...patch };
+  if (!isValidUsername(next.nickname)) {
+    next.nickname = profileFallbackFromIdentity(identity).nickname || '用户';
+  }
   localStorage.setItem(KEY, JSON.stringify(next));
   window.dispatchEvent(new CustomEvent('wb-profile-changed', { detail: next }));
   return next;

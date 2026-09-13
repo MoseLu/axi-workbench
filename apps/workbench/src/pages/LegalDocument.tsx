@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useI18n } from '../i18n';
+import zhCN from '../i18n/locales/zh-CN.json';
 import './LegalDocument.css';
+
+const copy = zhCN as Record<string, string>;
+const legalText = (key: string) => copy[key] ?? key;
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined'
   ? React.useEffect
@@ -12,7 +15,6 @@ type LegalDocumentProps = {
 };
 
 const LegalDocument: React.FC<LegalDocumentProps> = ({ kind }) => {
-  const { t } = useI18n();
   const isTerms = kind === 'terms';
   useIsomorphicLayoutEffect(() => {
     document.documentElement.classList.add('axi-legal-route');
@@ -40,25 +42,27 @@ const LegalDocument: React.FC<LegalDocumentProps> = ({ kind }) => {
 
   return (
     <main className="axi-legal-page">
-      <div className="axi-legal-layout">
-        <aside className="axi-legal-sidebar" aria-label="文档目录">
-          <Link className="axi-legal-brand" to="/login" aria-label={t("legal.brand.name")}>
-            <img src="/favicon.svg" alt="" aria-hidden="true" />
-            <span>{t("legal.brand.name")}</span>
-          </Link>
-          <div className="axi-legal-sidebar__title">法律文档</div>
-          <Link className={isTerms ? 'is-active' : ''} to="/legal/terms">服务条款</Link>
-          <Link className={!isTerms ? 'is-active' : ''} to="/legal/privacy">隐私政策</Link>
-        </aside>
+      <aside className="axi-legal-sidebar" aria-label="文档目录">
+        <Link className="axi-legal-brand" to="/login" aria-label={legalText('legal.brand.name')}>
+          <img src="/favicon.svg" alt="" aria-hidden="true" />
+          <span>{legalText('legal.brand.name')}</span>
+        </Link>
+        <div className="axi-legal-sidebar__title">法律文档</div>
+        <Link className={isTerms ? 'is-active' : ''} to="/legal/terms">服务条款</Link>
+        <Link className={!isTerms ? 'is-active' : ''} to="/legal/privacy">隐私政策</Link>
+      </aside>
 
+      <header className="axi-legal-nav" />
+
+      <div className="axi-legal-content">
         <article className="axi-legal-document">
-          <h1>{isTerms ? t("legal.terms.title") : t("legal.privacy.title")}</h1>
-          <p className="axi-legal-meta">{t("legal.document.updated")}</p>
+          <h1>{isTerms ? legalText('legal.terms.title') : legalText('legal.privacy.title')}</h1>
+          <p className="axi-legal-meta">{legalText('legal.document.updated')}</p>
           {isTerms ? (
             <>
-              <p>{t("legal.terms.welcome")}</p>
+              <p>{legalText('legal.terms.welcome')}</p>
               <h2 id="service">一、服务内容</h2>
-              <p>{t("legal.terms.serviceContent")}</p>
+              <p>{legalText('legal.terms.serviceContent')}</p>
               <h2 id="security">二、账号与安全</h2>
               <p>你应使用真实、合法且由你控制的邮箱完成登录，并妥善保管验证码、密码和会话信息。</p>
               <h2 id="acceptable-use">三、合理使用</h2>
@@ -68,7 +72,7 @@ const LegalDocument: React.FC<LegalDocumentProps> = ({ kind }) => {
             </>
           ) : (
             <>
-              <p>{t("legal.privacy.intro")}</p>
+              <p>{legalText('legal.privacy.intro')}</p>
               <h2 id="collection">一、我们处理的信息</h2>
               <p>我们可能处理你主动提交的邮箱、登录凭证、会话信息、设备配对信息以及必要的运行日志。</p>
               <h2 id="usage">二、信息用途</h2>
@@ -82,8 +86,10 @@ const LegalDocument: React.FC<LegalDocumentProps> = ({ kind }) => {
         </article>
 
         <aside className="axi-legal-toc" aria-label="本页导航">
-          <div className="axi-legal-toc__title">本页导航</div>
-          {sections.map(([id, title]) => <a key={id} href={`#${id}`}>{title}</a>)}
+          <div className="axi-legal-toc__viewport">
+            <div className="axi-legal-toc__title">本页导航</div>
+            {sections.map(([id, title]) => <a key={id} href={`#${id}`}>{title}</a>)}
+          </div>
         </aside>
       </div>
     </main>

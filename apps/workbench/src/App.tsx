@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, theme as antdTheme } from 'antd';
+import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
 import {
   AxiLocaleProvider,
@@ -12,6 +13,7 @@ import {
 import { axiCrudLocaleContribution } from '@axi/crud';
 import { axiSettingsLocaleContribution } from '@axi/settings';
 import { axiShellLocaleContribution } from '@axi/shell';
+import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foundation';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -30,10 +32,12 @@ import Devices from './pages/admin/me/Devices';
 import Notifications from './pages/admin/me/Notifications';
 import Theme from './pages/admin/me/Theme';
 import AuthCallback from './pages/AuthCallback';
+import LegalDocument from './pages/LegalDocument';
 import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
 import RequireSession from './components/Auth/RequireSession';
 import { AuthProvider } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
+import { isTauriShell } from './lib/shell';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +50,13 @@ const queryClient = new QueryClient({
 
 const WorkbenchSurface: React.FC = () => {
   const { mode, preset } = useAxiTheme();
+  const { locale } = useWorkbenchLocale();
+  React.useEffect(() => {
+    if (!isTauriShell() || typeof document === 'undefined') return undefined;
+    document.body.classList.add('axi-tauri-shell');
+    return () => document.body.classList.remove('axi-tauri-shell');
+  }, []);
+
   const antdThemeConfig = React.useMemo(
     () => ({
       algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
@@ -58,18 +69,19 @@ const WorkbenchSurface: React.FC = () => {
     <AxiLocaleProvider
       contributions={[axiShellLocaleContribution, axiSettingsLocaleContribution, axiCrudLocaleContribution]}
       fallbackLocale="zh-CN"
-      locale="zh-CN"
+      locale={locale}
     >
-      <ConfigProvider locale={zhCN} theme={antdThemeConfig}>
+      <ConfigProvider locale={locale === 'zh-CN' ? zhCN : enUS} theme={antdThemeConfig}>
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <I18nProvider>
-              <BrowserRouter>
-                <Routes>
+          <I18nProvider>
+            <BrowserRouter>
+              <Routes>
                   {/* Web 与移动端拥有独立 UI；登录协议统一通过 Axi Identity OIDC。 */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/legal/terms" element={<LegalDocument kind="terms" />} />
+                  <Route path="/legal/privacy" element={<LegalDocument kind="privacy" />} />
 
                   {/* Web 管理端专属壳：Axi Dashboard Chrome。 */}
                   <Route path="/" element={<RequireSession><MainLayout /></RequireSession>}>
@@ -84,6 +96,7 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/team" element={<Team />} />
                     {/* 历史扫码链接不再打开桌面摄像头工具，回到控制中心。 */}
                     <Route path="admin/scan" element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="admin/handoff" element={<Handoff />} />
                     <Route path="admin/handoff/:id" element={<Handoff />} />
                     {/* 全局联想搜索二级页 */}
                     <Route path="admin/search" element={<Search />} />
@@ -103,10 +116,9 @@ const WorkbenchSurface: React.FC = () => {
                   </Route>
 
                   <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </BrowserRouter>
-            </I18nProvider>
-          </AuthProvider>
+              </Routes>
+            </BrowserRouter>
+          </I18nProvider>
         </QueryClientProvider>
       </ConfigProvider>
     </AxiLocaleProvider>
@@ -119,7 +131,11 @@ const App: React.FC = () => (
     defaultStylePreset="black-gold"
     storageNamespace="axi.workbench"
   >
-    <WorkbenchSurface />
+    <AuthProvider>
+      <WorkbenchLocaleProvider>
+        <WorkbenchSurface />
+      </WorkbenchLocaleProvider>
+    </AuthProvider>
   </AxiThemeProvider>
 );
 

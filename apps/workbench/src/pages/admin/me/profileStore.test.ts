@@ -84,6 +84,35 @@ describe('profileStore', () => {
     });
   });
 
+  it('does not keep an email-shaped or overlong username in the profile', () => {
+    localStorage.setItem(profileStorageKey, JSON.stringify({
+      nickname: 'alexandria.long.lastname@outlook.com',
+    }));
+
+    const profile = loadProfile({
+      email: 'alexandria.long.lastname@outlook.com',
+      id: 'member-1',
+      name: 'alexandria.long.lastname@outlook.com',
+      status: 'active',
+    });
+
+    expect(profile.nickname).not.toContain('@');
+    expect(Array.from(profile.nickname)).toHaveLength(12);
+  });
+
+  it('prefers the server identity over a stale local username', () => {
+    localStorage.setItem(profileStorageKey, JSON.stringify({
+      nickname: 'old-local-name',
+    }));
+
+    expect(loadProfile({
+      email: 'member@example.com',
+      id: 'member-1',
+      name: 'server-name',
+      status: 'active',
+    }).nickname).toBe('server-name');
+  });
+
   it('falls back to the product default avatar when no custom image is set', () => {
     expect(DEFAULT_AVATAR_SRC).toBeTruthy();
     expect(resolveAvatarSrc('')).toBe(DEFAULT_AVATAR_SRC);

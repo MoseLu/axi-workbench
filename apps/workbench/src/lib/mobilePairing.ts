@@ -15,6 +15,7 @@ export type MobilePairingQr = {
   webPairingId: string;
   scanToken: string;
   expiresAt: number;
+  gatewayUrl?: string;
 };
 
 export type MobilePairingQrStatus = {
@@ -46,6 +47,23 @@ function assertWebPairingId(webPairingId: string): void {
   if (!WEB_PAIRING_ID_PATTERN.test(webPairingId)) throw new Error('二维码配对请求无效');
 }
 
+function normalizeGatewayUrl(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !value.trim()) throw new Error('服务端返回的网关地址无效');
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error('服务端返回的网关地址无效');
+  }
+  const path = parsed.pathname.replace(/\/+$/u, '');
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash || (path !== '' && path !== '/api/v1')) {
+    throw new Error('服务端返回的网关地址无效');
+  }
+  parsed.pathname = '/api/v1/';
+  return parsed.toString();
+}
+
 function parseQrTransaction(payload: JsonRecord): MobilePairingQr {
   const { webPairingId, scanToken, expiresAt } = payload;
   if (
@@ -58,7 +76,8 @@ function parseQrTransaction(payload: JsonRecord): MobilePairingQr {
   ) {
     throw new Error('服务端返回的二维码配对请求无效');
   }
-  return { webPairingId, scanToken, expiresAt };
+  const gatewayUrl = normalizeGatewayUrl(payload.gatewayUrl);
+  return { webPairingId, scanToken, expiresAt, ...(gatewayUrl ? { gatewayUrl } : {}) };
 }
 
 function parseQrStatus(payload: JsonRecord): MobilePairingQrStatus {
@@ -131,6 +150,7 @@ export function mobilePairingQrPayload(pairing: MobilePairingQr): string {
     kind: 'axi-mobile-pair-v1',
     webPairingId: pairing.webPairingId,
     scanToken: pairing.scanToken,
+    ...(pairing.gatewayUrl ? { gatewayUrl: normalizeGatewayUrl(pairing.gatewayUrl) } : {}),
   });
 }
 

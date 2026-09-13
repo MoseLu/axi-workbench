@@ -15,6 +15,7 @@ interface OneTimeCodeInputProps {
   disabled?: boolean;
   firstInputRef?: React.MutableRefObject<HTMLInputElement | null>;
   ariaLabelledBy?: string;
+  ariaInvalid?: boolean;
 }
 
 export const OneTimeCodeInput: React.FC<OneTimeCodeInputProps> = ({
@@ -23,6 +24,7 @@ export const OneTimeCodeInput: React.FC<OneTimeCodeInputProps> = ({
   disabled = false,
   firstInputRef,
   ariaLabelledBy,
+  ariaInvalid = false,
 }) => {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const slots = toOneTimeCodeSlots(value);
@@ -41,7 +43,7 @@ export const OneTimeCodeInput: React.FC<OneTimeCodeInputProps> = ({
   };
 
   return (
-    <div className="axi-one-time-code" aria-label={t('auth.otp.ariaLabel')} aria-labelledby={ariaLabelledBy} role="group">
+    <div className="axi-one-time-code" aria-label={t('auth.otp.ariaLabel')} aria-labelledby={ariaLabelledBy} aria-invalid={ariaInvalid || undefined} role="group">
       {slots.map((slot, index) => (
         <input
           key={index}

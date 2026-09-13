@@ -16,8 +16,7 @@
  *    decides whether to fall back to the dashboard or to a 404).
  *
  * Tab identity is anchored to `key`. `path` mirrors `key` in the admin shell
- * (kept REQUIRED to match `@epap/ui`'s `TabItem` so consumers don't need
- * adapter-time casts).
+ * so the persisted tab state and shared shell adapter use one stable contract.
  */
 
 export interface TabItem {

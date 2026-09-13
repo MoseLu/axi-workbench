@@ -2,12 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
 import { AxiBanner } from '@axi/widgets';
-import { resolveGatewayURL } from '@axi/workbench-foundation';
-import scanPromptImage from '../assets/login/scan-prompt.png';
+import { resolveGatewayURL, resolveUsername } from '@axi/workbench-foundation';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../i18n';
+import { oneTimeCodeValue } from '../lib/oneTimeCode';
 import { OneTimeCodeInput } from '../components/OneTimeCodeInput';
-import { createOneTimeCode, oneTimeCodeValue, type OneTimeCode } from '../lib/oneTimeCode';
 import {
   EMAIL_LOCAL_PART_MAX_LENGTH,
   EMAIL_LOCAL_PART_PATTERN,
@@ -22,16 +21,29 @@ import {
   type WebDeviceLoginQr,
 } from '../lib/webDeviceLogin';
 import { localizeLoginError } from '../lib/localizeLoginError';
-import { emitShellLoginSuccess, isTauriShell } from '../lib/shell';
+import {
+  getOrCreateDeviceId,
+  readLastAccount,
+  writeLastAccount,
+  type LastAccount,
+} from '../lib/lastAccount';
+import wechatBrandIconUrl from '../assets/icons/communication/wechat-brand.svg';
+import qqBrandIconUrl from '../assets/icons/communication/qq-brand.svg';
+import {
+  closeLoginWindow,
+  emitShellLoginSuccess,
+  externalLegalUrl,
+  getShellWindowLabel,
+  isTauriShell,
+  openExternalLegalPage,
+} from '../lib/shell';
 import './Login.css';
-
-const TAURI_BODY_CLASS = 'axi-tauri-shell';
 
 type Phase = 'email' | 'code' | 'verifying';
 type LoginMode = 'password' | 'email';
+type LoginSurface = 'quick' | 'qr' | 'account';
 type DeviceQrStatus = 'creating' | 'waiting_scan' | 'approved' | 'expired' | 'failed';
 type PasswordLoginResponse = { authenticated: boolean };
-type AuthMethodsResponse = { passwordLogin?: boolean };
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const QR_POLL_INTERVAL_MS = 3_000;
@@ -45,6 +57,106 @@ const EMAIL_SUFFIX_OPTIONS = [
 type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
 const OTP_PATTERN = /^\d{6}$/;
+
+function focusLoginField(id: string) {
+  const node = document.getElementById(id);
+  if (node instanceof HTMLElement) node.focus();
+}
+
+function isLoginEnterPassthroughTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest('a[href]')
+    || target.closest('.axi-login-email-suffix-wrap')
+    || target.closest('.axi-login-form-switch')
+    || target.closest('.axi-login-email-code-resend')
+    || target.closest('.axi-login-email-code-meta button')
+    || target.closest('.axi-login-qr-corner-switch')
+    || target.closest('.axi-login-window-close')
+    || target.closest('.axi-login-quick-links'),
+  );
+}
+
+function PasswordVisibilityToggle({
+  visible,
+  disabled,
+  showLabel,
+  hideLabel,
+  onToggle,
+}: {
+  visible: boolean;
+  disabled?: boolean;
+  showLabel: string;
+  hideLabel: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`axi-login-password-toggle${visible ? ' is-visible' : ''}`}
+      aria-label={visible ? hideLabel : showLabel}
+      aria-pressed={visible}
+      disabled={disabled}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onToggle}
+    >
+      {visible ? (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M3.2 3.2 L20.8 20.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <path
+            d="M9.6 9.7 A3.2 3.2 0 0 0 14.3 14.4 M7.1 7.3 C4.6 8.8 2.6 12 2.6 12 S6.4 19 12 19 c1.7 0 3.2-.4 4.5-1.1 M16.8 16.5 C19.4 14.9 21.4 12 21.4 12 S17.6 5 12 5 c-.8 0-1.6.1-2.3.3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M2.6 12 S6.4 5 12 5 s9.4 7 9.4 7-3.8 7-9.4 7-9.4-7-9.4-7Z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function SocialLoginPlaceholder({
+  provider,
+  label,
+  comingSoon,
+}: {
+  provider: 'wechat' | 'qq';
+  label: string;
+  comingSoon: string;
+}) {
+  return (
+    <button
+      type="button"
+      className={`axi-login-social-placeholder axi-login-social-placeholder--${provider}`}
+      aria-label={`${label}（${comingSoon}）`}
+      title={comingSoon}
+      disabled
+    >
+      <span className="axi-login-social-icon" aria-hidden="true">
+        <img src={provider === 'wechat' ? wechatBrandIconUrl : qqBrandIconUrl} alt="" />
+      </span>
+    </button>
+  );
+}
 
 function EmailSuffixSelect({
   id,
@@ -124,9 +236,8 @@ function EmailSuffixSelect({
 /**
  * Web 登录入口。
  *
- * 视觉结构固定为客户端常见的双栏登录面板：左侧始终显示扫码登录，
- * 右侧承载密码和邮箱验证码流程。扫码和右侧登录方式是并行的
- * 真实登录路径，不再通过顶部标签互相替换整个面板。
+ * 视觉结构采用紧凑客户端登录卡：扫码入口收进左上角二维码角标，
+ * 账号入口内部只保留轻量的密码/邮箱方式切换，不让两类表单同时占据画布。
  */
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -139,17 +250,37 @@ const Login: React.FC = () => {
     requestEmailCode,
     confirmEmailCode,
     refreshSession,
+    user,
   } = useAuth();
   const next = searchParams.get('next')?.startsWith('/') ? searchParams.get('next')! : '/admin/dashboard';
 
-  // 左侧二维码固定存在；登录方式和 phase 只描述右侧登录流程。
+  // 快捷登录必须先经过原生/浏览器会话探测，不能用本地缓存的账号信息
+  // 直接渲染一个可能必然失败的“一键登录”入口。
+  const [loginSurface, setLoginSurface] = useState<LoginSurface>('account');
+  const [quickAccount, setQuickAccount] = useState<LastAccount | null>(() => readLastAccount());
+  const otherMethodsRef = useRef(false);
+  const formLoginRef = useRef(false);
   const [loginMode, setLoginMode] = useState<LoginMode>('email');
-  const [passwordLoginEnabled, setPasswordLoginEnabled] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.localStorage.getItem('axi.login.remember') !== 'false';
+  });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAgreeHint, setShowAgreeHint] = useState(false);
+  const [emailAttempted, setEmailAttempted] = useState(false);
+  const [passwordAttempted, setPasswordAttempted] = useState(false);
+  const [codeAttempted, setCodeAttempted] = useState(false);
+  const agreedRef = useRef(false);
+  const hintRef = useRef(false);
+  agreedRef.current = agreedToTerms;
+  hintRef.current = showAgreeHint;
   const [phase, setPhase] = useState<Phase>('email');
   const [emailLocalPart, setEmailLocalPart] = useState('');
   const [emailSuffix, setEmailSuffix] = useState<EmailSuffix>(DEFAULT_EMAIL_SUFFIX);
   const [password, setPassword] = useState('');
-  const [code, setCode] = useState<OneTimeCode | string>(() => createOneTimeCode());
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [code, setCode] = useState('');
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
   const [sentTo, setSentTo] = useState('');
   const [challengeId, setChallengeId] = useState('');
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
@@ -163,55 +294,82 @@ const Login: React.FC = () => {
   const [qrError, setQrError] = useState<string | null>(null);
   const [deviceQr, setDeviceQr] = useState<WebDeviceLoginQr | null>(null);
   const [deviceQrStatus, setDeviceQrStatus] = useState<DeviceQrStatus>('creating');
-  const codeInputRef = useRef<HTMLInputElement | null>(null);
   const didNavigateRef = useRef(false);
   const deviceQrCreatingRef = useRef(false);
   const deviceQrConsumingRef = useRef(false);
+  const handleAccountEnterRef = useRef<() => void>(() => {});
 
-  useEffect(() => {
-    if (isAuthenticated && !didNavigateRef.current) {
-      didNavigateRef.current = true;
-      // Mac App（Tauri 壳）下：通知 shell 关 login 窗、开 main 窗；
-      // 纯浏览器下：走 React Router navigate 到 next。
-      if (isTauriShell()) {
-        void emitShellLoginSuccess();
-      } else {
+  const finishAuthenticatedEntry = () => {
+    if (didNavigateRef.current) return;
+    didNavigateRef.current = true;
+    if (isTauriShell()) {
+      void emitShellLoginSuccess();
+      if (getShellWindowLabel() === 'main') {
         navigate(next, { replace: true });
       }
+      return;
+    }
+    navigate(next, { replace: true });
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    const existing = readLastAccount();
+    setQuickAccount(writeLastAccount({
+      subject: user.id,
+      name: existing?.subject === user.id ? existing.name : user.name,
+      email: user.email,
+    }));
+    if (!otherMethodsRef.current && !formLoginRef.current) {
+      setLoginSurface((current) => (current === 'qr' ? current : 'quick'));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const deviceId = getOrCreateDeviceId();
+    const controller = new AbortController();
+    void fetch(resolveGatewayURL('/api/v1/sessions/resume'), {
+      credentials: 'include',
+      headers: { Accept: 'application/json', 'X-Axi-Device-Id': deviceId },
+      signal: controller.signal,
+    }).then(async (response) => {
+      if (!response.ok) {
+        setQuickAccount(null);
+        if (!otherMethodsRef.current) setLoginSurface('account');
+        return;
+      }
+      const body = (await response.json()) as { resumable?: boolean; user?: { subject?: string; email?: string; name?: string } };
+      if (!body.resumable || !body.user?.subject) {
+        setQuickAccount(null);
+        if (!otherMethodsRef.current) setLoginSurface('account');
+        return;
+      }
+      const existing = readLastAccount();
+      const account = writeLastAccount({
+        subject: body.user.subject,
+        name: existing?.subject === body.user.subject
+          ? existing.name
+          : resolveUsername({
+            candidate: body.user.name,
+            email: body.user.email,
+            subject: body.user.subject,
+          }),
+        email: body.user.email,
+      });
+      setQuickAccount(account);
+      if (!otherMethodsRef.current) setLoginSurface('quick');
+    }).catch(() => {
+      setQuickAccount(null);
+      if (!otherMethodsRef.current) setLoginSurface('account');
+    });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && !didNavigateRef.current && formLoginRef.current) {
+      finishAuthenticatedEntry();
     }
   }, [isAuthenticated, navigate, next]);
-
-  // 紧凑 macOS 登录窗只用 body 标记切换窗口内边距；登录内容本身仍与 Web 共用。
-  useEffect(() => {
-    if (!isTauriShell() || typeof document === 'undefined') return;
-    document.body.classList.add(TAURI_BODY_CLASS);
-    return () => {
-      document.body.classList.remove(TAURI_BODY_CLASS);
-    };
-  }, []);
-
-  // Capability discovery stays local to the Web login surface. Mobile keeps
-  // its existing shared AuthProvider contract and does not gain a new request.
-  useEffect(() => {
-    let cancelled = false;
-    void fetch(resolveGatewayURL('/api/v1/auth/methods'), {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('登录方式不可用');
-        return (await response.json().catch(() => ({}))) as AuthMethodsResponse;
-      })
-      .then((methods) => {
-        if (!cancelled) setPasswordLoginEnabled(methods.passwordLogin === true);
-      })
-      .catch(() => {
-        if (!cancelled) setPasswordLoginEnabled(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -220,6 +378,22 @@ const Login: React.FC = () => {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [cooldown]);
+
+  useEffect(() => {
+    if (loginSurface !== 'account' && loginSurface !== 'quick') return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter') return;
+      if (event.isComposing || event.keyCode === 229) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isLoginEnterPassthroughTarget(event.target)) return;
+      event.preventDefault();
+      if (event.repeat) return;
+      handleAccountEnterRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [loginSurface]);
+
 
   // 二维码始终在左侧启动；其轮询凭证只留在内存中。
   useEffect(() => {
@@ -293,8 +467,10 @@ const Login: React.FC = () => {
   const trimmedEmail = trimmedEmailLocalPart ? `${trimmedEmailLocalPart}@${emailSuffix}` : '';
   const emailSuffixIsSelected = EMAIL_SUFFIX_OPTIONS.includes(emailSuffix);
   const emailIsValid = emailSuffixIsSelected && isValidEmailLocalPart(trimmedEmailLocalPart) && EMAIL_PATTERN.test(trimmedEmail);
-  const emailFieldIsInvalid = emailLocalPart.length > 0 && !emailIsValid;
+  const emailFieldIsInvalid = (emailAttempted || emailLocalPart.length > 0) && !emailIsValid;
+  const passwordFieldIsInvalid = passwordAttempted && !password;
   const codeIsValid = OTP_PATTERN.test(oneTimeCodeValue(code));
+  const codeFieldIsInvalid = codeAttempted && !codeIsValid;
   const hasCurrentEmailChallenge = Boolean(sentTo) && sentTo === trimmedEmail;
   const isEmailCodeCoolingDown = hasCurrentEmailChallenge && cooldown > 0;
   const canResend = emailIsValid && cooldown <= 0 && !submitting && !sessionLoading && hasCurrentEmailChallenge;
@@ -308,11 +484,12 @@ const Login: React.FC = () => {
         : canRequestCode
           ? 'request'
           : 'disabled';
+  const resendCountdownLabel = String(cooldown);
   const canVerify = emailIsValid && codeIsValid && !submitting && Boolean(challengeId) && sentTo === trimmedEmail;
-  const canEnterCode = Boolean(challengeId) && sentTo === trimmedEmail;
+  const showingEmailCodeForm = Boolean(challengeId) && sentTo === trimmedEmail;
 
   const resetEmailChallenge = () => {
-    setCode(createOneTimeCode());
+    setCode('');
     setChallengeId('');
     setSentTo('');
     setExpiresAt(null);
@@ -333,13 +510,59 @@ const Login: React.FC = () => {
     setHint(null);
   };
 
-  const handleSendCode = async () => {
-    if (submitting || sessionLoading) return;
-    if (isEmailCodeCoolingDown) return;
-    if (!emailIsValid) {
-      setError(t('auth.login.invalidEmail'));
-      return;
+  const handleCodeInputChange = (value: readonly string[] | string) => {
+    setCode(oneTimeCodeValue(value));
+    setError(null);
+  };
+
+  const requireTermsAgreement = () => {
+    if (agreedRef.current) {
+      hintRef.current = false;
+      setShowAgreeHint(false);
+      return true;
     }
+    setError(null);
+    setHint(null);
+    hintRef.current = true;
+    setShowAgreeHint(true);
+    return false;
+  };
+
+  const assertEmailField = () => {
+    if (emailIsValid) return true;
+    setEmailAttempted(true);
+    setError(t('auth.login.invalidEmail'));
+    focusLoginField(loginMode === 'password' ? 'axi-login-password-email' : 'axi-login-email');
+    return false;
+  };
+
+  const assertPasswordField = () => {
+    if (password) return true;
+    setPasswordAttempted(true);
+    setError(t('auth.login.passwordRequired'));
+    focusLoginField('axi-login-password');
+    return false;
+  };
+
+  const assertCodeField = () => {
+    const trimmed = oneTimeCodeValue(code);
+    if (!trimmed) {
+      setCodeAttempted(true);
+      setError(t('auth.login.codeRequired'));
+      codeInputRef.current?.focus();
+      return false;
+    }
+    if (!OTP_PATTERN.test(trimmed)) {
+      setCodeAttempted(true);
+      setError(t('auth.login.codeLength'));
+      codeInputRef.current?.focus();
+      return false;
+    }
+    return true;
+  };
+
+  const submitSendCode = async () => {
+    if (submitting || sessionLoading || isEmailCodeCoolingDown) return;
     setError(null);
     setHint(null);
     setSubmitting(true);
@@ -350,7 +573,8 @@ const Login: React.FC = () => {
       setChallengeId(result.challengeId);
       setExpiresAt(result.expiresAt || null);
       setCooldown(RESEND_COOLDOWN_SECONDS);
-      setCode(createOneTimeCode());
+      setCode('');
+      setPhase('code');
       setHint(t('auth.login.codeSentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.sendFailed');
@@ -361,6 +585,14 @@ const Login: React.FC = () => {
     }
   };
 
+  const handleSendCode = async () => {
+    if (submitting || sessionLoading) return;
+    if (isEmailCodeCoolingDown) return;
+    if (!assertEmailField()) return;
+    if (!requireTermsAgreement()) return;
+    await submitSendCode();
+  };
+
   const loginWithPassword = async (loginEmail: string, loginPassword: string): Promise<boolean> => {
     const response = await fetch(resolveGatewayURL('/api/v1/sessions'), {
       method: 'POST',
@@ -369,29 +601,26 @@ const Login: React.FC = () => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      body: JSON.stringify({
+        email: loginEmail,
+        password: loginPassword,
+        rememberMe: rememberLogin,
+        deviceId: getOrCreateDeviceId(),
+      }),
     });
     const payload = (await response.json().catch(() => ({}))) as PasswordLoginResponse & { error?: string };
     if (!response.ok) {
       throw new Error(payload.error || `密码登录失败 (HTTP ${response.status})`);
     }
     if (payload.authenticated !== true) throw new Error('密码登录未建立会话');
+    formLoginRef.current = true;
     const authenticated = await refreshSession();
     if (!authenticated) throw new Error('会话未建立，请重试密码登录');
     return authenticated;
   };
 
-  const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submitPasswordLogin = async () => {
     if (passwordSubmitting || sessionLoading) return;
-    if (!emailIsValid) {
-      setError(t('auth.login.invalidEmail'));
-      return;
-    }
-    if (!password) {
-      setError('请输入登录密码');
-      return;
-    }
     setError(null);
     setHint(null);
     setPasswordSubmitting(true);
@@ -405,29 +634,28 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleVerifyCode = async (event?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
-    if (event && 'preventDefault' in event) event.preventDefault();
+  const handlePasswordLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (passwordSubmitting || sessionLoading) return;
+    if (!assertEmailField()) return;
+    if (!assertPasswordField()) return;
+    if (!requireTermsAgreement()) return;
+    await submitPasswordLogin();
+  };
+
+  const submitEmailCodeLogin = async () => {
     if (submitting) return;
-    if (!emailIsValid) {
-      setError(t('auth.login.invalidEmail'));
-      return;
-    }
     const trimmed = oneTimeCodeValue(code);
-    if (!trimmed) {
-      setError(t('auth.login.codeRequired'));
-      return;
-    }
-    if (!codeIsValid) {
-      setError(t('auth.login.codeLength'));
-      return;
-    }
     setError(null);
     setHint(null);
     setPhase('verifying');
     setSubmitting(true);
     try {
       const ok = await confirmEmailCode(challengeId, trimmed);
-      if (ok) return;
+      if (ok) {
+        formLoginRef.current = true;
+        return;
+      }
       setError(t('auth.login.codeInvalid'));
       setPhase('code');
     } catch (caught: unknown) {
@@ -437,6 +665,111 @@ const Login: React.FC = () => {
       setSubmitting(false);
     }
   };
+
+  const handleVerifyCode = async (event?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+    if (event && 'preventDefault' in event) event.preventDefault();
+    if (submitting) return;
+    if (!assertEmailField()) return;
+    if (!assertCodeField()) return;
+    if (!requireTermsAgreement()) return;
+    await submitEmailCodeLogin();
+  };
+
+  const submitQuickLogin = async () => {
+    if (submitting || passwordSubmitting || sessionLoading) return;
+    if (!quickAccount) {
+      openOtherMethods();
+      return;
+    }
+    setError(null);
+    setHint(null);
+    if (isAuthenticated) {
+      formLoginRef.current = true;
+      finishAuthenticatedEntry();
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const response = await fetch(resolveGatewayURL('/api/v1/sessions/resume'), {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'X-Axi-Device-Id': getOrCreateDeviceId(),
+        },
+      });
+      if (!response.ok) {
+        throw new Error(t('auth.login.resumeExpired'));
+      }
+      const ok = await refreshSession();
+      if (!ok) throw new Error(t('auth.login.resumeExpired'));
+      formLoginRef.current = true;
+      finishAuthenticatedEntry();
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? localizeLoginError(caught.message, t) : t('auth.login.resumeExpired'));
+      setQuickAccount(null);
+      otherMethodsRef.current = true;
+      setLoginSurface('account');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleQuickLogin = async () => {
+    if (!requireTermsAgreement()) return;
+    await submitQuickLogin();
+  };
+
+  const openOtherMethods = () => {
+    otherMethodsRef.current = true;
+    setLoginSurface('account');
+    setShowAgreeHint(false);
+  };
+
+  const handleAccountEnter = () => {
+    if (passwordSubmitting || submitting) return;
+    if (loginSurface === 'quick') {
+      void handleQuickLogin();
+      return;
+    }
+
+    if (loginMode === 'password') {
+      if (!assertEmailField()) return;
+      if (!assertPasswordField()) return;
+    } else if (!showingEmailCodeForm) {
+      if (!assertEmailField()) return;
+    } else if (!assertCodeField()) {
+      return;
+    }
+
+    if (!agreedRef.current) {
+      if (!hintRef.current) {
+        setError(null);
+        setHint(null);
+        hintRef.current = true;
+        setShowAgreeHint(true);
+        return;
+      }
+      agreedRef.current = true;
+      hintRef.current = false;
+      setAgreedToTerms(true);
+      setShowAgreeHint(false);
+      return;
+    }
+
+    if (sessionLoading) return;
+    if (loginMode === 'password') {
+      void submitPasswordLogin();
+      return;
+    }
+    if (showingEmailCodeForm) {
+      void submitEmailCodeLogin();
+      return;
+    }
+    void submitSendCode();
+  };
+
+  handleAccountEnterRef.current = handleAccountEnter;
 
   const handleResend = async () => {
     if (!canResend || sentTo !== trimmedEmail) return;
@@ -449,7 +782,8 @@ const Login: React.FC = () => {
       setChallengeId(result.challengeId);
       setExpiresAt(result.expiresAt || null);
       setCooldown(RESEND_COOLDOWN_SECONDS);
-      setCode(createOneTimeCode());
+      setCode('');
+      setPhase('code');
       setHint(t('auth.login.resentHint'));
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : t('auth.login.resendFailed');
@@ -471,8 +805,23 @@ const Login: React.FC = () => {
     setLoginMode(mode);
     setPhase('email');
     resetEmailChallenge();
+    setEmailAttempted(false);
+    setPasswordAttempted(false);
+    setCodeAttempted(false);
+    setPasswordVisible(false);
     setError(null);
     setHint(null);
+  };
+
+  const handleLoginSurfaceChange = (surface: LoginSurface) => {
+    setLoginSurface(surface);
+    setError(null);
+    setHint(null);
+  };
+
+  const handleRememberLoginChange = (checked: boolean) => {
+    setRememberLogin(checked);
+    window.localStorage.setItem('axi.login.remember', String(checked));
   };
 
   const banner = error || (sessionError && (phase === 'verifying' || loginMode === 'password') ? sessionError : null);
@@ -496,101 +845,183 @@ const Login: React.FC = () => {
       <div className="axi-login-page__grid" aria-hidden="true" />
 
       <section className="axi-login-card" aria-labelledby="axi-login-title">
-        {!isTauriShell() && (
+        {!isTauriShell() && loginSurface === 'quick' && (
           <div className="axi-login-card__chrome" aria-hidden="true">
             <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--close" />
             <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--minimize" />
             <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--maximize" />
           </div>
         )}
-        <div className="axi-login-card__body">
-          <section className="axi-login-qr-column" id="axi-login-qr-panel" aria-label="扫码登录">
-            <h1 id="axi-login-title">扫描二维码登录</h1>
-            <div
-              className="axi-login-qr-hover"
-              title={`请使用 ${appName} 手机端扫描二维码登录`}
-              aria-label={`使用 ${appName} 手机端扫描二维码登录`}
-              role="img"
-              tabIndex={0}
+        {isTauriShell() && (
+          <button
+            type="button"
+            className="axi-login-window-close"
+            aria-label={t('auth.login.closeWindow')}
+            title={t('auth.login.closeWindow')}
+            onClick={() => void closeLoginWindow()}
+          >
+            <span aria-hidden="true" />
+          </button>
+        )}
+        <div className={`axi-login-card__body${loginSurface === 'quick' ? ' is-quick' : ''}`}>
+          {loginSurface === 'account' && (
+            <button
+              type="button"
+              className="axi-login-qr-corner-switch"
+              aria-label={t('auth.login.switchToQr')}
+              title={t('auth.login.switchToQr')}
+              onClick={() => handleLoginSurfaceChange('qr')}
             >
-              <div className={`axi-login-qr-frame ${deviceQrStatus === 'failed' || deviceQrStatus === 'expired' ? 'is-error' : ''}`}>
-                {deviceQr ? (
-                  <QRCode
-                    aria-label="电脑登录二维码"
-                    value={webDeviceLoginQrPayload(deviceQr)}
-                    size={176}
-                    color="#111827"
-                    bgColor="#ffffff"
-                    errorLevel="M"
-                    bordered={false}
-                    status="active"
+              <img className="axi-login-qr-corner-png" src="/login-qr-corner.png" alt="" aria-hidden="true" />
+            </button>
+          )}
+
+
+          <div className={`axi-login-entry-panel is-${loginSurface}`}>
+            {loginSurface === 'quick' ? (
+              <section className="axi-login-quick" aria-label={t('auth.login.quickLogin')}>
+                <div className="axi-login-quick-brand" aria-label={appName}>
+                  <span className="axi-login-quick-mark">
+                    <img src="/apple-touch-icon.png" alt="" aria-hidden="true" />
+                  </span>
+                  <h1 id="axi-login-title">{appName}</h1>
+                </div>
+                <div className="axi-login-quick-dock">
+                <div className="axi-login-quick-account">
+                  <img
+                    className="axi-login-quick-avatar"
+                    src="/login-default-avatar.jpg"
+                    alt=""
+                    aria-hidden="true"
                   />
-                ) : deviceQrStatus === 'failed' ? (
-                  <div className="axi-login-qr-error" role="status">
-                    <span className="axi-login-qr-error__title">二维码暂时不可用</span>
-                    <button type="button" onClick={refreshDeviceQr}>重新生成</button>
-                  </div>
-                ) : (
-                  <div className="axi-login-qr-loading"><span /><span /><span /></div>
-                )}
-                {(deviceQrStatus === 'expired' || deviceQrStatus === 'failed') && deviceQr && (
+                  <span className="axi-login-quick-meta">
+                    <strong>{quickAccount?.name || t('auth.login.quickAccountFallbackName')}</strong>
+                    <em>{quickAccount?.emailMasked || quickAccount?.email || t('auth.login.quickAccountFallbackHint')}</em>
+                  </span>
                   <button
                     type="button"
-                    className="axi-login-qr-expired-overlay"
-                    aria-label={`${qrOverlayTitle}，${qrOverlayHint}`}
-                    onClick={refreshDeviceQr}
+                    className="axi-login-quick-submit"
+                    onClick={() => void handleQuickLogin()}
+                    disabled={submitting || sessionLoading}
                   >
-                    <span className="axi-login-qr-expired-overlay__icon" aria-hidden="true" />
-                    <span className="axi-login-qr-expired-overlay__title">{qrOverlayTitle}</span>
-                    <span className="axi-login-qr-expired-overlay__hint">{qrOverlayHint}</span>
+                    {submitting ? t('auth.login.verifying') : t('auth.signin')}
                   </button>
+                </div>
+                <div className="axi-login-consent axi-login-consent--quick">
+                  <label>
+                    <span className="axi-login-consent-box">
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          agreedRef.current = checked;
+                          setAgreedToTerms(checked);
+                          if (checked) {
+                            hintRef.current = false;
+                            setShowAgreeHint(false);
+                          }
+                        }}
+                      />
+                      {showAgreeHint ? (
+                        <span className="axi-login-consent-tooltip" role="alert">
+                          {t('auth.login.agreeHint')}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="axi-login-consent-copy">{t('auth.login.agreePrefixQuick')}<a
+                      href={externalLegalUrl('terms')}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(event) => {
+                        if (!isTauriShell()) return;
+                        event.preventDefault();
+                        void openExternalLegalPage('terms');
+                      }}
+                    >{t('auth.login.terms')}</a><a
+                      href={externalLegalUrl('privacy')}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(event) => {
+                        if (!isTauriShell()) return;
+                        event.preventDefault();
+                        void openExternalLegalPage('privacy');
+                      }}
+                    >{t('auth.login.privacy')}</a></span>
+                  </label>
+                </div>
+                <div className="axi-login-quick-links">
+                  <span>{t('auth.login.loginHelp')}？</span>
+                  <button type="button" onClick={openOtherMethods}>{t('auth.login.otherMethods')}</button>
+                </div>
+                </div>
+              </section>
+            ) : null}
+            {loginSurface !== 'quick' ? (
+            <div className="axi-login-brand" aria-label={appName}>
+              <img src="/apple-touch-icon.png" alt="" aria-hidden="true" />
+              <span>{appName}</span>
+            </div>
+            ) : null}
+            {loginSurface === 'qr' ? (
+              <section className="axi-login-qr-column" id="axi-login-qr-panel" aria-label={t('auth.login.qrLogin')}>
+                <h1 id="axi-login-title">{t('auth.login.scanTitle')}</h1>
+                <div
+                  className="axi-login-qr-hover"
+                  title={`请使用 ${appName} 手机端扫描二维码登录`}
+                  aria-label={`使用 ${appName} 手机端扫描二维码登录`}
+                  role="img"
+                  tabIndex={0}
+                >
+                  <div className={`axi-login-qr-frame ${deviceQrStatus === 'failed' || deviceQrStatus === 'expired' ? 'is-error' : ''}`}>
+                    {deviceQr ? (
+                      <QRCode
+                        aria-label="电脑登录二维码"
+                        value={webDeviceLoginQrPayload(deviceQr)}
+                        size={160}
+                        color="#111827"
+                        bgColor="#ffffff"
+                        errorLevel="M"
+                        bordered={false}
+                        status="active"
+                      />
+                    ) : deviceQrStatus === 'failed' ? (
+                      <div className="axi-login-qr-error" role="status">
+                        <span className="axi-login-qr-error__title">二维码暂时不可用</span>
+                        <button type="button" onClick={refreshDeviceQr}>重新生成</button>
+                      </div>
+                    ) : (
+                      <div className="axi-login-qr-loading"><span /><span /><span /></div>
+                    )}
+                    {(deviceQrStatus === 'expired' || deviceQrStatus === 'failed') && deviceQr && (
+                      <button
+                        type="button"
+                        className="axi-login-qr-expired-overlay"
+                        aria-label={`${qrOverlayTitle}，${qrOverlayHint}`}
+                        onClick={refreshDeviceQr}
+                      >
+                        <span className="axi-login-qr-expired-overlay__icon" aria-hidden="true" />
+                        <span className="axi-login-qr-expired-overlay__title">{qrOverlayTitle}</span>
+                        <span className="axi-login-qr-expired-overlay__hint">{qrOverlayHint}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="axi-login-qr-instruction">
+                  使用 <strong>{appName} 手机端</strong> 扫码登录
+                </p>
+                {qrError && deviceQrStatus === 'failed' && (
+                  <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">
+                    {qrError}
+                  </AxiBanner>
                 )}
-              </div>
-              <span className="axi-login-qr-tooltip" role="tooltip">
-                <img src={scanPromptImage} alt="" aria-hidden="true" />
-                <span className="axi-login-qr-tooltip__label">在手机端「我的」点击右上角扫一扫</span>
-              </span>
-            </div>
-            <p className="axi-login-qr-instruction">
-              请使用 <strong>{appName} 手机端</strong><br />
-              扫码登录或确认本机登录
-            </p>
-            {qrError && deviceQrStatus === 'failed' && (
-              <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--qr" aria-label="电脑登录二维码错误">
-                {qrError}
-              </AxiBanner>
-            )}
-          </section>
-
-          <div className="axi-login-card__divider" aria-hidden="true" />
-
-          <section className="axi-login-right" id="axi-login-email-panel" aria-label="登录方式">
-            <div className="axi-login-right__tabs" role="tablist" aria-label="登录方式">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={loginMode === 'password'}
-                aria-disabled={!passwordLoginEnabled}
-                disabled={!passwordLoginEnabled}
-                title={passwordLoginEnabled ? '使用邮箱和密码登录' : '当前环境尚未配置密码登录'}
-                className={`${loginMode === 'password' ? 'is-active' : ''} ${!passwordLoginEnabled ? 'is-disabled' : ''}`}
-                onClick={() => handleLoginModeChange('password')}
-              >
-                密码登录
-              </button>
-              <span aria-hidden="true">|</span>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={loginMode === 'email'}
-                className={loginMode === 'email' ? 'is-active' : ''}
-                onClick={() => handleLoginModeChange('email')}
-              >
-                邮箱登录
-              </button>
-            </div>
-
-            <div className={`axi-login-right__body is-${loginMode}`}>
+                <button type="button" className="axi-login-entry-switch" onClick={() => handleLoginSurfaceChange('account')}>
+                  {t('auth.login.useAccount')}
+                </button>
+              </section>
+            ) : loginSurface === 'account' ? (
+              <section className="axi-login-account" id="axi-login-account-panel" aria-label={t('auth.login.accountLogin')}>
+                <div className={`axi-login-right__body is-${loginMode}`}>
               <div className="axi-login-form-slot">
                 {loginMode === 'password' && (
                 <form className="axi-login-form axi-login-form--password" onSubmit={handlePasswordLogin} noValidate>
@@ -621,19 +1052,44 @@ const Login: React.FC = () => {
                     />
                   </div>
                   <label htmlFor="axi-login-password">密码</label>
-                  <div className="axi-login-form__row axi-login-form__row--input">
+                  <div className={`axi-login-form__row axi-login-form__row--input${passwordFieldIsInvalid ? ' is-invalid' : ''}`}>
                     <input
                       id="axi-login-password"
+                      className="axi-login-password-input"
                       name="password"
-                      type="password"
+                      type={passwordVisible ? 'text' : 'password'}
                       autoComplete="current-password"
                       required
                       minLength={8}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="请输入密码"
+                      aria-invalid={passwordFieldIsInvalid}
                       disabled={passwordSubmitting}
                     />
+                    <PasswordVisibilityToggle
+                      visible={passwordVisible}
+                      disabled={passwordSubmitting}
+                      showLabel={t('auth.login.showPassword')}
+                      hideLabel={t('auth.login.hidePassword')}
+                      onToggle={() => setPasswordVisible((current) => !current)}
+                    />
+                  </div>
+                  <div className="axi-login-form-options">
+                    <label className="axi-login-remember-option">
+                      <span className="axi-login-remember-box">
+                        <input
+                          type="checkbox"
+                          checked={rememberLogin}
+                          onChange={(event) => handleRememberLoginChange(event.target.checked)}
+                        />
+                        <span className="axi-login-remember-tooltip">十天内免登录</span>
+                      </span>
+                      <span>{t('auth.login.autoLogin')}</span>
+                    </label>
+                    <button type="button" className="axi-login-form-switch" onClick={() => handleLoginModeChange('email')}>
+                      {t('auth.login.codeLogin')}
+                    </button>
                   </div>
                   <button
                     className="axi-login-button axi-login-button--primary"
@@ -646,9 +1102,18 @@ const Login: React.FC = () => {
               )}
 
               {loginMode === 'email' && (
-                <form className="axi-login-form axi-login-form--email" onSubmit={(event) => event.preventDefault()} noValidate>
-                  <label htmlFor="axi-login-email">{t('auth.email')}</label>
-                  <div className={`axi-login-form__row axi-login-form__row--email${emailFieldIsInvalid ? ' is-invalid' : ''}`}>
+                <form
+                  className={`axi-login-form axi-login-form--email${showingEmailCodeForm ? ' is-code' : ''}`}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (showingEmailCodeForm) void handleVerifyCode();
+                    else void handleSendCode();
+                  }}
+                  noValidate
+                >
+                  {!showingEmailCodeForm && <>
+                    <label htmlFor="axi-login-email">{t('auth.email')}</label>
+                    <div className={`axi-login-form__row axi-login-form__row--email${emailFieldIsInvalid ? ' is-invalid' : ''}`}>
                     <input
                       id="axi-login-email"
                       name="email-local-part"
@@ -672,55 +1137,153 @@ const Login: React.FC = () => {
                       label={t('auth.email.suffixLabel')}
                       onChange={handleEmailSuffixChange}
                     />
-                  </div>
+                    </div>
+                  </>}
 
-                  <label htmlFor="axi-login-otp-first">{t('auth.login.codeLabel')}</label>
-                  <div className="axi-login-form__row axi-login-form__row--code">
-                    <OneTimeCodeInput
-                      ariaLabelledBy="axi-login-otp-first"
-                      disabled={submitting || !canEnterCode}
-                      firstInputRef={codeInputRef}
-                      value={code}
-                      onChange={setCode}
-                    />
+                  {showingEmailCodeForm ? (
+                    <>
+                      <div id="axi-login-email-code" className={`axi-login-email-code-row axi-login-form__row--code${codeFieldIsInvalid ? ' is-invalid' : ''}`}>
+                        <OneTimeCodeInput
+                          value={code}
+                          onChange={handleCodeInputChange}
+                          firstInputRef={codeInputRef}
+                          ariaLabelledBy="axi-login-email-code-label"
+                          ariaInvalid={codeFieldIsInvalid}
+                          disabled={submitting}
+                        />
+                        <span id="axi-login-email-code-label" className="axi-visually-hidden">{t('auth.login.codeLabel')}</span>
+                        <button
+                          type="button"
+                          className={`axi-login-email-code-resend axi-login-text-button--send${canResend ? ' is-resend' : ''}`}
+                          onClick={canResend ? handleResend : undefined}
+                          disabled={!canResend}
+                          aria-live="polite"
+                          aria-atomic="true"
+                          data-email-code-state={emailCodeButtonState}
+                        >
+                          {emailCodeSubmitting
+                            ? t('auth.login.sending')
+                            : isEmailCodeCoolingDown
+                              ? resendCountdownLabel
+                              : t('auth.login.resendCode')}
+                        </button>
+                      </div>
+                      <div className="axi-login-email-code-meta">
+                        <span>{t('auth.login.codeSentShort')}</span>
+                        <button type="button" onClick={() => handleLoginModeChange('password')}>
+                          {t('auth.login.passwordLogin')}
+                        </button>
+                      </div>
+                      <button
+                        className="axi-login-button axi-login-button--primary"
+                        type="submit"
+                        disabled={!canVerify}
+                      >
+                        {submitting ? t('auth.login.verifying') : t('auth.signin')}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                    <div className="axi-login-form-options">
+                      <label className="axi-login-remember-option">
+                        <span className="axi-login-remember-box">
+                          <input
+                            type="checkbox"
+                            checked={rememberLogin}
+                            onChange={(event) => handleRememberLoginChange(event.target.checked)}
+                          />
+                          <span className="axi-login-remember-tooltip">十天内免登录</span>
+                        </span>
+                        <span>{t('auth.login.autoLogin')}</span>
+                      </label>
+                      <button type="button" className="axi-login-form-switch" onClick={() => handleLoginModeChange('password')}>
+                        {t('auth.login.passwordLogin')}
+                      </button>
+                    </div>
                     <button
-                      type="button"
-                      className={`axi-login-text-button axi-login-text-button--send axi-login-code-send${canResend ? ' is-resend' : ''}`}
-                      onClick={canResend ? handleResend : handleSendCode}
+                      className="axi-login-button axi-login-button--primary axi-login-button--code-login"
+                      type="submit"
                       disabled={!canRequestCode}
-                      title={isEmailCodeCoolingDown ? `${cooldown}s 后可重新发送` : canResend ? t('auth.login.resendCode') : t('auth.login.requestCode')}
-                      aria-live="polite"
-                      aria-atomic="true"
                       data-email-code-state={emailCodeButtonState}
+                      aria-live="polite"
                     >
-                      {emailCodeSubmitting
-                        ? t('auth.login.sending')
-                        : isEmailCodeCoolingDown
-                          ? `${cooldown}s`
-                          : canResend
-                            ? t('auth.login.resendCode')
-                            : t('auth.login.requestCode')}
+                      {emailCodeSubmitting ? t('auth.login.sending') : t('auth.login.codeLogin')}
                     </button>
-                  </div>
-
-                  <button
-                    className="axi-login-button axi-login-button--primary"
-                    type="button"
-                    onClick={handleVerifyCode}
-                    disabled={!canVerify}
-                  >
-                    {submitting ? t('auth.login.verifying') : t('auth.signin')}
-                  </button>
+                    </>
+                  )}
                 </form>
               )}
 
               </div>
               <div className="axi-login-banner-slot" aria-live="polite">
-                {banner && <AxiBanner compact tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
-                {!banner && hint && <AxiBanner compact tone="brand" className="axi-login-banner axi-login-banner--hint">{hint}</AxiBanner>}
+                {banner && <AxiBanner compact icon={false} tone="danger" role="alert" className="axi-login-banner axi-login-banner--error">{banner}</AxiBanner>}
               </div>
-            </div>
-          </section>
+              <div className="axi-login-social-placeholders" aria-label={t('auth.login.socialLogin')}>
+                <SocialLoginPlaceholder
+                  provider="wechat"
+                  label={t('auth.login.wechatLogin')}
+                  comingSoon={t('auth.login.socialComingSoon')}
+                />
+                <SocialLoginPlaceholder
+                  provider="qq"
+                  label={t('auth.login.qqLogin')}
+                  comingSoon={t('auth.login.socialComingSoon')}
+                />
+              </div>
+              <div className="axi-login-consent">
+                <label>
+                  <span className="axi-login-consent-box">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        agreedRef.current = checked;
+                        setAgreedToTerms(checked);
+                        if (checked) {
+                          hintRef.current = false;
+                          setShowAgreeHint(false);
+                        }
+                      }}
+                    />
+                    {showAgreeHint ? (
+                      <span className="axi-login-consent-tooltip" role="alert">
+                        {t('auth.login.agreeHint')}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span>{t('auth.login.agreePrefix')}</span>
+                  <a
+                    href={externalLegalUrl('terms')}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(event) => {
+                      if (!isTauriShell()) return;
+                      event.preventDefault();
+                      void openExternalLegalPage('terms');
+                    }}
+                  >
+                    {t('auth.login.terms')}
+                  </a>
+                  <span>{t('auth.login.and')}</span>
+                  <a
+                    href={externalLegalUrl('privacy')}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(event) => {
+                      if (!isTauriShell()) return;
+                      event.preventDefault();
+                      void openExternalLegalPage('privacy');
+                    }}
+                  >
+                    {t('auth.login.privacy')}
+                  </a>
+                </label>
+              </div>
+                </div>
+              </section>
+            ) : null}
+          </div>
         </div>
       </section>
     </main>

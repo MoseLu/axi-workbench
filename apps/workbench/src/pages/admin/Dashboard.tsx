@@ -8,7 +8,7 @@ import {
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
-import { useControlSnapshot } from '@epap/api-client';
+import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@epap/api-client';
 import { useI18n } from '../../i18n';
 import {
   getProjectGitStatus,
@@ -19,6 +19,7 @@ import {
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';
 import { desktopCrudPagination } from './tenantMemberCrud';
+import { GovernanceSummary } from './GovernanceSummary';
 import './Dashboard.css';
 
 type ProjectRow = {
@@ -43,6 +44,8 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
+  const riskTransition = useTransitionGovernanceRisk();
+  const automationRun = useRunGovernanceAutomation();
   const [keywordDraft, setKeywordDraft] = React.useState('');
   const [keyword, setKeyword] = React.useState('');
   const [stateFilter, setStateFilter] = React.useState<'all' | 'available' | 'attention'>('all');
@@ -162,20 +165,35 @@ const Dashboard: React.FC = () => {
         ) : showLoading ? (
           <ControlPlaneState description={t('dashboard.loading.description')} loading title={t('dashboard.loading.title')} />
         ) : (
-          <AxiTableGroup className="dashboard-crud__table">
-            <AxiCrudTable
-              columns={projectColumns}
-              data={filteredProjectRows}
-              operationButtons={projectOperationButtons}
-              pagination={desktopCrudPagination(filteredProjectRows.length)}
-              rowKey="id"
-              rowSelection={false}
-              onRow={(row) => ({
-                onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                style: { cursor: 'pointer' },
-              })}
+          <>
+            <AxiTableGroup className="dashboard-crud__table">
+              <AxiCrudTable
+                columns={projectColumns}
+                data={filteredProjectRows}
+                operationButtons={projectOperationButtons}
+                pagination={desktopCrudPagination(filteredProjectRows.length)}
+                rowKey="id"
+                rowSelection={false}
+                onRow={(row) => ({
+                  onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                  style: { cursor: 'pointer' },
+                })}
+              />
+            </AxiTableGroup>
+            <GovernanceSummary
+              governance={snapshot?.governance}
+              onAutomationRun={async (automationId) => {
+                await automationRun.mutateAsync(automationId);
+                await refetch();
+              }}
+              automationRunPending={automationRun.isPending}
+              onRiskTransition={async ({ riskId, status, reason }) => {
+                await riskTransition.mutateAsync({ riskId, status, reason });
+                await refetch();
+              }}
+              riskTransitionPending={riskTransition.isPending}
             />
-          </AxiTableGroup>
+          </>
         )}
       </DesktopCrudFrame>
     </AxiCrud>

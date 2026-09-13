@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../contexts/AuthContext', () => ({
   useAuth: () => ({
+    updateUsername: vi.fn(async () => true),
     user: {
       email: 'admin@example.test',
       id: 'admin',
@@ -23,9 +24,11 @@ vi.mock('../../../i18n', () => ({
         'account.avatar.preview': '预览头像',
         'account.avatar.fileAriaLabel': '选择头像文件',
         'account.title': '基本信息',
-        'account.nickname.label': '昵称',
-        'account.nickname.placeholder': '请填写昵称',
-        'account.nickname.required': '昵称不能为空',
+        'account.username.label': '用户名',
+        'account.username.placeholder': '请输入用户名',
+        'account.username.invalid': '用户名格式不正确',
+        'account.username.hint': '用于首页展示',
+        'account.username.updateFailed': '保存失败',
         'account.email.label': '登录邮箱',
         'account.email.hint': '登录邮箱由身份服务绑定',
         'account.email.unbound': '未绑定',

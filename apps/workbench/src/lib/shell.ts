@@ -20,11 +20,18 @@ import {
   type ShellEventName,
   type ShellNotify,
   type ShellUnread,
-} from '@axi/workbench-desktop/contracts';
+} from '@axi/workbench-foundation/shell-contracts';
 
 type TauriInternals = {
   invoke: (cmd: string, payload?: Record<string, unknown>) => Promise<unknown>;
+  metadata?: {
+    currentWindow?: { label?: string };
+    currentWebview?: { label?: string };
+  };
 };
+
+export type ExternalLegalPage = 'terms' | 'privacy';
+const PUBLIC_WORKBENCH_URL = 'https://workbench.axiomaticworld.com';
 
 declare global {
   interface Window {
@@ -43,6 +50,54 @@ function getTauri(): TauriInternals | undefined {
  */
 export function isTauriShell(): boolean {
   return getTauri() !== undefined;
+}
+
+/**
+ * 当前 Tauri 窗口 label。登录窗是 `login`，工作台主窗是 `main`。
+ * 浏览器预览没有壳层元数据时返回 null。
+ */
+export function getShellWindowLabel(): string | null {
+  const metadata = getTauri()?.metadata;
+  const label = metadata?.currentWindow?.label || metadata?.currentWebview?.label;
+  return label || null;
+}
+
+export function externalLegalUrl(page: ExternalLegalPage): string {
+  return `${PUBLIC_WORKBENCH_URL}/legal/${page}`;
+}
+
+/**
+ * 打开外部协议页。Tauri 下交给 macOS 默认浏览器，Web 下打开新标签页。
+ */
+export async function openExternalLegalPage(page: ExternalLegalPage): Promise<void> {
+  const tauri = getTauri();
+  const url = externalLegalUrl(page);
+  if (tauri) {
+    try {
+      await tauri.invoke('open_external_url', { url });
+      return;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.debug('[shell] open external legal page failed', error);
+    }
+  }
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+}
+
+/**
+ * 关闭无原生装饰的登录窗口。浏览器预览没有对应的 shell 能力时静默跳过。
+ */
+export async function closeLoginWindow(): Promise<void> {
+  const tauri = getTauri();
+  if (!tauri) return;
+  try {
+    await tauri.invoke('plugin:window|close', { label: 'login' });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.debug('[shell] close login window failed', error);
+  }
 }
 
 /**

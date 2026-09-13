@@ -48,76 +48,25 @@ forbidMatch(
 );
 requireMatch(layout, /AxiDashboardShell/, 'desktop must use the shared Axi dashboard shell');
 requireMatch(layout, /AxiAdminSettingsPanel/, 'desktop settings must use the shared settings panel');
-requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared twelve-color Axi mark');
+requireMatch(layout, /AxiLogoMark/, 'Web brand must use the shared dango-family Axi mark');
 requireMatch(layout, /title: isPersonalOsRoute \? t\('personalOs\.shell\.brand'\) : t\('app\.name'\)/, 'Web brand title must come from the locale dictionary');
-requireMatch(index, /<title>Axi 工作台<\/title>/, 'Web document title must use the Chinese product name by default');
-requireMatch(zhLocale, /"app\.name": "Axi 工作台"/, 'Chinese Web locale must define the product name');
+requireMatch(index, /<title>公理工作台<\/title>/, 'Web document title must use the Chinese product name by default');
+requireMatch(zhLocale, /"app\.name": "公理工作台"/, 'Chinese Web locale must define the product name');
 requireMatch(enLocale, /"app\.name": "Axi Workbench"/, 'English Web locale must define the product name');
 requireMatch(main, /installTauriGatewayFetch\(\)/, 'desktop Web shell must install the native Gateway transport before React starts');
 requireMatch(tauriGateway, /proxy_gateway_request/, 'desktop Web shell must route Gateway requests through the native Tauri command');
 requireMatch(tauriGateway, /tauri\.localhost|url\.protocol === ['"]tauri:/, 'desktop Web shell must recognize the packaged Tauri origin');
 requireMatch(tauriGateway, /baseUrl: resolveNativeGatewayBaseURL\(\)/, 'desktop Web shell must pass the selected Gateway base URL to native transport');
-requireMatch(favicon, /viewBox="0 0 32 32"/, 'Web favicon must use the canonical 32px Axi mark viewBox');
-for (const path of [
-  /M16 0\.18 C13\.55 1\.35 11 3\.1 10\.65 5\.3 C10\.65 6\.7 11\.25 7\.75 11\.85 8\.8 L14\.976 14\.223 A2\.05 2\.05 0 0 1 17\.024 14\.223 L20\.15 8\.8 C20\.75 7\.75 21\.35 6\.7 21\.35 5\.3 C21 3\.1 18\.45 1\.35 16 0\.18 Z/,
-  /M16 2\.05 C14\.4 3 13\.1 4\.6 13 6\.3 C12\.9 8 14 10 15\.3 12\.4 C15\.55 12\.9 15\.8 13\.45 16 13\.95 C16\.2 13\.45 16\.45 12\.9 16\.7 12\.4 C18 10 19\.1 8 19 6\.3 C18\.9 4\.6 17\.6 3 16 2\.05 Z/,
-  /stroke="#000000"/,
-  /stroke-width="0\.28"/,
-  /stroke-linecap="round"/,
-  /stroke-linejoin="round"/,
-  /transform="rotate\(60 16 16\)"/,
-  /transform="rotate\(120 16 16\)"/,
-  /transform="rotate\(180 16 16\)"/,
-  /transform="rotate\(240 16 16\)"/,
-  /transform="rotate\(300 16 16\)"/,
-  /#0167FF/,
-  /#FF0167/,
-  /#E6FF01/,
-  /#67FF01/,
-  /#00E5FF/,
-  /#9901FF/,
-  /#D14DFF/,
-  /#FF9A3D/,
-  /#C8FF3D/,
-  /#3DFFB0/,
-  /#3D9BFF/,
-  /#8E4DFF/,
-  /#000000/,
-  /data-center="swirl"/,
-  /data-center-piece="violet-blue"/,
-  /data-center-piece="red-yellow"/,
-  /data-center-piece="yellow-green"/,
-  /data-center-piece="green-cyan"/,
-  /data-center-piece="cyan-violet"/,
-  /data-center-piece="blue-red"/,
-  /M16 16 C16\.805 15\.635 16\.805 14\.196 16 14\.05 A1\.95 1\.95 0 0 1 17\.689 15\.025 C17\.964 15\.795 16\.719 16\.514 16 16 Z/,
-]) {
-  requireMatch(favicon, path, 'Web favicon must keep the twelve-color curved swirl center');
-}
-requireMatch(favicon, /data-center-piece="violet-blue"[\s\S]*fill="#8E4DFF"/, 'Web swirl must include the violet-blue transition');
-requireMatch(favicon, /data-center-piece="red-yellow"[\s\S]*fill="#FF9A3D"/, 'Web swirl must include the red-yellow transition');
-requireMatch(favicon, /data-center-piece="yellow-green"[\s\S]*fill="#C8FF3D"/, 'Web swirl must include the yellow-green transition');
-requireMatch(favicon, /data-center-piece="green-cyan"[\s\S]*fill="#3DFFB0"/, 'Web swirl must include the green-cyan transition');
-requireMatch(favicon, /data-center-piece="cyan-violet"[\s\S]*fill="#3D9BFF"/, 'Web swirl must include the cyan-violet transition');
-requireMatch(favicon, /data-center-piece="blue-red"[\s\S]*fill="#D14DFF"/, 'Web swirl must include the blue-red transition');
-forbidMatch(favicon, /<(?:rect|radialGradient)\b|axi-icon-bg/, 'Web favicon must remain transparent without an icon background');
-forbidMatch(
-  favicon,
-  /fill="#FFFFFF" fill-opacity="0\.2"|stroke="#FFFFFF" stroke-opacity="0\.42"|stroke-opacity=/,
-  'Web favicon petal double-layer edges must use clean black outlines without translucent duplicate strokes',
-);
-if ((favicon.match(/<path\b/g) ?? []).length !== 18) {
-  throw new Error('Web favicon must contain twelve petal contour paths and six curved center pieces');
-}
-const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color);
-const outerFills = fills.slice(0, 6);
-const centerFills = fills.slice(6, 12);
-if (new Set([...outerFills, ...centerFills]).size !== 12 || centerFills.some((color) => outerFills.includes(color))) {
-  throw new Error('Web favicon must keep six distinct center transition colors separate from the six petal colors');
-}
-forbidMatch(favicon, /transform="[^"]*translate/, 'Web favicon must not contain offset shadow or duplicate contour transforms');
-forbidMatch(favicon, /<circle\b|M16 15\.05 L16\.82/, 'Web favicon center must use six curved pieces instead of a circle or a geometric join');
+requireMatch(favicon, /viewBox="0 0 1254 1254"/, 'Web favicon must use the canonical dango-family source viewBox');
+requireMatch(favicon, /<image[^>]+href="\/favicon-48\.png"/, 'Web favicon must render the selected dango-family image');
+requireMatch(favicon, /preserveAspectRatio="xMidYMid meet"/, 'Web favicon must preserve the family composition without stretching');
+requireMatch(favicon, /data-family-layout="grandfather,grandmother;father,baby,mother;young-dango-1,young-dango-2"/, 'Web favicon must preserve the canonical family order');
+forbidMatch(favicon, /<path\b|data-center=|rotate\(/, 'Web favicon must not retain the retired six-petal flower geometry');
 requireMatch(layout, /topbarPluginActions[\s\S]*axiWorkbenchIconMap\.preferences/, 'Web preferences action must use the shared settings surface');
+requireMatch(layout, /theme:\s*\{[\s\S]*iconName: mode === 'dark' \? axiWorkbenchIconMap\.sun : axiWorkbenchIconMap\.moon[\s\S]*onClick: \(event\) => toggleMode\(event\.currentTarget\)/, 'Web topbar must use the animated sun/moon theme toggle');
+requireMatch(layout, /topbarActionOrder=\{\['settings', 'preferences', 'theme'\]\}/, 'Web theme toggle must remain immediately to the right of preferences');
+forbidMatch(layout, /plugin-list|插件列表|workbench-plugin-list/, 'Web topbar must not expose the retired plugin list entry');
+forbidMatch(webShellCss, /workbench-plugin-list/, 'Web shell CSS must not retain the retired plugin list surface');
 requireMatch(breadcrumbs, /axiWorkbenchIconMap/, 'breadcrumbs must resolve through the shared Workbench icon semantics');
 requireMatch(foundationIcons, /notification:/, 'shared semantic icon registry must include notifications');
 requireMatch(foundationIcons, /moon:/, 'shared semantic icon registry must include the moon glyph');
@@ -139,6 +88,8 @@ forbidMatch(layout, /logo-axi-core-color\.png|admin-sun|admin-night-mode/, 'Web 
 forbidMatch(breadcrumbs, /ICON_HINTS|icon: 'admin-/, 'breadcrumbs must store product semantic icon names instead of raw glyph aliases');
 forbidMatch(webSource, /from ['"]@ant-design\/icons['"]/, 'Web source must not bypass the shared Axi icon registry');
 forbidMatch(webPackage, /"@ant-design\/icons"/, 'Web package must not retain a direct Ant icon dependency');
+forbidMatch(webPackage, /"@epap\/ui"/, 'Web package must not retain the retired legacy UI dependency');
+forbidMatch(webSource, /from ['"]@epap\/ui['"]/, 'Web source must not import the retired legacy UI package');
 forbidMatch(webSource, /MobileTopBar|MobileBottomNav|ScanIcon/, 'Web application must not retain a second mobile navigation shell');
 forbidMatch(webSource, /BarcodeDetector|getUserMedia|通用识别/, 'Web must not provide a generic camera scanner without a governed business action');
 requireMatch(navigation, /['"]\/admin\/operations['"]/, 'desktop navigation must expose a cross-project operations surface');
@@ -170,6 +121,16 @@ requireMatch(
 requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?padding:\s*var\(--space-2\);/, 'login QR frame must preserve the client-style white inset around the code');
 requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?border-radius:\s*var\(--radius-sm\);/, 'login QR frame must preserve rounded outer corners');
 requireMatch(loginCss, /\.axi-login-qr-frame \.ant-qrcode\s*\{[\s\S]*?border:\s*0 !important;/, 'login QR must not render a nested Ant Design border');
+requireMatch(
+  loginCss,
+  /input:not\(\.axi-one-time-code__input\):not\(\.axi-login-email-code-input\)/,
+  'generic login field chrome must not wrap the email code input in a second pill',
+);
+requireMatch(
+  loginCss,
+  /\.axi-login-email-code-input \{[\s\S]*?border:\s*0;[\s\S]*?border-radius:\s*0;/,
+  'email code input must stay flush inside the single capsule row',
+);
 requireMatch(loginCss, /\.axi-login-card__body\s*\{[\s\S]*?height:\s*22\.25rem;[\s\S]*?min-height:\s*22\.25rem;/, 'login body must preserve a fixed desktop height across login states');
 requireMatch(loginCss, /\.axi-login-right\s*\{[\s\S]*?grid-template-rows:\s*2rem 16rem;/, 'login right rail must use a fixed desktop track');
 requireMatch(loginCss, /\.axi-login-banner-slot\s*\{[\s\S]*?position:\s*absolute;[\s\S]*?bottom:\s*0;/, 'login feedback must not reflow the desktop form track');

@@ -6,7 +6,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: max(88px, 12vh) var(--axi-space-5, 20px) var(--axi-space-8, 40px);
-  background: rgba(8, 10, 14, 0.42);
+  background: var(--axi-modal-backdrop, rgba(8, 10, 14, 0.42));
   backdrop-filter: blur(5px);
   animation: wb-global-search-fade-in 140ms ease-out;
 }
@@ -43,7 +43,7 @@
   padding: 0 var(--axi-space-3, 12px);
   background: var(--axi-layout-surface-strong, rgba(15, 23, 42, 0.05));
   border: 1px solid var(--axi-layout-control-border, var(--axi-layout-border, rgba(15, 23, 42, 0.16)));
-  border-radius: var(--axi-radius-lg, 7px);
+  border-radius: var(--axi-radius-lg);
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
@@ -68,6 +68,7 @@
   outline: 0;
   font: inherit;
   font-size: var(--axi-font-size-sm, 14px);
+  line-height: var(--axi-line-height-normal, 1.5);
 }
 
 .wb-global-search__field input::placeholder {

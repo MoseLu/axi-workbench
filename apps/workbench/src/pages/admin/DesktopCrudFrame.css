@@ -3,8 +3,9 @@
   width: 100%;
   min-width: 0;
   min-height: 100%;
-  padding: var(--axi-space-3, 12px) var(--axi-space-3, 14px) var(--axi-space-5, 20px);
-  color: var(--axi-text, #f5f7fb);
+  /* The shared page owns the single standard 10px inset. */
+  padding: 0 0 var(--axi-space-5, 20px);
+  color: var(--axi-text);
 }
 
 .wb-crud-page__layout {
@@ -76,10 +77,21 @@
   min-width: 140px;
 }
 
-.wb-crud-page .axi-crud-layout__toolbar .ant-input-affix-wrapper,
-.wb-crud-page .axi-crud-layout__toolbar .ant-input {
+.wb-crud-page .axi-crud-layout__toolbar .ant-input-affix-wrapper {
   width: 220px;
   height: 32px;
+}
+
+.wb-crud-page .axi-crud-layout__toolbar .ant-input-affix-wrapper .ant-input {
+  height: auto;
+  line-height: var(--axi-line-height-normal, 1.5);
+}
+
+.wb-crud-page .axi-crud-layout__toolbar > .ant-input {
+  width: 220px;
+  height: var(--axi-layout-control-height, 32px);
+  line-height: var(--axi-line-height-normal, 1.5);
+  padding-block: 0;
 }
 
 .wb-crud-action-cluster,
@@ -157,13 +169,13 @@
 }
 
 .wb-crud-page .axi-table-action.is-tone-primary {
-  color: var(--axi-color-primary, #3b82f6);
-  border-color: color-mix(in srgb, var(--axi-color-primary, #3b82f6) 45%, transparent);
+  color: var(--axi-primary);
+  border-color: color-mix(in srgb, var(--axi-primary) 45%, transparent);
 }
 
 .wb-crud-page .axi-table-action.is-tone-danger {
-  color: var(--axi-color-danger, #f87171);
-  border-color: color-mix(in srgb, var(--axi-color-danger, #f87171) 40%, transparent);
+  color: var(--axi-danger);
+  border-color: color-mix(in srgb, var(--axi-danger) 40%, transparent);
 }
 
 .wb-crud-page .ant-btn-link {
@@ -186,7 +198,7 @@
   align-content: center;
   justify-items: center;
   gap: var(--axi-space-2, 8px);
-  padding: var(--axi-space-6, 28px);
+  padding: var(--axi-space-6);
   color: var(--axi-muted, rgba(255, 255, 255, .58));
   text-align: center;
 }

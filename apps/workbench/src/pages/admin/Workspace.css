@@ -13,7 +13,7 @@
 }
 
 .workflow-effects__detail {
-  border-top: 1px solid var(--axi-color-border, #e6e8eb);
+  border-top: 1px solid var(--axi-border);
   display: grid;
   gap: var(--axi-space-3, 12px);
   margin-top: var(--axi-space-3, 12px);
@@ -46,7 +46,7 @@
 }
 
 .workflow-effects__record {
-  border: 1px solid var(--axi-color-border, #e6e8eb);
+  border: 1px solid var(--axi-border);
   border-radius: var(--axi-radius-sm, 6px);
   display: grid;
   gap: var(--axi-space-2, 8px);
@@ -75,5 +75,5 @@
 }
 
 .workflow-effects__muted {
-  color: var(--axi-color-text-secondary, #6b7280);
+  color: var(--axi-text-secondary);
 }

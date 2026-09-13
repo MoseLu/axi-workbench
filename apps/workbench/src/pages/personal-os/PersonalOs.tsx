@@ -56,8 +56,9 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
   const updateProject = useUpdatePersonalOsProject();
   const updateFocus = useUpdatePersonalOsFocus();
   const items = queueQuery.data?.items ?? [];
+  const warnings = Array.isArray(queueQuery.data?.warnings) ? queueQuery.data.warnings : [];
   const selectedItem = items.find((item) => item.id === selectedId) ?? null;
-  const warningText = queueQuery.data?.warnings.includes('control_plane_snapshot_stale')
+  const warningText = warnings.includes('control_plane_snapshot_stale')
     ? t('personalOs.warning.snapshotStale')
     : t('personalOs.warning.runtimeUnavailable');
 
@@ -83,6 +84,67 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
 
   const pageTitle = mode === 'today' ? t('personalOs.page.today.title') : t('personalOs.page.workbench.title');
   const queueLabel = mode === 'today' ? t('personalOs.queue.todayLabel') : t('personalOs.queue.workbenchLabel');
+  const queueUnavailable = Boolean(queueQuery.error && !queueQuery.data);
+  const queueLoading = Boolean(queueQuery.isLoading && !queueQuery.data);
+  const queueAside = items.length ? (
+    <div className="personal-os-queue__list" role="list">
+      {items.map((item) => (
+        <ProjectQueueRow
+          item={item}
+          key={item.id}
+          locale={locale}
+          onSelect={() => setSelectedId(item.id)}
+          selected={item.id === selectedItem?.id}
+          t={t}
+        />
+      ))}
+    </div>
+  ) : queueUnavailable ? (
+    <PersonalOsEmptyState
+      actionLabel={t('personalOs.error.retry')}
+      description={t('personalOs.error.description')}
+      onAction={() => void queueQuery.refetch()}
+      title={t('personalOs.error.title')}
+    />
+  ) : queueLoading ? (
+    <PersonalOsLoadingState title={t('personalOs.loading.title')} />
+  ) : (
+    <PersonalOsEmptyState
+      actionLabel={mode === 'today' ? t('personalOs.empty.today.action') : undefined}
+      description={mode === 'today' ? t('personalOs.empty.today.description') : t('personalOs.empty.workbench.description')}
+      onAction={mode === 'today' ? () => navigate('/admin/personal-os/workbench') : undefined}
+      title={mode === 'today' ? t('personalOs.empty.today.title') : t('personalOs.empty.workbench.title')}
+    />
+  );
+  const inspectorContent = items.length ? (
+    <ProjectInspector
+      draft={draft}
+      focusPending={updateFocus.isPending}
+      isSaving={updateProject.isPending}
+      item={selectedItem}
+      locale={locale}
+      mutationError={updateProject.error}
+      onDraftChange={setDraft}
+      onFocus={() => void setFocus()}
+      onSave={() => void saveOverlay()}
+      t={t}
+    />
+  ) : queueLoading ? (
+    <PersonalOsLoadingState title={t('personalOs.loading.title')} />
+  ) : (
+    <ProjectInspector
+      draft={null}
+      focusPending={false}
+      isSaving={false}
+      item={null}
+      locale={locale}
+      mutationError={null}
+      onDraftChange={setDraft}
+      onFocus={() => undefined}
+      onSave={() => undefined}
+      t={t}
+    />
+  );
 
   const saveOverlay = async () => {
     if (!selectedItem || !draft) return;
@@ -158,66 +220,24 @@ const PersonalOsPage: React.FC<PersonalOsPageProps> = ({ mode }) => {
         </div>
       </div>
 
-      {queueQuery.data?.warnings.length ? (
+      {warnings.length ? (
         <AxiBanner tone="warning" role="status" className="personal-os-page__warning">{warningText}</AxiBanner>
       ) : null}
 
-      {queueQuery.error && !queueQuery.data ? (
-        <PersonalOsEmptyState
-          actionLabel={t('personalOs.error.retry')}
-          description={t('personalOs.error.description')}
-          onAction={() => void queueQuery.refetch()}
-          title={t('personalOs.error.title')}
-        />
-      ) : queueQuery.isLoading && !queueQuery.data ? (
-        <PersonalOsLoadingState title={t('personalOs.loading.title')} />
-      ) : items.length === 0 ? (
-        <PersonalOsEmptyState
-          actionLabel={mode === 'today' ? t('personalOs.empty.today.action') : undefined}
-          description={mode === 'today' ? t('personalOs.empty.today.description') : t('personalOs.empty.workbench.description')}
-          onAction={mode === 'today' ? () => navigate('/admin/personal-os/workbench') : undefined}
-          title={mode === 'today' ? t('personalOs.empty.today.title') : t('personalOs.empty.workbench.title')}
-        />
-      ) : (
-        <AxiViewGroup
-          aria-label={t('personalOs.inspector.label')}
-          aside={(
-            <div className="personal-os-queue__list" role="list">
-              {items.map((item) => (
-                <ProjectQueueRow
-                  item={item}
-                  key={item.id}
-                  locale={locale}
-                  onSelect={() => setSelectedId(item.id)}
-                  selected={item.id === selectedItem?.id}
-                  t={t}
-                />
-              ))}
-            </div>
-          )}
-          asideAriaLabel={queueLabel}
-          asideTitle={queueLabel}
-          className="personal-os-page__workspace"
-          collapseAsideLabel={t('personalOs.action.collapseQueue')}
-          collapsible
-          data-testid="personal-os-view-group"
-          asideWidth={340}
-          expandAsideLabel={t('personalOs.action.expandQueue')}
-        >
-          <ProjectInspector
-            draft={draft}
-            focusPending={updateFocus.isPending}
-            isSaving={updateProject.isPending}
-            item={selectedItem}
-            locale={locale}
-            mutationError={updateProject.error}
-            onDraftChange={setDraft}
-            onFocus={() => void setFocus()}
-            onSave={() => void saveOverlay()}
-            t={t}
-          />
-        </AxiViewGroup>
-      )}
+      <AxiViewGroup
+        aria-label={t('personalOs.inspector.label')}
+        aside={queueAside}
+        asideAriaLabel={queueLabel}
+        asideTitle={queueLabel}
+        className="personal-os-page__workspace"
+        collapseAsideLabel={t('personalOs.action.collapseQueue')}
+        collapsible
+        data-testid="personal-os-view-group"
+        asideWidth={340}
+        expandAsideLabel={t('personalOs.action.expandQueue')}
+      >
+        {inspectorContent}
+      </AxiViewGroup>
     </main>
   );
 };

@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
-import {
-  WorkbenchLocaleProvider,
-  useWorkbenchLocale,
-  type WorkbenchLocale,
-} from '@axi/workbench-foundation';
+import { useWorkbenchLocale, type WorkbenchLocale } from '@axi/workbench-foundation';
 import zhCN from './locales/zh-CN.json';
 import enUS from './locales/en-US.json';
 
@@ -24,11 +20,7 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return (
-    <WorkbenchLocaleProvider>
-      <I18nDictionaryProvider>{children}</I18nDictionaryProvider>
-    </WorkbenchLocaleProvider>
-  );
+  return <I18nDictionaryProvider>{children}</I18nDictionaryProvider>;
 };
 
 const I18nDictionaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

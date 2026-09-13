@@ -2,16 +2,61 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { selectApiProxyTarget } from './vite.apiProxyTarget';
+import { createLegalDocumentHtml } from './scripts/legal-page-html.mjs';
+
+const legalDocumentDevPlugin = {
+  name: 'axi-workbench-legal-document-ssr',
+  configureServer(server: {
+    middlewares: { use: (handler: (request: any, response: any, next: () => void) => void) => void };
+    ssrLoadModule: (url: string) => Promise<{ renderLegalDocument: (kind: 'terms' | 'privacy') => string }>;
+    transformIndexHtml: (url: string, html: string) => Promise<string>;
+    ssrFixStacktrace: (error: unknown) => void;
+  }) {
+    server.middlewares.use(async (request, response, next) => {
+      const pathname = new URL(request.url || '/', 'http://127.0.0.1').pathname.replace(/\/+$/u, '') || '/';
+      const kind = pathname === '/legal/privacy'
+        ? 'privacy'
+        : pathname === '/legal/terms'
+          ? 'terms'
+          : null;
+      if (!kind) {
+        next();
+        return;
+      }
+
+      try {
+        const { renderLegalDocument } = await server.ssrLoadModule('/src/legal-ssr-entry.tsx');
+        const html = createLegalDocumentHtml({
+          kind,
+          markup: renderLegalDocument(kind),
+          assets: { css: ['/src/index.css', '/src/pages/LegalDocument.css'] },
+        });
+        const transformed = await server.transformIndexHtml(request.url || pathname, html);
+        response.statusCode = 200;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end(transformed);
+      } catch (error) {
+        server.ssrFixStacktrace(error);
+        next();
+      }
+    });
+  },
+};
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '');
 
   return {
-    plugins: [react()],
+    plugins: [react(), legalDocumentDevPlugin],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+      // Workspace packages such as @epap/api-client declare React Query as a
+      // peer dependency. Force the app and those linked packages to share the
+      // same module instance, otherwise QueryClientProvider and useQuery can
+      // read different React contexts in the packaged WebView.
+      dedupe: ['react', 'react-dom', '@tanstack/react-query'],
     },
     server: {
       port: 5183,

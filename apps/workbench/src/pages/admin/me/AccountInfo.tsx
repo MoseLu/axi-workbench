@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 import { Button, Form, Input, message } from 'antd';
 import { AxiSvgIcon } from '@axi/core';
 import { useAuth } from '../../../contexts/AuthContext';
+import { USERNAME_MAX_LENGTH, isValidUsername } from '@axi/workbench-foundation';
 import { useI18n } from '../../../i18n';
+import { writeLastAccount } from '../../../lib/lastAccount';
 import {
   loadProfile,
   readFileAsDataUrl,
@@ -21,11 +23,12 @@ import './AccountInfo.css';
  * presentation data and are persisted through the existing profile store.
  */
 const AccountInfo: React.FC = () => {
-  const { user } = useAuth();
+  const { updateUsername, user } = useAuth();
   const { t } = useI18n();
   const [profile, setProfile] = useState<UserProfile>(() => loadProfile(user));
-  const [nickname, setNickname] = useState(profile.nickname);
+  const [username, setUsername] = useState(profile.nickname);
   const [avatarDataUrl, setAvatarDataUrl] = useState(profile.avatarDataUrl);
+  const [saving, setSaving] = useState(false);
   const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarPreviewTriggerRef = useRef<HTMLButtonElement>(null);
@@ -36,7 +39,7 @@ const AccountInfo: React.FC = () => {
     const onChange = () => {
       const next = loadProfile(user);
       setProfile(next);
-      setNickname(next.nickname);
+      setUsername(next.nickname);
       setAvatarDataUrl(next.avatarDataUrl);
     };
 
@@ -100,18 +103,30 @@ const AccountInfo: React.FC = () => {
     }
   };
 
-  const save = () => {
-    const nextNickname = nickname.trim();
-    if (!nextNickname) {
-      message.error(t('account.nickname.required'));
+  const save = async () => {
+    const nextUsername = username.trim();
+    if (!isValidUsername(nextUsername)) {
+      message.error(t('account.username.invalid'));
       return;
     }
 
-    const next = saveProfile({ nickname: nextNickname, avatarDataUrl }, user);
-    setProfile(next);
-    setNickname(next.nickname);
-    setAvatarDataUrl(next.avatarDataUrl);
-    message.success(t('account.saveSuccess'));
+    setSaving(true);
+    try {
+      if (nextUsername !== profile.nickname && !(await updateUsername(nextUsername))) {
+        message.error(t('account.username.updateFailed'));
+        return;
+      }
+      const next = saveProfile({ nickname: nextUsername, avatarDataUrl }, user);
+      setProfile(next);
+      setUsername(next.nickname);
+      setAvatarDataUrl(next.avatarDataUrl);
+      if (user?.id) {
+        writeLastAccount({ subject: user.id, name: next.nickname, email: user.email });
+      }
+      message.success(t('account.saveSuccess'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -159,15 +174,17 @@ const AccountInfo: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            label={t('account.nickname.label')}
+            extra={t('account.username.hint')}
+            label={t('account.username.label')}
             required
-            rules={[{ message: t('account.nickname.required'), required: true }]}
+            rules={[{ message: t('account.username.invalid'), required: true }]}
           >
             <Input
-              autoComplete="nickname"
-              placeholder={t('account.nickname.placeholder')}
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
+              autoComplete="username"
+              maxLength={USERNAME_MAX_LENGTH}
+              placeholder={t('account.username.placeholder')}
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
             />
           </Form.Item>
 
@@ -176,7 +193,7 @@ const AccountInfo: React.FC = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button htmlType="submit" type="primary">
+            <Button htmlType="submit" loading={saving} type="primary">
               {t('account.submit')}
             </Button>
           </Form.Item>

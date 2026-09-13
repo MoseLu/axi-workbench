@@ -7,8 +7,7 @@
 }
 
 /* ========== Right Sidebar Panel ==========
-   主题变量统一来自 @epap/ui → styles/variables.css（--mpms-*）。
-   这样无论是 light 还是 dark 主题，面板都能正常显示。 */
+   主题变量统一来自 @axi/tokens，避免遗留的 --mpms-* / --color-* 方言。 */
 .right-sidebar {
   position: fixed;
   right: -340px;
@@ -16,8 +15,8 @@
   bottom: 0;
   width: 340px;
   z-index: 1001;
-  background: var(--axi-layout-canvas, var(--color-bg-card));
-  border-left: 1px solid var(--axi-layout-border, var(--color-border-light));
+  background: var(--axi-layout-surface);
+  border-left: 1px solid var(--axi-layout-border);
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
   transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -34,16 +33,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--mpms-header-height, 46px);
+  height: var(--axi-layout-toolbar-height);
   padding: 0 var(--axi-space-4, 16px);
-  border-bottom: 1px solid var(--axi-layout-border, var(--color-border-light));
+  border-bottom: 1px solid var(--axi-layout-border);
   flex-shrink: 0;
 }
 
 .right-sidebar__title {
   font-size: var(--axi-font-size-sm, 14px);
   font-weight: var(--axi-font-weight-semibold, 600);
-  color: var(--axi-text, var(--color-text-el-primary));
+  color: var(--axi-text);
 }
 
 .right-sidebar__close {
@@ -55,15 +54,15 @@
   border: none;
   border-radius: var(--axi-radius-md, 6px);
   background: transparent;
-  color: var(--axi-text-secondary, var(--color-text-el-regular));
+  color: var(--axi-text-secondary);
   font-size: var(--axi-font-size-sm, 14px);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .right-sidebar__close:hover {
-  color: var(--axi-text, var(--color-text-el-primary));
-  background: var(--axi-layout-hover, var(--color-blue-soft-el));
+  color: var(--axi-text);
+  background: var(--axi-layout-hover);
 }
 
 /* ========== Body ========== */
@@ -81,7 +80,7 @@
 .right-sidebar__section-title {
   font-size: var(--axi-font-size-sm, 13px);
   font-weight: var(--axi-font-weight-semibold, 600);
-  color: var(--axi-text, var(--color-text-el-primary));
+  color: var(--axi-text);
   margin-bottom: var(--axi-space-3, 12px);
 }
 
@@ -109,17 +108,17 @@
   align-items: center;
   justify-content: center;
   transition: box-shadow 0.2s;
-  border: 1px solid var(--axi-layout-border, var(--color-border-light));
+  border: 1px solid var(--axi-layout-border);
 }
 
 .right-sidebar__theme-item.is-active .right-sidebar__theme-preview {
-  box-shadow: 0 0 0 2px var(--axi-primary, var(--color-antd-primary));
-  border-color: var(--axi-primary, var(--color-antd-primary));
+  box-shadow: 0 0 0 2px var(--axi-primary);
+  border-color: var(--axi-primary);
 }
 
 .right-sidebar__theme-label {
   font-size: var(--axi-font-size-xs, 12px);
-  color: var(--axi-text-secondary, var(--color-text-el-regular));
+  color: var(--axi-text-secondary);
 }
 
 /* ========== Colors ==========
@@ -153,9 +152,9 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--axi-space-2-5, 10px) 0;
-  border-bottom: 1px solid var(--axi-layout-border, var(--color-border-light));
+  border-bottom: 1px solid var(--axi-layout-border);
   font-size: var(--axi-font-size-sm, 13px);
-  color: var(--axi-text, var(--color-text-el-primary));
+  color: var(--axi-text);
 }
 
 .right-sidebar__setting-row:last-child {
@@ -163,6 +162,6 @@
 }
 
 .right-sidebar__setting-value {
-  color: var(--axi-text-secondary, var(--color-text-el-regular));
+  color: var(--axi-text-secondary);
   font-size: var(--axi-font-size-xs, 12px);
 }

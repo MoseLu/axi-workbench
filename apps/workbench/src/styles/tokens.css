@@ -100,16 +100,16 @@
   --space-0: 0;
   --space-px: 1px;
   --space-0_5: 2px;
-  --space-1: 4px;
+  --space-1: var(--axi-space-1, 4px);
   --space-1_5: 6px;
-  --space-2: 8px;
-  --space-2_5: 10px;
-  --space-3: 12px;
+  --space-2: var(--axi-space-2, 8px);
+  --space-2_5: var(--axi-space-2-5, 10px);
+  --space-3: var(--axi-space-3, 12px);
   --space-3_5: 14px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
+  --space-4: var(--axi-space-4, 16px);
+  --space-5: var(--axi-space-5, 24px);
+  --space-6: var(--axi-space-6, 32px);
+  --space-8: var(--axi-space-8, 48px);
   --space-10: 40px;
   --space-12: 48px;
   --space-14: 56px;
@@ -126,11 +126,11 @@
   --size-icon-xl: 24px;
 
   /* ── Radius ── */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-full: 999px;
+  --radius-xs: var(--axi-radius-sm, 4px);
+  --radius-sm: var(--axi-radius-sm, 4px);
+  --radius-md: var(--axi-radius-md, 6px);
+  --radius-lg: var(--axi-radius-lg, 8px);
+  --radius-full: var(--axi-radius-full, 9999px);
 
   /* ── Type ── */
   --text-xxs: 10px;

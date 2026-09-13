@@ -121,6 +121,8 @@ function resolveStaticFile(pathname) {
     return null
   }
   if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
+  const directoryIndex = join(distRoot, requested, 'index.html')
+  if (existsSync(directoryIndex) && statSync(directoryIndex).isFile()) return directoryIndex
   if (extname(requested)) return null
   const fallback = join(distRoot, 'index.html')
   return existsSync(fallback) ? fallback : null
@@ -138,9 +140,10 @@ function serveStatic(request, response, pathname) {
     sendJson(response, 404, { ok: false, error: '资源不存在' })
     return
   }
-  const isDocument = filePath === join(distRoot, 'index.html')
+  const isHtml = extname(filePath).toLowerCase() === '.html'
+  const isFavicon = /(?:^|\/)(?:favicon|apple-touch-icon)/i.test(filePath)
   response.writeHead(200, {
-    'cache-control': isDocument ? 'no-store' : 'public, max-age=31536000, immutable',
+    'cache-control': isHtml || isFavicon ? 'no-store' : 'public, max-age=31536000, immutable',
     'content-type': mimeTypes[extname(filePath).toLowerCase()] || 'application/octet-stream',
   })
   if (request.method === 'HEAD') {

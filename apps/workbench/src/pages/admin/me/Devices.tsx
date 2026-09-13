@@ -119,7 +119,7 @@ const Devices: React.FC = () => {
       <AxiTableGroup title="扫码配对手机">
         <Space direction="vertical" size={12} style={{ width: '100%' }}>
           <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            生成一次性二维码后，用真机扫一扫。扫码只会登记待确认设备；必须在此页确认，手机才会取得访问权限。
+            保持当前桌面会话，无需退出登录。生成一次性二维码后，用手机端扫一扫；扫码只会登记待确认设备，必须在此页确认，手机才会取得访问权限。
           </Typography.Paragraph>
           {pairing ? (
             <Space direction="vertical" size={12} align="center" style={{ width: '100%' }}>

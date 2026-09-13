@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WorkbenchLocaleProvider } from '@axi/workbench-foundation';
 import type { PersonalOsFocusResponse, PersonalOsQueueEnvelope, ProjectQueueItem } from '@axi/workstation-contracts';
 import {
   usePersonalOsFocus,
@@ -114,11 +115,13 @@ const focus: PersonalOsFocusResponse = {
 function renderPage(element: React.ReactElement) {
   return render(
     <AuthProvider>
-      <I18nProvider>
-        <MemoryRouter initialEntries={['/admin/personal-os/workbench']}>
-          {element}
-        </MemoryRouter>
-      </I18nProvider>
+      <WorkbenchLocaleProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/admin/personal-os/workbench']}>
+            {element}
+          </MemoryRouter>
+        </I18nProvider>
+      </WorkbenchLocaleProvider>
     </AuthProvider>,
   );
 }
@@ -198,13 +201,15 @@ describe('Personal OS project queue behavior', () => {
 
     expect(screen.getByText('今天还没有焦点项目')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '打开项目队列' })).toBeInTheDocument();
+    expect(screen.getByTestId('personal-os-view-group')).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: '项目检查器' })).toBeInTheDocument();
   });
 
   it('renders the loading state while the queue is synchronizing', () => {
     mockedUseQueue.mockReturnValue({ data: undefined, error: null, isFetching: true, isLoading: true, refetch } as never);
     renderPage(<PersonalOsWorkbench />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('正在同步项目队列');
+    expect(screen.getAllByRole('status').filter((entry) => entry.textContent?.includes('正在同步项目队列'))).toHaveLength(2);
   });
 
   it('explains a stale control-plane snapshot separately from a runtime outage', () => {
@@ -219,6 +224,21 @@ describe('Personal OS project queue behavior', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('控制面快照已过期');
     expect(screen.getByRole('status')).not.toHaveTextContent('DevSvc 当前不可用');
+  });
+
+  it('keeps Today usable when an older queue response omits warnings', () => {
+    mockedUseQueue.mockReturnValue({
+      data: { ...queue, view: 'today', items: [], warnings: undefined },
+      error: null,
+      isFetching: false,
+      isLoading: false,
+      refetch,
+    } as never);
+
+    expect(() => renderPage(<PersonalOsToday />)).not.toThrow();
+    expect(screen.getByText('今天还没有焦点项目')).toBeInTheDocument();
+    expect(screen.queryByText('控制面快照已过期')).not.toBeInTheDocument();
+    expect(screen.queryByText('DevSvc 当前不可用')).not.toBeInTheDocument();
   });
 
   it('renders a recoverable error state', () => {

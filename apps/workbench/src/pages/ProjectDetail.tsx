@@ -15,6 +15,7 @@ import {
 } from './workspaceRegistry';
 import { ControlPlaneState } from './admin/ControlPlaneState';
 import { DesktopCrudFrame } from './admin/DesktopCrudFrame';
+import { GovernanceInspector } from './admin/GovernanceInspector';
 import './ProjectDetail.css';
 
 type RelationshipRow = {
@@ -121,6 +122,13 @@ const ProjectDetailContent: React.FC<{
       })),
     [projectId, snapshot?.agentTasks, t],
   );
+  const governanceUnit = snapshot?.governance?.units.find((unit) => unit.id === projectId);
+  const governanceEvidence = snapshot?.governance?.evidence.filter((item) => governanceUnit?.evidenceRefs.includes(item.id)) ?? [];
+  const governanceImpact = snapshot?.governance?.impact.find((item) => item.subjectRef === projectId);
+  const governanceDocuments = snapshot?.governance?.documents.filter((item) => governanceUnit?.documentRefs.includes(item.id)) ?? [];
+  const governanceViolations = snapshot?.governance?.violations.filter((item) => item.subjectRef === projectId) ?? [];
+  const governanceWaivers = snapshot?.governance?.waivers.filter((item) => item.subjectRef === projectId) ?? [];
+  const governancePolicyDecisions = snapshot?.governance?.policyDecisions.filter((item) => item.resourceRef === projectId) ?? [];
   const relationshipColumns: AxiTableColumn<RelationshipRow>[] = [
     { dataIndex: 'direction', title: t('projectDetail.column.relationship'), width: 130 },
     { dataIndex: 'label', title: t('projectDetail.column.peer') },
@@ -149,6 +157,8 @@ const ProjectDetailContent: React.FC<{
           <Descriptions.Item label={t('projectDetail.descriptions.commands')}>{commandsCount}</Descriptions.Item>
         </Descriptions>
       </AxiTableGroup>
+
+      <GovernanceInspector documents={governanceDocuments} evidence={governanceEvidence} impact={governanceImpact} locale={locale} unit={governanceUnit} violations={governanceViolations} waivers={governanceWaivers} policyDecisions={governancePolicyDecisions} />
 
       <div className="project-detail-crud__grid">
         <AxiTableGroup

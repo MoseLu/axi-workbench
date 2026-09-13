@@ -2,10 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   emitShellNotify,
   emitShellUnread,
+  externalLegalUrl,
+  getShellWindowLabel,
   isTauriShell,
   listenShell,
+  openExternalLegalPage,
 } from './shell';
-import { SHELL_EVENTS } from '@axi/workbench-desktop/contracts';
+import { SHELL_EVENTS } from '@axi/workbench-foundation/shell-contracts';
 
 type TauriInternals = { invoke: (cmd: string, payload?: Record<string, unknown>) => Promise<unknown> };
 
@@ -18,6 +21,34 @@ afterEach(() => {
 });
 
 describe('shell.ts', () => {
+  describe('external legal pages', () => {
+    it('builds the public frontend route', () => {
+      expect(externalLegalUrl('terms')).toBe('https://workbench.axiomaticworld.com/legal/terms');
+      expect(externalLegalUrl('privacy')).toBe('https://workbench.axiomaticworld.com/legal/privacy');
+    });
+
+    it('asks Tauri to open the legal page in the system browser', async () => {
+      const invoke = vi.fn().mockResolvedValue(undefined);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__TAURI_INTERNALS__ = { invoke };
+
+      await openExternalLegalPage('terms');
+      expect(invoke).toHaveBeenCalledWith('open_external_url', {
+        url: 'https://workbench.axiomaticworld.com/legal/terms',
+      });
+    });
+
+    it('opens a new browser tab outside Tauri', async () => {
+      const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+      await openExternalLegalPage('privacy');
+      expect(open).toHaveBeenCalledWith(
+        'https://workbench.axiomaticworld.com/legal/privacy',
+        '_blank',
+        'noopener,noreferrer',
+      );
+    });
+  });
+
   describe('isTauriShell', () => {
     it('returns false in plain browser', () => {
       expect(isTauriShell()).toBe(false);
@@ -28,6 +59,22 @@ describe('shell.ts', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__TAURI_INTERNALS__ = { invoke };
       expect(isTauriShell()).toBe(true);
+    });
+  });
+
+  describe('getShellWindowLabel', () => {
+    it('returns null outside Tauri', () => {
+      expect(getShellWindowLabel()).toBeNull();
+    });
+
+    it('reads the current window label from Tauri metadata', () => {
+      const invoke = vi.fn().mockResolvedValue(undefined);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__TAURI_INTERNALS__ = {
+        invoke,
+        metadata: { currentWindow: { label: 'main' } },
+      };
+      expect(getShellWindowLabel()).toBe('main');
     });
   });
 
