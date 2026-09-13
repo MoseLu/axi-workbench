@@ -1,4 +1,4 @@
-// render-logo prints the approved four-color email logo as a browser data URL.
+// render-logo prints the approved dango-family email logo as a browser data URL.
 package main
 
 import (

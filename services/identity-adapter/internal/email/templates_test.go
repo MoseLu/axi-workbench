@@ -34,7 +34,7 @@ func TestRenderVerificationCodeHTML(t *testing.T) {
 		`width="56"`,
 		`height="56"`,
 		`object-fit:contain`,
-		`alt="Axi Workbench four-color logo"`,
+		`alt="Axi Workbench dango-family logo"`,
 		// The verification card itself is deliberately only the selectable code.
 		`<div class="code-card">`,
 		`<p class="code">123456</p>`,

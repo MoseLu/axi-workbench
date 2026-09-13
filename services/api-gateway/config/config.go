@@ -58,6 +58,8 @@ type IdentityConfig struct {
 	SessionCookieName          string
 	SessionCookieDomain        string
 	SessionCookieSecure        bool
+	ResumeCookieName           string
+	ResumeTicketTTL            time.Duration
 	SessionTTL                 time.Duration
 	SessionIdleTTL             time.Duration
 	SessionAbsoluteTTL         time.Duration
@@ -156,6 +158,8 @@ func Load() (*Config, error) {
 			SessionCookieName:          getEnv("SESSION_COOKIE_NAME", "axi_session"),
 			SessionCookieDomain:        os.Getenv("SESSION_COOKIE_DOMAIN"),
 			SessionCookieSecure:        getBoolEnv("SESSION_COOKIE_SECURE", environment == "production"),
+			ResumeCookieName:           getEnv("RESUME_COOKIE_NAME", "axi_resume"),
+			ResumeTicketTTL:            getDurationEnv("RESUME_TICKET_TTL", 10*24*time.Hour),
 			SessionTTL:                 legacySessionTTL,
 			SessionIdleTTL:             sessionIdleTTL,
 			SessionAbsoluteTTL:         sessionAbsoluteTTL,

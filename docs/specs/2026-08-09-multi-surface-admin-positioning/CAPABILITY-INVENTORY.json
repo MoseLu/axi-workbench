@@ -132,8 +132,8 @@
     {
       "id": "web-handoff-continuation",
       "surface": "web",
-      "route": "/admin/handoff/:id",
-      "allowedActions": ["恢复服务端交接上下文", "标记 Web 续办已完成"],
+      "route": "/admin/handoff,/admin/handoff/:id",
+      "allowedActions": ["查询交接历史", "按状态筛选", "恢复服务端交接上下文", "标记 Web 续办已完成"],
       "role": "控制中心操作者续办无法由 Mobile 完成的受控事项",
       "dataSource": "API Gateway -> Control Plane internal Web handoff contract",
       "dataStatus": "live_or_unavailable",
@@ -142,7 +142,7 @@
       "serverAuthorization": "Gateway 注入已验证 Web subject；Control Plane 校验内部令牌",
       "revalidation": "打开和完成时重新读取 handoff 状态",
       "idempotency": "服务端按 handoff 状态拒绝重复最终化",
-      "audit": "handoff_opened、handoff_completed，关联 handoffCorrelationId",
+      "audit": "handoff_opened、handoff_completed、handoff_rejected、handoff_expired，统一记录 sourceActorRef/actorRef 与 handoffCorrelationId",
       "handoff": "源端、目标端和最终动作共用 handoffCorrelationId",
       "unsupported": ["不接受客户端提供项目、动作或审批对象"],
       "status": "implemented"
@@ -150,10 +150,10 @@
     {
       "id": "mobile-workspace-projection",
       "surface": "mobile",
-      "route": "/home,/projects,/workspace,/search",
-      "allowedActions": ["刷新当前工作区投影", "搜索当前可见项目、事项和任务", "打开可见详情"],
+      "route": "/home,/projects,/workspace,/search,/handoffs",
+      "allowedActions": ["刷新当前工作区投影", "搜索当前可见项目、事项和任务", "查看本机交接历史", "打开可见详情"],
       "role": "值班或现场角色查看本人可见的工作区投影",
-      "dataSource": "API Gateway -> Control Plane /internal/mobile/v1/workspace",
+      "dataSource": "API Gateway -> Control Plane /internal/mobile/v1/workspace 与 /internal/mobile/v1/handoffs",
       "dataStatus": "live_or_unavailable",
       "actionLevel": "A",
       "owner": "Workbench Mobile",

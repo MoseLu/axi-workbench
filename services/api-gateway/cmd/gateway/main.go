@@ -160,6 +160,8 @@ func setupRouter(
 	v1.GET("/sessions/current", handlers.Session(identityService))
 	v1.DELETE("/sessions/current", handlers.Logout(identityService))
 	v1.POST("/sessions", handlers.PasswordLogin(identityService))
+	v1.GET("/sessions/resume", handlers.PeekResume(identityService))
+	v1.POST("/sessions/resume", handlers.RedeemResume(identityService))
 	auth.POST("/qr/transactions", proxyHandler.ProxyToIdentity())
 	auth.GET("/qr/transactions/:id", proxyHandler.ProxyToIdentity())
 	auth.POST("/qr/transactions/:id/resume", proxyHandler.ProxyToIdentity())
@@ -198,6 +200,7 @@ func setupRouter(
 	protected.PUT("/auth/eps/links/:provider", proxyHandler.ProxyToIdentity())
 	protected.GET("/handoffs/:id", mobileControl.ProxyWebHandoff())
 	protected.POST("/handoffs/:id", mobileControl.ProxyWebHandoff())
+	protected.GET("/handoffs", mobileControl.ProxyWebHandoff())
 	// Web control-plane calls stay same-origin and carry the browser session;
 	// the proxy injects the service credential and verified subject.
 	registerWebControlPlaneRoutes(protected, mobileControl.ProxyWebControl())
@@ -241,6 +244,8 @@ func setupRouter(
 	}
 
 	protected.GET("/users/me", handlers.Session(identityService))
+	protected.GET("/users/me/profile", handlers.GetProfile(identityService))
+	protected.PATCH("/users/me/profile", handlers.UpdateProfile(identityService))
 	protected.GET("/files/*path", proxyHandler.ProxyToFile())
 	protected.POST("/files/*path", proxyHandler.ProxyToFile())
 	protected.DELETE("/files/*path", proxyHandler.ProxyToFile())

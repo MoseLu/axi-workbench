@@ -44,6 +44,7 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | Workstation control plane | `services/control-plane` | `pnpm --filter @axi/workstation-control-plane test`, `pnpm --filter @axi/workstation-control-plane smoke` |
 | Communication gateway | `services/communication-gateway` | `pnpm --filter @axi/workstation-communication-gateway test` |
 | Workstation contracts | `packages/schemas` | `pnpm --filter @axi/workstation-contracts test` |
+| Legacy Spring compatibility service | `services/core-service` | `pnpm --dir services/core-service test`；Maven/H2 migration compatibility only, not a production six-layer owner |
 | 能力台账准入 | `docs/specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-INVENTORY.json` | `pnpm check:capabilities`；`pnpm check:boundaries` 会重复执行该门禁 |
 | Desktop host | `apps/devsvc-dashboard` | `pnpm --dir apps/devsvc-dashboard typecheck` |
 | Axi Coder | `apps/axi-coder` | `pnpm --dir apps/axi-coder typecheck` |
@@ -51,6 +52,7 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | Fleet Console (Python) | `infra/fleet-console` | `python3 infra/fleet-console/scripts/fleetctl.py validate` |
 | Boundary SOP | `scripts/check-workbench-boundaries.mjs` | `pnpm check:boundaries` |
 | Workspace graph | workspace governance | `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` |
+| Submit-log discipline | `docs/logs/submit/` + `docs/state/CHANGELOG.md` | `pnpm audit:submit-logs -- --since HEAD~3 --strict`；默认只报告历史缺口，`--strict` 用于新批次门禁 |
 
 ## 多端产品定位验证
 
@@ -63,7 +65,7 @@ The root docs form a single source of truth plus a runtime-enforced test plan:
 | REQ-REFERENCE-001 | 检查 `MARKET-REFERENCE.md` 是否保留官方来源、研究日期、可迁移推导与非推导边界。 | 产品评审能分辨“外部产品形态参照”与“Workbench 当前实现/需求”，不把竞品功能清单作为承诺。 |
 | REQ-WEB-001 / REQ-WEB-002 | `node apps/workbench/scripts/verify-ui-contracts.mjs`；Web type-check/test/build。 | 在桌面宽度审查全局导航、筛选/批量/审计等管理任务；不得出现移动底栏或移动壳替代后台结构。 |
 | REQ-MOBILE-001 / REQ-MOBILE-002 | `pnpm --filter @axi/workbench-mobile verify:contracts`；Mobile type-check/test/build。 | 在 390px 审查 Home / Projects / Workspace / Me 四个常驻导航项与顶部 Scan 动作；Mobile 写操作只有在 B 级动作政策允许时才出现，并在线复核服务端状态；不出现 C 级组织管理表单。 |
-| REQ-CROSS-001 | 运行 schemas、Control Plane、Gateway 与 `pnpm check:boundaries`；Control Plane 测试覆盖过期/越权字段、关联标识不匹配、幂等重放、C/D 交接和 Web 最终化。 | 每个双端工作流确认服务端权威状态、动作政策、授权/审计事件、Web 交接上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`。 |
+| REQ-CROSS-001 | 运行 schemas、Control Plane、Gateway 与 `pnpm check:boundaries`；Control Plane 测试覆盖过期/越权字段、关联标识不匹配、幂等重放、C/D 交接、绑定 Web owner subject 的历史/目标端授权、关联 ApprovalRequest 状态及 `expiresAt` 重验、审批与交接一致过期、bearer 绑定的 Mobile 历史投影和按 `handoffId` 的生命周期事件查询、production gateway internal token 的 fail-closed 默认值；Web 详情测试覆盖打开后重新读取当前 Control Plane 对象状态且失败不回退快照。 | 每个双端工作流确认服务端权威状态、动作政策、授权/审计事件、Web/Mobile 交接历史与详情上下文，以及贯穿源端、目标端和最终动作的 `handoff correlation id`；目标端不得以交接快照替代当前对象状态。 |
 | REQ-SCAN-001 | Mobile 领域审批扫码和 Identity 网页登录确认分别有路由/合同/单元测试；Web 合同验证禁止通用扫码实现或导航入口。 | 验证 Mobile 顶部 Scan 只接受 `axi://approval/scan_*`，Identity 登录确认只从独立入口完成；Web 只允许历史 URL 安全回到控制中心，不能识别、展示或授权通用二维码。 |
 | REQ-DELIVERY-001 | `pnpm check:capabilities` 与 `pnpm check:boundaries` 必须通过；评审每项新能力的台账。 | 未完成并复核台账的能力不得进入开发验收。 |
 
@@ -90,6 +92,7 @@ pnpm --filter @axi/workbench type-check
 pnpm --filter @axi/workbench test
 pnpm --filter @axi/workbench build
 node apps/workbench/scripts/verify-ui-contracts.mjs
+pnpm --dir apps/workbench e2e
 
 # 5) Independent mobile app
 pnpm --filter @axi/workbench-foundation type-check
@@ -97,6 +100,7 @@ pnpm --filter @axi/workbench-mobile type-check
 pnpm --filter @axi/workbench-mobile test
 pnpm --filter @axi/workbench-mobile build
 pnpm --filter @axi/workbench-mobile verify:contracts
+pnpm --dir apps/workbench-mobile e2e
 
 # 6) Control-plane smoke + Fleet Console validate
 pnpm --filter @axi/workstation-control-plane smoke
@@ -107,7 +111,14 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 (cd services/identity-adapter && go test -race ./...)
 (cd services/platform-core && go test -race ./...)
 go run helm.sh/helm/v3/cmd/helm@v3.18.6 lint infra/helm/axi-workbench-platform --strict
+
+# 8) Recent delivery batch audit (adjust HEAD~3 to the reviewed batch base)
+pnpm audit:submit-logs -- --since HEAD~3 --strict
 ```
+
+`make verify-identity-mailpit` additionally requires a locally running Mailpit
+SMTP listener at `127.0.0.1:1025`; if that dependency is unavailable, record the
+environment blocker in `docs/state/CHANGELOG.md` and `docs/state/VERIFICATION.md`.
 
 ### Surface-specific commands
 

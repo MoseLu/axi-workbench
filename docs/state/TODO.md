@@ -5,24 +5,24 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 
 ## P0
 
-- [ ] REQ-DOC-001: Keep the root documentation suite complete and current.
+- [x] REQ-DOC-001: Keep the root documentation suite complete and current.
   - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
   - Test: `rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
 
 - [x] REQ-POSITION-001 / REQ-ARCH-001 / REQ-ACTION-001 / REQ-SURFACE-001: Create a capability, route and action-policy ownership inventory before the next user-facing implementation batch.
   - Test: every existing and proposed user-facing capability follows `docs/specs/<change-id>/CAPABILITY-OWNERSHIP.md` and identifies its task role, A/B/C/D action level, execution-surface Owner (Web control center / Mobile role execution / actual vertical tool), any separate Host/discovery entry, allowed action, server-side policy/authority, audit/handoff association, acceptance, reviewer, and reason it is not duplicated on another surface.
 
-- [ ] REQ-REFERENCE-001: Keep external multi-end references bounded and traceable during design review.
+- [x] REQ-REFERENCE-001: Keep external multi-end references bounded and traceable during design review.
   - Test: `MARKET-REFERENCE.md` links each public observation to an official source, labels the product inference, and states what the source does not prove about Workbench or the reference product's internal implementation.
 
 - [x] REQ-SCAN-001: Keep only controlled mobile/identity scan flows and exclude a generic Web scanner.
   - Test: Mobile "审批扫码确认" and Identity "确认网页登录" have separate permission expectations, URI/API contracts, audit assertions and failure messages; the top Scan action does not silently absorb identity-login or device-pairing flows, and the Web verifier rejects a generic scanner or navigation entry.
 
-- [ ] REQ-VERIFY-002: Keep both user-app UI contract verifiers, type-checks, tests, and builds green.
+- [x] REQ-VERIFY-002: Keep both user-app UI contract verifiers, type-checks, tests, and builds green.
   - Test: Web: `pnpm --filter @axi/workbench type-check`, `test`, `build`, `node apps/workbench/scripts/verify-ui-contracts.mjs`; mobile: `pnpm --filter @axi/workbench-mobile type-check`, `test`, `build`, `verify:contracts`; foundation: `pnpm --filter @axi/workbench-foundation type-check` all exit 0.
 
-- [ ] REQ-CONTROLPLANE-001: Keep the control-plane smoke and six-layer snapshot green.
-  - Test: `pnpm --filter @axi/workstation-control-plane smoke` exits 0 and reports ≥ 35 resources across the six layers.
+- [x] REQ-CONTROLPLANE-001: Keep the control-plane smoke and six-layer snapshot green.
+  - Test: `pnpm --filter @axi/workstation-control-plane test` and `smoke` exit 0; the regression suite covers production rejection of a missing or development-default gateway internal token, Registry/Graph-only optional resource paths, and complete-field normalization for persisted evidence, and smoke reports ≥ 35 resources across the six layers.
 
 - [x] REQ-BOUNDARY-001: Preserve ownership and cross-project boundaries.
   - Test: `pnpm check:boundaries` exits 0; `docs/rules/axi-workbench-boundary-sop.md` and `scripts/check-workbench-boundaries.mjs` remain in sync; `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` reports ok.
@@ -38,29 +38,29 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 
 ## P1
 
-- [ ] REQ-VERIFY-001: Keep verification commands accurate for the real project stack.
+- [x] REQ-VERIFY-001: Keep verification commands accurate for the real project stack.
   - Test: every command listed in `TDD.md` runs against the current monorepo or the blocker is recorded in `docs/state/CHANGELOG.md`.
 
-- [ ] REQ-BOUNDARY-002: Service contracts declare six-layer paths before merge.
+- [x] REQ-BOUNDARY-002: Service contracts declare six-layer paths before merge.
   - Test: every modified service under `services/` has its `entry / authority / downstream / renderer / audit / verification` declared in the PR description and verified against `docs/rules/epap-six-layer-sop.md`.
 
-- [ ] REQ-COMMUNICATION-001: Keep communication-gateway above business logic.
+- [x] REQ-COMMUNICATION-001: Keep communication-gateway above business logic.
   - Test: `pnpm --filter @axi/workstation-communication-gateway test` passes and the gateway source does not import Codex, workspace index, memory tables, or project state owners.
 
-- [ ] REQ-WORKBENCH-002: Keep Web / mobile rendering boundaries clean.
+- [x] REQ-WORKBENCH-002: Keep Web / mobile rendering boundaries clean.
   - Test: 1440px Web smoke renders Axi Dashboard chrome at `:5173`; 390px mobile-app smoke renders the 微信式居中顶栏、加号菜单、四个常驻导航项与顶部扫码入口 at `:5174`; both app-specific contract verifiers pass and neither app imports the other app’s implementation.
 
-- [ ] REQ-DOC-002: Keep the v2 zero-context manifest current.
+- [x] REQ-DOC-002: Keep the v2 zero-context manifest current.
   - Test: `docs/project-docs.manifest.json` parses as JSON, references only project-local files, contains no secret values, and reflects the latest entrypoints, contracts, and verification evidence.
 
-- [ ] REQ-AXI-CODER-001: Keep Axi Coder snapshots free of hard-coded neighbor paths.
+- [x] REQ-AXI-CODER-001: Keep Axi Coder snapshots free of hard-coded neighbor paths.
   - Test: no Axi Coder snapshot contains a hard-coded `/projects/axi-notify/...` artifact path; resolution goes through environment variables and `workspace://` contract references.
 
-- [ ] REQ-MOBILE-001: Keep the independent WeChat-style mobile app and its shared foundation auditable.
+- [x] REQ-MOBILE-001: Keep the independent WeChat-style mobile app and its shared foundation auditable.
   - Test: `apps/workbench-mobile` owns its Home / Projects / Workspace / Me pages, centered header, four persistent navigation items, badges and Scan action/page; `packages/workbench-foundation` lists shared session / locale keys; mobile theme switching round-trips through `axi.workbench.mobile.theme.mode` without importing Web layout code.
 
-- [ ] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
-  - Test: each `docs/logs/submit/<batch-id>.md` is cited in the latest MILESTONE entry, and the linked deliverable evidence is current.
+- [x] REQ-MILESTONE-001: Update `MILESTONE.md` after each verified delivery batch.
+  - Test: each milestone records its objective, status, evidence, exit criteria and unresolved risks; the latest verified delivery evidence is current. Historical submit-log back-linking remains tracked separately by `REQ-LOG-001`.
 
 - [x] REQ-CROSS-001 / REQ-DELIVERY-001: Add cross-device continuity only after a capability has an explicit ownership and action-policy record.
   - Test: each dual-surface flow has a shared business object identifier, action-level/authority declaration, server-side authorization/audit evidence, a `handoff correlation id` recorded at source, target and final action, and a context-preserving handoff to Web when Mobile cannot complete it.
@@ -68,7 +68,7 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 ## P2
 
 - [ ] REQ-LOG-001: Promote submit-log discipline to P0 once weekly cadence stabilizes.
-  - Test: every merged batch has both `docs/logs/submit/<batch-id>.md` and a matching `CHANGELOG.md` entry; missing entries are listed by `pnpm check:boundaries` (when extended).
+  - Test: `pnpm audit:submit-logs -- --since <batch-base> --strict` verifies each reviewed batch commit has a direct `docs/logs/submit/<batch-id>.md` and same-commit `CHANGELOG.md` touch; default mode reports historical gaps without failing unrelated boundary checks. The historical corpus still needs reconciliation before promotion to P0.
 
 ## Zero-context handoff governance
 

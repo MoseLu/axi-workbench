@@ -1,6 +1,7 @@
 # `@epap/ui` — legacy layout stack
 
-**Status:** legacy (still required by `apps/workbench` / `@axi/workbench` only).
+**Status:** legacy (retained for compatibility/reference; no active runtime consumer in
+`apps/workbench` after the 2026-09-13 dead-consumer cleanup).
 
 ## Policy
 
@@ -9,6 +10,10 @@
 - Bugfixes and minimal styling for `apps/workbench` are allowed.
 - Large feature work on AppLayout / TabBar / Topbar here should be rejected or re-homed to `@axi/*`.
 
-## Consumers (keep until migrated)
+## Consumers
 
-- `apps/workbench` (`@axi/workbench`) only.
+- No active Web runtime consumer.
+- Historical `Sidebar.tsx` / `TabBar.tsx` files were not part of the live
+  `AxiDashboardShell` render chain and were removed from `apps/workbench`.
+- Keep this package until the repository-wide compatibility/reference policy
+  explicitly retires it; do not start new consumers here.

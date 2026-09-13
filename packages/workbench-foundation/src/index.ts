@@ -28,3 +28,13 @@ export {
   type WorkbenchNotificationCategory,
   type WorkbenchNotificationType,
 } from './notifications';
+export {
+  GENERATED_USERNAME_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  generateUsername,
+  isValidUsername,
+  resolveUsername,
+  usernameLength,
+  type UsernameIdentity,
+} from './username';

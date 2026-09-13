@@ -177,8 +177,6 @@ export const GovernanceUnitSchema = z.object({
   name: z.string().min(1),
   scope: z.literal("workspace"),
   ownerRef: z.string().min(1),
-  ownerEvidenceRef: z.string().min(1).optional(),
-  ownerStatus: z.enum(["resolved", "unknown", "external"]),
   lifecycle: z.string().min(1),
   status: z.string().min(1),
   identityStatus: GovernanceIdentityStatusEnum,
@@ -218,44 +216,9 @@ export const GovernanceCoverageSchema = z.object({
   unitCount: z.number().int().nonnegative(),
   ownerResolvedCount: z.number().int().nonnegative(),
   ownerUnknownCount: z.number().int().nonnegative(),
-  ownerExternalCount: z.number().int().nonnegative(),
   identityAlignedCount: z.number().int().nonnegative(),
   identityPartialCount: z.number().int().nonnegative(),
   identityConflictCount: z.number().int().nonnegative(),
-}).strict()
-
-export const GovernanceExecutionCoverageSchema = z.object({
-  declaredProjectCount: z.number().int().nonnegative(),
-  healthDeclaredCount: z.number().int().nonnegative(),
-  verifyDeclaredCount: z.number().int().nonnegative(),
-  remediationDeclaredCount: z.number().int().nonnegative(),
-}).strict()
-
-export const GovernanceRelationshipMetadataCoverageSchema = z.object({
-  dependencyEdgeCount: z.number().int().nonnegative(),
-  scopeDeclaredCount: z.number().int().nonnegative(),
-  requirednessDeclaredCount: z.number().int().nonnegative(),
-  dependencyPhaseDeclaredCount: z.number().int().nonnegative(),
-  environmentDeclaredCount: z.number().int().nonnegative(),
-  versionConstraintDeclaredCount: z.number().int().nonnegative(),
-  validityWindowDeclaredCount: z.number().int().nonnegative(),
-}).strict()
-
-export const GovernanceRelationshipMetadataGapSchema = z.object({
-  sourceRef: z.string().min(1),
-  targetRef: z.string().min(1),
-  relationshipType: z.literal("DEPENDS_ON"),
-  missing: z.array(z.enum(["requiredness", "dependencyPhase", "environment", "versionConstraint", "validityWindow"])).min(1),
-  provenance: z.string().min(1),
-}).strict()
-
-export const GovernanceEventCoverageSchema = z.object({
-  declaredSourceCount: z.number().int().nonnegative(),
-  loadedSourceCount: z.number().int().nonnegative(),
-  eventCount: z.number().int().nonnegative(),
-  surfaceCount: z.number().int().nonnegative(),
-  projectCount: z.number().int().nonnegative(),
-  serviceCount: z.number().int().nonnegative(),
 }).strict()
 
 export const GovernanceDocumentSchema = z.object({
@@ -306,10 +269,6 @@ export const WorkspaceEventSchema = z.object({
   occurredAt: z.coerce.date(),
   recordedAt: z.coerce.date(),
   actorRef: z.string().min(1),
-  surfaceRef: z.string().min(1).optional(),
-  projectRef: z.string().min(1).optional(),
-  serviceRef: z.string().min(1).optional(),
-  runRef: z.string().min(1).optional(),
   scopeRef: z.string().min(1),
   objectRef: z.string().min(1),
   action: z.string().min(1),
@@ -429,10 +388,6 @@ export const GovernanceSnapshotSchema = z.object({
   relationships: z.array(GovernanceRelationshipSchema).default([]),
   impact: z.array(GovernanceImpactSchema).default([]),
   coverage: GovernanceCoverageSchema,
-  executionCoverage: GovernanceExecutionCoverageSchema,
-  relationshipMetadataCoverage: GovernanceRelationshipMetadataCoverageSchema,
-  relationshipMetadataGaps: z.array(GovernanceRelationshipMetadataGapSchema).default([]),
-  eventCoverage: GovernanceEventCoverageSchema,
   documents: z.array(GovernanceDocumentSchema).default([]),
   rules: z.array(GovernanceRuleSchema).default([]),
   events: z.array(WorkspaceEventSchema).default([]),

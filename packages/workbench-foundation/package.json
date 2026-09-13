@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./auth": "./src/auth.tsx",
     "./icons": "./src/icons.ts",
-    "./locale": "./src/locale.tsx"
+    "./locale": "./src/locale.tsx",
+    "./shell-contracts": "./src/shell-contracts.ts"
   },
   "scripts": {
     "build": "tsc",

@@ -181,6 +181,10 @@ func (s *Service) Complete(ctx context.Context, state, code string) (string, bro
 	if session.Principal.Subject == "" {
 		return "", browserSession{}, "", ErrUnauthorized
 	}
+	session.Principal, err = s.ResolvePrincipalProfile(ctx, session.Principal)
+	if err != nil {
+		return "", browserSession{}, "", err
+	}
 	now := s.now()
 	session, err = s.initializeSession(session, now)
 	if err != nil {
@@ -220,15 +224,24 @@ func (s *Service) Authenticate(ctx context.Context, request *http.Request) (Prin
 // that have already attempted RestoreSession cannot accidentally issue a
 // second browser-cookie or session-store read during fallback.
 func (s *Service) AuthenticateHeaderCredentials(ctx context.Context, header http.Header) (Principal, error) {
+	var principal Principal
 	if authorization := header.Get("Authorization"); strings.HasPrefix(strings.ToLower(authorization), "bearer ") && s.client != nil {
-		return s.client.VerifyBearer(ctx, strings.TrimSpace(authorization[7:]))
-	}
-	if s.config.DevelopmentHeaderAuth {
-		if subject := strings.TrimSpace(header.Get("X-Axi-Development-Subject")); subject != "" {
-			return Principal{Subject: subject, Email: strings.TrimSpace(header.Get("X-Axi-Development-Email"))}, nil
+		var err error
+		principal, err = s.client.VerifyBearer(ctx, strings.TrimSpace(authorization[7:]))
+		if err != nil {
+			return Principal{}, err
 		}
+	} else if s.config.DevelopmentHeaderAuth {
+		if subject := strings.TrimSpace(header.Get("X-Axi-Development-Subject")); subject != "" {
+			principal = Principal{Subject: subject, Email: strings.TrimSpace(header.Get("X-Axi-Development-Email"))}
+		} else {
+			return Principal{}, ErrUnauthorized
+		}
+	} else {
+		return Principal{}, ErrUnauthorized
 	}
-	return Principal{}, ErrUnauthorized
+	principal.Name = resolveUsername(principal.Name, principal.Email, principal.Subject)
+	return principal, nil
 }
 
 // RestoreSession validates and refreshes a browser cookie session. It returns
@@ -244,6 +257,10 @@ func (s *Service) RestoreSession(ctx context.Context, request *http.Request) (Pr
 	}
 	now := s.now()
 	session, expected, err := s.loadSession(ctx, cookie.Value, now)
+	if err != nil {
+		return Principal{}, "", err
+	}
+	session.Principal, err = s.ResolvePrincipalProfile(ctx, session.Principal)
 	if err != nil {
 		return Principal{}, "", err
 	}
@@ -556,7 +573,7 @@ func (s *Service) EmailLoginPrincipal(email string) (Principal, error) {
 	if subject == "" {
 		return Principal{}, ErrUnavailable
 	}
-	return Principal{Subject: subject, Email: email}, nil
+	return Principal{Subject: subject, Email: email, Name: generatedUsername(email, subject)}, nil
 }
 
 // EmailLoginConfigured reports whether the owner-only email factor can issue
@@ -597,7 +614,7 @@ func (s *Service) AuthenticatePassword(_ context.Context, email, password string
 	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil || canonicalEmail != owner {
 		return Principal{}, ErrUnauthorized
 	}
-	return Principal{Subject: subject, Email: canonicalEmail}, nil
+	return Principal{Subject: subject, Email: canonicalEmail, Name: generatedUsername(canonicalEmail, subject)}, nil
 }
 
 func (s *Service) passwordLoginConfig() (owner, subject, passwordHash string) {
@@ -635,6 +652,11 @@ func (s *Service) IssuePrincipalSession(ctx context.Context, principal Principal
 	principal.Name = strings.TrimSpace(principal.Name)
 	if principal.Subject == "" || len(principal.Subject) > 256 || len(principal.Email) > 320 || len(principal.Name) > 256 {
 		return "", ErrUnauthorized
+	}
+	var err error
+	principal, err = s.ResolvePrincipalProfile(ctx, principal)
+	if err != nil {
+		return "", err
 	}
 	now := s.now()
 	session, err := s.initializeSession(browserSession{Principal: principal}, now)
@@ -778,7 +800,11 @@ func principalFromIDToken(token *oidc.IDToken) (Principal, error) {
 	if token.Subject == "" {
 		return Principal{}, ErrUnauthorized
 	}
-	return Principal{Subject: token.Subject, Email: claims.Email, Name: claims.Name}, nil
+	return Principal{
+		Subject: token.Subject,
+		Email:   claims.Email,
+		Name:    resolveUsername(claims.Name, claims.Email, token.Subject),
+	}, nil
 }
 
 func ParseReturnTo(value string) string {

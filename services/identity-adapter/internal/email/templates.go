@@ -35,7 +35,7 @@ const defaultBrandColor = "#10A37F"
 // Style aims at the ChatGPT / Linear / Vercel template family: a single white
 // card on a soft gray background, big monospaced code in a light gray inner
 // card, friendly copy around it. Delivered messages use the approved Axi
-// four-color PNG as a CID attachment; the local preview uses the same asset as
+// dango-family PNG as a CID attachment; the local preview uses the same asset as
 // a data URL because browsers do not resolve email CIDs.
 func RenderVerificationCodeHTML(p VerificationCodeParams) string {
 	return renderVerificationCodeHTML(p, "cid:"+brandLogoContentID)
@@ -195,7 +195,7 @@ func renderVerificationCodeHTML(p VerificationCodeParams, logoSource string) str
 // renderLogo references a supplied source so production can use CID while
 // local preview keeps the same approved PNG visible in a browser.
 func renderLogo(logoSource string) string {
-	return `<img class="logo-img" src="` + htmlEscape(logoSource) + `" width="56" height="56" alt="Axi Workbench four-color logo" style="display:block;margin:0 auto 12px;width:56px;height:56px;object-fit:contain;">`
+	return `<img class="logo-img" src="` + htmlEscape(logoSource) + `" width="56" height="56" alt="Axi Workbench dango-family logo" style="display:block;margin:0 auto 12px;width:56px;height:56px;object-fit:contain;">`
 }
 
 // RenderVerificationCodeText returns the plain-text fallback body.

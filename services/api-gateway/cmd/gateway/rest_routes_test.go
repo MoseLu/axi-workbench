@@ -28,6 +28,12 @@ func TestRESTSessionResourceAliasesAuthSession(t *testing.T) {
 	if logout.Code != http.StatusNoContent {
 		t.Fatalf("DELETE /sessions/current = %d", logout.Code)
 	}
+
+	resume := httptest.NewRecorder()
+	router.ServeHTTP(resume, httptest.NewRequest(http.MethodGet, "/api/v1/sessions/resume", nil))
+	if resume.Code != http.StatusOK {
+		t.Fatalf("GET /sessions/resume = %d", resume.Code)
+	}
 }
 
 func TestRESTResourceAliasesProxyToNounPaths(t *testing.T) {
@@ -128,6 +134,9 @@ func TestControlPlaneAndMobileCatchAllsAreExplicitAllowlists(t *testing.T) {
 		auth   bool
 	}{
 		{http.MethodGet, "/api/v1/control-plane/snapshot", "/internal/web/v1/snapshot", true},
+		{http.MethodGet, "/api/v1/control-plane/events", "/internal/web/v1/events", true},
+		{http.MethodGet, "/api/v1/control-plane/events/event-1", "/internal/web/v1/events/event-1", true},
+		{http.MethodPost, "/api/v1/control-plane/authorization/decision", "/internal/web/v1/authorization/decision", true},
 		{http.MethodPost, "/api/v1/control-plane/jobs/j-1/cancellations", "/internal/web/v1/jobs/j-1/cancellations", true},
 		{http.MethodPost, "/api/v1/control-plane/approvals/a-1/decisions", "/internal/web/v1/approvals/a-1/decisions", true},
 		{http.MethodPost, "/api/v1/control-plane/commands/c-1/runs", "/internal/web/v1/commands/c-1/runs", true},

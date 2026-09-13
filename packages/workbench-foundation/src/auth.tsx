@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { User } from '@axi/workstation-contracts';
+import { resolveUsername } from './username';
 
 type GatewaySessionResponse = {
   authenticated: boolean;
@@ -36,6 +37,7 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   requestEmailCode: (email: string) => Promise<{ challengeId: string; expiresAt: string }>;
   confirmEmailCode: (challengeId: string, token: string) => Promise<boolean>;
+  updateUsername: (username: string) => Promise<boolean>;
 }
 
 export interface AuthProviderProps {
@@ -85,7 +87,11 @@ export function resolveGatewayURL(path: string, baseURL = gatewayBaseURL): strin
 }
 
 function mapGatewayUser(value: NonNullable<GatewaySessionResponse['user']>): User {
-  const displayName = value.name?.trim() || value.email?.split('@')[0] || value.subject;
+  const displayName = resolveUsername({
+    candidate: value.name,
+    email: value.email,
+    subject: value.subject,
+  });
   const now = new Date();
   return {
     id: value.subject,
@@ -226,7 +232,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ challengeId: challenge, token: trimmed }),
+        body: JSON.stringify({
+          challengeId: challenge,
+          token: trimmed,
+          rememberMe: typeof window === 'undefined' ? true : window.localStorage.getItem('axi.login.remember') !== 'false',
+          deviceId: typeof window === 'undefined' ? '' : window.localStorage.getItem('axi.login.deviceId') || '',
+        }),
       });
       if (!response.ok) {
         const detail = await readErrorDetail(response);
@@ -264,6 +275,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  const updateUsername = useCallback(async (username: string): Promise<boolean> => {
+    try {
+      const response = await fetch(resolveGatewayURL('/api/v1/users/me/profile'), {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ username: username.trim() }),
+      });
+      if (!response.ok) {
+        const detail = await readErrorDetail(response);
+        throw new Error(detail || `用户名更新失败 (HTTP ${response.status})`);
+      }
+      const refreshed = await refreshSession();
+      if (!refreshed) throw new Error('会话未建立，请重新登录');
+      return true;
+    } catch (caught: unknown) {
+      setError(caught instanceof Error ? caught.message : '用户名更新失败');
+      return false;
+    }
+  }, [refreshSession]);
+
   const value = useMemo<AuthContextType>(() => ({
     user,
     isAuthenticated: Boolean(user),
@@ -273,8 +308,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshSession,
     requestEmailCode,
     confirmEmailCode,
+    updateUsername,
     logout,
-  }), [beginLogin, confirmEmailCode, error, isLoading, logout, refreshSession, requestEmailCode, user]);
+  }), [beginLogin, confirmEmailCode, error, isLoading, logout, refreshSession, requestEmailCode, updateUsername, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

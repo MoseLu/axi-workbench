@@ -120,6 +120,8 @@ func EmailLoginConfirm(service *identity.Service, identityAdapterURL string) gin
 		var req struct {
 			ChallengeID string `json:"challengeId" binding:"required"`
 			Token       string `json:"token" binding:"required"`
+			RememberMe  bool   `json:"rememberMe"`
+			DeviceID    string `json:"deviceId"`
 		}
 		if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.ChallengeID) == "" || !emailCodePattern.MatchString(strings.TrimSpace(req.Token)) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "challengeId and a six-digit verification token are required"})
@@ -149,6 +151,7 @@ func EmailLoginConfirm(service *identity.Service, identityAdapterURL string) gin
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "email is not an approved owner identity"})
 			return
 		}
+		issueResumeTicket(c, service, principal, req.RememberMe, firstNonEmpty(req.DeviceID, identity.DeviceIDFromRequest(c.Request)))
 		c.JSON(http.StatusOK, gin.H{
 			"authenticated": true,
 			"user":          principal,
@@ -163,8 +166,10 @@ func EmailLoginConfirm(service *identity.Service, identityAdapterURL string) gin
 func PasswordLogin(service *identity.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
-			Email    string `json:"email" binding:"required,email"`
-			Password string `json:"password" binding:"required,min=8,max=72"`
+			Email      string `json:"email" binding:"required,email"`
+			Password   string `json:"password" binding:"required,min=8,max=72"`
+			RememberMe bool   `json:"rememberMe"`
+			DeviceID   string `json:"deviceId"`
 		}
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
@@ -189,11 +194,85 @@ func PasswordLogin(service *identity.Service) gin.HandlerFunc {
 			return
 		}
 		service.SetCookie(c.Writer, sessionID)
+		issueResumeTicket(c, service, principal, req.RememberMe, firstNonEmpty(req.DeviceID, identity.DeviceIDFromRequest(c.Request)))
 		c.JSON(http.StatusOK, gin.H{
 			"authenticated": true,
 			"user":          principal,
 		})
 	}
+}
+
+// PeekResume reports whether this device still has a valid one-click ticket.
+func PeekResume(service *identity.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ticketID := service.ResumeTicketFromRequest(c.Request)
+		deviceID := identity.DeviceIDFromRequest(c.Request)
+		if ticketID == "" || deviceID == "" {
+			c.JSON(http.StatusOK, gin.H{"resumable": false})
+			return
+		}
+		principal, err := service.PeekResumeTicket(c.Request.Context(), ticketID, deviceID)
+		if err != nil {
+			if errors.Is(err, identity.ErrSessionStoreUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"resumable": false})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"resumable": true,
+			"user":      principal,
+		})
+	}
+}
+
+// RedeemResume exchanges a device-bound ticket for a browser session.
+func RedeemResume(service *identity.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ticketID := service.ResumeTicketFromRequest(c.Request)
+		deviceID := identity.DeviceIDFromRequest(c.Request)
+		if ticketID == "" || deviceID == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "resume ticket is not valid on this device"})
+			return
+		}
+		sessionID, principal, err := service.RedeemResumeTicket(c.Request.Context(), ticketID, deviceID)
+		if err != nil {
+			if errors.Is(err, identity.ErrSessionStoreUnavailable) {
+				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "session store unavailable"})
+				return
+			}
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "resume ticket is not valid on this device"})
+			return
+		}
+		service.SetCookie(c.Writer, sessionID)
+		service.SetResumeCookie(c.Writer, ticketID)
+		c.JSON(http.StatusOK, gin.H{
+			"authenticated": true,
+			"user":          principal,
+		})
+	}
+}
+
+func issueResumeTicket(c *gin.Context, service *identity.Service, principal identity.Principal, rememberMe bool, deviceID string) {
+	if !rememberMe {
+		service.ClearResumeCookie(c.Writer)
+		return
+	}
+	ticketID, err := service.IssueResumeTicket(c.Request.Context(), principal, deviceID)
+	if err != nil {
+		return
+	}
+	service.SetResumeCookie(c.Writer, ticketID)
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 // AuthMethods exposes capability flags without revealing owner identity or

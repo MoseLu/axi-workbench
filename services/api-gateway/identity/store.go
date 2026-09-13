@@ -20,6 +20,7 @@ var (
 // responses or browser storage.
 type RecordStore interface {
 	Set(context.Context, string, []byte, time.Duration) error
+	SetPersistent(context.Context, string, []byte) error
 	Get(context.Context, string) ([]byte, error)
 	CompareAndSet(context.Context, string, []byte, []byte, time.Duration) error
 	CompareAndDelete(context.Context, string, []byte) error
@@ -57,11 +58,18 @@ func (s *MemoryRecordStore) Set(_ context.Context, key string, value []byte, ttl
 	return nil
 }
 
+func (s *MemoryRecordStore) SetPersistent(_ context.Context, key string, value []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.records[key] = memoryRecord{value: append([]byte(nil), value...), expiresAt: time.Time{}}
+	return nil
+}
+
 func (s *MemoryRecordStore) Get(_ context.Context, key string) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	record, exists := s.records[key]
-	if !exists || !s.now().Before(record.expiresAt) {
+	if !exists || (!record.expiresAt.IsZero() && !s.now().Before(record.expiresAt)) {
 		delete(s.records, key)
 		return nil, ErrRecordNotFound
 	}
@@ -76,7 +84,7 @@ func (s *MemoryRecordStore) CompareAndSet(_ context.Context, key string, expecte
 	defer s.mu.Unlock()
 	now := s.now()
 	record, exists := s.records[key]
-	if !exists || !now.Before(record.expiresAt) {
+	if !exists || (!record.expiresAt.IsZero() && !now.Before(record.expiresAt)) {
 		delete(s.records, key)
 		return ErrRecordNotFound
 	}
@@ -92,7 +100,7 @@ func (s *MemoryRecordStore) CompareAndDelete(_ context.Context, key string, expe
 	defer s.mu.Unlock()
 	now := s.now()
 	record, exists := s.records[key]
-	if !exists || !now.Before(record.expiresAt) {
+	if !exists || (!record.expiresAt.IsZero() && !now.Before(record.expiresAt)) {
 		delete(s.records, key)
 		return ErrRecordNotFound
 	}
@@ -114,7 +122,7 @@ func (s *MemoryRecordStore) Rotate(_ context.Context, oldKey string, expected []
 	defer s.mu.Unlock()
 	now := s.now()
 	record, exists := s.records[oldKey]
-	if !exists || !now.Before(record.expiresAt) {
+	if !exists || (!record.expiresAt.IsZero() && !now.Before(record.expiresAt)) {
 		delete(s.records, oldKey)
 		return ErrRecordNotFound
 	}
@@ -153,6 +161,10 @@ func (s *RedisRecordStore) Set(ctx context.Context, key string, value []byte, tt
 		return err
 	}
 	return s.client.Set(ctx, key, append([]byte(nil), value...), ttl).Err()
+}
+
+func (s *RedisRecordStore) SetPersistent(ctx context.Context, key string, value []byte) error {
+	return s.client.Set(ctx, key, append([]byte(nil), value...), 0).Err()
 }
 
 func (s *RedisRecordStore) Get(ctx context.Context, key string) ([]byte, error) {

@@ -84,7 +84,7 @@ flowchart LR
 | 用户端共享基础 | `packages/workbench-foundation/src/index.ts` | 只共享认证会话与语言偏好；不得导出页面或布局 |
 | API/契约 | `packages/api-client`、`packages/schemas`、`packages/types` | Web、移动端和控制面通过合同接入，不通过互相导入页面实现 |
 | 兼容出口 | `packages/epap-schemas-compat`、部分 `@epap/*` | 迁移兼容层，不代表旧命名空间是新功能的首选入口 |
-| 旧 UI 出口 | `packages/ui` | `legacy`；目前仍被 Web 过渡使用，新 Dashboard 不应继续基于它扩展 |
+| 旧 UI 出口 | `packages/ui` | `legacy`；Web 的无活跃引用已清理，包仅保留作兼容/参考，新 Dashboard 不应继续基于它扩展 |
 | 生产业务 API | `services/api-gateway` → `identity-adapter` / `platform-core` | Go/Gin 生产链路；`auth-service` 与 Spring/H2 `core-service` 仅迁移兼容 |
 | Host 注册 | `apps/devsvc-dashboard/config/axi-apps.json` | 决定哪些本地应用被 Host 发现、启动和挂载；不等同于 pnpm membership |
 
@@ -101,7 +101,7 @@ App Search 已由现有 ownership decision 保留在本项目内；本轮不搬�
 
 1. 以本清单为入口，补齐各非根成员的 manifest、启动 profile 和健康检查归属。
 2. 再处理 `apps/app-search-system`、Fleet Dashboard、根 `backend/` 的生命周期与文档漂移；不通过移动目录制造“看起来整齐”的假解决方案。
-3. 在消费者验证覆盖后，逐步收敛 `@epap/*` / `packages/ui` 兼容层；Web 与移动端页面仍保持独立。
+3. Web 的 legacy consumer validation 与无活跃死消费者清理已完成并记录于 [`docs/audit/20260913-web-legacy-consumer-validation.md`](../audit/20260913-web-legacy-consumer-validation.md)；后续 `@epap/*` API 兼容出口和 `packages/ui` 的 repository-wide 退役仍须另立治理批次，Web 与移动端页面保持独立。
 4. 任何新增用户入口先证明它不是 Web/mobile/Host 的重复实现，并同步本清单、对应 `AGENTS.md`、manifest 和验证命令。
 
 ## 新人/Agent 阅读顺序

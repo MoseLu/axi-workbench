@@ -18,7 +18,7 @@ import (
 
 func TestComposeMIMEMessageEmbedsOfficialCIDLogo(t *testing.T) {
 	asset := BrandLogoInlineAsset()
-	html := `<img src="cid:` + asset.ContentID + `" alt="Axi Workbench four-color logo">`
+	html := `<img src="cid:` + asset.ContentID + `" alt="Axi Workbench dango-family logo">`
 	raw, err := composeMIMEMessage("noreply@example.test", Message{
 		To:           "recipient@example.test",
 		Subject:      "验证码",
@@ -80,7 +80,7 @@ func TestComposeMIMEMessageEmbedsOfficialCIDLogo(t *testing.T) {
 		t.Fatalf("decode inline image: %v", err)
 	}
 	if !bytes.Equal(decodedImage, asset.Data) {
-		t.Errorf("CID image is not the approved four-color asset")
+		t.Errorf("CID image is not the approved dango-family asset")
 	}
 }
 

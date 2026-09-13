@@ -18,9 +18,47 @@ test("control-plane schema exposes Chat-Codex-inspired communication entities", 
     "AgentTaskSchema",
     "AgentRuntimeSchema",
     "AxiResourceSnapshotSchema",
+    "GovernanceEvidenceSchema",
+    "GovernanceRelationshipSchema",
+    "GovernanceImpactSchema",
+    "GovernanceDocumentSchema",
+    "freshnessIntervalSeconds",
+    "GovernanceDocumentStatusEnum",
+    "GovernanceRuleSchema",
+    "GovernanceRuleStatusEnum",
+    "WorkspaceEventSchema",
+    "retentionClass",
+    "previousHash",
+    "GovernanceSubjectSchema",
+    "GovernanceRoleSchema",
+    "GovernanceGrantSchema",
+    "GovernancePolicyDecisionSchema",
+    "GovernancePolicyDecisionResponseSchema",
+    "GovernanceAuthorizationSchema",
+    "GovernanceAuthorizationStatusEnum",
+    "GovernanceActionEnum",
+    "GovernancePolicyDecisionEnum",
+    "GovernanceUnitSchema",
+    "GovernanceSnapshotSchema",
+    "GovernanceEvidenceTypeEnum",
+    "GovernanceEvidenceFreshnessEnum",
+    "GovernanceHealthSchema",
+    "GovernanceHealthStatusEnum",
+    "GovernanceRiskSchema",
+    "GovernanceIncidentSchema",
+    "GovernanceViolationSchema",
+    "GovernanceWaiverSchema",
+    "eventRefs",
+    "policyDecisionRef",
+    "GovernanceViolationStatusEnum",
+    "GovernanceRiskStatusEnum",
+    "GovernanceIncidentStatusEnum",
+    "GovernanceRiskTransitionRequestSchema",
     '"credential_ref"',
     '"agent_artifact"',
     "ControlJobSchema",
+    "ManagedCommandSchema",
+    "executorRef",
     "TaskAssessmentSchema",
     "WorkflowPlanSchema",
     "AgentAssignmentSchema",
@@ -42,6 +80,22 @@ test("mobile approval contracts derive business object fields from an opaque sca
   assert.match(source, /handoffCorrelationId/);
 });
 
+test("Evidence Contract accepts an explicitly unknown type for incomplete legacy records", () => {
+  assert.match(source, /GovernanceEvidenceTypeEnum[\s\S]*"production",\s*"unknown"/);
+});
+
+test("relationship contract exposes scope and dependency constraint extensions", () => {
+  for (const token of ["scope", "requiredness", "dependencyPhase", "environment", "versionConstraint", "validFrom", "validTo"]) {
+    assert.match(source, new RegExp(`GovernanceRelationshipSchema[\\s\\S]*${token}`));
+  }
+});
+
+test("relationship contract keeps explicit relationship metadata optional for legacy declarations", () => {
+  assert.match(source, /requiredness:[^\n]+optional/);
+  assert.match(source, /dependencyPhase:[^\n]+optional/);
+  assert.match(source, /validFrom:[^\n]+optional/);
+});
+
 test("QR device pairing keeps the one-time scan bearer separate from Web owner confirmation", () => {
   for (const token of [
     "WebPairingQrTransactionSchema",
@@ -59,6 +113,9 @@ test("QR device pairing keeps the one-time scan bearer separate from Web owner c
   const response = source.match(/export const QrPairScanResponseSchema[\s\S]*?\n\}\)\.strict\(\)/)?.[0] ?? "";
   assert.ok(response, "QR scan response must be a closed schema");
   assert.doesNotMatch(response, /scanToken/, "the phone scan response must not echo the QR bearer");
+  const payload = source.match(/export const WebPairingQrPayloadSchema[\s\S]*?\n\}\)\.strict\(\)/)?.[0] ?? "";
+  assert.match(payload, /gatewayUrl: z\.string\(\)\.url\(\)\.optional\(\)/);
+  assert.doesNotMatch(payload, /ownerSubject|accessToken|pollToken/);
 });
 
 test("QR computer login requires an already paired mobile device and keeps the browser poll credential out of the camera payload", () => {

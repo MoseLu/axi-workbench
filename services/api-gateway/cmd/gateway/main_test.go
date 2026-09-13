@@ -341,6 +341,16 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 			if got := request.Header.Get("X-Axi-Subject"); got != "" {
 				t.Errorf("untrusted mobile subject was forwarded: %q", got)
 			}
+		case "/internal/mobile/v1/handoffs":
+			if got := request.Header.Get("Authorization"); got != "Bearer device-short-lived-token" {
+				t.Errorf("mobile bearer was not forwarded to handoff history: %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+				t.Errorf("mobile handoff history internal token = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Subject"); got != "" {
+				t.Errorf("untrusted mobile subject was forwarded to handoff history: %q", got)
+			}
 		case "/internal/mobile/v1/pair/qr/scan":
 			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
 				t.Errorf("QR scan internal token = %q", got)
@@ -354,6 +364,16 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 			}
 			if got := request.Header.Get("Authorization"); got != "" {
 				t.Errorf("browser bearer leaked to handoff backend: %q", got)
+			}
+		case "/internal/web/v1/handoffs":
+			if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
+				t.Errorf("web handoff history subject = %q", got)
+			}
+			if got := request.Header.Get("X-Axi-Internal-Token"); got != "control-plane-test-token" {
+				t.Errorf("web handoff history internal token = %q", got)
+			}
+			if got := request.Header.Get("Authorization"); got != "" {
+				t.Errorf("browser bearer leaked to handoff history backend: %q", got)
 			}
 		case "/internal/web/v1/snapshot":
 			if got := request.Header.Get("X-Axi-Subject"); got != "zitadel-alice" {
@@ -407,6 +427,21 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 		t.Fatalf("mobile proxy status = %d", mobileResponse.StatusCode)
 	}
 
+	mobileHandoffHistory, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/mobile/handoffs?status=pending", nil)
+	if err != nil {
+		t.Fatalf("create mobile handoff history request: %v", err)
+	}
+	mobileHandoffHistory.Header.Set("Authorization", "Bearer device-short-lived-token")
+	mobileHandoffHistory.Header.Set("X-Axi-Subject", "attacker")
+	mobileHandoffHistoryResponse, err := gateway.Client().Do(mobileHandoffHistory)
+	if err != nil {
+		t.Fatalf("call mobile handoff history proxy: %v", err)
+	}
+	mobileHandoffHistoryResponse.Body.Close()
+	if mobileHandoffHistoryResponse.StatusCode != http.StatusOK {
+		t.Fatalf("mobile handoff history proxy status = %d", mobileHandoffHistoryResponse.StatusCode)
+	}
+
 	qrScan, err := http.NewRequest(http.MethodPost, gateway.URL+"/api/v1/mobile/pair/qr/scan", nil)
 	if err != nil {
 		t.Fatalf("create QR scan request: %v", err)
@@ -434,6 +469,21 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 	handoffResponse.Body.Close()
 	if handoffResponse.StatusCode != http.StatusOK {
 		t.Fatalf("handoff proxy status = %d", handoffResponse.StatusCode)
+	}
+
+	handoffHistory, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/handoffs?status=pending", nil)
+	if err != nil {
+		t.Fatalf("create handoff history request: %v", err)
+	}
+	handoffHistory.Header.Set("X-Axi-Development-Subject", "zitadel-alice")
+	handoffHistory.Header.Set("Authorization", "Bearer attacker-token")
+	handoffHistoryResponse, err := gateway.Client().Do(handoffHistory)
+	if err != nil {
+		t.Fatalf("call handoff history proxy: %v", err)
+	}
+	handoffHistoryResponse.Body.Close()
+	if handoffHistoryResponse.StatusCode != http.StatusOK {
+		t.Fatalf("handoff history proxy status = %d", handoffHistoryResponse.StatusCode)
 	}
 
 	control, err := http.NewRequest(http.MethodGet, gateway.URL+"/api/v1/control-plane/snapshot", nil)

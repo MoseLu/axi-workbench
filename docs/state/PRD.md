@@ -1,6 +1,6 @@
 # Axi Workbench PRD
 
-> 版本：v4 · 状态：产品架构已定，实施待启动 · 更新：2026-08-09
+> 版本：v4 · 状态：产品架构已定；P1/P2 本地验收完成，P3/P4/P5 持续实施 · 更新：2026-09-13
 >
 > 本 PRD 的变更规格、公开案例研究和能力台账位于 [`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)。当前源码角色仍以 [`docs/architecture/source-catalog.md`](../architecture/source-catalog.md) 为准；本文不把规划能力写成既有实现。
 
@@ -200,11 +200,11 @@ DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是
 | 阶段 | 目标 | 可交付物 | 退出条件 |
 | --- | --- | --- | --- |
 | P0：产品架构与能力盘点 | 将产品形态参照转化为 Workbench 的角色/动作归属 | 完整当前能力盘点、动作政策模板、扫码语义台账、产品命名统一 | **已完成（2026-08-22）**：全量盘点记录于 [`CAPABILITY-INVENTORY.json`](../specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-INVENTORY.json)；结构化台账见 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)；跨端交接协议草案见 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)。 |
-| P1：Web 控制中心收敛 | 形成后台级信息架构 | Web 主导航、复杂管理页面优先级、桌面交互规范 | 核心管理员任务可在桌面端闭环，不需要借用移动交互。 |
-| P2：Mobile 角色执行收敛 | 让高频、即时、个人化任务安全闭环 | 待办、告警、审批、项目状态和安全扫码流程 | 每个 Mobile 写动作满足 B 级政策，C 级任务可无损交接 Web。 |
-| P3：共享动作合同与跨端连续性 | 让用户不丢失对象、状态和责任上下文 | 统一对象标识、服务端动作政策、登录后产品内交接入口、`handoff correlation id` | Web 和 Mobile 可从同一对象继续工作，最终状态由服务端一致返回。 |
-| P4：专业工具治理 | 让专业操作保留在正确表面 | 工具入口、授权、审计与异常提醒规范 | D 级操作不被复制为通用后台按钮，专用工具能被受控发现与审计。 |
-| P5：持续治理 | 防止重新混杂 | PRD/TDD/合同检查和设计评审清单 | 新功能开发前完成 `REQ-DELIVERY-001` 台账，边界检查持续通过。 |
+| P1：Web 控制中心收敛 | 形成后台级信息架构 | Web 主导航、复杂管理页面优先级、桌面交互规范 | **本地验收完成（2026-09-13）**：桌面 Dashboard、工作项、运行状态、法律页、登录、交接详情当前状态重取与窄屏边界均有 UI 合同、184 项单测、25 项浏览器验收、类型检查和生产构建证据；核心管理员任务可在桌面端闭环，不需要借用移动交互。 |
+| P2：Mobile 角色执行收敛 | 让高频、即时、个人化任务安全闭环 | 待办、告警、审批、项目状态和安全扫码流程 | **本地验收完成（2026-09-13）**：Mobile 33 项单测、1 项浏览器验收、合同验证、类型检查和生产构建通过；每个 Mobile 写动作满足 B 级政策，C 级任务交接 Web。 |
+| P3：共享动作合同与跨端连续性 | 让用户不丢失对象、状态和责任上下文 | 统一对象标识、服务端动作政策、登录后产品内交接入口、`handoff correlation id` | **部分完成**：Mobile → Web 的对象/状态/责任交接、Web 详情打开后的当前 Control Plane 对象重取、已绑定 Web owner subject 的历史与目标端动作授权、关联 ApprovalRequest 状态及过期时间重验、审批与交接一致过期、Web 与配对设备限定的 Mobile 历史查询、详情续办、拒绝续办和通用 24h 过期终态（均含主体/关联标识/审计）已验证，后台 expiry worker 可停止并定时 sweep，且可向外部通知 relay enqueue `handoff.expired`；Web → Mobile、批量交接和场景化 SLA 仍按 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md) 的开放项推进。 |
+| P4：专业工具治理 | 让专业操作保留在正确表面 | 工具入口、授权、审计与异常提醒规范 | **本地边界与持久化依赖验收完成，外部运行验收待完成**：D 级操作保留在专业工具，DevSvc 仅负责发现/托管；边界、Go API race、Helm、本地 Mailpit SMTP、PostgreSQL RLS 和真实 Redis 会话集成校验通过，真实集群、ZITADEL、生产 SMTP 和故障注入仍是外部门禁。 |
+| P5：持续治理 | 防止重新混杂 | PRD/TDD/合同检查和设计评审清单 | **进行中**：PRD/TDD/TODO/MILESTONE/CHANGELOG、六层声明、边界检查和提交记录已持续维护；Control Plane 在 production 缺少或仍使用开发默认 gateway internal token 时 fail closed；生产 Grant source owner 尚未在工作区注册，真实内部 caller identity 仍待外部合同，当前执行保持 secure default deny。 |
 
 ## 11. 成功指标
 
@@ -223,7 +223,7 @@ DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是
 | 将所有重要操作一律锁在 Web | 不按重要性单因素判断；按对象数、影响范围、授权、服务端重验、确认和审计判断。 |
 | “扫码”继续掩盖不同安全模型，或被误加到 Web 当作通用工具 | 只保留 Mobile 领域审批与 Identity 登录确认两条受控流程；Web 通过项目、工作项和交接处理真实对象，不公开通用扫码。 |
 | 旧文档仍称移动端为五项底栏 | 以 4 项常驻导航 + Scan 动作为本期事实，后续变更需走信息架构决策。 |
-| Web legacy UI / `@epap/*` 兼容层影响视觉收敛 | 作为独立迁移议题，先完成消费者验证，不与产品定位变更捆绑。 |
+| Web legacy UI / `@epap/*` 兼容层影响视觉收敛 | 已完成第一阶段消费者验证与 Web 无活跃死消费者清理；后续兼容包退役仍需独立治理批次。 |
 | 缺少本项目实际用户研究数据 | 本版是 Owner 方向、源码事实和公开产品形态的设计基线；P0 应补充管理员、值班和现场角色的任务访谈/可用性验证。 |
 | Mobile 推送、离线与设备安全能力未完全验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 |
 
@@ -236,11 +236,11 @@ DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是
 | 所有重要操作一律锁在 Web | 已防护 | 按对象数、影响范围、授权、服务端重验、确认和审计判断，不按重要性单因素判断。 | 产品 Owner |
 | "扫码"继续掩盖不同安全模型 | 已防护 | 只保留 Mobile 领域审批与 Identity 登录确认两条受控流程；Web 不公开通用扫码。 | 产品 Owner |
 | 旧文档仍称移动端为五项底栏 | 已防护 | 以 4 项常驻导航 + Scan 动作为本期事实。 | 产品 Owner |
-| Web legacy UI 影响视觉收敛 | 待处理 | 作为独立迁移议题，先完成消费者验证，不与产品定位变更捆绑。 | 前端 Owner |
+| Web legacy UI 影响视觉收敛 | 已处理（2026-09-13） | 已确认并清理 `@epap/ui` 的两个无活跃引用文件，Web 当前由 `AxiDashboardShell` 与 `@axi/*` 运行时提供；`@epap/ui` 包本身与 `@epap/api-client` API 兼容出口的最终退役仍需独立治理批次，详见 [`20260913-web-legacy-consumer-validation.md`](../audit/20260913-web-legacy-consumer-validation.md)。 | 前端 Owner |
 | 缺少实际用户研究数据 | 待处理 | P0 应补充管理员、值班和现场角色的任务访谈/可用性验证。 | 产品 Owner |
 | Mobile 推送、离线与设备安全能力 | 待验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 | 产品 Owner + 安全 |
-| 交接超时 SLA 默认值 | 规划中 | 需确定不同场景的 SLA（HANDOFF-PROTOCOL.md 中已列 Open）。 | 产品 Owner |
-| 交接拒绝场景 | 规划中 | 用户拒绝处理时的状态流转（HANDOFF-PROTOCOL.md 中已列 Open）。 | 产品 Owner |
+| 交接超时 SLA 默认值 | 已确定基线 | 通用交接默认 24h；运行时已实现后台 worker、惰性过期、审计和正整数 `handoffExpiryMs`/`AXI_HANDOFF_EXPIRY_MS` 配置覆盖，代码参数优先且非法值回退默认，不同场景的更短 SLA 另行评审。 | Control Plane + 产品 Owner |
+| 交接拒绝场景 | 已完成（2026-09-13） | `pending/opened → rejected` 已由 Control Plane 与 Web 实现；拒绝原因、验证主体、关联标识和审计均持久化，详见 `HANDOFF-PROTOCOL.md`。 | Control Plane + Web |
 | Web → Mobile 交接 | Reserved | 当前聚焦 Mobile → Web，P3 再考虑反向。 | 产品 Owner |
 | 批量交接语义 | 规划中 | 多对象交接的打包语义（HANDOFF-PROTOCOL.md 中已列 Open）。 | 产品 Owner |
 

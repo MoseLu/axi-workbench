@@ -18,6 +18,9 @@ import type {
   PersonalOsProjectResponse,
   PersonalOsQueueEnvelope,
   PersonalOsView,
+  WorkspaceEventPage,
+  GovernanceRisk,
+  GovernanceIncident,
 } from "@axi/workstation-contracts"
 import type { AxiosRequestConfig } from "axios"
 
@@ -69,6 +72,58 @@ export const useControlSnapshot = (options?: AxiosRequestConfig) => {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 10_000,
+  })
+}
+
+export type WorkspaceEventQuery = {
+  eventType?: string;
+  actorRef?: string;
+  objectRef?: string;
+  since?: string;
+  afterEventId?: string;
+  limit?: number;
+}
+
+/** Authenticated, bounded workspace activity read model; writes remain on owner-specific routes. */
+export const useWorkspaceEvents = (params: WorkspaceEventQuery = {}, options?: AxiosRequestConfig) => {
+  return useQuery({
+    queryKey: ["workspaceEvents", params],
+    queryFn: () =>
+      controlPlaneClient
+        .get<WorkspaceEventPage>("/events", { ...options, params: { ...params, ...(options?.params || {}) } })
+        .then((res) => res.data),
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10_000,
+  })
+}
+
+export type GovernanceRiskTransitionVariables = {
+  riskId: string;
+  status: "acknowledged" | "resolved" | "waived";
+  reason?: string;
+  correlationId?: string;
+}
+
+export type GovernanceRiskTransitionResponse = {
+  ok: true;
+  risk: GovernanceRisk;
+  incident: GovernanceIncident | null;
+}
+
+/** Risk lifecycle writes stay on the authenticated control-plane Gateway. */
+export const useTransitionGovernanceRisk = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ riskId, ...payload }: GovernanceRiskTransitionVariables) =>
+      controlPlaneClient
+        .post<GovernanceRiskTransitionResponse>(`/risks/${encodeURIComponent(riskId)}/transition`, payload)
+        .then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })
+    },
   })
 }
 
@@ -236,6 +291,20 @@ export const useRunControlCommand = () => {
     mutationFn: (commandId: string) =>
       controlPlaneClient
         .post<ControlRun>(`/commands/${encodeURIComponent(commandId)}/runs`)
+        .then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })
+    },
+  })
+}
+
+/** Registered automation runs stay on the authenticated control-plane Gateway. */
+export const useRunGovernanceAutomation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (automationId: string) =>
+      controlPlaneClient
+        .post<ControlRun>(`/automations/${encodeURIComponent(automationId)}/runs`)
         .then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["controlSnapshot"] })

@@ -9,6 +9,9 @@ import (
 // are reachable; CONNECT/TRACE and unknown paths fall through to 404.
 func registerWebControlPlaneRoutes(protected *gin.RouterGroup, proxy gin.HandlerFunc) {
 	protected.GET("/control-plane/snapshot", proxy)
+	protected.GET("/control-plane/events", proxy)
+	protected.GET("/control-plane/events/:eventId", proxy)
+	protected.POST("/control-plane/authorization/decision", proxy)
 	protected.GET("/control-plane/personal-os/queue", proxy)
 	protected.GET("/control-plane/personal-os/projects/:id", proxy)
 	protected.PATCH("/control-plane/personal-os/projects/:id", proxy)
@@ -56,6 +59,7 @@ func registerMobileControlRoutes(v1 *gin.RouterGroup, proxy gin.HandlerFunc) {
 	v1.POST("/mobile/auth/owner-token", proxy)
 	v1.POST("/mobile/auth/owner-tokens", proxy)
 	v1.GET("/mobile/workspace", proxy)
+	v1.GET("/mobile/handoffs", proxy)
 	v1.POST("/mobile/approval-scans/resolve", proxy)
 	v1.POST("/mobile/approval-scans/:id/decision", proxy)
 	v1.POST("/mobile/approval-scans/:id/decisions", proxy)
