@@ -472,12 +472,12 @@ function isPersonalOsProject({ id, project = {}, workspaceRoot }) {
   const relativePath = project.path
     ? relative(workspaceRoot, resolve(workspaceRoot, project.path)).replaceAll("\\", "/")
     : "";
-  const kind = String(project.kind || "").toLowerCase();
+  const objectType = String(project.objectType || project.governanceUnitType || "").toLowerCase();
+  const scope = String(project.scope || "").toLowerCase();
   const lifecycle = String(project.lifecycle || "").toLowerCase();
   if (relativePath === "" || relativePath === ".") return false;
-  if (relativePath.split("/")[0] === "references") return false;
   if (project.external === true || lifecycle === "legacy-reference" || lifecycle === "external-infra") return false;
-  if (kind.includes("reference") || kind.includes("workspace-anchor") || kind.includes("contract-placeholder")) return false;
+  if (scope === "workspace-resource" || ["reference", "external_provider", "contract"].includes(objectType)) return false;
   return Boolean(id);
 }
 

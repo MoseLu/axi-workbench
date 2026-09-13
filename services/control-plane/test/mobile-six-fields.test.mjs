@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { request as httpRequest } from "node:http";
-import { createControlPlane } from "../src/control-plane.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
 import { createControlPlaneHttpServer } from "../src/server.mjs";
 
 function fixture() {

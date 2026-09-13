@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createControlPlane } from "../src/control-plane.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
 import { createControlPlaneHttpServer } from "../src/server.mjs";
 
 function invokeServer(server, { method, url, headers = {}, body }) {

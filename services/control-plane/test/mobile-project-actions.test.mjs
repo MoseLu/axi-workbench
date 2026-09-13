@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createControlPlane } from "../src/control-plane.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
 
 function createFixture() {
   const workspaceRoot = mkdtempSync(join(tmpdir(), "axi-mobile-project-action-"));

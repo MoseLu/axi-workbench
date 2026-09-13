@@ -34,6 +34,12 @@ function fixture() {
       lifecycle: "legacy-reference",
       path: join(root, "references", "reference-app"),
     },
+    "contract-app": {
+      name: "合同占位",
+      kind: "arbitrary-kind-name",
+      objectType: "contract",
+      path: join(root, "docs", "contract-app"),
+    },
   };
   for (const project of Object.values(projects)) mkdirSync(project.path, { recursive: true });
   const graphPath = join(root, "workspace.graph.json");
@@ -72,6 +78,15 @@ function fixture() {
         layer: "software",
         kind: "reference-project",
         path: projects["reference-app"].path,
+        status: "available",
+        metadata: { git: null },
+      },
+      {
+        id: "contract-app",
+        name: "合同占位",
+        layer: "base_service",
+        kind: "arbitrary-kind-name",
+        path: projects["contract-app"].path,
         status: "available",
         metadata: { git: null },
       },

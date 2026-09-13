@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, request as httpRequest } from "node:http";
 import { createPrivateKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
-import { createControlPlane } from "../src/control-plane.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
 
 /* We don't actually spin up the real server.mjs (it would call
  * process.env at module load).  Instead we re-derive the HTTP handler

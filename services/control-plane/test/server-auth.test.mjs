@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createPrivateKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
 import { createServer } from "node:http";
-import { createControlPlane } from "../src/control-plane.mjs";
-import { createControlPlaneHttpServer } from "../src/server.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
+import { createControlPlaneHttpServer, resolveGatewayInternalToken, resolveMobileGatewayUrl } from "../src/server.mjs";
 
 const TEST_TOKEN_SECRET = "test-core-token-secret";
 const OWNER_APPROVAL_SECRET = "test-core-owner-approval-secret";
@@ -35,16 +35,20 @@ function fixture() {
   const controlPlane = createControlPlane({
     workspaceRoot,
     graphPath,
+    registryPath: join(workspaceRoot, "workspace.json"),
     cacheDir: join(workspaceRoot, ".cache"),
     pairingTokenSecret: TEST_TOKEN_SECRET,
     ownerApprovalSecret: OWNER_APPROVAL_SECRET,
   });
   return {
+    workspaceRoot,
+    cacheDir: join(workspaceRoot, ".cache"),
     controlPlane,
     server: createControlPlaneHttpServer({
       controlPlane,
       coreApiToken: "core-token-test-value",
       ownerApprovalSecret: OWNER_APPROVAL_SECRET,
+      mobileGatewayUrlResolver: () => "http://192.168.1.42:8088/api/v1/",
       // Restrict CORS to a single known origin.
       allowedOrigins: ["http://allowed-origin.test"],
     }),
@@ -103,6 +107,8 @@ test("core HTTP rejects /snapshot, /jobs, /approvals, /commands, /runs without A
   const { server } = fixture();
   const endpoints = [
     ["GET", "/snapshot"],
+    ["GET", "/events"],
+    ["POST", "/authorization/decision"],
     ["POST", "/query"],
     ["POST", "/communication/messages"],
     ["POST", "/jobs"],
@@ -118,6 +124,8 @@ test("core HTTP rejects /snapshot, /jobs, /approvals, /commands, /runs without A
     ["POST", "/approvals/x/decisions"],
     ["POST", "/commands/x/run"],
     ["POST", "/commands/x/runs"],
+    ["POST", "/automations/x/run"],
+    ["POST", "/automations/x/runs"],
     ["GET", "/runs/x"],
   ];
   for (const [method, url] of endpoints) {
@@ -142,6 +150,243 @@ test("core HTTP accepts /snapshot with the configured coreApiToken bearer", asyn
   assert.ok(body.axiResources || body.resources, "snapshot shape");
 });
 
+test("core HTTP exposes normalized workspace events with object filters", async () => {
+  const { server, controlPlane } = fixture();
+  controlPlane.recordMobileAudit({
+    auditKind: "mobile_action",
+    projectId: "sample-app",
+    serviceId: "mobile-client",
+    runId: "run-sample-app",
+    deviceId: "device-1",
+    handoffCorrelationId: "handoff:sample-app",
+    status: "executed",
+  });
+  const r = await invokeServer(server, {
+    method: "GET",
+    url: "/events?objectRef=sample-app&surfaceRef=mobile&projectRef=sample-app&serviceRef=mobile-client&runRef=run-sample-app&limit=10",
+    headers: { authorization: "Bearer core-token-test-value" },
+  });
+  assert.equal(r.status, 200, `expected 200, got ${r.status}: ${r.body}`);
+  const body = JSON.parse(r.body);
+  assert.equal(body.events.length, 1);
+  assert.equal(body.events[0].objectRef, "sample-app");
+  assert.equal(body.events[0].actorRef, "device-1");
+  assert.equal(body.events[0].correlationId, "handoff:sample-app");
+  assert.equal(body.events[0].immutable, true);
+  assert.equal(body.events[0].raw, undefined);
+  const detail = await invokeServer(server, {
+    method: "GET",
+    url: `/events/${encodeURIComponent(body.events[0].eventId)}`,
+    headers: { authorization: "Bearer core-token-test-value" },
+  });
+  assert.equal(detail.status, 200);
+  assert.deepEqual(JSON.parse(detail.body), body.events[0]);
+  const missing = await invokeServer(server, {
+    method: "GET",
+    url: "/events/event-does-not-exist",
+    headers: { authorization: "Bearer core-token-test-value" },
+  });
+  assert.equal(missing.status, 404);
+});
+
+test("core HTTP returns a secure default-deny Workspace policy decision", async () => {
+  const { server, controlPlane } = fixture();
+  const r = await invokeServer(server, {
+    method: "POST",
+    url: "/authorization/decision",
+    headers: { authorization: "Bearer core-token-test-value" },
+    body: { subjectRef: "user:alice", resourceRef: "sample-app", action: "execute" },
+  });
+  assert.equal(r.status, 200);
+  const body = JSON.parse(r.body);
+  assert.equal(body.decision.decision, "deny");
+  assert.equal(body.decision.reason, "no_matching_grant");
+  assert.ok(body.warnings.includes("workspace_rbac_grants_unconfigured"));
+  assert.equal(body.decision.evidenceRefs.length, 1);
+  assert.ok(controlPlane.snapshot().governance.evidence.some((item) => item.id === body.decision.evidenceRefs[0] && item.source === "control-plane.policy" && item.status === "deny"));
+  const decisionEvents = controlPlane.getWorkspaceEvents({ eventType: "policy_decision.evaluated" }).events;
+  assert.equal(decisionEvents.length, 1);
+  assert.equal(decisionEvents[0].eventType, "policy_decision.evaluated");
+  assert.equal(decisionEvents[0].actorRef, "core_api_token");
+  assert.equal(decisionEvents[0].objectRef, "sample-app");
+  assert.equal(decisionEvents[0].policyDecisionRef, body.decision.id);
+  assert.ok(decisionEvents[0].evidenceRefs.includes(body.decision.evidenceRefs[0]));
+  const persisted = await invokeServer(server, {
+    method: "GET",
+    url: `/authorization/decision/${encodeURIComponent(body.decision.id)}`,
+    headers: { authorization: "Bearer core-token-test-value" },
+  });
+  assert.equal(persisted.status, 200);
+  assert.deepEqual(JSON.parse(persisted.body), body.decision);
+  const invalid = await invokeServer(server, {
+    method: "POST",
+    url: "/authorization/decision",
+    headers: { authorization: "Bearer core-token-test-value" },
+    body: { subjectRef: "user:alice", resourceRef: "sample-app", action: "execute", grants: [] },
+  });
+  assert.equal(invalid.status, 400);
+});
+
+test("core controlled writes fail closed before execution and emit policy decisions", async () => {
+  const { server, controlPlane } = fixture();
+  const headers = {
+    authorization: "Bearer core-token-test-value",
+    "x-axi-subject": "user:alice",
+  };
+  const requests = [
+    { method: "POST", url: "/jobs", body: { projectId: "sample-app" }, action: "execute", objectRef: "sample-app" },
+    { method: "POST", url: "/jobs/job-1/cancel", body: {}, action: "write", objectRef: "job:job-1" },
+    { method: "POST", url: "/agent-tasks/task-1/cancel", body: {}, action: "write", objectRef: "agent-task:task-1" },
+    { method: "POST", url: "/approvals/approval-1/decision", body: { decision: "approved" }, action: "approve", objectRef: "approval:approval-1" },
+    { method: "POST", url: "/commands/command-1/run", body: {}, action: "execute", objectRef: "command-1" },
+    { method: "POST", url: "/automations/automation-1/run", body: {}, action: "execute", objectRef: "automation:automation-1" },
+  ];
+  for (const request of requests) {
+    const response = await invokeServer(server, { ...request, headers });
+    assert.equal(response.status, 403, `${request.url} must default deny, got ${response.status}: ${response.body}`);
+    const body = JSON.parse(response.body);
+    assert.equal(body.policy.decision.decision, "deny");
+  }
+  const events = controlPlane.getWorkspaceEvents({ eventType: "policy_decision.evaluated" }).events;
+  assert.equal(events.length, requests.length);
+  const actualDecisions = events.map((event) => [event.actorRef, event.action, event.objectRef, event.result]).sort((left, right) => left.join("\u0000").localeCompare(right.join("\u0000")));
+  const expectedDecisions = requests.map((request) => ["user:alice", request.action, request.objectRef, "deny"]).sort((left, right) => left.join("\u0000").localeCompare(right.join("\u0000")));
+  assert.deepEqual(actualDecisions, expectedDecisions);
+  assert.equal(controlPlane.getJob("job-1"), null);
+});
+
+test("core controlled writes proceed only with a registry-declared allow grant", async () => {
+  const { workspaceRoot, server, controlPlane } = fixture();
+  mkdirSync(join(workspaceRoot, "rbac"), { recursive: true });
+  writeFileSync(join(workspaceRoot, "workspace.json"), JSON.stringify({
+    settings: { rbac: { version: "test-rbac-v1", grants: "rbac/grants.json" } },
+  }));
+  writeFileSync(join(workspaceRoot, "rbac", "grants.json"), JSON.stringify({ grants: [{
+    id: "grant:core-execute",
+    subjectRef: "user:alice",
+    roleRef: "role:operator",
+    scopeType: "workspace",
+    scopeRef: "workspace",
+    resourceRef: "*",
+    action: "execute",
+    effect: "allow",
+    inheritance: "default",
+  }] }));
+  let received;
+  let receivedAuthorization;
+  controlPlane.createJob = (body, internal) => {
+    received = body;
+    receivedAuthorization = internal;
+    return { accepted: true, job: { id: "job:allowed" } };
+  };
+  const response = await invokeServer(server, {
+    method: "POST",
+    url: "/jobs",
+    headers: { authorization: "Bearer core-token-test-value", "x-axi-subject": "user:alice" },
+    body: { projectId: "sample-app", correlationId: "corr:allowed" },
+  });
+  assert.equal(response.status, 202);
+  assert.deepEqual(received, { projectId: "sample-app", correlationId: "corr:allowed" });
+  assert.match(receivedAuthorization.policyDecisionRef, /^policy-decision:/);
+  const event = controlPlane.getWorkspaceEvents({ eventType: "policy_decision.evaluated" }).events[0];
+  assert.equal(event.result, "allow");
+  assert.equal(event.policyDecisionRef.startsWith("policy-decision:"), true);
+  assert.equal(event.correlationId, "corr:allowed");
+});
+
+test("core Risk lifecycle is policy-gated and returns durable Risk plus Incident state", async () => {
+  const { workspaceRoot, cacheDir, server, controlPlane } = fixture();
+  mkdirSync(join(cacheDir, "risks"), { recursive: true });
+  mkdirSync(join(cacheDir, "incidents"), { recursive: true });
+  writeFileSync(join(cacheDir, "risks", "risk_test.json"), JSON.stringify({
+    id: "risk:test",
+    targetRef: "sample-app",
+    riskType: "execution_failure",
+    severity: "critical",
+    likelihood: "likely",
+    status: "open",
+    ownerRef: "unknown",
+    reason: "runtime unavailable",
+    sourceAssessmentRef: "job:test",
+    evidenceRefs: [],
+    correlationId: "corr-risk-test",
+    detectedAt: new Date().toISOString(),
+    dueAt: null,
+    resolvedAt: null,
+    source: "control-plane.execution",
+    incidentRef: "incident:test",
+  }));
+  writeFileSync(join(cacheDir, "incidents", "incident_test.json"), JSON.stringify({
+    id: "incident:test",
+    riskRef: "risk:test",
+    targetRef: "sample-app",
+    severity: "critical",
+    status: "open",
+    ownerRef: "unknown",
+    summary: "runtime unavailable",
+    correlationId: "corr-risk-test",
+    createdAt: new Date().toISOString(),
+    resolvedAt: null,
+    source: "control-plane.execution",
+  }));
+  const headers = { authorization: "Bearer core-token-test-value", "x-axi-subject": "user:alice" };
+  const listed = await invokeServer(server, { method: "GET", url: "/risks", headers });
+  assert.equal(listed.status, 200);
+  assert.equal(JSON.parse(listed.body).risks[0].id, "risk:test");
+
+  const denied = await invokeServer(server, { method: "POST", url: "/risks/risk%3Atest/transition", headers, body: { status: "acknowledged" } });
+  assert.equal(denied.status, 403);
+
+  writeFileSync(join(workspaceRoot, "workspace.json"), JSON.stringify({ settings: { rbac: { grants: "rbac/grants.json" } } }));
+  mkdirSync(join(workspaceRoot, "rbac"), { recursive: true });
+  writeFileSync(join(workspaceRoot, "rbac", "grants.json"), JSON.stringify({ grants: [{
+    id: "grant:risk-manage",
+    subjectRef: "user:alice",
+    roleRef: "role:operator",
+    scopeType: "workspace",
+    scopeRef: "workspace",
+    resourceRef: "risk:risk:test",
+    action: "manage",
+    effect: "allow",
+    inheritance: "default",
+  }] }));
+  const acknowledged = await invokeServer(server, {
+    method: "POST",
+    url: "/risks/risk%3Atest/transition",
+    headers,
+    body: { status: "acknowledged", correlationId: "corr-risk-ack-http" },
+  });
+  assert.equal(acknowledged.status, 200, acknowledged.body);
+  assert.equal(JSON.parse(acknowledged.body).risk.status, "acknowledged");
+  const resolved = await invokeServer(server, {
+    method: "POST",
+    url: "/risks/risk%3Atest/transition",
+    headers,
+    body: { status: "resolved", reason: "runtime restored", correlationId: "corr-risk-resolve-http" },
+  });
+  assert.equal(resolved.status, 200, resolved.body);
+  assert.equal(JSON.parse(resolved.body).incident.status, "resolved");
+  const transitionEvents = controlPlane.getWorkspaceEvents({ eventType: "risk.transitioned" }).events;
+  assert.equal(transitionEvents.at(-1).policyDecisionRef.startsWith("policy-decision:"), true);
+});
+
+test("natural-language execution over core query is policy-gated before command execution", async () => {
+  const { server, controlPlane } = fixture();
+  const response = await invokeServer(server, {
+    method: "POST",
+    url: "/query",
+    headers: { authorization: "Bearer core-token-test-value", "x-axi-subject": "user:alice" },
+    body: { text: "跑一下 sample-app 健康检查" },
+  });
+  assert.equal(response.status, 200);
+  const body = JSON.parse(response.body);
+  assert.equal(body.accepted, false);
+  assert.equal(body.actions[0].status, "blocked");
+  assert.match(body.blockedReason, /no_matching_grant/);
+  const event = controlPlane.getWorkspaceEvents({ eventType: "policy_decision.evaluated" }).events[0];
+  assert.deepEqual([event.actorRef, event.action, event.objectRef, event.result], ["user:alice", "execute", "sample-app", "deny"]);
+});
+
 test("REST noun aliases match legacy RPC control-plane action paths", async () => {
   const { server } = fixture();
   const headers = { authorization: "Bearer core-token-test-value" };
@@ -155,7 +400,18 @@ test("REST noun aliases match legacy RPC control-plane action paths", async () =
     const rpc = await invokeServer(server, { method: "POST", url: rpcPath, headers, body: {} });
     const rest = await invokeServer(server, { method: "POST", url: restPath, headers, body: {} });
     assert.equal(rest.status, rpc.status, `${restPath} status ${rest.status} != ${rpcPath} ${rpc.status}`);
-    assert.equal(rest.body, rpc.body, `${restPath} body drifted from ${rpcPath}`);
+    const semantic = (response) => {
+      const body = JSON.parse(response.body);
+      return {
+        status: response.status,
+        error: body.error,
+        decision: body.policy?.decision?.decision,
+        reason: body.policy?.decision?.reason,
+        action: body.policy?.decision?.action,
+        resourceRef: body.policy?.decision?.resourceRef,
+      };
+    };
+    assert.deepEqual(semantic(rest), semantic(rpc), `${restPath} semantics drifted from ${rpcPath}`);
   }
 });
 
@@ -182,6 +438,65 @@ test("internal gateway web snapshot still rejects missing service identity", asy
     headers: { "x-axi-internal-token": "axi-development-internal-token" },
   });
   assert.equal(r.status, 401);
+});
+
+test("production Control Plane rejects the development gateway token but accepts an injected token", async () => {
+  assert.equal(resolveGatewayInternalToken({ nodeEnv: "production" }), "");
+  assert.equal(resolveGatewayInternalToken({ configuredToken: "axi-development-internal-token", nodeEnv: "production" }), "");
+  assert.equal(resolveGatewayInternalToken({ configuredToken: "production-gateway-token", nodeEnv: "production" }), "production-gateway-token");
+
+  const { controlPlane } = fixture();
+  const productionServer = createControlPlaneHttpServer({
+    controlPlane,
+    nodeEnv: "production",
+    gatewayInternalToken: "axi-development-internal-token",
+    coreApiToken: "core-token-test-value",
+    allowedOrigins: ["http://allowed-origin.test"],
+  });
+  const rejected = await invokeServer(productionServer, {
+    method: "GET",
+    url: "/internal/web/v1/snapshot",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "owner-subject",
+    },
+  });
+  assert.equal(rejected.status, 401);
+
+  const configuredServer = createControlPlaneHttpServer({
+    controlPlane,
+    nodeEnv: "production",
+    gatewayInternalToken: "production-gateway-token",
+    coreApiToken: "core-token-test-value",
+    allowedOrigins: ["http://allowed-origin.test"],
+  });
+  const accepted = await invokeServer(configuredServer, {
+    method: "GET",
+    url: "/internal/web/v1/snapshot",
+    headers: {
+      "x-axi-internal-token": "production-gateway-token",
+      "x-axi-subject": "owner-subject",
+    },
+  });
+  assert.equal(accepted.status, 200);
+});
+
+test("communication gateway internal route carries a verified subject into the policy gate", async () => {
+  const { server, controlPlane } = fixture();
+  const r = await invokeServer(server, {
+    method: "POST",
+    url: "/internal/communication/v1/jobs",
+    headers: {
+      "x-axi-internal-token": "axi-development-internal-token",
+      "x-axi-subject": "user:alice",
+    },
+    body: { projectId: "sample-app" },
+  });
+  assert.equal(r.status, 403);
+  const body = JSON.parse(r.body);
+  assert.equal(body.policy.decision.decision, "deny");
+  const event = controlPlane.getWorkspaceEvents({ eventType: "policy_decision.evaluated" }).events[0];
+  assert.deepEqual([event.actorRef, event.action, event.objectRef, event.result], ["user:alice", "execute", "sample-app", "deny"]);
 });
 
 test("core HTTP does not emit Access-Control-Allow-Origin: * for arbitrary origin", async () => {
@@ -400,6 +715,7 @@ test("Web owner can create, observe, and confirm a QR pairing without exposing i
   const createdBody = JSON.parse(created.body);
   assert.match(createdBody.webPairingId, /^webpair_/);
   assert.match(createdBody.scanToken, /^[A-Za-z0-9_-]{32,}$/);
+  assert.equal(createdBody.gatewayUrl, "http://192.168.1.42:8088/api/v1/");
 
   const beforeScan = await invokeServer(server, {
     method: "GET",
@@ -410,6 +726,7 @@ test("Web owner can create, observe, and confirm a QR pairing without exposing i
   const beforeScanBody = JSON.parse(beforeScan.body);
   assert.equal(beforeScanBody.status, "waiting_scan");
   assert.equal("scanToken" in beforeScanBody, false);
+  assert.equal("gatewayUrl" in beforeScanBody, false);
 
   const foreignOwner = await invokeServer(server, {
     method: "GET",
@@ -417,6 +734,34 @@ test("Web owner can create, observe, and confirm a QR pairing without exposing i
     headers: { ...authHeaders, "x-axi-subject": "other-owner" },
   });
   assert.equal(foreignOwner.status, 404);
+});
+
+test("mobile QR Gateway hint prefers explicit advertisement and never advertises production discovery", () => {
+  assert.equal(
+    resolveMobileGatewayUrl({ explicit: "https://workbench.axiomaticworld.com/api/v1", environment: "production" }),
+    "https://workbench.axiomaticworld.com/api/v1/",
+  );
+  assert.equal(resolveMobileGatewayUrl({ environment: "production", interfaces: {} }), "");
+  assert.equal(
+    resolveMobileGatewayUrl({
+      environment: "development",
+      gatewayPort: "8088",
+      interfaces: {
+        en0: [
+          { address: "127.0.0.1", family: "IPv4", internal: true },
+          { address: "192.168.1.42", family: "IPv4", internal: false },
+        ],
+      },
+    }),
+    "http://192.168.1.42:8088/api/v1/",
+  );
+  assert.equal(
+    resolveMobileGatewayUrl({
+      environment: "development",
+      interfaces: { en0: [{ address: "8.8.8.8", family: "IPv4", internal: false }] },
+    }),
+    "",
+  );
 });
 
 test("phone QR scan is gateway-only and requires the one-time scan bearer", async () => {

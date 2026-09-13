@@ -16,11 +16,10 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { request as httpRequest } from "node:http";
-import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
-import { createControlPlane } from "../src/control-plane.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
 import { createControlPlaneHttpServer } from "../src/server.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -382,6 +381,7 @@ const MobileProjectCardSchema = {
           "intent",
           "autoExecutable",
           "actionType",
+          "actionLevel",
           "executionMode",
           "riskLevel",
           "summary",
@@ -393,6 +393,7 @@ const MobileProjectCardSchema = {
           intent: { type: "string" },
           autoExecutable: { type: "boolean" },
           actionType: { type: "string" },
+          actionLevel: { type: "string", enum: ["A", "B", "C", "D"] },
           executionMode: { type: "string", enum: ["immediate", "requires_approval"] },
           riskLevel: { type: "string", enum: ["low", "medium", "high", "destructive"] },
           summary: { type: "string" },
@@ -521,7 +522,7 @@ function freshWorkspace() {
         {
           id: "sample-app",
           stage: "building",
-          confidence: "medium",
+          confidence: "low",
           summary: "Project is healthy and observable.",
           updatedAt: new Date().toISOString(),
           evidence: ["unit:test"],
@@ -545,13 +546,11 @@ async function startControlPlane() {
     pairingTokenSecret: "mobile-schema-test-secret-32-bytes!",
     ownerApprovalSecret: "mobile-schema-owner-secret-32-bytes",
   });
-  const server = createServer(
-    createControlPlaneHttpServer({
-      controlPlane,
-      mobileOwnerToken: "test-owner",
-      pairingRequired: false,
-    }),
-  );
+  const server = createControlPlaneHttpServer({
+    controlPlane,
+    mobileOwnerToken: "test-owner",
+    pairingRequired: false,
+  });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   return { server, controlPlane, workspaceRoot };
 }
@@ -567,6 +566,7 @@ function fetchJson(server, method, pathname, payload, headers = {}) {
         path: pathname,
         headers: {
           "Content-Type": "application/json",
+          Connection: "close",
           ...headers,
         },
       },
