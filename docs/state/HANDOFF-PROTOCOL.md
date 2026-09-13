@@ -1,6 +1,6 @@
 # 跨端交接协议草案
 
-> 状态：Draft · 更新：2026-08-22
+> 状态：Draft · 更新：2026-09-13
 >
 > 本协议定义 Mobile ↔ Web 之间的任务交接语义、Correlation ID 格式和状态机。正式版需经产品 Owner、领域 Owner 和两端维护者共同评审。
 
@@ -82,6 +82,9 @@ interface HandoffPayload {
   // 时间
   created_at: string;            // ISO 8601
   expires_at: string;           // ISO 8601，默认 created_at + 24h
+  rejected_at?: string;         // ISO 8601，拒绝续办时写入
+  rejected_by?: string;         // 经 Gateway 验证的目标端主体
+  rejection_reason?: string;    // 拒绝续办必填
 
   // 状态
   status: HandoffStatus;
@@ -93,8 +96,44 @@ type HandoffStatus =
   | 'accepted'     // 目标端已接受处理
   | 'completed'    // 任务完成
   | 'failed'       // 执行失败
+  | 'rejected'     // 目标端明确拒绝续办
   | 'expired';     // 超时未处理
 ```
+
+### 当前运行 profile：Mobile → Web
+
+上面的通用状态机仍是面向未来双向交接的抽象；当前 Control Plane 已实现并
+由 `HandoffContextSchema` 校验的运行状态是：
+
+```typescript
+type CurrentHandoffStatus = 'pending' | 'opened' | 'completed' | 'rejected' | 'expired';
+
+interface CurrentHandoffContext {
+  id: string;
+  handoffCorrelationId: string;
+  sourceSurface: 'mobile';
+  targetSurface: 'web';
+  status: CurrentHandoffStatus;
+  approvalId: string | null;
+  sourceActorRef?: string | null;
+  sourceOwnerRef?: string | null;
+  object: { type: 'approval'; id: string; projectId: string | null; actionId: string | null; actionType: string | null };
+  impact: string;
+  riskLevel: 'low' | 'medium' | 'high' | 'destructive';
+  createdAt: string;
+  expiresAt: string;
+  openedAt?: string;
+  openedBy?: string;
+  completedAt?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  expiredAt?: string;
+}
+```
+
+The runtime serialization uses camelCase and the Gateway paths documented below;
+the snake_case model above remains a conceptual protocol notation only.
 
 ### 审计事件字段
 
@@ -109,6 +148,7 @@ interface HandoffAuditEvent {
     type: string;
     id: string;
   };
+  rejection_reason?: string;     // 拒绝续办时必填
   final_action?: string;         // 最终执行的动作（若有）
   result: 'success' | 'failure';
   timestamp: string;             // ISO 8601
@@ -127,12 +167,14 @@ interface HandoffAuditEvent {
                    accepted
                        │
            ┌───────────┴───────────┐
-           ▼                       ▼
+      ▼                       ▼
       completed                 failed
            │                       │
            └───────────┬───────────┘
                        ▼
                    (end)
+
+    目标端拒绝：`pending/opened → rejected`，拒绝原因必填并终止该交接
 
     超时检测：任何非 terminal 状态在 expires_at 后转为 expired
 ```
@@ -146,6 +188,7 @@ interface HandoffAuditEvent {
 | `delivered` | 目标端接受处理 | `accepted` | 目标端 | 用户点击"接受并处理" |
 | `accepted` | 任务完成 | `completed` | 目标端 | 最终动作成功执行 |
 | `accepted` | 执行失败 | `failed` | 目标端 | 最终动作执行失败 |
+| `pending/opened` | 目标端拒绝续办 | `rejected` | 目标端 | 拒绝原因非空，写入验证主体和审计 |
 | 任意非 terminal | 超时检测 | `expired` | 系统 | `now > expires_at` |
 
 ### 状态语义
@@ -157,6 +200,7 @@ interface HandoffAuditEvent {
 | `accepted` | 目标端正在处理 | 双方可见 |
 | `completed` | 任务在目标端闭环 | 双方可见，可查询审计 |
 | `failed` | 目标端执行失败，可重试或重新交接 | 双方可见 |
+| `rejected` | 目标端明确拒绝续办，原因已记录 | 双方可见，不得继续原交接 |
 | `expired` | 超过 SLA 未处理 | 源端可见，通知发起方 |
 
 ## 交接流程
@@ -191,8 +235,8 @@ interface HandoffAuditEvent {
 
 1. **数据新鲜度**：目标端加载时必须重新从服务端获取最新状态，不能使用交接快照代替
 2. **鉴权不可跳过**：目标端必须重新验证用户权限
-3. **幂等处理**：若交接已处理（completed/failed），再次打开应展示结果而非重复执行
-4. **SLA 监控**：后台任务定期检测过期交接，发送通知
+3. **幂等处理**：若交接已处理（completed/failed/rejected/expired），再次打开应展示结果而非重复执行
+4. **SLA 监控**：后台任务定期检测过期交接并写入审计；通知投递仍由外部通知能力按项目配置负责
 
 ## 技术实现要点
 
@@ -200,14 +244,18 @@ interface HandoffAuditEvent {
 
 - 交接数据存储在 Control Plane 或独立服务
 - 交接记录保留 90 天（可配置）
-- 提供查询接口：`GET /handoffs?actor={user_id}&status={status}`
-- 提供状态更新接口：`PATCH /handoffs/{handoff_id}`
+- 提供历史查询接口：`GET /api/v1/handoffs?status={status}&actor={sourceActorRef}`；由 Gateway 会话保护，并按已验证 Web subject 限定 `sourceOwnerRef` 绑定的记录；`actor` 仅按源端 actor reference 过滤。未绑定的历史记录在迁移期间保持可见，但不构成新的授权边界。
+- 提供状态读取接口：`GET /api/v1/handoffs/{handoff_id}`（Gateway 会话保护）。
+- 提供完成接口：`POST /api/v1/handoffs/{handoff_id}`，body 为 `{ "outcome": "..." }`。
+- 提供拒绝接口：`POST /api/v1/handoffs/{handoff_id}`，body 为 `{ "action": "reject", "reason": "..." }`；reason 非空，服务端记录经 Gateway 验证的 Web subject，并将 `pending/opened` 置为 `rejected` 终态。
+- 目标端打开、完成或拒绝前必须重新验证权限与关联审批状态；已绑定 `sourceOwnerRef` 的记录仅允许同一 Web owner subject 继续处理，主体不匹配返回 403 并写入拒绝审计；关联 `ApprovalRequest` 为非 `pending` 且未因超时过期时返回 409、保持交接不变并写入拒绝审计，若 `pending` 记录已超过 `expiresAt` 则先将审批与交接一起持久化为 `expired` 并审计。
+- 过期通知边界：Control Plane expiry worker 在持久化并审计后，可向外部通知 relay enqueue 一个 `handoff.expired` 事件；渠道投递、重试和用户偏好不由 Control Plane 直接拥有。
 
 ### 客户端要求
 
 - Mobile 交接入口在 C 级操作场景明确展示
 - Web `/handoff/:id` 页面必须登录后访问
-- 两端都应展示交接状态和历史
+- 两端都应展示交接状态和历史；Web 提供登录后的 `/admin/handoff` 历史投影及 `/admin/handoff/:id` 详情续办页，Mobile 提供配对设备限定的 `/handoffs` 历史页。Web 详情页打开交接后必须另行读取当前 Control Plane 对象状态，当前对象读取失败时不得用交接快照冒充最新状态；读取成功后提供直接进入该当前对象详情的入口。
 
 ### 深链接（预留）
 
@@ -221,8 +269,8 @@ axi-workbench://handoff/{handoff_id}
 
 | 问题 | 状态 | 负责人 | 解决计划 |
 | --- | --- | --- | --- |
-| 交接超时 SLA 默认值 | Open | 产品 | 需确定不同场景的 SLA（P0 待定） |
-| 交接拒绝场景 | Open | 产品 | 用户拒绝处理时的状态流转 |
+| 交接超时 SLA 默认值 | Implemented (2026-09-13) | Control Plane + 产品 | 通用交接默认 24h；Control Plane 支持正整数 `handoffExpiryMs` 或 `AXI_HANDOFF_EXPIRY_MS` 覆盖（代码参数优先，非法值回退默认）；后台 expiry worker、访问、写入和显式 sweep 均可将超时记录转为 `expired` 并写审计；不同场景的更短 SLA 仍待产品决定 |
+| 交接拒绝场景 | Implemented (2026-09-13) | Control Plane + Web | `pending/opened → rejected`；原因、验证主体和关联标识写入持久化记录与审计 |
 | Web → Mobile 交接 | Reserved | 产品 | 当前聚焦 Mobile → Web，P3 再考虑反向 |
 | 批量交接 | Open | 产品 | 多对象交接的打包语义 |
 

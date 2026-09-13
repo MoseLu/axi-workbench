@@ -32,16 +32,12 @@
 - Start: `make docker-up && make migrate-identity && make migrate-platform`
 - Start: `pnpm dev:workbench`
 - Start: `pnpm dev:mobile`
-- Start: `pnpm dev:desktop` — Tauri 2 壳指向 `http://127.0.0.1:5173`，需先跑 `pnpm dev:workbench`
 - Start: `pnpm --filter @axi/workstation-control-plane start`
 - Start: `pnpm --filter @axi/workstation-communication-gateway start`
 - Health: `pnpm --filter @axi/workstation-control-plane smoke`
 - Health: `python3 infra/fleet-console/scripts/fleetctl.py validate`
 - Verify: `make verify-go`
 - Verify: `make verify-helm`
-- Package Mac App: `pnpm build:desktop` —— 产出 `apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app`
-- Package Mac App + DMG: `pnpm build:desktop:dmg`
-- Notarize Mac App: `apps/workbench-desktop/scripts/notarize.sh`（需 Apple Developer ID）
 - Verify: `pnpm --filter @epap/api-client --filter @axi/workbench-foundation --filter @axi/workbench --filter @axi/workbench-mobile type-check`
 - Verify: `pnpm --filter @axi/workbench --filter @axi/workbench-mobile test`
 - Verify: `pnpm --filter @axi/workbench --filter @axi/workbench-mobile build`
@@ -73,12 +69,11 @@
 
 - TODO: `docs/state/TODO.md`
 - Milestone: `docs/state/MILESTONE.md`
-- Active: Align verification commands with the real project stack
-- Active: Implement the role-oriented multi-surface product contract: Web control center, Mobile role execution and professional tools; reconcile capability/action-policy ownership and navigation terminology while keeping the two app compositions independent
+- Active: Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence
+- Active: Advance the product-owned P3 handoff decisions: Web to Mobile, batch semantics and scenario-specific SLA
 - Active: Preserve ownership and cross-project boundaries
-- Active: Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment
-- Known failure: The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.
-- Known failure: No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; cluster end-to-end acceptance remains external.
+- Active: Close the remaining external Go API plane gates: ZITADEL OIDC, production SMTP, database fault-injection recovery and cluster deployment
+- Known failure: No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; local Mailpit, PostgreSQL RLS and Redis integrations pass, while cluster end-to-end, production SMTP and fault-injection acceptance remain external.
 
 ## Troubleshooting
 
@@ -97,7 +92,7 @@
 - ADR: `docs/adr/0001-zitadel-gin-platform-core.md`
 - Changelog: `docs/state/CHANGELOG.md`
 - Submit log: `docs/logs/submit/20260611-124603-batch-submit.md`
-- Last verified: `2026-08-07`
-- Evidence: `Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, four persistent navigation items, badges, and Scan flow without Web dashboard nodes.`, `Web and mobile UI contract verifiers, TypeScript, unit tests, and production builds passed on 2026-08-07.`, `Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template passed; required local Mailpit SMTP delivery passed; an isolated PostgreSQL migration/runtime-role integration test proved direct owner-downgrade and cross-tenant denial on 2026-08-07.`
+- Last verified: `2026-09-13`
+- Evidence: `Web browser smoke renders the Axi Dashboard shell with shared tabs, breadcrumbs, topbar actions, theme switch, and settings panel.`, `Mobile-app browser smoke renders its own WeChat-style centered header, plus menu, four persistent navigation items, badges, and Scan flow without Web dashboard nodes.`, `Web tests 184/184, UI contract verifier, type-check and production build passed on 2026-09-13; Mobile tests 34/34, UI contract verifier, type-check and production build passed on 2026-09-14; Workbench Foundation type-check passed. The historical Web @epap/ui consumers were removed after confirming they were outside the live AxiDashboardShell render chain; authenticated /admin/handoff history filters status and opens the server-backed detail route; the detail route re-reads current Control Plane project state, fails closed if that read is unavailable, and provides a direct current-project detail entry; paired Mobile /handoffs is restricted to the bearer device actor; pairing QR gateway hints are restricted to private LAN or the first-party HTTPS origin.`, `Control Plane tests 211/211, communication-gateway tests 15/15, workstation contracts tests 9/9, API client type-check, boundary check and 43-resource six-layer smoke passed on 2026-09-14; handoff history filtering, bound Web-owner authorization, linked ApprovalRequest status/expiry revalidation with consistent handoff expiry, lifecycle source-actor/source-owner audit identity, handoffId event projection, rejection, configurable/default-24h expiry (including AXI_HANDOFF_EXPIRY_MS), stoppable expiry worker, external notification enqueue boundary, production fail-closed handling for a missing or development-default gateway internal token, Registry/Graph-only optional resource path resolution, complete-field normalization for persisted evidence, and owner coverage status split are covered by persistence/audit and governance regression tests.`, `Current browser acceptance passed on 2026-09-13: Web Playwright 25/25 and Mobile Playwright 1/1, including the authenticated handoff detail current-state re-read, desktop shell, legal routes, QR states, responsive boundaries and independent mobile login.`, `Recent delivery-record audit passed 1/1 with `pnpm audit:submit-logs -- --since HEAD~1 --strict`; the prior handoff-owner batch passed 4/4, while 236 historical submit-log coverage gaps and 537 same-batch Changelog evidence gaps remain explicit governance gaps.`, `Go gateway, identity-adapter and platform-core race tests passed with audience/scope validation, OTLP trace export and W3C trace continuation; Helm lint/template, the 2026-09-13 Mailpit SMTP integration check, PostgreSQL RLS integration with dedicated migration/runtime roles, and API Gateway Redis session restart/concurrency integration passed; cluster, real ZITADEL, production SMTP and fault-injection acceptance remain external.`
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.

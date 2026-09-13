@@ -289,6 +289,40 @@ paths:
                 $ref: '#/components/schemas/MobileWorkspaceSnapshot'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /mobile/v1/handoffs:
+    get:
+      tags: [workspace]
+      summary: Handoff history created by the authenticated device
+      operationId: mobileHandoffHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [pending, opened, completed, rejected, expired]
+      responses:
+        '200':
+          description: Handoff history filtered to the authenticated device actor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, handoffs]
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                  handoffs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HandoffContext'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /mobile/v1/projects/{id}:
     get:
       tags: [workspace]
@@ -575,6 +609,50 @@ components:
         codeExpiresAt:
           type: integer
           description: Unix epoch seconds (5-minute TTL by default)
+    WebPairingQrTransaction:
+      type: object
+      required: [webPairingId, scanToken, expiresAt]
+      additionalProperties: false
+      description: |
+        Short-lived transaction returned to an authenticated Web owner. The
+        optional gatewayUrl is a transport hint for the paired phone; it is
+        never an identity, session cookie, or approval credential.
+      properties:
+        webPairingId:
+          type: string
+          pattern: '^webpair_[A-Za-z0-9_-]{16,}$'
+        scanToken:
+          type: string
+          minLength: 32
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+        expiresAt:
+          type: integer
+          description: Unix epoch milliseconds; the QR transaction expires after this timestamp.
+        gatewayUrl:
+          type: string
+          format: uri
+          description: Reachable API Gateway base URL; the phone accepts only a private LAN HTTP URL or the first-party HTTPS deployment.
+    WebPairingQrPayload:
+      type: object
+      required: [kind, webPairingId, scanToken]
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+          enum: [axi-mobile-pair-v1]
+        webPairingId:
+          type: string
+          pattern: '^webpair_[A-Za-z0-9_-]{16,}$'
+        scanToken:
+          type: string
+          minLength: 32
+          maxLength: 128
+          pattern: '^[A-Za-z0-9_-]+$'
+        gatewayUrl:
+          type: string
+          format: uri
+          description: Transport-only hint copied from WebPairingQrTransaction.
     QrPairScanRequest:
       type: object
       required: [webPairingId, scanToken, publicKeyHex, publicKeyAlgorithm, deviceName]
@@ -959,10 +1037,18 @@ components:
           enum: [mobile, web, specialist]
         status:
           type: string
-          enum: [pending, opened, completed, rejected]
+          enum: [pending, opened, completed, rejected, expired]
         approvalId:
           type: string
           nullable: true
+        sourceActorRef:
+          type: string
+          nullable: true
+          description: Source actor reference used only for authenticated history filtering.
+        sourceOwnerRef:
+          type: string
+          nullable: true
+          description: Verified Web owner subject bound by the authenticated pairing flow.
         object:
           $ref: '#/components/schemas/ApprovalScanObject'
         impact:
@@ -973,6 +1059,10 @@ components:
         createdAt:
           type: string
           format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          description: Default handoff SLA is 24 hours from creation.
         openedAt:
           type: string
           format: date-time
@@ -981,6 +1071,20 @@ components:
         completedAt:
           type: string
           format: date-time
+        rejectedAt:
+          type: string
+          format: date-time
+        rejectedBy:
+          type: string
+          description: Verified Web subject that rejected the continuation.
+        rejectionReason:
+          type: string
+          minLength: 1
+          description: User-provided reason required when rejecting the continuation.
+        expiredAt:
+          type: string
+          format: date-time
+          description: Set when a pending/opened handoff is observed after its expiry.
         finalAction:
           type: object
           required: [outcome, performedBy, occurredAt]
@@ -1293,7 +1397,7 @@ components:
           nullable: true
     MobileAction:
       type: object
-      required: [actionId, commandId, label, intent, autoExecutable, actionType, executionMode, riskLevel, summary]
+      required: [actionId, commandId, label, intent, autoExecutable, actionType, actionLevel, executionMode, riskLevel, summary]
       additionalProperties: false
       properties:
         actionId:
@@ -1308,6 +1412,9 @@ components:
           type: boolean
         actionType:
           type: string
+        actionLevel:
+          type: string
+          enum: [A, B, C, D]
         executionMode:
           type: string
           enum: [immediate, requires_approval]

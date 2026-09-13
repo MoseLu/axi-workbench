@@ -154,6 +154,18 @@ test("OpenAPI: required schemas exist for the runtime surface", () => {
   }
 });
 
+test("OpenAPI: handoff rejection retains the verified actor and required reason fields", () => {
+  const handoff = readSubSection("HandoffContext");
+  assert.ok(handoff, "HandoffContext schema must exist");
+  expectContains("rejectedAt:", "handoff rejectedAt");
+  expectContains("rejectedBy:", "handoff rejectedBy");
+  expectContains("rejectionReason:", "handoff rejectionReason");
+  expectContains("expiresAt:", "handoff expiresAt");
+  expectContains("expiredAt:", "handoff expiredAt");
+  expectContains("enum: [pending, opened, completed, rejected, expired]", "handoff terminal statuses");
+  expectContains("User-provided reason required when rejecting the continuation.", "handoff rejection reason description");
+});
+
 test("OpenAPI: workspace snapshot carries recent task results separately from pending tasks", () => {
   const snapshotBlock = spec.slice(spec.indexOf("    MobileWorkspaceSnapshot:"), spec.indexOf("    MobilePreview:"));
   assert.match(snapshotBlock, /required: \[.*recentTasks.*\]/, "recentTasks must be required in the snapshot contract");
