@@ -1446,7 +1446,7 @@ export function buildGovernanceSnapshot({
       ...(Object.hasOwn(graphProjects, id) ? { graph: graphPath } : {}),
       ...(registryEntry ? { registry: registryPath } : {}),
     };
-    const documentProjection = buildGovernanceDocuments({ id, ownerRef, graphProject, registryEntry, projectRoot: canonicalPath, evidence, documents, warnings, conflicts, now: observedDate });
+    const documentProjection = buildProjectDocuments({ id, ownerRef, graphProject, registryEntry, projectRoot: canonicalPath, evidence, documents, warnings, conflicts, now: observedDate });
     evidenceRefs.push(...documentProjection.evidenceRefs);
     const documentRefs = documentProjection.documentRefs;
     const unitFreshness = aggregateGovernanceFreshness(evidence, evidenceRefs);
@@ -1561,6 +1561,7 @@ export function buildGovernanceSnapshot({
     violations,
     waivers,
     automations,
+    governanceDocuments: buildWorkspaceGovernanceDocuments({ graph, now: observedDate }),
     policyDecisions: policyDecisions.filter(isRecord).map((decision) => {
       const eventRefs = events.filter((event) => event.policyDecisionRef === decision.id).map((event) => event.eventId);
       return eventRefs.length ? { ...decision, eventRefs } : decision;
@@ -1569,6 +1570,52 @@ export function buildGovernanceSnapshot({
     conflicts,
     warnings: [...new Set(warnings)],
   };
+}
+
+/**
+ * TASK6: Build GovernanceDocument read model from workspace.graph.json declarations.
+ * Each GovernanceDocument has owner, evidenceRefs, requirement, and requirementSource.
+ */
+function buildWorkspaceGovernanceDocuments({ graph, now }) {
+  const declarations = Array.isArray(graph?.governanceDocuments) ? graph.governanceDocuments : [];
+  return declarations.map((doc) => {
+    // Validate evidence files exist
+    const evidenceRefs = Array.isArray(doc.evidenceRefs) ? doc.evidenceRefs : [];
+    const availableEvidence = evidenceRefs.filter((ref) => {
+      if (!ref || typeof ref !== "string") return false;
+      // Check if it's a path reference (starts with / or contains file extensions)
+      if (ref.startsWith("/")) {
+        return existsSync(ref);
+      }
+      return true;
+    });
+
+    // Determine status based on evidence availability
+    let status = "present";
+    if (evidenceRefs.length === 0) {
+      status = "unknown";
+    } else if (availableEvidence.length === 0) {
+      status = "missing";
+    } else if (availableEvidence.length < evidenceRefs.length) {
+      status = "partial";
+    }
+
+    return {
+      id: doc.id || `doc:unknown:${now.getTime()}`,
+      name: doc.name || "Unnamed Document",
+      description: doc.description || "",
+      requirement: doc.requirement || "optional",
+      requirementSource: doc.requirementSource || "unknown",
+      ownerRef: doc.owner || "unknown",
+      evidenceRefs,
+      availableEvidenceRefs: availableEvidence,
+      policyRef: doc.policyRef || null,
+      tags: Array.isArray(doc.tags) ? doc.tags : [],
+      effectiveAt: doc.effectiveAt || null,
+      status,
+      source: "workspace.graph.governanceDocuments",
+    };
+  });
 }
 
 function isExternalGovernanceUnit(graphProject, registryEntry) {
@@ -1586,15 +1633,21 @@ function resolveDeclaredWorkspaceEventSources({ graph, registry }) {
 }
 
 function buildGovernanceWaivers({ risks, events = [], now }) {
-  return risks.filter((risk) => isRecord(risk) && risk.status === "waived").flatMap((risk) => {
+  // TASK6: Support both waived and revoked status
+  return risks.filter((risk) => isRecord(risk) && (risk.status === "waived" || risk.status === "revoked")).flatMap((risk) => {
     const sourceRiskRef = firstString(risk.id);
     const subjectRef = firstString(risk.targetRef);
     const reason = firstString(risk.statusReason, risk.reason);
     if (!sourceRiskRef || !subjectRef || !reason) return [];
+
+    // TASK6: Support revoked status with revokedBy and revokedAt
+    const isRevoked = risk.status === "revoked";
     const expiresAt = validIsoDate(risk.dueAt);
-    const status = expiresAt && new Date(expiresAt).getTime() <= now.getTime() ? "expired" : "active";
+    let status = isRevoked ? "revoked" : (expiresAt && new Date(expiresAt).getTime() <= now.getTime() ? "expired" : "active");
+
     const eventRefs = events.filter((event) => event.objectRef === subjectRef || event.objectRef === sourceRiskRef).map((event) => event.eventId);
-    return [{
+
+    const waiver = {
       id: `waiver:${sourceRiskRef}`,
       subjectRef,
       sourceRiskRef,
@@ -1604,9 +1657,20 @@ function buildGovernanceWaivers({ risks, events = [], now }) {
       evidenceRefs: Array.isArray(risk.evidenceRefs) ? risk.evidenceRefs.filter((value) => typeof value === "string") : [],
       eventRefs,
       issuedAt: validIsoDate(risk.updatedAt || risk.detectedAt) || now,
-      ...(expiresAt ? { expiresAt } : {}),
       source: firstString(risk.source, "control-plane.risk"),
-    }];
+    };
+
+    // TASK6: Add revoked metadata when waiver is revoked
+    if (isRevoked) {
+      waiver.revokedBy = risk.revokedBy || risk.ownerRef || "unknown";
+      waiver.revokedAt = validIsoDate(risk.revokedAt) || now;
+    }
+
+    if (expiresAt && !isRevoked) {
+      waiver.expiresAt = expiresAt;
+    }
+
+    return [waiver];
   });
 }
 
@@ -2190,7 +2254,7 @@ function makeGovernanceRuleRelationship(sourceRef, targetRef, relationshipType) 
   };
 }
 
-function buildGovernanceDocuments({ id, ownerRef, graphProject, registryEntry, projectRoot, evidence, documents, warnings, conflicts, now }) {
+function buildProjectDocuments({ id, ownerRef, graphProject, registryEntry, projectRoot, evidence, documents, warnings, conflicts, now }) {
   const graphRequirements = graphProject.document_requirements || graphProject.documentRequirements;
   const registryRequirements = registryEntry?.document_requirements || registryEntry?.documentRequirements;
   if (Array.isArray(graphRequirements) && Array.isArray(registryRequirements)
