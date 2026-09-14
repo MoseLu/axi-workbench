@@ -23,7 +23,7 @@
 | axi-rules validate | ✅ PASS | indexes validated |
 | axi-workspace-governance audit | ✅ PASS | Entries 22, Errors 0 |
 | Dashboard typecheck | ✅ PASS | |
-| Dashboard tests | ✅ PASS | 21/21 |
+| Dashboard tests | ✅ PASS | 25/25 |
 | drift-check | ✅ PASS | 0 warnings |
 | visibility admin语义 | ✅ PASS | 类型+过滤逻辑已统一 |
 | menuGroup分组 | ✅ PASS | 动态生成分组导航 |
@@ -43,7 +43,7 @@
 | 菜单分组与角色过滤 | ✅ 完成 | visibility admin + menuGroup 分组 + Shell 角色注入 |
 | Hosted App 绑定 | ✅ 完成 | executionBoundary 已配置 |
 | Dashboard typecheck | ✅ 完成 | |
-| Dashboard tests | ✅ 完成 | 21/21 |
+| Dashboard tests | ✅ 完成 | 25/25 |
 | Axi UI typecheck | ✅ 完成 | Gallery 已修复 |
 | Skills 校验 | ✅ 完成 | runtime verify + i18n manifest 均通过 |
 | Registry 健康 | ✅ 完成 | 服务运行正常 |
@@ -167,7 +167,7 @@
 | workspace validate | `workspace-project-cli.mjs validate` | 0 | ✅ PASS | workspace graph and handoff registry ok |
 | boundary check | `pnpm check:boundaries` | 0 | ✅ PASS | Axi Workbench boundary check passed |
 | dashboard typecheck | `pnpm --dir apps/devsvc-dashboard typecheck` | 0 | ✅ PASS | 当前类型检查通过 |
-| dashboard test | `pnpm --dir apps/devsvc-dashboard test` | 0 | ✅ PASS | 21/21 |
+| dashboard test | `pnpm --dir apps/devsvc-dashboard test` | 0 | ✅ PASS | 25/25 |
 | axi-ui check/typecheck/test/build | `pnpm check:file-lines && pnpm test` | 0 | ✅ PASS | 完整检查、93 tests 和 Gallery build 通过 |
 | axi-rules validate | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | indexes validated |
 | axi-skills runtime verify | `cd .../axi-skills && python3 scripts/verify.py` | 0 | ✅ PASS | errors=0，9 warnings |
@@ -348,7 +348,7 @@
 - [x] `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` → ✅ PASS
 - [x] `pnpm check:boundaries` → ✅ PASS
 - [x] `pnpm --dir apps/devsvc-dashboard typecheck` → ✅ PASS
-- [x] `pnpm --dir apps/devsvc-dashboard test` → ✅ PASS (21/21)
+- [x] `pnpm --dir apps/devsvc-dashboard test` → ✅ PASS (25/25)
 - [ ] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource 和路由行为。
 - [ ] 验证 Hosted App 和 Resource Index 的路由互不混淆。
 - [ ] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现。
