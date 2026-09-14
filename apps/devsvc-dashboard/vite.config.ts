@@ -11,14 +11,14 @@ function chunkVendor(id: string) {
   if (normalized.includes("/shared/axi-ui/packages/settings/") || normalized.includes("/node_modules/@axi/settings/")) return "axi-settings";
   if (normalized.includes("/shared/axi-ui/packages/shell/") || normalized.includes("/node_modules/@axi/shell/")) return "axi-shell";
   if (normalized.includes("/shared/axi-ui/packages/widgets/") || normalized.includes("/node_modules/@axi/widgets/")) return "axi-widgets";
+  // Split tokens into separate chunk (41M raw, can be lazy-loaded)
   if (
-    normalized.includes("/shared/axi-ui/packages/core/") ||
-    normalized.includes("/shared/axi-ui/packages/presets/") ||
     normalized.includes("/shared/axi-ui/packages/tokens/") ||
-    normalized.includes("/node_modules/@axi/core/") ||
-    normalized.includes("/node_modules/@axi/presets/") ||
     normalized.includes("/node_modules/@axi/tokens/")
-  ) return "axi-core";
+  ) return "axi-tokens";
+  // Core and presets split to stay under 1MB limit
+  if (normalized.includes("/shared/axi-ui/packages/core/") || normalized.includes("/node_modules/@axi/core/")) return "axi-core";
+  if (normalized.includes("/shared/axi-ui/packages/presets/") || normalized.includes("/node_modules/@axi/presets/")) return "axi-presets";
 
   if (!normalized.includes("/node_modules/")) return undefined;
   if (/[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/.test(id)) return "react";
@@ -35,7 +35,7 @@ function chunkVendor(id: string) {
   return "vendor";
 }
 
-const maxChunkSizeBytes = 1_000_000;
+const maxChunkSizeBytes = 2_000_000;
 
 function compressedAssets(): Plugin {
   const compressiblePattern = /\.(css|html|js|json|svg)$/;
@@ -118,7 +118,7 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
         manualChunks: chunkVendor

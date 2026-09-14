@@ -7,13 +7,43 @@ const themeModeStorageKey = "devsvc-dashboard-theme-mode";
 export const adminUsername = "admin";
 export const adminPassword = "admin";
 
+export type UserRole = 'user' | 'developer' | 'admin';
+
 export type AuthUser = {
   username: string;
   displayName: string;
   deviceKey: string;
   loginAt: number;
   avatarDataUrl?: string;
+  role?: UserRole;
 };
+
+/**
+ * Get user role from multiple sources with the following priority:
+ * 1. AuthUser.role (if available)
+ * 2. window.__APP_CONFIG__.userRole (if available)
+ * 3. VITE_USER_ROLE environment variable (fallback)
+ *
+ * @returns User role, defaults to 'developer'
+ */
+export function getUserRole(): UserRole {
+  // Priority 1: Already stored in AuthUser
+  const storedAuth = readStoredAuth();
+  if (storedAuth?.role) return storedAuth.role;
+
+  // Priority 2: From window.__APP_CONFIG__
+  const appConfig = (window as { __APP_CONFIG__?: { userRole?: UserRole } }).__APP_CONFIG__;
+  if (appConfig?.userRole) return appConfig.userRole;
+
+  // Priority 3: From VITE_USER_ROLE environment variable
+  const envRole = (import.meta as { env?: { VITE_USER_ROLE?: UserRole } }).env?.VITE_USER_ROLE;
+  if (envRole && ['user', 'developer', 'admin'].includes(envRole)) {
+    return envRole;
+  }
+
+  // Default fallback
+  return 'developer';
+}
 
 
 export function hashText(value: string) {
@@ -54,12 +84,13 @@ export function readStoredAuth(): AuthUser | null {
     if (!stored) return null;
     const parsed = JSON.parse(stored) as AuthUser;
     if (parsed?.username === adminUsername && parsed.loginAt) {
-      const nextUser = {
+      const nextUser: AuthUser = {
         username: parsed.username,
         displayName: parsed.displayName || parsed.username,
         deviceKey: getDeviceKey(),
         loginAt: parsed.loginAt || Date.now(),
-        avatarDataUrl: parsed.avatarDataUrl
+        avatarDataUrl: parsed.avatarDataUrl,
+        role: parsed.role
       };
       if (parsed.deviceKey !== nextUser.deviceKey) {
         writeStoredAuth(nextUser);
