@@ -121,13 +121,20 @@ const staticNavGroups: NavGroup[] = [
 ];
 
 // menuGroup 配置：标签和图标
+// Quick entries (hardcoded) get injected into these groups
 const menuGroupConfig: Record<string, { label: string; icon: string }> = {
   "component-library": { label: "component-library", icon: "component" },
-  "workspace-governance": { label: "workspace-governance", icon: "rule" },
+  "workspace-ops": { label: "workspace-ops", icon: "workbench" },
   "agent-runtime": { label: "agent-runtime", icon: "work" },
   "system": { label: "system", icon: "database" },
   "axi-apps": { label: "axi-apps", icon: "app" }
 };
+
+// Hardcoded quick entry resources (not from API)
+// These are injected into the appropriate menuGroup for quick access
+const quickEntryResources: Array<{ id: string; title: string; menuGroup: string; icon?: string }> = [
+  { id: "axi-ui", title: "Axi UI", menuGroup: "component-library", icon: "component" }
+];
 
 // navGroups 仅包含静态导航组，动态 menuGroup 在 makeHostNavGroups 中动态生成
 export const navGroups: NavGroup[] = staticNavGroups;
@@ -223,16 +230,38 @@ export function makeHostNavGroups(
     return true;
   });
 
+  // Build combined resources: API resources + quick entries
+  const combinedResources = [
+    ...filteredResources,
+    ...quickEntryResources.map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      kind: 'shared-runtime',
+      surface: 'resource-index',
+      status: 'verified',
+      ownerPath: '',
+      menuGroup: entry.menuGroup,
+      icon: entry.icon,
+      dashboardRoute: `/axi-ui/${entry.id}`
+    }))
+  ];
+
   // Group resources by menuGroup
   const menuGroupMap = new Map<string, NavItem[]>();
 
-  for (const resource of filteredResources) {
+  for (const resource of combinedResources) {
     const groupKey = resource.menuGroup || "axi-resources";
     if (!menuGroupMap.has(groupKey)) {
       menuGroupMap.set(groupKey, []);
     }
+
+    // Determine route - use dashboardRoute for quick entries
+    const routeKey: NavRouteKey = 'dashboardRoute' in resource && resource.dashboardRoute && resource.dashboardRoute !== "/axi-resources"
+      ? resource.dashboardRoute as NavRouteKey
+      : axiResourceRoute(resource) as NavRouteKey;
+
     menuGroupMap.get(groupKey)!.push({
-      key: axiResourceRoute(resource) as NavRouteKey,
+      key: routeKey,
       icon: resourceIcon(resource),
       label: resource.title
     });
@@ -241,7 +270,7 @@ export function makeHostNavGroups(
   // Build the groups array dynamically based on actual menuGroups
   const groups: NavGroup[] = [...staticNavGroups];
 
-  // Add hosted apps as a separate group
+  // Add hosted apps as a separate group (axi-apps)
   if (hostedAppItems.length > 0) {
     groups.push({
       key: "axi-apps",
@@ -253,7 +282,6 @@ export function makeHostNavGroups(
 
   // Add resource groups based on menuGroupMap (excluding 'axi-apps' which is handled above)
   for (const [groupKey, items] of menuGroupMap) {
-    // Skip if already handled (axi-apps for hosted apps)
     if (groupKey === "axi-apps" && hostedAppItems.length > 0) continue;
 
     const config = menuGroupConfig[groupKey];

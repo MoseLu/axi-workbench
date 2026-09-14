@@ -221,6 +221,211 @@ function AxiResourceDetail({ resource }: { resource: AxiResource }) {
           )}
         </div>
       </div>
+
+      {/* Type-specific Detail Sections */}
+      {resource.kind === "shared-rule-index" && resource.rulesMetadata && (
+        <div className="resource-detail-section">
+          <h3 className="resource-detail-section-title">{t("规则详情")}</h3>
+          <div className="resource-detail-grid">
+            {resource.rulesMetadata.ruleFamilies && resource.rulesMetadata.ruleFamilies.length > 0 && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("规则族")}</span>
+                <div className="resource-detail-tags">
+                  {resource.rulesMetadata.ruleFamilies.map((family) => (
+                    <AxiTag key={family} className="metric-tag" effect="light" round type="primary">
+                      {family}
+                    </AxiTag>
+                  ))}
+                </div>
+              </div>
+            )}
+            {resource.rulesMetadata.applicableScopes && resource.rulesMetadata.applicableScopes.length > 0 && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("适用场景")}</span>
+                <div className="resource-detail-tags">
+                  {resource.rulesMetadata.applicableScopes.map((scope) => (
+                    <AxiTag key={scope} className="metric-tag" effect="light" round type="success">
+                      {scope}
+                    </AxiTag>
+                  ))}
+                </div>
+              </div>
+            )}
+            {resource.rulesMetadata.sourcePrecedence && resource.rulesMetadata.sourcePrecedence.length > 0 && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("Source Precedence")}</span>
+                <div className="resource-detail-tags">
+                  {resource.rulesMetadata.sourcePrecedence.map((source, idx) => (
+                    <AxiTag key={source} className="metric-tag" effect="light" round type="warning">
+                      {idx + 1}. {source}
+                    </AxiTag>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {resource.kind === "shared-skill-registry" && resource.skillsMetadata && (
+        <div className="resource-detail-section">
+          <h3 className="resource-detail-section-title">{t("技能详情")}</h3>
+          <div className="resource-detail-grid">
+            {resource.skillsMetadata.skillCategories && resource.skillsMetadata.skillCategories.length > 0 && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("技能分类")}</span>
+                <div className="resource-detail-tags">
+                  {resource.skillsMetadata.skillCategories.map((category) => (
+                    <AxiTag key={category} className="metric-tag" effect="light" round type="primary">
+                      {category}
+                    </AxiTag>
+                  ))}
+                </div>
+              </div>
+            )}
+            {resource.skillsMetadata.version && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("版本")}</span>
+                <span className="resource-detail-value">
+                  <AxiTag className="metric-tag" effect="light" round type="info">
+                    v{resource.skillsMetadata.version}
+                  </AxiTag>
+                </span>
+              </div>
+            )}
+            {resource.skillsMetadata.skillCount !== undefined && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("技能数量")}</span>
+                <span className="resource-detail-value">{resource.skillsMetadata.skillCount}</span>
+              </div>
+            )}
+            {resource.skillsMetadata.i18nStatus && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("i18n 状态")}</span>
+                <span className="resource-detail-value">
+                  <AxiTag
+                    className="metric-tag"
+                    effect="light"
+                    round
+                    type={resource.skillsMetadata.i18nStatus === "full" ? "success" : resource.skillsMetadata.i18nStatus === "partial" ? "warning" : "info"}
+                  >
+                    {resource.skillsMetadata.i18nStatus === "full" ? "完全本地化" : resource.skillsMetadata.i18nStatus === "partial" ? "部分本地化" : "无本地化"}
+                  </AxiTag>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {resource.kind === "local-registry" && resource.registryMetadata && (
+        <div className="resource-detail-section">
+          <h3 className="resource-detail-section-title">{t("Registry 详情")}</h3>
+          <div className="resource-detail-grid">
+            {resource.registryMetadata.registryUrl && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("Registry 地址")}</span>
+                <span className="resource-detail-value">
+                  <code className="resource-detail-code">{resource.registryMetadata.registryUrl}</code>
+                </span>
+              </div>
+            )}
+            {resource.registryMetadata.healthEndpoint && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("健康检查端点")}</span>
+                <span className="resource-detail-value">
+                  <code className="resource-detail-code">{resource.registryMetadata.healthEndpoint}</code>
+                </span>
+              </div>
+            )}
+            {resource.registryMetadata.packageCount !== undefined && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("包数量")}</span>
+                <span className="resource-detail-value">{resource.registryMetadata.packageCount}</span>
+              </div>
+            )}
+            {resource.registryMetadata.healthStatus && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("健康状态")}</span>
+                <span className="resource-detail-value">
+                  <AxiTag
+                    className="metric-tag"
+                    effect="light"
+                    round
+                    type={resource.registryMetadata.healthStatus === "healthy" ? "success" : resource.registryMetadata.healthStatus === "unhealthy" ? "danger" : "info"}
+                  >
+                    {resource.registryMetadata.healthStatus === "healthy" ? "健康" : resource.registryMetadata.healthStatus === "unhealthy" ? "不健康" : "未知"}
+                  </AxiTag>
+                </span>
+              </div>
+            )}
+            {resource.health && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("检查间隔")}</span>
+                <span className="resource-detail-value">{resource.health.interval / 1000}s</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {resource.kind === "governance-infrastructure" && resource.governanceMetadata && (
+        <div className="resource-detail-section">
+          <h3 className="resource-detail-section-title">{t("治理详情")}</h3>
+          <div className="resource-detail-grid">
+            {resource.governanceMetadata.projectCount !== undefined && (
+              <div className="resource-detail-item">
+                <span className="resource-detail-label">{t("项目注册数")}</span>
+                <span className="resource-detail-value">{resource.governanceMetadata.projectCount}</span>
+              </div>
+            )}
+            {resource.governanceMetadata.graphValidation && (
+              <>
+                <div className="resource-detail-item">
+                  <span className="resource-detail-label">{t("Graph 校验")}</span>
+                  <span className="resource-detail-value">
+                    <AxiTag
+                      className="metric-tag"
+                      effect="light"
+                      round
+                      type={resource.governanceMetadata.graphValidation.valid ? "success" : "danger"}
+                    >
+                      {resource.governanceMetadata.graphValidation.valid ? "有效" : "无效"}
+                    </AxiTag>
+                  </span>
+                </div>
+                {resource.governanceMetadata.graphValidation.errorCount !== undefined && (
+                  <div className="resource-detail-item">
+                    <span className="resource-detail-label">{t("错误数")}</span>
+                    <span className="resource-detail-value" style={{ color: resource.governanceMetadata.graphValidation.errorCount > 0 ? "var(--red)" : "inherit" }}>
+                      {resource.governanceMetadata.graphValidation.errorCount}
+                    </span>
+                  </div>
+                )}
+                {resource.governanceMetadata.graphValidation.warningCount !== undefined && (
+                  <div className="resource-detail-item">
+                    <span className="resource-detail-label">{t("警告数")}</span>
+                    <span className="resource-detail-value" style={{ color: resource.governanceMetadata.graphValidation.warningCount > 0 ? "var(--amber)" : "inherit" }}>
+                      {resource.governanceMetadata.graphValidation.warningCount}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+            {resource.governanceMetadata.lastValidatedAt && (
+              <div className="resource-detail-item resource-detail-item-full">
+                <span className="resource-detail-label">{t("最近校验时间")}</span>
+                <span className="resource-detail-value">
+                  {formatAbsoluteTime(resource.governanceMetadata.lastValidatedAt)}
+                  <span className="resource-detail-relative">
+                    ({formatRelativeTime(resource.governanceMetadata.lastValidatedAt)})
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

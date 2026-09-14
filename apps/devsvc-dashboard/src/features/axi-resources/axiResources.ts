@@ -17,6 +17,47 @@ export type VerifyCommand = {
   runner?: 'local' | 'ci';
 };
 
+// Health check configuration for registry resources
+export type HealthCheck = {
+  type: "http";
+  endpoint: string;
+  interval: number;
+};
+
+// Rule family metadata for axiom-rules
+export type AxiRulesMetadata = {
+  ruleFamilies?: string[];           // e.g., ["AR-BOOTSTRAP-*", "AR-ADMISSION-*"]
+  applicableScopes?: string[];       // e.g., ["project", "workspace", "system"]
+  sourcePrecedence?: string[];       // e.g., ["CLAUDE.md", "AGENTS.md", "INDEX.md"]
+};
+
+// Skill metadata for axiom-skills
+export type AxiSkillsMetadata = {
+  skillCategories?: string[];        // e.g., ["agentic", "workspace-ops", "frontend"]
+  version?: string;                 // e.g., "3.2.0"
+  i18nStatus?: "full" | "partial" | "none";
+  skillCount?: number;
+};
+
+// Registry metadata for axiom-registry
+export type AxiRegistryMetadata = {
+  registryUrl?: string;             // e.g., "http://127.0.0.1:4873"
+  packageCount?: number;
+  healthStatus?: "healthy" | "unhealthy" | "unknown";
+  healthEndpoint?: string;
+};
+
+// Governance metadata for axiom-workspace-governance
+export type AxiGovernanceMetadata = {
+  projectCount?: number;
+  graphValidation?: {
+    valid: boolean;
+    errorCount?: number;
+    warningCount?: number;
+  };
+  lastValidatedAt?: string;
+};
+
 export type AxiResource = {
   id: string;
   title: string;
@@ -44,6 +85,13 @@ export type AxiResource = {
 
   // Verify commands (read-only, from graph config only)
   verifyCommands?: VerifyCommand[];
+
+  // Type-specific metadata (populated from backend or static config)
+  health?: HealthCheck;
+  rulesMetadata?: AxiRulesMetadata;
+  skillsMetadata?: AxiSkillsMetadata;
+  registryMetadata?: AxiRegistryMetadata;
+  governanceMetadata?: AxiGovernanceMetadata;
 };
 
 export type AxiResourcesPayload = {

@@ -2,6 +2,47 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
+// Verification cache: key = resourceId, value = cached verification result
+const verificationCache = new Map();
+
+// Cache TTL: 24 hours in milliseconds
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Check if a cached verification result is stale (older than 24 hours).
+ * @param {string} resourceId - The resource identifier
+ * @returns {boolean} - True if no cache exists or cache is older than 24 hours
+ */
+export function isStale(resourceId) {
+  const cached = verificationCache.get(resourceId);
+  if (!cached) return true;
+
+  const cachedAt = new Date(cached.lastVerifiedAt).getTime();
+  const now = Date.now();
+  return (now - cachedAt) > CACHE_TTL_MS;
+}
+
+/**
+ * Get cached verification result for a resource.
+ * @param {string} resourceId - The resource identifier
+ * @returns {object|null} - Cached result or null if not cached
+ */
+export function getCachedVerification(resourceId) {
+  return verificationCache.get(resourceId) || null;
+}
+
+/**
+ * Clear verification cache for a specific resource or all resources.
+ * @param {string|null} resourceId - Optional resource ID to clear, or null to clear all
+ */
+export function clearVerificationCache(resourceId = null) {
+  if (resourceId) {
+    verificationCache.delete(resourceId);
+  } else {
+    verificationCache.clear();
+  }
+}
+
 function readJson(filePath, fallback) {
   if (!fs.existsSync(filePath)) return fallback;
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -309,9 +350,13 @@ function mergeResource(base, override, workspaceRoot) {
 export async function loadWorkspaceResourceRegistry({
   workspaceRoot,
   graphPath = path.join(workspaceRoot, "workspace.graph.json"),
-  staticResourcesPath = path.join(workspaceRoot, "projects", "axi-workbench", "apps", "devsvc-dashboard", "config", "axi-resources.json")
+  staticResourcesPath = path.join(workspaceRoot, "projects", "axi-workbench", "apps", "devsvc-dashboard", "config", "axi-resources.json"),
+  cacheOptions = {}
 } = {}) {
   if (!workspaceRoot) throw new Error("workspaceRoot is required");
+
+  // Cache options: enabled (default true), forceRefresh (default false)
+  const { enabled = true, forceRefresh = false } = cacheOptions;
 
   const graph = readJson(graphPath, { projects: {} });
   const staticResources = readJson(staticResourcesPath, []);
@@ -321,12 +366,39 @@ export async function loadWorkspaceResourceRegistry({
   for (const [id, project] of Object.entries(graph.projects || {})) {
     const baseResource = graphResource({ id, project, workspaceRoot });
 
-    // Run verification commands and merge results
-    const verificationResult = await runVerifications(
-      baseResource.verifyCommands,
-      baseResource.ownerPath,
-      workspaceRoot
-    );
+    // Determine whether to use cache or run fresh verification
+    let verificationResult;
+    const cachedResult = enabled ? getCachedVerification(id) : null;
+    const needsRefresh = forceRefresh || !cachedResult || isStale(id);
+
+    if (needsRefresh) {
+      // Run verification commands and merge results
+      verificationResult = await runVerifications(
+        baseResource.verifyCommands,
+        baseResource.ownerPath,
+        workspaceRoot
+      );
+
+      // Cache the verification result for future requests
+      if (enabled && verificationResult.lastVerifiedAt) {
+        verificationCache.set(id, {
+          lastVerifiedAt: verificationResult.lastVerifiedAt,
+          verificationSource: verificationResult.verificationSource,
+          verificationSummary: verificationResult.verificationSummary,
+          verificationResults: verificationResult.verificationResults,
+          status: verificationResult.status
+        });
+      }
+    } else {
+      // Use cached result
+      verificationResult = {
+        lastVerifiedAt: cachedResult.lastVerifiedAt,
+        verificationSource: cachedResult.verificationSource,
+        verificationSummary: cachedResult.verificationSummary,
+        verificationResults: cachedResult.verificationResults,
+        status: cachedResult.status
+      };
+    }
 
     const merged = mergeResource(
       { ...baseResource, ...verificationResult },
@@ -341,6 +413,9 @@ export async function loadWorkspaceResourceRegistry({
       merged.verificationSource = verificationResult.verificationSource;
       merged.verificationSummary = verificationResult.verificationSummary;
     }
+
+    // Add cache metadata for debugging/transparency
+    merged.fromCache = !needsRefresh && Boolean(verificationResult.lastVerifiedAt);
 
     // Finalize evidence link based on final merged state
     merged.evidenceLink = generateEvidenceLink(merged, verificationResult);
