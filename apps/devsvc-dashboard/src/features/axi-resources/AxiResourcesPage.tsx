@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button as AntButton } from "antd";
+import { Button as AntButton, Tooltip } from "antd";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +16,81 @@ const surfaceLabels: Record<string, string> = {
   "hosted-subroute": "托管子路由",
   "resource-index": "资源索引"
 };
+
+// Helper to format relative time
+function formatRelativeTime(isoTimestamp?: string): string {
+  if (!isoTimestamp) return "—";
+  const date = new Date(isoTimestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return "刚刚";
+  if (diffMins < 60) return `${diffMins} 分钟前`;
+  if (diffHours < 24) return `${diffHours} 小时前`;
+  if (diffDays < 7) return `${diffDays} 天前`;
+  return date.toLocaleDateString("zh-CN");
+}
+
+// Helper to get verification source label
+function getVerificationSourceLabel(source?: string): string {
+  const labels: Record<string, string> = {
+    local: "本地验证",
+    ci: "CI 验证",
+    remote: "远程验证"
+  };
+  return labels[source || ""] || "—";
+}
+
+// Enhanced verification status renderer for failed resources
+function VerificationStatus({ resource }: { resource: AxiResource }) {
+  const { t } = useTranslation();
+  const isFailed = resource.status === "failed";
+
+  if (!isFailed) {
+    return <StatusChip value={resource.status} />;
+  }
+
+  return (
+    <Tooltip
+      title={
+        <div style={{ maxWidth: 280, whiteSpace: "pre-wrap" }}>
+          {resource.verificationSummary && (
+            <div style={{ marginBottom: 8 }}>
+              <strong>{t("失败原因")}:</strong>
+              <br />
+              {resource.verificationSummary}
+            </div>
+          )}
+          <div style={{ fontSize: 12, opacity: 0.9 }}>
+            <div>{t("验证来源")}: {getVerificationSourceLabel(resource.verificationSource)}</div>
+            <div>{t("验证时间")}: {formatRelativeTime(resource.lastVerifiedAt)}</div>
+            {resource.owner && <div>{t("联系 Owner")}: {resource.owner}</div>}
+          </div>
+        </div>
+      }
+      placement="topLeft"
+    >
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+        <StatusChip value={resource.status} />
+        <span style={{ fontSize: 11, color: "var(--red)" }}>
+          {resource.verificationSummary
+            ? resource.verificationSummary.length > 20
+              ? resource.verificationSummary.slice(0, 20) + "..."
+              : resource.verificationSummary
+            : t("验证失败")}
+        </span>
+        {resource.owner && (
+          <span style={{ fontSize: 10, color: "var(--amber)" }}>
+            {t("联系 Owner")}: {resource.owner}
+          </span>
+        )}
+      </div>
+    </Tooltip>
+  );
+}
 
 export function AxiResourcesPage() {
   const { t } = useTranslation();
@@ -73,8 +148,8 @@ export function AxiResourcesPage() {
           title: t("状态"),
           dataIndex: "status",
           align: "center" as const,
-          width: 100,
-          render: (value: string) => <StatusChip value={value} />
+          width: 160,
+          render: (_: string, resource: AxiResource) => <VerificationStatus resource={resource} />
         },
         {
           title: t("收归方式"),
@@ -108,7 +183,19 @@ export function AxiResourcesPage() {
           render: (value: string, resource: AxiResource) => (
             <div className="service-cell">
               <div className="service-name">{resource.ownerPathExists ? t("已登记") : t("未配置")}</div>
-              <div className="service-desc" title={value}>{value}</div>
+              {/* 不暴露绝对路径，只显示存在状态 */}
+              <div className="service-desc">—</div>
+              {resource.owner && (
+                <div className="service-desc" style={{ color: resource.status === "failed" ? "var(--red)" : "inherit" }}>
+                  {resource.status === "failed" ? (
+                    <Tooltip title={t("请联系 Owner 解决验证失败问题")}>
+                      <span>{t("联系 Owner")}: {resource.owner}</span>
+                    </Tooltip>
+                  ) : (
+                    <span>{t("Owner")}: {resource.owner}</span>
+                  )}
+                </div>
+              )}
             </div>
           )
         },
@@ -126,6 +213,19 @@ export function AxiResourcesPage() {
           title: t("说明"),
           dataIndex: "notes",
           render: (value?: string) => <span className="service-desc" title={value}>{value ? t(value) : "-"}</span>
+        },
+        {
+          title: t("文档"),
+          dataIndex: "docsRoute",
+          align: "center" as const,
+          width: 100,
+          render: (value?: string) => value ? (
+            <AntButton href={value} size="small" type="link" target="_blank" icon="book">
+              {t("文档")}
+            </AntButton>
+          ) : (
+            <span className="service-desc">—</span>
+          )
         }
       ]
     }

@@ -1,11 +1,28 @@
 import { api } from "../../lib/api";
 
+// Resource lifecycle status for registration → verification → expiration lifecycle
+export type ResourceLifecycleStatus =
+  | 'registered'  // Project exists in graph with path
+  | 'path-found'   // ownerPath resolved but not yet verified
+  | 'verified'     // Recent successful verification
+  | 'stale'        // Verification older than 24 hours
+  | 'failed'       // Verification failed
+  | 'missing';     // Path does not exist
+
+// Verification command descriptor (read-only, from graph config)
+export type VerifyCommand = {
+  id: string;
+  label: string;
+  command: string[];  // Array of command parts (not shell string)
+  runner?: 'local' | 'ci';
+};
+
 export type AxiResource = {
   id: string;
   title: string;
   kind: string;
   surface: string;
-  status: string;
+  status: ResourceLifecycleStatus | string;
   ownerPath: string;
   ownerPathExists?: boolean;
   dashboardRoute?: string;
@@ -13,17 +30,20 @@ export type AxiResource = {
   notes?: string;
 
   // Presentation override fields
-  visibility?: 'always' | 'deferred' | 'hidden';
+  visibility?: 'always' | 'deferred' | 'hidden' | 'admin';
   menuGroup?: string;
   audience?: 'user' | 'developer' | 'admin';
   docsRoute?: string;
   owner?: string;
 
   // Verification metadata
-  lastVerifiedAt?: string;
-  verificationSource?: string;
-  verificationSummary?: string;
-  evidenceLink?: string;
+  lastVerifiedAt?: string;      // ISO-8601 timestamp
+  verificationSource?: string;  // 'local' | 'ci' | 'remote'
+  verificationSummary?: string; // Human-readable summary
+  evidenceLink?: string;       // Evidence URL
+
+  // Verify commands (read-only, from graph config only)
+  verifyCommands?: VerifyCommand[];
 };
 
 export type AxiResourcesPayload = {

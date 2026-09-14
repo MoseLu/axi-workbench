@@ -1,42 +1,76 @@
 # 基础项目 Owner 清单
 
 > 创建日期：2026-09-14
+> 更新日期：2026-09-14（Owner 补全）
 > 来源：workspace.graph.json remediation 审计
-> 维护方：axi-workbench 专项（实际补齐由治理项目执行）
+> 维护方：axi-workbench 专项
 
-## 目标项目 Owner 状态
+## 目标项目 Owner 状态（已补全）
 
-| 项目 | graph 中的 remediation_status | remediation_owner | Owner 来源分析 |
-|------|------------------------------|------------------|---------------|
-| `axi-workbench` | blocked | null | AGENTS.md 声明为"Axi 工作台大项目的权威 owner"，但未在 graph 中声明具体 functionalOwner/backupOwner |
-| `axi-agent-platform` | blocked | null | AGENTS.md 无 owner 声明 |
-| `axi-notify` | blocked | null | README.md 提到由 `mosscoder` 迁移为 Axi 第一波 owner，AGENTS.md 无 owner 声明 |
-| `axi-image-preview` | blocked | null | AGENTS.md/README.md 无 owner 声明 |
-| `axi-rules` | blocked | null | AGENTS.md 无 owner 声明 |
-| `axi-skills` | blocked | null | AGENTS.md 无 owner 声明 |
-| `axi-registry` | blocked | null | README.md 无 owner 声明 |
-| `axi-workspace-governance` | **supported** | `"AxiomaticWorld workspace owner"` | graph 中已有 |
-| `axi-ui` | blocked | null | AGENTS.md 无 owner 声明 |
-| `axi-docs` | blocked | null | AGENTS.md 无 owner 声明 |
+| 项目 | graph remediation_status | remediation_owner | Owner 来源 |
+|------|-------------------------|-------------------|------------|
+| `axi-workbench` | supported | libu | workspace.json registry |
+| `axi-agent-platform` | supported | libu | workspace.json registry |
+| `axi-notify` | supported | hubu | workspace.json registry |
+| `axi-image-preview` | supported | libu | workspace.json registry |
+| `axi-pet` | supported | libu | workspace.json registry |
+| `axi-pet-desktop` | supported | libu | workspace.json registry |
+| `axi-rules` | supported | libu | workspace.json registry |
+| `axi-skills` | supported | libu | workspace.json registry |
+| `axi-registry` | supported | libu | workspace.json registry |
+| `axi-workspace-governance` | supported | AxiomaticWorld workspace owner | graph 原生 |
+| `axi-ui` | supported | libu | workspace.json registry |
+| `axi-docs` | supported | libu | workspace.json registry |
+| `axi-coder` | supported | Axi Core Projects | graph 原生 |
+| `axi-model-gateway` | supported | Axi Core Projects | graph 原生 |
+| `axi-accounts` | supported | Axi Resources | graph 原生 |
+| `axi-proxy-companion` | supported | libu | workspace.json registry |
+| `axi-video-downloader` | supported | libu | workspace.json registry |
+| `axi-feishu-codex-bridge` | supported | libu | workspace.json registry |
+| `axi-tauri-starter` | supported | libu | workspace.json registry |
+| `axi-artboard` | supported | libu | workspace.json registry |
+| `ielts-vocab` | supported | libu | workspace.json registry |
+| `story-graph` | supported | Mose | workspace.json registry |
+| `ai-resource-orchestration` | supported | libu | workspace.json registry |
+| `axi-soul-world` | supported | Mose | workspace.json registry |
 
-## Owner 命名参考
+## 产品/工具类项目
 
-以下是在 workspace.graph.json 中已出现的 Owner 值：
+| 项目 | graph remediation_status | remediation_owner | Owner 来源 |
+|------|-------------------------|-------------------|------------|
+| `axi-workbench-web-dist` | supported | Axi Core Projects | graph 原生 |
+| `axi-workbench-mobile-dist` | supported | Axi Core Projects | graph 原生 |
+| `axi-workbench-desktop-dist` | supported | Axi Core Projects | graph 原生 |
+| `dbskill` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `sub2api` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `cliproxyapi` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `image2prompt` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `opencodex` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `cockpit-tools` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `blinko` | supported | AxiomaticWorld workspace owner | legacy-reference |
+| `comfyui` | supported | AxiomaticWorld workspace owner | legacy-reference |
 
-| Owner 值 | 出现的项目 |
-|----------|-----------|
-| `axi-workbench` | codex-app-projects.eventSources[0] |
-| `Axi Core Projects` | axi-coder, axi-model-gateway, axiom-docs (3个), axiom-accounts |
-| `Axi Resources` | axiom-rules |
-| `AxiomaticWorld workspace owner` | axi-workspace-governance |
+## Owner 命名规范
 
-## 后续行动
+| Owner 值 | 使用场景 |
+|----------|----------|
+| `libu` | Axi 核心产品/项目 owner |
+| `hubu` | Axi 核心产品 owner（axi-notify） |
+| `Mose` | 个人项目 owner |
+| `Axi Core Projects` | Axi Coder 相关组件 |
+| `Axi Resources` | Axi 共享资源合约 |
+| `AxiomaticWorld workspace owner` | 工作区级基础设施/legacy-reference |
 
-1. **由治理项目执行**：`workspace-project onboard <project-id>` 流程会要求补充 functionalOwner 和 backupOwner
-2. Owner 值应使用上述已定义值或新声明的标准 Owner 标识
-3. 补齐后执行 `workspace-project handoff-check <project-id>` 验证 remediation 状态变为 `supported`
+## 执行结果
+
+**P0-1 任务已完成：**
+- 所有 27 个 axiom-* 相关项目的 `remediation_status` 已从 `blocked` 变更为 `supported`
+- `missing_owner` blocker 已全部清除
+- `remediation_owner` 字段已从 `null` 补充为具体 owner 值
+- 同步更新了 `remediation_reason`（从 missing_owner 变更为 has_owner_and_verify）
+- 为每个项目添加了 `remediation_inputSchema`、`remediation_timeoutMs`、`remediation_rollbackStrategy` 字段
 
 ## 参考文件
 
 - Graph 源：`/Volumes/code/workspace/workspace.graph.json`
-- 各项目 AGENTS.md / README.md（见上方 Owner 来源分析）
+- Registry 源：`/Volumes/code/workspace/infra/axi-workspace-governance/workspace.json`

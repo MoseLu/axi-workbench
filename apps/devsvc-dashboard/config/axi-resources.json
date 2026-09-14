@@ -27,7 +27,8 @@
       "ops",
       "credentials"
     ],
-    "notes": "Fleet executor/resource view hosted by the dashboard inside Axi Workbench."
+    "notes": "Fleet executor/resource view hosted by the dashboard inside Axi Workbench.",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "axi-coder",
@@ -42,7 +43,8 @@
       "model-gateway",
       "agent-task"
     ],
-    "notes": "Development workbench and model gateway provider surface."
+    "notes": "Development workbench and model gateway provider surface.",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "axi-verification-inbox",
@@ -58,7 +60,8 @@
       "otp",
       "oauth"
     ],
-    "notes": "Verification inbox appears in dashboard; native Tauri bridge remains the runtime for real mailbox actions."
+    "notes": "Verification inbox appears in dashboard; native Tauri bridge remains the runtime for real mailbox actions.",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "axi-workbench",
@@ -91,7 +94,8 @@
       "worktree-guard",
       "quality-gate"
     ],
-    "notes": "Agent runtime frontend is hosted by the dashboard; runtime contracts remain under Axi Agent Platform."
+    "notes": "Agent runtime frontend is hosted by the dashboard; runtime contracts remain under Axi Agent Platform.",
+    "menuGroup": "agent-runtime"
   },
   {
     "id": "axi-agent-mcp",
@@ -106,7 +110,8 @@
       "tools",
       "quality-gate"
     ],
-    "notes": "43-tool MCP service contract surfaced through the Axi resource index."
+    "notes": "43-tool MCP service contract surfaced through the Axi resource index.",
+    "menuGroup": "agent-runtime"
   },
   {
     "id": "axi-agent-transport",
@@ -121,7 +126,8 @@
       "websocket",
       "correlation"
     ],
-    "notes": "Terminal transport owner surfaced as a dashboard resource."
+    "notes": "Terminal transport owner surfaced as a dashboard resource.",
+    "menuGroup": "agent-runtime"
   },
   {
     "id": "axi-docs",
@@ -138,7 +144,8 @@
       "manifest",
       "search"
     ],
-    "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime."
+    "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime.",
+    "menuGroup": "workspace-governance"
   },
   {
     "id": "axi-rules",
@@ -154,6 +161,7 @@
       "memory-source-precedence"
     ],
     "notes": "Workspace rule authority is surfaced from the shared workspace graph; policy ownership remains with Axi Rules.",
+    "visibility": "admin",
     "menuGroup": "workspace-governance"
   },
   {
@@ -162,7 +170,7 @@
     "kind": "shared-skill-registry",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-skills",
+    "ownerPath": "${workspaceRoot}/shared/axi-skills",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "skill-registry",
@@ -179,7 +187,7 @@
     "kind": "governance-infrastructure",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workspace-governance",
+    "ownerPath": "${workspaceRoot}/infra/axi-workspace-governance",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "workspace-admission",
@@ -188,7 +196,7 @@
     ],
     "notes": "Workspace governance infrastructure for project admission, registration, and handoff chain.",
     "visibility": "hidden",
-    "menuGroup": "infrastructure"
+    "menuGroup": "system"
   },
   {
     "id": "axi-image-preview",
@@ -204,7 +212,8 @@
       "gallery",
       "preview"
     ],
-    "notes": "Image and wallpaper preview UI is hosted by the dashboard shell."
+    "notes": "Image and wallpaper preview UI is hosted by the dashboard shell.",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "axi-accounts",
@@ -219,7 +228,9 @@
       "credential-ref",
       "provider-credential-ref"
     ],
-    "notes": "Contract owner only; cockpit-tools remains reference and is not an Axi application."
+    "notes": "Contract owner only; cockpit-tools remains reference and is not an Axi application.",
+    "visibility": "admin",
+    "menuGroup": "system"
   },
   {
     "id": "axi-model-gateway",
@@ -234,7 +245,9 @@
       "proxy-diagnostics",
       "cli-route"
     ],
-    "notes": "Provider runtime is owned by Axi Coder and entered through its Providers page."
+    "notes": "Provider runtime is owned by Axi Coder and entered through its Providers page.",
+    "visibility": "admin",
+    "menuGroup": "system"
   },
   {
     "id": "axi-notify",
@@ -249,7 +262,9 @@
       "events",
       "device-targeting"
     ],
-    "notes": "Notify relay and event persistence owner; not a dashboard-hosted web app."
+    "notes": "Notify relay and event persistence owner; not a dashboard-hosted web app.",
+    "visibility": "admin",
+    "menuGroup": "system"
   },
   {
     "id": "axi-mobile",
@@ -264,7 +279,9 @@
       "inbox",
       "workflow-events"
     ],
-    "notes": "Android companion host remains under Axi Notify and is visible as a dashboard resource."
+    "notes": "Android companion host remains under Axi Notify and is visible as a dashboard resource.",
+    "visibility": "admin",
+    "menuGroup": "system"
   },
   {
     "id": "axi-todo",
@@ -280,7 +297,8 @@
       "mcp",
       "daemon"
     ],
-    "notes": "Local task ledger and Codex runner are part of Axi Agent Platform."
+    "notes": "Local task ledger and Codex runner are part of Axi Agent Platform.",
+    "menuGroup": "agent-runtime"
   },
   {
     "id": "axi-ui",
@@ -296,7 +314,9 @@
       "antd",
       "dashboard-shell"
     ],
-    "notes": "Shared UI/runtime provider consumed by dashboard and hosted apps."
+    "notes": "Shared UI/runtime provider consumed by dashboard and hosted apps.",
+    "visibility": "admin",
+    "menuGroup": "component-library"
   },
   {
     "id": "axi-registry",
@@ -306,13 +326,18 @@
     "status": "active",
     "ownerPath": "${workspaceRoot}/infra/axi-registry",
     "dashboardRoute": "/axi-resources",
+    "health": {
+      "type": "http",
+      "endpoint": "http://127.0.0.1:4873/-/verdaccio/packages",
+      "interval": 30000
+    },
     "capabilities": [
       "verdaccio",
       "package-distribution"
     ],
     "notes": "Local distribution boundary for @axi/* packages.",
     "visibility": "hidden",
-    "menuGroup": "infrastructure"
+    "menuGroup": "system"
   },
   {
     "id": "axi-app-cli",
@@ -327,7 +352,9 @@
       "template",
       "governance"
     ],
-    "notes": "Generated app governance and scaffold runtime are part of Axi Workbench."
+    "notes": "Generated app governance and scaffold runtime are part of Axi Workbench.",
+    "visibility": "admin",
+    "menuGroup": "system"
   },
   {
     "id": "axi-ollama-menu-assistant",
@@ -342,6 +369,73 @@
       "voice-workflows",
       "macos-menu"
     ],
-    "notes": "Native macOS menu assistant is indexed by the dashboard inside Axi Workbench."
+    "notes": "Native macOS menu assistant is indexed by the dashboard inside Axi Workbench.",
+    "visibility": "admin",
+    "menuGroup": "system"
+  },
+  {
+    "id": "axi-tauri-starter",
+    "title": "Axi Tauri Starter",
+    "kind": "desktop-template",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/shared/axi-tauri-starter",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "tauri",
+      "desktop-scaffold",
+      "template"
+    ],
+    "notes": "Desktop application starter template based on Tauri. Private; for internal use only.",
+    "visibility": "admin",
+    "menuGroup": "system"
+  },
+  {
+    "id": "axi-workbench-web-dist",
+    "title": "Axi Workbench Web Distribution",
+    "kind": "distribution",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/distributions/axi-workbench-web",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "web-distribution",
+      "production-deploy"
+    ],
+    "notes": "Standalone web distribution of Axi Workbench. Private; for internal distribution only.",
+    "visibility": "admin",
+    "menuGroup": "system"
+  },
+  {
+    "id": "axi-workbench-mobile-dist",
+    "title": "Axi Workbench Mobile Distribution",
+    "kind": "distribution",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/distributions/axi-workbench-mobile",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "mobile-distribution",
+      "production-deploy"
+    ],
+    "notes": "Standalone mobile distribution of Axi Workbench. Private; for internal distribution only.",
+    "visibility": "admin",
+    "menuGroup": "system"
+  },
+  {
+    "id": "axi-workbench-desktop-dist",
+    "title": "Axi Workbench Desktop Distribution",
+    "kind": "distribution",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/distributions/axi-workbench-desktop",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "desktop-distribution",
+      "production-deploy"
+    ],
+    "notes": "Standalone desktop distribution of Axi Workbench. Private; for internal distribution only.",
+    "visibility": "admin",
+    "menuGroup": "system"
   }
 ]

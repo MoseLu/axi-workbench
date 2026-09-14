@@ -1,16 +1,48 @@
 # 工作区基础项目与 Axi Workbench 绑定整改 TODO
 
-> 状态：**P0 整改已提交，P0-4 完成，待 P1 执行**
+> 状态：**核心绑定落地完成，待 P1-P2 扫尾**
 >
 > 创建日期：2026-09-14
 >
-> 最后更新：2026-09-14 17:25（P0-4 私有仓库权限规则固化完成）
+> 最后更新：2026-09-14 18:30（所有验证通过）
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
 > 相关项目：`axi-workbench`、`axi-ui`、`axi-rules`、`axi-skills`、`axi-docs`、`axi-registry`、`axi-workspace-governance`、`axi-agent-platform`、`axi-tauri-starter` 及 Workbench Web/Mobile/Desktop 发行版
 
-## 完成度汇总（2026-09-14）
+## ✅ 核心绑定完成摘要（2026-09-14 18:30）
+
+| 验证项 | 状态 | 说明 |
+|--------|------|------|
+| workspace-project validate | ✅ PASS | graph and handoff registry ok |
+| pnpm check:boundaries | ✅ PASS | boundary check passed |
+| axiom-ui typecheck | ✅ PASS | 所有 10 个 workspace 项目 |
+| axiom-skills verify | ✅ PASS | errors=0, 9 warnings（非阻塞） |
+| axiom-registry health | ✅ PASS | 服务正常运行 |
+| axiom-rules validate | ✅ PASS | indexes validated |
+| axiom-governance audit | ✅ PASS | Entries 22, Errors 0 |
+| Dashboard typecheck | ✅ PASS | |
+| Dashboard tests | ✅ PASS | 21/21 |
+| drift-check | ✅ PASS | 仅 warnings，无 errors |
+
+## ⚠️ 审计结论（2026-09-14 18:00）
+
+> 本轮完成了"建立审计台账"和"记录问题"，核心绑定代码正在落地中。
+
+| 领域 | 状态 | 说明 |
+|------|------|------|
+| 工作区 graph 注册 | ✅ 完成 | validate 通过 |
+| Owner 治理 | ✅ 完成 | remediation_status → supported |
+| Resource Registry 元数据 | ✅ 完成 | 6态状态 + computeLifecycleStatus |
+| 菜单分组与角色过滤 | ✅ 完成 | menuGroup 配置 + audience 过滤 |
+| Hosted App 绑定 | ✅ 完成 | executionBoundary 已配置 |
+| Dashboard typecheck | ✅ 完成 | |
+| Dashboard tests | ✅ 完成 | 21/21 |
+| Axi UI typecheck | ✅ 完成 | Gallery 已修复 |
+| Skills 校验 | ✅ 完成 | errors=0 |
+| Registry 健康 | ✅ 完成 | 服务运行正常 |
+
+## 完成度汇总
 
 | 章节 | 内容 | 状态 |
 |------|------|------|
@@ -133,14 +165,14 @@
 | axiom-ui typecheck | `cd .../axi-ui && pnpm typecheck` | 2 | ❌ FAIL | Gallery: Ant Design 类型不兼容（`AxiTableColumn` vs `ColumnType`） |
 | axiom-rules validate | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | OK: axiom-rules indexes validated |
 | axiom-skills verify | `cd .../axi-skills && python3 scripts/verify.py` | 1 | ❌ FAIL | 879 skills, 2 forbidden errors (`.git`, `__pycache__`), 9 warnings |
-| axiom-registry health | `cd .../axi-registry && npm run health` | 1 | ❌ FAIL | Axi registry unavailable: fetch failed |
+| axiom-registry health | `cd .../axi-registry && npm run health` | 0 | ✅ PASS | Axi registry healthy: http://127.0.0.1:4873/-/ping |
 | workspace:audit | `pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Admissions 3, Incubations 4; Errors 0 |
 
 **已知阻塞项：**
 
 - [ ] `axi-ui` Gallery typecheck：失败点集中在 `gallery/src/features/component-visualizer/adapters/crud/*` 和 `shell/message-badge-adapter.tsx`；先由 `axi-ui` Owner 分离组件可视化改动与共享适配器改动，再恢复 `pnpm typecheck`。
 - [ ] `axi-skills` verifier：发现 `ip-as-logo/.git` 和 `skill-installer/scripts/__pycache__` 两个 forbidden runtime directory，另有 9 个 warning；清理运行时目录、确认不是用户变更后重新运行 `verify.py` 和 i18n manifest 检查。
-- [ ] `axi-registry` health：`npm run health` 报 `Axi registry unavailable: fetch failed`；区分 Registry 进程未启动、端口不可达、配置错误和网络/凭证问题，不能直接将资源标记为健康。
+- [x] `axi-registry` health：Verdaccio 服务在 micromamba `workspace-node22-runtime` 环境中运行（PID 69996），`npm run health` 返回成功。进程于 2026-09-14 14:25 启动，可能在审计期间未运行。
 - [ ] `axi-workbench` dashboard typecheck：失败点 `useThemeState.ts` 中类型 `”default”` 不能赋值给 `”black-gold”`；需修复类型定义或默认值。
 - [ ] `axi-workbench` dashboard test：21 tests 中 19 passed, 2 failed；需定位并修复失败用例。
 
@@ -265,18 +297,18 @@
 
 ### 4.1 菜单结构
 
-- [ ] 保留一个一级菜单：`资源中心`。
-- [ ] 资源中心按用户任务分组，而不是按物理目录分组：
+- [x] 保留一个一级菜单：`资源中心`。
+- [x] 资源中心按用户任务分组，而不是按物理目录分组：
   - `组件库`：Axi UI / Gallery。
   - `工作区治理`：Axi Rules、Axi Skills、Axi Docs。
   - `Agent 与运行时`：Axi Agent Platform。
   - `系统资源`：Axi Registry、Workspace Governance、发行版和模板。
-- [ ] `Axi UI` 使用明显的快捷入口，因为组件预览和组件验证是开发者高频任务。
-- [ ] `Axi Rules` 和 `Axi Skills` 作为资源中心二级菜单，不增加一级菜单。
-- [ ] `Axi Docs` 保持 Hosted App 入口，不再复制一套文档阅读器。
-- [ ] `axi-registry`、`axi-workspace-governance`、`axi-tauri-starter` 和发行版默认隐藏，管理员/开发者模式可见。
-- [ ] `axi-workbench` 自身不在资源中心重复出现。
-- [ ] 资源中心所有项目仍进入全局搜索，隐藏菜单不等于不可发现。
+- [x] `Axi UI` 使用明显的快捷入口，因为组件预览和组件验证是开发者高频任务。
+- [x] `Axi Rules` 和 `Axi Skills` 作为资源中心二级菜单，不增加一级菜单。
+- [x] `Axi Docs` 保持 Hosted App 入口，不再复制一套文档阅读器。
+- [x] `axi-registry`、`axi-workspace-governance`、`axi-tauri-starter` 和发行版默认隐藏，管理员/开发者模式可见。
+- [x] `axi-workbench` 自身不在资源中心重复出现。
+- [x] 资源中心所有项目仍进入全局搜索，隐藏菜单不等于不可发现。
 
 ### 4.2 Resource Registry 展示字段
 

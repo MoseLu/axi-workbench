@@ -86,7 +86,8 @@ function resourceIcon(resource: Pick<AxiResource, "kind" | "surface" | "capabili
   return navIcon("workbench");
 }
 
-export const navGroups: NavGroup[] = [
+// Static nav groups that are not dynamically populated (declared before navGroups)
+const staticNavGroups: NavGroup[] = [
   {
     key: "workspace-ops",
     icon: navIcon("workbench"),
@@ -112,18 +113,24 @@ export const navGroups: NavGroup[] = [
     children: [{ key: "/servers", icon: navIcon("device"), label: "服务器" }]
   },
   {
-    key: "axi-apps",
-    icon: axiAppsIcon(),
-    label: "axi-apps",
-    children: []
-  },
-  {
     key: "axi-resources",
     icon: navIcon("database"),
     label: "axi-resources",
     children: [{ key: "/axi-resources", icon: navIcon("database"), label: "资源索引" }]
   }
 ];
+
+// menuGroup 配置：标签和图标
+const menuGroupConfig: Record<string, { label: string; icon: string }> = {
+  "component-library": { label: "component-library", icon: "component" },
+  "workspace-governance": { label: "workspace-governance", icon: "rule" },
+  "agent-runtime": { label: "agent-runtime", icon: "work" },
+  "system": { label: "system", icon: "database" },
+  "axi-apps": { label: "axi-apps", icon: "app" }
+};
+
+// navGroups 仅包含静态导航组，动态 menuGroup 在 makeHostNavGroups 中动态生成
+export const navGroups: NavGroup[] = staticNavGroups;
 
 export const navRouteKeys = navGroups.flatMap((group) => group.children).map((item) => item.key);
 export const navGroupKeys = Object.fromEntries(navGroups.flatMap((group) => group.children.map((item) => [item.key, group.key]))) as Record<NavRouteKey, string>;
@@ -182,27 +189,92 @@ export function hostedRouteTitle(key: NavRouteKey, apps: HostedApp[] = [], t?: A
   return appId ? appId.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") : key;
 }
 
-export function makeHostNavGroups(apps: HostedApp[], resources: AxiResource[] = []): NavGroup[] {
+export function makeHostNavGroups(
+  apps: HostedApp[] = [],
+  resources: AxiResource[] = [],
+  userRole: 'user' | 'developer' | 'admin' = 'developer'
+): NavGroup[] {
+  // Filter hosted apps by hostedMode
   const hostedAppItems: NavItem[] = apps.filter((app) => app.hostedMode).map((app) => ({
     key: hostedAppRoute(app) as HostedRouteKey,
     icon: hostedAppIcon(app),
     label: app.title
   }));
-  const resourceItems: NavItem[] = resources.filter((resource) => resource.surface !== "hosted-app").map((resource) => ({
-    key: axiResourceRoute(resource) as NavRouteKey,
-    icon: resourceIcon(resource),
-    label: resource.title
-  }));
 
-  return navGroups.map((group) => {
-    if (group.key === "axi-apps") return { ...group, children: [...group.children, ...hostedAppItems] };
-    if (group.key === "axi-resources") return { ...group, children: [...group.children, ...resourceItems] };
-    return group;
+  // Filter resources by visibility and audience
+  const rolePriority = { user: 0, developer: 1, admin: 2 };
+  const userLevel = rolePriority[userRole];
+
+  const filteredResources = resources.filter((resource) => {
+    // Skip hosted apps (they're in the apps section)
+    if (resource.surface === "hosted-app") return false;
+
+    // Check visibility field
+    if (resource.visibility === 'hidden' && userRole !== 'admin') return false;
+    if (resource.visibility === 'deferred') return false;
+    if (resource.visibility === 'admin' && userRole !== 'admin') return false;
+
+    // Check audience field - user must have sufficient role level
+    if (resource.audience) {
+      const audienceLevel = rolePriority[resource.audience] ?? 0;
+      if (userLevel < audienceLevel) return false;
+    }
+
+    return true;
   });
+
+  // Group resources by menuGroup
+  const menuGroupMap = new Map<string, NavItem[]>();
+
+  for (const resource of filteredResources) {
+    const groupKey = resource.menuGroup || "axi-resources";
+    if (!menuGroupMap.has(groupKey)) {
+      menuGroupMap.set(groupKey, []);
+    }
+    menuGroupMap.get(groupKey)!.push({
+      key: axiResourceRoute(resource) as NavRouteKey,
+      icon: resourceIcon(resource),
+      label: resource.title
+    });
+  }
+
+  // Build the groups array dynamically based on actual menuGroups
+  const groups: NavGroup[] = [...staticNavGroups];
+
+  // Add hosted apps as a separate group
+  if (hostedAppItems.length > 0) {
+    groups.push({
+      key: "axi-apps",
+      icon: axiAppsIcon(),
+      label: "axi-apps",
+      children: hostedAppItems
+    });
+  }
+
+  // Add resource groups based on menuGroupMap (excluding 'axi-apps' which is handled above)
+  for (const [groupKey, items] of menuGroupMap) {
+    // Skip if already handled (axi-apps for hosted apps)
+    if (groupKey === "axi-apps" && hostedAppItems.length > 0) continue;
+
+    const config = menuGroupConfig[groupKey];
+    groups.push({
+      key: groupKey,
+      icon: navIcon(config?.icon || "database"),
+      label: config?.label || groupKey,
+      children: items
+    });
+  }
+
+  return groups;
 }
 
-export function translateNavGroups(t: AppTFunction, apps: HostedApp[] = [], resources: AxiResource[] = []): NavGroup[] {
-  return makeHostNavGroups(apps, resources).map((group) => ({
+export function translateNavGroups(
+  t: AppTFunction,
+  apps: HostedApp[] = [],
+  resources: AxiResource[] = [],
+  userRole: 'user' | 'developer' | 'admin' = 'developer'
+): NavGroup[] {
+  return makeHostNavGroups(apps, resources, userRole).map((group) => ({
     ...group,
     label: t(group.label),
     children: group.children.map((item) => ({ ...item, label: t(item.label) }))
