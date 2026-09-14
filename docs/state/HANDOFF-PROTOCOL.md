@@ -40,7 +40,8 @@ HF-{unix_timestamp_ms}-{uuid_v4_short}
 | --- | --- | --- | --- |
 | Mobile → Web | Mobile | Web | C 级无法闭环、复杂编辑、批量操作 |
 | Mobile 扫码 → Web 续办 | Mobile | Web | B 级确认后需进一步处理 |
-| Web → Mobile | Web | Mobile | 需要现场确认的任务（预留） |
+| Web → Mobile | Web | Mobile | 需要现场确认的任务（已完成） |
+| 批量交接 | Batch | Web/Mobile | 多对象批量交接，共享 batchId |
 
 ## 交接数据模型
 
@@ -52,9 +53,9 @@ interface HandoffPayload {
   handoff_id: string;           // 格式：HF-{timestamp}-{uuid}
 
   // 交接元数据
-  source_surface: 'web' | 'mobile';
+  source_surface: 'web' | 'mobile' | 'batch';
   target_surface: 'web' | 'mobile';
-  action_level: 'B' | 'C';
+  action_level: 'A' | 'B' | 'C' | 'D';
   reason: string;                // 交接原因说明
 
   // 业务对象
@@ -91,7 +92,9 @@ interface HandoffPayload {
 }
 
 type HandoffStatus =
-  | 'created'      // 已创建，等待投递
+  | 'pending'      // 已创建，等待目标端打开
+  | 'opened'       // 目标端已打开
+  | 'created'      // Web→Mobile：已创建，等待投递
   | 'delivered'    // 已投递到目标端
   | 'accepted'     // 目标端已接受处理
   | 'completed'    // 任务完成
@@ -100,7 +103,7 @@ type HandoffStatus =
   | 'expired';     // 超时未处理
 ```
 
-### 当前运行 profile：Mobile → Web
+### 当前运行 profile：Mobile ↔ Web
 
 上面的通用状态机仍是面向未来双向交接的抽象；当前 Control Plane 已实现并
 由 `HandoffContextSchema` 校验的运行状态是：
@@ -111,8 +114,11 @@ type CurrentHandoffStatus = 'pending' | 'opened' | 'completed' | 'rejected' | 'e
 interface CurrentHandoffContext {
   id: string;
   handoffCorrelationId: string;
-  sourceSurface: 'mobile';
-  targetSurface: 'web';
+  sourceSurface: 'mobile' | 'web' | 'batch';
+  targetSurface: 'web' | 'mobile';
+  batchId?: string;          // 批量交接时共享
+  actionLevel: 'A' | 'B' | 'C' | 'D';
+  riskLevel: 'low' | 'medium' | 'high' | 'destructive';
   status: CurrentHandoffStatus;
   approvalId: string | null;
   sourceActorRef?: string | null;
@@ -271,8 +277,8 @@ axi-workbench://handoff/{handoff_id}
 | --- | --- | --- | --- |
 | 交接超时 SLA 默认值 | Implemented (2026-09-13) | Control Plane + 产品 | 通用交接默认 24h；Control Plane 支持正整数 `handoffExpiryMs` 或 `AXI_HANDOFF_EXPIRY_MS` 覆盖（代码参数优先，非法值回退默认）；后台 expiry worker、访问、写入和显式 sweep 均可将超时记录转为 `expired` 并写审计；不同场景的更短 SLA 仍待产品决定 |
 | 交接拒绝场景 | Implemented (2026-09-13) | Control Plane + Web | `pending/opened → rejected`；原因、验证主体和关联标识写入持久化记录与审计 |
-| Web → Mobile 交接 | Reserved | 产品 | 当前聚焦 Mobile → Web，P3 再考虑反向 |
-| 批量交接 | Open | 产品 | 多对象交接的打包语义 |
+| Web → Mobile 交接 | Implemented (2026-09-15) | Control Plane + Web | POST `/internal/web/v1/handoffs` 端点；`createWebToMobileHandoff`；状态机 created → delivered → accepted/completed/rejected/failed；审计事件 |
+| 批量交接 | Implemented (2026-09-15) | Control Plane + Web | `createBatchHandoff`；batchId 关联；`riskLevel` 映射（A/B/C/D）；批量审计事件；Web `HandoffCreate` 页面 |
 
 ## 文档关系
 
