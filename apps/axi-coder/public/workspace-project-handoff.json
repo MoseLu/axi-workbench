@@ -1,12 +1,12 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-08-31T16:07:29.218Z",
+  "generatedAt": "2026-09-14T00:45:53.638Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 22,
-    "verified": 22,
+    "verified": 21,
     "documented": 0,
-    "stale": 0,
+    "stale": 1,
     "unready": 0
   },
   "projects": [
@@ -941,17 +941,16 @@
         "todo": "docs/state/TODO.md",
         "milestone": "docs/state/MILESTONE.md",
         "active": [
-          "Align verification commands with the real project stack",
-          "Implement the role-oriented multi-surface product contract: Web control center, Mobile role execution and professional tools; reconcile capability/action-policy ownership and navigation terminology while keeping the two app compositions independent",
+          "Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence",
+          "Advance the product-owned P3 handoff decisions: Web to Mobile, batch semantics and scenario-specific SLA",
           "Preserve ownership and cross-project boundaries",
-          "Complete Go API plane cluster integration: ZITADEL OIDC, Mailpit/SMTP, PostgreSQL/Redis fault recovery and Helm deployment"
+          "Close the remaining external Go API plane gates: ZITADEL OIDC, production SMTP, database fault-injection recovery and cluster deployment"
         ],
         "knownFailures": [
-          "The root AGENTS.md still describes the pre-v2 manifest as legacy and should be reconciled in a separately authorized guidance update.",
-          "No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; cluster end-to-end acceptance remains external."
+          "No Kubernetes cluster or production ZITADEL/SMTP credentials are attached to this local workspace; local Mailpit, PostgreSQL RLS and Redis integrations pass, while cluster end-to-end, production SMTP and fault-injection acceptance remain external."
         ]
       },
-      "lastVerifiedAt": "2026-08-07"
+      "lastVerifiedAt": "2026-09-13"
     },
     {
       "id": "axi-workspace-governance",
@@ -1103,13 +1102,15 @@
       "kind": "product",
       "lifecycle": "active-product",
       "owner": "Mose",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/products/story-graph/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/products/story-graph/docs/HANDOFF.md",
       "graphId": "story-graph",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 40 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Evidence-driven local novel relationship graph workbench with a Python pipeline, SQLite evidence store, and React/Vite viewer.",
       "commands": {

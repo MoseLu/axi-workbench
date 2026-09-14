@@ -1,24 +1,24 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-08-31T16:07:29.218Z",
+  "generatedAt": "2026-09-14T00:45:53.638Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 37,
-    "axiTotal": 21,
+    "total": 40,
+    "axiTotal": 24,
     "complete": 1,
-    "usableOrBetter": 9,
+    "usableOrBetter": 13,
     "blocked": 0,
     "byStage": {
       "unassessed": 26,
-      "building": 2,
-      "usable": 7,
+      "usable": 11,
       "complete": 1,
+      "building": 1,
       "maintenance": 1
     },
     "byConfidence": {
       "low": 19,
-      "high": 7,
-      "medium": 11
+      "high": 11,
+      "medium": 10
     }
   },
   "projects": [
@@ -33,39 +33,26 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
-        "docs:partial",
-        "handoff:verified",
+        "docs:not-applicable",
+        "handoff:not-applicable",
         "verify:test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md",
         "health:test -f /Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md",
         "contracts:2"
       ],
-      "remaining": [
-        "补齐 TODO.md，让待办和里程碑可审计。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
-      ],
+      "remaining": [],
       "docs": {
-        "status": "partial",
+        "status": "not-applicable",
         "present": [
-          "README.md",
-          "AGENTS.md",
-          "docs/project-docs.manifest.json"
+          "/Volumes/code/workspace/docs/axi/merge-plans/AXI_ACCOUNTS_MERGE_PLAN.md",
+          "/Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md"
         ],
-        "missing": [
-          "CHANGELOG.md",
-          "TODO.md",
-          "MILESTONE.md",
-          "docs/PRD.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md",
-          "VERIFICATION.md"
-        ]
+        "missing": []
       },
       "handoff": {
-        "status": "verified",
-        "score": 10,
+        "status": "not-applicable",
+        "score": null,
         "errors": []
       },
       "verify": [
@@ -77,7 +64,8 @@
       "contracts": [
         "/Volumes/code/workspace/docs/axi/merge-plans/AXI_ACCOUNTS_MERGE_PLAN.md",
         "/Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md"
-      ]
+      ],
+      "workspaceResource": true
     },
     {
       "id": "axi-agent-platform",
@@ -241,15 +229,16 @@
       "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
       "kind": "full-development-workbench",
       "isAxi": true,
-      "stage": "building",
-      "stageLabel": "建设中",
-      "confidence": "medium",
-      "confidenceLabel": "中",
-      "summary": "Axi Coder is the full development workbench surface and now consumes the workspace project completion snapshot.",
-      "updatedAt": "2026-05-30",
+      "stage": "usable",
+      "stageLabel": "可用",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Axi Coder is the full development workbench surface and consumes the generated workspace project completion snapshot.",
+      "updatedAt": "2026-09-14",
       "evidence": [
         "Product surface and workspace E2E contract tests define the Axi Coder capability boundary.",
         "Hosted dashboard registration exposes Axi Coder under /apps/axi-coder/overview.",
+        "The completion panel reads workspace-project-completion.json with a malformed-snapshot fallback; Axi Coder tests pass 14/14 and production build passes.",
         "docs:partial",
         "handoff:verified",
         "verify:pnpm typecheck | pnpm test",
@@ -258,7 +247,6 @@
         "package-scripts:test,build"
       ],
       "remaining": [
-        "Keep the completion panel wired to generated workspace evidence.",
         "Add native Tauri completion command only if the static snapshot stops being sufficient.",
         "补齐 TODO.md，让待办和里程碑可审计。",
         "补齐 MILESTONE.md，让待办和里程碑可审计。"
@@ -373,7 +361,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -787,7 +775,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -900,7 +888,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1108,7 +1096,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1231,7 +1219,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1284,11 +1272,12 @@
       "stageLabel": "建设中",
       "confidence": "medium",
       "confidenceLabel": "中",
-      "summary": "Axi Workbench hosts the dashboard, Axi Coder, control-plane, fleet console, and local assistants; project-completion support is still being expanded.",
-      "updatedAt": "2026-05-30",
+      "summary": "Axi Workbench hosts the dashboard, Axi Coder, control-plane, fleet console, and local assistants; project-completion evidence is now consumed by the Axi Coder surface.",
+      "updatedAt": "2026-09-14",
       "evidence": [
         "DevSvc Dashboard and Axi Coder are registered as hosted workbench surfaces.",
         "Workspace verify covers dashboard, Axi Coder, verification inbox, and fleet console.",
+        "Axi Coder completion panel consumes the generated workspace project completion snapshot and passes 14/14 tests with a production build.",
         "docs:partial",
         "handoff:verified",
         "verify:pnpm --dir apps/devsvc-dashboard typecheck | pnpm --dir apps/axi-coder typecheck | npm --prefix apps/verification-inbox run typecheck | python3 infra/fleet-console/scripts/fleetctl.py validate",
@@ -1297,7 +1286,6 @@
         "package-scripts:test,build"
       ],
       "remaining": [
-        "Finish the project completion data and UI loop for Axi Coder.",
         "Continue consolidating dashboard/control-plane documentation and evidence.",
         "consumes ai-resource-orchestration is a declarative capability edge only. Runtime dispatch flows through task-execution-routing/v1 and must never instantiate a second resource gateway or front the standalone gateway directly. See ADR-005/006 and the resource-search ADR for the cross-project contract surface."
       ],
@@ -1347,6 +1335,228 @@
         "tools/axi-app-cli/package.json",
         "services/control-plane/src/control-plane.mjs",
         "services/workflow-engine/services/executor.py"
+      ]
+    },
+    {
+      "id": "axi-workbench-desktop-dist",
+      "name": "Axi Workbench Desktop Distribution",
+      "path": "/Volumes/code/workspace/distributions/axi-workbench-desktop",
+      "kind": "distribution",
+      "isAxi": true,
+      "stage": "usable",
+      "stageLabel": "可用",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Axi Workbench Desktop Distribution is a standalone Tauri 2 desktop app wrapping the Axi Workbench web UI for native macOS experience.",
+      "updatedAt": "2026-09-14",
+      "evidence": [
+        "distributions/axi-workbench-desktop/package.json",
+        "distributions/axi-workbench-desktop/pnpm-workspace.yaml",
+        "distributions/axi-workbench-desktop/README.md",
+        "apps/workbench direct type-check passes after restoring the distribution TypeScript and shared Axi UI build prerequisites.",
+        "verify:ci validates package, Turbo, workspace, frozen-install, and CI command contracts.",
+        "pnpm pack --dry-run for the Desktop Web and native app packages excludes environment files and Turbo state via explicit files allowlists.",
+        "Full Desktop distribution type-check passes 19/19 tasks; build passes 16/16 tasks with Tauri ad hoc app signing and contract verification.",
+        "docs:legacy",
+        "handoff:unready",
+        "verify:pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-desktop type-check | pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-desktop verify:ci",
+        "health:test -f /Volumes/code/workspace/distributions/axi-workbench-desktop/package.json | test -d /Volumes/code/workspace/distributions/axi-workbench-desktop/apps",
+        "contracts:5",
+        "package-scripts:test,build"
+      ],
+      "remaining": [
+        "Verify Tauri build pipeline",
+        "Confirm DMG packaging workflow",
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "legacy",
+        "present": [
+          "README.md"
+        ],
+        "missing": [
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [
+        "pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-desktop type-check",
+        "pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-desktop verify:ci"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/distributions/axi-workbench-desktop/package.json",
+        "test -d /Volumes/code/workspace/distributions/axi-workbench-desktop/apps"
+      ],
+      "contracts": [
+        "README.md",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "apps/workbench/package.json",
+        "apps/workbench-desktop/package.json"
+      ]
+    },
+    {
+      "id": "axi-workbench-mobile-dist",
+      "name": "Axi Workbench Mobile Distribution",
+      "path": "/Volumes/code/workspace/distributions/axi-workbench-mobile",
+      "kind": "distribution",
+      "isAxi": true,
+      "stage": "usable",
+      "stageLabel": "可用",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Axi Workbench Mobile Distribution is a standalone monorepo for mobile deployment, including @axi/workbench-mobile app and shared @axi/* packages.",
+      "updatedAt": "2026-09-14",
+      "evidence": [
+        "distributions/axi-workbench-mobile/package.json",
+        "distributions/axi-workbench-mobile/pnpm-workspace.yaml",
+        "distributions/axi-workbench-mobile/README.md",
+        "Turbo tasks configuration, shared Axi UI build prerequisites, and the distribution-owned @axi/workstation-contracts package are restored; full type-check passes 8/8 tasks, build passes 6/6 tasks, and Mobile tests pass 33/33.",
+        "verify:ci validates package, Turbo, workspace, frozen-install, and CI command contracts.",
+        "pnpm pack --dry-run for the Mobile app excludes environment files and Turbo state via the explicit files allowlist.",
+        "docs:legacy",
+        "handoff:unready",
+        "verify:pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-mobile type-check | pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-mobile verify:ci",
+        "health:test -f /Volumes/code/workspace/distributions/axi-workbench-mobile/package.json | test -d /Volumes/code/workspace/distributions/axi-workbench-mobile/apps",
+        "contracts:4",
+        "package-scripts:test,build"
+      ],
+      "remaining": [
+        "Verify mobile-specific build targets",
+        "Confirm platform-specific package publishing",
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "legacy",
+        "present": [
+          "README.md"
+        ],
+        "missing": [
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [
+        "pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-mobile type-check",
+        "pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-mobile verify:ci"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/distributions/axi-workbench-mobile/package.json",
+        "test -d /Volumes/code/workspace/distributions/axi-workbench-mobile/apps"
+      ],
+      "contracts": [
+        "README.md",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "apps/workbench-mobile/package.json"
+      ]
+    },
+    {
+      "id": "axi-workbench-web-dist",
+      "name": "Axi Workbench Web Distribution",
+      "path": "/Volumes/code/workspace/distributions/axi-workbench-web",
+      "kind": "distribution",
+      "isAxi": true,
+      "stage": "usable",
+      "stageLabel": "可用",
+      "confidence": "high",
+      "confidenceLabel": "高",
+      "summary": "Axi Workbench Web Distribution is a standalone monorepo for web deployment, wrapping the Axi Workbench UI with Turbo, React, and shared @axi/* packages.",
+      "updatedAt": "2026-09-14",
+      "evidence": [
+        "distributions/axi-workbench-web/package.json",
+        "distributions/axi-workbench-web/pnpm-workspace.yaml",
+        "distributions/axi-workbench-web/README.md",
+        "apps/workbench direct type-check passes after restoring the distribution TypeScript and shared Axi UI build prerequisites.",
+        "verify:ci validates package, Turbo, workspace, frozen-install, and CI command contracts.",
+        "pnpm pack --dry-run for the Web app excludes environment files and Turbo state via the explicit files allowlist.",
+        "Full Web distribution type-check and build pass across 18 and 15 Turbo tasks respectively.",
+        "docs:legacy",
+        "handoff:unready",
+        "verify:pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-web type-check | pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-web verify:ci",
+        "health:test -f /Volumes/code/workspace/distributions/axi-workbench-web/package.json | test -d /Volumes/code/workspace/distributions/axi-workbench-web/apps",
+        "contracts:4",
+        "package-scripts:test,build"
+      ],
+      "remaining": [
+        "Verify CI/CD pipeline integration",
+        "Confirm package publish workflow",
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "legacy",
+        "present": [
+          "README.md"
+        ],
+        "missing": [
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [
+        "pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-web type-check",
+        "pnpm --dir /Volumes/code/workspace/distributions/axi-workbench-web verify:ci"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/distributions/axi-workbench-web/package.json",
+        "test -d /Volumes/code/workspace/distributions/axi-workbench-web/apps"
+      ],
+      "contracts": [
+        "README.md",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "apps/workbench/package.json"
       ]
     },
     {
@@ -1409,7 +1619,7 @@
     },
     {
       "id": "ai-capability",
-      "name": "Ai Capability",
+      "name": "AI Capability Layer",
       "path": "/Users/mose/.cc-connect",
       "kind": "local-capability-layer",
       "isAxi": false,
@@ -1418,7 +1628,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1555,7 +1765,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1614,7 +1824,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1674,7 +1884,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1785,7 +1995,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1843,7 +2053,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1942,7 +2152,7 @@
     },
     {
       "id": "ielts-vocab",
-      "name": "Ielts Vocab",
+      "name": "IELTS Vocabulary",
       "path": "/Volumes/code/workspace/products/ielts-vocab",
       "kind": "product",
       "isAxi": false,
@@ -1951,7 +2161,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2010,7 +2220,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2062,7 +2272,7 @@
     },
     {
       "id": "minimax-tokenplan",
-      "name": "Minimax Tokenplan",
+      "name": "MiniMax Token Plan",
       "path": "/Users/mose/.cc-connect",
       "kind": "cloud-capability-cli",
       "isAxi": false,
@@ -2071,7 +2281,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2128,7 +2338,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2185,7 +2395,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2249,7 +2459,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2312,7 +2522,7 @@
         "products/story-graph/data/evidence-store/graph.json",
         "products/story-graph/db/graph.db",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:python3 -m unittest -q tests/test_evidence_pipeline.py | node --test app/server/evidence-store.test.mjs | npm --prefix app run build",
         "health:test -f /Volumes/code/workspace/products/story-graph/README.md | test -f /Volumes/code/workspace/products/story-graph/app/package.json | test -f /Volumes/code/workspace/products/story-graph/db/graph.db",
         "contracts:9"
@@ -2340,9 +2550,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 40 days old (max 30)"
+        ]
       },
       "verify": [
         "python3 -m unittest -q tests/test_evidence_pipeline.py",
@@ -2377,7 +2589,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-08-31T16:07:29.218Z",
+      "updatedAt": "2026-09-14T00:45:53.638Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
