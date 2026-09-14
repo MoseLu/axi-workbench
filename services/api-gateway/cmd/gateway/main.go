@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/epap/api-gateway/config"
+	"github.com/epap/api-gateway/gateway"
 	"github.com/epap/api-gateway/handlers"
 	"github.com/epap/api-gateway/identity"
 	"github.com/epap/api-gateway/middleware"
@@ -62,7 +64,27 @@ func main() {
 		cfg.Services.WorkflowInternalToken,
 		cfg.Services.NotificationInternalToken,
 	)
-	router := setupRouter(cfg, proxyHandler, identityService, limiter, logger)
+
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+
+	// Load route configuration
+	routeMatcher, err := loadRouteConfig()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("load route configuration")
+	}
+
+	// Initialize dynamic router for hot-reload support
+	dynamicRouter := gateway.NewDynamicRouter(routeMatcher, getRoutesConfigPath(), logger)
+
+	// Start configuration file watcher
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if err := dynamicRouter.StartWatcher(ctx); err != nil {
+		logger.Warn().Err(err).Msg("failed to start config watcher, using polling fallback")
+	}
+
+	router := setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, logger)
+
 	server := &http.Server{
 		Addr:              ":" + cfg.Server.Port,
 		Handler:           router,
@@ -91,9 +113,25 @@ func main() {
 			_ = server.Close()
 		}
 		if serverErr := <-serverErrors; serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-			logger.Error().Err(serverErr).Msg("API Gateway stopped with an error")
+			logger.Error().Err(err).Msg("API Gateway stopped with an error")
 		}
 	}
+}
+
+// loadRouteConfig loads route configuration from YAML file with fallback
+func loadRouteConfig() (*config.RouteMatcher, error) {
+	routesPath := getRoutesConfigPath()
+
+	matcher, err := config.LoadRoutes(routesPath)
+	if err != nil {
+		// If file not found, try relative path (useful for development)
+		matcher, err = config.LoadRoutes("config/routes.yaml")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return matcher, nil
 }
 
 func setupLogger(level string) zerolog.Logger {
@@ -116,8 +154,11 @@ func newLimiter(cfg *config.Config) (ratelimit.Limiter, error) {
 func setupRouter(
 	cfg *config.Config,
 	proxyHandler *handlers.ProxyHandler,
+	mobileControl *handlers.MobileControlProxy,
 	identityService *identity.Service,
 	limiter ratelimit.Limiter,
+	routeMatcher *config.RouteMatcher,
+	dynamicRouter *gateway.DynamicRouter,
 	logger zerolog.Logger,
 ) *gin.Engine {
 	if cfg.Environment == "production" {
@@ -139,138 +180,65 @@ func setupRouter(
 	router.Use(middleware.RateLimit(limiter))
 	router.Use(middleware.Audit(logger))
 
+	// Register routes from configuration
+	registry := handlers.NewRouteRegistry(handlers.RouteRegistryConfig{
+		RouteMatcher:    routeMatcher,
+		ProxyHandler:    proxyHandler,
+		IdentityService: identityService,
+		Limiter:         limiter,
+		MobileControl:   mobileControl,
+		InternalToken:   cfg.Services.ControlPlaneInternalToken,
+		Logger:          logger,
+	})
+
+	if err := registry.RegisterRoutes(router); err != nil {
+		logger.Fatal().Err(err).Msg("register configured routes")
+	}
+
+	// Also register routes that are not easily configurable
+	registerAdditionalRoutes(router, identityService, mobileControl)
+
+	// Register admin routes for dynamic route management
+	registerAdminRoutes(router, dynamicRouter, cfg.Services.ControlPlaneInternalToken, logger)
+
+	// NoRoute handler
+	router.NoRoute(handlers.NotFoundHandler())
+	return router
+}
+
+// registerAdditionalRoutes registers routes that have complex logic not suitable for YAML config
+func registerAdditionalRoutes(router *gin.Engine, identityService *identity.Service, mobileControl *handlers.MobileControlProxy) {
+	// Health check
 	router.GET("/health", handlers.HealthCheck())
+
+	// Ready check (depends on identity service)
 	router.GET("/ready", func(c *gin.Context) {
-		if err := errors.Join(identityService.Ready(c.Request.Context()), limiter.Ping(c.Request.Context())); err != nil {
+		if err := errors.Join(identityService.Ready(c.Request.Context())); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "gateway dependencies are unavailable"})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ready"})
 	})
+}
 
-	v1 := router.Group("/api/v1")
-	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
-	auth := v1.Group("/auth")
-	auth.GET("/oidc/start", handlers.OIDCStart(identityService))
-	auth.GET("/oidc/callback", handlers.OIDCCallback(identityService))
-	auth.GET("/methods", handlers.AuthMethods(identityService))
-	auth.GET("/session", handlers.Session(identityService))
-	auth.POST("/logout", handlers.Logout(identityService))
-	// REST session resource. Old /auth/session and /auth/logout stay as aliases.
-	v1.GET("/sessions/current", handlers.Session(identityService))
-	v1.DELETE("/sessions/current", handlers.Logout(identityService))
-	v1.POST("/sessions", handlers.PasswordLogin(identityService))
-	v1.GET("/sessions/resume", handlers.PeekResume(identityService))
-	v1.POST("/sessions/resume", handlers.RedeemResume(identityService))
-	auth.POST("/qr/transactions", proxyHandler.ProxyToIdentity())
-	auth.GET("/qr/transactions/:id", proxyHandler.ProxyToIdentity())
-	auth.POST("/qr/transactions/:id/resume", proxyHandler.ProxyToIdentity())
-	auth.POST("/qr/transactions/:id/resumptions", proxyHandler.ProxyToIdentity())
-	auth.POST("/email-verifications", proxyHandler.ProxyToIdentity())
-	auth.POST("/email-verifications/confirm", proxyHandler.ProxyToIdentity())
-	auth.POST("/email-verifications/:id/redemptions", proxyHandler.ProxyToIdentity())
-	// Login-with-email: confirm the one-time token through the identity-adapter
-	// and issue a browser session. Replaces the OIDC code-exchange step for
-	// environments that use SMTP delivery instead of an external IdP.
-	auth.POST("/login/email/confirm", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
-	v1.POST("/sessions/email", handlers.EmailLoginConfirm(identityService, cfg.Services.IdentityAdapterURL))
-	// Password login uses the configured bcrypt owner hash and issues the same
-	// durable browser session as email and device login.
-	auth.POST("/login/password", handlers.PasswordLogin(identityService))
-	// A browser that has no cookie may create/poll a device-login QR. The
-	// scanner bearer never reaches a browser session endpoint; completion is
-	// intercepted by the Gateway so only it issues the HttpOnly cookie.
-	auth.POST("/device-login/qr", mobileControl.ProxyPublicWebLogin())
-	auth.GET("/device-login/qr/:id", mobileControl.ProxyPublicWebLogin())
-	auth.POST("/device-login/qr/:id/consume", mobileControl.ConsumeWebLogin(identityService))
-	v1.POST("/sessions/device-qr/:id", mobileControl.ConsumeWebLogin(identityService))
-	// ZITADEL custom-login completes a QR transaction through the public
-	// gateway. The adapter still checks its webhook secret; this path preserves
-	// the sole-Ingress and ClusterIP-only identity-adapter topology.
-	v1.POST("/internal/zitadel/qr/transactions/:id/complete", proxyHandler.ProxyToIdentity())
-	// Platform Core is the only caller of this route. The gateway fans the
-	// durable event out to notification and workflow consumers using their
-	// dedicated internal credentials.
-	v1.POST("/internal/events", middleware.RequireInternalToken(cfg.Services.PlatformOutboxToken), proxyHandler.ProxyToEventConsumers())
+// registerAdminRoutes registers the admin routes for dynamic route management
+func registerAdminRoutes(router *gin.Engine, dynamicRouter *gateway.DynamicRouter, internalToken string, logger zerolog.Logger) {
+	adminHandler := gateway.NewAdminHandler(dynamicRouter, internalToken, logger)
+	adminHandler.RegisterRoutes(router.Group("/api/v1"))
+}
 
-	protected := v1.Group("")
-	protected.Use(middleware.RequireIdentity(identityService))
-	protected.POST("/auth/qr/transactions/:id/approve", proxyHandler.ProxyToIdentity())
-	protected.GET("/auth/eps/links/:provider", proxyHandler.ProxyToIdentity())
-	protected.PUT("/auth/eps/links/:provider", proxyHandler.ProxyToIdentity())
-	protected.GET("/handoffs/:id", mobileControl.ProxyWebHandoff())
-	protected.POST("/handoffs/:id", mobileControl.ProxyWebHandoff())
-	protected.GET("/handoffs", mobileControl.ProxyWebHandoff())
-	// Web control-plane calls stay same-origin and carry the browser session;
-	// the proxy injects the service credential and verified subject.
-	registerWebControlPlaneRoutes(protected, mobileControl.ProxyWebControl())
-
-	// Device-paired Mobile traffic carries a short-lived Control Plane bearer,
-	// rather than a browser OIDC credential.  It remains behind this Gateway;
-	// the downstream verifies the device token after this proxy strips spoofed
-	// internal headers and attaches the Gateway credential.
-	registerMobileControlRoutes(v1, mobileControl.Proxy())
-
-	// Platform Core routes are tenant-aware. The tenant ID comes from the path;
-	// Platform Core also checks membership and RLS, so a forged client header
-	// cannot turn another tenant into an authorized context.
-	protected.GET("/tenants", proxyHandler.ProxyToPlatform())
-	protected.POST("/tenants", proxyHandler.ProxyToPlatform())
-	protected.GET("/tenants/:tenantID/members", proxyHandler.ProxyToPlatform())
-	protected.PUT("/tenants/:tenantID/members/:memberSubject", proxyHandler.ProxyToPlatform())
-	protected.GET("/me/preferences", proxyHandler.ProxyToPlatform())
-	protected.PATCH("/me/preferences", proxyHandler.ProxyToPlatform())
-	protected.GET("/tenants/:tenantID/dictionaries/:key", proxyHandler.ProxyToPlatform())
-	protected.PUT("/tenants/:tenantID/dictionaries/:key", proxyHandler.ProxyToPlatform())
-	protected.GET("/tenants/:tenantID/projects", proxyHandler.ProxyToPlatform())
-	protected.POST("/tenants/:tenantID/projects", proxyHandler.ProxyToPlatform())
-	protected.GET("/tenants/:tenantID/tasks", proxyHandler.ProxyToPlatform())
-	protected.POST("/tenants/:tenantID/tasks", proxyHandler.ProxyToPlatform())
-
-	// Existing core-service is compatibility-read-only only. It remains an
-	// internal migration source and is not deployed by the production chart.
-	if cfg.Services.LegacyCoreServiceURL != "" {
-		legacyRead := func(next gin.HandlerFunc) gin.HandlerFunc {
-			return func(c *gin.Context) {
-				c.Header("Deprecation", "true")
-				c.Header("Link", "</api/v1/tenants/{tenantID}/projects>; rel=successor-version")
-				next(c)
-			}
+// getRoutesConfigPath returns the path to the routes configuration file
+func getRoutesConfigPath() string {
+	routesPath := os.Getenv("ROUTES_CONFIG_PATH")
+	if routesPath == "" {
+		// Default to config/routes.yaml in the same directory as the binary
+		execPath, err := os.Executable()
+		if err != nil {
+			// Fallback to relative path
+			routesPath = "config/routes.yaml"
+		} else {
+			routesPath = filepath.Join(filepath.Dir(execPath), "config", "routes.yaml")
 		}
-		protected.GET("/projects", legacyRead(proxyHandler.ProxyToLegacyCore()))
-		protected.GET("/projects/:id", legacyRead(proxyHandler.ProxyToLegacyCore()))
-		protected.GET("/tasks", legacyRead(proxyHandler.ProxyToLegacyCore()))
-		protected.GET("/tasks/:id", legacyRead(proxyHandler.ProxyToLegacyCore()))
 	}
-
-	protected.GET("/users/me", handlers.Session(identityService))
-	protected.GET("/users/me/profile", handlers.GetProfile(identityService))
-	protected.PATCH("/users/me/profile", handlers.UpdateProfile(identityService))
-	protected.GET("/files/*path", proxyHandler.ProxyToFile())
-	protected.POST("/files/*path", proxyHandler.ProxyToFile())
-	protected.DELETE("/files/*path", proxyHandler.ProxyToFile())
-	protected.GET("/workflows", proxyHandler.ProxyToWorkflow())
-	protected.POST("/workflows", proxyHandler.ProxyToWorkflow())
-	protected.GET("/workflows/:id", proxyHandler.ProxyToWorkflow())
-	protected.PATCH("/workflows/:id", proxyHandler.ProxyToWorkflow())
-	protected.PUT("/workflows/:id", proxyHandler.ProxyToWorkflow())
-	protected.DELETE("/workflows/:id", proxyHandler.ProxyToWorkflow())
-	protected.POST("/workflows/:id/execute", proxyHandler.ProxyToWorkflow())
-	protected.POST("/workflows/:id/executions", proxyHandler.ProxyToWorkflow())
-	protected.GET("/workflows/:id/execution", proxyHandler.ProxyToWorkflow())
-	protected.GET("/workflows/:id/executions/current", proxyHandler.ProxyToWorkflow())
-	protected.GET("/workflows/:id/approvals", proxyHandler.ProxyToWorkflow())
-	protected.POST("/workflows/:id/approvals/:approvalId", proxyHandler.ProxyToWorkflow())
-	protected.PATCH("/workflows/:id/approvals/:approvalId", proxyHandler.ProxyToWorkflow())
-	protected.POST("/workflows/:id/cancel", proxyHandler.ProxyToWorkflow())
-	protected.POST("/workflows/:id/cancellations", proxyHandler.ProxyToWorkflow())
-	protected.GET("/notifications", proxyHandler.ProxyToNotification())
-	protected.POST("/notifications", proxyHandler.ProxyToNotification())
-	protected.PUT("/notifications/read-all", proxyHandler.ProxyToNotification())
-	protected.POST("/notifications/read-receipts", proxyHandler.ProxyToNotification())
-	protected.PUT("/notifications/:id/read", proxyHandler.ProxyToNotification())
-	protected.PATCH("/notifications/:id", proxyHandler.ProxyToNotification())
-	protected.GET("/notifications/nav-badges", proxyHandler.ProxyToNotification())
-	router.NoRoute(handlers.NotFoundHandler())
-	return router
+	return routesPath
 }
