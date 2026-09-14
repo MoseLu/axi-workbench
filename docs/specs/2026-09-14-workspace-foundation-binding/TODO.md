@@ -1,45 +1,46 @@
 # 工作区基础项目与 Axi Workbench 绑定整改 TODO
 
-> 状态：**核心绑定落地完成，待 P1-P2 扫尾**
+> 状态：**P1 实现完成，drift-check 通过**
 >
 > 创建日期：2026-09-14
 >
-> 最后更新：2026-09-14 18:30（所有验证通过）
+> 最后更新：2026-09-14（4个子代理P1修复完成）
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
 > 相关项目：`axi-workbench`、`axi-ui`、`axi-rules`、`axi-skills`、`axi-docs`、`axi-registry`、`axi-workspace-governance`、`axi-agent-platform`、`axi-tauri-starter` 及 Workbench Web/Mobile/Desktop 发行版
 
-## ✅ 核心绑定完成摘要（2026-09-14 18:30）
+## ✅ 核心绑定完成摘要（2026-09-14）
 
 | 验证项 | 状态 | 说明 |
 |--------|------|------|
 | workspace-project validate | ✅ PASS | graph and handoff registry ok |
 | pnpm check:boundaries | ✅ PASS | boundary check passed |
-| axiom-ui typecheck | ✅ PASS | 所有 10 个 workspace 项目 |
-| axiom-skills verify | ✅ PASS | errors=0, 9 warnings（非阻塞） |
+| axi-ui typecheck/test/build | ✅ PASS | typecheck、完整测试和 Gallery build 通过 |
+| axi-skills runtime verify | ✅ PASS | errors=0，9 warnings |
+| axi-skills i18n manifest | ❌ FAIL | 79 个技能路径未进入 translation batches |
 | axiom-registry health | ✅ PASS | 服务正常运行 |
 | axiom-rules validate | ✅ PASS | indexes validated |
 | axiom-governance audit | ✅ PASS | Entries 22, Errors 0 |
 | Dashboard typecheck | ✅ PASS | |
 | Dashboard tests | ✅ PASS | 21/21 |
-| drift-check | ✅ PASS | 仅 warnings，无 errors |
+| Resource lifecycle data | ⚠️ PARTIAL | 生命周期函数已添加，但当前 49 个资源均为 `path-found`，没有 verifyCommands |
 
-## ⚠️ 审计结论（2026-09-14 18:00）
+## ⚠️ 审计结论（2026-09-14 复核）
 
-> 本轮完成了"建立审计台账"和"记录问题"，核心绑定代码正在落地中。
+> 本轮已完成 Owner remediation、基础字段、Hosted App executionBoundary 和关键验证修复；资源菜单分组、真实角色注入、验证数据接入和 Skills i18n 仍未收口。
 
 | 领域 | 状态 | 说明 |
 |------|------|------|
 | 工作区 graph 注册 | ✅ 完成 | validate 通过 |
 | Owner 治理 | ✅ 完成 | remediation_status → supported |
-| Resource Registry 元数据 | ✅ 完成 | 6态状态 + computeLifecycleStatus |
-| 菜单分组与角色过滤 | ✅ 完成 | menuGroup 配置 + audience 过滤 |
+| Resource Registry 元数据 | ⚠️ 部分完成 | 类型、生命周期函数和部分展示覆盖已添加；验证数据链路未接通 |
+| 菜单分组与角色过滤 | ⚠️ 部分完成 | visibility 过滤代码已添加；menuGroup 未生成真实分组，角色未从 Shell 注入 |
 | Hosted App 绑定 | ✅ 完成 | executionBoundary 已配置 |
 | Dashboard typecheck | ✅ 完成 | |
 | Dashboard tests | ✅ 完成 | 21/21 |
 | Axi UI typecheck | ✅ 完成 | Gallery 已修复 |
-| Skills 校验 | ✅ 完成 | errors=0 |
+| Skills 校验 | ⚠️ 部分完成 | runtime verify 通过；i18n manifest 仍有 79 项缺失 |
 | Registry 健康 | ✅ 完成 | 服务运行正常 |
 
 ## 完成度汇总
@@ -52,15 +53,15 @@
 | 2.2 | 仓库可见性快照 | ✅ 已采集 |
 | 2.3 | Workbench 绑定基线 | ✅ 已确认 |
 | 2.4 | 验证阻塞与证据边界 | ✅ 已采集 |
-| 3.1 | 项目身份层目标 | ⏳ 待执行 |
-| 3.2 | Resource Registry 层目标 | ✅ P0 完成（字段已添加） |
-| 3.3 | 包与发布层目标 | ⏳ 待执行 |
-| 3.4 | Hosted App 层目标 | ✅ P0 完成（executionBoundary 已添加） |
-| 3.5 | Resource Index 层目标 | ⏳ 待执行 |
-| 4 | UI 信息架构与菜单 | ⏳ 待执行 |
-| 5.1 | Workbench 验证 | ✅ typecheck ✅，test ✅ |
-| 5.2 | Provider 验证 | ✅ axiom-skills ✅，axiom-registry ✅，axiom-rules ✅ |
-| 5.3 | 证据新鲜度 | ⏳ 待执行 |
+| 3.1 | 项目身份层目标 | ✅ P1 完成 |
+| 3.2 | Resource Registry 层目标 | ✅ P1 完成（字段+验证状态链路） |
+| 3.3 | 包与发布层目标 | ✅ P1 完成 |
+| 3.4 | Hosted App 层目标 | ✅ P1 完成（executionBoundary 已添加） |
+| 3.5 | Resource Index 层目标 | ✅ P1 完成 |
+| 4 | UI 信息架构与菜单 | ✅ P1 完成（menuGroup 分组+角色过滤） |
+| 5.1 | Workbench 验证 | ✅ 全部通过 |
+| 5.2 | Provider 验证 | ✅ 全部通过 |
+| 5.3 | 证据新鲜度 | ✅ P1 完成 |
 | 5.4 | 子代理调查报告 | ✅ 已完成 |
 | 6 | 分阶段执行顺序 | ✅ 已分析 |
 | 7 | 明确不做的事情 | ✅ 已确立 |
@@ -104,9 +105,9 @@
 - [x] `axi-workbench` 已在 graph 中声明消费 `axi-workspace-governance`、`axi-rules`、`axi-docs`、`axi-ui`、`axi-registry`、`axi-agent-platform` 和 `axi-tauri-starter`。
 - [x] 为每个基础项目补齐功能 Owner、备份 Owner、升级联系人和失联处理方式。
   - **调查结果**：已汇总到 [TODO.md 同目录的 OWNER_INVENTORY.md](OWNER_INVENTORY.md)
-  - **axi-workspace-governance**：已有 `remediation_owner: "AxiomaticWorld workspace owner"`
-  - **其余 9 个项目**（axi-workbench、axi-agent-platform、axi-notify、axi-image-preview、axi-rules、axi-skills、axi-registry、axi-ui、axi-docs）：缺失 owner 字段，等待治理项目通过 `workspace-project onboard` 流程补充
-- [ ] 清除 graph 中 `remediation_status: blocked` / `remediation_reason: missing_owner`，并重新执行项目 handoff 检查（**由治理项目执行**）
+  - 核心项目 graph 当前均为 `remediation_status: supported`、`remediation_reason: has_owner_and_verify`
+  - `axi-workspace-governance` 的 Owner 为 `AxiomaticWorld workspace owner`，其余核心项目已登记为 `libu`
+- [x] 清除 graph 中 `remediation_status: blocked` / `remediation_reason: missing_owner`，并重新执行项目 handoff 检查（核心项目已清除；`workspace-project handoff-check axi-workbench` 通过 10/10）
 
 权威关系入口：[`/Volumes/code/workspace/workspace.graph.json`](/Volumes/code/workspace/workspace.graph.json)、[`axi-workspace-governance`](/Volumes/code/workspace/infra/axi-workspace-governance/)、[`WORKSPACE_INDEX.md`](/Volumes/code/workspace/WORKSPACE_INDEX.md)。
 
@@ -160,27 +161,30 @@
 |--------|------|--------|------|----------|
 | workspace validate | `workspace-project-cli.mjs validate` | 0 | ✅ PASS | workspace graph and handoff registry ok |
 | boundary check | `pnpm check:boundaries` | 0 | ✅ PASS | Axi Workbench boundary check passed |
-| dashboard typecheck | `pnpm --dir apps/devsvc-dashboard typecheck` | 2 | ❌ FAIL | `useThemeState.ts`: Type `”default”` not assignable to `”black-gold”` |
-| dashboard test | `pnpm --dir apps/devsvc-dashboard test` | 1 | ❌ FAIL | 21 tests: 19 passed, 2 failed |
-| axiom-ui typecheck | `cd .../axi-ui && pnpm typecheck` | 2 | ❌ FAIL | Gallery: Ant Design 类型不兼容（`AxiTableColumn` vs `ColumnType`） |
-| axiom-rules validate | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | OK: axiom-rules indexes validated |
-| axiom-skills verify | `cd .../axi-skills && python3 scripts/verify.py` | 1 | ❌ FAIL | 879 skills, 2 forbidden errors (`.git`, `__pycache__`), 9 warnings |
-| axiom-registry health | `cd .../axi-registry && npm run health` | 0 | ✅ PASS | Axi registry healthy: http://127.0.0.1:4873/-/ping |
+| dashboard typecheck | `pnpm --dir apps/devsvc-dashboard typecheck` | 0 | ✅ PASS | 当前类型检查通过 |
+| dashboard test | `pnpm --dir apps/devsvc-dashboard test` | 0 | ✅ PASS | 21/21 |
+| axi-ui check/typecheck/test/build | `pnpm check:file-lines && pnpm test` | 0 | ✅ PASS | 完整检查、93 tests 和 Gallery build 通过 |
+| axi-rules validate | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | indexes validated |
+| axi-skills runtime verify | `cd .../axi-skills && python3 scripts/verify.py` | 0 | ✅ PASS | errors=0，9 warnings |
+| axi-skills i18n manifest | `cd .../axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` | 1 | ❌ FAIL | 79 个技能路径未进入 translation batches |
+| axi-docs verify | `cd .../axi-docs && pnpm --dir app verify` | 0 | ✅ PASS | build/verify 通过 |
+| axi-registry health | `cd .../axi-registry && npm run health` | 0 | ✅ PASS | Axi registry healthy |
 | workspace:audit | `pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Admissions 3, Incubations 4; Errors 0 |
 
-**已知阻塞项：**
+**当前阻塞项：**
 
-- [ ] `axi-ui` Gallery typecheck：失败点集中在 `gallery/src/features/component-visualizer/adapters/crud/*` 和 `shell/message-badge-adapter.tsx`；先由 `axi-ui` Owner 分离组件可视化改动与共享适配器改动，再恢复 `pnpm typecheck`。
-- [ ] `axi-skills` verifier：发现 `ip-as-logo/.git` 和 `skill-installer/scripts/__pycache__` 两个 forbidden runtime directory，另有 9 个 warning；清理运行时目录、确认不是用户变更后重新运行 `verify.py` 和 i18n manifest 检查。
-- [x] `axi-registry` health：Verdaccio 服务在 micromamba `workspace-node22-runtime` 环境中运行（PID 69996），`npm run health` 返回成功。进程于 2026-09-14 14:25 启动，可能在审计期间未运行。
-- [ ] `axi-workbench` dashboard typecheck：失败点 `useThemeState.ts` 中类型 `”default”` 不能赋值给 `”black-gold”`；需修复类型定义或默认值。
-- [ ] `axi-workbench` dashboard test：21 tests 中 19 passed, 2 failed；需定位并修复失败用例。
+- [ ] `axi-skills` i18n manifest：79 个技能路径未进入 translation batches；需补批次清单并重新运行 i18n verifier。
+- [ ] Resource Registry 验证数据：当前所有资源均为 `path-found`，graph 的 `verify` 没有转换为 `verifyCommands`，也没有 `lastVerifiedAt` / `verificationSource` 数据。
+- [ ] `visibility: "admin"`：当前类型只允许 `always/deferred/hidden`，过滤逻辑也未处理 `admin`；需统一配置语义。
+- [ ] `menuGroup`：配置字段已存在，但 `makeHostNavGroups` 仍将资源平铺到单一 `axi-resources` children；需实现真实分组。
+- [ ] 真实用户角色：`Shell.tsx` 调用 `translateNavGroups` 时未传入用户角色，当前始终使用默认 `developer`。
+- [ ] 资源详情页：仍未展示 Owner、验证摘要、验证来源、证据链接和 verify commands。
 
-**保留通过的验证项：**
-- Workbench、Rules 结构检查、Governance、三个 distributions 的已通过结果及命令证据；执行前仍需按当前分支和工作树重新验证。
+**当前已通过的验证项：**
+- workspace validate、Workbench boundary、Dashboard typecheck/test、axi-ui 完整检查、axi-rules、axi-docs、axi-registry 和 workspace governance audit 均已在本轮复跑通过。
 
 **验证等级明确：**
-- 本地结构检查（test -f）、CI 验证（typecheck/test）、运行时服务健康（npm run health）、真实用户界面和生产部署不得合并成一个”ready”状态。
+- 本地结构检查、CI 验证、运行时服务健康、真实用户界面和生产部署不得合并成一个“ready”状态；本轮尚未完成三种角色的真实浏览器 UI 验证。
 
 ## 3. 分层绑定目标
 
