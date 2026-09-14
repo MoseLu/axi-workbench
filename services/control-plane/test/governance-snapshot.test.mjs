@@ -946,3 +946,70 @@ test("keeps API event pagination bounded while governance snapshots read the ful
   assert.equal(readWorkspaceEvents({ sources: [{ path: root, source: "axi-runtime-ledger" }], limit: 2 }).events.length, 2);
   assert.equal(readWorkspaceEvents({ sources: [{ path: root, source: "axi-runtime-ledger" }], limit: null }).events.length, 3);
 });
+
+test("TASK3: integrates Platform audit source alongside DevSvc runtime-ledger without losing 254 events", () => {
+  // TASK3验收：接入至少一个有明确owner和格式合同的Platform事件源
+  // 原始runtime-ledger保持不变，新增control-plane audit作为Platform源
+
+  // 1. 创建DevSvc runtime-ledger fixture (模拟原有254条)
+  const runtimeRoot = mkdtempSync(join(tmpdir(), "axi-task3-runtime-"));
+  writeFileSync(join(runtimeRoot, "2026-09-13.jsonl"), Array.from({ length: 5 }, (_, index) => JSON.stringify({
+    eventId: `devsvc-event-${index + 1}`,
+    eventType: "service.health.changed",
+    surface: "devsvc",
+    projectId: "axi-workbench",
+    serviceId: "core",
+    actor: "mose",
+    objectRef: "axi-workbench",
+    action: "status",
+    result: "ok",
+    occurredAt: `2026-09-13T03:0${index}:00.000Z`,
+  })).join("\n") + "\n");
+
+  // 2. 创建Platform audit fixture (模拟control-plane audit)
+  const platformRoot = mkdtempSync(join(tmpdir(), "axi-task3-platform-"));
+  writeFileSync(join(platformRoot, "audit.jsonl"), [
+    JSON.stringify({ auditKind: "approval_requested", eventId: "approval-event-1", actorRef: "device-1", objectRef: "ai-capability", occurredAt: 1789280000, status: "pending" }),
+    JSON.stringify({ auditKind: "job_event", eventId: "job-event-1", type: "job.completed", actorRef: "agent:test", objectRef: "job-1", occurredAt: 1789280100, status: "completed" }),
+  ].join("\n") + "\n");
+
+  // 3. 读取两个源
+  const sources = [
+    { path: runtimeRoot, source: "axi-runtime-ledger" },
+    { path: platformRoot, source: "axi-control-plane-audit" },
+  ];
+
+  const events = readWorkspaceEvents({ sources, limit: null }).events;
+
+  // 4. 验证：总事件数 = runtime(5) + platform(2)
+  assert.equal(events.length, 7, "Total events should be 7");
+
+  // 5. 验证：DevSvc surface 事件
+  const devsvcEvents = events.filter(e => e.surfaceRef === "devsvc");
+  assert.equal(devsvcEvents.length, 5, "DevSvc events should be 5");
+
+  // 6. 验证：Platform source 事件（source包含audit.jsonl）
+  const platformEvents = events.filter(e => e.source === "axi-control-plane-audit/audit.jsonl");
+  assert.equal(platformEvents.length, 2, "Platform audit events should be 2");
+
+  // 7. 验证：project/service/run引用保留
+  const devsvcWithRefs = devsvcEvents[0];
+  assert.equal(devsvcWithRefs.projectRef, "axi-workbench", "projectRef should be preserved");
+  assert.equal(devsvcWithRefs.serviceRef, "core", "serviceRef should be preserved");
+
+  // 8. 验证：Platform事件有actor/object引用
+  assert.ok(platformEvents[0]?.actorRef, "Platform event should have actorRef");
+  assert.ok(platformEvents[0]?.objectRef, "Platform event should have objectRef");
+
+  // 9. 验证：fail-closed（无效source返回0条）
+  const invalidEvents = readWorkspaceEvents({ sources: [{ path: "/nonexistent/audit.jsonl", source: "invalid" }], limit: null }).events;
+  assert.equal(invalidEvents.length, 0, "Invalid source should return 0 events");
+
+  // 10. 验证：过滤和分页不回退
+  const filteredEvents = readWorkspaceEvents({ sources, surfaceRef: "devsvc", limit: 2 });
+  assert.equal(filteredEvents.events.length, 2, "Surface filter should work");
+  assert.ok(filteredEvents.nextCursor, "Pagination cursor should be present");
+
+  const allEvents = readWorkspaceEvents({ sources, surfaceRef: "devsvc", limit: null });
+  assert.equal(allEvents.events.length, 5, "limit=null should return all filtered events");
+});
