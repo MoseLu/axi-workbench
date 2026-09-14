@@ -104,6 +104,10 @@ make migrate-identity
 make migrate-platform
 # 完整本地后端（基础设施、五类迁移、Control Plane、Identity、Platform、Workflow、Notification、File、Gateway）
 make dev-backend
+# 容器化生产形态 API 平面（宿主机网关 18088；Control Plane 仍由宿主机进程提供）
+make docker-backend
+make verify-docker-backend
+make docker-backend-down
 ```
 
 打开：Web `http://127.0.0.1:5173` · 移动端 `http://127.0.0.1:5174`。

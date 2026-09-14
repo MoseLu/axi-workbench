@@ -33,6 +33,19 @@ Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 
 
 本地仍允许 Go/Python/Node 进程直接运行，以保留快速反馈；但端口、DSN、内部 token、迁移职责、服务边界和 Gateway 下游地址与 Helm 生产合同保持一致。生产集群、Ingress、Secret manager、ZITADEL、S3/ClamAV 等仍由 `infra/helm/axi-workbench-platform` 管理，不由本地 profile 模拟。
 
+### 4.0.2 容器化生产形态 API 平面
+
+为验证容器边界与 Helm 服务拓扑，`docker-compose.backend.yml` 提供独立的 `backend` profile。它复用各业务服务自己的 Dockerfile，以 Compose DNS 连接 PostgreSQL、Redis 和 Mailpit；五类迁移作为一次性任务先执行成功，再启动 Identity、Platform、Workflow、Notification、File 和 API Gateway。容器网关映射到宿主机 `127.0.0.1:18088`，与进程形态网关 `8088` 并存，便于对比验证。
+
+```bash
+make docker-backend
+make verify-docker-backend
+docker compose -f docker-compose.yml -f docker-compose.backend.yml --profile backend ps -a
+make docker-backend-down
+```
+
+该 profile 刻意不把 Control Plane 打进业务 API 镜像：Control Plane 仍以软件层受管的宿主机进程运行在 `8092`，容器 Gateway 通过 `host.docker.internal:8092` 访问它。这与生产 Helm 中“业务 API 服务进入 ClusterIP，Control Plane 按其独立部署边界管理”的职责划分一致。Compose 只提供本地容器拓扑、迁移顺序和健康验证，不等同于 Kubernetes 集群、Ingress、Secret manager、真实 ZITADEL、S3/ClamAV、Kafka 或故障演练验收。
+
 ## 4.1 api-gateway — Go + Gin
 
 > **职责**：统一入口、流量路由、JWT 验证（调用 auth-service gRPC）、请求限流、链路追踪注入、响应日志。

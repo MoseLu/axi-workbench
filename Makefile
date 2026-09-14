@@ -1,4 +1,4 @@
-.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-backend dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
+.PHONY: help install dev build test clean lint type-check docker-up docker-down docker-backend docker-backend-down verify-docker-backend dev-backend dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
 
 help:
 	@echo "EPAP - Enterprise Project Automation Platform"
@@ -15,6 +15,7 @@ help:
 	@echo "  make clean          - Clean all build artifacts"
 	@echo "  make docker-up      - Start local infrastructure"
 	@echo "  make docker-down   - Stop local infrastructure"
+	@echo "  make docker-backend - Start containerized production-shaped API plane"
 	@echo "  make dev-backend   - Start the complete local backend profile"
 	@echo ""
 
@@ -58,6 +59,15 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+docker-backend:
+	docker compose -f docker-compose.yml -f docker-compose.backend.yml --profile backend up -d --build postgres redis mailpit identity-migrate platform-migrate workflow-migrate notification-migrate file-migrate identity-adapter platform-core workflow-engine notification-service file-service api-gateway
+
+docker-backend-down:
+	docker compose -f docker-compose.yml -f docker-compose.backend.yml --profile backend rm -sf api-gateway identity-adapter platform-core workflow-engine notification-service file-service identity-migrate platform-migrate workflow-migrate notification-migrate file-migrate
+
+verify-docker-backend:
+	curl --silent --show-error --fail http://127.0.0.1:18088/health >/dev/null
 
 dev-backend:
 	bash scripts/dev-backend.sh
