@@ -1,12 +1,12 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-09-14T00:45:53.638Z",
+  "generatedAt": "2026-09-14T15:55:50.750Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
     "total": 22,
-    "verified": 21,
+    "verified": 22,
     "documented": 0,
-    "stale": 1,
+    "stale": 0,
     "unready": 0
   },
   "projects": [
@@ -465,7 +465,11 @@
         ],
         "verify": [
           "pnpm typecheck",
-          "pnpm -F @axi-pet-desktop/desktop-pet test:run"
+          "pnpm -F @axi-pet-desktop/desktop-pet test:run",
+          "pnpm -F @axi-pet-desktop/desktop-pet lint",
+          "pnpm -F @axi-pet-desktop/desktop-pet assets:audit-miku",
+          "pnpm -F @axi-pet-desktop/desktop-pet assets:audit-expression-matrix",
+          "pnpm -F @axi-pet-desktop/desktop-pet rebuild:mac"
         ],
         "smoke": [
           "pnpm -F @axi-pet-desktop/desktop-pet e2e:linux"
@@ -476,11 +480,13 @@
         "milestone": "docs/HANDOFF.md",
         "active": [
           "Maintain the Electron shell + React frontend sync.",
-          "Keep the desktop runtime aligned with the Web companion."
+          "Keep the desktop runtime aligned with the Web companion.",
+          "Hatsune Miku v1 is registered with one audited neutral outfit; voice and wake assets remain pending authorization/models.",
+          "Next: add Miku expression variants and outfits only after per-asset provenance and audit review."
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-08-23"
+      "lastVerifiedAt": "2026-09-14"
     },
     {
       "id": "axi-proxy-companion",
@@ -1102,15 +1108,13 @@
       "kind": "product",
       "lifecycle": "active-product",
       "owner": "Mose",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/products/story-graph/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/products/story-graph/docs/HANDOFF.md",
       "graphId": "story-graph",
       "graphMatched": true,
-      "errors": [
-        "verification is stale: 40 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Evidence-driven local novel relationship graph workbench with a Python pipeline, SQLite evidence store, and React/Vite viewer.",
       "commands": {
@@ -1147,7 +1151,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-08-05"
+      "lastVerifiedAt": "2026-09-14"
     }
   ]
 }
