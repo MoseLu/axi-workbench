@@ -104,3 +104,12 @@ CREATE INDEX IF NOT EXISTS workflow_event_dispatch_claim_idx
 
 CREATE INDEX IF NOT EXISTS workflow_event_inbox_topic_idx
     ON axi_workflow.event_inbox (topic, received_at DESC);
+
+REVOKE ALL ON SCHEMA axi_workflow FROM PUBLIC;
+GRANT USAGE ON SCHEMA axi_workflow TO axi_workflow_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA axi_workflow TO axi_workflow_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA axi_workflow TO axi_workflow_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA axi_workflow
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO axi_workflow_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA axi_workflow
+    GRANT USAGE, SELECT ON SEQUENCES TO axi_workflow_app;

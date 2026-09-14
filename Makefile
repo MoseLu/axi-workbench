@@ -1,4 +1,4 @@
-.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
+.PHONY: help install dev build test clean lint type-check docker-up docker-down dev-backend dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
 
 help:
 	@echo "EPAP - Enterprise Project Automation Platform"
@@ -15,6 +15,7 @@ help:
 	@echo "  make clean          - Clean all build artifacts"
 	@echo "  make docker-up      - Start local infrastructure"
 	@echo "  make docker-down   - Stop local infrastructure"
+	@echo "  make dev-backend   - Start the complete local backend profile"
 	@echo ""
 
 install:
@@ -57,6 +58,9 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+dev-backend:
+	bash scripts/dev-backend.sh
 
 # Backend services. The dev-run scripts load the repository .env without
 # printing secrets and apply the local ports/defaults used by Workbench.

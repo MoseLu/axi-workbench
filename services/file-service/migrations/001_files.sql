@@ -27,3 +27,12 @@ ALTER TABLE axi_files.files
 
 CREATE INDEX IF NOT EXISTS files_owner_modified_idx
     ON axi_files.files (owner_subject, modified_at DESC, name);
+
+REVOKE ALL ON SCHEMA axi_files FROM PUBLIC;
+GRANT USAGE ON SCHEMA axi_files TO axi_file_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA axi_files TO axi_file_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA axi_files TO axi_file_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA axi_files
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO axi_file_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA axi_files
+    GRANT USAGE, SELECT ON SEQUENCES TO axi_file_app;

@@ -6,6 +6,7 @@ All notable local changes to Axi Workbench are tracked here.
 
 ### Changed
 
+- 2026-09-14：新增 `make dev-backend` 完整本地后端 profile：按生产服务边界启动 Control Plane、Identity、Platform、Workflow、Notification、File 与 API Gateway，先确保 Compose PostgreSQL/Redis/Mailpit 健康，再执行五类数据库迁移和逐服务 readiness 检查；本地服务继续使用进程运行，生产 Helm/ClusterIP/Secret 边界保持不变。
 - 2026-09-14：收敛本地后端运行基线：Workbench Docker Compose 的 PostgreSQL/Redis/Kafka 改用 `15432/16379/19092` 专用端口并仅绑定本机，避免与宿主机其他项目的基础设施冲突；Identity 与 Platform 的开发启动器及迁移入口默认使用持久化 PostgreSQL/Redis，不再因缺少局部 `.env` 配置静默回退到内存状态。已验证 Identity、Platform、API Gateway、Control Plane 的 `/health` 与 `/ready` 全部通过，三项 Go 后端 `go test -race ./...` 全部通过；当前生产 Kubernetes/Helm 与真实 ZITADEL、SMTP、集群故障演练仍保持外部验收边界。
 - 新增 append-only audit.jsonl 到 GovernanceWaiver/Violation eventRefs 的回归验证。
 - Admin/Project Governance Inspector 展示 Violation/Waiver 的 Evidence 与 Workspace Event 引用，支持合规判断追踪到事实事件。

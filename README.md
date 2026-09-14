@@ -102,6 +102,8 @@ pnpm run lint
 make docker-up
 make migrate-identity
 make migrate-platform
+# 完整本地后端（基础设施、五类迁移、Control Plane、Identity、Platform、Workflow、Notification、File、Gateway）
+make dev-backend
 ```
 
 打开：Web `http://127.0.0.1:5173` · 移动端 `http://127.0.0.1:5174`。

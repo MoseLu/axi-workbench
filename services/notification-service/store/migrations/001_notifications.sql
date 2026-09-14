@@ -48,3 +48,12 @@ CREATE TABLE IF NOT EXISTS axi_notifications.event_inbox (
 
 CREATE INDEX IF NOT EXISTS notification_event_inbox_topic_idx
     ON axi_notifications.event_inbox (topic, received_at DESC);
+
+REVOKE ALL ON SCHEMA axi_notifications FROM PUBLIC;
+GRANT USAGE ON SCHEMA axi_notifications TO axi_notification_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA axi_notifications TO axi_notification_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA axi_notifications TO axi_notification_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA axi_notifications
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO axi_notification_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA axi_notifications
+    GRANT USAGE, SELECT ON SEQUENCES TO axi_notification_app;

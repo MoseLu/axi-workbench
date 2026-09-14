@@ -27,6 +27,12 @@
 
 Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 [`infra/helm`](../infra/helm/README.md)。以下内容为早期 EPAP 设计记录，不覆盖本节的当前边界。
 
+### 4.0.1 本地生产形态 profile
+
+本地完整后端使用 `make dev-backend` 启动。它先启动 Compose 的 PostgreSQL、Redis、Mailpit，确保本地数据库角色/数据库存在，依次执行 Identity、Platform、Workflow、Notification、File 五类迁移，再按依赖顺序启动 Control Plane、Identity Adapter、Platform Core、Workflow Engine、Notification Service、File Service 和 API Gateway，并逐项检查 readiness。
+
+本地仍允许 Go/Python/Node 进程直接运行，以保留快速反馈；但端口、DSN、内部 token、迁移职责、服务边界和 Gateway 下游地址与 Helm 生产合同保持一致。生产集群、Ingress、Secret manager、ZITADEL、S3/ClamAV 等仍由 `infra/helm/axi-workbench-platform` 管理，不由本地 profile 模拟。
+
 ## 4.1 api-gateway — Go + Gin
 
 > **职责**：统一入口、流量路由、JWT 验证（调用 auth-service gRPC）、请求限流、链路追踪注入、响应日志。
