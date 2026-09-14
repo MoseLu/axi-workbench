@@ -24,6 +24,9 @@ import type {
 } from "@axi/workstation-contracts"
 import type { AxiosRequestConfig } from "axios"
 
+// Re-export platform hooks for tenant management
+export * from "./platform"
+
 // ============================================
 // Project Hooks
 // ============================================

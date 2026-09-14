@@ -50,6 +50,186 @@ const BLOCK_PATTERNS = [
   /生产.*(写|改|删|部署|发布)/,
 ];
 
+/**
+ * Handoff 状态定义 - 支持双向交接
+ */
+export const HandoffStatus = {
+  CREATED: "created",
+  DELIVERED: "delivered",
+  ACCEPTED: "accepted",
+  COMPLETED: "completed",
+  FAILED: "failed",
+  REJECTED: "rejected",
+  EXPIRED: "expired",
+  PENDING: "pending",
+  OPENED: "opened",
+};
+
+/**
+ * 双向状态转换规则
+ */
+export const HandoffTransitions = {
+  "web->mobile": {
+    created: new Set(["delivered", "expired"]),
+    delivered: new Set(["accepted", "rejected", "expired"]),
+    accepted: new Set(["completed", "failed", "expired"]),
+    rejected: new Set(["expired"]),
+    completed: new Set(),
+    failed: new Set(),
+    expired: new Set(),
+  },
+  "mobile->web": {
+    pending: new Set(["opened", "expired"]),
+    opened: new Set(["completed", "rejected", "expired"]),
+    completed: new Set(),
+    rejected: new Set(),
+    expired: new Set(),
+    created: new Set(["delivered", "expired"]),
+    delivered: new Set(["accepted", "rejected", "expired"]),
+    accepted: new Set(["completed", "failed", "expired"]),
+    failed: new Set(),
+  },
+};
+
+/**
+ * 验证状态转换是否合法
+ */
+export function isValidHandoffTransition(direction, currentStatus, nextStatus) {
+  const rules = HandoffTransitions[direction];
+  if (!rules) return false;
+  const allowedTransitions = rules[currentStatus];
+  return allowedTransitions ? allowedTransitions.has(nextStatus) : false;
+}
+
+// SLA configuration for handoff expiry times
+export const DEFAULT_SLA = {
+  standard: 24 * 60 * 60 * 1000,      // 24 hours
+  urgent: 60 * 60 * 1000,              // 1 hour
+  lowPriority: 72 * 60 * 60 * 1000,    // 72 hours
+};
+
+export const SCENARIO_SLA = {
+  approval: { expiryMs: 60 * 60 * 1000, label: "urgent" },        // 1 hour
+  alert: { expiryMs: 15 * 60 * 1000, label: "urgent" },           // 15 minutes
+  task: { expiryMs: 24 * 60 * 60 * 1000, label: "standard" },   // 24 hours
+  project: { expiryMs: 72 * 60 * 60 * 1000, label: "lowPriority" }, // 72 hours
+};
+
+export function getScenarioSla(scenario) {
+  if (!scenario) return { expiryMs: DEFAULT_SLA.standard, label: "standard" };
+  const scenarioConfig = SCENARIO_SLA[scenario];
+  if (scenarioConfig) return scenarioConfig;
+  return { expiryMs: DEFAULT_SLA.standard, label: "standard" };
+}
+
+/**
+ * 创建批量交接
+ */
+export function createBatchHandoff({ params, cacheDir, handoffs, notifyExpired }) {
+  // Extract with defaults - only apply defaults when params is undefined
+  const direction = params?.direction ?? "mobile_to_web";
+  const targetSurface = params?.targetSurface ?? "web";
+  const actionLevel = params?.actionLevel ?? "B";
+  const objects = params?.objects ?? [];
+  const reason = params?.reason ?? "";
+
+  // Validation - use explicit checks to detect missing required fields
+  if (!params || !("direction" in params) || direction === null || direction === undefined || direction === "") {
+    return { ok: false, httpStatus: 400, error: "direction is required" };
+  }
+  if (!("targetSurface" in params) || targetSurface === null || targetSurface === undefined || targetSurface === "") {
+    return { ok: false, httpStatus: 400, error: "targetSurface is required" };
+  }
+  if (!Array.isArray(objects) || objects.length === 0) {
+    return { ok: false, httpStatus: 400, error: "objects must be a non-empty array" };
+  }
+  for (const obj of objects) {
+    if (!obj.type || !obj.id) {
+      return { ok: false, httpStatus: 400, error: "each object must have type and id" };
+    }
+  }
+
+  // Generate batch ID
+  const timestamp = Date.now();
+  const shortId = randomBytes(4).toString("hex");
+  const batchId = `BATCH-${timestamp}-${shortId}`;
+
+  const results = [];
+  const handoffIds = [];
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (const obj of objects) {
+    const id = `handoff_${timestamp}_${randomBytes(4).toString("hex")}`;
+    const handoffCorrelationId = `batch:${batchId}:${obj.type}:${obj.id}`;
+
+    const record = {
+      id,
+      batchId,
+      handoffCorrelationId,
+      direction,  // 添加 direction 字段
+      source: "batch",
+      sourceSurface: "batch",  // 批量交接统一使用 batch 作为源
+      targetSurface,
+      actionLevel,
+      object: obj,
+      status: "pending",
+      reason,
+      impact: reason,
+      actionSummary: `批量交接 ${objects.length} 个 ${obj.type} 对象`,
+      riskLevel: actionLevel === "D" ? "destructive" : actionLevel === "C" ? "high" : actionLevel === "B" ? "medium" : "low",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + HANDOFF_TTL_MS).toISOString(),
+    };
+
+    try {
+      // Persist to disk
+      persistJson(join(cacheDir, "handoffs", `${id}.json`), record);
+      handoffs.set(id, record);
+      handoffIds.push(id);
+      results.push({ ok: true, handoff: record });
+      successCount++;
+    } catch (error) {
+      results.push({ ok: false, error: String(error) });
+      failureCount++;
+    }
+  }
+
+  const status = failureCount === 0 ? "completed" : failureCount === objects.length ? "failed" : "partial";
+
+  // Record batch audit event
+  recordMobileAudit({ cacheDir, event: {
+    auditKind: "batch_handoff_created",
+    batchId,
+    direction,
+    targetSurface,
+    actionLevel,
+    outcome: `${successCount}/${objects.length}`,
+    reason,
+  }});
+
+  return {
+    ok: true,
+    batchId,
+    totalCount: objects.length,
+    successCount,
+    failureCount,
+    status,
+    handoffs: handoffIds,
+    results,
+  };
+}
+
+/**
+ * 获取给定方向的所有合法目标状态
+ */
+export function getAllowedHandoffTransitions(direction, currentStatus) {
+  const rules = HandoffTransitions[direction];
+  if (!rules) return [];
+  const allowedTransitions = rules[currentStatus];
+  return allowedTransitions ? [...allowedTransitions] : [];
+}
+
 export function createControlPlane(options = {}) {
   const workspaceRoot = workspaceRootOf(options);
   const nodeEnv = options.nodeEnv || process.env.NODE_ENV || "development";
@@ -229,12 +409,20 @@ function buildControlPlaneSurface({
     createApprovalScan: (input) => createApprovalScan({ input, cacheDir, approvals, approvalScans }),
     resolveApprovalScan: (scanToken) => resolveApprovalScan({ scanToken, cacheDir, approvals, approvalScans }),
     getHandoff: (id) => handoffs.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null),
-    listHandoffs: ({ status = "", actor = "", owner = "" } = {}) => listHandoffs({ status, actor, owner, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    listHandoffs: ({ status = "", actor = "", owner = "", direction = "" } = {}) => listHandoffs({ status, actor, owner, direction, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
     handoffExpiry: { durationMs: handoffExpiryMs, defaultDurationMs: HANDOFF_TTL_MS },
     expireHandoffs: () => expirePendingHandoffs({ cacheDir, handoffs, notifyExpired: onHandoffExpired }),
     openHandoff: (id, subject) => openHandoff({ id, subject, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
     completeHandoff: (id, subject, outcome) => completeHandoff({ id, subject, outcome, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
     rejectHandoff: (id, subject, reason) => rejectHandoff({ id, subject, reason, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    // Web -> Mobile handoff methods
+    createBatchHandoff: (params) => createBatchHandoff({ params, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    createWebToMobileHandoff: (input) => createWebToMobileHandoff({ input, cacheDir, handoffs, handoffExpiryMs, notifyExpired: onHandoffExpired }),
+    deliverWebToMobileHandoff: (id, actor) => deliverWebToMobileHandoff({ id, actor, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    acceptWebToMobileHandoff: (id, actor) => acceptWebToMobileHandoff({ id, actor, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    completeWebToMobileHandoff: (id, actor, outcome) => completeWebToMobileHandoff({ id, actor, outcome, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    failWebToMobileHandoff: (id, actor, reason) => failWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    rejectWebToMobileHandoff: (id, actor, reason) => rejectWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
     query: (input, options = {}) => {
       const policyEvaluator = options.policyEvaluator || (enforceExecutionPolicy
         ? (policyInput) => evaluateSurfaceExecutionPolicy({ input, policyInput, workspaceRoot, registryPath, cacheDir })
@@ -494,6 +682,9 @@ export function recordMobileAudit({ cacheDir, event = {} }) {
     actorRef: event.actorRef || null,
     sourceActorRef: event.sourceActorRef || null,
     sourceOwnerRef: event.sourceOwnerRef || null,
+    sourceSurface: event.sourceSurface || null,
+    targetSurface: event.targetSurface || null,
+    direction: event.direction || null,
     outcome: event.outcome || null,
     reason: event.reason || null,
     status: event.status || "executed",
@@ -612,7 +803,7 @@ function decideApprovalScan({ input = {}, cacheDir, approvalScans, handoffs, res
     scan.handoffId = handoff.id;
     approvalScans?.set(scan.id, scan);
     persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
-    recordAudit({ auditKind: "handoff_created", deviceId: input.deviceId, actorRef: handoff.sourceActorRef, sourceActorRef: handoff.sourceActorRef, sourceOwnerRef: handoff.sourceOwnerRef, idempotencyKey: input.idempotencyKey, approvalRef: approval.id, handoffCorrelationId: correlationId, handoffId: handoff.id, policyDecisionRef: input.policyDecisionRef || null, status: "handed_off" });
+    recordAudit({ auditKind: "handoff_created", deviceId: input.deviceId, actorRef: handoff.sourceActorRef, sourceActorRef: handoff.sourceActorRef, sourceOwnerRef: handoff.sourceOwnerRef, idempotencyKey: input.idempotencyKey, approvalRef: approval.id, handoffCorrelationId: correlationId, handoffId: handoff.id, policyDecisionRef: input.policyDecisionRef || null, status: "handed_off", sourceSurface: handoff.sourceSurface, targetSurface: handoff.targetSurface });
     return { ok: true, status: "handed_off", handoff };
   }
   const result = resolveApproval({ id: approval.id, decision: input.decision, policyDecisionRef: input.policyDecisionRef || null });
@@ -640,7 +831,7 @@ function openHandoff({ id, subject, cacheDir, handoffs, approvals, notifyExpired
     handoff.openedBy = subject;
     handoffs?.set(handoff.id, handoff);
     persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
-    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_opened", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "opened" } });
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_opened", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "opened", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
   }
   return handoff;
 }
@@ -659,7 +850,7 @@ function completeHandoff({ id, subject, outcome, cacheDir, handoffs, approvals, 
   handoff.finalAction = { outcome, performedBy: subject, occurredAt: handoff.completedAt };
   handoffs?.set(handoff.id, handoff);
   persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
-  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_completed", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, outcome, status: "completed" } });
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_completed", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, outcome, status: "completed", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
   return handoff;
 }
 
@@ -678,23 +869,29 @@ function rejectHandoff({ id, subject, reason, cacheDir, handoffs, approvals, not
   handoff.rejectionReason = reason;
   handoffs?.set(handoff.id, handoff);
   persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
-  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_rejected", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "rejected" } });
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_rejected", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "rejected", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
   return handoff;
 }
 
-function listHandoffs({ status = "", actor = "", owner = "", cacheDir, handoffs, notifyExpired }) {
+function listHandoffs({ status = "", actor = "", owner = "", direction = "", cacheDir, handoffs, notifyExpired }) {
   expirePendingHandoffs({ cacheDir, handoffs, notifyExpired });
   const normalizedStatus = String(status || "").trim();
   const normalizedActor = String(actor || "").trim();
   const normalizedOwner = String(owner || "").trim();
-  const allowedStatuses = new Set(["pending", "opened", "completed", "rejected", "expired"]);
+  const normalizedDirection = String(direction || "").trim();
+  const allowedStatuses = new Set(["pending", "opened", "completed", "rejected", "expired", "created", "delivered", "accepted", "failed"]);
   if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
-    return { ok: false, httpStatus: 400, error: "handoff status must be pending, opened, completed, rejected, or expired" };
+    return { ok: false, httpStatus: 400, error: "handoff status must be pending, opened, completed, rejected, expired, created, delivered, accepted, or failed" };
+  }
+  const allowedDirections = new Set(["web->mobile", "mobile->web"]);
+  if (normalizedDirection && !allowedDirections.has(normalizedDirection)) {
+    return { ok: false, httpStatus: 400, error: "handoff direction must be web->mobile or mobile->web" };
   }
   const records = [...(handoffs?.values() || [])]
     .filter((handoff) => !normalizedStatus || handoff.status === normalizedStatus)
     .filter((handoff) => !normalizedActor || handoff.sourceActorRef === normalizedActor)
     .filter((handoff) => !normalizedOwner || !handoff.sourceOwnerRef || handoff.sourceOwnerRef === normalizedOwner)
+    .filter((handoff) => !normalizedDirection || handoff.direction === normalizedDirection)
     .sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || "")) || String(right.id).localeCompare(String(left.id)));
   return { ok: true, handoffs: records };
 }
@@ -702,7 +899,7 @@ function listHandoffs({ status = "", actor = "", owner = "", cacheDir, handoffs,
 function verifyHandoffOwner({ handoff, subject, cacheDir }) {
   const sourceOwnerRef = firstString(handoff?.sourceOwnerRef);
   if (!sourceOwnerRef || sourceOwnerRef === String(subject || "").trim()) return { ok: true };
-  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason: "source owner subject mismatch", status: "denied" } });
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason: "source owner subject mismatch", status: "denied", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
   return { ok: false, httpStatus: 403, error: "handoff owner authorization required" };
 }
 
@@ -733,13 +930,13 @@ function verifyHandoffApproval({ handoff, subject, cacheDir, approvals, handoffs
       result: approval.status,
       status: approval.status,
     });
-    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expired", actorRef: "system:approval-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approval.id, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason: "linked approval expired", status: "expired" } });
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expired", actorRef: "system:approval-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approval.id, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason: "linked approval expired", status: "expired", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
     const reason = "approval expired";
-    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approval.id, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "denied" } });
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approval.id, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "denied", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
     return { ok: false, httpStatus: 409, error: "handoff approval is no longer pending" };
   }
   const reason = approval ? `approval status is ${approval.status || "unknown"}` : "approval record not found";
-  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "denied" } });
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "denied", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
   return { ok: false, httpStatus: 409, error: "handoff approval is no longer pending" };
 }
 
@@ -769,13 +966,13 @@ function expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired }) {
   handoff.expiredAt = new Date().toISOString();
   handoffs?.set(handoff.id, handoff);
   persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
-  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expired", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "expired" } });
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expired", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "expired", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
   if (typeof notifyExpired === "function") {
     try {
       notifyExpired({ type: "handoff.expired", handoff: { ...handoff } });
-      recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expiry_notification_queued", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "notification_queued" } });
+      recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expiry_notification_queued", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "notification_queued", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
     } catch {
-      recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expiry_notification_failed", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "notification_failed" } });
+      recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expiry_notification_failed", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "notification_failed", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
     }
   }
   return handoff;
@@ -786,6 +983,152 @@ function approvalActionLevel(approval) {
   if (approval?.riskLevel === "destructive") return "D";
   if (approval?.riskLevel === "high") return "C";
   return "B";
+}
+
+/**
+ * Create a web-to-mobile handoff record
+ */
+function createWebToMobileHandoff({ input, cacheDir, handoffs, handoffExpiryMs, notifyExpired }) {
+  const now = new Date();
+  const expiresAt = handoffExpiryMs
+    ? new Date(now.getTime() + handoffExpiryMs).toISOString()
+    : new Date(now.getTime() + HANDOFF_TTL_MS).toISOString();
+  const handoff = {
+    id: `handoff_${randomUUID()}`,
+    direction: "web->mobile",
+    sourceSurface: "web",
+    targetSurface: "mobile",
+    status: "created",
+    createdAt: now.toISOString(),
+    expiresAt,
+    sourceActorRef: input.sourceActorRef || null,
+    sourceOwnerRef: input.sourceOwnerRef || null,
+    targetOwnerRef: input.targetOwnerRef || null,
+    object: {
+      type: "handoff",
+      projectId: input.projectId || null,
+      actionId: input.actionId || null,
+      actionType: input.actionType || null,
+    },
+    impact: input.impact || null,
+    riskLevel: input.riskLevel || "medium",
+    availableTransitions: ["delivered", "expired"],
+  };
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_created", actorRef: input.sourceActorRef || null, sourceActorRef: input.sourceActorRef || null, sourceOwnerRef: input.sourceOwnerRef || null, targetOwnerRef: input.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", projectId: input.projectId || null, actionId: input.actionId || null, actionType: input.actionType || null, handoffId: handoff.id, outcome: input.impact || null, status: "created" } });
+  return { ok: true, handoff };
+}
+
+/**
+ * Deliver a web-to-mobile handoff (created -> delivered)
+ */
+function deliverWebToMobileHandoff({ id, actor, cacheDir, handoffs, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "created") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "delivered")) return handoff;
+  handoff.status = "delivered";
+  handoff.deliveredAt = new Date().toISOString();
+  handoff.deliveredBy = actor;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_delivered", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, status: "delivered" } });
+  return handoff;
+}
+
+/**
+ * Accept a web-to-mobile handoff (delivered -> accepted)
+ */
+function acceptWebToMobileHandoff({ id, actor, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "delivered") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "accepted")) return handoff;
+  // Check target ownership
+  if (handoff.targetOwnerRef && handoff.targetOwnerRef !== actor) {
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, reason: "target owner authorization required", status: "denied" } });
+    return { ok: false, httpStatus: 403, error: "target owner authorization required" };
+  }
+  handoff.status = "accepted";
+  handoff.acceptedAt = new Date().toISOString();
+  handoff.acceptedBy = actor;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_accepted", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, status: "accepted" } });
+  return handoff;
+}
+
+/**
+ * Complete a web-to-mobile handoff (accepted -> completed)
+ */
+function completeWebToMobileHandoff({ id, actor, outcome, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "accepted") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "completed")) return handoff;
+  handoff.status = "completed";
+  handoff.completedAt = new Date().toISOString();
+  handoff.finalAction = { outcome, performedBy: actor, occurredAt: handoff.completedAt };
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_completed", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, outcome, status: "completed" } });
+  return handoff;
+}
+
+/**
+ * Fail a web-to-mobile handoff (accepted -> failed)
+ */
+function failWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "accepted") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "failed")) return handoff;
+  handoff.status = "failed";
+  handoff.failedAt = new Date().toISOString();
+  handoff.failureReason = reason;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_failed", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, reason, status: "failed" } });
+  return handoff;
+}
+
+/**
+ * Reject a web-to-mobile handoff (delivered -> rejected)
+ */
+function rejectWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "delivered") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "rejected")) return handoff;
+  handoff.status = "rejected";
+  handoff.rejectedAt = new Date().toISOString();
+  handoff.rejectedBy = actor;
+  handoff.rejectionReason = reason;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_rejected", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, reason, status: "rejected" } });
+  return handoff;
 }
 
 /**

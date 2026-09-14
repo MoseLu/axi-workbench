@@ -15,7 +15,7 @@ export default function HandoffPage() {
   const { t } = useMobileI18n();
   const session = useMobileDeviceSession();
   const handoffs = useMobileHandoffsQuery();
-  const records = handoffs.data?.handoffs ?? [];
+  const records = handoffs.data ?? [];
 
   return (
     <section className="axi-mobile-page" aria-busy={handoffs.isFetching}>

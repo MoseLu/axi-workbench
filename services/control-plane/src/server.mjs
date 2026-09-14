@@ -151,9 +151,29 @@ export function createControlPlaneHttpServer({
       }
       const subject = String(req.headers["x-axi-subject"] || "").trim();
       if (!subject) return sendJson(res, 401, { error: "verified web identity required" }, url);
-      if (req.method !== "GET") return sendJson(res, 405, { error: "method not allowed" }, url);
-      const result = controlPlane.listHandoffs({ status: url.searchParams.get("status") || "", actor: url.searchParams.get("actor") || "", owner: subject });
-      return sendJson(res, result.ok ? 200 : result.httpStatus || 400, result.ok ? result : { error: result.error }, url);
+      // GET: list handoffs
+      if (req.method === "GET") {
+        const result = controlPlane.listHandoffs({ status: url.searchParams.get("status") || "", actor: url.searchParams.get("actor") || "", owner: subject });
+        return sendJson(res, result.ok ? 200 : result.httpStatus || 400, result.ok ? result : { error: result.error }, url);
+      }
+      // POST: create new web-to-mobile handoff
+      if (req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (!body || typeof body !== "object") return sendJson(res, 400, { error: "request body required" }, url);
+        const input = {
+          sourceActorRef: subject,
+          sourceOwnerRef: subject,
+          targetOwnerRef: body.targetOwnerRef || null,
+          projectId: body.projectId || null,
+          actionId: body.actionId || null,
+          actionType: body.actionType || null,
+          impact: body.impact || null,
+          riskLevel: body.riskLevel || "medium",
+        };
+        const result = controlPlane.createWebToMobileHandoff(input);
+        return sendJson(res, result.ok ? 201 : 400, result, url);
+      }
+      return sendJson(res, 405, { error: "method not allowed" }, url);
     }
     if (url.pathname.startsWith("/internal/web/v1/handoffs/")) {
       if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {

@@ -48,6 +48,44 @@ export type ApprovalScanPreview = {
 
 export type MobileDeviceSession = { deviceId: string; expiresAt: number };
 
+// ============================================
+// Incoming Handoff Types
+// ============================================
+
+export type HandoffSurface = 'web' | 'mobile';
+export type HandoffActionLevel = 'A' | 'B' | 'C' | 'D';
+export type HandoffStatus = 'pending' | 'opened' | 'completed' | 'rejected' | 'expired';
+export type HandoffObject = { type: string; id: string; projectId?: string; actionId?: string; actionType?: string };
+
+export interface IncomingHandoff {
+  id: string;
+  handoffCorrelationId?: string | null;
+  source: HandoffSurface;
+  sourceSurface?: HandoffSurface | null;
+  targetSurface: HandoffSurface;
+  actionLevel?: HandoffActionLevel | null;
+  object: HandoffObject;
+  status: HandoffStatus;
+  reason?: string | null;
+  impact?: string | null;
+  riskLevel?: string | null;
+  createdAt: string;
+  openedAt?: string | null;
+  expiresAt?: string | null;
+  expiredAt?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
+  approvalId?: string | null;
+}
+
+export type CreateHandoffParams = {
+  direction: HandoffSurface;
+  targetSurface: HandoffSurface;
+  actionLevel: HandoffActionLevel;
+  object: HandoffObject;
+  context?: Record<string, unknown>;
+};
+
 export type MobileWebLoginQrPayload = Pick<
   import('./webLoginQr').WebLoginQrPayload,
   'webLoginId' | 'scanToken'
@@ -484,3 +522,60 @@ export function useInvalidateMobileWorkspace() {
   const client = useQueryClient();
   return () => client.invalidateQueries({ queryKey: ['mobile-workspace'] });
 }
+
+// ============================================
+// Incoming Handoff Functions
+// ============================================
+
+export async function listIncomingHandoffs(params?: { status?: HandoffStatus; limit?: number }): Promise<IncomingHandoff[]> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  const query = searchParams.toString();
+  return mobileFetch<IncomingHandoff[]>(`/handoffs/incoming${query ? `?${query}` : ''}`);
+}
+
+export async function getHandoff(handoffId: string): Promise<IncomingHandoff> {
+  return mobileFetch<IncomingHandoff>(`/handoffs/${encodeURIComponent(handoffId)}`);
+}
+
+export async function acceptHandoff(handoffId: string): Promise<IncomingHandoff> {
+  return mobileFetch<IncomingHandoff>(`/handoffs/${encodeURIComponent(handoffId)}/accept`, {
+    method: 'POST',
+    body: JSON.stringify({ idempotencyKey: crypto.randomUUID() }),
+  });
+}
+
+export async function rejectHandoff(handoffId: string, reason: string): Promise<IncomingHandoff> {
+  return mobileFetch<IncomingHandoff>(`/handoffs/${encodeURIComponent(handoffId)}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ reason, idempotencyKey: crypto.randomUUID() }),
+  });
+}
+
+export function useIncomingHandoffsQuery(params?: { status?: HandoffStatus; limit?: number }) {
+  const session = useMobileDeviceSession();
+  return useQuery({
+    queryKey: ['incoming-handoffs', params],
+    queryFn: () => listIncomingHandoffs(params),
+    enabled: Boolean(session),
+    retry: false,
+    staleTime: 10_000,
+  });
+}
+
+// Alias for compatibility
+export const useMobileHandoffsQuery = useIncomingHandoffsQuery;
+export type MobileHandoff = IncomingHandoff;
+
+export function useHandoffQuery(handoffId: string) {
+  const session = useMobileDeviceSession();
+  return useQuery({
+    queryKey: ['handoff', handoffId],
+    queryFn: () => getHandoff(handoffId),
+    enabled: Boolean(session) && Boolean(handoffId),
+    retry: false,
+    staleTime: 10_000,
+  });
+}
+

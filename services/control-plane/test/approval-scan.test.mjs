@@ -332,3 +332,99 @@ test("approval scan refuses a correlation identifier from another scan", () => {
   assert.equal(result.httpStatus, 422);
   assert.match(result.error, /correlation/);
 });
+
+test("handoff audit events include sourceSurface and targetSurface fields", () => {
+  const { controlPlane, cacheDir } = fixture();
+  const approvalId = pendingApproval(controlPlane, "approval_scan_surface_fields_001");
+  const approval = controlPlane.snapshot().approvals.find((item) => item.id === approvalId);
+  approval.actionLevel = "C";
+  writeFileSync(join(cacheDir, "approvals", `${approvalId}.json`), JSON.stringify(approval));
+  const created = controlPlane.createApprovalScan({ approvalId });
+  const preview = controlPlane.resolveApprovalScan(created.scanId);
+  const result = controlPlane.decideApprovalScan({
+    scanId: created.scanId,
+    decision: "handoff",
+    idempotencyKey: "approval_scan_surface_submit_001",
+    handoffCorrelationId: preview.handoffCorrelationId,
+    deviceId: "dev_test-owner",
+  });
+  assert.equal(result.status, "handed_off");
+  const audit = readFileSync(join(cacheDir, "audit.jsonl"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line));
+
+  // handoff_created event should include sourceSurface and targetSurface
+  const createdEvent = audit.find((event) => event.auditKind === "handoff_created");
+  assert.ok(createdEvent, "handoff_created event should exist");
+  assert.equal(createdEvent.sourceSurface, "mobile");
+  assert.equal(createdEvent.targetSurface, "web");
+
+  // open handoff
+  controlPlane.openHandoff(result.handoff.id, "owner@example.test");
+  const openedAudit = readFileSync(join(cacheDir, "audit.jsonl"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line));
+  const openedEvent = openedAudit.find((event) => event.auditKind === "handoff_opened");
+  assert.ok(openedEvent, "handoff_opened event should exist");
+  assert.equal(openedEvent.sourceSurface, "mobile");
+  assert.equal(openedEvent.targetSurface, "web");
+
+  // complete handoff
+  controlPlane.completeHandoff(result.handoff.id, "owner@example.test", "executed");
+  const completedAudit = readFileSync(join(cacheDir, "audit.jsonl"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line));
+  const completedEvent = completedAudit.find((event) => event.auditKind === "handoff_completed");
+  assert.ok(completedEvent, "handoff_completed event should exist");
+  assert.equal(completedEvent.sourceSurface, "mobile");
+  assert.equal(completedEvent.targetSurface, "web");
+});
+
+test("handoff rejected audit event includes sourceSurface and targetSurface", () => {
+  const { controlPlane, cacheDir } = fixture();
+  const approvalId = pendingApproval(controlPlane, "approval_scan_reject_surface_001");
+  const approval = controlPlane.snapshot().approvals.find((item) => item.id === approvalId);
+  approval.actionLevel = "C";
+  writeFileSync(join(cacheDir, "approvals", `${approvalId}.json`), JSON.stringify(approval));
+  const created = controlPlane.createApprovalScan({ approvalId });
+  const preview = controlPlane.resolveApprovalScan(created.scanId);
+  const result = controlPlane.decideApprovalScan({
+    scanId: created.scanId,
+    decision: "handoff",
+    idempotencyKey: "approval_scan_reject_surface_submit_001",
+    handoffCorrelationId: preview.handoffCorrelationId,
+    deviceId: "dev_test-owner",
+  });
+  controlPlane.openHandoff(result.handoff.id, "owner@example.test");
+  controlPlane.rejectHandoff(result.handoff.id, "owner@example.test", "not the right time");
+
+  const audit = readFileSync(join(cacheDir, "audit.jsonl"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line));
+  const rejectedEvent = audit.find((event) => event.auditKind === "handoff_rejected");
+  assert.ok(rejectedEvent, "handoff_rejected event should exist");
+  assert.equal(rejectedEvent.sourceSurface, "mobile");
+  assert.equal(rejectedEvent.targetSurface, "web");
+  assert.equal(rejectedEvent.reason, "not the right time");
+});
+
+test("handoff expired audit event includes sourceSurface and targetSurface", () => {
+  const { controlPlane, cacheDir } = fixture();
+  const approvalId = pendingApproval(controlPlane, "approval_scan_expired_surface_001");
+  const approval = controlPlane.snapshot().approvals.find((item) => item.id === approvalId);
+  approval.actionLevel = "C";
+  writeFileSync(join(cacheDir, "approvals", `${approvalId}.json`), JSON.stringify(approval));
+  const created = controlPlane.createApprovalScan({ approvalId });
+  const preview = controlPlane.resolveApprovalScan(created.scanId);
+  const result = controlPlane.decideApprovalScan({
+    scanId: created.scanId,
+    decision: "handoff",
+    idempotencyKey: "approval_scan_expired_surface_submit_001",
+    handoffCorrelationId: preview.handoffCorrelationId,
+    deviceId: "dev_test-owner",
+  });
+
+  // Modify the in-memory handoff object to expire it immediately
+  result.handoff.expiresAt = new Date(Date.now() - 1000).toISOString();
+
+  const sweep = controlPlane.expireHandoffs();
+  assert.deepEqual(sweep, { ok: true, expired: 1 });
+
+  const audit = readFileSync(join(cacheDir, "audit.jsonl"), "utf8").split("\n").filter(Boolean).map((line) => JSON.parse(line));
+  const expiredEvent = audit.find((event) => event.auditKind === "handoff_expired");
+  assert.ok(expiredEvent, "handoff_expired event should exist");
+  assert.equal(expiredEvent.sourceSurface, "mobile");
+  assert.equal(expiredEvent.targetSurface, "web");
+});

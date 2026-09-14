@@ -17,6 +17,9 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import WebLoginConfirmPage from './pages/WebLoginConfirmPage';
 import RequireSession from './components/RequireSession';
 import { MobileDeviceSessionBootstrap } from './components/MobileDeviceSessionBootstrap';
+// Handoff routes for Mobile
+import IncomingHandoffs from './pages/IncomingHandoffs';
+import HandoffDetail from './pages/HandoffDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +51,9 @@ const MobileSurface: React.FC = () => (
               <Route path="inbox" element={<InboxPage />} />
               <Route path="me" element={<ProfilePage />} />
               <Route path="search" element={<SearchPage />} />
+              {/* Handoff routes */}
+              <Route path="handoffs" element={<IncomingHandoffs />} />
+              <Route path="handoffs/:id" element={<HandoffDetail />} />
             </Route>
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
