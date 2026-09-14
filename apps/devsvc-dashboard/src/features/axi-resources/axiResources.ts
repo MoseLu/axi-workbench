@@ -11,6 +11,19 @@ export type AxiResource = {
   dashboardRoute?: string;
   capabilities?: string[];
   notes?: string;
+
+  // Presentation override fields
+  visibility?: 'always' | 'deferred' | 'hidden';
+  menuGroup?: string;
+  audience?: 'user' | 'developer' | 'admin';
+  docsRoute?: string;
+  owner?: string;
+
+  // Verification metadata
+  lastVerifiedAt?: string;
+  verificationSource?: string;
+  verificationSummary?: string;
+  evidenceLink?: string;
 };
 
 export type AxiResourcesPayload = {

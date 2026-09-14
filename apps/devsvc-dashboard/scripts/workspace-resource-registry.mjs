@@ -40,6 +40,7 @@ function mergeResource(base, override, workspaceRoot) {
     ...base,
     ...override,
     ownerPath: resolveWorkspaceValue(override.ownerPath ?? base.ownerPath, workspaceRoot),
+    // capabilities: deduplicated union of base and override lists
     capabilities: unique([...(base.capabilities || []), ...(override.capabilities || [])])
   };
 
@@ -50,10 +51,23 @@ function mergeResource(base, override, workspaceRoot) {
 }
 
 /**
- * Creates the dashboard resource index from the authoritative workspace graph.
- * Static dashboard entries are presentation overrides only: they can supply a
- * hosted route, icon-oriented title, or capability labels, but cannot hide a
- * graph-registered project from the resource index.
+ * Status field semantics:
+ *   "active"   — ownerPath resolves to an existing directory on disk
+ *   "missing"  — ownerPath is empty or does not exist (static-only entry)
+ *   "inactive" — reserved for future deprecation / manual override signal
+ *
+ * Presentation override fields (from static config):
+ *   visibility  — "always" (default) | "deferred" (lazy-load) | "hidden" (index only)
+ *   menuGroup  — dashboard nav grouping label (e.g. "infrastructure", "workspace-governance")
+ *   audience   — "user" | "developer" | "admin"
+ *   docsRoute  — link to external documentation
+ *   owner      — human-readable owner label
+ *
+ * Verification metadata (from static config):
+ *   lastVerifiedAt      — ISO-8601 timestamp of last manual/automated review
+ *   verificationSource  — tool or process that performed the check
+ *   verificationSummary — one-line finding summary
+ *   evidenceLink        — URL to evidence (CI run, PR, doc page, etc.)
  */
 export function loadWorkspaceResourceRegistry({
   workspaceRoot,

@@ -208,6 +208,12 @@
   {
     "appId": "axi-docs",
     "title": "Axi Docs",
+    "executionBoundary": {
+      "owner": "Axi Docs Team",
+      "authorization": "文档访问授权由 axiom-docs 项目管理",
+      "audit": "文档访问与搜索操作审计",
+      "fallback": "不可用时显示离线文档索引，不复制搜索功能到 Host"
+    },
     "icon": "search",
     "cwd": "${workspaceRoot}/projects/axi-docs/app",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
@@ -281,6 +287,12 @@
   {
     "appId": "axi-agent-platform",
     "title": "Axi Agent Platform",
+    "executionBoundary": {
+      "owner": "Axi Agent Platform Team",
+      "authorization": "Agent 运行时授权由 axiom-agent-platform 项目管理",
+      "audit": "Agent 任务、工具调用与产物审计",
+      "fallback": "不可用时保留受控入口与错误状态，不由 Host 执行任务"
+    },
     "icon": "work",
     "cwd": "${workspaceRoot}/projects/axi-agent-platform/frontend",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm exec vite -- --host 127.0.0.1 --port ${port} --strictPort",

@@ -74,7 +74,8 @@
       "resource-snapshot",
       "agent-task"
     ],
-    "notes": "Canonical Workbench monorepo; hosts control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI."
+    "notes": "Canonical Workbench monorepo; hosts control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI.",
+    "visibility": "hidden"
   },
   {
     "id": "axi-agent-platform",
@@ -152,7 +153,42 @@
       "workspace-rule-index",
       "memory-source-precedence"
     ],
-    "notes": "Workspace rule authority is surfaced from the shared workspace graph; policy ownership remains with Axi Rules."
+    "notes": "Workspace rule authority is surfaced from the shared workspace graph; policy ownership remains with Axi Rules.",
+    "menuGroup": "workspace-governance"
+  },
+  {
+    "id": "axi-skills",
+    "title": "Axi Skills",
+    "kind": "shared-skill-registry",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-skills",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "skill-registry",
+      "workspace-skill-index",
+      "agent-skill-source"
+    ],
+    "notes": "Shared skill registry consumed by agents across the workspace.",
+    "visibility": "deferred",
+    "menuGroup": "workspace-governance"
+  },
+  {
+    "id": "axi-workspace-governance",
+    "title": "Axi Workspace Governance",
+    "kind": "governance-infrastructure",
+    "surface": "resource-index",
+    "status": "active",
+    "ownerPath": "${workspaceRoot}/projects/axi-workspace-governance",
+    "dashboardRoute": "/axi-resources",
+    "capabilities": [
+      "workspace-admission",
+      "project-registration",
+      "handoff-chain"
+    ],
+    "notes": "Workspace governance infrastructure for project admission, registration, and handoff chain.",
+    "visibility": "hidden",
+    "menuGroup": "infrastructure"
   },
   {
     "id": "axi-image-preview",
@@ -274,7 +310,9 @@
       "verdaccio",
       "package-distribution"
     ],
-    "notes": "Local distribution boundary for @axi/* packages."
+    "notes": "Local distribution boundary for @axi/* packages.",
+    "visibility": "hidden",
+    "menuGroup": "infrastructure"
   },
   {
     "id": "axi-app-cli",

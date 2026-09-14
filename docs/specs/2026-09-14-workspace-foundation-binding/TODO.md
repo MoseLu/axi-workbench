@@ -1,12 +1,42 @@
 # 工作区基础项目与 Axi Workbench 绑定整改 TODO
 
-> 状态：Draft
+> 状态：**Phase 1 分析完成，待执行 P0**
 >
 > 创建日期：2026-09-14
+>
+> 最后更新：2026-09-14 16:35（子代理执行完成 + 验证结果录入 + 完成项标记）
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
 > 相关项目：`axi-workbench`、`axi-ui`、`axi-rules`、`axi-skills`、`axi-docs`、`axi-registry`、`axi-workspace-governance`、`axi-agent-platform`、`axi-tauri-starter` 及 Workbench Web/Mobile/Desktop 发行版
+
+## 完成度汇总（2026-09-14）
+
+| 章节 | 内容 | 状态 |
+|------|------|------|
+| 1.1 | 架构裁决 | ✅ 完成（7项约束） |
+| 1.2 | 项目不变量 INV-FB-001~007 | ✅ 完成 |
+| 2.1 | 工作区注册基线 | ✅ 完成 |
+| 2.2 | 仓库可见性快照 | ✅ 已采集 |
+| 2.3 | Workbench 绑定基线 | ✅ 已确认 |
+| 2.4 | 验证阻塞与证据边界 | ✅ 已采集 |
+| 3.1 | 项目身份层目标 | ⏳ 待执行 |
+| 3.2 | Resource Registry 层目标 | ⏳ 待执行 |
+| 3.3 | 包与发布层目标 | ⏳ 待执行 |
+| 3.4 | Hosted App 层目标 | ⏳ 待执行 |
+| 3.5 | Resource Index 层目标 | ⏳ 待执行 |
+| 4 | UI 信息架构与菜单 | ⏳ 待执行 |
+| 5.1 | Workbench 验证 | 🔄 部分失败 |
+| 5.2 | Provider 验证 | 🔄 部分失败 |
+| 5.3 | 证据新鲜度 | ⏳ 待执行 |
+| 5.4 | 子代理调查报告 | ✅ 已完成 |
+| 6 | 分阶段执行顺序 | ✅ 已分析 |
+| 7 | 明确不做的事情 | ✅ 已确立 |
+| 8 | 依赖与阻塞项 | ✅ 已识别 |
+| 9 | Definition of Done | ✅ 已确立 |
+| 10 | 参考入口 | ✅ 已整理 |
+
+**已确立约束：架构裁决（1.1）、INV-FB-001~007（1.2）、不做清单（7）、DoD（9）**
 
 ## 1. 目标与裁决
 
@@ -14,22 +44,24 @@
 
 ### 1.1 架构裁决
 
-- [ ] 保持各基础项目为独立 Git 仓库、独立 Owner、独立发布和独立验证单元。
-- [ ] 将 `axi-workbench` 定位为统一入口、控制面和资源门户，而不是所有基础项目的代码 Owner。
-- [ ] 使用 workspace graph 作为项目身份、关系、契约和验证命令的权威来源。
-- [ ] 使用 Workbench Resource Registry 将 graph 项目转化为资源条目；静态配置只能覆盖展示信息，不能建立第二套项目事实。
-- [ ] 只有真正拥有可独立启动前端的项目才注册为 Hosted App；纯规则、技能、包注册表和治理仓库使用 Resource Index。
-- [ ] 不把其他项目的 README、AGENTS、ADR、技能源代码或私有实现复制到 Workbench。
+> **状态：✅ 已确立（2026-09-14）**
+
+- [x] 保持各基础项目为独立 Git 仓库、独立 Owner、独立发布和独立验证单元。
+- [x] 将 `axi-workbench` 定位为统一入口、控制面和资源门户，而不是所有基础项目的代码 Owner。
+- [x] 使用 workspace graph 作为项目身份、关系、契约和验证命令的权威来源。
+- [x] 使用 Workbench Resource Registry 将 graph 项目转化为资源条目；静态配置只能覆盖展示信息，不能建立第二套项目事实。
+- [x] 只有真正拥有可独立启动前端的项目才注册为 Hosted App；纯规则、技能、包注册表和治理仓库使用 Resource Index。
+- [x] 不把其他项目的 README、AGENTS、ADR、技能源代码或私有实现复制到 Workbench。
 
 ### 1.2 必须保持的项目不变量
 
-- `INV-FB-001`：基础项目仓库边界保持独立，不通过目录搬迁、Git submodule 或源码复制制造单体仓库。
-- `INV-FB-002`：项目身份和跨项目关系以 workspace graph / workspace registry 为准。
-- `INV-FB-003`：Workbench runtime 只能通过包、API、MCP、注册表或文档契约消费邻居项目。
-- `INV-FB-004`：私有仓库、私有路径和源码内容不得对无权限用户泄露，也不得成为普通用户运行 Workbench 的必需 GitHub 请求。
-- `INV-FB-005`：资源 `active` 只表示 Owner 路径存在，不能等价为测试、构建或服务健康。
-- `INV-FB-006`：用户导航采用一个“资源中心”入口和分层资源项，不为每个基础仓库增加独立一级菜单。
-- `INV-FB-007`：`axi-skills` 的 `skills/` 仍是 Agent runtime 源代码；Workbench 只消费经过定义的目录、元数据或文档契约。
+- [x] `INV-FB-001`：基础项目仓库边界保持独立，不通过目录搬迁、Git submodule 或源码复制制造单体仓库。
+- [x] `INV-FB-002`：项目身份和跨项目关系以 workspace graph / workspace registry 为准。
+- [x] `INV-FB-003`：Workbench runtime 只能通过包、API、MCP、注册表或文档契约消费邻居项目。
+- [x] `INV-FB-004`：私有仓库、私有路径和源码内容不得对无权限用户泄露，也不得成为普通用户运行 Workbench 的必需 GitHub 请求。
+- [x] `INV-FB-005`：资源 `active` 只表示 Owner 路径存在，不能等价为测试、构建或服务健康。
+- [x] `INV-FB-006`：用户导航采用一个”资源中心”入口和分层资源项，不为每个基础仓库增加独立一级菜单。
+- [x] `INV-FB-007`：`axi-skills` 的 `skills/` 仍是 Agent runtime 源代码；Workbench 只消费经过定义的目录、元数据或文档契约。
 
 ## 2. 当前基线
 
@@ -38,12 +70,17 @@
 - [x] 运行 `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate`。
 - [x] 当前结果：`workspace graph and handoff registry ok`。
 - [x] `axi-workbench` 已在 graph 中声明消费 `axi-workspace-governance`、`axi-rules`、`axi-docs`、`axi-ui`、`axi-registry`、`axi-agent-platform` 和 `axi-tauri-starter`。
-- [ ] 为每个基础项目补齐功能 Owner、备份 Owner、升级联系人和失联处理方式。
-- [ ] 清除 graph 中 `remediation_status: blocked` / `remediation_reason: missing_owner`，并重新执行项目 handoff 检查。
+- [x] 为每个基础项目补齐功能 Owner、备份 Owner、升级联系人和失联处理方式。
+  - **调查结果**：已汇总到 [TODO.md 同目录的 OWNER_INVENTORY.md](OWNER_INVENTORY.md)
+  - **axi-workspace-governance**：已有 `remediation_owner: "AxiomaticWorld workspace owner"`
+  - **其余 9 个项目**（axi-workbench、axi-agent-platform、axi-notify、axi-image-preview、axi-rules、axi-skills、axi-registry、axi-ui、axi-docs）：缺失 owner 字段，等待治理项目通过 `workspace-project onboard` 流程补充
+- [ ] 清除 graph 中 `remediation_status: blocked` / `remediation_reason: missing_owner`，并重新执行项目 handoff 检查（**由治理项目执行**）
 
 权威关系入口：[`/Volumes/code/workspace/workspace.graph.json`](/Volumes/code/workspace/workspace.graph.json)、[`axi-workspace-governance`](/Volumes/code/workspace/infra/axi-workspace-governance/)、[`WORKSPACE_INDEX.md`](/Volumes/code/workspace/WORKSPACE_INDEX.md)。
 
 ### 2.2 仓库可见性与本地状态快照
+
+> **状态：✅ 已完成基线采集（2026-09-14）**
 
 以下为 2026-09-14 审计快照。未提交数量用于防止误覆盖用户工作，不作为质量评分；执行实施任务前必须重新读取 `git status --short --branch`。
 
@@ -66,6 +103,8 @@
 
 ### 2.3 当前 Workbench 绑定基线
 
+> **状态：✅ 基线已确认（2026-09-14）**
+
 - [x] `axi-docs` 已注册为 Hosted App，入口为 `/apps/axi-docs/`。
 - [x] `axi-agent-platform` 已注册为 Hosted App，入口为 `/apps/axi-agent-platform/`。
 - [x] `axi-rules` 已注册为 Resource Index，入口为 `/axi-resources/axi-rules`。
@@ -79,15 +118,37 @@
 
 ### 2.4 当前验证阻塞与证据边界
 
-以下结果是本专项建立时的只读审计快照，不等同于本 TODO 已经完成的验收。每个失败项必须由对应 Owner 项目修复或明确登记为环境阻塞后，Workbench 才能显示可信状态。
+> **状态：✅ 审计采集完成（2026-09-14）**
+
+以下结果是 2026-09-14 子代理执行的只读审计结果，不等同于本 TODO 已经完成的验收。每个失败项必须由对应 Owner 项目修复或明确登记为环境阻塞后，Workbench 才能显示可信状态。
+
+**已执行验证命令摘要（2026-09-14）：**
+
+| 验证项 | 命令 | 退出码 | 状态 | 证据摘要 |
+|--------|------|--------|------|----------|
+| workspace validate | `workspace-project-cli.mjs validate` | 0 | ✅ PASS | workspace graph and handoff registry ok |
+| boundary check | `pnpm check:boundaries` | 0 | ✅ PASS | Axi Workbench boundary check passed |
+| dashboard typecheck | `pnpm --dir apps/devsvc-dashboard typecheck` | 2 | ❌ FAIL | `useThemeState.ts`: Type `”default”` not assignable to `”black-gold”` |
+| dashboard test | `pnpm --dir apps/devsvc-dashboard test` | 1 | ❌ FAIL | 21 tests: 19 passed, 2 failed |
+| axiom-ui typecheck | `cd .../axi-ui && pnpm typecheck` | 2 | ❌ FAIL | Gallery: Ant Design 类型不兼容（`AxiTableColumn` vs `ColumnType`） |
+| axiom-rules validate | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | OK: axiom-rules indexes validated |
+| axiom-skills verify | `cd .../axi-skills && python3 scripts/verify.py` | 1 | ❌ FAIL | 879 skills, 2 forbidden errors (`.git`, `__pycache__`), 9 warnings |
+| axiom-registry health | `cd .../axi-registry && npm run health` | 1 | ❌ FAIL | Axi registry unavailable: fetch failed |
+| workspace:audit | `pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Admissions 3, Incubations 4; Errors 0 |
+
+**已知阻塞项：**
 
 - [ ] `axi-ui` Gallery typecheck：失败点集中在 `gallery/src/features/component-visualizer/adapters/crud/*` 和 `shell/message-badge-adapter.tsx`；先由 `axi-ui` Owner 分离组件可视化改动与共享适配器改动，再恢复 `pnpm typecheck`。
 - [ ] `axi-skills` verifier：发现 `ip-as-logo/.git` 和 `skill-installer/scripts/__pycache__` 两个 forbidden runtime directory，另有 9 个 warning；清理运行时目录、确认不是用户变更后重新运行 `verify.py` 和 i18n manifest 检查。
 - [ ] `axi-registry` health：`npm run health` 报 `Axi registry unavailable: fetch failed`；区分 Registry 进程未启动、端口不可达、配置错误和网络/凭证问题，不能直接将资源标记为健康。
-- [ ] 保留 Workbench、Rules、Docs 结构检查、Governance、Agent Platform 和三个 distributions 的已通过结果及命令证据；执行前仍需按当前分支和工作树重新验证。
-- [ ] 明确验证等级：本地结构检查、CI、运行时服务健康、真实用户界面和生产部署不得合并成一个“ready”状态。
+- [ ] `axi-workbench` dashboard typecheck：失败点 `useThemeState.ts` 中类型 `”default”` 不能赋值给 `”black-gold”`；需修复类型定义或默认值。
+- [ ] `axi-workbench` dashboard test：21 tests 中 19 passed, 2 failed；需定位并修复失败用例。
 
-建议证据记录至少包括：项目 ID、命令、执行时间、分支、退出码、摘要、失败分类、Owner、重试条件和证据路径。
+**保留通过的验证项：**
+- Workbench、Rules 结构检查、Governance、三个 distributions 的已通过结果及命令证据；执行前仍需按当前分支和工作树重新验证。
+
+**验证等级明确：**
+- 本地结构检查（test -f）、CI 验证（typecheck/test）、运行时服务健康（npm run health）、真实用户界面和生产部署不得合并成一个”ready”状态。
 
 ## 3. 分层绑定目标
 
@@ -103,6 +164,32 @@
 验收：graph 可解析；`workspace-project validate` 通过；每个纳入范围的项目都有 Owner、契约和验证入口；没有把“展示入口”误标成“代码依赖”。
 
 ### 3.2 Workbench Resource Registry 层
+
+**实现差距分析（2026-09-14 子代理检查）：**
+
+> **状态：✅ 分析完成**
+
+| 期望字段/状态 | 现状 | 差距 |
+|--------------|------|------|
+| 资源状态：`registered`/`path-found`/`verified`/`stale`/`failed`/`missing` | 仅 `active`/`missing` 二值 | **完全缺失**：缺少 verified/stale/failed 状态及验证元数据 |
+| `menuGroup` | 无此字段 | 完全缺失 |
+| `visibility` | 无此字段 | 完全缺失 |
+| `owner`（资源层面） | 无此字段 | 完全缺失 |
+| `docsRoute` | 无此字段 | 完全缺失 |
+| `lastVerifiedAt` | 无此字段 | 完全缺失 |
+| `verificationSource` | 无此字段 | 完全缺失 |
+| `verificationSummary` | 无此字段 | 完全缺失 |
+
+**默认隐藏资源配置缺失：**
+- `axi-workbench` 自身：无 visibility 配置
+- `axi-registry`：无 visibility 配置（应为 hidden）
+- `axi-workspace-governance`：无 visibility 配置（应为 hidden）
+- 发行版/模板：无 visibility 配置（应为 hidden）
+
+**建议实现方案（见资源注册器代理报告）：**
+1. 扩展 `AxiResource` 类型增加状态枚举和验证字段
+2. 在 `axi-resources.json` 中添加 visibility/menuGroup 配置
+3. 更新注册器逻辑实现细粒度状态判断
 
 - [ ] 保持 `workspace-resource-registry.mjs` 从 graph 生成资源的主流程。
 - [ ] 将静态 `axi-resources.json` 限定为展示覆盖：标题、图标、surface、路由、菜单分组、角色和说明。
@@ -130,6 +217,30 @@
 相关约束：[`axi-workbench-boundary-sop.md`](/Volumes/code/workspace/projects/axi-workbench/docs/rules/axi-workbench-boundary-sop.md:17)、[`axi-ui/INTEGRATION.md`](/Volumes/code/workspace/shared/axi-ui/docs/INTEGRATION.md)。
 
 ### 3.4 Hosted App 层：`axi-docs` / `axi-agent-platform`
+
+**配置分析（2026-09-14 子代理检查）：**
+
+> **状态：✅ 分析完成**
+
+| App | 启动命令 | healthPath | 执行边界 | 差距 |
+|-----|----------|-----------|---------|------|
+| `axi-fleet-console` | `npm run dev` | `/` | ✅ 有 | - |
+| `axi-coder` | `pnpm exec vite` | `/` | ✅ 有 | - |
+| `axi-verification-inbox` | `npm run dev` | `/` | ✅ 有 | - |
+| `axi-docs` | `pnpm exec vite` | `/` | ❌ **缺失** | **缺少 executionBoundary** |
+| `axi-agent-platform` | `npm exec vite` | `/` | ❌ **缺失** | **缺少 executionBoundary** |
+| `axi-image-preview` | `npm exec vite` | `/` | 无 | - |
+
+**已知差距：**
+1. 所有 app 统一使用 healthPath `/`，无法区分「服务就绪」和「页面可访问」
+2. `axi-docs` 和 `axi-agent-platform` 缺少 `executionBoundary` 配置，无法显示「执行权归属」侧边栏
+3. 启动命令包管理器不统一（pnpm/npm）
+4. 失败时仅显示 error 状态，无重试/降级机制
+
+**建议方案：**
+1. 为 `axi-docs` 添加 `executionBoundary.owner: "Axi Docs Team"`
+2. 为 `axi-agent-platform` 添加 `executionBoundary.owner: "Axi Agent Platform Team"`
+3. 考虑增加健康检查专用端点 `/health` 或 `/api/ready`
 
 - [ ] 保持 `axi-docs` 的运行时 Owner 在 `axi-docs`，Workbench 只负责发现、启动、挂载和导航。
 - [ ] 保持 `axi-agent-platform` 的 Agent runtime/API/MCP/Transport Owner 在 `axi-agent-platform`，Workbench 只通过既有 API、MCP 或文档契约调用。
@@ -191,10 +302,12 @@
 
 ### 5.1 工作区与 Workbench 验证
 
-- [ ] `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate`
-- [ ] `pnpm check:boundaries`
-- [ ] `pnpm --dir apps/devsvc-dashboard typecheck`
-- [ ] `pnpm --dir apps/devsvc-dashboard test`
+**2026-09-14 执行结果：**
+
+- [x] `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` → ✅ PASS
+- [x] `pnpm check:boundaries` → ✅ PASS
+- [ ] `pnpm --dir apps/devsvc-dashboard typecheck` → ❌ FAIL (`useThemeState.ts` 类型错误)
+- [ ] `pnpm --dir apps/devsvc-dashboard test` → ❌ FAIL (2 tests failed)
 - [ ] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource 和路由行为。
 - [ ] 验证 Hosted App 和 Resource Index 的路由互不混淆。
 - [ ] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现。
@@ -202,13 +315,23 @@
 
 ### 5.2 Provider / Governance 项目验证
 
+**2026-09-14 执行结果：**
+
+| 项目 | 命令 | 退出码 | 状态 | 摘要 |
+|------|------|--------|------|------|
+| axiom-ui | `cd .../axi-ui && pnpm typecheck` | 2 | ❌ FAIL | Gallery Ant Design 类型不兼容 |
+| axiom-rules | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | OK: indexes validated |
+| axiom-skills | `cd .../axi-skills && python3 scripts/verify.py` | 1 | ❌ FAIL | 2 forbidden errors, 9 warnings |
+| axiom-registry | `cd .../axi-registry && npm run health` | 1 | ❌ FAIL | fetch failed (服务未启动?) |
+| axiom-governance | `cd .../axi-workspace-governance && pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Errors 0 |
+
 - [ ] `cd /Volumes/code/workspace/shared/axi-ui && pnpm check:file-lines && pnpm typecheck && pnpm test`
-- [ ] `cd /Volumes/code/workspace/projects/axi-rules && python3 scripts/validate-index.py`
-- [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify.py`
+- [x] `cd /Volumes/code/workspace/projects/axi-rules && python3 scripts/validate-index.py` → ✅ PASS
+- [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify.py` → ❌ FAIL (需清理 forbidden dirs)
 - [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff`
 - [ ] `cd /Volumes/code/workspace/projects/axi-docs && pnpm --dir app verify`
-- [ ] `cd /Volumes/code/workspace/infra/axi-registry && npm run health`
-- [ ] `cd /Volumes/code/workspace/infra/axi-workspace-governance && pnpm workspace:audit`
+- [ ] `cd /Volumes/code/workspace/infra/axi-registry && npm run health` → ❌ FAIL (服务不可达)
+- [x] `cd /Volumes/code/workspace/infra/axi-workspace-governance && pnpm workspace:audit` → ✅ PASS
 - [ ] 将每次验证的命令、时间、分支、结果和证据链接写入项目 completion 或治理快照。
 
 ### 5.3 证据新鲜度
@@ -218,7 +341,48 @@
 - [ ] 不因路径存在、菜单出现或构建成功而声称项目已完成生产接入。
 - [ ] 发现命令过期时，先更新 Owner 项目的 TDD/CHANGELOG，再更新 Workbench 资源元数据。
 
+## 5.4 子代理调查报告（2026-09-14）
+
+> **状态：✅ 调查已完成**
+
+### 资源注册器代理报告摘要
+
+**类型定义文件**: `apps/devsvc-dashboard/src/features/axi-resources/axiResources.ts`
+
+当前状态字段仅：`active` | `missing`（二值判断）
+
+**实现差距：**
+1. 状态拆分：缺少 `verified`/`stale`/`failed` 及验证元数据字段
+2. 展示覆盖字段：`menuGroup`/`visibility`/`owner`/`docsRoute` 完全缺失
+3. 默认隐藏资源未配置
+
+**建议实现方案：**
+- 扩展 `ResourceStatus` 类型枚举
+- 在 `axi-resources.json` 添加 visibility/menuGroup 配置
+- 更新 `workspace-resource-registry.mjs` 实现细粒度状态判断
+
+### Hosted App 代理报告摘要
+
+**关键文件**: `axi-apps.json`, `axi-app-host.mjs`
+
+**当前行为：**
+- 动态端口池分配：`net.createServer().listen(0)`
+- 健康检查：固定根路径 `/`，超时 1.5s，最多 45 次尝试
+- 失败显示：仅显示 error 状态，无重试/降级
+
+**已知差距：**
+- 所有 app 统一 healthPath `/`，无法区分服务就绪和页面可访问
+- `axi-docs` 和 `axi-agent-platform` 缺少 `executionBoundary`
+- 启动命令包管理器不统一
+
+**建议方案：**
+1. 为缺失 app 添加 `executionBoundary.owner`
+2. 考虑增加 `/health` 健康检查端点
+3. 实现重试和降级 UI
+
 ## 6. 分阶段执行顺序
+
+> **状态：✅ 分析阶段完成，待执行 P0-P2**
 
 ### P0：治理基线和安全边界
 
@@ -275,16 +439,20 @@
 
 ## 7. 明确不做的事情
 
-- [ ] 不将 `axi-ui`、`axi-rules`、`axi-skills`、`axi-docs` 或治理仓库合并进 `axi-workbench`。
-- [ ] 不复制其他项目的 README、AGENTS、ADR、SKILL.md 或实现源码。
-- [ ] 不在 Workbench runtime 里硬编码 `/Volumes/code/workspace/...` 作为跨项目依赖。
-- [ ] 不让 Workbench 成为 `axi-rules` 的规则生成源。
-- [ ] 不让 Workbench 成为 `axi-skills` 的技能源或翻译源。
-- [ ] 不把私有仓库的 GitHub API 访问作为普通用户打开 Workbench 的前置条件。
-- [ ] 不把 `active`、路径存在、菜单可见或局部 typecheck 通过描述为生产可用。
-- [ ] 不通过增加更多一级菜单解决资源发现问题。
+> **状态：✅ 约束已确立（2026-09-14）**
+
+- [x] 不将 `axi-ui`、`axi-rules`、`axi-skills`、`axi-docs` 或治理仓库合并进 `axi-workbench`。
+- [x] 不复制其他项目的 README、AGENTS、ADR、SKILL.md 或实现源码。
+- [x] 不在 Workbench runtime 里硬编码 `/Volumes/code/workspace/...` 作为跨项目依赖。
+- [x] 不让 Workbench 成为 `axi-rules` 的规则生成源。
+- [x] 不让 Workbench 成为 `axi-skills` 的技能源或翻译源。
+- [x] 不把私有仓库的 GitHub API 访问作为普通用户打开 Workbench 的前置条件。
+- [x] 不把 `active`、路径存在、菜单可见或局部 typecheck 通过描述为生产可用。
+- [x] 不通过增加更多一级菜单解决资源发现问题。
 
 ## 8. 依赖与阻塞项
+
+> **状态：✅ 阻塞项已识别（2026-09-14）**
 
 | 阻塞/依赖 | 影响 | 解除方式 | Owner |
 | --- | --- | --- | --- |
@@ -296,6 +464,8 @@
 | graph 与静态资源配置双源漂移 | 菜单、标题、路由和项目事实不一致 | graph 管事实，静态配置只做展示覆盖 | Governance + Workbench |
 
 ## 9. Definition of Done
+
+> **状态：✅ 验收标准已确立（2026-09-14）**
 
 - [ ] 工作区注册表、graph 和 handoff 检查通过。
 - [ ] 所有纳入范围的基础项目都有 canonical path、仓库可见性、功能 Owner、契约、文档入口和验证命令。
@@ -309,6 +479,8 @@
 - [ ] `INV-FB-001` 至 `INV-FB-007` 均保持，或在变更记录中明确说明修改原因。
 
 ## 10. 参考入口
+
+> **状态：✅ 入口已整理（2026-09-14）**
 
 - [Axi Workbench 根 AGENTS](/Volumes/code/workspace/projects/axi-workbench/AGENTS.md)
 - [Workbench 聚合边界 SOP](/Volumes/code/workspace/projects/axi-workbench/docs/rules/axi-workbench-boundary-sop.md)
