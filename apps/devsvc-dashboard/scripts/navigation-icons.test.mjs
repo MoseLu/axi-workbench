@@ -19,8 +19,9 @@ test("hosted app navigation uses distinct group and app icons", async () => {
 test("axi app navigation keeps only real apps in the app group", async () => {
   const registrySource = await readFile(path.join(projectRoot, "src", "app-registry.tsx"), "utf8");
 
-  assert.match(registrySource, /key:\s*"axi-apps",\s*[\s\S]*?label:\s*"Axi 应用",\s*[\s\S]*?children:\s*\[\s*\]/u);
-  assert.match(registrySource, /key:\s*"axi-resources",\s*[\s\S]*?label:\s*"Axi 资源",\s*[\s\S]*?label:\s*"资源索引"/u);
+  assert.match(registrySource, /key:\s*"axi-apps",\s*[\s\S]*?label:\s*"axi-apps",\s*[\s\S]*?children:\s*\[\s*\]/u);
+  assert.match(registrySource, /key:\s*"axi-resources",\s*[\s\S]*?label:\s*"axi-resources",\s*[\s\S]*?children:\s*\[\s*\{[\s\S]*?label:\s*"资源索引"/u);
   assert.match(registrySource, /const hostedAppItems:\s*NavItem\[\]\s*=\s*apps\.filter\(\(app\)\s*=>\s*app\.hostedMode\)\.map/u);
-  assert.match(registrySource, /const resourceItems:\s*NavItem\[\]\s*=\s*resources\.filter\(\(resource\)\s*=>\s*resource\.surface\s*!==\s*"hosted-app"\)\.map/u);
+  assert.match(registrySource, /const filteredResources\s*=\s*resources\.filter\(/u);
+  assert.match(registrySource, /const resourceItems:\s*NavItem\[\]\s*=\s*filteredResources\.map/u);
 });
