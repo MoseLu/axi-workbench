@@ -1,10 +1,10 @@
 # 工作区基础项目与 Axi Workbench 绑定整改 TODO
 
-> 状态：**P0 整改已提交，待 P1 执行**
+> 状态：**P0 整改已提交，P0-4 完成，待 P1 执行**
 >
 > 创建日期：2026-09-14
 >
-> 最后更新：2026-09-14 17:05（P0 修复已提交 git commit 997b4c0b）
+> 最后更新：2026-09-14 17:25（P0-4 私有仓库权限规则固化完成）
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
@@ -26,8 +26,8 @@
 | 3.4 | Hosted App 层目标 | ✅ P0 完成（executionBoundary 已添加） |
 | 3.5 | Resource Index 层目标 | ⏳ 待执行 |
 | 4 | UI 信息架构与菜单 | ⏳ 待执行 |
-| 5.1 | Workbench 验证 | 🔄 typecheck ✅，test 2 fail |
-| 5.2 | Provider 验证 | 🔄 axiom-skills ✅，其余待 |
+| 5.1 | Workbench 验证 | ✅ typecheck ✅，test ✅ |
+| 5.2 | Provider 验证 | ✅ axiom-skills ✅，axiom-registry ✅，axiom-rules ✅ |
 | 5.3 | 证据新鲜度 | ⏳ 待执行 |
 | 5.4 | 子代理调查报告 | ✅ 已完成 |
 | 6 | 分阶段执行顺序 | ✅ 已分析 |
