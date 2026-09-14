@@ -34,9 +34,12 @@ import { emitShellUnread } from '../lib/shell';
 import {
   workbenchDesktopNavGroupsWithKeys,
   workbenchMenuRouteMap,
+  filterNavGroupsByRole,
+  type WorkbenchNavGroup,
 } from '../lib/navigationRegistry';
 import { loadProfile, resolveAvatarSrc, type UserProfile } from '../pages/admin/me/profileStore';
 import { WorkbenchFloatingToolArrow } from '../lib/floatingToolArrow';
+import { getUserRole, type UserRole } from '../config';
 import './MainLayout.css';
 
 const ROUTE_PREFIX_LABEL_KEYS: Array<{ prefix: string; labelKey: string }> = [
@@ -263,9 +266,14 @@ const MainLayout: React.FC = () => {
     });
   }, [navigate]);
 
+  // 从本地配置读取用户角色
+  const userRole = useMemo<UserRole>(() => getUserRole(), []);
+
   const visibleDesktopNavGroups = useMemo<AxiDashboardNavGroup[]>(() => {
     const keyword = sidebarSearchValue.trim().toLowerCase();
-    const localized = workbenchDesktopNavGroupsWithKeys.map((group) => ({
+    // 根据用户角色过滤导航分组
+    const roleFiltered = filterNavGroupsByRole(workbenchDesktopNavGroupsWithKeys, userRole);
+    const localized = roleFiltered.map((group: WorkbenchNavGroup) => ({
       ...group,
       label: t(group.labelKey),
       children: group.children.map((item) => ({
@@ -282,7 +290,7 @@ const MainLayout: React.FC = () => {
           .filter((group) => group.children.length > 0)
       : localized;
     return filtered as unknown as AxiDashboardNavGroup[];
-  }, [sidebarSearchValue, t]);
+  }, [sidebarSearchValue, t, userRole]);
 
   const shellNavGroups = useMemo(
     () => isPersonalOsRoute

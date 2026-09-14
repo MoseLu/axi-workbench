@@ -78,7 +78,8 @@
       "agent-task"
     ],
     "notes": "Canonical Workbench monorepo; hosts control plane, dashboards, coder, docs/search, fleet, inbox, local assistants, and app CLI.",
-    "visibility": "hidden"
+    "visibility": "hidden",
+    "menuGroup": "system"
   },
   {
     "id": "axi-agent-platform",
@@ -145,7 +146,7 @@
       "search"
     ],
     "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime.",
-    "menuGroup": "workspace-governance"
+    "menuGroup": "workspace-ops"
   },
   {
     "id": "axi-rules",

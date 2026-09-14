@@ -5,7 +5,11 @@
  * 在生产环境中，角色应该从认证服务获取。
  */
 
-import type { UserRole } from "@axi/types/auth";
+/**
+ * 用户角色类型
+ * 与 @epap/types/auth.ts 保持一致
+ */
+export type UserRole = "admin" | "developer" | "user" | "guest";
 
 // 默认角色为 developer（向后兼容）
 const DEFAULT_ROLE: UserRole = "developer";

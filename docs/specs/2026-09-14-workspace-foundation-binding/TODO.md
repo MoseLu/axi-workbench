@@ -19,9 +19,9 @@
 | axi-ui typecheck/test/build | ✅ PASS | typecheck、完整测试和 Gallery build 通过 |
 | axi-skills runtime verify | ✅ PASS | errors=0，9 warnings |
 | axi-skills i18n manifest | ❌ FAIL | 79 个技能路径未进入 translation batches |
-| axiom-registry health | ✅ PASS | 服务正常运行 |
-| axiom-rules validate | ✅ PASS | indexes validated |
-| axiom-governance audit | ✅ PASS | Entries 22, Errors 0 |
+| axi-registry health | ✅ PASS | 服务正常运行 |
+| axi-rules validate | ✅ PASS | indexes validated |
+| axi-workspace-governance audit | ✅ PASS | Entries 22, Errors 0 |
 | Dashboard typecheck | ✅ PASS | |
 | Dashboard tests | ✅ PASS | 21/21 |
 | Resource lifecycle data | ⚠️ PARTIAL | 生命周期函数已添加，但当前 49 个资源均为 `path-found`，没有 verifyCommands |
@@ -302,17 +302,17 @@
 ### 4.1 菜单结构
 
 - [x] 保留一个一级菜单：`资源中心`。
-- [x] 资源中心按用户任务分组，而不是按物理目录分组：
+- [ ] 资源中心按用户任务生成真实分组，而不是仅保存 `menuGroup` 字段：
   - `组件库`：Axi UI / Gallery。
   - `工作区治理`：Axi Rules、Axi Skills、Axi Docs。
   - `Agent 与运行时`：Axi Agent Platform。
   - `系统资源`：Axi Registry、Workspace Governance、发行版和模板。
-- [x] `Axi UI` 使用明显的快捷入口，因为组件预览和组件验证是开发者高频任务。
-- [x] `Axi Rules` 和 `Axi Skills` 作为资源中心二级菜单，不增加一级菜单。
+- [ ] `Axi UI` 使用明显的快捷入口，因为组件预览和组件验证是开发者高频任务。
+- [ ] `Axi Rules` 和 `Axi Skills` 作为资源中心二级菜单，不增加一级菜单。
 - [x] `Axi Docs` 保持 Hosted App 入口，不再复制一套文档阅读器。
-- [x] `axi-registry`、`axi-workspace-governance`、`axi-tauri-starter` 和发行版默认隐藏，管理员/开发者模式可见。
-- [x] `axi-workbench` 自身不在资源中心重复出现。
-- [x] 资源中心所有项目仍进入全局搜索，隐藏菜单不等于不可发现。
+- [ ] `axi-registry`、`axi-workspace-governance`、`axi-tauri-starter` 和发行版默认隐藏，管理员/开发者模式可见；当前部分 `admin` 值尚未生效。
+- [ ] `axi-workbench` 自身不在资源中心重复出现；当前只对非 admin 角色隐藏。
+- [ ] 资源中心所有项目仍进入全局搜索，隐藏菜单不等于不可发现；当前 `deferred` 项会被直接排除。
 
 ### 4.2 Resource Registry 展示字段
 
@@ -383,21 +383,22 @@
 
 > **状态：✅ 调查已完成**
 
-### 资源注册器代理报告摘要
+### 资源注册器复核摘要
 
 **类型定义文件**: `apps/devsvc-dashboard/src/features/axi-resources/axiResources.ts`
 
-当前状态字段仅：`active` | `missing`（二值判断）
+当前状态字段已扩展为：`registered` | `path-found` | `verified` | `stale` | `failed` | `missing`。
 
-**实现差距：**
-1. 状态拆分：缺少 `verified`/`stale`/`failed` 及验证元数据字段
-2. 展示覆盖字段：`menuGroup`/`visibility`/`owner`/`docsRoute` 完全缺失
-3. 默认隐藏资源未配置
+**当前仍有差距：**
+1. 当前运行结果为 49 个资源全部 `path-found`，没有实际 `verified`/`stale`/`failed` 记录
+2. `menuGroup` 已进入配置，但导航实现仍未按字段生成真实分组
+3. `visibility: "admin"` 不在类型和过滤逻辑支持范围内
+4. graph 的 `verify` 尚未转换为 `verifyCommands`，当前输出为 0 条
 
-**建议实现方案：**
-- 扩展 `ResourceStatus` 类型枚举
-- 在 `axi-resources.json` 添加 visibility/menuGroup 配置
-- 更新 `workspace-resource-registry.mjs` 实现细粒度状态判断
+**下一步：**
+- 接通验证命令和验证结果数据源
+- 统一 visibility/audience 语义并注入真实角色
+- 按 menuGroup 构造资源中心分组并增加行为测试
 
 ### Hosted App 代理报告摘要
 
@@ -408,47 +409,53 @@
 - 健康检查：固定根路径 `/`，超时 1.5s，最多 45 次尝试
 - 失败显示：仅显示 error 状态，无重试/降级
 
-**已知差距：**
-- 所有 app 统一 healthPath `/`，无法区分服务就绪和页面可访问
-- `axi-docs` 和 `axi-agent-platform` 缺少 `executionBoundary`
+**当前仍有差距：**
+- 所有 app 仍主要使用 healthPath `/`，无法区分服务就绪和页面可访问
 - 启动命令包管理器不统一
+- 失败态尚未形成统一的重试、降级和 Owner 处置流程
 
-**建议方案：**
-1. 为缺失 app 添加 `executionBoundary.owner`
-2. 考虑增加 `/health` 健康检查端点
-3. 实现重试和降级 UI
+**下一步：**
+1. 增加 readiness endpoint 或健康检查合同
+2. 实现失败重试、降级和 Owner 处置 UI
+3. 为 Hosted App 启停和健康状态保留证据
 
 ## 6. 分阶段执行顺序
 
-> **状态：✅ 分析阶段完成，待执行 P0-P2**
+> **状态：P0 核心治理完成；P1 资源绑定与 UI 语义、P2 自动化仍待完成**
 
 ### P0：治理基线和安全边界
 
-- [ ] 完成所有基础项目的功能 Owner、备份 Owner、仓库可见性和文档入口登记。
-- [ ] 解决 `axi-workbench` graph remediation 的 `missing_owner` blocker。
-- [ ] 确认每个项目的 canonical path、repo remote、private/public 状态和工作区分支模型。
-- [ ] 确认 `axi-skills` 不作为 Workbench runtime 依赖，除非先建立正式消费契约。
+> **状态：✅ 核心治理基线完成；仓库关系对账和证据快照仍需维护**
+
+- [x] 完成核心基础项目的 Owner remediation 登记；当前 graph 状态为 `supported`。
+- [x] 解决 `axi-workbench` graph remediation 的 `missing_owner` blocker。
+- [x] 建立每个项目的 canonical path、repo remote、private/public 状态和工作区分支模型快照。
+- [x] 确认 `axi-skills` 不作为 Workbench runtime 依赖，除非先建立正式消费契约。
 - [ ] 固化私有仓库不向普通用户暴露的权限规则。
 - [ ] 对照 `workspace.json`、`workspace.graph.json` 和本地 `git remote`，确认仓库 canonical remote 的唯一来源；发现 `axiomaticworld/*` 与 `MoseLu/*` 不一致时，记录是迁移别名、镜像还是实际漂移。
 - [ ] 对照 workspace registry 与 graph 的项目覆盖，确认三个 Workbench distributions 是有意的 graph-only registration，还是需要补入治理 registry。
 - [ ] 对 `axi-ui`、`axi-registry` 等项目做正向 consumers 与反向 `workspace-project consumers` 对账，消除图谱中的消费者缺失或说明其原因。
-- [ ] 为当前 2026-09-14 工作树快照建立审计记录，任何后续操作避开已有未提交变更。
+- [x] 为当前 2026-09-14 工作树建立过审计记录；该快照在后续提交后已过期，必须重新生成后才能作为当前证据。
 
 完成标准：注册表通过；所有基础项目 Owner 不再缺失；安全边界和项目关系有单一权威来源。
 
 ### P1：Resource Registry 与菜单分层
 
-- [ ] 设计并落地资源元数据字段。
-- [ ] 修正 `active` 语义，增加注册、验证和过期状态。
+> **状态：⚠️ 字段和基础过滤代码已落地，实际语义与验证数据链路未闭合**
+
+- [x] 设计并落地资源元数据字段。
+- [ ] 修正资源生命周期语义：当前函数已支持多状态，但数据源未提供验证记录，49 个资源均为 `path-found`。
 - [ ] 增加菜单分组和角色过滤。
-- [ ] 隐藏 Workbench 自身、Registry、Governance、模板和发行版的默认菜单项。
-- [ ] 增加 `axi-skills`、Governance、Registry 的展示覆盖。
+- [ ] 隐藏 Workbench 自身、Registry、Governance、模板和发行版的默认菜单项，并修复 `visibility: "admin"` 未被过滤的问题。
+- [ ] 完成 `axi-skills`、Governance、Registry 的展示覆盖、Owner、文档和验证元数据。
 - [ ] 完成资源详情、面包屑、全局搜索和错误态。
 - [ ] 为验证失败的 `axi-ui`、`axi-skills`、`axi-registry` 增加失败详情和重试/外部修复说明，禁止只显示一个不可解释的红色状态。
 
 完成标准：普通用户看到清晰的资源中心；开发者可以找到 UI/Rules/Skills；管理员可查看治理和交付资源；不会出现几十个平铺资源菜单。
 
 ### P1：Hosted App 与文档绑定
+
+> **状态：⚠️ Hosted App executionBoundary 已补齐，运行时健康与失败治理未完成**
 
 - [ ] 验证 `axi-docs` 和 `axi-agent-platform` 的 Hosted App 启动和失败回退。
 - [ ] 为 `axi-rules` 和 `axi-skills` 建立到 Axi Docs 的受控文档入口。
@@ -458,6 +465,8 @@
 完成标准：应用运行时、文档运行时和资源索引的所有权清晰；用户能从 Workbench 完成发现、阅读和返回，但不会误以为项目已被合并。
 
 ### P1：包消费和交付链路
+
+> **状态：⏳ 尚未完成版本化 Registry 消费验收**
 
 - [ ] 区分 Workbench 本地联调的 `link:` 和交付阶段的私有 Registry 版本消费。
 - [ ] 验证 `axi-ui` 发布到 `axi-registry` 后，Workbench Dashboard、Axi Coder、Agent Platform 和三个发行版均可消费。
@@ -494,10 +503,14 @@
 
 | 阻塞/依赖 | 影响 | 解除方式 | Owner |
 | --- | --- | --- | --- |
-| 功能 Owner 缺失 | 当前 graph remediation 为 blocked，无法完成可靠交接 | 补齐每个项目的功能/备份 Owner 并重新 handoff-check | 待指定 |
+| ~~功能 Owner 缺失~~ | 核心项目已登记，graph remediation 当前为 `supported` | 继续维护 Owner 来源和交接证据 | Governance |
+| `axi-skills` i18n manifest 缺失 | i18n verifier 失败 79 项，技能翻译批次不完整 | 补齐 translation batches 后重跑 verifier | axi-skills |
 | `axi-skills` 消费契约不明确 | 不能判断 Workbench 是否可读取技能内容 | 仅做目录展示；若需要 runtime 消费，先建立版本化契约和 graph edge | `axi-skills` + Workbench |
-| `active` 状态语义过弱 | UI 可能误报健康 | 增加验证快照和新鲜度字段 | Workbench |
-| 私有仓库访问策略未产品化 | 可能泄露源码路径或依赖 GitHub 登录 | 本地注册表优先，GitHub 链接仅管理员可见 | Governance + Workbench |
+| `visibility: "admin"` 语义未实现 | admin 资源可能对 developer 可见 | 统一 visibility 类型或改用 audience，并接入真实角色 | Workbench |
+| `menuGroup` 未参与导航分组 | 资源仍会平铺在单一资源组下 | 按 menuGroup 构造分组并补行为测试 | Workbench |
+| 验证命令未接通 | 所有资源均为 `path-found`，无法显示 verified/stale/failed | 将 graph 的 `verify` 映射到资源 verification 数据 | Governance + Workbench |
+| 资源详情信息不完整 | UI 不展示 Owner、验证摘要和 evidence | 完成资源详情字段渲染和受控链接 | Workbench |
+| 私有仓库访问策略未完成端到端验证 | 可能泄露源码路径或依赖 GitHub 登录 | 本地注册表优先，GitHub 链接仅管理员可见，并补角色测试 | Governance + Workbench |
 | `axi-ui` 当前本地未提交变更较多 | 升级或清理可能覆盖用户工作 | 变更前读取状态，Provider 任务与 Workbench 任务分离 | `axi-ui` Owner |
 | graph 与静态资源配置双源漂移 | 菜单、标题、路由和项目事实不一致 | graph 管事实，静态配置只做展示覆盖 | Governance + Workbench |
 
@@ -505,7 +518,7 @@
 
 > **状态：✅ 验收标准已确立（2026-09-14）**
 
-- [ ] 工作区注册表、graph 和 handoff 检查通过。
+- [x] 工作区注册表、graph 和 handoff 检查通过。
 - [ ] 所有纳入范围的基础项目都有 canonical path、仓库可见性、功能 Owner、契约、文档入口和验证命令。
 - [ ] Workbench 只有一个资源中心一级入口，并按角色和任务分层显示。
 - [ ] `axi-ui`、`axi-rules`、`axi-skills` 具备清晰的资源详情和 canonical Owner 链接。

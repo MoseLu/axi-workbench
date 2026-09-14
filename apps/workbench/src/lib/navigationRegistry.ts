@@ -1,5 +1,14 @@
 import type { AxiDashboardNavGroup } from '@axi/shell';
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
+import type { UserRole } from '../config';
+
+/**
+ * 导航项的可见性角色要求。
+ * - undefined: 对所有角色可见
+ * - 单个角色: 只对该角色可见
+ * - 多个角色: 对其中任一角色可见
+ */
+export type VisibilityRole = UserRole | UserRole[] | undefined;
 
 /**
  * Canonical desktop navigation registration for the primary application
@@ -27,6 +36,8 @@ export type WorkbenchNavItem = {
   labelKey: string;
   target?: string;
   title?: string;
+  /** 可见性角色要求，不设置则对所有角色可见 */
+  visibility?: VisibilityRole;
 };
 
 export type WorkbenchNavGroup = {
@@ -37,6 +48,8 @@ export type WorkbenchNavGroup = {
   key: string;
   label: string;
   labelKey: string;
+  /** 可见性角色要求，不设置则对所有角色可见 */
+  visibility?: VisibilityRole;
 };
 
 export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
@@ -77,8 +90,8 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
     iconName: axiWorkbenchIconMap.team,
     children: [
       { key: '/admin/team', label: '团队', labelKey: 'nav.team', iconName: axiWorkbenchIconMap.team },
-      { key: '/admin/settings/menu', label: '菜单配置', labelKey: 'nav.settings.menu.configure', iconName: axiWorkbenchIconMap.menu },
-      { key: '/admin/settings/role', label: '角色权限', labelKey: 'nav.settings.role.permission', iconName: axiWorkbenchIconMap.roles },
+      { key: '/admin/settings/menu', label: '菜单配置', labelKey: 'nav.settings.menu.configure', iconName: axiWorkbenchIconMap.menu, visibility: 'admin' },
+      { key: '/admin/settings/role', label: '角色权限', labelKey: 'nav.settings.role.permission', iconName: axiWorkbenchIconMap.roles, visibility: 'admin' },
     ],
   },
 ];
@@ -142,4 +155,50 @@ export function getRegisteredDesktopRoutes(): RegisteredDesktopRoute[] {
       path: String(item.key),
     })),
   );
+}
+
+/**
+ * 检查用户角色是否符合可见性要求
+ */
+function checkVisibility(userRole: UserRole, visibility: VisibilityRole): boolean {
+  if (visibility === undefined) return true;
+  if (Array.isArray(visibility)) return visibility.includes(userRole);
+  return userRole === visibility;
+}
+
+/**
+ * 根据用户角色过滤导航项
+ * - 移除不符合 visibility 要求的导航项
+ * - 如果一个分组的所有子项都被过滤掉，该分组也会被移除
+ * - 如果分组有 visibility 要求但不满足，分组及其所有子项都会被移除
+ */
+export function filterNavGroupsByRole(
+  groups: WorkbenchNavGroup[],
+  userRole: UserRole
+): WorkbenchNavGroup[] {
+  return groups
+    .map((group) => {
+      // 检查分组级别的 visibility
+      if (group.visibility !== undefined && !checkVisibility(userRole, group.visibility)) {
+        return null;
+      }
+      // 过滤子项
+      const filteredChildren = group.children.filter((item) =>
+        checkVisibility(userRole, item.visibility)
+      );
+      // 如果没有子项了，返回 null（分组会被过滤掉）
+      if (filteredChildren.length === 0) {
+        return null;
+      }
+      return { ...group, children: filteredChildren };
+    })
+    .filter((group): group is WorkbenchNavGroup => group !== null);
+}
+
+/**
+ * 获取默认的 WorkbenchNavGroup（未过滤）
+ * 用于向后兼容
+ */
+export function getDefaultNavGroups(): WorkbenchNavGroup[] {
+  return workbenchDesktopNavGroupsWithKeys;
 }

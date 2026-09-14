@@ -293,16 +293,31 @@ export function AxiResourcesPage() {
           render: (value: string) => <AxiTag className="metric-tag" effect="light" round type="info">{t(surfaceLabels[value] || value)}</AxiTag>
         },
         {
+          title: t("证据"),
+          dataIndex: "evidenceLink",
+          align: "center" as const,
+          width: 100,
+          render: (value?: string) => value ? (
+            <Tooltip title={value}>
+              <AntButton href={value} size="small" type="link" target="_blank" icon="link">
+                {t("查看")}
+              </AntButton>
+            </Tooltip>
+          ) : (
+            <span className="service-desc">—</span>
+          )
+        },
+        {
           title: t("resources.column.axiEntry"),
           dataIndex: "dashboardRoute",
           align: "center" as const,
-          width: 150,
+          width: 100,
           render: (value?: string) => value ? (
             <AntButton href={value} size="small" type="link">
               {t("打开")}
             </AntButton>
           ) : (
-            <AxiTag className="metric-tag" effect="light" round type="info">{t("资源索引")}</AxiTag>
+            <span className="service-desc">—</span>
           )
         }
       ]
