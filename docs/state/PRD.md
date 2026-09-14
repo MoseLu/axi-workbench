@@ -1,6 +1,6 @@
 # Axi Workbench PRD
 
-> 版本：v4 · 状态：产品架构已定；P1/P2 本地验收完成，P3/P4/P5 持续实施 · 更新：2026-09-13
+> 版本：v5 · 状态：产品架构已定；P1/P2 本地验收完成，公网移动访问整改待执行 · 更新：2026-09-14
 >
 > 本 PRD 的变更规格、公开案例研究和能力台账位于 [`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)。当前源码角色仍以 [`docs/architecture/source-catalog.md`](../architecture/source-catalog.md) 为准；本文不把规划能力写成既有实现。
 
@@ -253,3 +253,191 @@ DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是
 - 阶段状态：[`docs/state/MILESTONE.md`](./MILESTONE.md)
 - 当前源码角色：[`docs/architecture/source-catalog.md`](../architecture/source-catalog.md)
 - 变更规格：[`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)
+
+## 14. 公网移动访问整改 PRD（蜂窝网络 / 非局域网）
+
+### 14.1 背景与当前证据
+
+用户希望 Android 移动端在 4G/5G 等非 Wi‑Fi 环境下，直接通过公网域名访问 Workbench，而不是依赖开发机局域网地址。当前代码已经具备这条产品路径的本地基础：Android Release 默认 Gateway 为 `https://workbench.axiomaticworld.com/api/v1/`，Helm Chart 规划同一域名下 `/api` → API Gateway、`/` → Web 静态站点，配对二维码在生产环境可由 `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL` 注入公网地址。
+
+当前线上证据显示“域名可访问”不等于“Workbench 公网 API 已部署”：
+
+| 探针 | 当前结果 | 结论 |
+| --- | --- | --- |
+| `https://workbench.axiomaticworld.com/legal/terms` | HTTP 200，但返回页标题为“雅思冲刺 - IELTS Vocabulary” | 当前域名静态内容与 Workbench 不是同一已验证发布面，不能据此证明 Workbench 已上线。 |
+| `https://workbench.axiomaticworld.com/api/v1/health` | HTTP 404，JSON `{"detail":"Not Found"}` | 当前公网 `/api` 未返回 Workbench Gateway 健康合同。 |
+| `https://workbench.axiomaticworld.com/api/v1/auth/session` | HTTP 404 | OIDC/session API 未接通，移动端 Release 不能依赖该域名登录。 |
+| 局域网真机验收 | `192.168.101.14` 手机 → `192.168.101.13` 开发机，扫码、审批、会话恢复成功 | 产品流程与 Android 客户端可用；证据不代表公网部署已完成。 |
+
+因此，本整改不是“把 Android 地址改成域名”这么简单，而是一次完整的公网 API 平面、域名入口、认证、二维码地址传播和蜂窝网络验收工作。
+
+### 14.2 产品目标
+
+1. 已安装 Android Release 的用户无需连接与开发机同一 Wi‑Fi；只要手机能访问互联网，即可完成首次设备配对、工作区同步和后续会话恢复。
+2. 桌面 Web owner 在已登录状态生成的手机配对 QR 必须携带公网 HTTPS Gateway 地址；手机不得要求用户手工输入域名、IP 或端口。
+3. 公网 API 必须通过 `https://workbench.axiomaticworld.com/api/v1/` 提供 Workbench Gateway 合同，不得继续把其他产品静态站点或其他服务的 404 当作 Workbench 入口。
+4. Web、Android、Control Plane、Identity 和 API Gateway 对同一生产域名、OIDC 回调、CORS、session/bearer 边界保持一致。
+5. 所有上线声明必须由公网探针、真实蜂窝网络设备测试和服务端审计证据共同支撑；本地/集群内健康检查不能替代公网验收。
+
+### 14.3 非目标与边界
+
+- 不把公网部署改造成设备间 P2P、局域网发现或手写配对协议；手机只访问受 TLS 保护的 API Gateway。
+- 不把控制面端口（默认 `8092`）暴露到公网；外部只暴露 API Gateway 的 `/api` 路径。
+- 不在客户端内置 owner approval secret、内部服务 token、数据库凭据或静态 JWT。
+- 不为了复用现有域名而覆盖/删除当前由其他产品拥有的站点；必须先完成域名 owner、DNS、入口路由和证书归属确认。
+- 不承诺离线登录、无网络访问、后台常驻同步或公网环境下绕过 OIDC/设备审批。
+
+### 14.4 目标架构与数据流
+
+```text
+Android Release（4G/5G）
+        │ HTTPS + /api/v1/mobile/* + device bearer
+        ▼
+workbench.axiomaticworld.com
+        │ NGINX Ingress：/api → API Gateway；/ → Workbench Web 静态站
+        ▼
+API Gateway（公网唯一业务入口）
+        ├─ OIDC / session / CORS / rate limit
+        ├─ /api/v1/control-plane/mobile/pair/qr（已登录 Web owner）
+        ├─ /api/v1/mobile/pair/qr/scan（手机首次配对）
+        ├─ /api/v1/mobile/pair/status（手机轮询）
+        ├─ /api/v1/mobile/auth/nonces + /tokens（设备会话）
+        └─ /api/v1/mobile/workspace（工作区读取）
+        ▼
+Control Plane / Identity Adapter / Platform Core / Notification / File
+        （仅集群内 ClusterIP，不直接暴露）
+```
+
+首次配对流程：
+
+1. Web owner 访问同一域名的 Workbench Web 并完成 OIDC/session 登录。
+2. Web 调用 `/api/v1/control-plane/mobile/pair/qr`；Gateway 将请求转发至 Control Plane。
+3. Control Plane 返回短期 `webPairingId`、一次性 `scanToken` 和生产 `gatewayUrl=https://workbench.axiomaticworld.com/api/v1/`。
+4. Web 将上述内容编码为 `axi-mobile-pair-v1` QR；QR 不包含 cookie、owner secret、access token 或内部地址。
+5. Android 通过蜂窝网络扫描 QR，从 `gatewayUrl` 自动配置 endpoint，调用 `/api/v1/mobile/pair/qr/scan`。
+6. Web owner 在设备管理页确认；Android 轮询 `/api/v1/mobile/pair/status`，换取 device ID、nonce 和短期 access token。
+7. Android 通过 `/api/v1/mobile/workspace` 加载工作区；强制停止/重启后从 Android Keystore + DataStore 恢复，不重新要求输入 Gateway。
+
+### 14.5 生产合同要求
+
+#### 域名、DNS、TLS 与入口
+
+- `workbench.axiomaticworld.com` 的 A/AAAA/CNAME 必须指向实际承载 Workbench Ingress 的入口；禁止指向其他产品的静态站点而继续宣称 Workbench 已上线。
+- 证书覆盖该域名，TLS 最低为 TLS 1.2；HTTP 必须 301/308 到 HTTPS。
+- Ingress 必须精确分流：`/api` → `api-gateway`，其他 Workbench Web 路径 → Workbench 静态站点；`/legal/terms` 和 `/legal/privacy` 必须由 Workbench Web 或明确的产品外链策略拥有。
+- Gateway、Control Plane、Identity Adapter、Platform Core 等 Service 保持 `ClusterIP`；不得开放 `8092` 或内部服务端口。
+
+#### Gateway 与 API 路由
+
+公网必须返回 Workbench API 合同，而不是通用 404：
+
+| 方法 | 公网路径 | 未认证预期 | 已配对/已认证预期 |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/auth/session` | `200` 未认证 JSON 或明确 `401` 合同 | `200`，返回已验证主体，不泄露 session ID |
+| `POST` | `/api/v1/control-plane/mobile/pair/qr` | `401` | 已登录 Web owner 返回短期 QR transaction + `gatewayUrl` |
+| `POST` | `/api/v1/mobile/pair/qr/scan` | 由一次性 QR bearer + Gateway 内部边界校验 | `200`，返回 pending pairing，不回显 scan bearer |
+| `POST` | `/api/v1/mobile/pair/status` | 无效/过期返回明确错误 | `200` pending/approved |
+| `POST` | `/api/v1/mobile/auth/nonces` | 无设备 bearer 拒绝 | 已配对设备返回 nonce |
+| `POST` | `/api/v1/mobile/auth/tokens` | 无有效设备签名拒绝 | 返回短期 mobile access token |
+| `GET` | `/api/v1/mobile/workspace` | `401` | `200`，返回当前设备被授权的真实工作区 |
+
+#### 生产配置
+
+- Control Plane：`ENVIRONMENT=production`，`AXI_MOBILE_GATEWAY_BASE_URL=https://workbench.axiomaticworld.com/api/v1/`（或等价 `GATEWAY_PUBLIC_URL`）。生产禁止依赖网卡枚举推断公网地址。
+- API Gateway：`publicBaseURL=https://workbench.axiomaticworld.com`、`cors.allowedOrigins` 精确包含 Workbench Web origin；启用 rate limit、OIDC audience/scope、Redis session 与内部服务 token。
+- Identity：生产 OIDC issuer、client、callback URL、allowed return URLs 与该域名一致；生产 SMTP、Webhook secret、数据库和 Redis 使用外部 Secret。
+- Android Release：默认 `GATEWAY_BASE_URL=https://workbench.axiomaticworld.com/api/v1/`；禁止通过发布包写入局域网 IP、`10.0.2.2` 或控制面端口。
+- 配对 QR：生产 payload 只能使用 HTTPS 公网 Gateway；Android 继续拒绝公网 HTTP、非受信域名、凭据嵌入、query/hash 和控制面端口。
+
+### 14.6 子任务拆分（可直接分派给 Agent）
+
+以下任务按依赖排序；每个 Agent 必须只修改自己拥有的路径，保留其他未提交改动，并在完成时返回“改动、证据、未验证项、回滚方式”。
+
+| ID | 子任务 / Owner | 依赖 | 负责范围 | 完成定义 |
+| --- | --- | --- | --- | --- |
+| PUB-00 | 现状基线与域名 owner 核验 / Release Agent | 无 | DNS、证书、当前 Nginx/Ingress、线上站点与 API 探针；不改生产 | 输出 DNS/TLS/HTTP 状态表，确认当前域名 owner、静态站点 owner、API owner；明确冲突与回滚入口。 |
+| PUB-01 | 公网入口与 Ingress 路由 / Platform Agent | PUB-00 | `infra/helm/axi-workbench-platform/**`、Ingress、证书、DNS 变更说明 | `/api/v1/auth/session` 到达 Workbench Gateway；`/api` 不再 404；HTTP 强制 HTTPS；内部端口不可公网访问。提交 `curl` 探针和 `helm lint/template` 证据。 |
+| PUB-02 | Gateway 生产配置与路由合同 / Go Gateway Agent | PUB-00 | `services/api-gateway/**`、CORS、OIDC、rate limit、mobile routes | 所有移动配对/会话/workspace 路由在公网前缀下可达；未授权返回合同化 401/403；不转发浏览器 cookie/内部 token 到错误下游；Go 单测/race 通过。 |
+| PUB-03 | Control Plane 公网 QR 地址与生产 fail-closed / Control Plane Agent | PUB-01、PUB-02 | `services/control-plane/src/server.mjs`、相关测试、运行时 Secret 文档 | 生产 QR 必含配置的 HTTPS `gatewayUrl`；未配置时不猜地址并产生可观测失败；开发环境仍可自动枚举私有 IPv4；QR 状态接口不回显 scan token；Node 测试通过。 |
+| PUB-04 | Web owner QR 与公网 API 消费 / Web Agent | PUB-02、PUB-03 | `apps/workbench/src/lib/mobilePairing.ts`、设备管理页、Web tests | Web 生成 QR 使用服务端 `gatewayUrl`；不会把 cookie、owner secret、poll token 写入 QR；生产 Web 通过同源 `/api` 创建/轮询/确认；type-check、unit、UI contract 通过。 |
+| PUB-05 | Android Release 公网 endpoint 与安全校验 / Android Agent | PUB-03 | `apps/workbench-mobile/android/**`、Release config、DataStore、Scan/Profile | Release 默认公网 HTTPS；扫码自动写入并优先使用 QR endpoint；局域网/模拟器只留 Debug；个人页显示设备会话已登录；Android unit、Debug/Release build 通过。 |
+| PUB-06 | Identity/OIDC/CORS/Session 联调 / Identity Agent | PUB-01、PUB-02 | `services/identity-adapter/**`、Gateway OIDC 配置、Redis session、生产 Secret 清单 | Web owner 可在公网域名登录；`auth/session` 语义稳定；callback/return URL 精确匹配；CORS 与 cookie 安全属性通过；不能用测试邮箱/开发 token 代替生产身份。 |
+| PUB-07 | 公网安全与观测门禁 / Security Agent | PUB-01、PUB-02、PUB-06 | Ingress headers、rate limit、audit/metrics/logging、Secret 扫描 | TLS、HSTS、CORS、rate limit、内部 token、审计事件和敏感字段脱敏通过；无 JWT/API key/owner secret 进入日志、QR、客户端或 Git。 |
+| PUB-08 | 蜂窝网络真机 E2E / Device QA Agent | PUB-01…PUB-07 | 真实 Android Release/Debug 设备、4G/5G、Web owner、截图/日志 | 关闭 Wi‑Fi、无 `adb reverse`：生成 QR → 手机扫描 → Gateway scanned → Web approved → workspace 200 → force-stop/relaunch 恢复；记录手机公网运营商网络、时间、服务版本、响应状态和截图。 |
+| PUB-09 | 生产发布、回滚与文档收口 / Release Agent | PUB-01…PUB-08 | Helm release、runbook、`docs/08-todo.md`、CHANGELOG/HANDOFF | 发布前门禁全部有证据；提供 DNS/Ingress/Gateway/Secret/Android 版本回滚顺序；更新 PRD/TODO/CHANGELOG/HANDOFF；任何未完成外部门禁明确标记为未验收。 |
+
+#### 并行执行建议
+
+```text
+PUB-00
+  ├─ PUB-01 ─┬─ PUB-03 ─┬─ PUB-04
+  │          │          └─ PUB-05
+  │          └─ PUB-02 ─── PUB-06 ── PUB-07
+  └─────────────────────────────── PUB-08 ── PUB-09
+```
+
+PUB-01、PUB-02 可在 PUB-00 完成后并行；PUB-03 依赖公网路径和 Gateway 合同；PUB-04/05 可并行；PUB-06/07 需要 API 路由稳定；PUB-08 必须最后执行，且不得用局域网、VPN、`adb reverse` 或本地 hosts 覆盖冒充公网证据。
+
+### 14.7 验收矩阵与门禁
+
+#### L0：静态/合同门禁
+
+- Android Release BuildConfig 为 `https://workbench.axiomaticworld.com/api/v1/`，无局域网 IP、`10.0.2.2`、控制面端口。
+- Helm lint/template、Gateway Go test/race、Control Plane Node tests、Web/Mobile type-check/test/contract verifier 全部通过。
+- QR payload schema 只包含 `kind`、`webPairingId`、`scanToken`、`gatewayUrl`；不包含 cookie、owner secret、poll token、access token。
+
+#### L1：公网探针门禁
+
+- DNS/TLS 正确；HTTP → HTTPS。
+- `/api/v1/auth/session` 返回 Workbench 合同，而不是其他产品 404。
+- 未认证移动写接口返回明确 401/403；不存在“200 + 空数据”假成功。
+- Gateway 到 Control Plane 的内部 token 和 subject 传递可审计，外部响应不泄露内部地址。
+
+#### L2：公网身份与配对门禁
+
+- Web owner 在公网域名完成真实 OIDC/session 登录。
+- Web 生成的 QR 包含公网 HTTPS Gateway；二维码过期、重复扫描、跨 owner 扫描、未确认状态均符合合同。
+- 手机使用蜂窝网络完成 scanned → approved → token/workspace；服务端审计包含 owner、device、webPairingId、结果和时间。
+
+#### L3：真实设备恢复门禁
+
+- 关闭手机 Wi‑Fi；不设置 `adb reverse`、VPN、静态 hosts 或手工 Gateway。
+- 首次配对后，Android 工作区至少成功读取一次真实项目快照。
+- force-stop、冷启动、Gateway 任一副本重启后，设备会话按设计恢复；撤销/过期后必须回到重新配对，而不是继续使用旧 token。
+- 保存截图、HTTP 状态、应用版本、Gateway/Control Plane 版本、时区和网络类型；证据不得包含完整 token。
+
+#### L4：回滚门禁
+
+- DNS/Ingress 可回滚到上一稳定入口。
+- Gateway/Control Plane 镜像、ConfigMap、Secret 变更均有前一版本引用。
+- Android 客户端无法热回滚时，服务端仍能拒绝错误版本并给出可解释提示；禁止临时开放控制面端口或要求用户手写 IP 作为生产补丁。
+
+### 14.8 失败处理与回滚
+
+| 失败 | 处理 | 禁止做法 |
+| --- | --- | --- |
+| `/api` 仍 404 | 回到 PUB-01，修复 DNS/Ingress/静态站点冲突；保留旧站点可恢复 | 不在 Android 端增加另一套隐藏域名或让用户填写 IP。 |
+| Gateway 可达但 OIDC/session 失败 | 回到 PUB-06，检查 issuer、audience、callback、Redis、cookie/CORS | 不把 owner token、JWT 或内部 token 写入 APK/QR。 |
+| QR 无 `gatewayUrl` | 回到 PUB-03，修复生产环境变量和发布配置 | 不让 Release 自动枚举局域网网卡作为公网地址。 |
+| 蜂窝扫码超时 | 分层判断 DNS/TLS/Ingress/Gateway/下游/移动运营商；保留 request ID 与审计 | 不用 `adb reverse`、VPN 或局域网成功替代公网证据。 |
+| 配对成功但工作区 401 | 检查 nonce 签名、device scope、token TTL、撤销状态和 DataStore/Keystore 恢复 | 不关闭 bearer 校验或把 mobile token 当 Web cookie。 |
+| 线上域名仍由其他产品占用 | 暂停切流，建立独立 `api.workbench.axiomaticworld.com` 或明确同域路由方案并重新签发证书 | 不覆盖其他产品站点，也不把 404 解读为 API “暂时不可用”。 |
+
+### 14.9 交付物清单
+
+- 生产 DNS/TLS/Ingress 变更记录与可回滚版本。
+- API Gateway 公网路由、OIDC、CORS、rate limit、内部 token 和审计配置。
+- Control Plane `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL` 配置与 Secret 管理说明。
+- Web/Android QR schema、Release endpoint、错误文案和兼容策略。
+- 蜂窝网络真机 E2E 报告（不含完整 token）与截图。
+- `docs/08-todo.md` 子任务状态、`CHANGELOG.md`、`HANDOFF.md`、生产 runbook 和回滚手册。
+
+### 14.10 完成定义
+
+只有同时满足以下条件，才能把“移动端支持公网/蜂窝网络登录”标记为完成：
+
+1. 公网域名的 `/api` 确实到达 Workbench API Gateway，不再返回其他产品或通用 404。
+2. 生产 QR 自动携带 HTTPS Gateway，Android Release 不需要用户手填地址。
+3. 真实手机关闭 Wi‑Fi、无反向代理/静态 hosts，完成扫码、Web owner 确认、工作区读取和重启恢复。
+4. OIDC/session、device bearer、Control Plane 审批、审计、TLS/CORS/rate limit 和生产 Secret 均通过门禁。
+5. 有发布版本、时间、网络类型、HTTP/审计结果、截图和回滚证据；未验证的集群、身份、SMTP 或故障注入项单独标记，不得用本地结果覆盖。
