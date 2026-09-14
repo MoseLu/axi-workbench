@@ -928,16 +928,18 @@
 
 | ID | 子任务 | 优先级 | 依赖 | 状态 |
 |---|---|---:|---|---|
-| PUB-00 | 核验 DNS、证书、域名 owner、当前静态站点与 `/api` 实际归属 | 🔴 P0 | 无 | 待执行 |
+| PUB-00 | 核验 DNS、证书、域名 owner、当前静态站点与 `/api` 实际归属 | 🔴 P0 | 无 | 部分完成：线上 HTTP 探针已完成；域名 owner/切流归属仍待确认 |
 | PUB-01 | 配置公网 Ingress：`/api` → Workbench API Gateway、`/` → Workbench Web | 🔴 P0 | PUB-00 | 待执行 |
-| PUB-02 | 完成 Gateway 生产路由、OIDC、CORS、Redis session、rate limit 与移动合同 | 🔴 P0 | PUB-00 | 待执行 |
-| PUB-03 | 配置 Control Plane 生产 `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL`，让 QR 下发公网 HTTPS | 🔴 P0 | PUB-01、PUB-02 | 待执行 |
-| PUB-04 | 验证 Web owner 公网生成/轮询/确认手机配对 QR | 🔴 P0 | PUB-02、PUB-03 | 待执行 |
-| PUB-05 | 验证 Android Release 公网 endpoint、安全校验、设备会话和个人页状态 | 🔴 P0 | PUB-03 | 待执行 |
+| PUB-02 | 完成 Gateway 生产路由、OIDC、CORS、Redis session、rate limit 与移动合同 | 🔴 P0 | PUB-00 | 部分完成：容器化本地 Gateway 与移动路由已运行；生产公网未验证 |
+| PUB-03 | 配置 Control Plane 生产 `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL`，让 QR 下发公网 HTTPS | 🔴 P0 | PUB-01、PUB-02 | 部分完成：代码支持并有测试；生产环境变量尚未落地 |
+| PUB-04 | 验证 Web owner 公网生成/轮询/确认手机配对 QR | 🔴 P0 | PUB-02、PUB-03 | 部分完成：局域网真机闭环通过；公网 owner 闭环未验证 |
+| PUB-05 | 验证 Android Release 公网 endpoint、安全校验、设备会话和个人页状态 | 🔴 P0 | PUB-03 | 部分完成：Release 默认地址与真机设备会话已验证；蜂窝公网未验证 |
 | PUB-06 | 联调生产 OIDC、session/cookie、Identity Adapter、生产 Secret 与审计 | 🔴 P0 | PUB-01、PUB-02 | 待执行 |
-| PUB-07 | 完成 TLS、HSTS、CORS、敏感字段脱敏、rate limit 与公网观测门禁 | 🟠 P1 | PUB-01、PUB-02、PUB-06 | 待执行 |
-| PUB-08 | 关闭 Wi‑Fi、无 `adb reverse`，用 4G/5G 真机完成扫码→审批→工作区→重启恢复 | 🔴 P0 | PUB-01…PUB-07 | 待执行 |
+| PUB-07 | 完成 TLS、HSTS、CORS、敏感字段脱敏、rate limit 与公网观测门禁 | 🟠 P1 | PUB-01、PUB-02、PUB-06 | 部分完成：本地 Gateway 合同/限流/脱敏已有证据；生产门禁未验证 |
+| PUB-08 | 关闭 Wi‑Fi、无 `adb reverse`，用 4G/5G 真机完成扫码→审批→工作区→重启恢复 | 🔴 P0 | PUB-01…PUB-07 | 部分完成：同网段真机闭环通过；4G/5G 公网闭环未执行 |
 | PUB-09 | 发布、回滚、runbook、CHANGELOG/HANDOFF/TODO 收口 | 🟠 P1 | PUB-01…PUB-08 | 待执行 |
+
+> 2026-09-14 进度复核：PUB-00 已完成线上探针基线，结果仍是域名静态页面属于其他产品、Workbench `/api/v1/health` 与 `/api/v1/auth/session` 返回 404；PUB-02 另有本地容器化 API 平面证据（Gateway `127.0.0.1:18088/health` 200，未认证 session 401，mobile workspace 路由进入 Gateway 并拒绝无效签名），但这不是公网部署证据。PUB-03/04/05/07/08 仅计入代码、局域网真机或本地容器的部分完成，PUB-01、PUB-06、PUB-09 仍未执行；当前不能宣称支持蜂窝网络。
 
 ---
 
