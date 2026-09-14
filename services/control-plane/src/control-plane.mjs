@@ -2036,8 +2036,62 @@ const GOVERNANCE_INHERITANCE = new Set(["required", "default", "optional", "forb
 
 function normalizeConfiguredGrant(grant, source) {
   if (!isRecord(grant)) return null;
+  // Detect grants.json (v1) format: nested subject/scope/action with grantId
+  const sourceGrantId = firstString(grant.grantId, grant.id);
+  const sourceSubject = isRecord(grant.subject) ? grant.subject : null;
+  const sourceScope = isRecord(grant.scope) ? grant.scope : null;
+  const sourceAction = isRecord(grant.action) ? grant.action : null;
+  const isV1Format = sourceGrantId && sourceSubject && sourceScope && sourceAction;
   const required = ["id", "subjectRef", "roleRef", "scopeType", "scopeRef", "resourceRef", "action", "effect", "inheritance"];
-  if (required.some((field) => !firstString(grant[field]))) return null;
+  if (required.some((field) => !firstString(grant[field]))) {
+    // If this looks like v1 format but missing internal fields, try to convert
+    if (isV1Format) {
+      const subjectId = firstString(sourceSubject.id, sourceSubject.type) || "*";
+      const subjectType = firstString(sourceSubject.type, "user");
+      const subjectRef = subjectType === "user"
+        ? (subjectId === "*" ? "user:*" : `user:${subjectId}`)
+        : subjectType === "agent"
+          ? `agent:${subjectId}`
+          : subjectType === "service"
+            ? `service:${subjectId}`
+            : `${subjectType}:${subjectId}`;
+      const scopeLevel = firstString(sourceScope.level) || "workspace";
+      const scopeRef = scopeLevel === "workspace"
+        ? "workspace"
+        : scopeLevel === "unit"
+          ? firstString(sourceScope.unit, sourceScope.workspace) || "workspace"
+          : scopeLevel === "object"
+            ? firstString(sourceScope.path, sourceScope.unit, sourceScope.workspace) || "workspace"
+            : "workspace";
+      const actionType = firstString(sourceAction.type) || "read";
+      const resourceRef = firstString(grant.resource) || "**";
+      const effect = firstString(grant.effect) || "deny";
+      const inheritance = "default"; // grants.json v1 doesn't have inheritance field
+      const priority = Number.isInteger(grant.priority) ? grant.priority : 0;
+      const validFrom = dateFromValue(grant.validFrom || grant.createdAt);
+      const validTo = dateFromValue(grant.validTo || grant.expiresAt);
+      if (validFrom && validTo && validFrom > validTo) return null; // validFrom must not be strictly after validTo
+      return {
+        id: sourceGrantId,
+        subjectRef,
+        roleRef: subjectId === "*" ? "*" : subjectId,
+        scopeType: scopeLevel,
+        scopeRef,
+        resourceRef,
+        action: actionType,
+        effect,
+        inheritance,
+        priority,
+        validFrom: validFrom ? validFrom.toISOString() : null,
+        validTo: validTo ? validTo.toISOString() : null,
+        source: `workspace-rbac:${source}`,
+        overrides: Array.isArray(grant.overrides) ? grant.overrides.filter((value) => typeof value === "string") : [],
+        evidenceRefs: Array.isArray(grant.evidenceRefs) ? grant.evidenceRefs.filter((value) => typeof value === "string")
+          : Array.isArray(grant.evidence) ? grant.evidence.filter((value) => typeof value === "string") : [],
+      };
+    }
+    return null;
+  }
   if (!GOVERNANCE_SCOPE_TYPES.has(grant.scopeType) || !GOVERNANCE_ACTIONS.has(grant.action) || !GOVERNANCE_DECISIONS.has(grant.effect) || !GOVERNANCE_INHERITANCE.has(grant.inheritance)) return null;
   if (grant.priority !== undefined && (!Number.isInteger(grant.priority) || grant.priority < 0)) return null;
   for (const field of ["validFrom", "validTo"]) {
@@ -2045,7 +2099,7 @@ function normalizeConfiguredGrant(grant, source) {
   }
   const validFrom = dateFromValue(grant.validFrom);
   const validTo = dateFromValue(grant.validTo);
-  if (validFrom && validTo && validFrom >= validTo) return null;
+  if (validFrom && validTo && validFrom > validTo) return null; // validFrom must not be strictly after validTo
   return {
     ...grant,
     source: firstString(grant.source) || `workspace-rbac:${source}`,

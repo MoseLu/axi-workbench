@@ -245,6 +245,7 @@ const governance: GovernanceSnapshot = {
   }],
   conflicts: [{ subjectRef: 'graph-only', field: 'ownerRef', values: [{ source: 'workspace.graph', value: 'unknown' }, { source: 'workspace.registry', value: 'owner' }] }],
   warnings: ['evidence_stale:axi-workbench:completion'],
+  governanceDocuments: [],
 };
 
 function renderSummary(value: GovernanceSnapshot | undefined, props: { onAutomationRun?: (automationId: string) => Promise<void>; automationRunPending?: boolean; onRiskTransition?: (input: { riskId: string; status: 'acknowledged' | 'resolved' | 'waived'; reason?: string }) => Promise<void>; riskTransitionPending?: boolean } = {}) {
