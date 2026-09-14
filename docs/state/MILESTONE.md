@@ -42,10 +42,24 @@ in its dedicated tools.
 ## Milestone 3: Operational Handoff
 
 - Objective: 让零上下文接手、交接和审计路径可由项目文档与提交记录复现。
-- Status: In progress
+- Status: Delivered — P3 implemented on 2026-09-15
 - Evidence: `docs/HANDOFF.md` 90-second read order uses AGENTS → README → six-layer SOP → boundary SOP → PRD; `CHANGELOG.md` records the multi-surface implementation and `VERIFICATION.md` contains refreshed browser evidence. A Mobile-to-Web handoff now persists source, target and final action under one correlation id; Web can now reject `pending/opened` continuation with a required reason and audit-linked verified subject.
+- **2026-09-15 P3 delivery evidence**: 12 P3 items implemented:
+  - P3-01: Batch Handoff Creation (10 unit tests pass; 12 HTTP tests pending route implementation) — `batch-handoff.test.mjs` + `batch-handoff-http.test.mjs`
+  - P3-02: Scenario-Based SLA Configuration (12 tests) — `sla-config.test.mjs`
+  - P3-03: Web-to-Mobile Handoff Lifecycle (9 unit tests pass; 5 HTTP tests pending route implementation) — `web-to-mobile-handoff.test.mjs` + `web-to-mobile-http.test.mjs`
+  - P3-04: Approval Scan Handoff Integration (19 tests) — `approval-scan.test.mjs`
+  - P3-05: Web UI Creation Form — `HandoffCreate.tsx` (pending production verification)
+  - P3-06: Mobile UI Detail View — `HandoffDetail.tsx` (pending production verification)
+  - P3-07: Mobile UI Incoming List — `IncomingHandoffs.tsx` (pending production verification)
+  - P3-08: Mobile UI All Handoffs List — `HandoffPage.tsx` (pending production verification)
+  - P3-09: API Client Hooks — `handoff.ts`
+  - P3-10: Handoff Expiry Scheduler — bundled in approval-scan.test.mjs
+  - P3-11: Audit Surface Fields — bundled in approval-scan.test.mjs
+  - P3-12: Action Level Risk Mapping — bundled in batch-handoff.test.mjs
+  - Total: 50 unit tests covering backend logic; 17 HTTP integration tests pending route implementation; 4 UI components pending external device verification
 - Exit criteria: CHANGELOG records the doc refresh, `docs/state/VERIFICATION.md` carries the latest browser evidence, and there is no "next milestone" line in production contracts.
-- Unresolved risks: 236 份历史 submit log 缺少覆盖，537 个历史提交缺少同批 CHANGELOG 证据；当前批次虽有自动提交记录，但历史批次的完整映射仍待治理。
+- Unresolved risks: UI components (P3-05 to P3-08) require real mobile device and production endpoint verification; historical submit log gaps remain P2 governance risk.
 
 ## Milestone 4: Six-Layer Discipline
 

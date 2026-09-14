@@ -175,6 +175,22 @@ export function createControlPlaneHttpServer({
       }
       return sendJson(res, 405, { error: "method not allowed" }, url);
     }
+    if (url.pathname === "/internal/web/v1/batch-handoffs") {
+      if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
+        return sendJson(res, 401, { error: "gateway internal authorization required" }, url);
+      }
+      const subject = String(req.headers["x-axi-subject"] || "").trim();
+      if (!subject) return sendJson(res, 401, { error: "verified web identity required" }, url);
+      // POST: create batch handoff
+      if (req.method === "POST") {
+        const body = await readJsonBody(req);
+        if (!body || typeof body !== "object") return sendJson(res, 400, { error: "request body required" }, url);
+        // Pass body directly as params - controlPlane wrapper handles cacheDir and handoffs
+        const result = controlPlane.createBatchHandoff(body);
+        return sendJson(res, result.ok ? 201 : result.httpStatus || 400, result, url);
+      }
+      return sendJson(res, 405, { error: "method not allowed" }, url);
+    }
     if (url.pathname.startsWith("/internal/web/v1/handoffs/")) {
       if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
         return sendJson(res, 401, { error: "gateway internal authorization required" });
@@ -191,18 +207,28 @@ export function createControlPlaneHttpServer({
       }
       if (req.method === "POST") {
         const body = await readJsonBody(req);
+        // Read handoff to determine direction and current status
+        const existingHandoff = controlPlane.handoffs?.get(handoffID) || controlPlane.getHandoff?.(handoffID);
+        if (!existingHandoff) return sendJson(res, 404, { error: "handoff not found" }, url);
+
         if (body && body.action === "reject") {
           if (typeof body.reason !== "string" || !body.reason.trim() || Object.keys(body).some((key) => !["action", "reason"].includes(key))) {
             return sendJson(res, 400, { error: "handoff rejection requires a non-empty reason" }, url);
           }
-          const handoff = controlPlane.rejectHandoff(handoffID, subject, body.reason.trim());
+          // Route to correct function based on direction
+          const handoff = existingHandoff.direction === "web->mobile"
+            ? controlPlane.rejectWebToMobileHandoff(handoffID, subject, body.reason.trim())
+            : controlPlane.rejectHandoff(handoffID, subject, body.reason.trim());
           if (handoff?.ok === false) return sendJson(res, handoff.httpStatus || 403, { error: handoff.error }, url);
           return sendJson(res, handoff ? 200 : 404, handoff || { error: "handoff not found" }, url);
         }
         if (!body || typeof body.outcome !== "string" || !body.outcome.trim() || Object.keys(body).some((key) => key !== "outcome")) {
           return sendJson(res, 400, { error: "handoff completion accepts only a non-empty outcome" });
         }
-        const handoff = controlPlane.completeHandoff(handoffID, subject, body.outcome.trim());
+        // Route to correct function based on direction
+        const handoff = existingHandoff.direction === "web->mobile"
+          ? controlPlane.completeWebToMobileHandoff(handoffID, subject, body.outcome.trim())
+          : controlPlane.completeHandoff(handoffID, subject, body.outcome.trim());
         if (handoff?.ok === false) return sendJson(res, handoff.httpStatus || 403, { error: handoff.error }, url);
         return sendJson(res, handoff ? 200 : 404, handoff || { error: "handoff not found" });
       }

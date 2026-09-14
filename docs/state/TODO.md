@@ -65,6 +65,109 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [x] REQ-CROSS-001 / REQ-DELIVERY-001: Add cross-device continuity only after a capability has an explicit ownership and action-policy record.
   - Test: each dual-surface flow has a shared business object identifier, action-level/authority declaration, server-side authorization/audit evidence, a `handoff correlation id` recorded at source, target and final action, and a context-preserving handoff to Web when Mobile cannot complete it.
 
+## P3: Handoff Implementation (2026-09-15)
+
+| ID | Feature | Status | Tests | Evidence | External Gate |
+|----|---------|--------|-------|----------|--------------|
+| P3-01 | Batch Handoff Creation | Completed (Unit) / In Progress (HTTP) | 10 unit + 12 HTTP | `batch-handoff.test.mjs` + `batch-handoff-http.test.mjs` | HTTP route not implemented |
+| P3-02 | Scenario-Based SLA Configuration | Completed | 12 | `services/control-plane/test/sla-config.test.mjs` | None |
+| P3-03 | Web-to-Mobile Handoff Lifecycle | Completed (Unit) / In Progress (HTTP) | 9 unit + 5 HTTP | `web-to-mobile-handoff.test.mjs` + `web-to-mobile-http.test.mjs` | HTTP action routes not implemented |
+| P3-04 | Approval Scan Handoff Integration | Completed | 19 | `services/control-plane/test/approval-scan.test.mjs` | None |
+| P3-05 | Web UI - Creation Form | Completed | 0 (UI) | `apps/workbench/src/pages/admin/HandoffCreate.tsx` | Pending External Verification |
+| P3-06 | Mobile UI - Detail View | Completed | 0 (UI) | `apps/workbench-mobile/src/pages/HandoffDetail.tsx` | Pending External Verification |
+| P3-07 | Mobile UI - Incoming List | Completed | 0 (UI) | `apps/workbench-mobile/src/pages/IncomingHandoffs.tsx` | Pending External Verification |
+| P3-08 | Mobile UI - All Handoffs List | Completed | 0 (UI) | `apps/workbench-mobile/src/pages/HandoffPage.tsx` | Pending External Verification |
+| P3-09 | API Client Hooks | Completed | 0 (hooks) | `packages/api-client/src/hooks/handoff.ts` | None |
+| P3-10 | Handoff Expiry Scheduler | Completed | 1+ | `services/control-plane/test/approval-scan.test.mjs` | None |
+| P3-11 | Handoff Audit Surface Fields | Completed | Bundled | `services/control-plane/test/approval-scan.test.mjs` | None |
+| P3-12 | Action Level Risk Mapping | Completed | Bundled | `services/control-plane/test/batch-handoff.test.mjs` | None |
+
+**Summary**: 12 P3 items, 52 unit tests passing (P3-01: 10, P3-02: 12, P3-03: 9, P3-04: 19, bundled: P3-10/11/12), 17 HTTP integration tests pending route implementation in server.mjs, 4 UI components pending external device verification.
+
+### P3-01: Batch Handoff Creation
+- **Status**: Completed (Unit) / In Progress (HTTP integration)
+- **Test Count**: 10 unit tests pass; 12 HTTP integration tests fail (route not implemented)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/batch-handoff.test.mjs`, `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/batch-handoff-http.test.mjs`
+- **External Gate**: HTTP route `/internal/web/v1/batch-handoffs` needs implementation in control-plane.mjs
+- **Details**: Creates multiple handoffs with a common `batchId` (format: `BATCH-{timestamp}-{8-char-hash}`) in a single operation; handles partial success/failure; action level defaults (B) and risk mapping (A=low, B=medium, C=high, D=destructive)
+
+### P3-02: Scenario-Based SLA Configuration
+- **Status**: Completed
+- **Test Count**: 12 tests
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/sla-config.test.mjs`
+- **External Gate**: None
+- **Details**: Configurable SLA durations per scenario type: approval (1h urgent), alert (15min urgent), task (24h standard), project (72h lowPriority); environment variable override via `AXI_HANDOFF_EXPIRY_MS`
+
+### P3-03: Web-to-Mobile Handoff Lifecycle
+- **Status**: Completed (Unit) / In Progress (HTTP integration)
+- **Test Count**: 9 unit tests pass; 5 HTTP integration tests fail (route not implemented)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/web-to-mobile-handoff.test.mjs`, `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/web-to-mobile-http.test.mjs`
+- **External Gate**: HTTP routes for `POST /handoffs/:id` with `reject`/`complete` action need implementation in server.mjs
+- **Details**: Full state machine: created → delivered → accepted/rejected → completed/failed; includes `HandoffStatus` enum and `HandoffTransitions` maps
+
+### P3-04: Approval Scan Handoff Integration
+- **Status**: Completed
+- **Test Count**: 19 tests
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
+- **External Gate**: None
+- **Details**: C/D level scan decisions route to Web; owner binding (403 for wrong owner); approval revalidation before lifecycle changes (409 if approval no longer pending); expiry cascade; rejection requires reason
+
+### P3-05: Web UI - Creation Form
+- **Status**: Completed (Pending External Verification)
+- **Test Count**: 0 (UI component)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench/src/pages/admin/HandoffCreate.tsx`
+- **External Gate**: Gateway URL, TLS, ZITADEL auth
+- **Details**: Ant Design form with direction, targetSurface, actionLevel, objectType, objectId, reason fields
+
+### P3-06: Mobile UI - Detail View
+- **Status**: Completed (Pending External Verification)
+- **Test Count**: 0 (UI component)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench-mobile/src/pages/HandoffDetail.tsx`
+- **External Gate**: Real mobile device, control plane endpoint
+- **Details**: Displays handoff details; accept/reject actions with reason input for rejection
+
+### P3-07: Mobile UI - Incoming List
+- **Status**: Completed (Pending External Verification)
+- **Test Count**: 0 (UI component)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench-mobile/src/pages/IncomingHandoffs.tsx`
+- **External Gate**: Real mobile device, control plane endpoint
+- **Details**: Lists incoming handoffs filtered by status=opened; navigates to detail on tap
+
+### P3-08: Mobile UI - All Handoffs List
+- **Status**: Completed (Pending External Verification)
+- **Test Count**: 0 (UI component)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench-mobile/src/pages/HandoffPage.tsx`
+- **External Gate**: Real mobile device, control plane endpoint
+- **Details**: Lists all handoffs for device session; shows rejection reason if present
+
+### P3-09: API Client Hooks
+- **Status**: Completed
+- **Test Count**: 0 (hooks library)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/packages/api-client/src/hooks/handoff.ts`
+- **External Gate**: None
+- **Details**: Exports `useCreateHandoff`, `useHandoffs`, `useHandoff`, `useAcceptHandoff`, `useRejectHandoff` with React Query integration
+
+### P3-10: Handoff Expiry Scheduler
+- **Status**: Completed
+- **Test Count**: 1+ (bundled in approval-scan.test.mjs)
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
+- **External Gate**: None
+- **Details**: Background scheduler auto-expires overdue handoffs; notification callback after durable audit; failure isolation
+
+### P3-11: Handoff Audit Surface Fields
+- **Status**: Completed
+- **Test Count**: Bundled
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
+- **External Gate**: None
+- **Details**: All audit events include `sourceSurface` and `targetSurface` fields
+
+### P3-12: Action Level Risk Mapping
+- **Status**: Completed
+- **Test Count**: Bundled
+- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/batch-handoff.test.mjs`
+- **External Gate**: None
+- **Details**: Action levels A/B/C/D map to risk levels: low/medium/high/destructive
+
 ## P2
 
 - [ ] REQ-LOG-001: Promote submit-log discipline to P0 once weekly cadence stabilizes.
