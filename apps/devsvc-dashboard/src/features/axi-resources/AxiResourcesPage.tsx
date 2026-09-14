@@ -8,7 +8,7 @@ import { AxiTable } from "@axi/crud";
 import { AxiTag } from "@axi/core";
 import { api, requestErrorMessage } from "../../lib/api";
 import { metricTagType, StatusChip } from "../status/status";
-import type { AxiResource, AxiResourcesPayload } from "./axiResources";
+import type { AxiResource, AxiResourcesPayload, VerifyCommand } from "./axiResources";
 
 const surfaceLabels: Record<string, string> = {
   "dashboard-host": "应用宿主",
@@ -92,6 +92,139 @@ function VerificationStatus({ resource }: { resource: AxiResource }) {
   );
 }
 
+// Helper to format absolute time
+function formatAbsoluteTime(isoTimestamp?: string): string {
+  if (!isoTimestamp) return "—";
+  const date = new Date(isoTimestamp);
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+// Helper to format verify command for display
+function formatVerifyCommand(cmd: VerifyCommand): string {
+  return cmd.command.join(" ");
+}
+
+// Detail view component for single resource
+function AxiResourceDetail({ resource }: { resource: AxiResource }) {
+  const { t } = useTranslation();
+
+  // Visibility label map
+  const visibilityLabels: Record<string, string> = {
+    always: "公开",
+    deferred: "延迟展示",
+    hidden: "隐藏",
+    admin: "仅管理员"
+  };
+
+  return (
+    <div className="resource-detail">
+      {/* Basic Info Section */}
+      <div className="resource-detail-section">
+        <h3 className="resource-detail-section-title">{t("基本信息")}</h3>
+        <div className="resource-detail-grid">
+          {resource.owner && (
+            <div className="resource-detail-item">
+              <span className="resource-detail-label">{t("Owner 名称")}</span>
+              <span className="resource-detail-value">{resource.owner}</span>
+            </div>
+          )}
+          {resource.visibility && (
+            <div className="resource-detail-item">
+              <span className="resource-detail-label">{t("可见性")}</span>
+              <span className="resource-detail-value">
+                <AxiTag className="metric-tag" effect="light" round type="info">
+                  {t(visibilityLabels[resource.visibility] || resource.visibility)}
+                </AxiTag>
+              </span>
+            </div>
+          )}
+          {resource.kind && (
+            <div className="resource-detail-item">
+              <span className="resource-detail-label">{t("类型")}</span>
+              <span className="resource-detail-value">
+                <AxiTag className="metric-tag" effect="light" round type={metricTagType(resource.kind)}>
+                  {t(resource.kind)}
+                </AxiTag>
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Verification Status Section */}
+      <div className="resource-detail-section">
+        <h3 className="resource-detail-section-title">{t("验证状态")}</h3>
+        <div className="resource-detail-grid">
+          <div className="resource-detail-item">
+            <span className="resource-detail-label">{t("验证时间")}</span>
+            <span className="resource-detail-value">
+              {formatAbsoluteTime(resource.lastVerifiedAt)}
+              {resource.lastVerifiedAt && (
+                <span className="resource-detail-relative">
+                  ({formatRelativeTime(resource.lastVerifiedAt)})
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="resource-detail-item">
+            <span className="resource-detail-label">{t("验证来源")}</span>
+            <span className="resource-detail-value">
+              {getVerificationSourceLabel(resource.verificationSource)}
+            </span>
+          </div>
+          {resource.verificationSummary && (
+            <div className="resource-detail-item resource-detail-item-full">
+              <span className="resource-detail-label">{t("验证摘要")}</span>
+              <span className="resource-detail-value resource-detail-pre">{resource.verificationSummary}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Actions Section */}
+      <div className="resource-detail-section">
+        <h3 className="resource-detail-section-title">{t("操作")}</h3>
+        <div className="resource-detail-grid">
+          {resource.verifyCommands && resource.verifyCommands.length > 0 && (
+            <div className="resource-detail-item resource-detail-item-full">
+              <span className="resource-detail-label">{t("Verify Commands")}</span>
+              <div className="resource-detail-commands">
+                {resource.verifyCommands.map((cmd) => (
+                  <div key={cmd.id} className="resource-detail-command">
+                    <span className="resource-detail-command-label">{cmd.label}</span>
+                    <code className="resource-detail-command-code">{formatVerifyCommand(cmd)}</code>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {resource.evidenceLink && (
+            <div className="resource-detail-item resource-detail-item-full">
+              <span className="resource-detail-label">{t("证据链接")}</span>
+              <span className="resource-detail-value">
+                <AntButton href={resource.evidenceLink} size="small" type="link" target="_blank" icon="link">
+                  {t("查看证据")}
+                </AntButton>
+              </span>
+            </div>
+          )}
+          {!resource.verifyCommands?.length && !resource.evidenceLink && (
+            <div className="resource-detail-item">
+              <span className="resource-detail-value" style={{ color: "var(--gray)" }}>—</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AxiResourcesPage() {
   const { t } = useTranslation();
   const { resourceId } = useParams();
@@ -101,6 +234,7 @@ export function AxiResourcesPage() {
   const [loading, setLoading] = useState(false);
   const resources = data?.resources || [];
   const visibleResources = resourceId ? resources.filter((resource) => resource.id === resourceId) : resources;
+  const singleResource = resourceId && visibleResources.length === 1 ? visibleResources[0] : null;
 
   async function load() {
     setLoading(true);
@@ -234,20 +368,40 @@ export function AxiResourcesPage() {
   return (
     <section className="panel services-panel">
       {error ? <div className="hosted-app-state is-error">{error}</div> : null}
-      <AxiTable<AxiResource>
-        bordered
-        className="services-table server-ant-table"
-        columns={columns}
-        dataSource={visibleResources}
-        loading={loading}
-        pagination={false}
-        rowKey="id"
-        scroll={{ x: 1380 }}
-        size="small"
-        tableLayout="fixed"
-        toolbarContainer={tableToolbarContainer}
-        toolbar={{ storageKey: "axi-resources-table" }}
-      />
+      {singleResource ? (
+        <>
+          <AxiResourceDetail resource={singleResource} />
+          <AxiTable<AxiResource>
+            bordered
+            className="services-table server-ant-table"
+            columns={columns}
+            dataSource={visibleResources}
+            loading={loading}
+            pagination={false}
+            rowKey="id"
+            scroll={{ x: 1380 }}
+            size="small"
+            tableLayout="fixed"
+            toolbarContainer={tableToolbarContainer}
+            toolbar={{ storageKey: "axi-resources-table" }}
+          />
+        </>
+      ) : (
+        <AxiTable<AxiResource>
+          bordered
+          className="services-table server-ant-table"
+          columns={columns}
+          dataSource={visibleResources}
+          loading={loading}
+          pagination={false}
+          rowKey="id"
+          scroll={{ x: 1380 }}
+          size="small"
+          tableLayout="fixed"
+          toolbarContainer={tableToolbarContainer}
+          toolbar={{ storageKey: "axi-resources-table" }}
+        />
+      )}
     </section>
   );
 }

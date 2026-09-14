@@ -941,6 +941,8 @@
 
 > 2026-09-14 进度复核：PUB-00 已完成线上探针基线，结果仍是域名静态页面属于其他产品、Workbench `/api/v1/health` 与 `/api/v1/auth/session` 返回 404；PUB-02 另有本地容器化 API 平面证据（Gateway `127.0.0.1:18088/health` 200，未认证 session 401，mobile workspace 路由进入 Gateway 并拒绝无效签名），但这不是公网部署证据。PUB-03/04/05/07/08 仅计入代码、局域网真机或本地容器的部分完成，PUB-01、PUB-06、PUB-09 仍未执行；当前不能宣称支持蜂窝网络。
 
+> 2026-09-14 第二轮复核（18:45）：PUB-00 深度探针发现 `axiom-workbench.com` 和 `axi-workbench.com` 均 WHOIS No match（未注册），DNS 解析到 `198.18.x.x` 为 Clash fake-ip；PUB-01~PUB-09 规划分析均已完成（Ingress 缺少 `/` 路由、Control Plane 生产缺 `GATEWAY_PUBLIC_URL`、Android Release endpoint `https://workbench.axiomaticworld.com/api/v1/` 可配置、HSTS/CSP 缺失、4G 验证规划已输出）。域名未注册是核心阻塞，PUB-01~PUB-09 依赖域名注册后才能执行公网验证。
+
 > 2026-09-14 推送复核：`90fc786d` 已推送到 `origin/dev`，但提交范围是 DevSvc 工作区资源绑定、菜单分组和 drift 检查，不包含 PUB-01…PUB-09 所需的 DNS、Ingress、API Gateway、Control Plane 生产配置、生产 Secret 或 4G/5G 真机证据；公网探针仍保持上述 404，因此公网移动访问状态不变。
 
 ---

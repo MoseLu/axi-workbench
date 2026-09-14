@@ -190,6 +190,34 @@ async function runVerifications(verifyCommands, ownerPath, workspaceRoot) {
   };
 }
 
+/**
+ * Generate evidence link based on resource surface and verification results.
+ */
+function generateEvidenceLink(resource, verificationResult) {
+  const { id, surface, dashboardRoute } = resource;
+
+  // For hosted apps, evidence links to the app entry point
+  if (surface === "hosted-app" || surface === "hosted-subroute") {
+    // Extract appId from dashboardRoute or use id
+    const appIdMatch = dashboardRoute?.match(/^\/apps\/([^/]+)/);
+    const appId = appIdMatch ? appIdMatch[1] : id;
+    return `/apps/${appId}`;
+  }
+
+  // For resource-index, evidence links to the resource detail page
+  if (surface === "resource-index") {
+    return `/axi-resources/${encodeURIComponent(id)}`;
+  }
+
+  // For dashboard-host, link to the dashboard route
+  if (surface === "dashboard-host") {
+    return dashboardRoute || `/axi-resources/${encodeURIComponent(id)}`;
+  }
+
+  // Fallback to resource detail page
+  return `/axi-resources/${encodeURIComponent(id)}`;
+}
+
 function graphResource({ id, project, workspaceRoot }) {
   const ownerPath = resolveWorkspaceValue(project.path, workspaceRoot);
   const ownerPathExists = Boolean(ownerPath) && fs.existsSync(ownerPath);
@@ -206,6 +234,9 @@ function graphResource({ id, project, workspaceRoot }) {
     verificationSource: project.verificationSource
   });
 
+  // Generate base resource with preliminary evidence link
+  const evidenceLink = `/axi-resources/${encodeURIComponent(id)}`;
+
   return {
     id,
     title: project.name || id,
@@ -217,7 +248,8 @@ function graphResource({ id, project, workspaceRoot }) {
     dashboardRoute: defaultDashboardRoute(id),
     capabilities: unique(project.provides || []),
     notes: `Registered workspace project (${kind}).`,
-    verifyCommands
+    verifyCommands,
+    evidenceLink
   };
 }
 
@@ -245,7 +277,9 @@ function mergeResource(base, override, workspaceRoot) {
   return {
     ...merged,
     // verifyCommands: from graph config only (base), not from static override
-    verifyCommands: base.verifyCommands || []
+    verifyCommands: base.verifyCommands || [],
+    // evidenceLink: prefer override, fallback to base
+    evidenceLink: override.evidenceLink || base.evidenceLink
   };
 }
 
@@ -307,6 +341,9 @@ export async function loadWorkspaceResourceRegistry({
       merged.verificationSource = verificationResult.verificationSource;
       merged.verificationSummary = verificationResult.verificationSummary;
     }
+
+    // Finalize evidence link based on final merged state
+    merged.evidenceLink = generateEvidenceLink(merged, verificationResult);
 
     resources.push(merged);
     staticById.delete(id);

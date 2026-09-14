@@ -1,5 +1,83 @@
 # Axi Workbench Verification
 
+## 2026-09-14 4G/5G 真机验证规划 (PUB-08)
+
+> 目标：验证 Axi Workbench 在移动网络环境下（关闭 Wi-Fi，使用 4G/5G）的完整工作流
+>
+> 规划状态：PENDING
+>
+> 触发背景：Foundation binding 整改完成，需验证 Workbench 在真实移动网络下的资源加载、Hosted App 启动和状态恢复能力
+
+### PUB-08 验证步骤
+
+| 步骤 | 操作 | 验证点 |
+|------|------|--------|
+| 1 | 关闭 Wi-Fi，确认设备使用 4G/5G | 状态栏显示 4G/LTE/5G 信号 |
+| 2 | 扫码入口 → 审批流 → 工作区加载 | 页面正常渲染，无 CDN 超时 |
+| 3 | 触发需要公网资源的操作（如访问 Hosted App） | Hosted App 动态端口分配成功 |
+| 4 | 模拟网络中断后恢复 | 状态恢复、session 保持 |
+| 5 | 重启 App 后验证状态持久化 | 工作区上下文不丢失 |
+
+### 公网基础设施就绪状态检查
+
+| 依赖项 | 就绪状态 | 验证命令 | 预期 |
+|--------|----------|----------|------|
+| Axi Registry | 需确认 | `npm run health` | healthy |
+| Axi Rules 索引 | 需确认 | `python3 scripts/validate-index.py` | indexes validated |
+| Axi Docs 静态资源 | 需确认 | 可通过公网访问 | HTTP 200 |
+| Axi Agent Platform | 需确认 | 服务运行 + health check | ready |
+| ZITADEL 认证服务 | 外部依赖 | OIDC discovery | discovery ok |
+
+### PUB-08 Verification Checklist
+
+#### 前置条件
+
+- [ ] 测试设备关闭 Wi-Fi，确认 4G/5G 连接
+- [ ] 确认 Axi Registry 服务可达（公网或 VPN）
+- [ ] 确认 Axi Rules 索引已同步
+- [ ] 确认 Axi Docs 静态资源已部署
+- [ ] 确认 Hosted App 启动脚本在公网环境下可执行
+- [ ] 确认 ZITADEL 认证服务 OIDC discovery 可达
+
+#### 功能验证
+
+- [ ] 扫码入口加载正常（无 CDN 超时）
+- [ ] 工作区页面完整渲染
+- [ ] 资源中心加载所有注册资源
+- [ ] Hosted App（axi-docs）可启动
+- [ ] Hosted App（axi-agent-platform）可启动
+- [ ] Resource Index（axi-rules）详情页可访问
+- [ ] Resource Index（axi-skills）详情页可访问
+- [ ] 全局搜索功能正常
+- [ ] 权限菜单按角色正确过滤
+
+#### 状态恢复验证
+
+- [ ] App 切换到后台后恢复
+- [ ] 网络中断后自动重连
+- [ ] 重启 App 后 session 保持
+- [ ] 工作区上下文持久化
+
+#### 性能基线
+
+- [ ] 4G 环境下首页加载 < 5s
+- [ ] Hosted App 启动 < 10s
+- [ ] 资源列表加载 < 3s
+
+### 已知约束
+
+1. **网络依赖**：所有验证依赖 Axi 基础设施公网可达
+2. **设备限制**：需真实 iOS/Android 设备或带移动网卡的 Mac
+3. **认证流**：ZITADEL OIDC 回调需公网可达的 redirect_uri
+
+### 待执行
+
+- [ ] 在真实 4G/5G 环境下执行上述 checklist
+- [ ] 记录实际网络延迟和加载时间
+- [ ] 记录发现的任何网络超时或资源加载失败
+
+---
+
 ## 2026-09-14 control-plane security and two-application verification refresh
 
 - Control Plane: `pnpm --filter @axi/workstation-control-plane test` passes 196/196; `pnpm --filter @axi/workstation-control-plane smoke` passes with 43 resources across six layers. Core `/jobs` approval escalation, subject-bound PolicyDecision references, expiring ApprovalRequests, Web handoff history filtering and owner binding, linked ApprovalRequest status/expiry revalidation with consistent handoff expiry, handoffId event projection, configurable/default-24h expiry including environment parsing, the stoppable expiry worker, external notification enqueue boundary, production fail-closed handling for a missing or development-default gateway internal token, registry/graph-only optional resource path resolution, and complete-field normalization for persisted evidence are covered by the current regression suite.

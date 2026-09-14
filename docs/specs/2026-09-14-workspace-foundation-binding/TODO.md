@@ -201,37 +201,37 @@
 
 ### 3.2 Workbench Resource Registry 层
 
-**实现差距分析（2026-09-14 子代理检查）：**
+**当前实现状态（2026-09-14 复核）：**
 
-> **状态：✅ 分析完成**
+> **状态：⚠️ 基础字段和生命周期函数已落地，验证数据与导航语义未闭合**
 
-| 期望字段/状态 | 现状 | 差距 |
+| 期望字段/状态 | 当前实现 | 未完成项 |
 |--------------|------|------|
-| 资源状态：`registered`/`path-found`/`verified`/`stale`/`failed`/`missing` | 仅 `active`/`missing` 二值 | **完全缺失**：缺少 verified/stale/failed 状态及验证元数据 |
-| `menuGroup` | 无此字段 | 完全缺失 |
-| `visibility` | 无此字段 | 完全缺失 |
-| `owner`（资源层面） | 无此字段 | 完全缺失 |
-| `docsRoute` | 无此字段 | 完全缺失 |
-| `lastVerifiedAt` | 无此字段 | 完全缺失 |
-| `verificationSource` | 无此字段 | 完全缺失 |
-| `verificationSummary` | 无此字段 | 完全缺失 |
+| 资源状态：`registered`/`path-found`/`verified`/`stale`/`failed`/`missing` | `computeLifecycleStatus` 已实现 | 当前 49 个资源均为 `path-found`，没有实际验证记录 |
+| `menuGroup` | `axi-resources.json` 已配置 | `app-registry.tsx` 未按此字段生成分组 |
+| `visibility` | 已配置 `hidden`、`deferred`、`admin` | 类型不接受 `admin`，过滤逻辑也未处理 `admin` |
+| `audience` | 类型已定义 | Shell 未注入真实用户角色，配置中也未形成完整角色矩阵 |
+| `owner` / `docsRoute` | 类型已定义 | 基础资源配置没有系统性填充值，详情页未展示 Owner |
+| `lastVerifiedAt` / `verificationSource` / `verificationSummary` / `evidenceLink` | 类型已定义 | graph/static config 没有完整验证数据 |
+| `verifyCommands` | 类型和注册器输出已定义 | graph 使用 `verify`，当前转换结果为 0 条 |
 
-**默认隐藏资源配置缺失：**
-- `axi-workbench` 自身：无 visibility 配置
-- `axi-registry`：无 visibility 配置（应为 hidden）
-- `axi-workspace-governance`：无 visibility 配置（应为 hidden）
-- 发行版/模板：无 visibility 配置（应为 hidden）
+**当前展示覆盖：**
+- `axi-workbench`、`axi-registry`、`axi-workspace-governance` 已配置 `hidden`。
+- `axi-skills` 已配置 `deferred`，但当前代码会将其从导航中直接排除，不是真正的延迟加载。
+- `axi-ui`、`axi-rules`、发行版和 Tauri 模板使用了 `admin`，但该值尚未被过滤逻辑支持。
 
-**建议实现方案（见资源注册器代理报告）：**
-1. 扩展 `AxiResource` 类型增加状态枚举和验证字段
-2. 在 `axi-resources.json` 中添加 visibility/menuGroup 配置
-3. 更新注册器逻辑实现细粒度状态判断
+**当前剩余实现：**
+1. 将资源元数据从配置输入贯通到 Resource Registry 和导航层
+2. 统一 `admin` / `hidden` / `deferred` 的配置和过滤语义
+3. 将 graph 的验证命令和结果接入资源状态
 
 - [ ] 保持 `workspace-resource-registry.mjs` 从 graph 生成资源的主流程。
 - [ ] 将静态 `axi-resources.json` 限定为展示覆盖：标题、图标、surface、路由、菜单分组、角色和说明。
 - [ ] 禁止静态资源配置隐藏 graph 已注册项目，除非有明确的 `visibilityPolicy` 和审计记录。
 - [ ] 将资源状态拆分为 `registered`、`path-found`、`verified`、`stale`、`failed`、`missing`。
-- [ ] 将 graph 中的验证命令转换为只读验证元数据，不允许前端拼接任意 shell 命令。
+- [ ] 让 `ResourceLifecycleStatus` 类型去掉 `| string`，避免任意状态绕过类型约束。
+- [ ] 将 graph 中的 `verify` 命令转换为只读验证元数据，不允许前端拼接任意 shell 命令。
+- [ ] 将验证结果实际写入 graph snapshot 或受控 verification endpoint，避免所有资源长期停留在 `path-found`。
 - [ ] 增加 `lastVerifiedAt`、`verificationSource`、`verificationSummary` 和 `evidenceLink`。
 - [ ] 私有仓库在普通 UI 中只显示项目名、状态、Owner 和受控文档入口；不展示绝对本地路径、私有文件内容或未经授权的 GitHub 页面。
 - [ ] 对缺少 Owner、验证命令或文档入口的资源显示治理缺口，而不是显示为完整可用。
@@ -254,29 +254,29 @@
 
 ### 3.4 Hosted App 层：`axi-docs` / `axi-agent-platform`
 
-**配置分析（2026-09-14 子代理检查）：**
+**配置分析（2026-09-14 复核）：**
 
-> **状态：✅ 分析完成**
+> **状态：⚠️ executionBoundary 已补齐，健康与失败治理仍待完善**
 
 | App | 启动命令 | healthPath | 执行边界 | 差距 |
 |-----|----------|-----------|---------|------|
 | `axi-fleet-console` | `npm run dev` | `/` | ✅ 有 | - |
 | `axi-coder` | `pnpm exec vite` | `/` | ✅ 有 | - |
 | `axi-verification-inbox` | `npm run dev` | `/` | ✅ 有 | - |
-| `axi-docs` | `pnpm exec vite` | `/` | ❌ **缺失** | **缺少 executionBoundary** |
-| `axi-agent-platform` | `npm exec vite` | `/` | ❌ **缺失** | **缺少 executionBoundary** |
+| `axi-docs` | `pnpm exec vite` | `/` | ✅ 有 | 已补齐 executionBoundary |
+| `axi-agent-platform` | `npm exec vite` | `/` | ✅ 有 | 已补齐 executionBoundary |
 | `axi-image-preview` | `npm exec vite` | `/` | 无 | - |
 
 **已知差距：**
 1. 所有 app 统一使用 healthPath `/`，无法区分「服务就绪」和「页面可访问」
-2. `axi-docs` 和 `axi-agent-platform` 缺少 `executionBoundary` 配置，无法显示「执行权归属」侧边栏
+2. `healthPath` 仍普遍使用 `/`，不能区分服务就绪和页面可访问
 3. 启动命令包管理器不统一（pnpm/npm）
 4. 失败时仅显示 error 状态，无重试/降级机制
 
 **建议方案：**
-1. 为 `axi-docs` 添加 `executionBoundary.owner: "Axi Docs Team"`
-2. 为 `axi-agent-platform` 添加 `executionBoundary.owner: "Axi Agent Platform Team"`
-3. 考虑增加健康检查专用端点 `/health` 或 `/api/ready`
+1. 为每个 Hosted App 增加真实的 readiness endpoint 或明确的健康检查合同
+2. 为启动失败增加重试、降级和 Owner 归属提示
+3. 记录 Hosted App 的启动、停止和健康证据，不把根页面响应当作完整运行时健康
 
 - [ ] 保持 `axi-docs` 的运行时 Owner 在 `axi-docs`，Workbench 只负责发现、启动、挂载和导航。
 - [ ] 保持 `axi-agent-platform` 的 Agent runtime/API/MCP/Transport Owner 在 `axi-agent-platform`，Workbench 只通过既有 API、MCP 或文档契约调用。
@@ -342,8 +342,8 @@
 
 - [x] `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` → ✅ PASS
 - [x] `pnpm check:boundaries` → ✅ PASS
-- [ ] `pnpm --dir apps/devsvc-dashboard typecheck` → ❌ FAIL (`useThemeState.ts` 类型错误)
-- [ ] `pnpm --dir apps/devsvc-dashboard test` → ❌ FAIL (2 tests failed)
+- [x] `pnpm --dir apps/devsvc-dashboard typecheck` → ✅ PASS
+- [x] `pnpm --dir apps/devsvc-dashboard test` → ✅ PASS (21/21)
 - [ ] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource 和路由行为。
 - [ ] 验证 Hosted App 和 Resource Index 的路由互不混淆。
 - [ ] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现。
@@ -355,18 +355,20 @@
 
 | 项目 | 命令 | 退出码 | 状态 | 摘要 |
 |------|------|--------|------|------|
-| axiom-ui | `cd .../axi-ui && pnpm typecheck` | 2 | ❌ FAIL | Gallery Ant Design 类型不兼容 |
-| axiom-rules | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | OK: indexes validated |
-| axiom-skills | `cd .../axi-skills && python3 scripts/verify.py` | 1 | ❌ FAIL | 2 forbidden errors, 9 warnings |
-| axiom-registry | `cd .../axi-registry && npm run health` | 1 | ❌ FAIL | fetch failed (服务未启动?) |
-| axiom-governance | `cd .../axi-workspace-governance && pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Errors 0 |
+| axi-ui | `pnpm check:file-lines && pnpm test` | 0 | ✅ PASS | 完整检查、93 tests 和 Gallery build 通过 |
+| axi-rules | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | indexes validated |
+| axi-skills runtime | `cd .../axi-skills && python3 scripts/verify.py` | 0 | ✅ PASS | errors=0，9 warnings |
+| axi-skills i18n | `cd .../axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` | 1 | ❌ FAIL | 79 个技能路径未进入 translation batches |
+| axi-docs | `cd .../axi-docs && pnpm --dir app verify` | 0 | ✅ PASS | build/verify 通过 |
+| axi-registry | `cd .../axi-registry && npm run health` | 0 | ✅ PASS | Axi registry healthy |
+| axi-governance | `cd .../axi-workspace-governance && pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Errors 0 |
 
 - [ ] `cd /Volumes/code/workspace/shared/axi-ui && pnpm check:file-lines && pnpm typecheck && pnpm test`
 - [x] `cd /Volumes/code/workspace/projects/axi-rules && python3 scripts/validate-index.py` → ✅ PASS
-- [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify.py` → ❌ FAIL (需清理 forbidden dirs)
-- [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff`
-- [ ] `cd /Volumes/code/workspace/projects/axi-docs && pnpm --dir app verify`
-- [ ] `cd /Volumes/code/workspace/infra/axi-registry && npm run health` → ❌ FAIL (服务不可达)
+- [x] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify.py` → ✅ PASS（errors=0，9 warnings）
+- [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` → ❌ FAIL（79 项）
+- [x] `cd /Volumes/code/workspace/projects/axi-docs && pnpm --dir app verify` → ✅ PASS
+- [x] `cd /Volumes/code/workspace/infra/axi-registry && npm run health` → ✅ PASS
 - [x] `cd /Volumes/code/workspace/infra/axi-workspace-governance && pnpm workspace:audit` → ✅ PASS
 - [ ] 将每次验证的命令、时间、分支、结果和证据链接写入项目 completion 或治理快照。
 
