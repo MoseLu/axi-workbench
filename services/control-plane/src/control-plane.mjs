@@ -1505,7 +1505,7 @@ export function buildGovernanceSnapshot({
     dependencyPhaseDeclaredCount: dependencyEdges.filter((relationship) => relationship.dependencyPhase !== undefined).length,
     environmentDeclaredCount: dependencyEdges.filter((relationship) => relationship.environment !== undefined).length,
     versionConstraintDeclaredCount: dependencyEdges.filter((relationship) => relationship.versionConstraint !== undefined).length,
-    validityWindowDeclaredCount: dependencyEdges.filter((relationship) => relationship.validFrom !== undefined || relationship.validTo !== undefined).length,
+    validityWindowDeclaredCount: dependencyEdges.filter((relationship) => relationship.validFrom !== undefined || relationship.validTo !== undefined || relationship.validityWindow !== undefined).length,
   };
   const relationshipMetadataGaps = dependencyEdges.flatMap((relationship) => {
     const missing = [
@@ -1513,11 +1513,11 @@ export function buildGovernanceSnapshot({
       ["dependencyPhase", relationship.dependencyPhase === undefined],
       ["environment", relationship.environment === undefined],
       ["versionConstraint", relationship.versionConstraint === undefined],
-      ["validityWindow", relationship.validFrom === undefined && relationship.validTo === undefined],
+      ["validityWindow", relationship.validFrom === undefined && relationship.validTo === undefined && relationship.validityWindow === undefined],
     ].filter(([, absent]) => absent).map(([field]) => field);
     return missing.length ? [{ sourceRef: relationship.sourceRef, targetRef: relationship.targetRef, relationshipType: "DEPENDS_ON", missing, provenance: relationship.provenance }] : [];
   });
-  if (dependencyEdges.some((relationship) => relationship.requiredness === undefined || relationship.dependencyPhase === undefined || relationship.environment === undefined || relationship.versionConstraint === undefined || (relationship.validFrom === undefined && relationship.validTo === undefined))) {
+  if (dependencyEdges.some((relationship) => relationship.requiredness === undefined || relationship.dependencyPhase === undefined || relationship.environment === undefined || relationship.versionConstraint === undefined || (relationship.validFrom === undefined && relationship.validTo === undefined && relationship.validityWindow === undefined))) {
     warnings.push(`relationship_metadata_incomplete:${dependencyEdges.length}`);
   }
   const ruleProjection = buildGovernanceRules({ graph, graphPath, registry, registryPath, evidence, warnings, conflicts, now: observedDate });
@@ -2665,7 +2665,7 @@ function buildGovernanceRelationships({ id, graphProject, registryEntry, graphPa
         provenance: firstString(value.provenance, provenance),
         confidence: normalizeGovernanceConfidence(value.confidence),
       };
-      for (const field of ["requiredness", "dependencyPhase", "environment", "versionConstraint"]) {
+      for (const field of ["requiredness", "dependencyPhase", "environment", "versionConstraint", "validityWindow"]) {
         const fieldValue = firstString(value[field]);
         if (fieldValue) relationship[field] = fieldValue;
       }

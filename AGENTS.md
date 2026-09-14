@@ -201,3 +201,29 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 ### manifest 状态说明
 
 `docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**（参见 `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 清单）。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的状态文档。
+
+## Relationship Metadata
+
+This section declares relationship metadata consumed by the workspace control-plane snapshot for relationship provenance tracking.
+
+### As a Provider (targetRef)
+
+When other projects declare a dependency on this project in `workspace.graph.json`, they inherit the following metadata contract:
+
+- **requiredness**: "required" (this project is a mandatory dependency for consumers)
+- **dependencyPhase**: varies by capability (see below)
+- **versionConstraint**: "workspace protocol" (workspace dependencies use `link:/catalog:` protocol, no explicit version pinning)
+- **validityWindow**: "indefinite" (no expiration on workspace protocol dependencies)
+
+#### Capability Phases
+
+| Capability | Dependency Phase | Notes |
+|---|---|---|
+| dashboard-apps | runtime | Dashboard applications render in browser |
+| control-plane | runtime | Control plane orchestrates agent tasks |
+| communication-gateway | runtime | Gateway routes IM/communication at runtime |
+| prompt-layer | build | Prompts are loaded at agent startup |
+| im-envelope | runtime | IM envelope protocol processes messages |
+| agent-task | runtime | AgentTask protocol manages task execution |
+| verification-inbox | runtime | Verification inbox runs during quality checks |
+| fleet-console | runtime | Fleet console serves resource management UI |
