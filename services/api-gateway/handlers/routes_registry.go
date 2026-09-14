@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"sync"
 
 	"github.com/epap/api-gateway/config"
+	"github.com/epap/api-gateway/discovery"
 	"github.com/epap/api-gateway/identity"
 	"github.com/epap/api-gateway/middleware"
 	"github.com/epap/api-gateway/ratelimit"
@@ -25,6 +27,7 @@ type RouteRegistry struct {
 	logger            zerolog.Logger
 	registeredRoutes  map[string]bool
 	mu                sync.RWMutex
+	discoveryManager  *discovery.Manager
 	// Per-upstream internal tokens for GenericProxy
 	platformInternalToken      string
 	identityInternalToken      string
@@ -69,6 +72,13 @@ func NewRouteRegistry(cfg RouteRegistryConfig) *RouteRegistry {
 		workflowInternalToken:     cfg.WorkflowInternalToken,
 		notificationInternalToken: cfg.NotificationInternalToken,
 	}
+}
+
+// SetDiscoveryManager sets the service discovery manager for upstream resolution.
+func (rr *RouteRegistry) SetDiscoveryManager(dm *discovery.Manager) {
+	rr.mu.Lock()
+	defer rr.mu.Unlock()
+	rr.discoveryManager = dm
 }
 
 // RegisterRoutes registers all routes from configuration to the gin router
@@ -137,7 +147,21 @@ func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
 	// If we have an upstream URL, use proxy handler with the correct internal token
 	if route.Upstream != "" {
 		internalToken := rr.getInternalTokenForUpstream(route.UpstreamType)
-		return rr.proxyHandler.GenericProxy(route.Upstream, internalToken)
+		upstream := route.Upstream
+
+		// If discovery manager is available, resolve the actual URL
+		rr.mu.RLock()
+		dm := rr.discoveryManager
+		rr.mu.RUnlock()
+
+		if dm != nil && route.UpstreamType != "" {
+			ctx := context.Background()
+			if resolvedURL, err := dm.GetAddress(ctx, route.UpstreamType); err == nil {
+				upstream = resolvedURL
+			}
+		}
+
+		return rr.proxyHandler.GenericProxy(upstream, internalToken)
 	}
 
 	// Resolve by handler name

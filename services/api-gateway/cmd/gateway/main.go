@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/epap/api-gateway/config"
+	"github.com/epap/api-gateway/discovery"
 	"github.com/epap/api-gateway/gateway"
 	"github.com/epap/api-gateway/handlers"
 	"github.com/epap/api-gateway/identity"
@@ -66,6 +67,16 @@ func main() {
 	)
 
 	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+
+	// Initialize service discovery manager (optional, falls back to static URLs)
+	var discoveryManager *discovery.Manager
+	if len(cfg.Services.Upstreams) > 0 {
+		discoveryManager = discovery.NewManager(logger)
+		for _, upstream := range cfg.Services.Upstreams {
+			discoveryManager.RegisterUpstream(upstream)
+		}
+		logger.Info().Int("count", len(cfg.Services.Upstreams)).Msg("service discovery initialized")
+	}
 
 	// Load route configuration
 	routeMatcher, err := loadRouteConfig()

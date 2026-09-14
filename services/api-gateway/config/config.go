@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/epap/api-gateway/discovery"
 )
 
 // Config describes the only public Axi business API entry point. Backend
@@ -45,6 +47,8 @@ type ServicesConfig struct {
 	WorkflowInternalToken     string
 	NotificationInternalToken string
 	ControlPlaneInternalToken string
+	// Upstreams defines dynamic service discovery configurations
+	Upstreams []discovery.UpstreamConfig
 }
 
 type IdentityConfig struct {
