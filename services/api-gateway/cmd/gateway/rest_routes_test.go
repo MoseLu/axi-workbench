@@ -15,7 +15,8 @@ func TestRESTSessionResourceAliasesAuthSession(t *testing.T) {
 	cfg := testGatewayConfig("http://127.0.0.1:1", 50)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(50, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(50, nil))
 
 	session := httptest.NewRecorder()
 	router.ServeHTTP(session, httptest.NewRequest(http.MethodGet, "/api/v1/sessions/current", nil))
@@ -49,7 +50,8 @@ func TestRESTResourceAliasesProxyToNounPaths(t *testing.T) {
 	cfg := testGatewayConfig(downstream.URL, 50)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	gateway := httptest.NewServer(setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(50, nil), setupLogger("disabled")))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	gateway := httptest.NewServer(testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(50, nil)))
 	defer gateway.Close()
 
 	cases := []struct {
@@ -90,7 +92,8 @@ func TestRESTLoginActionAliasesStayOnPublicSessionResources(t *testing.T) {
 	cfg := testGatewayConfig("http://127.0.0.1:1", 50)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(50, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(50, nil))
 
 	emailRPC := httptest.NewRecorder()
 	router.ServeHTTP(emailRPC, httptest.NewRequest(http.MethodPost, "/api/v1/auth/login/email/confirm", nil))
@@ -124,7 +127,8 @@ func TestControlPlaneAndMobileCatchAllsAreExplicitAllowlists(t *testing.T) {
 	cfg.Services.ControlPlaneInternalToken = "control-plane-test-token"
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	gateway := httptest.NewServer(setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(50, nil), setupLogger("disabled")))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	gateway := httptest.NewServer(testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(50, nil)))
 	defer gateway.Close()
 
 	allowed := []struct {

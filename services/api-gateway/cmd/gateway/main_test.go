@@ -9,10 +9,113 @@ import (
 	"time"
 
 	"github.com/epap/api-gateway/config"
+	"github.com/epap/api-gateway/gateway"
 	"github.com/epap/api-gateway/handlers"
 	"github.com/epap/api-gateway/identity"
 	"github.com/epap/api-gateway/ratelimit"
+	"github.com/gin-gonic/gin"
 )
+
+// testSetupRouter is a helper that creates a router with all required dependencies for testing.
+func testSetupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, mobileControl *handlers.MobileControlProxy, identityService *identity.Service, limiter ratelimit.Limiter) *gin.Engine {
+	// Create a minimal route matcher for testing
+	routeMatcher, err := config.NewRouteMatcher(testRoutesYAML(cfg))
+	if err != nil {
+		panic("create test route matcher: " + err.Error())
+	}
+
+	// Create dynamic router for admin routes
+	dynamicRouter := gateway.NewDynamicRouter(routeMatcher, "", setupLogger("disabled"))
+
+	return setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, setupLogger("disabled"))
+}
+
+// testRoutesYAML generates a minimal routes configuration for testing.
+// Note: /health and /ready are registered by registerAdditionalRoutes, not here.
+func testRoutesYAML(cfg *config.Config) []byte {
+	return []byte(`
+routes:
+  - id: platform-core
+    path: /api/v1/tenants
+    upstream: ` + cfg.Services.PlatformCoreURL + `
+    predicates:
+      - Method=GET
+  - id: zitadel-qr-complete
+    path: /api/v1/internal/zitadel/qr/transactions/:transactionId/complete
+    handler: ProxyToIdentity
+    predicates:
+      - Method=POST
+    internal: true
+  - id: device-login-qr
+    path: /api/v1/auth/device-login/qr
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: device-login-qr-consume
+    path: /api/v1/auth/device-login/qr/:webLoginId/consume
+    handler: ConsumeWebLogin
+    predicates:
+      - Method=POST
+  - id: mobile-workspace
+    path: /api/v1/mobile/workspace
+    handler: MobileControlProxy
+  - id: mobile-handoffs
+    path: /api/v1/mobile/handoffs
+    handler: MobileControlProxy
+  - id: mobile-qr-scan
+    path: /api/v1/mobile/pair/qr/scan
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: web-handoff
+    path: /api/v1/handoffs/:handoffId
+    handler: MobileControlProxy
+  - id: web-handoffs
+    path: /api/v1/handoffs
+    handler: MobileControlProxy
+  - id: web-snapshot
+    path: /api/v1/control-plane/snapshot
+    handler: MobileControlProxy
+  - id: web-qr-pair
+    path: /api/v1/control-plane/mobile/pair/qr
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: file-download
+    path: /api/v1/files/download/:filePath
+    upstream: ` + cfg.Services.FileServiceURL + `
+    internal: true
+  - id: workflow-execute
+    path: /api/v1/workflows/:workflowId/execute
+    upstream: ` + cfg.Services.WorkflowURL + `
+    predicates:
+      - Method=POST
+    internal: true
+  - id: workflow-execution
+    path: /api/v1/workflows/:workflowId/execution
+    upstream: ` + cfg.Services.WorkflowURL + `
+    internal: true
+  - id: workflow-approvals
+    path: /api/v1/workflows/:workflowId/approvals
+    upstream: ` + cfg.Services.WorkflowURL + `
+    internal: true
+  - id: workflow-approval-decision
+    path: /api/v1/workflows/:workflowId/approvals/:approvalId
+    upstream: ` + cfg.Services.WorkflowURL + `
+    predicates:
+      - Method=POST
+    internal: true
+  - id: notification-badges
+    path: /api/v1/notifications/nav-badges
+    upstream: ` + cfg.Services.NotificationURL + `
+  - id: event-fanout
+    path: /api/v1/internal/events
+    handler: ProxyToEventConsumers
+    predicates:
+      - Method=POST
+    internal: true
+`)
+}
 
 func TestGatewayReplacesSpoofedInternalHeadersWithVerifiedIdentity(t *testing.T) {
 	downstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -36,7 +139,8 @@ func TestGatewayReplacesSpoofedInternalHeadersWithVerifiedIdentity(t *testing.T)
 	cfg := testGatewayConfig(downstream.URL, 10)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 
 	server := httptest.NewServer(router)
 	defer server.Close()
@@ -63,7 +167,8 @@ func TestGatewayRateLimitAppliesBeforePublicRoutes(t *testing.T) {
 	cfg := testGatewayConfig("http://127.0.0.1:1", 1)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(1, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(1, nil))
 
 	first := httptest.NewRecorder()
 	router.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/health", nil))
@@ -82,7 +187,8 @@ func TestGatewayRateLimitDoesNotTrustUnconfiguredForwardedFor(t *testing.T) {
 	cfg.Server.TrustedProxies = nil
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(1, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(1, nil))
 
 	first := httptest.NewRequest(http.MethodGet, "/health", nil)
 	first.Header.Set("X-Forwarded-For", "198.51.100.10")
@@ -118,7 +224,8 @@ func TestGatewayRoutesZitadelQRCompletionThroughIdentityAdapter(t *testing.T) {
 	cfg := testGatewayConfig(downstream.URL, 10)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 
 	gateway := httptest.NewServer(router)
 	defer gateway.Close()
@@ -173,7 +280,8 @@ func TestGatewayCompletesPublicDeviceQRCodeLoginWithoutForwardingBrowserCredenti
 	cfg := testGatewayConfig(downstream.URL, 10)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 	gateway := httptest.NewServer(router)
 	defer gateway.Close()
 
@@ -240,7 +348,8 @@ func TestGatewayFansOutPlatformEventsWithConsumerCredentials(t *testing.T) {
 	cfg.Services.WorkflowURL = workflow.URL
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", workflow.URL, notification.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/internal/events", strings.NewReader(`{"id":"event-1","tenantId":"tenant-1","topic":"task.created","payload":{"createdBy":"alice"}}`))
 	request.Header.Set("X-Axi-Internal-Token", "outbox-test-token")
@@ -261,7 +370,8 @@ func TestGatewayRejectsUnauthenticatedPlatformEvent(t *testing.T) {
 	cfg := testGatewayConfig("http://127.0.0.1:1", 10)
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", "http://127.0.0.1:1", "http://127.0.0.1:1", "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/internal/events", strings.NewReader(`{}`))
 	request.Header.Set("X-Axi-Internal-Token", "attacker-token")
@@ -307,7 +417,8 @@ func TestGatewayRewritesSpecialistPathsAndUsesDedicatedTokens(t *testing.T) {
 			cfg := testGatewayConfig(downstream.URL, 10)
 			identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 			proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-			router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+			mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+			router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 
 			gateway := httptest.NewServer(router)
 			defer gateway.Close()
@@ -408,7 +519,8 @@ func TestGatewayRoutesMobileAndWebHandoffThroughControlPlaneBoundary(t *testing.
 	cfg.Services.ControlPlaneInternalToken = "control-plane-test-token"
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler(downstream.URL, downstream.URL, "", downstream.URL, downstream.URL, downstream.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
-	router := setupRouter(cfg, proxy, identityService, ratelimit.NewMemory(10, nil), setupLogger("disabled"))
+	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)
+	router := testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(10, nil))
 	gateway := httptest.NewServer(router)
 	defer gateway.Close()
 
