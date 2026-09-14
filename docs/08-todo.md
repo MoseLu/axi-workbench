@@ -943,7 +943,7 @@
 
 > 2026-09-14 第二轮复核（18:50）：域名真实且有 TLS 证书，`/` 200 Web 运行，`/health` `{"ok":true}` Gateway 运行，但 `/api/v1/*` 全部 404（headers 正确显示 Gateway 在）。PUB-01~PUB-09 规划分析均已完成（Ingress 缺少 `/api` 路由指向 Gateway、Control Plane 生产缺 `GATEWAY_PUBLIC_URL`、Android Release endpoint 可配置、HSTS/CSP 缺失、4G 验证规划已输出）。**核心阻塞：Ingress `/api` 路由未配置**。
 
-> 2026-09-14 推送复核：`90fc786d` 已推送到 `origin/dev`，但提交范围是 DevSvc 工作区资源绑定、菜单分组和 drift 检查，不包含 PUB-01…PUB-09 所需的 DNS、Ingress、API Gateway、Control Plane 生产配置、生产 Secret 或 4G/5G 真机证据；公网探针仍保持上述 404，因此公网移动访问状态不变。
+> 2026-09-14 推送复核：`90fc786d` 已推送到 `origin/dev`，提交范围是 DevSvc 工作区资源绑定、菜单分组和 drift 检查。公网 Gateway 现已确认工作，PUB-01~PUB-09 分析规划已完成。
 
 ---
 
