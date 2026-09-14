@@ -59,7 +59,7 @@ if [[ -n "${GATEWAY_REDIS_URL+x}" ]]; then
     exit 1
   fi
 else
-  export GATEWAY_REDIS_URL="redis://127.0.0.1:6379/0"
+  export GATEWAY_REDIS_URL="redis://127.0.0.1:16379/0"
 fi
 if [[ "${GATEWAY_REDIS_URL}" == *\?* || "${GATEWAY_REDIS_URL}" == *\#* ]]; then
   echo "GATEWAY_REDIS_URL 不得包含 query 或 fragment，且必须使用本地 Gateway 专用 Redis DB 0（路径 /0）。" >&2

@@ -53,10 +53,10 @@ clean:
 	rm -rf .turbo
 
 docker-up:
-	docker-compose up -d
+	docker compose up -d
 
 docker-down:
-	docker-compose down
+	docker compose down
 
 # Backend services. The dev-run scripts load the repository .env without
 # printing secrets and apply the local ports/defaults used by Workbench.
@@ -101,10 +101,10 @@ migrate-core:
 	cd services/core-service && ./gradlew flywayMigrate
 
 migrate-identity:
-	cd services/identity-adapter && go run ./cmd/migrate
+	set -a; [ ! -f .env ] || . ./.env; export IDENTITY_DATABASE_URL="$${IDENTITY_DATABASE_URL:-postgresql://axi_identity_app:axi_identity_dev@127.0.0.1:15432/axi_identity?sslmode=disable}"; set +a; cd services/identity-adapter && go run ./cmd/migrate
 
 migrate-platform:
-	cd services/platform-core && go run ./cmd/migrate
+	set -a; [ ! -f .env ] || . ./.env; export PLATFORM_DATABASE_URL="$${PLATFORM_DATABASE_URL:-postgresql://axi_platform_app:axi_platform_dev@127.0.0.1:15432/axi_platform?sslmode=disable}"; export PLATFORM_MIGRATION_DATABASE_URL="$${PLATFORM_MIGRATION_DATABASE_URL:-postgresql://axi_platform_migrator:axi_platform_migrator_dev@127.0.0.1:15432/axi_platform?sslmode=disable}"; set +a; cd services/platform-core && go run ./cmd/migrate
 
 migrate-notification:
 	cd services/notification-service && go run ./cmd/migrate
