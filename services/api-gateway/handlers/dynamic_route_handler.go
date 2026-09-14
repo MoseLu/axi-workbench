@@ -149,6 +149,10 @@ func (drh *DynamicRouteHandler) resolveHandler(route *gateway.Route) gin.Handler
 		return drh.mobileControl.Proxy()
 	case "ProxyWebControl":
 		return drh.mobileControl.ProxyWebControl()
+	case "ProxyWebHandoff":
+		return drh.mobileControl.ProxyWebHandoff()
+	case "ProxyPublicWebLogin":
+		return drh.mobileControl.ProxyPublicWebLogin()
 	case "ConsumeWebLogin":
 		return drh.mobileControl.ConsumeWebLogin(drh.identityService)
 	case "ProxyToIdentity":

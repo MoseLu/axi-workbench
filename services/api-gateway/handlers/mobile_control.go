@@ -85,7 +85,7 @@ func (p *MobileControlProxy) ProxyWebHandoff() gin.HandlerFunc {
 	proxy.Director = func(request *http.Request) {
 		originalDirector(request)
 		request.Host = p.target.Host
-		request.URL.Path = "/internal/web/v1/handoffs" + strings.TrimPrefix(request.URL.Path, "/api/v1/handoffs")
+		request.URL.Path = stripControlPlanePath(request.URL.Path)
 		request.URL.RawPath = ""
 	}
 	proxy.ErrorHandler = func(writer http.ResponseWriter, _ *http.Request, _ error) {
@@ -107,6 +107,26 @@ func (p *MobileControlProxy) ProxyWebHandoff() gin.HandlerFunc {
 	}
 }
 
+// stripControlPlanePath converts a public gateway path to an internal control plane path.
+// It handles multiple gateway path prefixes:
+//   - /api/v1/control-plane/* -> /internal/web/v1/*
+//   - /api/v1/handoffs/* -> /internal/web/v1/handoffs/*
+//   - /api/v1/control-plane/mobile/pair/qr -> /internal/web/v1/mobile/pair/qr
+func stripControlPlanePath(gatewayPath string) string {
+	// Order matters: check more specific prefixes first
+	if strings.HasPrefix(gatewayPath, "/api/v1/handoffs") {
+		// /api/v1/handoffs/xyz -> /internal/web/v1/handoffs/xyz
+		// /api/v1/handoffs -> /internal/web/v1/handoffs
+		return "/internal/web/v1" + gatewayPath[len("/api/v1"):]
+	}
+	if strings.HasPrefix(gatewayPath, "/api/v1/control-plane") {
+		// /api/v1/control-plane/xyz -> /internal/web/v1/xyz
+		return "/internal/web/v1" + gatewayPath[len("/api/v1/control-plane"):]
+	}
+	// Fallback: strip /api/v1 and prefix with /internal/web/v1
+	return "/internal/web/v1" + gatewayPath[len("/api/v1"):]
+}
+
 // ProxyWebControl exposes the browser control-plane read/write API only after
 // the Gateway has established an HttpOnly session. The browser never receives
 // the control-plane internal credential and cannot spoof the subject header.
@@ -121,7 +141,7 @@ func (p *MobileControlProxy) ProxyWebControl() gin.HandlerFunc {
 	proxy.Director = func(request *http.Request) {
 		originalDirector(request)
 		request.Host = p.target.Host
-		request.URL.Path = "/internal/web/v1" + strings.TrimPrefix(request.URL.Path, "/api/v1/control-plane")
+		request.URL.Path = stripControlPlanePath(request.URL.Path)
 		request.URL.RawPath = ""
 	}
 	proxy.ErrorHandler = func(writer http.ResponseWriter, _ *http.Request, _ error) {
@@ -230,6 +250,9 @@ func (p *MobileControlProxy) ConsumeWebLogin(service *identity.Service) gin.Hand
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Axi-QR-Poll-Token", pollToken)
 		request.Header.Set("X-Axi-Internal-Token", p.internalToken)
+		// Prevent browser-supplied credentials from leaking to the private service hop
+		request.Header.Del("Authorization")
+		request.Header.Del("Cookie")
 		response, err := client.Do(request)
 		if err != nil {
 			c.JSON(http.StatusBadGateway, gin.H{"error": "control plane unavailable"})

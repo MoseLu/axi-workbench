@@ -132,7 +132,7 @@ assert_started() {
     fail "${case_name} did not start through the durable launcher"
   fi
   assert_observed_line 'GO_ARGS=run ./cmd/gateway'
-  assert_observed_line 'GATEWAY_REDIS_URL=redis://127.0.0.1:6379/0'
+  assert_observed_line 'GATEWAY_REDIS_URL=redis://127.0.0.1:16379/0'
   assert_observed_line 'GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true'
 }
 

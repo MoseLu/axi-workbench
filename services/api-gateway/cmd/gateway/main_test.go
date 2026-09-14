@@ -59,6 +59,9 @@ routes:
     handler: ProxyToIdentity
     predicates:
       - Method=POST
+    filters:
+      - RequireInternalToken
+      - Audit
     internal: true
   - id: email-login-confirm
     path: /api/v1/auth/login/email/confirm
@@ -72,7 +75,7 @@ routes:
       - Method=POST
   - id: device-login-qr
     path: /api/v1/auth/device-login/qr
-    handler: MobileControlProxy
+    handler: ProxyPublicWebLogin
     predicates:
       - Method=POST
   - id: device-login-qr-consume
@@ -102,10 +105,14 @@ routes:
       - Method=POST
   - id: web-handoff
     path: /api/v1/handoffs/:handoffId
-    handler: MobileControlProxy
+    handler: ProxyWebControl
+    filters:
+      - RequireIdentity
   - id: web-handoffs
     path: /api/v1/handoffs
-    handler: MobileControlProxy
+    handler: ProxyWebControl
+    filters:
+      - RequireIdentity
   - id: web-snapshot
     path: /api/v1/control-plane/snapshot
     handler: ProxyWebControl
@@ -113,43 +120,152 @@ routes:
       - Method=GET
     filters:
       - RequireIdentity
+  - id: web-events
+    path: /api/v1/control-plane/events
+    handler: ProxyWebControl
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+  - id: web-event-detail
+    path: /api/v1/control-plane/events/:eventId
+    handler: ProxyWebControl
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+  - id: web-authorization-decision
+    path: /api/v1/control-plane/authorization/decision
+    handler: ProxyWebControl
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+  - id: web-jobs-cancellations
+    path: /api/v1/control-plane/jobs/:jobId/cancellations
+    handler: ProxyWebControl
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+  - id: web-approvals-decisions
+    path: /api/v1/control-plane/approvals/:approvalId/decisions
+    handler: ProxyWebControl
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+  - id: web-commands-runs
+    path: /api/v1/control-plane/commands/:commandId/runs
+    handler: ProxyWebControl
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
   - id: web-qr-pair
     path: /api/v1/control-plane/mobile/pair/qr
+    handler: ProxyWebControl
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+  - id: mobile-auth-token
+    path: /api/v1/mobile/auth/token
     handler: MobileControlProxy
     predicates:
       - Method=POST
+  - id: mobile-auth-tokens
+    path: /api/v1/mobile/auth/tokens
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: mobile-pair-confirmations
+    path: /api/v1/mobile/pair/confirmations
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: mobile-jobs-cancellations
+    path: /api/v1/mobile/jobs/:jobId/cancellations
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: email-verifications-redemptions
+    path: /api/v1/auth/email-verifications/:challengeId/redemptions
+    handler: Session
+    predicates:
+      - Method=POST
+  - id: qr-transactions-resumptions
+    path: /api/v1/auth/qr/transactions/:transactionId/resumptions
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+  - id: notifications-proxy
+    path: /api/v1/notifications
+    handler: ProxyToNotification
+    filters:
+      - RequireIdentity
+  - id: notifications-by-id
+    path: /api/v1/notifications/:notificationId
+    handler: ProxyToNotification
+    predicates:
+      - Method=PATCH
+    filters:
+      - RequireIdentity
+  - id: notifications-read-receipts
+    path: /api/v1/notifications/read-receipts
+    handler: ProxyToNotification
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+  - id: workflow-executions
+    path: /api/v1/workflows/:id/executions
+    handler: ProxyToWorkflow
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+  - id: workflow-cancellations
+    path: /api/v1/workflows/:id/cancellations
+    handler: ProxyToWorkflow
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
   - id: file-download
     path: /api/v1/files/download/:filePath
-    upstream: ` + cfg.Services.FileServiceURL + `
-    upstreamType: file
+    handler: ProxyToFile
     filters:
       - RequireIdentity
   - id: workflow-execute
-    path: /api/v1/workflows/:workflowId/execute
-    upstream: ` + cfg.Services.WorkflowURL + `
-    upstreamType: workflow
+    path: /api/v1/workflows/:id/execute
+    handler: ProxyToWorkflow
     predicates:
       - Method=POST
     filters:
       - RequireIdentity
   - id: workflow-execution
-    path: /api/v1/workflows/:workflowId/execution
-    upstream: ` + cfg.Services.WorkflowURL + `
-    upstreamType: workflow
+    path: /api/v1/workflows/:id/execution
+    handler: ProxyToWorkflow
+    predicates:
+      - Method=GET
     filters:
       - RequireIdentity
   - id: workflow-approvals
-    path: /api/v1/workflows/:workflowId/approvals
-    upstream: ` + cfg.Services.WorkflowURL + `
-    upstreamType: workflow
+    path: /api/v1/workflows/:id/approvals
+    handler: ProxyToWorkflow
     filters:
       - RequireIdentity
   - id: workflow-approval-decision
-    path: /api/v1/workflows/:workflowId/approvals/:approvalId
-    upstream: ` + cfg.Services.WorkflowURL + `
-    upstreamType: workflow
+    path: /api/v1/workflows/:id/approvals/:approvalId
+    handler: ProxyToWorkflow
     predicates:
       - Method=POST
+    filters:
+      - RequireIdentity
+  - id: workflow-executions-current
+    path: /api/v1/workflows/:id/executions/current
+    handler: ProxyToWorkflow
     filters:
       - RequireIdentity
   - id: notification-badges
@@ -396,6 +512,8 @@ func TestGatewayFansOutPlatformEventsWithConsumerCredentials(t *testing.T) {
 	cfg := testGatewayConfig("http://127.0.0.1:1", 10)
 	cfg.Services.NotificationURL = notification.URL
 	cfg.Services.WorkflowURL = workflow.URL
+	cfg.Services.ControlPlaneURL = notification.URL
+	cfg.Services.ControlPlaneInternalToken = "outbox-test-token"
 	identityService := identity.NewForTest(cfg.Identity, identity.NewMemoryRecordStore(nil), nil, nil)
 	proxy := handlers.NewProxyHandler("http://127.0.0.1:1", "http://127.0.0.1:1", "", "http://127.0.0.1:1", workflow.URL, notification.URL, "identity-test-token", "platform-test-token", "file-test-token", "workflow-test-token", "notification-test-token")
 	mobileControl := handlers.NewMobileControlProxy(cfg.Services.ControlPlaneURL, cfg.Services.ControlPlaneInternalToken)

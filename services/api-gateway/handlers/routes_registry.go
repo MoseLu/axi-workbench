@@ -192,6 +192,10 @@ func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
 		return rr.mobileControl.Proxy()
 	case "ProxyWebControl":
 		return rr.mobileControl.ProxyWebControl()
+	case "ProxyWebHandoff":
+		return rr.mobileControl.ProxyWebHandoff()
+	case "ProxyPublicWebLogin":
+		return rr.mobileControl.ProxyPublicWebLogin()
 	case "ConsumeWebLogin":
 		return rr.mobileControl.ConsumeWebLogin(rr.identityService)
 	case "ProxyToIdentity":
