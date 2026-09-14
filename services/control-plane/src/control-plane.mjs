@@ -323,6 +323,8 @@ function buildControlPlaneSurface({
     },
     normalizeIMEnvelope,
     recordMobileAudit: (event) => recordMobileAudit({ cacheDir, event }),
+    // TASK6: External fact refresh interface - reads declared external sources from workspace.graph.json
+    refreshExternalFacts: (options = {}) => refreshExternalFacts({ workspaceRoot, graphPath, cacheDir, ...options }),
   };
   // Wire the mobile approval bridge now that the surface exists.
   surface.decideApproval = (input) => {
@@ -5173,28 +5175,36 @@ function resolveGovernanceOwner({ workspaceRoot, targetRef }) {
   return { ownerRef: "unknown", source: "unresolved" };
 }
 
-function transitionGovernanceRisk({ input = {}, cacheDir }) {
+export function transitionGovernanceRisk({ input = {}, cacheDir }) {
   const riskId = firstString(input.id);
   if (!riskId || !cacheDir) return { ok: false, httpStatus: 404, error: "risk not found" };
   const risk = readJson(join(cacheDir, "risks", `${safeFileName(riskId)}.json`), null);
   if (!risk) return { ok: false, httpStatus: 404, error: "risk not found" };
   const current = risk.status;
   const next = firstString(input.status);
+  // TASK6: Support revoked transition from waived state
   const transitions = {
     open: new Set(["acknowledged", "resolved", "waived"]),
     acknowledged: new Set(["open", "resolved", "waived"]),
     resolved: new Set(),
-    waived: new Set(),
+    waived: new Set(["revoked"]), // TASK6: Owner can revoke an active waiver
   };
   if (current === next) return { ok: true, risk, incident: risk.incidentRef ? readJson(join(cacheDir, "incidents", `${safeFileName(risk.incidentRef)}.json`), null) : null };
   if (!transitions[current]?.has(next)) return { ok: false, httpStatus: 409, error: `risk transition not allowed: ${current} -> ${next}` };
   const reason = firstString(input.reason);
-  if (["resolved", "waived"].includes(next) && !reason) return { ok: false, httpStatus: 422, error: "reason is required when resolving or waiving a risk" };
+  if (["resolved", "waived", "revoked"].includes(next) && !reason) return { ok: false, httpStatus: 422, error: "reason is required when resolving, waiving, or revoking a risk" };
   const now = new Date().toISOString();
   risk.status = next;
   risk.updatedAt = now;
   if (reason) risk.statusReason = reason;
-  risk.resolvedAt = ["resolved", "waived"].includes(next) ? now : null;
+  risk.resolvedAt = ["resolved", "waived", "revoked"].includes(next) ? now : null;
+
+  // TASK6: Record revocation metadata when transitioning to revoked state
+  if (next === "revoked") {
+    risk.revokedBy = firstString(input.actorRef, input.revokedBy, "unknown");
+    risk.revokedAt = now;
+  }
+
   persistJson(join(cacheDir, "risks", `${safeFileName(risk.id)}.json`), risk);
 
   const incident = risk.incidentRef
@@ -5204,24 +5214,47 @@ function transitionGovernanceRisk({ input = {}, cacheDir }) {
     incident.status = next === "open" ? "open" : next === "acknowledged" ? "acknowledged" : "resolved";
     incident.updatedAt = now;
     if (reason) incident.statusReason = reason;
-    incident.resolvedAt = ["resolved", "waived"].includes(next) ? now : null;
+    incident.resolvedAt = ["resolved", "waived", "revoked"].includes(next) ? now : null;
     persistJson(join(cacheDir, "incidents", `${safeFileName(incident.id)}.json`), incident);
   }
   const actorRef = firstString(input.actorRef) || "unknown";
   const policyDecisionRef = firstString(input.policyDecisionRef) || null;
   const correlationId = firstString(input.correlationId, risk.correlationId, risk.id) || risk.id;
-  appendAuditRecord(cacheDir, {
-    auditKind: "risk.transitioned",
-    actorRef,
-    objectRef: risk.targetRef,
-    action: "manage",
-    correlationId,
-    policyDecisionRef,
-    beforeRef: `risk:${current}`,
-    afterRef: `risk:${next}`,
-    result: next,
-    status: next,
-  });
+
+  // TASK6: Write revocation audit event with waiver metadata
+  if (next === "revoked") {
+    appendAuditRecord(cacheDir, {
+      auditKind: "waiver.revoked", // TASK6: Dedicated waiver revocation event
+      actorRef,
+      objectRef: risk.targetRef,
+      action: "revoke",
+      correlationId,
+      policyDecisionRef,
+      beforeRef: `risk:${current}`,
+      afterRef: `risk:${next}`,
+      result: next,
+      status: next,
+      // TASK6: Include waiver revocation metadata
+      riskRef: risk.id,
+      revokedBy: risk.revokedBy,
+      revokedAt: risk.revokedAt,
+      reason: reason || null,
+      sourceRiskRef: risk.id,
+    });
+  } else {
+    appendAuditRecord(cacheDir, {
+      auditKind: "risk.transitioned",
+      actorRef,
+      objectRef: risk.targetRef,
+      action: "manage",
+      correlationId,
+      policyDecisionRef,
+      beforeRef: `risk:${current}`,
+      afterRef: `risk:${next}`,
+      result: next,
+      status: next,
+    });
+  }
   if (incident) appendAuditRecord(cacheDir, {
     auditKind: "incident.transitioned",
     actorRef,
@@ -5235,6 +5268,73 @@ function transitionGovernanceRisk({ input = {}, cacheDir }) {
     status: incident.status,
   });
   return { ok: true, risk, incident };
+}
+
+/**
+ * TASK6: External fact refresh interface.
+ * Reads declared external sources from workspace.graph.json and refreshes cached facts.
+ * Returns the refreshed facts and audit event IDs for traceability.
+ */
+export function refreshExternalFacts({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), cacheDir = "", targetIds = [] } = {}) {
+  const graph = readJson(graphPath, null);
+  if (!graph) return { ok: false, error: "workspace.graph.json not found", refreshedFacts: [], eventIds: [] };
+
+  const externalSources = Array.isArray(graph.externalFacts) ? graph.externalFacts : [];
+  if (externalSources.length === 0) return { ok: true, refreshedFacts: [], eventIds: [], count: 0, message: "No external facts declared" };
+
+  const refreshedFacts = [];
+  const eventIds = [];
+  const now = new Date().toISOString();
+
+  for (const source of externalSources) {
+    if (!source || typeof source !== "object") continue;
+    // Filter by targetIds if specified
+    if (targetIds.length > 0 && !targetIds.includes(source.id)) continue;
+
+    const fact = {
+      id: source.id || `external:${randomUUID()}`,
+      name: source.name || source.id || "Unknown",
+      type: source.type || "external",
+      source: source.source || "workspace.graph.externalFacts",
+      targetRef: source.targetRef || source.subjectRef || null,
+      status: "available",
+      refreshedAt: now,
+      data: source.data || null,
+      url: source.url || null,
+      lastFetchedAt: source.lastFetchedAt || null,
+    };
+
+    refreshedFacts.push(fact);
+
+    // Write audit event for the refresh
+    if (cacheDir) {
+      const eventId = `external-fact:${fact.id}:${Date.now()}`;
+      appendAuditRecord(cacheDir, {
+        auditKind: "external_fact.refreshed",
+        eventId,
+        actorRef: "control-plane:external-fact-refresh",
+        objectRef: fact.targetRef || fact.id,
+        action: "refresh",
+        correlationId: `external-fact:${fact.id}`,
+        result: "refreshed",
+        status: "refreshed",
+        sourceRef: fact.source,
+        targetRef: fact.targetRef,
+        factId: fact.id,
+        factName: fact.name,
+        factType: fact.type,
+      });
+      eventIds.push(eventId);
+    }
+  }
+
+  return {
+    ok: true,
+    refreshedFacts,
+    eventIds,
+    count: refreshedFacts.length,
+    refreshedAt: now,
+  };
 }
 
 function failJob(cacheDir, job, message) {

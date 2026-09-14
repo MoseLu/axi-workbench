@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
-import { buildGovernanceSnapshot, buildSnapshot, readWorkspaceEvents, recordMobileAudit } from "../src/control-plane.mjs";
+import { buildGovernanceSnapshot, buildSnapshot, readWorkspaceEvents, recordMobileAudit, transitionGovernanceRisk, refreshExternalFacts } from "../src/control-plane.mjs";
 
 function makeGovernanceFixture({ conflict = false, graphIdentity = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), "axi-governance-snapshot-"));
@@ -1266,4 +1266,218 @@ test("TASK6: rule inheritance does not propagate when parent is stale", () => {
 
   // Verify warnings include stale rule
   assert.ok(snapshot.warnings.includes("rule_stale:rule:parent:stale"), "Stale parent should generate warning");
+});
+
+// TASK6: Waiver revoke writes dedicated audit event with revocation metadata
+test("TASK6: waiver revoke writes audit event with revokedBy and revokedAt metadata", () => {
+  const root = mkdtempSync(join(tmpdir(), "axi-task6-waiver-revoke-audit-"));
+  const cacheDir = join(root, "cache");
+  mkdirSync(cacheDir, { recursive: true });
+
+  // Create a waived risk (use safe filename without colons)
+  const riskDir = join(cacheDir, "risks");
+  mkdirSync(riskDir, { recursive: true });
+  const risk = {
+    id: "risk-waived-alpha-doc", // safe filename
+    targetRef: "alpha",
+    status: "waived",
+    ownerRef: "owner-1",
+    reason: "Temporary exception",
+    statusReason: "Approved until replacement",
+    detectedAt: "2026-09-13T00:00:00.000Z",
+    updatedAt: "2026-09-13T00:00:00.000Z",
+    source: "control-plane.test",
+  };
+  writeFileSync(join(riskDir, "risk-waived-alpha-doc.json"), JSON.stringify(risk));
+
+  // Revoke the waiver
+  const result = transitionGovernanceRisk({
+    input: {
+      id: "risk-waived-alpha-doc",
+      status: "revoked",
+      reason: "Owner revoked the waiver",
+      actorRef: "owner-1",
+    },
+    cacheDir,
+  });
+
+  assert.equal(result.ok, true, "Transition should succeed");
+  assert.equal(result.risk.status, "revoked", "Risk status should be revoked");
+  assert.equal(result.risk.revokedBy, "owner-1", "Revoked by should be set");
+  assert.ok(result.risk.revokedAt, "Revoked timestamp should be set");
+
+  // Verify audit event was written
+  const auditPath = join(cacheDir, "audit.jsonl");
+  assert.ok(existsSync(auditPath), "Audit file should exist");
+
+  const auditRecords = readFileSync(auditPath, "utf8")
+    .trim()
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+
+  const revokeEvent = auditRecords.find((record) => record.auditKind === "waiver.revoked");
+  assert.ok(revokeEvent, "Should have waiver.revoked audit event");
+  assert.equal(revokeEvent.actorRef, "owner-1", "Actor should be owner");
+  assert.equal(revokeEvent.result, "revoked", "Result should be revoked");
+  assert.equal(revokeEvent.revokedBy, "owner-1", "RevokedBy metadata should be set");
+  assert.ok(revokeEvent.revokedAt, "RevokedAt metadata should be set");
+  assert.equal(revokeEvent.riskRef, "risk-waived-alpha-doc", "RiskRef should be included");
+});
+
+// TASK6: Revoked waiver does not allow second revocation transition
+test("TASK6: revoked waiver cannot be transitioned again", () => {
+  const root = mkdtempSync(join(tmpdir(), "axi-task6-no-revoke-twice-"));
+  const cacheDir = join(root, "cache");
+  mkdirSync(cacheDir, { recursive: true });
+
+  // Create a revoked risk (use safe filename without colons)
+  const riskDir = join(cacheDir, "risks");
+  mkdirSync(riskDir, { recursive: true });
+  const risk = {
+    id: "risk-already-revoked", // safe filename
+    targetRef: "alpha",
+    status: "revoked",
+    ownerRef: "owner-1",
+    reason: "Already revoked",
+    revokedBy: "owner-1",
+    revokedAt: "2026-09-13T00:00:00.000Z",
+    detectedAt: "2026-09-12T00:00:00.000Z",
+    source: "control-plane.test",
+  };
+  writeFileSync(join(riskDir, "risk-already-revoked.json"), JSON.stringify(risk));
+
+  // Attempt to transition again should fail
+  const result = transitionGovernanceRisk({
+    input: {
+      id: "risk-already-revoked",
+      status: "resolved",
+      reason: "Try to resolve",
+      actorRef: "owner-1",
+    },
+    cacheDir,
+  });
+
+  assert.equal(result.ok, false, "Transition should fail");
+  assert.equal(result.httpStatus, 409, "Should return 409 Conflict");
+  assert.ok(result.error.includes("not allowed"), "Error should indicate transition not allowed");
+});
+
+// TASK6: External facts refresh interface reads declared external sources
+test("TASK6: refreshExternalFacts reads declared external sources and writes audit events", () => {
+  const root = mkdtempSync(join(tmpdir(), "axi-task6-external-facts-"));
+  const graphPath = join(root, "workspace.graph.json");
+  const cacheDir = join(root, "cache");
+  mkdirSync(cacheDir, { recursive: true });
+
+  // Create workspace.graph.json with externalFacts declaration
+  writeFileSync(graphPath, JSON.stringify({
+    projects: {},
+    externalFacts: [
+      {
+        id: "external:jira:project-alpha",
+        name: "Jira Project Alpha Status",
+        type: "external:jira",
+        source: "https://jira.example.com/rest/api/2/project/alpha",
+        targetRef: "alpha",
+        data: { status: "active", priority: "high" },
+      },
+      {
+        id: "external:github:pr-count",
+        name: "GitHub PR Count",
+        type: "external:github",
+        source: "https://api.github.com/repos/org/project/pulls",
+        targetRef: "beta",
+        data: { openPRs: 5 },
+      },
+    ],
+  }));
+
+  // Refresh all external facts
+  const result = refreshExternalFacts({
+    workspaceRoot: root,
+    graphPath,
+    cacheDir,
+  });
+
+  assert.equal(result.ok, true, "Refresh should succeed");
+  assert.equal(result.count, 2, "Should refresh 2 facts");
+  assert.equal(result.refreshedFacts.length, 2, "Should return 2 refreshed facts");
+
+  // Verify first fact
+  const jiraFact = result.refreshedFacts.find((f) => f.id === "external:jira:project-alpha");
+  assert.ok(jiraFact, "Should have Jira fact");
+  assert.equal(jiraFact.name, "Jira Project Alpha Status", "Name should be preserved");
+  assert.equal(jiraFact.targetRef, "alpha", "TargetRef should be set");
+  assert.equal(jiraFact.status, "available", "Status should be available");
+  assert.ok(jiraFact.refreshedAt, "RefreshedAt should be set");
+
+  // Verify audit events were written
+  const auditPath = join(cacheDir, "audit.jsonl");
+  assert.ok(existsSync(auditPath), "Audit file should exist");
+
+  const auditRecords = readFileSync(auditPath, "utf8")
+    .trim()
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+
+  assert.equal(auditRecords.length, 2, "Should have 2 audit events");
+  assert.ok(auditRecords.every((r) => r.auditKind === "external_fact.refreshed"), "All events should be external_fact.refreshed");
+
+  // Verify event IDs are returned
+  assert.equal(result.eventIds.length, 2, "Should return 2 event IDs");
+});
+
+// TASK6: External facts refresh with target filter
+test("TASK6: refreshExternalFacts supports targetIds filter", () => {
+  const root = mkdtempSync(join(tmpdir(), "axi-task6-external-facts-filter-"));
+  const graphPath = join(root, "workspace.graph.json");
+  const cacheDir = join(root, "cache");
+  mkdirSync(cacheDir, { recursive: true });
+
+  writeFileSync(graphPath, JSON.stringify({
+    projects: {},
+    externalFacts: [
+      { id: "fact:alpha", name: "Alpha Fact", type: "external", targetRef: "alpha" },
+      { id: "fact:beta", name: "Beta Fact", type: "external", targetRef: "beta" },
+      { id: "fact:gamma", name: "Gamma Fact", type: "external", targetRef: "gamma" },
+    ],
+  }));
+
+  // Refresh only alpha and beta
+  const result = refreshExternalFacts({
+    workspaceRoot: root,
+    graphPath,
+    cacheDir,
+    targetIds: ["fact:alpha", "fact:beta"],
+  });
+
+  assert.equal(result.ok, true, "Refresh should succeed");
+  assert.equal(result.count, 2, "Should refresh 2 facts");
+  assert.ok(result.refreshedFacts.every((f) => ["fact:alpha", "fact:beta"].includes(f.id)), "Should only include alpha and beta");
+  assert.ok(!result.refreshedFacts.some((f) => f.id === "fact:gamma"), "Should not include gamma");
+});
+
+// TASK6: External facts returns empty when no sources declared
+test("TASK6: refreshExternalFacts returns empty when no externalFacts declared", () => {
+  const root = mkdtempSync(join(tmpdir(), "axi-task6-no-external-facts-"));
+  const graphPath = join(root, "workspace.graph.json");
+  const cacheDir = join(root, "cache");
+  mkdirSync(cacheDir, { recursive: true });
+
+  writeFileSync(graphPath, JSON.stringify({
+    projects: {},
+  }));
+
+  const result = refreshExternalFacts({
+    workspaceRoot: root,
+    graphPath,
+    cacheDir,
+  });
+
+  assert.equal(result.ok, true, "Refresh should succeed");
+  assert.equal(result.count, 0, "Should return 0 facts");
+  assert.equal(result.refreshedFacts.length, 0, "Should return empty array");
+  assert.ok(result.message.includes("No external facts"), "Should indicate no external facts");
 });
