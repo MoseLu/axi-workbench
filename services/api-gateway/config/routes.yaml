@@ -104,41 +104,37 @@ routes:
     filters:
       - Audit
 
-  # Mobile control plane proxy routes
+  # Mobile control plane proxy routes - uses MobileControlProxy for /internal/mobile/v1/ prefix
   - id: mobile-pair
     path: /api/v1/mobile/pair/**
-    upstream: ${CONTROL_PLANE_URL}
+    handler: MobileControlProxy
     predicates:
       - Method=POST,GET
     filters:
-      - StripPrefix=3
       - RateLimit=mobile
       - Audit
 
   - id: mobile-auth
     path: /api/v1/mobile/auth/**
-    upstream: ${CONTROL_PLANE_URL}
+    handler: MobileControlProxy
     predicates:
       - Method=POST
     filters:
-      - StripPrefix=3
       - RateLimit=mobile
 
   - id: mobile-workspace
-    path: /api/v1/mobile/workspace
-    upstream: ${CONTROL_PLANE_URL}
+    path: /api/v1/mobile/workspace/**
+    handler: MobileControlProxy
     predicates:
       - Method=GET
-    filters:
-      - StripPrefix=3
+    filters: []
 
   - id: mobile-handoffs
-    path: /api/v1/mobile/handoffs
-    upstream: ${CONTROL_PLANE_URL}
+    path: /api/v1/mobile/handoffs/**
+    handler: MobileControlProxy
     predicates:
       - Method=GET
-    filters:
-      - StripPrefix=3
+    filters: []
 
   # Internal routes (require internal token)
   - id: internal-events
@@ -180,6 +176,7 @@ routes:
   - id: tenants
     path: /api/v1/tenants
     upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
     predicates:
       - Method=GET,POST
     filters:
@@ -189,6 +186,7 @@ routes:
   - id: tenant-members
     path: /api/v1/tenants/:tenantID/members
     upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
     predicates:
       - Method=GET,PUT
     filters:
@@ -197,6 +195,7 @@ routes:
   - id: tenant-preferences
     path: /api/v1/me/preferences
     upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
     predicates:
       - Method=GET,PATCH
     filters:
@@ -205,6 +204,7 @@ routes:
   - id: tenant-dictionary
     path: /api/v1/tenants/:tenantID/dictionaries/:key
     upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
     predicates:
       - Method=GET,PUT
     filters:
@@ -214,6 +214,7 @@ routes:
   - id: files
     path: /api/v1/files/**
     upstream: ${FILE_SERVICE_URL}
+    upstreamType: file
     predicates:
       - Method=GET,POST,DELETE
     filters:
@@ -224,6 +225,7 @@ routes:
   - id: workflows
     path: /api/v1/workflows
     upstream: ${WORKFLOW_URL}
+    upstreamType: workflow
     predicates:
       - Method=GET,POST
     filters:
@@ -232,6 +234,7 @@ routes:
   - id: workflow-detail
     path: /api/v1/workflows/:id
     upstream: ${WORKFLOW_URL}
+    upstreamType: workflow
     predicates:
       - Method=GET,PATCH,PUT,DELETE
     filters:
@@ -240,6 +243,7 @@ routes:
   - id: workflow-execute
     path: /api/v1/workflows/:id/execute
     upstream: ${WORKFLOW_URL}
+    upstreamType: workflow
     predicates:
       - Method=POST
     filters:
@@ -249,52 +253,50 @@ routes:
   - id: notifications
     path: /api/v1/notifications
     upstream: ${NOTIFICATION_URL}
+    upstreamType: notification
     predicates:
       - Method=GET,POST
     filters:
       - RequireIdentity
 
-  # Web control plane routes (protected)
-  - id: control-plane-snapshot
-    path: /api/v1/control-plane/snapshot
-    upstream: ${CONTROL_PLANE_URL}
+  # Web control plane routes (protected) - uses ProxyWebControl for /internal/web/v1/ prefix
+  - id: control-plane
+    path: /api/v1/control-plane/**
+    handler: ProxyWebControl
     predicates:
-      - Method=GET
+      - Method=GET,POST
     filters:
       - RequireIdentity
 
-  - id: control-plane-events
-    path: /api/v1/control-plane/events
-    upstream: ${CONTROL_PLANE_URL}
-    predicates:
-      - Method=GET
-    filters:
-      - RequireIdentity
-
-  - id: control-plane-query
-    path: /api/v1/control-plane/query
-    upstream: ${CONTROL_PLANE_URL}
-    predicates:
-      - Method=POST
-    filters:
-      - RequireIdentity
-
-  # Mobile proxy routes
+  # Mobile proxy routes - uses MobileControlProxy for /internal/mobile/v1/ prefix
   - id: mobile-jobs
-    path: /api/v1/mobile/jobs
-    upstream: ${CONTROL_PLANE_URL}
+    path: /api/v1/mobile/jobs/**
+    handler: MobileControlProxy
     predicates:
       - Method=POST
-    filters:
-      - StripPrefix=3
+    filters: []
 
   - id: mobile-approvals
-    path: /api/v1/mobile/approvals/:id/decision
-    upstream: ${CONTROL_PLANE_URL}
+    path: /api/v1/mobile/approvals/:id/decision/**
+    handler: MobileControlProxy
     predicates:
       - Method=POST
-    filters:
-      - StripPrefix=3
+    filters: []
+
+  # Email login confirmation routes (no auth required)
+  - id: email-login-confirm
+    path: /api/v1/auth/login/email/confirm
+    handler: EmailLoginConfirm
+    predicates:
+      - Method=POST
+    filters: []
+
+  - id: sessions-email
+    path: /api/v1/sessions/email
+    handler: EmailLoginConfirm
+    predicates:
+      - Method=POST
+    filters: []
 
 # Route groups for common filter combinations
 routeGroups:

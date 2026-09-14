@@ -100,12 +100,13 @@ func (ah *AdminHandler) GetRoute(c *gin.Context) {
 
 // RouteUpdateRequest represents a request to update a route.
 type RouteUpdateRequest struct {
-	Path       string   `json:"path"`
-	Upstream   string   `json:"upstream,omitempty"`
-	Handler    string   `json:"handler,omitempty"`
-	Predicates []string `json:"predicates,omitempty"`
-	Filters    []string `json:"filters,omitempty"`
-	Internal   bool     `json:"internal"`
+	Path         string   `json:"path"`
+	Upstream     string   `json:"upstream,omitempty"`
+	UpstreamType string   `json:"upstreamType,omitempty"`
+	Handler      string   `json:"handler,omitempty"`
+	Predicates   []string `json:"predicates,omitempty"`
+	Filters      []string `json:"filters,omitempty"`
+	Internal     bool     `json:"internal"`
 }
 
 // AddRoute handles POST /admin/routes
@@ -130,13 +131,14 @@ func (ah *AdminHandler) AddRoute(c *gin.Context) {
 	}
 
 	route := &config.Route{
-		ID:         routeID,
-		Path:       req.Path,
-		Upstream:   req.Upstream,
-		Handler:    req.Handler,
-		Predicates: req.Predicates,
-		Filters:    req.Filters,
-		Internal:   req.Internal,
+		ID:           routeID,
+		Path:         req.Path,
+		Upstream:     req.Upstream,
+		UpstreamType: req.UpstreamType,
+		Handler:      req.Handler,
+		Predicates:   req.Predicates,
+		Filters:      req.Filters,
+		Internal:     req.Internal,
 	}
 
 	if err := ah.dynamicRouter.AddRoute(route); err != nil {
@@ -167,13 +169,14 @@ func (ah *AdminHandler) UpdateRoute(c *gin.Context) {
 	}
 
 	route := &config.Route{
-		ID:         id,
-		Path:       req.Path,
-		Upstream:   req.Upstream,
-		Handler:    req.Handler,
-		Predicates: req.Predicates,
-		Filters:    req.Filters,
-		Internal:   req.Internal,
+		ID:           id,
+		Path:         req.Path,
+		Upstream:     req.Upstream,
+		UpstreamType: req.UpstreamType,
+		Handler:      req.Handler,
+		Predicates:   req.Predicates,
+		Filters:      req.Filters,
+		Internal:     req.Internal,
 	}
 
 	if err := ah.dynamicRouter.UpdateRoute(id, route); err != nil {

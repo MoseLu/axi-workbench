@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,14 +24,15 @@ type DynamicRouter struct {
 
 // Route represents a runtime route with additional metadata.
 type Route struct {
-	ID         string   `json:"id"`
-	Path       string   `json:"path"`
-	Upstream   string   `json:"upstream,omitempty"`
-	Handler    string   `json:"handler,omitempty"`
-	Predicates []string `json:"predicates,omitempty"`
-	Filters    []string `json:"filters,omitempty"`
-	Internal   bool     `json:"internal"`
-	Version    int64    `json:"version"`
+	ID           string   `json:"id"`
+	Path         string   `json:"path"`
+	Upstream     string   `json:"upstream,omitempty"`
+	UpstreamType string   `json:"upstreamType,omitempty"`
+	Handler      string   `json:"handler,omitempty"`
+	Predicates   []string `json:"predicates,omitempty"`
+	Filters      []string `json:"filters,omitempty"`
+	Internal     bool     `json:"internal"`
+	Version      int64    `json:"version"`
 }
 
 // NewDynamicRouter creates a new DynamicRouter with the given configuration.
@@ -83,14 +85,15 @@ func (dr *DynamicRouter) GetRoute(id string) *Route {
 
 	if r, ok := dr.routes[id]; ok {
 		return &Route{
-			ID:         r.ID,
-			Path:       r.Path,
-			Upstream:   r.Upstream,
-			Handler:    r.Handler,
-			Predicates: r.Predicates,
-			Filters:    r.Filters,
-			Internal:   r.Internal,
-			Version:    dr.version,
+			ID:           r.ID,
+			Path:         r.Path,
+			Upstream:     r.Upstream,
+			UpstreamType: r.UpstreamType,
+			Handler:      r.Handler,
+			Predicates:   r.Predicates,
+			Filters:      r.Filters,
+			Internal:     r.Internal,
+			Version:      dr.version,
 		}
 	}
 	return nil
@@ -259,6 +262,61 @@ type RouteError struct {
 
 func (e *RouteError) Error() string {
 	return "route " + e.Op + " failed for " + e.ID + ": " + e.Message
+}
+
+// Match finds a route that matches the given path and method.
+// Returns nil if no matching route is found.
+func (dr *DynamicRouter) Match(path, method string) *Route {
+	dr.mu.RLock()
+	defer dr.mu.RUnlock()
+
+	for _, r := range dr.routes {
+		methods := config.ParseMethodPredicate(r.Predicates)
+		if len(methods) > 0 {
+			methodMatch := false
+			for _, m := range methods {
+				if m == method {
+					methodMatch = true
+					break
+				}
+			}
+			if !methodMatch {
+				continue
+			}
+		}
+
+		if dr.matchPath(r.Path, path) {
+			return &Route{
+				ID:           r.ID,
+				Path:         r.Path,
+				Upstream:     r.Upstream,
+				UpstreamType: r.UpstreamType,
+				Handler:      r.Handler,
+				Predicates:   r.Predicates,
+				Filters:      r.Filters,
+				Internal:     r.Internal,
+				Version:      dr.version,
+			}
+		}
+	}
+	return nil
+}
+
+// matchPath performs path pattern matching with wildcards
+func (dr *DynamicRouter) matchPath(pattern, path string) bool {
+	if pattern == path {
+		return true
+	}
+	if strings.HasSuffix(pattern, "/**") {
+		prefix := strings.TrimSuffix(pattern, "/**")
+		return strings.HasPrefix(path, prefix)
+	}
+	if strings.HasSuffix(pattern, "/*") {
+		prefix := strings.TrimSuffix(pattern, "/*")
+		rest := strings.TrimPrefix(path, prefix)
+		return len(rest) > 0 && !strings.Contains(rest[1:], "/")
+	}
+	return false
 }
 
 // Upstream represents a target service configuration.

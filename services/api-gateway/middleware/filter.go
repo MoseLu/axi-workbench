@@ -345,6 +345,25 @@ func (f *StripPrefixFilter) Filter(c *gin.Context, chain FilterChain) {
 	chain.Next(c)
 }
 
+// StripPathSegments returns a middleware that strips the first n path segments from the request path.
+// For example, StripPathSegments(2) transforms "/api/v1/users" to "/users".
+func StripPathSegments(n int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		segments := strings.Split(strings.Trim(path, "/"), "/")
+		if len(segments) > n {
+			newPath := "/" + strings.Join(segments[n:], "/")
+			c.Request.URL.Path = newPath
+			// Also update RawPath if set
+			if c.Request.URL.RawPath != "" {
+				rawSegments := strings.Split(strings.Trim(c.Request.URL.RawPath, "/"), "/")
+				c.Request.URL.RawPath = "/" + strings.Join(rawSegments[n:], "/")
+			}
+		}
+		c.Next()
+	}
+}
+
 // RewritePathFilter rewrites the request path using from/to pattern.
 type RewritePathFilter struct {
 	From string

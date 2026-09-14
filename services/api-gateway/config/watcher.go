@@ -82,12 +82,14 @@ func (cw *ConfigWatcher) Start(ctx context.Context) {
 	}
 	cw.mu.Unlock()
 
-	// Start fsnotify watcher if available
+	// Start fsnotify watcher if available - this is the primary mechanism
 	if cw.fsWatcher != nil {
 		go cw.fsWatchLoop(ctx)
+		// fsnotify is reliable, no need for polling as fallback
+		return
 	}
 
-	// Always start polling as a fallback/primary mechanism
+	// Fallback: use polling when fsnotify is not available
 	cw.mu.Lock()
 	cw.pollTicker = time.NewTicker(cw.interval)
 	cw.mu.Unlock()
@@ -102,13 +104,7 @@ func (cw *ConfigWatcher) fsWatchLoop(ctx context.Context) {
 		cw.mu.RUnlock()
 
 		if watcher == nil {
-			select {
-			case <-ctx.Done():
-				return
-			case <-cw.done:
-				return
-			}
-			continue
+			return // fsnotify not available, polling handles everything
 		}
 
 		select {
@@ -143,13 +139,8 @@ func (cw *ConfigWatcher) pollLoop(ctx context.Context) {
 		cw.mu.RUnlock()
 
 		if ticker == nil {
-			select {
-			case <-ctx.Done():
-				return
-			case <-cw.done:
-				return
-			}
-			continue
+			// Ticker was stopped, exit gracefully
+			return
 		}
 
 		select {

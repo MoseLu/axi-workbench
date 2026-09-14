@@ -407,6 +407,64 @@ func TestStripPrefixFilter(t *testing.T) {
 	})
 }
 
+func TestStripPathSegments(t *testing.T) {
+	t.Run("strips first 1 segment", func(t *testing.T) {
+		handler := StripPathSegments(1)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/v1/users", nil)
+
+		handler(c)
+
+		assert.Equal(t, "/v1/users", c.Request.URL.Path)
+	})
+
+	t.Run("strips first 2 segments", func(t *testing.T) {
+		handler := StripPathSegments(2)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/v1/users", nil)
+
+		handler(c)
+
+		assert.Equal(t, "/users", c.Request.URL.Path)
+	})
+
+	t.Run("strips first 3 segments", func(t *testing.T) {
+		handler := StripPathSegments(3)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/v1/users/profile", nil)
+
+		handler(c)
+
+		assert.Equal(t, "/profile", c.Request.URL.Path)
+	})
+
+	t.Run("handles path with fewer segments than N", func(t *testing.T) {
+		handler := StripPathSegments(5)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/v1", nil)
+
+		handler(c)
+
+		// When path has fewer segments than N, keep the path unchanged
+		assert.Equal(t, "/api/v1", c.Request.URL.Path)
+	})
+
+	t.Run("handles root path", func(t *testing.T) {
+		handler := StripPathSegments(1)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+
+		handler(c)
+
+		assert.Equal(t, "/", c.Request.URL.Path)
+	})
+}
+
 func TestRewritePathFilter(t *testing.T) {
 	t.Run("RewritePathFilter rewrites path", func(t *testing.T) {
 		filter := NewRewritePathFilter("/legacy/", "/modern/")

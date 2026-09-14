@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/epap/api-gateway/config"
@@ -20,20 +21,33 @@ type RouteRegistry struct {
 	limiter           ratelimit.Limiter
 	mobileControl     *MobileControlProxy
 	internalToken     string
+	identityAdapterURL string
 	logger            zerolog.Logger
 	registeredRoutes  map[string]bool
 	mu                sync.RWMutex
+	// Per-upstream internal tokens for GenericProxy
+	platformInternalToken      string
+	identityInternalToken      string
+	fileInternalToken         string
+	workflowInternalToken     string
+	notificationInternalToken string
 }
 
 // RouteRegistryConfig holds dependencies for the route registry
 type RouteRegistryConfig struct {
-	RouteMatcher      *config.RouteMatcher
-	ProxyHandler      *ProxyHandler
-	IdentityService   *identity.Service
-	Limiter           ratelimit.Limiter
-	MobileControl     *MobileControlProxy
-	InternalToken     string
-	Logger            zerolog.Logger
+	RouteMatcher                *config.RouteMatcher
+	ProxyHandler               *ProxyHandler
+	IdentityService             *identity.Service
+	Limiter                    ratelimit.Limiter
+	MobileControl               *MobileControlProxy
+	InternalToken              string
+	IdentityAdapterURL         string
+	Logger                     zerolog.Logger
+	PlatformInternalToken      string
+	IdentityInternalToken      string
+	FileInternalToken          string
+	WorkflowInternalToken      string
+	NotificationInternalToken string
 }
 
 // NewRouteRegistry creates a new route registry
@@ -41,12 +55,19 @@ func NewRouteRegistry(cfg RouteRegistryConfig) *RouteRegistry {
 	return &RouteRegistry{
 		matcher:          cfg.RouteMatcher,
 		proxyHandler:     cfg.ProxyHandler,
-		identityService:   cfg.IdentityService,
-		limiter:          cfg.Limiter,
-		mobileControl:    cfg.MobileControl,
-		internalToken:    cfg.InternalToken,
-		logger:           cfg.Logger,
+		identityService:  cfg.IdentityService,
+		limiter:         cfg.Limiter,
+		mobileControl:   cfg.MobileControl,
+		internalToken:   cfg.InternalToken,
+		identityAdapterURL: cfg.IdentityAdapterURL,
+		logger:          cfg.Logger,
 		registeredRoutes: make(map[string]bool),
+		// Per-upstream internal tokens for GenericProxy
+		platformInternalToken:      cfg.PlatformInternalToken,
+		identityInternalToken:      cfg.IdentityInternalToken,
+		fileInternalToken:         cfg.FileInternalToken,
+		workflowInternalToken:     cfg.WorkflowInternalToken,
+		notificationInternalToken: cfg.NotificationInternalToken,
 	}
 }
 
@@ -113,9 +134,10 @@ func (rr *RouteRegistry) buildMiddlewareChain(route *config.Route) ([]gin.Handle
 
 // resolveHandler resolves the handler function for a route
 func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
-	// If we have an upstream URL, use proxy handler
+	// If we have an upstream URL, use proxy handler with the correct internal token
 	if route.Upstream != "" {
-		return rr.proxyHandler.GenericProxy(route.Upstream)
+		internalToken := rr.getInternalTokenForUpstream(route.UpstreamType)
+		return rr.proxyHandler.GenericProxy(route.Upstream, internalToken)
 	}
 
 	// Resolve by handler name
@@ -144,6 +166,8 @@ func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
 		return UpdateProfile(rr.identityService)
 	case "MobileControlProxy":
 		return rr.mobileControl.Proxy()
+	case "ProxyWebControl":
+		return rr.mobileControl.ProxyWebControl()
 	case "ConsumeWebLogin":
 		return rr.mobileControl.ConsumeWebLogin(rr.identityService)
 	case "ProxyToIdentity":
@@ -158,6 +182,8 @@ func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
 		return rr.proxyHandler.ProxyToNotification()
 	case "ProxyToEventConsumers":
 		return rr.proxyHandler.ProxyToEventConsumers()
+	case "EmailLoginConfirm":
+		return EmailLoginConfirm(rr.identityService, rr.identityAdapterURL)
 	default:
 		rr.logger.Warn().Str("handler", route.Handler).Msg("unknown handler, using not found")
 		return NotFoundHandler()
@@ -179,7 +205,14 @@ func (rr *RouteRegistry) resolveFilter(filter string) (gin.HandlerFunc, error) {
 		// RateLimit filter is handled globally in setupRouter
 		return func(c *gin.Context) { c.Next() }, nil
 	case "StripPrefix":
-		// Path stripping is handled by the proxy handler configuration
+		// Parse the numeric argument for stripping path segments
+		_, args := config.ParseFilter(filter)
+		if len(args) > 0 {
+			if n, err := strconv.Atoi(args[0]); err == nil && n > 0 {
+				return middleware.StripPathSegments(n), nil
+			}
+		}
+		// Fallback: no-op if no valid numeric argument
 		return func(c *gin.Context) { c.Next() }, nil
 	default:
 		return nil, fmt.Errorf("unknown filter: %q", filterName)
@@ -234,4 +267,23 @@ func parseInt(s string) int {
 		}
 	}
 	return n
+}
+
+// getInternalTokenForUpstream returns the appropriate internal token based on upstream type
+func (rr *RouteRegistry) getInternalTokenForUpstream(upstreamType string) string {
+	switch upstreamType {
+	case "platform", "control-plane":
+		return rr.platformInternalToken
+	case "identity":
+		return rr.identityInternalToken
+	case "file":
+		return rr.fileInternalToken
+	case "workflow":
+		return rr.workflowInternalToken
+	case "notification":
+		return rr.notificationInternalToken
+	default:
+		// Fallback to the default internal token for backward compatibility
+		return rr.internalToken
+	}
 }

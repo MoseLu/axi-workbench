@@ -76,6 +76,17 @@ func main() {
 	// Initialize dynamic router for hot-reload support
 	dynamicRouter := gateway.NewDynamicRouter(routeMatcher, getRoutesConfigPath(), logger)
 
+	// Initialize dynamic route handler for runtime route matching
+	dynamicRouteHandler := handlers.NewDynamicRouteHandler(
+		dynamicRouter,
+		proxyHandler,
+		identityService,
+		limiter,
+		mobileControl,
+		cfg.Services.ControlPlaneInternalToken,
+		logger,
+	)
+
 	// Start configuration file watcher
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -83,7 +94,7 @@ func main() {
 		logger.Warn().Err(err).Msg("failed to start config watcher, using polling fallback")
 	}
 
-	router := setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, logger)
+	router := setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, dynamicRouteHandler, logger)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Server.Port,
@@ -159,6 +170,7 @@ func setupRouter(
 	limiter ratelimit.Limiter,
 	routeMatcher *config.RouteMatcher,
 	dynamicRouter *gateway.DynamicRouter,
+	dynamicRouteHandler *handlers.DynamicRouteHandler,
 	logger zerolog.Logger,
 ) *gin.Engine {
 	if cfg.Environment == "production" {
@@ -182,13 +194,19 @@ func setupRouter(
 
 	// Register routes from configuration
 	registry := handlers.NewRouteRegistry(handlers.RouteRegistryConfig{
-		RouteMatcher:    routeMatcher,
-		ProxyHandler:    proxyHandler,
-		IdentityService: identityService,
-		Limiter:         limiter,
-		MobileControl:   mobileControl,
-		InternalToken:   cfg.Services.ControlPlaneInternalToken,
-		Logger:          logger,
+		RouteMatcher:               routeMatcher,
+		ProxyHandler:              proxyHandler,
+		IdentityService:           identityService,
+		Limiter:                  limiter,
+		MobileControl:            mobileControl,
+		InternalToken:            cfg.Services.ControlPlaneInternalToken,
+		IdentityAdapterURL:       cfg.Services.IdentityAdapterURL,
+		Logger:                   logger,
+		PlatformInternalToken:     cfg.Services.PlatformInternalToken,
+		IdentityInternalToken:     cfg.Services.IdentityInternalToken,
+		FileInternalToken:        cfg.Services.FileInternalToken,
+		WorkflowInternalToken:    cfg.Services.WorkflowInternalToken,
+		NotificationInternalToken: cfg.Services.NotificationInternalToken,
 	})
 
 	if err := registry.RegisterRoutes(router); err != nil {
@@ -201,8 +219,8 @@ func setupRouter(
 	// Register admin routes for dynamic route management
 	registerAdminRoutes(router, dynamicRouter, cfg.Services.ControlPlaneInternalToken, logger)
 
-	// NoRoute handler
-	router.NoRoute(handlers.NotFoundHandler())
+	// NoRoute handler for dynamic routes (registered routes take precedence)
+	router.NoRoute(dynamicRouteHandler.NoRoute())
 	return router
 }
 

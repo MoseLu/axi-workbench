@@ -83,9 +83,9 @@ func (p *ProxyHandler) ProxyToNotification() gin.HandlerFunc {
 	return p.createProxy(p.notificationURL, p.notificationInternalToken, "", "")
 }
 
-// GenericProxy creates a proxy handler for an arbitrary upstream URL.
-func (p *ProxyHandler) GenericProxy(upstreamURL string) gin.HandlerFunc {
-	return p.createProxy(upstreamURL, "", "", "")
+// GenericProxy creates a proxy handler for an arbitrary upstream URL with the specified internal token.
+func (p *ProxyHandler) GenericProxy(upstreamURL, internalToken string) gin.HandlerFunc {
+	return p.createProxy(upstreamURL, internalToken, "", "")
 }
 
 // ProxyToEventConsumers fans one Platform Core outbox delivery to both

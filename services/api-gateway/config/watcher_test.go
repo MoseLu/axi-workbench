@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -142,11 +143,11 @@ routes:
 	err := os.WriteFile(configPath, []byte(initialContent), 0644)
 	require.NoError(t, err)
 
-	changeCount := 0
+	changeCount := atomic.Int32{}
 	callbackCalled := make(chan struct{}, 1)
 
 	watcher, err := NewConfigWatcher(configPath, 50*time.Millisecond, func(cfg *RoutesConfig) {
-		changeCount++
+		changeCount.Add(1)
 		select {
 		case callbackCalled <- struct{}{}:
 		default:
@@ -176,7 +177,7 @@ routes:
 	select {
 	case <-callbackCalled:
 		// At least one change was detected
-		assert.GreaterOrEqual(t, changeCount, 1)
+		assert.GreaterOrEqual(t, changeCount.Load(), int32(1))
 	case <-time.After(500 * time.Millisecond):
 		t.Log("no callback received, but that's ok for polling fallback")
 	}

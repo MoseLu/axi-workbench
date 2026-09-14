@@ -14,13 +14,14 @@ import (
 
 // Route represents a single route configuration (Spring Cloud Gateway style)
 type Route struct {
-	ID         string   `yaml:"id"`         // Unique route identifier
-	Path       string   `yaml:"path"`       // URL path pattern
-	Upstream   string   `yaml:"upstream"`  // Target upstream URL (optional)
-	Handler    string   `yaml:"handler"`    // Handler name (optional)
-	Predicates []string `yaml:"predicates"` // Route predicates (e.g., Method=GET)
-	Filters    []string `yaml:"filters"`    // Filter names
-	Internal   bool     `yaml:"internal"`   // Internal route (requires internal token)
+	ID           string   `yaml:"id"`           // Unique route identifier
+	Path         string   `yaml:"path"`         // URL path pattern
+	Upstream     string   `yaml:"upstream"`      // Target upstream URL (optional)
+	UpstreamType string   `yaml:"upstreamType"`  // Upstream type: control-plane, platform, identity, file, workflow, notification (optional)
+	Handler      string   `yaml:"handler"`      // Handler name (optional)
+	Predicates   []string `yaml:"predicates"`   // Route predicates (e.g., Method=GET)
+	Filters      []string `yaml:"filters"`       // Filter names
+	Internal     bool     `yaml:"internal"`     // Internal route (requires internal token)
 }
 
 // RouteGroup defines common filter combinations

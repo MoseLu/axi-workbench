@@ -27,7 +27,18 @@ func testSetupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, mo
 	// Create dynamic router for admin routes
 	dynamicRouter := gateway.NewDynamicRouter(routeMatcher, "", setupLogger("disabled"))
 
-	return setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, setupLogger("disabled"))
+	// Create dynamic route handler for NoRoute handling
+	dynamicRouteHandler := handlers.NewDynamicRouteHandler(
+		dynamicRouter,
+		proxyHandler,
+		identityService,
+		limiter,
+		mobileControl,
+		cfg.Services.ControlPlaneInternalToken,
+		setupLogger("disabled"),
+	)
+
+	return setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, dynamicRouteHandler, setupLogger("disabled"))
 }
 
 // testRoutesYAML generates a minimal routes configuration for testing.
@@ -38,14 +49,27 @@ routes:
   - id: platform-core
     path: /api/v1/tenants
     upstream: ` + cfg.Services.PlatformCoreURL + `
+    upstreamType: platform
     predicates:
       - Method=GET
+    filters:
+      - RequireIdentity
   - id: zitadel-qr-complete
     path: /api/v1/internal/zitadel/qr/transactions/:transactionId/complete
     handler: ProxyToIdentity
     predicates:
       - Method=POST
     internal: true
+  - id: email-login-confirm
+    path: /api/v1/auth/login/email/confirm
+    handler: EmailLoginConfirm
+    predicates:
+      - Method=POST
+  - id: sessions-email
+    path: /api/v1/sessions/email
+    handler: EmailLoginConfirm
+    predicates:
+      - Method=POST
   - id: device-login-qr
     path: /api/v1/auth/device-login/qr
     handler: MobileControlProxy
@@ -56,6 +80,15 @@ routes:
     handler: ConsumeWebLogin
     predicates:
       - Method=POST
+  - id: sessions-current
+    path: /api/v1/sessions/current
+    handler: Session
+  - id: sessions-resume
+    path: /api/v1/sessions/resume
+    handler: Session
+  - id: sessions-device-qr
+    path: /api/v1/sessions/device-qr/:webLoginId
+    handler: Session
   - id: mobile-workspace
     path: /api/v1/mobile/workspace
     handler: MobileControlProxy
@@ -75,7 +108,11 @@ routes:
     handler: MobileControlProxy
   - id: web-snapshot
     path: /api/v1/control-plane/snapshot
-    handler: MobileControlProxy
+    handler: ProxyWebControl
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
   - id: web-qr-pair
     path: /api/v1/control-plane/mobile/pair/qr
     handler: MobileControlProxy
@@ -84,30 +121,43 @@ routes:
   - id: file-download
     path: /api/v1/files/download/:filePath
     upstream: ` + cfg.Services.FileServiceURL + `
-    internal: true
+    upstreamType: file
+    filters:
+      - RequireIdentity
   - id: workflow-execute
     path: /api/v1/workflows/:workflowId/execute
     upstream: ` + cfg.Services.WorkflowURL + `
+    upstreamType: workflow
     predicates:
       - Method=POST
-    internal: true
+    filters:
+      - RequireIdentity
   - id: workflow-execution
     path: /api/v1/workflows/:workflowId/execution
     upstream: ` + cfg.Services.WorkflowURL + `
-    internal: true
+    upstreamType: workflow
+    filters:
+      - RequireIdentity
   - id: workflow-approvals
     path: /api/v1/workflows/:workflowId/approvals
     upstream: ` + cfg.Services.WorkflowURL + `
-    internal: true
+    upstreamType: workflow
+    filters:
+      - RequireIdentity
   - id: workflow-approval-decision
     path: /api/v1/workflows/:workflowId/approvals/:approvalId
     upstream: ` + cfg.Services.WorkflowURL + `
+    upstreamType: workflow
     predicates:
       - Method=POST
-    internal: true
+    filters:
+      - RequireIdentity
   - id: notification-badges
     path: /api/v1/notifications/nav-badges
     upstream: ` + cfg.Services.NotificationURL + `
+    upstreamType: notification
+    filters:
+      - RequireIdentity
   - id: event-fanout
     path: /api/v1/internal/events
     handler: ProxyToEventConsumers
@@ -643,6 +693,7 @@ func testGatewayConfig(platformURL string, rateLimit int) *config.Config {
 			FileServiceURL:            platformURL,
 			WorkflowURL:               platformURL,
 			NotificationURL:           platformURL,
+			PlatformInternalToken:      "platform-test-token",
 			FileInternalToken:         "file-test-token",
 			WorkflowInternalToken:     "workflow-test-token",
 			NotificationInternalToken: "notification-test-token",
