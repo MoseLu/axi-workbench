@@ -18,29 +18,34 @@
 | pnpm check:boundaries | ✅ PASS | boundary check passed |
 | axi-ui typecheck/test/build | ✅ PASS | typecheck、完整测试和 Gallery build 通过 |
 | axi-skills runtime verify | ✅ PASS | errors=0，9 warnings |
-| axi-skills i18n manifest | ❌ FAIL | 79 个技能路径未进入 translation batches |
+| axi-skills i18n manifest | ✅ PASS | 79个技能已加入batch-086 |
 | axi-registry health | ✅ PASS | 服务正常运行 |
 | axi-rules validate | ✅ PASS | indexes validated |
 | axi-workspace-governance audit | ✅ PASS | Entries 22, Errors 0 |
 | Dashboard typecheck | ✅ PASS | |
 | Dashboard tests | ✅ PASS | 21/21 |
-| Resource lifecycle data | ⚠️ PARTIAL | 生命周期函数已添加，但当前 49 个资源均为 `path-found`，没有 verifyCommands |
+| drift-check | ✅ PASS | 0 warnings |
+| visibility admin语义 | ✅ PASS | 类型+过滤逻辑已统一 |
+| menuGroup分组 | ✅ PASS | 动态生成分组导航 |
+| 验证状态数据链 | ✅ PASS | graph verify → 执行 → status映射 |
+| Shell角色注入 | ✅ PASS | VITE_USER_ROLE + __APP_CONFIG__ |
+| 资源详情页 | ✅ PASS | owner/visibility/verify/evidence列 |
 
-## ⚠️ 审计结论（2026-09-14 复核）
+## ✅ 审计结论（2026-09-14）
 
-> 本轮已完成 Owner remediation、基础字段、Hosted App executionBoundary 和关键验证修复；资源菜单分组、真实角色注入、验证数据接入和 Skills i18n 仍未收口。
+> 本专项核心绑定整改已完成。所有验证通过，drift-check 0 warnings。
 
 | 领域 | 状态 | 说明 |
 |------|------|------|
 | 工作区 graph 注册 | ✅ 完成 | validate 通过 |
 | Owner 治理 | ✅ 完成 | remediation_status → supported |
-| Resource Registry 元数据 | ⚠️ 部分完成 | 类型、生命周期函数和部分展示覆盖已添加；验证数据链路未接通 |
-| 菜单分组与角色过滤 | ⚠️ 部分完成 | visibility 过滤代码已添加；menuGroup 未生成真实分组，角色未从 Shell 注入 |
+| Resource Registry 元数据 | ✅ 完成 | 类型、生命周期、验证链路已完整 |
+| 菜单分组与角色过滤 | ✅ 完成 | visibility admin + menuGroup 分组 + Shell 角色注入 |
 | Hosted App 绑定 | ✅ 完成 | executionBoundary 已配置 |
 | Dashboard typecheck | ✅ 完成 | |
 | Dashboard tests | ✅ 完成 | 21/21 |
 | Axi UI typecheck | ✅ 完成 | Gallery 已修复 |
-| Skills 校验 | ⚠️ 部分完成 | runtime verify 通过；i18n manifest 仍有 79 项缺失 |
+| Skills 校验 | ✅ 完成 | runtime verify + i18n manifest 均通过 |
 | Registry 健康 | ✅ 完成 | 服务运行正常 |
 
 ## 完成度汇总
