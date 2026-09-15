@@ -168,7 +168,7 @@ services:
       WORKFLOW_SERVICE_URL: http://workflow-engine:8083
       NOTIFICATION_SERVICE_URL: http://notification-service:8084
       FILE_SERVICE_URL: http://file-service:8085
-      CONTROL_PLANE_URL: http://host.docker.internal:8092
+      CONTROL_PLANE_URL: http://control-plane:8092
       GATEWAY_IDENTITY_INTERNAL_TOKEN: axi-development-internal-token
       GATEWAY_PLATFORM_INTERNAL_TOKEN: axi-development-internal-token
       GATEWAY_FILE_INTERNAL_TOKEN: axi-development-internal-token
@@ -187,6 +187,57 @@ services:
         condition: service_started
       file-service:
         condition: service_started
+      control-plane:
+        condition: service_healthy
+
+  control-plane:
+    profiles: [backend]
+    build:
+      context: .
+      dockerfile: services/control-plane/Dockerfile
+    environment:
+      ENVIRONMENT: development
+      CONTROL_PLANE_PORT: "8092"
+      CONTROL_PLANE_BIND: "0.0.0.0"
+      GATEWAY_INTERNAL_TOKEN: axi-development-internal-token
+      AXI_MOBILE_PAIRING_ENABLED: "false"
+    healthcheck:
+      # Probe the existing /health route exposed by
+      # services/control-plane/src/server.mjs:144. The container ships
+      # only a distroless Node runtime (no curl/wget), so we use a tiny
+      # Node one-liner that exits 0 on 200 and non-zero otherwise. This
+      # is what the API Gateway `depends_on: condition: service_healthy`
+      # above will wait for.
+      test: ["CMD", "/nodejs/bin/node", "-e", "require('http').get('http://127.0.0.1:8092/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    # The Control Plane holds in-memory pairing / execution-policy state.
+    # The Compose-managed `axi_control_plane_state` volume below gives it a
+    # durable home so restarts do not wipe the pairing table. Logs and
+    # secrets stay out of the volume by design.
+    volumes:
+      - axi_control_plane_state:/var/lib/axi/control-plane
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  default:
+    name: epap-network
 
 volumes:
   backend_file_data:
+  axi_control_plane_state:
