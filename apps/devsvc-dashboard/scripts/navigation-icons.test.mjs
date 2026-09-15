@@ -16,11 +16,19 @@ test("hosted app navigation uses distinct group and app icons", async () => {
   assert.match(shellSource, /hostedAppIcon\(currentHostedApp,\s*14\)/u);
 });
 
-test("axi app navigation keeps only real apps in the app group", async () => {
+test("axi app navigation dynamically generates menuGroup-based groups", async () => {
   const registrySource = await readFile(path.join(projectRoot, "src", "app-registry.tsx"), "utf8");
 
-  assert.match(registrySource, /key:\s*"axi-apps",\s*[\s\S]*?label:\s*"Axi 应用",\s*[\s\S]*?children:\s*\[\s*\]/u);
-  assert.match(registrySource, /key:\s*"axi-resources",\s*[\s\S]*?label:\s*"Axi 资源",\s*[\s\S]*?label:\s*"资源索引"/u);
+  // menuGroup 配置和 staticNavGroups 静态定义
+  assert.match(registrySource, /const menuGroupConfig:\s*Record<string,\s*\{[^}]*label:\s*string[^}]*icon:\s*string[^}]*\}>/u);
+  assert.match(registrySource, /const staticNavGroups:\s*NavGroup\[\]/u);
+
+  // 动态分组逻辑：hostedAppItems 和 filteredResources
   assert.match(registrySource, /const hostedAppItems:\s*NavItem\[\]\s*=\s*apps\.filter\(\(app\)\s*=>\s*app\.hostedMode\)\.map/u);
-  assert.match(registrySource, /const resourceItems:\s*NavItem\[\]\s*=\s*resources\.filter\(\(resource\)\s*=>\s*resource\.surface\s*!==\s*"hosted-app"\)\.map/u);
+  assert.match(registrySource, /const filteredResources\s*=\s*resources\.filter\(/u);
+  assert.match(registrySource, /const menuGroupMap\s*=\s*new Map/u);
+
+  // 动态生成分组结构：基于 menuGroupMap 循环创建分组
+  assert.match(registrySource, /for\s*\(\s*const\s*\[\s*groupKey,\s*items\s*\]\s+of\s+menuGroupMap\)/u);
+  assert.match(registrySource, /groups\.push\(\{\s*key:\s*groupKey/);
 });

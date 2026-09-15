@@ -1,0 +1,387 @@
+.workbench-system-settings-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workbench-system-settings-title svg {
+  color: var(--axi-primary, #60a5fa);
+}
+
+.workbench-system-settings-dialog .axi-dialog-v2__detail {
+  overflow: hidden;
+}
+
+.workbench-system-settings-dialog .axi-dialog-v2__detail-content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.workbench-system-settings-dialog .axi-dialog-v2__aside-header {
+  justify-content: flex-start;
+  padding-inline: 18px;
+  text-align: left;
+}
+
+.wb-system-settings__sections {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 12px 10px 16px;
+}
+
+.wb-system-settings__sections button {
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 10px;
+  color: var(--axi-text-secondary, var(--axi-muted));
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.wb-system-settings__sections button:hover,
+.wb-system-settings__sections button:focus-visible {
+  color: var(--axi-text);
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+  outline: 0;
+}
+
+.wb-system-settings__sections button.is-active {
+  color: var(--axi-nav-text-active, var(--axi-primary));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--axi-primary) 14%, transparent), transparent);
+}
+
+.wb-system-settings__sections button.is-active::after {
+  position: absolute;
+  top: 7px;
+  right: 0;
+  bottom: 7px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--axi-primary);
+  content: '';
+}
+
+.wb-system-settings__sections button svg {
+  color: currentColor;
+}
+
+.wb-system-settings__detail {
+  min-width: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-system-settings__tabs {
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 22px;
+  flex: 0 0 auto;
+  overflow-x: auto;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--axi-layout-border, var(--axi-border));
+  scrollbar-width: none;
+}
+
+.wb-system-settings__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.wb-system-settings__tabs button {
+  min-height: 44px;
+  position: relative;
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0 2px;
+  color: var(--axi-text-secondary, var(--axi-muted));
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.wb-system-settings__tabs button:hover,
+.wb-system-settings__tabs button:focus-visible {
+  color: var(--axi-text);
+  outline: 0;
+}
+
+.wb-system-settings__tabs button.is-active {
+  color: var(--axi-primary);
+}
+
+.wb-system-settings__tabs button.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--axi-primary);
+  content: '';
+}
+
+.wb-system-settings__tabpanel {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 22px 24px 28px;
+}
+
+.wb-system-settings__page {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.wb-system-settings__section-label {
+  color: var(--axi-text-secondary, var(--axi-muted));
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.wb-system-settings__list,
+.wb-system-settings__shortcut-list {
+  border-top: 1px solid var(--axi-layout-border, var(--axi-border));
+}
+
+.wb-system-settings__row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  min-height: 72px;
+  padding: 12px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--axi-layout-border, var(--axi-border)) 76%, transparent);
+}
+
+.wb-system-settings__row-copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.wb-system-settings__row-copy strong {
+  color: var(--axi-text);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.wb-system-settings__row-copy small {
+  color: var(--axi-text-secondary, var(--axi-muted));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wb-system-settings__row-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.wb-system-settings__toggle {
+  width: 38px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid var(--axi-layout-border, var(--axi-border));
+  border-radius: 999px;
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.wb-system-settings__toggle span {
+  width: 16px;
+  height: 16px;
+  display: block;
+  border-radius: 999px;
+  background: var(--axi-text-secondary, var(--axi-muted));
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.wb-system-settings__toggle.is-on {
+  border-color: var(--axi-primary);
+  background: color-mix(in srgb, var(--axi-primary) 22%, var(--axi-layout-surface, var(--axi-bg-surface)));
+}
+
+.wb-system-settings__toggle.is-on span {
+  background: var(--axi-primary);
+  transform: translateX(14px);
+}
+
+.wb-system-settings__toggle:focus-visible,
+.wb-system-settings__action:focus-visible,
+.wb-system-settings__options button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--axi-primary) 56%, transparent);
+  outline-offset: 2px;
+}
+
+.wb-system-settings__options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 7px;
+  background: var(--axi-layout-surface-strong, var(--axi-bg-elevated));
+}
+
+.wb-system-settings__options button {
+  min-height: 28px;
+  border: 0;
+  border-radius: 5px;
+  padding: 0 9px;
+  color: var(--axi-text-secondary, var(--axi-muted));
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.wb-system-settings__options button:hover,
+.wb-system-settings__options button.is-active {
+  color: var(--axi-text);
+  background: var(--axi-layout-surface, var(--axi-bg-surface));
+}
+
+.wb-system-settings__options button.is-active {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--axi-text) 12%, transparent);
+}
+
+.wb-system-settings__action {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--axi-primary) 34%, var(--axi-layout-border, var(--axi-border)));
+  border-radius: 7px;
+  padding: 0 10px;
+  color: var(--axi-primary);
+  background: color-mix(in srgb, var(--axi-primary) 8%, transparent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.wb-system-settings__action:hover {
+  border-color: var(--axi-primary);
+  background: color-mix(in srgb, var(--axi-primary) 14%, transparent);
+}
+
+.wb-system-settings__status,
+.wb-system-settings__value {
+  color: var(--axi-text-secondary, var(--axi-muted));
+  font-size: 12px;
+}
+
+.wb-system-settings__status {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--axi-layout-hover, var(--axi-bg-page));
+}
+
+.wb-system-settings__status.is-ready {
+  color: var(--axi-nav-text-active, var(--axi-primary));
+  background: color-mix(in srgb, var(--axi-primary) 10%, transparent);
+}
+
+.wb-system-settings__row kbd {
+  min-width: 54px;
+  padding: 5px 8px;
+  border: 1px solid var(--axi-layout-border, var(--axi-border));
+  border-radius: 6px;
+  color: var(--axi-text);
+  background: var(--axi-layout-surface, var(--axi-bg-surface));
+  font-family: var(--axi-font-family-mono, monospace);
+  font-size: 12px;
+  text-align: center;
+}
+
+.wb-system-settings__appearance-content {
+  min-width: 0;
+}
+
+.wb-system-settings__appearance-content .axi-admin-settings {
+  padding: 0;
+}
+
+.wb-system-settings__appearance-content .axi-admin-settings__choice-grid {
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .wb-system-settings__sections {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 10px 12px;
+  }
+
+  .wb-system-settings__sections button {
+    justify-items: center;
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding-inline: 5px;
+    text-align: center;
+  }
+
+  .wb-system-settings__sections button.is-active::after {
+    top: auto;
+    right: 20%;
+    bottom: 0;
+    left: 20%;
+    width: auto;
+    height: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wb-system-settings-dialog .axi-dialog-v2__aside-header {
+    justify-content: center;
+    padding-inline: 12px;
+    text-align: center;
+  }
+
+  .wb-system-settings__sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wb-system-settings__tabpanel {
+    padding: 18px 16px 22px;
+  }
+
+  .wb-system-settings__row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .wb-system-settings__row-control {
+    justify-content: flex-start;
+  }
+
+  .wb-system-settings__options {
+    justify-content: flex-start;
+  }
+}

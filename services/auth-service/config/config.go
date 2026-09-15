@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	JWT      JWTConfig
-	Database DatabaseConfig
+	Server      ServerConfig
+	JWT         JWTConfig
+	Database    DatabaseConfig
+	OAuthSecret string
 }
 
 type ServerConfig struct {
@@ -18,10 +19,11 @@ type ServerConfig struct {
 }
 
 type JWTConfig struct {
-	AccessSecret  string
-	RefreshSecret string
-	AccessExpiry  time.Duration
-	RefreshExpiry time.Duration
+	AccessSecret       string
+	RefreshSecret      string
+	AccessExpiry       time.Duration
+	RefreshExpiry      time.Duration
+	RememberMeExpiry   time.Duration
 }
 
 type DatabaseConfig struct {
@@ -39,10 +41,11 @@ func Load() *Config {
 			Host: getEnv("SERVER_HOST", "0.0.0.0"),
 		},
 		JWT: JWTConfig{
-			AccessSecret:  getEnv("JWT_ACCESS_SECRET", "your-access-secret-key"),
-			RefreshSecret: getEnv("JWT_REFRESH_SECRET", "your-refresh-secret-key"),
-			AccessExpiry:  getDurationEnv("JWT_ACCESS_EXPIRY", 15*time.Minute),
-			RefreshExpiry: getDurationEnv("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
+			AccessSecret:     getEnv("JWT_ACCESS_SECRET", "your-access-secret-key"),
+			RefreshSecret:    getEnv("JWT_REFRESH_SECRET", "your-refresh-secret-key"),
+			AccessExpiry:     getDurationEnv("JWT_ACCESS_EXPIRY", 15*time.Minute),
+			RefreshExpiry:    getDurationEnv("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
+			RememberMeExpiry: getDurationEnv("JWT_REMEMBER_ME_EXPIRY", 30*24*time.Hour),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -51,6 +54,7 @@ func Load() *Config {
 			Password: getEnv("DB_PASSWORD", "postgres"),
 			DBName:   getEnv("DB_NAME", "auth_db"),
 		},
+		OAuthSecret: getEnv("OAUTH_QR_SECRET", "axi-workbench-qr-secret-change-me"),
 	}
 }
 

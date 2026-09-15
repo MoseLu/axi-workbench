@@ -176,6 +176,7 @@ struct PetLaunchRequest: Equatable, Sendable {
     var slotIndex: Int
     var slotCount: Int
     var allowsDirectionalRunning: Bool = true
+    var language: AppLanguage = .simplifiedChinese
 
     var signature: String {
         [
@@ -267,7 +268,8 @@ final class PetRunnerController {
                 id: petDirectoryURL.lastPathComponent,
                 petDirectoryURL: petDirectoryURL,
                 slotIndex: 0,
-                slotCount: PetFormationSlots.slotCount
+                slotCount: PetFormationSlots.slotCount,
+                language: AppLanguage.current()
             ),
         ])
     }
@@ -360,7 +362,8 @@ final class PetRunnerController {
                 petDirectoryURL: request.petDirectoryURL,
                 slotIndex: slotIndex,
                 slotCount: PetFormationSlots.slotCount,
-                allowsDirectionalRunning: allowsDirectionalRunning
+                allowsDirectionalRunning: allowsDirectionalRunning,
+                language: request.language
             )
         }
     }
@@ -377,6 +380,8 @@ final class PetRunnerController {
         environment[Constants.petSlotIndexEnvironmentKey] = String(request.slotIndex)
         environment[Constants.petSlotCountEnvironmentKey] = String(request.slotCount)
         environment[Constants.petAllowsDirectionalRunningEnvironmentKey] = request.allowsDirectionalRunning ? "true" : "false"
+        environment[PetRunnerIPC.groupIDEnvironmentKey] = PetRunnerIPC.groupID
+        environment[PetRunnerIPC.languageEnvironmentKey] = request.language.rawValue
         configuration.environment = environment
 
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSRunningApplication, Error>) in

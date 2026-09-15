@@ -1,23 +1,45 @@
 import { useEffect, useState } from "react";
-import { Button as AntButton, Space } from "antd";
+import { Button as AntButton } from "antd";
 import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { AxiCrud, AxiDialog, AxiPagination, AxiTable, AxiTableButton, useAxiClientPagination } from "@axi/crud";
+import { AxiTag } from "@axi/core";
 import { useTableToolbarSlot } from "../../app-shell/toolbarSlot";
 import { api, requestErrorMessage } from "../../lib/api";
-import { MetricTag, statusText, StatusChip } from "../status/status";
+import { statusText, StatusChip } from "../status/status";
 
 export function ServersPage() {
   const { t } = useTranslation();
   const tableToolbarContainer = useTableToolbarSlot();
-  const [data, setData] = useState<any>(null);
+  const [servers, setServers] = useState<any[]>([]);
   const [checkServer, setCheckServer] = useState<any>(null);
   const [checkText, setCheckText] = useState(() => t("选择服务器后可以执行只读巡检。"));
   const [checkResults, setCheckResults] = useState<Record<string, { status: string; text: string; checkedAt?: string }>>({});
   const [loading, setLoading] = useState(false);
-	  const servers = data?.remoteServers?.servers || [];
-	  const serverPagination = useAxiClientPagination(servers, { pageSize: 5 });
+
+  const serverPagination = useAxiClientPagination(servers, { pageSize: 5 });
+
+  // AxiCrud no longer owns polling; load servers on an interval at page level.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const body = await api("/api/alerts") as { remoteServers?: { servers?: any[] } };
+        if (cancelled) return;
+        setServers(body?.remoteServers?.servers || []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error(requestErrorMessage(error));
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!checkServer) setCheckText(t("选择服务器后可以执行只读巡检。"));
@@ -47,16 +69,6 @@ export function ServersPage() {
       ...seeded,
       ...current
     }));
-  }
-
-  async function load() {
-    const body = await api("/api/alerts");
-    const rows = body?.remoteServers?.servers || [];
-    setData(body);
-    seedCheckResults(rows);
-    if (rows.some((server) => !server.checkResult)) {
-      void runChecks(rows);
-    }
   }
 
   async function runCheck(serverId = checkServer?.id, showDialog = true) {
@@ -110,9 +122,15 @@ export function ServersPage() {
     void runCheck(server.id);
   }
 
+  // Re-seed check results whenever the polled server list changes. This keeps
+  // a single timer (AxiCrud.polling) and avoids racing the mount-only loader.
   useEffect(() => {
-    void load();
-  }, []);
+    if (!servers.length) return;
+    seedCheckResults(servers);
+    if (servers.some((server) => !server.checkResult)) {
+      void runChecks(servers);
+    }
+  }, [servers]);
 
   function serverCheckSummary(server: any) {
     const result = checkResults[server.id];
@@ -141,7 +159,7 @@ export function ServersPage() {
 	      title: t("服务器"),
       children: [
         {
-	          title: t("名称"),
+		          title: t("名称"),
           align: "center",
           dataIndex: "id",
           width: 280,
@@ -170,13 +188,13 @@ export function ServersPage() {
 	      title: t("接入信息"),
       children: [
         {
-	          title: t("可用性"),
+		          title: t("可用性"),
           align: "center",
           width: 88,
           render: (_, server) => <StatusChip value={serverCheckSummary(server).status} />
         },
         {
-	          title: t("巡检结果"),
+		          title: t("巡检结果"),
           align: "center",
           width: 220,
           render: (_, server) => {
@@ -190,13 +208,13 @@ export function ServersPage() {
           }
         },
         {
-	          title: t("环境"),
+		          title: t("环境"),
           align: "center",
           width: 82,
-          render: (_, server) => <MetricTag>{server.environment || "-"}</MetricTag>
+          render: (_, server) => <AxiTag className="metric-tag" effect="light" round>{server.environment || "-"}</AxiTag>
         },
         {
-	          title: t("接入"),
+		          title: t("接入"),
           align: "center",
           width: 200,
           render: (_, server) => (
@@ -215,7 +233,7 @@ export function ServersPage() {
       fixed: "end",
       children: [
         {
-	          title: t("命令"),
+		          title: t("命令"),
           align: "center",
           fixed: "end",
           width: 100,
@@ -228,7 +246,7 @@ export function ServersPage() {
   ];
 
   return (
-    <AxiCrud dataSource={serverPagination.rows} className="page-stack">
+    <AxiCrud className="page-stack" dataSource={serverPagination.rows}>
       <section className="panel server-panel">
         <div className="server-table-wrap">
           <AxiTable<any>
@@ -262,14 +280,14 @@ export function ServersPage() {
         width={920}
         fullscreenLabel={t("切换全屏")}
         footer={(
-          <Space>
+          <>
             <AntButton icon={<RefreshCw size={14} />} loading={loading} onClick={() => void runCheck()}>
 	              {t("重新巡检")}
             </AntButton>
             <AntButton type="primary" onClick={() => setCheckServer(null)}>
 	              {t("关闭")}
             </AntButton>
-          </Space>
+          </>
         )}
         onClose={() => setCheckServer(null)}
       >
@@ -278,3 +296,4 @@ export function ServersPage() {
     </AxiCrud>
   );
 }
+

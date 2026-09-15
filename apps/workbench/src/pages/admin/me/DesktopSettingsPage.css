@@ -1,0 +1,91 @@
+.wb-settings-page {
+  min-height: 100%;
+  padding: var(--axi-space-3, 12px) var(--axi-space-3, 14px) var(--axi-space-5, 24px);
+}
+
+.wb-settings-page__layout,
+.wb-settings-page__workspace {
+  min-height: min(680px, calc(100vh - 156px));
+}
+
+.wb-settings-page__layout > .axi-crud-row--pagination {
+  display: none;
+}
+
+.wb-settings-page__workspace {
+  padding: 0;
+  overflow: hidden;
+}
+
+.wb-settings-page__workspace .axi-filter-group__filters {
+  padding: var(--axi-space-3, 12px);
+  border-right: 1px solid var(--axi-layout-border, var(--axi-border));
+  background: color-mix(in srgb, var(--axi-layout-surface-strong, var(--axi-bg-page)) 72%, transparent);
+}
+
+.wb-settings-page__workspace .axi-master-list {
+  gap: var(--axi-space-2-5, 10px);
+}
+
+.wb-settings-page__workspace .axi-master-list__header {
+  min-height: 30px;
+  padding: 0 var(--axi-space-1, 2px) var(--axi-space-2, 8px);
+}
+
+.wb-settings-page__workspace .axi-master-list__header strong {
+  color: var(--axi-text, #f5f7fb);
+  font-size: var(--axi-font-size-sm, 13px);
+}
+
+.wb-settings-page__workspace .axi-master-list__item {
+  min-height: 48px;
+  padding: var(--axi-space-2, 8px) var(--axi-space-2-5, 10px);
+}
+
+.wb-settings-page__content {
+  min-width: 0;
+  padding: var(--axi-space-3, 14px);
+}
+
+.wb-settings-page__header {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--axi-space-3, 12px);
+  margin-bottom: 12px;
+}
+
+.wb-settings-page__header h1 {
+  margin: 0;
+  color: var(--axi-text, #f5f7fb);
+  font-size: var(--axi-font-size-sm, 15px);
+  font-weight: var(--axi-font-weight-semibold, 600);
+  line-height: 1.4;
+}
+
+.wb-settings-page__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--axi-space-2, 8px);
+}
+
+.wb-settings-page__body {
+  display: grid;
+  align-content: start;
+  gap: var(--axi-space-3, 12px);
+  min-width: 0;
+}
+
+.wb-settings-page .axi-table-group {
+  border-radius: var(--axi-radius-md, 6px);
+}
+
+.wb-settings-page .ant-descriptions-item-label {
+  color: var(--axi-muted, rgba(255, 255, 255, .58));
+  font-size: var(--axi-font-size-xs, 12px);
+}
+
+.wb-settings-page .ant-descriptions-item-content {
+  color: var(--axi-text, #f5f7fb);
+}

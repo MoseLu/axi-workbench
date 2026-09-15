@@ -4,7 +4,6 @@ import {
   defaultDarkTheme,
   defaultLightTheme,
   applyTheme,
-  getTheme,
   createTheme,
   generateCSSVariables,
   injectAnimationKeyframes,
@@ -60,12 +59,13 @@ export interface ThemeProviderProps {
  * 主题提供器组件，提供设计令牌上下文并管理主题状态
  */
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
-  initialMode = 'dark',
+  initialMode,
   config,
   children,
 }) => {
-  const [mode, setMode] = useState<ThemeMode>(initialMode);
-  const [customTokens, setCustomTokens] = useState<Partial<DesignTokens> | null>(null);
+  const resolvedInitialMode = initialMode ?? config?.mode ?? 'dark';
+  const [mode, setMode] = useState<ThemeMode>(resolvedInitialMode);
+  const [customTokens, setCustomTokens] = useState<Partial<DesignTokens> | null>(config?.tokens ?? null);
 
   // Calculate current tokens based on mode and custom overrides
   const tokens = useMemo(() => {
@@ -94,7 +94,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       setCustomTokens(newTokens);
     },
     resetTheme: () => {
-      setMode(initialMode);
+      setMode(resolvedInitialMode);
       setCustomTokens(null);
     },
   };

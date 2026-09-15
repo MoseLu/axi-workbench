@@ -33,8 +33,13 @@ struct AssistantPanelView: View {
     @State var automationErrorMessage: String?
     @State var isAutomationCreatePanelPresented = false
     @State var selectedPluginPanelTab: PluginPanelTab = .plugins
+    let onToggleWindowZoom: () -> Void
     let collapsedTitleBarLeadingPadding: CGFloat = 224
     let titleBarConversationTitleMaxWidth: CGFloat = 360
+
+    init(onToggleWindowZoom: @escaping () -> Void = {}) {
+        self.onToggleWindowZoom = onToggleWindowZoom
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -296,7 +301,8 @@ struct AssistantPanelView: View {
             onCopyWorkspacePath: { appModel.copyCurrentConversationWorkspacePath() },
             onCopyConversationID: { appModel.copyConversationID($0) },
             onCopyDeepLink: { appModel.copyConversationDeepLink($0) },
-            onCopyMarkdown: { conversation, title in appModel.copyConversationAsMarkdown(conversation, title: title) }
+            onCopyMarkdown: { conversation, title in appModel.copyConversationAsMarkdown(conversation, title: title) },
+            onToggleWindowZoom: onToggleWindowZoom
         )
     }
 

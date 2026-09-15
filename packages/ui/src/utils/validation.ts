@@ -138,7 +138,7 @@ export const password = (options: {
  * 便捷验证器 - 用户名
  */
 export const username = (message = '用户名至少 3 个字符') => 
-  z.string().min(3, message).max(20, '用户名最多 20 个字符');
+  z.string().min(3, message).max(16, '用户名最多 16 个字符');
 
 /**
  * 便捷验证器 - URL

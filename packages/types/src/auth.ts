@@ -2,7 +2,7 @@
 // Auth Types
 // ============================================
 
-export type UserRole = "admin" | "user" | "guest"
+export type UserRole = "admin" | "developer" | "user" | "guest"
 
 export type Permission = 
   | "project:read" | "project:write" | "project:delete"

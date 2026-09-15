@@ -74,7 +74,7 @@ export function AppTopbar({
             <AxiSvgIcon name={sidebarCollapsed ? "fold" : "expand"} size={17} animation="grow" animationDuration={0.22} />
           </button>
         ) : null}
-        <GlobalSearchBox projects={projects} recentAccessKeys={recentAccessKeys} onClearRecentAccess={onClearRecentAccess} onSelectSearchItem={onSelectSearchItem} />
+        <GlobalSearchBox projects={projects} recentAccessKeys={recentAccessKeys} onClearRecentAccess={onClearRecentAccess} onSelectSearchItem={onSelectSearchItem} userRole={user.role} />
       </div>
       <div className="topbar-right">
         <a

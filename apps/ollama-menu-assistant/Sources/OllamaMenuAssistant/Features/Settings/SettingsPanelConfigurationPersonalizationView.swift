@@ -298,12 +298,15 @@ extension SettingsPanelView {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppTheme.destructivePrimary)
                     .lineLimit(1)
-                    .padding(.horizontal, 12)
-                    .frame(height: 28)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.horizontal, 10)
+                    .frame(minWidth: 44, minHeight: 28)
                     .background(AppTheme.redSoft)
-                    .clipShape(Capsule())
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(2)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 13)

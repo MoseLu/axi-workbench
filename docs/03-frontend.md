@@ -1,5 +1,7 @@
 # 第三章 前端层详细设计
 
+> 说明：本文保留前端设计与迁移背景；其中早期应用名称和目录示例可能已过时。当前物理源码拓扑以 [`architecture/source-catalog.md`](./architecture/source-catalog.md) 为准。
+
 ## 3.1 工作空间组织 — Turborepo + PNPM
 
 ### 3.1.1 pnpm-workspace.yaml

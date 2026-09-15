@@ -89,10 +89,10 @@ Python FastAPI 后端服务，提供 SOP 文档管理、设备控制、向量语
 |------|------|------|
 | AGENTS.md | `./AGENTS.md` | 后端目录 AI 文档（当前） |
 | TODO.md | `./TODO.md` | 后端模块任务（L3） |
-| MILESTONES.md | `./MILESTONES.md` | 后端模块里程碑（L3） |
+| MILESTONE.md | `./MILESTONE.md` | 后端模块里程碑（L3） |
 | AGENTS.md (parent) | `../AGENTS.md` | 项目根文档（L2） |
 | TODO.md (parent) | `../TODO.md` | 全项目任务（L2） |
-| MILESTONES.md (parent) | `../MILESTONES.md` | 全项目里程碑（L2） |
+| MILESTONE.md (parent) | `../MILESTONE.md` | 全项目里程碑（L2） |
 
 ### Quick Commands
 ```bash

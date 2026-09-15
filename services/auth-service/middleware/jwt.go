@@ -31,13 +31,25 @@ func NewJWTManager(cfg *config.JWTConfig) *JWTManager {
 	return &JWTManager{config: cfg}
 }
 
+func (m *JWTManager) RefreshExpiry() time.Duration {
+	return m.config.RefreshExpiry
+}
+
+func (m *JWTManager) RememberMeExpiry() time.Duration {
+	return m.config.RememberMeExpiry
+}
+
 func (m *JWTManager) GenerateTokenPair(userID uuid.UUID, email string) (*TokenPair, error) {
+	return m.GenerateTokenPairWithExpiry(userID, email, m.config.RefreshExpiry)
+}
+
+func (m *JWTManager) GenerateTokenPairWithExpiry(userID uuid.UUID, email string, refreshExpiry time.Duration) (*TokenPair, error) {
 	accessToken, err := m.generateToken(userID, email, m.config.AccessSecret, m.config.AccessExpiry)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := m.generateToken(userID, email, m.config.RefreshSecret, m.config.RefreshExpiry)
+	refreshToken, err := m.generateToken(userID, email, m.config.RefreshSecret, refreshExpiry)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,3 @@
+.projects-crud .axi-table-group {
+  min-height: min(560px, calc(100vh - 180px));
+}

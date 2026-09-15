@@ -1,0 +1,316 @@
+# API Gateway Route Configuration
+# Spring Cloud Gateway style route definitions
+# ENV variables can override upstream URLs using ${ENV_VAR_NAME} syntax
+
+routes:
+  # Health check routes (no auth required)
+  - id: health
+    path: /health
+    handler: HealthCheck
+    predicates:
+      - Method=GET
+    filters: []
+
+  - id: ready
+    path: /ready
+    handler: Ready
+    predicates:
+      - Method=GET
+    filters: []
+
+  # Auth routes (session management)
+  - id: auth-session
+    path: /api/v1/auth/session
+    handler: Session
+    predicates:
+      - Method=GET
+    filters:
+      - Audit
+
+  - id: auth-logout
+    path: /api/v1/auth/logout
+    handler: Logout
+    predicates:
+      - Method=POST
+    filters:
+      - Audit
+
+  # OIDC authentication routes
+  - id: oidc-start
+    path: /api/v1/auth/oidc/start
+    handler: OIDCStart
+    predicates:
+      - Method=GET
+    filters: []
+
+  - id: oidc-callback
+    path: /api/v1/auth/oidc/callback
+    handler: OIDCCallback
+    predicates:
+      - Method=GET
+    filters: []
+
+  # Auth methods discovery
+  - id: auth-methods
+    path: /api/v1/auth/methods
+    handler: AuthMethods
+    predicates:
+      - Method=GET
+    filters: []
+
+  # REST session resource (new style)
+  - id: session-current
+    path: /api/v1/sessions/current
+    handler: Session
+    predicates:
+      - Method=GET,DELETE
+    filters:
+      - Audit
+
+  - id: sessions-create
+    path: /api/v1/sessions
+    handler: PasswordLogin
+    predicates:
+      - Method=POST
+    filters: []
+
+  - id: session-resume
+    path: /api/v1/sessions/resume
+    handler: RedeemResume
+    predicates:
+      - Method=GET,POST
+    filters: []
+
+  # Device login (QR code flow)
+  - id: device-login-qr-create
+    path: /api/v1/auth/device-login/qr
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+    filters: []
+
+  - id: device-login-qr-status
+    path: /api/v1/auth/device-login/qr/:id
+    handler: MobileControlProxy
+    predicates:
+      - Method=GET
+    filters: []
+
+  - id: device-login-qr-consume
+    path: /api/v1/auth/device-login/qr/:id/consume
+    handler: ConsumeWebLogin
+    predicates:
+      - Method=POST
+    filters:
+      - Audit
+
+  # Mobile control plane proxy routes - uses MobileControlProxy for /internal/mobile/v1/ prefix
+  - id: mobile-pair
+    path: /api/v1/mobile/pair/*path
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST,GET
+    filters:
+      - RateLimit=mobile
+      - Audit
+
+  - id: mobile-auth
+    path: /api/v1/mobile/auth/*path
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+    filters:
+      - RateLimit=mobile
+
+  - id: mobile-workspace
+    path: /api/v1/mobile/workspace/*path
+    handler: MobileControlProxy
+    predicates:
+      - Method=GET
+    filters: []
+
+  - id: mobile-handoffs
+    path: /api/v1/mobile/handoffs/*path
+    handler: MobileControlProxy
+    predicates:
+      - Method=GET
+    filters: []
+
+  # Internal routes (require internal token)
+  - id: internal-events
+    path: /api/v1/internal/events
+    handler: ProxyToEventConsumers
+    predicates:
+      - Method=POST
+    filters:
+      - RequireInternalToken
+    internal: true
+
+  - id: internal-zitadel-qr
+    path: /api/v1/internal/zitadel/qr/transactions/:id/complete
+    handler: ProxyToIdentity
+    predicates:
+      - Method=POST
+    filters: []
+    internal: true
+
+  # Protected routes (require identity/authentication)
+  - id: profile-me
+    path: /api/v1/users/me
+    handler: Session
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: profile-me-detail
+    path: /api/v1/users/me/profile
+    handler: GetProfile
+    predicates:
+      - Method=GET,PATCH
+    filters:
+      - RequireIdentity
+      - Audit
+
+  # Tenant routes (proxy to platform core)
+  - id: tenants
+    path: /api/v1/tenants
+    upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
+    predicates:
+      - Method=GET,POST
+    filters:
+      - RequireIdentity
+      - Audit
+
+  - id: tenant-members
+    path: /api/v1/tenants/:tenantID/members
+    upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
+    predicates:
+      - Method=GET,PUT
+    filters:
+      - RequireIdentity
+
+  - id: tenant-preferences
+    path: /api/v1/me/preferences
+    upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
+    predicates:
+      - Method=GET,PATCH
+    filters:
+      - RequireIdentity
+
+  - id: tenant-dictionary
+    path: /api/v1/tenants/:tenantID/dictionaries/:key
+    upstream: ${PLATFORM_CORE_URL}
+    upstreamType: platform
+    predicates:
+      - Method=GET,PUT
+    filters:
+      - RequireIdentity
+
+  # File routes (proxy to file service)
+  - id: files
+    path: /api/v1/files/*path
+    upstream: ${FILE_SERVICE_URL}
+    upstreamType: file
+    predicates:
+      - Method=GET,POST,DELETE
+    filters:
+      - RequireIdentity
+      - Audit
+
+  # Workflow routes (proxy to workflow service)
+  - id: workflows
+    path: /api/v1/workflows
+    upstream: ${WORKFLOW_URL}
+    upstreamType: workflow
+    predicates:
+      - Method=GET,POST
+    filters:
+      - RequireIdentity
+
+  - id: workflow-detail
+    path: /api/v1/workflows/:id
+    upstream: ${WORKFLOW_URL}
+    upstreamType: workflow
+    predicates:
+      - Method=GET,PATCH,PUT,DELETE
+    filters:
+      - RequireIdentity
+
+  - id: workflow-execute
+    path: /api/v1/workflows/:id/execute
+    upstream: ${WORKFLOW_URL}
+    upstreamType: workflow
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+
+  # Notification routes (proxy to notification service)
+  - id: notifications
+    path: /api/v1/notifications
+    upstream: ${NOTIFICATION_URL}
+    upstreamType: notification
+    predicates:
+      - Method=GET,POST
+    filters:
+      - RequireIdentity
+
+  # Web control plane routes (protected) - uses ProxyWebControl for /internal/web/v1/ prefix
+  - id: control-plane
+    path: /api/v1/control-plane/*path
+    handler: ProxyWebControl
+    predicates:
+      - Method=GET,POST
+    filters:
+      - RequireIdentity
+
+  # Mobile proxy routes - uses MobileControlProxy for /internal/mobile/v1/ prefix
+  - id: mobile-jobs
+    path: /api/v1/mobile/jobs/*path
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+    filters: []
+
+  - id: mobile-approvals
+    path: /api/v1/mobile/approvals/:id/decision/*path
+    handler: MobileControlProxy
+    predicates:
+      - Method=POST
+    filters: []
+
+  # Email login confirmation routes (no auth required)
+  - id: email-login-confirm
+    path: /api/v1/auth/login/email/confirm
+    handler: EmailLoginConfirm
+    predicates:
+      - Method=POST
+    filters: []
+
+  - id: sessions-email
+    path: /api/v1/sessions/email
+    handler: EmailLoginConfirm
+    predicates:
+      - Method=POST
+    filters: []
+
+# Route groups for common filter combinations
+routeGroups:
+  standardProtected:
+    filters:
+      - RequireIdentity
+      - Audit
+
+  mobileRoute:
+    filters:
+      - StripPrefix=3
+      - RateLimit=mobile
+      - Audit
+
+  internalRoute:
+    filters:
+      - RequireInternalToken
