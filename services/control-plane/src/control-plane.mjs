@@ -1834,11 +1834,35 @@ export function buildGovernanceSnapshot({
     identityConflictCount: units.filter((unit) => unit.identityStatus === "conflict").length,
   };
   const declaredProjects = Object.values(graphProjects).filter(isRecord);
+  const graphExecutionCoverage = isRecord(graph?.executionCoverage) ? graph.executionCoverage : {};
+  // TASK4: Surface graph-declared remediation status buckets as declared coverage.
+  // We do NOT infer missing per-unit status; we expose whatever graph declares
+  // explicitly and validate declaredCount = supported + blocked + notSupported
+  // when all four fields are present. Unit-level `remediationStatus` field is
+  // still missing on 40/40 graph projects — that gap remains owner-owned.
+  const numOrNull = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const remediationSupportedCount = numOrNull(graphExecutionCoverage.remediationSupportedCount);
+  const remediationBlockedCount = numOrNull(graphExecutionCoverage.remediationBlockedCount);
+  const remediationNotSupportedCount = numOrNull(graphExecutionCoverage.remediationNotSupportedCount);
+  const sumDeclared =
+    remediationSupportedCount !== null &&
+    remediationBlockedCount !== null &&
+    remediationNotSupportedCount !== null
+      ? remediationSupportedCount + remediationBlockedCount + remediationNotSupportedCount
+      : null;
+  const remediationDeclaredGraph = numOrNull(graphExecutionCoverage.remediationDeclaredCount);
+  const coverageConsistent =
+    sumDeclared !== null && remediationDeclaredGraph !== null && sumDeclared === remediationDeclaredGraph;
   const executionCoverage = {
     declaredProjectCount: declaredProjects.length,
     healthDeclaredCount: declaredProjects.filter((project) => Array.isArray(project.health) && project.health.length > 0).length,
     verifyDeclaredCount: declaredProjects.filter((project) => Array.isArray(project.verify) && project.verify.length > 0).length,
     remediationDeclaredCount: declaredProjects.filter((project) => Array.isArray(project.remediation) && project.remediation.length > 0).length,
+    remediationSupportedCount,
+    remediationBlockedCount,
+    remediationNotSupportedCount,
+    coverageSource: "graph_declaration",
+    coverageConsistent,
   };
   const dependencyEdges = relationships.filter((relationship) => relationship.relationshipType === "DEPENDS_ON");
   const relationshipMetadataCoverage = {

@@ -142,6 +142,11 @@ test("builds a source-aware governance snapshot with stable identity and stale e
     healthDeclaredCount: 0,
     verifyDeclaredCount: 0,
     remediationDeclaredCount: 0,
+    remediationSupportedCount: null,
+    remediationBlockedCount: null,
+    remediationNotSupportedCount: null,
+    coverageSource: "graph_declaration",
+    coverageConsistent: false,
   });
   assert.deepEqual(snapshot.relationshipMetadataCoverage, {
     dependencyEdgeCount: 3,
@@ -299,7 +304,55 @@ test("projects registered health, verify, and remediation declaration coverage",
     healthDeclaredCount: 1,
     verifyDeclaredCount: 1,
     remediationDeclaredCount: 1,
+    remediationSupportedCount: null,
+    remediationBlockedCount: null,
+    remediationNotSupportedCount: null,
+    coverageSource: "graph_declaration",
+    coverageConsistent: false,
   });
+});
+
+// TASK4: graph.executionCoverage declares remediation status buckets.
+// Snapshot must surface those buckets and validate declared-count consistency.
+test("TASK4: surfaces graph-declared remediation status buckets and validates consistency", () => {
+  const fixture = makeGovernanceFixture();
+  const graph = JSON.parse(readFileSync(fixture.graphPath, "utf8"));
+  graph.executionCoverage = {
+    remediationDeclaredCount: 5,
+    remediationSupportedCount: 2,
+    remediationBlockedCount: 2,
+    remediationNotSupportedCount: 1,
+  };
+  writeFileSync(fixture.graphPath, JSON.stringify(graph));
+
+  const snapshot = buildGovernanceSnapshot({ ...fixture, generatedAt: "2026-09-15T00:00:00.000Z" });
+  assert.deepEqual(snapshot.executionCoverage, {
+    declaredProjectCount: 3,
+    healthDeclaredCount: 0,
+    verifyDeclaredCount: 0,
+    remediationDeclaredCount: 0,
+    remediationSupportedCount: 2,
+    remediationBlockedCount: 2,
+    remediationNotSupportedCount: 1,
+    coverageSource: "graph_declaration",
+    coverageConsistent: true,
+  });
+});
+
+test("TASK4: reports coverageConsistent=false when graph buckets do not sum to declaredCount", () => {
+  const fixture = makeGovernanceFixture();
+  const graph = JSON.parse(readFileSync(fixture.graphPath, "utf8"));
+  graph.executionCoverage = {
+    remediationDeclaredCount: 5,
+    remediationSupportedCount: 2,
+    remediationBlockedCount: 1,
+    remediationNotSupportedCount: 1,
+  };
+  writeFileSync(fixture.graphPath, JSON.stringify(graph));
+
+  const snapshot = buildGovernanceSnapshot({ ...fixture, generatedAt: "2026-09-15T00:00:00.000Z" });
+  assert.equal(snapshot.executionCoverage.remediationSupportedCount, 2);
+  assert.equal(snapshot.executionCoverage.coverageConsistent, false);
 });
 
 test("recomputes persisted evidence freshness against the snapshot observation time", () => {
