@@ -102,6 +102,13 @@ DNS 错指 → **必须先改 DNS 才能切流**，TODO §3 已写明。
 - Docker Desktop：由于 Windows 用户 Session 2 原处于断开状态，曾通过 Windows 任务计划的交互令牌启动 Docker Desktop；临时任务已删除，未保存密码或持久化启动项。进程曾进入 Session 2，但 engine pipe 仍未出现。
 - 当前结论：阻塞已从“DNS 未切流”推进到“Windows Docker Desktop/WSL engine 未 ready”。未启动 Compose、未安装反向代理、未接触证书/私钥和生产凭据。
 
+## 3.2 Windows 网络代理清理（2026-09-16）
+
+- 只读发现：WinHTTP 代理为 `192.168.101.5:7897`；当前登录用户 WinINET 也启用了同一代理，导致 Windows Chrome `ERR_TIMED_OUT`。
+- 已执行：`netsh winhttp reset proxy`；WinINET `ProxyEnable` 设为 `0`，并删除 `ProxyServer` 值。
+- 验证：WinHTTP 显示“直接访问”；WinINET `ProxyEnable=0` 且 `ProxyServer` 不存在；Windows `curl.exe -4 --noproxy * -k -I https://www.baidu.com` 返回 `HTTP/1.1 200 OK`。
+- 影响边界：未修改 Windows 网卡、默认网关、DNS、端口转发或 Mac 代理；Docker Desktop 仍需自己的 engine-ready 验收。
+
 ## 4. 回滚方法
 
 任何一步都可以独立回滚，互不影响：
