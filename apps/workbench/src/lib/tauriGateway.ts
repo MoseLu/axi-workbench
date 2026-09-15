@@ -14,7 +14,7 @@ type TauriWindow = Window & {
 };
 
 const GATEWAY_HOSTNAMES = new Set(['localhost', '127.0.0.1']);
-const LOCAL_GATEWAY_BASE_URL = 'http://127.0.0.1:8088';
+const LOCAL_GATEWAY_BASE_URL = 'https://workbench.axiomaticworld.com:8443';
 const PACKAGED_GATEWAY_BASE_URL = 'https://workbench.axiomaticworld.com';
 const metaEnv = (import.meta as ImportMeta & {
   env?: { PROD?: boolean; VITE_API_BASE_URL?: string };

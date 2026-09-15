@@ -32,8 +32,8 @@ describe('tauriGateway routing', () => {
     )).toBe(false);
   });
 
-  it('uses the local Gateway in the development test build unless a build supplies a public base URL', () => {
-    expect(resolveNativeGatewayBaseURL('')).toBe('http://127.0.0.1:8088');
+  it('uses the local HTTPS Gateway in the development test build unless a build supplies a public base URL', () => {
+    expect(resolveNativeGatewayBaseURL('')).toBe('https://workbench.axiomaticworld.com:8443');
     expect(resolveNativeGatewayBaseURL('https://workbench.axiomaticworld.com/')).toBe(
       'https://workbench.axiomaticworld.com/',
     );

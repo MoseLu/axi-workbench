@@ -14,6 +14,7 @@ export const SHELL_EVENTS = {
   LOGIN_SUCCESS: 'shell://login-success',
   LOGIN_FAILED: 'shell://login-failed',
   LOGOUT: 'shell://logout',
+  LOCAL_RUNTIME_STATUS: 'shell://local-runtime-status',
 } as const;
 
 export type ShellEventName = (typeof SHELL_EVENTS)[keyof typeof SHELL_EVENTS];
@@ -46,6 +47,15 @@ export type ShellPing = {
 export type ShellLoginSuccess = Record<string, never>;
 export type ShellLoginFailed = { reason?: string };
 export type ShellLogout = Record<string, never>;
+export type LocalRuntimeServiceStatus = 'starting' | 'ready' | 'failed' | 'external';
+export type LocalRuntimeStatus = {
+  mode: 'local-project';
+  phase: 'discovering' | 'starting' | 'ready' | 'failed';
+  services: Record<string, LocalRuntimeServiceStatus>;
+  gatewayOrigin: string;
+  error?: string | null;
+  logPath?: string | null;
+};
 
 export interface ShellEventPayloadMap {
   [SHELL_EVENTS.READY]: ShellReady;
@@ -57,6 +67,7 @@ export interface ShellEventPayloadMap {
   [SHELL_EVENTS.LOGIN_SUCCESS]: ShellLoginSuccess;
   [SHELL_EVENTS.LOGIN_FAILED]: ShellLoginFailed;
   [SHELL_EVENTS.LOGOUT]: ShellLogout;
+  [SHELL_EVENTS.LOCAL_RUNTIME_STATUS]: LocalRuntimeStatus;
 }
 
 export const SHELL_MENU_IDS = {

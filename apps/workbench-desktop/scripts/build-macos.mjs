@@ -5,6 +5,7 @@ import {
   readdirSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,11 +18,23 @@ const appBundleName = 'Axi 工作台.app'
 const dmgPrefix = 'Axi 工作台_'
 const appPath = resolve(packageRoot, `src-tauri/target/release/bundle/macos/${appBundleName}`)
 const args = process.argv.slice(2)
+const isLocalBuild = args.includes('--local')
+const tauriArgs = args.filter((arg) => arg !== '--local')
 const isCi = process.env.CI === 'true' || process.env.CI === '1'
 const configuredIdentity = process.env.APPLE_SIGNING_IDENTITY?.trim()
 const signingIdentity = configuredIdentity || (isCi ? '' : '-')
 const defaultPackagedGatewayBaseURL = 'https://workbench.axiomaticworld.com'
-const allowLocalGateway = process.env.AXI_DESKTOP_ALLOW_LOCAL_GATEWAY === 'true'
+const localGatewayBaseURL = 'https://workbench.axiomaticworld.com:8443'
+const allowLocalGateway = isLocalBuild || process.env.AXI_DESKTOP_ALLOW_LOCAL_GATEWAY === 'true'
+const buildProfilePath = resolve(packageRoot, 'src-tauri/.build-profile')
+
+if (isLocalBuild) {
+  process.env.AXI_DESKTOP_LOCAL = 'true'
+  process.env.AXI_DESKTOP_ALLOW_LOCAL_GATEWAY = 'true'
+} else {
+  delete process.env.AXI_DESKTOP_LOCAL
+}
+writeFileSync(buildProfilePath, `${isLocalBuild ? 'local' : 'public'}\n`, 'utf8')
 
 function normalizePackagedGatewayBaseURL(value) {
   let url
@@ -51,11 +64,11 @@ function normalizePackagedGatewayBaseURL(value) {
 }
 
 const packagedGatewayBaseURL = normalizePackagedGatewayBaseURL(
-  process.env.VITE_API_BASE_URL?.trim() || defaultPackagedGatewayBaseURL,
+  process.env.VITE_API_BASE_URL?.trim() || (isLocalBuild ? localGatewayBaseURL : defaultPackagedGatewayBaseURL),
 )
 process.env.VITE_API_BASE_URL = packagedGatewayBaseURL
 process.env.AXI_DESKTOP_PACKAGE = 'true'
-console.log(`[macos-build] packaged Gateway base URL: ${packagedGatewayBaseURL}`)
+console.log(`[macos-build] ${isLocalBuild ? 'local project' : 'public'} Gateway base URL: ${packagedGatewayBaseURL}`)
 
 function run(command, commandArgs) {
   const result = spawnSync(command, commandArgs, {
@@ -84,12 +97,13 @@ const configOverlay = JSON.stringify({
   bundle: {
     macOS: {
       signingIdentity,
+      ...(isLocalBuild ? { entitlements: 'entitlements/workbench-local.plist' } : {}),
     },
   },
 })
 
 function withBundleTarget(target) {
-  const buildArgs = [...args]
+  const buildArgs = [...tauriArgs]
   const bundleArgIndex = buildArgs.indexOf('--bundles')
   const inlineBundleArgIndex = buildArgs.findIndex((arg) => arg.startsWith('--bundles='))
 
@@ -105,9 +119,9 @@ function withBundleTarget(target) {
 }
 
 const requestedBundles = (() => {
-  const bundleArgIndex = args.indexOf('--bundles')
-  if (bundleArgIndex >= 0) return args[bundleArgIndex + 1] ?? ''
-  const inlineBundleArg = args.find((arg) => arg.startsWith('--bundles='))
+  const bundleArgIndex = tauriArgs.indexOf('--bundles')
+  if (bundleArgIndex >= 0) return tauriArgs[bundleArgIndex + 1] ?? ''
+  const inlineBundleArg = tauriArgs.find((arg) => arg.startsWith('--bundles='))
   return inlineBundleArg?.slice('--bundles='.length) ?? ''
 })()
 const wantsDmg = requestedBundles.split(',').includes('dmg')

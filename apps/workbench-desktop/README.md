@@ -19,8 +19,8 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 
 桌面端按 Codex App / 哔哩哔哩客户端的方式启动：**打开 App 即可**，不要再另开终端跑后端。
 
-- 本机仓库还在时（`tauri dev`、从本仓库打的调试包），壳层会探测 `127.0.0.1:8088`；没起来就拉起 control-plane、identity-adapter、platform-core、api-gateway，并在需要时执行 `docker compose up -d`。进程作为 sidecar 挂在 App 下面，退出 App 时一并停掉。
-- 正式包打到公网 `https://workbench.axiomaticworld.com` 时走哔哩哔哩模型：云端 API，不拉本机后端。若本机 Gateway 已经在听，壳层仍优先走 `127.0.0.1:8088`，方便同一台开发机双击 `/Applications` 里的包。
+- 本机项目包（`tauri dev`、`build:desktop:local`）会自动拉起 control-plane、identity-adapter、platform-core、api-gateway 和本机 HTTPS 入口；进程由 App 的 supervisor 管理，退出 App 时一并停掉。
+- 正式公网包使用 `https://workbench.axiomaticworld.com`，不拉本机后端；公网与本机项目包通过不同构建 profile 明确区分。
 
 开发一键入口：
 
@@ -32,7 +32,7 @@ pnpm dev:desktop
 
 ## Gateway 地址
 
-本机开发默认使用 `http://127.0.0.1:8088`。打包后的正式 macOS App 默认使用
+本机项目包默认使用 `https://workbench.axiomaticworld.com:8443`，由 Rust 层将域名映射到本机 HTTPS 入口，再反代到 `127.0.0.1:8088`。打包后的正式 macOS App 默认使用
 `https://workbench.axiomaticworld.com`，不依赖本机 Gateway 进程。Tauri WebView
 不直接从 `tauri://` / `tauri.localhost` 发起 Gateway 请求，而是由 Rust 原生层转发，
 因此登录二维码、轮询和 HttpOnly 会话 cookie 走同一条稳定链路。
@@ -44,42 +44,32 @@ pnpm --filter @axi/workbench-desktop build
 ```
 
 `build-macos.mjs` 会自动把正式包的 `VITE_API_BASE_URL` 固定为公网地址，并在打包
-校验中确认公网地址已经注入，避免正式包使用 `127.0.0.1:8088`。只有明确设置
-`AXI_DESKTOP_ALLOW_LOCAL_GATEWAY=true VITE_API_BASE_URL=http://127.0.0.1:8088`
-时，才允许生成仅供本机调试的本地 Gateway 包。
+校验中确认公网地址已经注入。本机项目包使用 `pnpm build:desktop:local`，自动注入
+`https://workbench.axiomaticworld.com:8443` 和本机项目模式。
 
-原生层只接受本地 `:8088`，或精确的 `https://workbench.axiomaticworld.com`；不会
+原生层只接受本地 Gateway `:8088`、本机 HTTPS `:8443`，或精确的
+`https://workbench.axiomaticworld.com`；不会
 接受任意外部 URL，也不会把会话 cookie 发给父域下的其他项目。该主机应与 Web
 静态站点共用同一入口，使 `/api/*`
 和页面同源。正式启用前，需要为该子域名配置 DNS 与覆盖该主机名的 HTTPS 证书。
 
 ### 本机 HTTPS 部署
 
-本机调试时，可在 `/etc/hosts` 中将域名指向回环地址（该系统文件需要管理员权限）：
-
-```text
-127.0.0.1 workbench.axiomaticworld.com
-```
-
-先构建 Web，再用下载目录中的证书启动本机 HTTPS 入口：
+本机项目包不要求修改 `/etc/hosts`。在项目 `.env` 中配置证书和私钥路径：
 
 ```bash
-pnpm --filter @axi/workbench build
-WORKBENCH_TLS_CERT_FILE=/Users/mose/Downloads/27080427_workbench.axiomaticworld.com_nginx/workbench.axiomaticworld.com.pem \
-WORKBENCH_TLS_KEY_FILE=/Users/mose/Downloads/27080427_workbench.axiomaticworld.com_nginx/workbench.axiomaticworld.com.key \
-pnpm --filter @axi/workbench serve:local
+WORKBENCH_TLS_CERT_FILE=.local/workbench-tls/workbench.axiomaticworld.com.pem
+WORKBENCH_TLS_KEY_FILE=.local/workbench-tls/workbench.axiomaticworld.com.key
 ```
 
 入口地址为 `https://workbench.axiomaticworld.com:8443`，`/api/*` 会反代到本机
-Gateway `:8088`。本机调试桌面包可使用：
+Gateway `:8088`。桌面包可直接使用：
 
 ```bash
-AXI_DESKTOP_ALLOW_LOCAL_GATEWAY=true \
-VITE_API_BASE_URL=https://workbench.axiomaticworld.com:8443 \
-pnpm --filter @axi/workbench-desktop build
+pnpm build:desktop:local
 ```
 
-证书和私钥只从本地环境变量读取，不应复制到仓库或提交 Git。
+证书和私钥只从本地 `.env` 读取，不应复制到仓库或提交 Git。
 
 ## 与其他端的关系
 
@@ -140,6 +130,9 @@ node apps/workbench-desktop/scripts/dev-desktop.mjs --print-only
 ```bash
 # 仅打包 .app（快速本地验证）
 pnpm build:desktop
+
+# 打包本机项目版 .app（双击自动启动本地后端）
+pnpm build:desktop:local
 
 # 打包 .app + .dmg（分发用）
 pnpm build:desktop:dmg

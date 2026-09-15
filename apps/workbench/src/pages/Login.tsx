@@ -22,6 +22,14 @@ import {
 } from '../lib/webDeviceLogin';
 import { localizeLoginError } from '../lib/localizeLoginError';
 import {
+  getLocalRuntimeStatus,
+  isLocalRuntimeBlocked,
+  listenLocalRuntimeStatus,
+  LOCAL_RUNTIME_STARTING,
+  retryLocalRuntime,
+  type LocalRuntimeStatus,
+} from '../lib/localRuntime';
+import {
   getOrCreateDeviceId,
   readLastAccount,
   writeLastAccount,
@@ -298,6 +306,55 @@ const Login: React.FC = () => {
   const deviceQrCreatingRef = useRef(false);
   const deviceQrConsumingRef = useRef(false);
   const handleAccountEnterRef = useRef<() => void>(() => {});
+  const [localRuntimeStatus, setLocalRuntimeStatus] = useState<LocalRuntimeStatus | null>(null);
+  const [localRuntimeStatusResolved, setLocalRuntimeStatusResolved] = useState(() => !isTauriShell());
+  const localRuntimeRequired = isTauriShell();
+  const localRuntimeBlocked = isLocalRuntimeBlocked(
+    localRuntimeRequired,
+    localRuntimeStatusResolved,
+    localRuntimeStatus,
+  );
+
+  useEffect(() => {
+    if (!localRuntimeRequired) return undefined;
+    let cancelled = false;
+    let unsubscribe: () => void = () => undefined;
+    const refresh = async () => {
+      const status = await getLocalRuntimeStatus();
+      if (cancelled) return;
+      setLocalRuntimeStatus(status);
+      setLocalRuntimeStatusResolved(true);
+    };
+    void refresh();
+    void listenLocalRuntimeStatus((status) => {
+      if (cancelled) return;
+      setLocalRuntimeStatus(status);
+      setLocalRuntimeStatusResolved(true);
+    }).then((off) => {
+      if (cancelled) off();
+      else unsubscribe = off;
+    });
+    const interval = window.setInterval(() => void refresh(), 750);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      window.clearInterval(interval);
+    };
+  }, [localRuntimeRequired]);
+
+  const handleLocalRuntimeRetry = async () => {
+    setLocalRuntimeStatus(LOCAL_RUNTIME_STARTING);
+    setLocalRuntimeStatusResolved(true);
+    try {
+      await retryLocalRuntime();
+    } catch (cause: unknown) {
+      setLocalRuntimeStatus({
+        ...LOCAL_RUNTIME_STARTING,
+        phase: 'failed',
+        error: cause instanceof Error ? cause.message : '无法重启本机服务',
+      });
+    }
+  };
 
   const finishAuthenticatedEntry = () => {
     if (didNavigateRef.current) return;
@@ -562,7 +619,7 @@ const Login: React.FC = () => {
   };
 
   const submitSendCode = async () => {
-    if (submitting || sessionLoading || isEmailCodeCoolingDown) return;
+    if (localRuntimeBlocked || submitting || sessionLoading || isEmailCodeCoolingDown) return;
     setError(null);
     setHint(null);
     setSubmitting(true);
@@ -586,7 +643,7 @@ const Login: React.FC = () => {
   };
 
   const handleSendCode = async () => {
-    if (submitting || sessionLoading) return;
+    if (localRuntimeBlocked || submitting || sessionLoading) return;
     if (isEmailCodeCoolingDown) return;
     if (!assertEmailField()) return;
     if (!requireTermsAgreement()) return;
@@ -826,6 +883,9 @@ const Login: React.FC = () => {
 
   const banner = error || (sessionError && (phase === 'verifying' || loginMode === 'password') ? sessionError : null);
   const appName = t('app.name');
+  const runtimeStatusLabel = localRuntimeStatus?.phase === 'failed'
+    ? t('auth.login.localRuntimeFailed')
+    : t('auth.login.localRuntimeStarting');
   const qrOverlayTitle = deviceQrStatus === 'expired' ? '二维码已过期' : '二维码加载失败';
   const qrOverlayHint = deviceQrStatus === 'expired' ? '请点击刷新' : '请点击重试';
   const refreshDeviceQr = () => {
@@ -844,7 +904,7 @@ const Login: React.FC = () => {
       />
       <div className="axi-login-page__grid" aria-hidden="true" />
 
-      <section className="axi-login-card" aria-labelledby="axi-login-title">
+      <section className={`axi-login-card${localRuntimeBlocked ? ' is-runtime-blocked' : ''}`} aria-labelledby="axi-login-title">
         {!isTauriShell() && loginSurface === 'quick' && (
           <div className="axi-login-card__chrome" aria-hidden="true">
             <span className="axi-login-card__chrome-dot axi-login-card__chrome-dot--close" />
@@ -862,6 +922,29 @@ const Login: React.FC = () => {
           >
             <span aria-hidden="true" />
           </button>
+        )}
+        {localRuntimeBlocked && (
+          <div
+            className="axi-login-runtime-gate"
+            role={localRuntimeStatus?.phase === 'failed' ? 'alert' : 'status'}
+            aria-live="polite"
+            aria-busy={localRuntimeStatus?.phase !== 'failed'}
+          >
+            <strong>{runtimeStatusLabel}</strong>
+            <span>
+              {localRuntimeStatus?.phase === 'failed'
+                ? [
+                    localRuntimeStatus.error || t('auth.login.localRuntimeRetryHint'),
+                    localRuntimeStatus.logPath ? `日志：${localRuntimeStatus.logPath}` : '',
+                  ].filter(Boolean).join(' ')
+                : t('auth.login.localRuntimeWaitHint')}
+            </span>
+            {localRuntimeStatus?.phase === 'failed' && (
+              <button type="button" onClick={() => void handleLocalRuntimeRetry()}>
+                {t('auth.login.localRuntimeRetry')}
+              </button>
+            )}
+          </div>
         )}
         <div className={`axi-login-card__body${loginSurface === 'quick' ? ' is-quick' : ''}`}>
           {loginSurface === 'account' && (

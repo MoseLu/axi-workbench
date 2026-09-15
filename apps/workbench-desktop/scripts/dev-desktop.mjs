@@ -3,7 +3,7 @@
  * dev-desktop.mjs
  *
  * 一次性拉起 Axi Workbench 的双端 dev：
- *   - 终端 1（Web）：`pnpm dev:workbench`  -> vite 监听 127.0.0.1:5183
+ *   - 终端 1（Web）：`pnpm --filter @axi/workbench dev`  -> vite 监听 127.0.0.1:5183
  *   - 终端 2（Tauri）：`pnpm --filter @axi/workbench-desktop dev:split`
  *
  * 设计原则：
@@ -26,12 +26,13 @@ const WEB_URL = 'http://127.0.0.1:5183'
 const WEB_HOST = '127.0.0.1'
 const WEB_PORT = 5183
 const GATEWAY_PORT = 8088
+const HTTPS_PORT = 8443
 const READY_TIMEOUT_MS = 60_000
 const PROBE_INTERVAL_MS = 250
 
 const printOnly = args.includes('--print-only')
 
-const WEB_CMD = ['pnpm', ['dev:workbench']]
+const WEB_CMD = ['pnpm', ['--filter', '@axi/workbench', 'dev']]
 const RUNTIME_CMD = ['node', ['scripts/ensure-local-runtime.mjs', '--supervise']]
 const TAURI_CMD = ['pnpm', ['--filter', '@axi/workbench-desktop', 'dev:split']]
 
@@ -143,8 +144,9 @@ async function main() {
 
   const waitedWeb = await waitForPort(WEB_PORT, WEB_URL, READY_TIMEOUT_MS)
   const waitedGateway = await waitForPort(GATEWAY_PORT, 'local Gateway', READY_TIMEOUT_MS)
+  const waitedHttps = await waitForPort(HTTPS_PORT, 'local HTTPS entry', READY_TIMEOUT_MS)
   console.log(
-    `[dev-desktop] web ready after ${waitedWeb}ms, gateway ready after ${waitedGateway}ms; starting tauri: ${fmtCommand(TAURI_CMD)}`,
+    `[dev-desktop] web ready after ${waitedWeb}ms, gateway ready after ${waitedGateway}ms, HTTPS ready after ${waitedHttps}ms; starting tauri: ${fmtCommand(TAURI_CMD)}`,
   )
 
   spawnStep('tauri', TAURI_CMD, packageRoot)

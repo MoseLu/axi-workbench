@@ -4,13 +4,14 @@
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
     tray::{TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Listener, Manager, WindowEvent,
+    AppHandle, Emitter, Listener, Manager, RunEvent, WindowEvent,
 };
 
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::State;
@@ -19,9 +20,10 @@ mod runtime;
 use runtime::LocalRuntime;
 
 const APP_NAME: &str = "Axi 工作台";
-const DEFAULT_GATEWAY_BASE_URL: &str = "http://127.0.0.1:8088";
+const DEFAULT_GATEWAY_BASE_URL: &str = runtime::LOCAL_HTTPS_ORIGIN;
 const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
 const LOCAL_HTTPS_PORT: u16 = 8443;
+const LOCAL_RUNTIME_STATUS_EVENT: &str = "shell://local-runtime-status";
 
 #[derive(Default)]
 struct GatewaySession {
@@ -219,9 +221,12 @@ mod gateway_tests {
     use super::resolve_gateway_url;
 
     #[test]
-    fn allows_local_gateway() {
+    fn uses_local_https_gateway_by_default() {
         let url = resolve_gateway_url(None, "/api/v1/auth/session").expect("local URL");
-        assert_eq!(url.as_str(), "http://127.0.0.1:8088/api/v1/auth/session");
+        assert_eq!(
+            url.as_str(),
+            "https://workbench.axiomaticworld.com:8443/api/v1/auth/session"
+        );
     }
 
     #[test]
@@ -286,6 +291,63 @@ fn should_hide_on_close(label: &str) -> bool {
     label != "login"
 }
 
+#[tauri::command]
+fn local_runtime_status(runtime: State<'_, LocalRuntime>) -> Option<runtime::LocalRuntimeStatus> {
+    if !runtime::local_project_mode() {
+        return None;
+    }
+    Some(runtime.snapshot())
+}
+
+fn publish_local_runtime_status(app: &AppHandle) {
+    let status = app.state::<LocalRuntime>().snapshot();
+    let _ = app.emit(LOCAL_RUNTIME_STATUS_EVENT, status);
+}
+
+fn local_runtime_log_path(app: &AppHandle) -> PathBuf {
+    app.path()
+        .app_log_dir()
+        .or_else(|_| app.path().app_data_dir())
+        .unwrap_or_else(|_| std::env::temp_dir().join("Axi Workbench"))
+        .join("workbench-runtime.log")
+}
+
+fn stop_local_runtime(app: &AppHandle) {
+    if runtime::local_project_mode() {
+        app.state::<LocalRuntime>().shutdown();
+    }
+}
+
+fn start_local_runtime(app: &AppHandle) {
+    if !app.state::<LocalRuntime>().begin_start() {
+        return;
+    }
+    publish_local_runtime_status(app);
+
+    let handle = app.clone();
+    let log_path = local_runtime_log_path(app);
+    std::thread::spawn(move || {
+        let runtime = handle.state::<LocalRuntime>();
+        let result = runtime::discover_workspace_root()
+            .ok_or_else(|| "找不到 Axi Workbench 项目根目录，请确认项目仍位于构建时路径或设置 AXI_WORKBENCH_ROOT。".to_string())
+            .and_then(|root| runtime.ensure_from_workspace(&root, &log_path));
+        match result {
+            Ok(()) => runtime.mark_ready(),
+            Err(error) => runtime.mark_failed(error),
+        }
+        publish_local_runtime_status(&handle);
+    });
+}
+
+#[tauri::command]
+fn retry_local_runtime(app: AppHandle) -> Result<(), String> {
+    if !runtime::local_project_mode() {
+        return Err("当前 App 不是本机项目构建，不能启动本机运行时。".to_string());
+    }
+    start_local_runtime(&app);
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -310,34 +372,19 @@ pub fn run() {
         }));
     }
 
-    builder
+    let app = builder
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .manage(GatewaySession::default())
         .manage(LocalRuntime::default())
-        .invoke_handler(tauri::generate_handler![proxy_gateway_request])
+        .invoke_handler(tauri::generate_handler![
+            proxy_gateway_request,
+            local_runtime_status,
+            retry_local_runtime
+        ])
         .setup(|app| {
-            if let Some(root) = runtime::discover_workspace_root() {
-                let runtime = app.state::<LocalRuntime>();
-                runtime.prefer_local.store(true, std::sync::atomic::Ordering::SeqCst);
-                if runtime::local_gateway_listening() {
-                    eprintln!(
-                        "[workbench-desktop] local Gateway already listening at http://127.0.0.1:8088"
-                    );
-                } else {
-                    let handle = app.handle().clone();
-                    std::thread::spawn(move || {
-                        let runtime = handle.state::<LocalRuntime>();
-                        match runtime.ensure_from_workspace(&root) {
-                            Ok(()) => eprintln!(
-                                "[workbench-desktop] local Gateway ready at http://127.0.0.1:8088"
-                            ),
-                            Err(error) => {
-                                eprintln!("[workbench-desktop] local runtime: {error}")
-                            }
-                        }
-                    });
-                }
+            if runtime::local_project_mode() {
+                start_local_runtime(app.handle());
             }
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;
@@ -359,12 +406,19 @@ pub fn run() {
                     api.prevent_close();
                 } else {
                     // 登录窗关闭 = 明确退出，避免留下无窗口的单实例进程。
+                    stop_local_runtime(&window.app_handle());
                     window.app_handle().exit(0);
                 }
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Workbench Mac App");
+        .build(tauri::generate_context!())
+        .expect("error while building Workbench Mac App");
+
+    app.run(|app, event| {
+        if let RunEvent::ExitRequested { .. } = event {
+            stop_local_runtime(app);
+        }
+    });
 }
 
 fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
@@ -459,6 +513,7 @@ fn build_app_menu(app: &AppHandle) -> tauri::Result<()> {
 
     app.on_menu_event(|app, event| match event.id().as_ref() {
         "app_quit" => {
+            stop_local_runtime(app);
             app.exit(0);
         }
         "app_hide" => {
@@ -528,6 +583,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                 }
             }
             "tray_quit" => {
+                stop_local_runtime(app);
                 app.exit(0);
             }
             _ => {}

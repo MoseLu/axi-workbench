@@ -18,6 +18,9 @@ coverage/
 # Misc
 .DS_Store
 *.pem
+*.key
+.local/workbench-tls/
+apps/workbench-desktop/src-tauri/.build-profile
 *.log
 npm-debug.log*
 yarn-debug.log*

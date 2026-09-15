@@ -50,6 +50,53 @@
   color-scheme: light;
 }
 
+.axi-login-card.is-runtime-blocked .axi-login-card__body {
+  pointer-events: none;
+  user-select: none;
+}
+
+.axi-login-runtime-gate {
+  position: absolute;
+  z-index: 11;
+  inset: 2.75rem .75rem .75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: .5rem;
+  padding: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 28%, var(--palette-gray-200));
+  border-radius: var(--radius-md);
+  color: var(--palette-gray-700);
+  background: color-mix(in srgb, var(--palette-white) 94%, var(--color-brand));
+  text-align: center;
+  box-shadow: 0 .75rem 2rem color-mix(in srgb, var(--palette-black) 12%, transparent);
+}
+
+.axi-login-runtime-gate strong {
+  color: var(--palette-gray-900);
+  font-size: var(--text-lg);
+}
+
+.axi-login-runtime-gate span {
+  max-width: 24rem;
+  color: var(--palette-gray-600);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.axi-login-runtime-gate button {
+  margin-top: .25rem;
+  padding: .5rem 1rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--palette-white);
+  background: var(--color-brand);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+}
+
 /* 卡片顶部色条：Mac App 下隐藏（依赖原生 chrome 提供视觉锚点）。 */
 .axi-login-card::before {
   display: none;

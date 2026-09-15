@@ -224,30 +224,12 @@ func setupRouter(
 		logger.Fatal().Err(err).Msg("register configured routes")
 	}
 
-	// Also register routes that are not easily configurable
-	registerAdditionalRoutes(router, identityService, mobileControl)
-
 	// Register admin routes for dynamic route management
 	registerAdminRoutes(router, dynamicRouter, cfg.Services.ControlPlaneInternalToken, logger)
 
 	// NoRoute handler for dynamic routes (registered routes take precedence)
 	router.NoRoute(dynamicRouteHandler.NoRoute())
 	return router
-}
-
-// registerAdditionalRoutes registers routes that have complex logic not suitable for YAML config
-func registerAdditionalRoutes(router *gin.Engine, identityService *identity.Service, mobileControl *handlers.MobileControlProxy) {
-	// Health check
-	router.GET("/health", handlers.HealthCheck())
-
-	// Ready check (depends on identity service)
-	router.GET("/ready", func(c *gin.Context) {
-		if err := errors.Join(identityService.Ready(c.Request.Context())); err != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "gateway dependencies are unavailable"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "ready"})
-	})
 }
 
 // registerAdminRoutes registers the admin routes for dynamic route management

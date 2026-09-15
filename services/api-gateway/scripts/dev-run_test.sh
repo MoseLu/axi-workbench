@@ -45,6 +45,8 @@ printf '%s\n' \
   '  printf "GO_ARGS=%s\\n" "$*"' \
   '  printf "GATEWAY_REDIS_URL=%s\\n" "${GATEWAY_REDIS_URL-<unset>}"' \
   '  printf "GATEWAY_REQUIRE_DURABLE_SESSION_STORE=%s\\n" "${GATEWAY_REQUIRE_DURABLE_SESSION_STORE-<unset>}"' \
+  '  printf "WORKFLOW_URL=%s\\n" "${WORKFLOW_URL-<unset>}"' \
+  '  printf "NOTIFICATION_URL=%s\\n" "${NOTIFICATION_URL-<unset>}"' \
   '} > "${FAKE_GO_ENV_FILE}"' \
   > "${TEST_ROOT}/bin/go"
 chmod +x "${TEST_ROOT}/bin/curl" "${TEST_ROOT}/bin/go"
@@ -134,6 +136,8 @@ assert_started() {
   assert_observed_line 'GO_ARGS=run ./cmd/gateway'
   assert_observed_line 'GATEWAY_REDIS_URL=redis://127.0.0.1:16379/0'
   assert_observed_line 'GATEWAY_REQUIRE_DURABLE_SESSION_STORE=true'
+  assert_observed_line 'WORKFLOW_URL=http://127.0.0.1:8083'
+  assert_observed_line 'NOTIFICATION_URL=http://127.0.0.1:8084'
 }
 
 assert_control_plane_rejected
