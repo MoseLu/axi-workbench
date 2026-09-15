@@ -15,6 +15,7 @@ const LOCAL_GATEWAY_HOST: &str = "127.0.0.1";
 const LOCAL_GATEWAY_PORT: u16 = 8088;
 pub const LOCAL_HTTPS_PORT: u16 = 8443;
 pub const LOCAL_HTTPS_ORIGIN: &str = "https://workbench.axiomaticworld.com:8443";
+pub const REMOTE_GATEWAY_ORIGIN: &str = "https://workbench.axiomaticworld.com";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LocalRuntimeStatus {

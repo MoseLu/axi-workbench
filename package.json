@@ -31,8 +31,10 @@
     "build:workbench": "turbo run build --filter=@axi/workbench",
     "dev:desktop": "pnpm --filter @axi/workbench-desktop dev",
     "build:desktop": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build",
+    "build:desktop:remote": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build",
     "build:desktop:local": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build:local",
     "build:desktop:dmg": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build:dmg",
+    "build:desktop:remote:dmg": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build:dmg",
     "build:desktop:local:dmg": "pnpm --filter @axi/workbench-desktop verify:contracts && pnpm --filter @axi/workbench-desktop build:local:dmg",
     "type-check:mobile": "pnpm --filter @axi/workbench-mobile type-check"
   },

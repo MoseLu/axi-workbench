@@ -10,17 +10,19 @@ Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
 | 包名 | `@axi/workbench-desktop` |
 | 桌面壳 | **Tauri 2**（Rust + WKWebView） |
 | 复用 UI | `apps/workbench` 的 Vite 构建产物 |
-| 启动开发 | `pnpm dev:desktop` |
-| 打包 .app | `pnpm build:desktop`（本地 ad hoc 签名） |
+| 启动开发 | `pnpm dev:desktop`（仅本机项目模式） |
+| 打包远程 .app | `pnpm build:desktop:remote`（本地 ad hoc 签名） |
+| 打包本机项目 .app | `pnpm build:desktop:local`（仅开发机） |
 | 打包 .dmg + 公证 | `pnpm build:desktop:dmg` + `apps/workbench-desktop/scripts/notarize.sh` |
 | 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/`（应用名为 `Axi 工作台`） |
 
 ## 一键启动
 
-桌面端按 Codex App / 哔哩哔哩客户端的方式启动：**打开 App 即可**，不要再另开终端跑后端。
+桌面端正式包按 Codex App / 哔哩哔哩客户端的方式工作：**打开 App 即可**，只连接远程
+HTTPS Gateway，不在用户 Mac 上启动后端。
 
-- 本机项目包（`tauri dev`、`build:desktop:local`）会自动拉起 control-plane、identity-adapter、platform-core、api-gateway 和本机 HTTPS 入口；进程由 App 的 supervisor 管理，退出 App 时一并停掉。
-- 正式公网包使用 `https://workbench.axiomaticworld.com`，不拉本机后端；公网与本机项目包通过不同构建 profile 明确区分。
+- 远程包（`build:desktop:remote` / `build:desktop`）使用 `https://workbench.axiomaticworld.com`，不拉本机 Node、Go、Docker 或本机 HTTPS。
+- 本机项目包（`tauri dev`、`build:desktop:local`）仍用于开发和故障排查，会自动拉起本机完整链路；它不是正式分发包。
 
 开发一键入口：
 
@@ -32,23 +34,25 @@ pnpm dev:desktop
 
 ## Gateway 地址
 
-本机项目包默认使用 `https://workbench.axiomaticworld.com:8443`，由 Rust 层将域名映射到本机 HTTPS 入口，再反代到 `127.0.0.1:8088`。打包后的正式 macOS App 默认使用
-`https://workbench.axiomaticworld.com`，不依赖本机 Gateway 进程。Tauri WebView
+远程包默认使用 `https://workbench.axiomaticworld.com`，由 Windows 服务器提供 HTTPS
+和 Gateway；Mac App 不启动本机后端。Tauri WebView
 不直接从 `tauri://` / `tauri.localhost` 发起 Gateway 请求，而是由 Rust 原生层转发，
 因此登录二维码、轮询和 HttpOnly 会话 cookie 走同一条稳定链路。
 
-公网构建时注入项目子域名，例如：
+本机项目包才使用 `https://workbench.axiomaticworld.com:8443`，由 Rust 层映射到本机
+HTTPS 入口，再反代到 `127.0.0.1:8088`。
+
+远程构建入口：
 
 ```bash
-pnpm --filter @axi/workbench-desktop build
+pnpm build:desktop:remote
 ```
 
-`build-macos.mjs` 会自动把正式包的 `VITE_API_BASE_URL` 固定为公网地址，并在打包
-校验中确认公网地址已经注入。本机项目包使用 `pnpm build:desktop:local`，自动注入
-`https://workbench.axiomaticworld.com:8443` 和本机项目模式。
+`build-macos.mjs` 会把远程包的 `VITE_API_BASE_URL` 固定为公网地址，并在打包校验中
+确认远程地址已经注入。本机项目包必须显式使用 `pnpm build:desktop:local`。
 
 原生层只接受本地 Gateway `:8088`、本机 HTTPS `:8443`，或精确的
-`https://workbench.axiomaticworld.com`；不会
+`https://workbench.axiomaticworld.com`；远程包不会
 接受任意外部 URL，也不会把会话 cookie 发给父域下的其他项目。该主机应与 Web
 静态站点共用同一入口，使 `/api/*`
 和页面同源。正式启用前，需要为该子域名配置 DNS 与覆盖该主机名的 HTTPS 证书。

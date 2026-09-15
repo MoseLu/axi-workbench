@@ -20,7 +20,7 @@ mod runtime;
 use runtime::LocalRuntime;
 
 const APP_NAME: &str = "Axi 工作台";
-const DEFAULT_GATEWAY_BASE_URL: &str = runtime::LOCAL_HTTPS_ORIGIN;
+const DEFAULT_GATEWAY_BASE_URL: &str = runtime::REMOTE_GATEWAY_ORIGIN;
 const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
 const LOCAL_HTTPS_PORT: u16 = 8443;
 const LOCAL_RUNTIME_STATUS_EVENT: &str = "shell://local-runtime-status";
@@ -221,11 +221,11 @@ mod gateway_tests {
     use super::resolve_gateway_url;
 
     #[test]
-    fn uses_local_https_gateway_by_default() {
+    fn uses_remote_https_gateway_by_default() {
         let url = resolve_gateway_url(None, "/api/v1/auth/session").expect("local URL");
         assert_eq!(
             url.as_str(),
-            "https://workbench.axiomaticworld.com:8443/api/v1/auth/session"
+            "https://workbench.axiomaticworld.com/api/v1/auth/session"
         );
     }
 
