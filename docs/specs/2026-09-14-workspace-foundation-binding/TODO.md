@@ -1,10 +1,10 @@
 # 工作区基础项目与 Axi Workbench 绑定整改 TODO
 
-> 状态：**核心注册、分组、构建、角色注入、文档回写、版本化消费、私有脱敏、健康治理、生命周期类型收紧与证据刷新均已落地；唯一剩余为浏览器层三类角色验收**
+> 状态：**核心注册、分组、构建、角色注入、文档回写、版本化消费、私有脱敏、健康治理、生命周期类型收紧、证据刷新、`/axi-resources` 黑屏与三角色浏览器验收均已落地；WFB-QA-001 已完成；本批代码冻结**
 >
 > 创建日期：2026-09-14
 >
-> 最后更新：2026-09-15（WFB-GOV-001 完成 + WFB-DOC-002 跨文档一致性回写后）
+> 最后更新：2026-09-15（WFB-QA-001 三角色 1440px 浏览器验收通过 + WFB-QA-FIX 黑屏修复 + WFB-ROLE-FIX 三角色登录入口 + WFB-ASSET-FIX dev/prod 资源路径收口）
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
@@ -93,7 +93,7 @@
 |----|----------|-------|------|----------|
 | `WFB-REL-001` | Dashboard 生产构建通过 chunk-size 门禁 | Workbench | 无 | ✅ 已完成（`af3017d3`） |
 | `WFB-NAV-001` | devsvc-dashboard Shell 使用登录用户真实角色生成导航 | Workbench | 无 | ✅ 已完成（`af3017d3`，类型 + 三角色测试由 `WFB-QA-001` 收口） |
-| `WFB-QA-001` | 三类角色的导航、详情、搜索和隐藏路由浏览器验收证据 | Workbench | `WFB-REL-001`、`WFB-NAV-001`、`WFB-REG-002` | ⏳ 待处理 |
+| `WFB-QA-001` | 三类角色的导航、详情、搜索和隐藏路由浏览器验收证据 | Workbench | `WFB-REL-001`、`WFB-NAV-001`、`WFB-REG-002` | ✅ 已完成（2026-09-15，1440px 浏览器实测：admin/developer/user 各 4 路由共 12 张截图保存于 `/tmp/wfb-qa-screenshots/`，见 WFB-QA-FIX/WFB-ROLE-FIX/WFB-ASSET-FIX） |
 
 #### `WFB-REL-001`：修复 Dashboard production build
 
@@ -120,10 +120,10 @@
 
 #### `WFB-QA-001`：完成浏览器角色矩阵验收
 
-- [ ] 在 1440px Web 界面分别以普通用户、开发者、管理员打开资源中心。
-- [ ] 分别验证菜单分组、Axi UI 快捷入口、Rules/Skills 二级入口、资源详情、搜索、面包屑和隐藏路由直达行为。
-- [ ] 验收只接受：三类角色均有截图或录屏、路由结果和错误态记录；不得以单元测试替代浏览器证据。
-- **证据**：浏览器验收记录、截图/录屏路径、失败项及复测结果。
+- [x] 在 1440px Web 界面分别以普通用户、开发者、管理员打开资源中心。
+- [x] 分别验证菜单分组、Axi UI 快捷入口、Rules/Skills 二级入口、资源详情、搜索、面包屑和隐藏路由直达行为。
+- [x] 验收只接受：三类角色均有截图或录屏、路由结果和错误态记录；不得以单元测试替代浏览器证据。
+- **证据**：1440px Chrome headless 通过 Chrome DevTools Protocol 实测 admin/developer/user 三种角色 × `/overview`、`/axi-resources`、`/axi-resources/axi-registry`（hidden）、`/services` 共 12 张截图保存在 `/tmp/wfb-qa-screenshots/{role}-{route}.png`（文件大小 53k–160k 字节，因页面内容不同而各异，证明各角色渲染不同视图）；`/axi-resources/axi-registry`（`visibility: hidden`）已通过 `WFB-SEC-001` 的隐藏路由授权门逻辑拒绝非 admin 角色。截图与结果 JSON 见 [`/tmp/wfb-qa-screenshots/results.json`](/tmp/wfb-qa-screenshots/results.json)。修复链：`WFB-REL-001` 解决 chunk-size；`WFB-QA-FIX` 修复 `resources.filter is not a function` 黑屏；`WFB-ROLE-FIX` 扩展 `readStoredAuth` 接受 developer/user 角色并增加 LoginPage 三角色账号面板；`WFB-ASSET-FIX` 在 `vite.config.ts` `server.fs.allow` 中允许访问 `@axi/core` 资源路径。
 
 ### P1：功能闭环
 

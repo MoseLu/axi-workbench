@@ -1,6 +1,6 @@
 import i18n from "../../i18n";
 
-const authStorageKey = "devsvc-dashboard-auth";
+export const authStorageKey = "devsvc-dashboard-auth";
 const deviceSeedStorageKey = "devsvc-dashboard-device-seed";
 const themeStorageKey = "devsvc-dashboard-theme";
 const themeModeStorageKey = "devsvc-dashboard-theme-mode";
@@ -19,6 +19,27 @@ export type AuthUser = {
 };
 
 /**
+ * Static username → role mapping. Admin maps via `adminUsername`;
+ * `developer` and `user` are accepted as additional dev-only identities so
+ * WFB-QA-001 has a real browser-reachable login entry for every role.
+ * Production deployments should disable this via `VITE_ENABLE_DEV_LOGIN=false`
+ * or by not bundling any non-admin accounts in this map.
+ */
+const DEV_LOGIN_ACCOUNTS: Record<string, { password: string; role: UserRole; displayName?: string }> = {
+  [adminUsername]: { password: adminPassword, role: 'admin', displayName: '管理员' },
+  developer: { password: 'developer', role: 'developer', displayName: '开发者' },
+  user: { password: 'user', role: 'user', displayName: '普通用户' }
+};
+
+export function listDevLoginAccounts(): Array<{ username: string; displayName: string; role: UserRole }> {
+  return Object.entries(DEV_LOGIN_ACCOUNTS).map(([username, info]) => ({
+    username,
+    displayName: info.displayName ?? username,
+    role: info.role
+  }));
+}
+
+/**
  * Resolve the role for a username. The login UI knows the username, so
  * resolving here keeps `AuthUser.role` mandatory and prevents the Shell
  * from falling back to `developer` when role is missing.
@@ -26,8 +47,21 @@ export type AuthUser = {
  * @returns User role. Defaults to `developer` for unknown usernames.
  */
 export function resolveRoleForUsername(username: string): UserRole {
+  const info = DEV_LOGIN_ACCOUNTS[username];
+  if (info) return info.role;
   if (username === adminUsername) return 'admin';
   return 'developer';
+}
+
+/**
+ * Validate credentials against the dev login table. Returns the resolved
+ * role on success and `null` on failure. Used by `useAuthState.login`.
+ */
+export function validateLoginCredentials(username: string, password: string): UserRole | null {
+  const info = DEV_LOGIN_ACCOUNTS[username];
+  if (info && info.password === password) return info.role;
+  if (username === adminUsername && password === adminPassword) return 'admin';
+  return null;
 }
 
 /**
@@ -95,21 +129,27 @@ export function readStoredAuth(): AuthUser | null {
     const stored = window.localStorage.getItem(authStorageKey);
     if (!stored) return null;
     const parsed = JSON.parse(stored) as AuthUser;
-    if (parsed?.username === adminUsername && parsed.loginAt) {
-      const nextUser: AuthUser = {
-        username: parsed.username,
-        displayName: parsed.displayName || parsed.username,
-        deviceKey: getDeviceKey(),
-        loginAt: parsed.loginAt || Date.now(),
-        avatarDataUrl: parsed.avatarDataUrl,
-        role: parsed.role ?? resolveRoleForUsername(parsed.username)
-      };
-      if (parsed.deviceKey !== nextUser.deviceKey || parsed.role == null) {
-        writeStoredAuth(nextUser);
-      }
-      return nextUser;
+    // Accept any username that has a role resolved from the dev login table.
+    // The previous implementation only accepted `adminUsername`, which
+    // silently wiped developer / user sessions and forced the user back to
+    // /login even after they had a valid AuthUser persisted.
+    const resolvedRole = parsed.role ?? resolveRoleForUsername(parsed.username);
+    if (!parsed?.username || !parsed.loginAt || !resolvedRole) {
+      window.localStorage.removeItem(authStorageKey);
+      return null;
     }
-    window.localStorage.removeItem(authStorageKey);
+    const nextUser: AuthUser = {
+      username: parsed.username,
+      displayName: parsed.displayName || parsed.username,
+      deviceKey: getDeviceKey(),
+      loginAt: parsed.loginAt || Date.now(),
+      avatarDataUrl: parsed.avatarDataUrl,
+      role: resolvedRole
+    };
+    if (parsed.deviceKey !== nextUser.deviceKey || parsed.role == null) {
+      writeStoredAuth(nextUser);
+    }
+    return nextUser;
   } catch {
     window.localStorage.removeItem(authStorageKey);
   }

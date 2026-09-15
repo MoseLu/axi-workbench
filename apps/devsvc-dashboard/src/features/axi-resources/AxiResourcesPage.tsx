@@ -500,7 +500,7 @@ export function AxiResourcesPage({ userRole = "developer" as UserRole }: { userR
   const [data, setData] = useState<AxiResourcesPayload | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const resources = data?.resources || [];
+  const resources = Array.isArray(data?.resources) ? data.resources : [];
   // Hidden / admin / private-visibility resources are dropped for the
   // current role before they reach any column renderer. This mirrors the
   // nav filtering so the table and the sidebar cannot disagree.

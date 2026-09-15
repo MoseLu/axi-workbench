@@ -146,7 +146,7 @@ export type AxiResourcesPayload = {
 
 export async function listAxiResources(): Promise<AxiResource[]> {
   const body = await api("/api/axi/resources") as AxiResourcesPayload;
-  const resources = body.resources || [];
+  const resources = Array.isArray(body.resources) ? body.resources : [];
   // The API boundary can deliver arbitrary strings in `status`; the
   // front-end must never let them escape the typed surface. Normalize
   // here once, at the parse boundary, so downstream consumers (page,

@@ -1,5 +1,7 @@
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
 import type { IncomingMessage } from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
@@ -109,6 +111,14 @@ export default defineConfig({
   },
   plugins: [react(), compressedAssets(), enforceMaxChunkSize()],
   server: {
+    fs: {
+      // Allow Vite to serve assets from the shared axi-ui monorepo (notably
+      // @axi/core's branding SVG/PNG that lives outside this workspace).
+      allow: [
+        path.dirname(path.dirname(fileURLToPath(import.meta.url))),
+        path.resolve(path.dirname(path.dirname(fileURLToPath(import.meta.url))), "..", "..", "..", "shared", "axi-ui")
+      ]
+    },
     proxy: {
       "/api": "http://127.0.0.1:17888",
       "/apps": {
