@@ -298,6 +298,28 @@ function shutdown(children, code = 0) {
   }, 500)
 }
 
+function startDependencyMonitor(children) {
+  let checking = false
+  const monitor = setInterval(async () => {
+    if (checking) return
+    checking = true
+    try {
+      const postgresUp = await probePort(POSTGRES_PORT)
+      const redisUp = await probePort(REDIS_PORT)
+      if (!postgresUp || !redisUp) {
+        console.error(
+          `[desktop-runtime] docker dependency lost (postgres=${postgresUp}, redis=${redisUp}); stopping app-owned services`,
+        )
+        clearInterval(monitor)
+        shutdown(children, 1)
+      }
+    } finally {
+      checking = false
+    }
+  }, 5_000)
+  monitor.unref()
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2))
   const root = process.env.AXI_WORKBENCH_ROOT || repoRoot
@@ -307,6 +329,7 @@ async function main() {
   }
   process.on('SIGINT', () => shutdown(children, 130))
   process.on('SIGTERM', () => shutdown(children, 143))
+  startDependencyMonitor(children)
   if (process.platform !== 'win32' && process.env.AXI_DESKTOP_SUPERVISOR === '1') {
     const parentPid = process.ppid
     const parentWatch = setInterval(() => {

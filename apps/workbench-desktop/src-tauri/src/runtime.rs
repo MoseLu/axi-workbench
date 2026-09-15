@@ -165,6 +165,22 @@ pub fn find_bin(name: &str) -> PathBuf {
 }
 
 impl LocalRuntime {
+    pub fn has_supervisor(&self) -> bool {
+        self.child
+            .lock()
+            .map(|child| child.is_some())
+            .unwrap_or(false)
+    }
+
+    pub fn wait_for_supervisor_exit(&self) -> Option<String> {
+        loop {
+            if self.child_exited() {
+                return Some("本机服务监督器已退出，请查看日志并重试。".to_string());
+            }
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    }
+
     pub fn shutdown(&self) {
         if let Ok(mut child) = self.child.lock() {
             if let Some(mut process) = child.take() {

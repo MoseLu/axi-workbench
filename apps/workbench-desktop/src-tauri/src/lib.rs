@@ -332,7 +332,15 @@ fn start_local_runtime(app: &AppHandle) {
             .ok_or_else(|| "找不到 Axi Workbench 项目根目录，请确认项目仍位于构建时路径或设置 AXI_WORKBENCH_ROOT。".to_string())
             .and_then(|root| runtime.ensure_from_workspace(&root, &log_path));
         match result {
-            Ok(()) => runtime.mark_ready(),
+            Ok(()) => {
+                runtime.mark_ready();
+                publish_local_runtime_status(&handle);
+                if runtime.has_supervisor() {
+                    if let Some(error) = runtime.wait_for_supervisor_exit() {
+                        runtime.mark_failed(error);
+                    }
+                }
+            }
             Err(error) => runtime.mark_failed(error),
         }
         publish_local_runtime_status(&handle);
