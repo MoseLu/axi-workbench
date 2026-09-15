@@ -1,16 +1,16 @@
 # 工作区基础项目与 Axi Workbench 绑定整改 TODO
 
-> 状态：**P2 完成，所有验证通过**
+> 状态：**核心功能已落地，发布闭环未完成**
 >
 > 创建日期：2026-09-14
 >
-> 最后更新：2026-09-14 19:00（全部完成）
+> 最后更新：2026-09-15（严苛复核后更新）
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
 > 相关项目：`axi-workbench`、`axi-ui`、`axi-rules`、`axi-skills`、`axi-docs`、`axi-registry`、`axi-workspace-governance`、`axi-agent-platform`、`axi-tauri-starter` 及 Workbench Web/Mobile/Desktop 发行版
 
-## ✅ 核心绑定完成摘要（2026-09-14）
+## ✅ 已完成基础能力与复核结果（截至 2026-09-15）
 
 | 验证项 | 状态 | 说明 |
 |--------|------|------|
@@ -18,35 +18,38 @@
 | pnpm check:boundaries | ✅ PASS | boundary check passed |
 | axi-ui typecheck/test/build | ✅ PASS | typecheck、完整测试和 Gallery build 通过 |
 | axi-skills runtime verify | ✅ PASS | errors=0，9 warnings |
-| axi-skills i18n manifest | ✅ PASS | 79个技能已加入batch-086 |
+| axi-skills i18n manifest | ✅ PASS | 当前 manifest 检查通过 |
 | axi-registry health | ✅ PASS | 服务正常运行 |
 | axi-rules validate | ✅ PASS | indexes validated |
 | axi-workspace-governance audit | ✅ PASS | Entries 22, Errors 0 |
 | Dashboard typecheck | ✅ PASS | |
 | Dashboard tests | ✅ PASS | 25/25 |
-| drift-check | ✅ PASS | 0 warnings |
-| visibility admin语义 | ✅ PASS | 类型+过滤逻辑已统一 |
-| menuGroup分组 | ✅ PASS | 动态生成分组导航 |
+| drift-check | ✅ PASS | 使用显式 workspace root 参数时 0 warnings |
+| visibility admin语义 | ⚠️ 部分完成 | 过滤逻辑存在，但真实 Shell 角色链路未闭合 |
+| menuGroup分组 | ✅ PASS | 动态分组实现和行为测试通过 |
 | 验证状态数据链 | ✅ PASS | graph verify → 执行 → status映射 |
-| Shell角色注入 | ✅ PASS | VITE_USER_ROLE + __APP_CONFIG__ |
-| 资源详情页 | ✅ PASS | owner/visibility/verify/evidence列 |
+| Shell角色注入 | ❌ 未完成 | devsvc-dashboard Shell 调用未传入真实用户角色 |
+| 资源详情页 | ⚠️ 部分完成 | 字段渲染存在，真实数据和浏览器验收仍待 |
+| Dashboard production build | ❌ FAIL | axi-core chunk 1.48MB，超过 1MB 门禁 |
 
-## ✅ 审计结论（2026-09-14）
+## ⚠️ 审计结论（2026-09-15）
 
-> 本专项核心绑定整改已完成。所有验证通过，drift-check 0 warnings。
+> 本专项的核心注册、分组、验证映射和 i18n 整改已基本落地，但尚未达到发布完成：生产构建失败，真实角色注入未闭合，部分 Resource Index 元数据没有实际数据源证据，且尚未完成浏览器级角色验收。
 
 | 领域 | 状态 | 说明 |
 |------|------|------|
 | 工作区 graph 注册 | ✅ 完成 | validate 通过 |
 | Owner 治理 | ✅ 完成 | remediation_status → supported |
-| Resource Registry 元数据 | ✅ 完成 | 类型、生命周期、验证链路已完整 |
-| 菜单分组与角色过滤 | ✅ 完成 | visibility admin + menuGroup 分组 + Shell 角色注入 |
+| Resource Registry 元数据 | ⚠️ 部分完成 | 字段和生命周期代码存在，类型约束及实际验证数据仍需收口 |
+| 菜单分组与角色过滤 | ⚠️ 部分完成 | menuGroup 已生效，真实 Shell 角色注入未闭合 |
 | Hosted App 绑定 | ✅ 完成 | executionBoundary 已配置 |
 | Dashboard typecheck | ✅ 完成 | |
 | Dashboard tests | ✅ 完成 | 25/25 |
 | Axi UI typecheck | ✅ 完成 | Gallery 已修复 |
-| Skills 校验 | ✅ 完成 | runtime verify + i18n manifest 均通过 |
+| Skills 校验 | ✅ 完成 | runtime verify + i18n manifest 当前通过 |
 | Registry 健康 | ✅ 完成 | 服务运行正常 |
+| Dashboard production build | ❌ 未完成 | chunk-size 门禁失败 |
+| 浏览器级角色与详情验收 | ⏳ 未完成 | 尚无三类角色的真实 UI 证据 |
 
 ## 完成度汇总
 
@@ -58,15 +61,15 @@
 | 2.2 | 仓库可见性快照 | ✅ 已采集 |
 | 2.3 | Workbench 绑定基线 | ✅ 已确认 |
 | 2.4 | 验证阻塞与证据边界 | ✅ 已采集 |
-| 3.1 | 项目身份层目标 | ⚠️ Owner/graph 完成，统一字段与证据仍待 |
-| 3.2 | Resource Registry 层目标 | ⚠️ 字段已添加，验证状态链路与导航语义未闭合 |
+| 3.1 | 项目身份层目标 | ⚠️ Owner/graph 完成，证据新鲜度和快照仍待 |
+| 3.2 | Resource Registry 层目标 | ⚠️ 字段、验证映射已落地，角色链路和实际 metadata 仍待 |
 | 3.3 | 包与发布层目标 | ⏳ 版本化 Registry 消费未完成 |
 | 3.4 | Hosted App 层目标 | ⚠️ executionBoundary 已添加，健康与失败治理未完成 |
-| 3.5 | Resource Index 层目标 | ⏳ 详情、文档和验证信息未完成 |
-| 4 | UI 信息架构与菜单 | ⚠️ 资源入口已存在，真实分组和角色验证未完成 |
-| 5.1 | Workbench 验证 | ✅ 命令通过，真实角色 UI 未验证 |
-| 5.2 | Provider 验证 | ⚠️ runtime/build 通过，Skills i18n 失败 79 项 |
-| 5.3 | 证据新鲜度 | ⏳ 验证快照数据未接通 |
+| 3.5 | Resource Index 层目标 | ⚠️ 详情渲染存在，实际 metadata 数据和入口验收仍待 |
+| 4 | UI 信息架构与菜单 | ⚠️ 分组已实现，角色、搜索和浏览器验收仍待 |
+| 5.1 | Workbench 验证 | ⚠️ typecheck/test 通过，production build 和真实 UI 未闭合 |
+| 5.2 | Provider 验证 | ✅ 当前已复核通过；仍需补齐交付链路证据 |
+| 5.3 | 证据新鲜度 | ⚠️ 进程内缓存已实现，持久化和快照新鲜度仍待 |
 | 5.4 | 子代理调查报告 | ✅ 已完成 |
 | 6 | 分阶段执行顺序 | ✅ 已分析 |
 | 7 | 明确不做的事情 | ✅ 已确立 |
@@ -75,6 +78,130 @@
 | 10 | 参考入口 | ✅ 已整理 |
 
 **已确立约束：架构裁决（1.1）、INV-FB-001~007（1.2）、不做清单（7）、DoD（9）**
+
+## 0. 2026-09-15 严苛复核后的剩余原子任务
+
+> 本节是当前执行队列的唯一入口。每个任务只交付一个可独立验收的结果；下方历史章节中的宽泛 TODO 必须映射到本节任务后才能勾选。`typecheck/test` 通过不等于生产构建、真实角色 UI 或生产接入完成。
+
+### P0：发布阻塞
+
+| ID | 原子产出 | Owner | 依赖 | 当前状态 |
+|----|----------|-------|------|----------|
+| `WFB-REL-001` | Dashboard 生产构建通过 chunk-size 门禁 | Workbench | 无 | ⏳ 待处理 |
+| `WFB-NAV-001` | devsvc-dashboard Shell 使用登录用户真实角色生成导航 | Workbench | 无 | ⏳ 待处理 |
+| `WFB-QA-001` | 三类角色的导航、详情、搜索和隐藏路由浏览器验收证据 | Workbench | `WFB-REL-001`、`WFB-NAV-001`、`WFB-REG-002` | ⏳ 待处理 |
+
+#### `WFB-REL-001`：修复 Dashboard production build
+
+- [ ] 找出 `axi-core` 产物超过 1 MB 的具体依赖或入口，并记录构建前后 chunk 大小。
+- [ ] 通过入口拆分、动态导入或依赖边界调整，使 `pnpm --dir apps/devsvc-dashboard build` 退出码为 0。
+- [ ] 验收只接受：构建成功，且没有通过关闭或放宽 chunk-size 门禁掩盖问题。
+- **证据**：构建日志、产物大小报告、对应 CHANGELOG 条目。
+
+#### `WFB-NAV-001`：接通真实 Shell 用户角色
+
+- [ ] 将认证用户的角色以类型安全的方式传入 `makeHostNavGroups` / `translateNavGroups`，禁止依赖默认 `developer`。
+- [ ] 为 `user`、`developer`、`admin` 各增加一个导航断言，覆盖 `hidden`、`deferred`、`admin` 三种 visibility 语义。
+- [ ] 验收只接受：Shell 实际调用链携带真实角色，且三类角色测试均通过。
+- **证据**：[Shell.tsx](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-shell/Shell.tsx)、认证类型、导航测试日志。
+
+#### `WFB-QA-001`：完成浏览器角色矩阵验收
+
+- [ ] 在 1440px Web 界面分别以普通用户、开发者、管理员打开资源中心。
+- [ ] 分别验证菜单分组、Axi UI 快捷入口、Rules/Skills 二级入口、资源详情、搜索、面包屑和隐藏路由直达行为。
+- [ ] 验收只接受：三类角色均有截图或录屏、路由结果和错误态记录；不得以单元测试替代浏览器证据。
+- **证据**：浏览器验收记录、截图/录屏路径、失败项及复测结果。
+
+### P1：功能闭环
+
+| ID | 原子产出 | Owner | 依赖 | 当前状态 |
+|----|----------|-------|------|----------|
+| `WFB-REG-001` | Resource Registry 的生命周期状态类型不允许任意字符串 | Workbench | 无 | ⏳ 待处理 |
+| `WFB-REG-002` | 四类 Resource Index 详情均获得真实 metadata 数据 | Workbench + Provider Owners | graph/config 字段确认 | ⏳ 待处理 |
+| `WFB-REG-003` | 验证结果具备可追溯的受控持久化来源 | Governance + Workbench | `WFB-REG-002` | ⏳ 待处理 |
+| `WFB-SEC-001` | 私有资源 UI 不泄露路径、源码和未授权远程链接 | Workbench | `WFB-NAV-001` | ⏳ 待处理 |
+| `WFB-HOST-001` | Hosted App 健康检查与失败处置合同统一 | Workbench + Hosted Owners | 无 | ⏳ 待处理 |
+| `WFB-PACK-001` | `@axi/*` 版本化 Registry 消费完成一次消费者回归 | axi-ui + axi-registry + Workbench | Registry 可用 | ⏳ 待处理 |
+
+#### `WFB-REG-001`：收紧生命周期状态类型
+
+- [ ] 将 `AxiResource.status` 从 `ResourceLifecycleStatus | string` 改为严格的 `ResourceLifecycleStatus`。
+- [ ] 为未知外部状态增加显式归一化分支，不允许通过类型逃逸进入 UI。
+- [ ] 验收只接受：typecheck 通过，未知状态有确定的 fallback 和测试覆盖。
+- **证据**：[axiResources.ts](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/features/axi-resources/axiResources.ts)、类型测试日志。
+
+#### `WFB-REG-002`：贯通 Resource Index 专属 metadata
+
+- [ ] 为 `axi-rules`、`axi-skills`、`axi-registry`、`axi-workspace-governance` 各提供一份来自 graph、受控配置或 Owner API 的真实 metadata 输入。
+- [ ] 详情页分别展示规则族/索引、技能分类/i18n、Registry 健康/使用方、治理审计/completion 摘要。
+- [ ] 验收只接受：四类资源在真实 registry 输出中有非空 metadata，详情页渲染测试通过；禁止只实现空渲染器。
+- **证据**：[workspace-resource-registry.mjs](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs)、资源配置、详情页测试输出。
+
+#### `WFB-REG-003`：建立验证结果的可追溯来源
+
+- [ ] 明确验证结果写入的权威位置（workspace snapshot、completion 或受控 verification endpoint），并记录命令、时间、分支、来源和摘要。
+- [ ] 保留 24 小时 freshness 规则，同时区分进程内缓存命中和持久化证据命中。
+- [ ] 验收只接受：服务重启后仍能读取最近验证证据，过期后显示 `stale`，失败显示 `failed`，不得长期全部为 `path-found`。
+- **证据**：持久化样例、重启前后 API/页面结果、过期和失败测试日志。
+
+#### `WFB-SEC-001`：完成私有资源暴露测试
+
+- [ ] 为普通用户增加断言：不显示私有仓库绝对路径、源码正文、凭据或未授权 GitHub 链接。
+- [ ] 验证菜单渲染、全局搜索和详情加载不会触发普通用户未授权的远程仓库请求。
+- [ ] 验收只接受：普通用户直接访问隐藏路由得到授权错误或安全重定向，管理员访问仍可获得受控信息。
+- **证据**：角色测试、网络请求记录、脱敏后的 UI 截图。
+
+#### `WFB-HOST-001`：统一 Hosted App 健康与失败处置
+
+- [ ] 为 `axi-docs` 和 `axi-agent-platform` 定义可区分 readiness 与页面可访问性的 health contract。
+- [ ] 为启动失败定义一次重试、降级展示和 Owner 处置提示，并记录停止策略。
+- [ ] 验收只接受：健康、超时、启动失败三种状态在 Workbench 中可区分，且不把根页面响应伪装成完整服务健康。
+- **证据**：Host 配置、健康检查测试、失败态截图和启动/停止日志。
+
+#### `WFB-PACK-001`：完成版本化包消费回归
+
+- [ ] 记录 `axi-ui` 发布包的版本、registry 来源和兼容范围，并让 Workbench 通过 `@axi/*` 契约消费。
+- [ ] 对 Workbench Dashboard、Axi Coder、Agent Platform、Web/Mobile/Desktop distributions 各执行一次最小消费验证。
+- [ ] 验收只接受：构建产物不含 `/Volumes/code/workspace/...` runtime wiring，且每个消费者都有成功或明确阻塞证据。
+- **证据**：包版本记录、消费者命令日志、构建产物路径扫描。
+
+### P2：可维护性收口
+
+| ID | 原子产出 | Owner | 依赖 | 当前状态 |
+|----|----------|-------|------|----------|
+| `WFB-DRIFT-001` | drift-check 有稳定、可复制的默认调用方式 | Workbench | 无 | ⏳ 待处理 |
+| `WFB-EVID-001` | 当前工作树与跨项目完成证据重新采集 | Governance + Workbench | 本批代码冻结 | ⏳ 待处理 |
+| `WFB-GOV-001` | remote、graph、registry 覆盖和消费者关系完成对账 | Governance + Workbench | 无 | ⏳ 待处理 |
+| `WFB-DOC-001` | 本 TODO 已改为原子任务并反映当前审计事实 | Workbench | 无 | ✅ 本次已更新 |
+| `WFB-DOC-002` | TODO、CHANGELOG、MILESTONE 和 completion 完成本批次一致性回写 | Workbench | `WFB-EVID-001` | ⏳ 待处理 |
+
+#### `WFB-DRIFT-001`：固定 drift-check 调用入口
+
+- [ ] 增加带 workspace root 的 package script 或 wrapper，使开发者无需手工猜测参数即可运行 drift-check。
+- [ ] 保留 `node apps/devsvc-dashboard/scripts/drift-check.mjs /Volumes/code/workspace` 的显式验证，并增加无参数调用测试。
+- [ ] 验收只接受：默认入口退出码为 0、输出 `0 warnings`，且在 graph 缺失时能给出明确错误。
+- **证据**：package script、成功日志和缺失 graph 的失败日志。
+
+#### `WFB-EVID-001`：刷新当前证据快照
+
+- [ ] 在代码变更完成后重新采集 Workbench 及所有纳入范围项目的 `git status --short --branch`、验证时间、分支和提交范围。
+- [ ] 标记 commit-ledger/gateway 等未提交改动是否属于本专项，禁止使用过期 `WORKTREE_SNAPSHOT` 作为当前证据。
+- [ ] 验收只接受：snapshot、completion、CHANGELOG 和本 TODO 引用同一批次、同一时间窗口。
+- **证据**：新的快照文件、提交清单、工作区治理审计输出。
+
+#### `WFB-GOV-001`：完成关系与来源对账
+
+- [ ] 对照 `workspace.json`、`workspace.graph.json`、workspace registry 和各仓库 `git remote`，确认 canonical remote、graph-only registration 和 registry 覆盖关系。
+- [ ] 对 `axi-ui`、`axi-registry` 等 Provider 执行正向 consumers 与反向 `workspace-project consumers` 对账，并为缺失关系写出原因。
+- [ ] 验收只接受：每个差异都有“迁移别名、镜像、故意不登记或真实漂移”中的一种结论和证据。
+- **证据**：对账表、workspace-project 输出、graph/registry 差异报告。
+
+#### `WFB-DOC-002`：完成跨文档一致性回写
+
+- [ ] 将本节原子任务的状态、验证命令、提交范围和仍成立的 `INV-FB-*` 同步到 `CHANGELOG.md`、`MILESTONE.md` 和项目 completion。
+- [ ] 删除或标注这些文档中已经过期的“全部完成”、旧 i18n FAIL、旧资源状态和旧构建结论。
+- [ ] 验收只接受：四份文档引用同一批次、同一时间窗口，且不存在相互矛盾的当前状态。
+- **证据**：四份文档 diff、文档检查命令、completion 快照。
 
 ## 1. 目标与裁决
 
@@ -149,18 +276,18 @@
 - [x] `axi-ui` 已注册为共享 runtime resource，当前通过资源索引承载。
 - [x] `axi-skills` 已被 workspace graph 注册，Resource Registry 会自动生成 `/axi-resources/axi-skills`。
 - [x] `axi-registry` 和 `axi-workspace-governance` 已能由 graph 自动生成资源条目。
-- [ ] 给 `axi-skills`、`axi-registry`、`axi-workspace-governance` 补充正式的展示覆盖、菜单分组、用户角色和文档入口。
-- [ ] 从默认资源菜单中隐藏 Workbench 自身、低层基础设施、模板和发行版，保留全局搜索和管理员视图。
+- [ ] 给 `axi-skills`、`axi-registry`、`axi-workspace-governance` 补充正式的展示覆盖、菜单分组、用户角色和文档入口 → `WFB-REG-002`。
+- [ ] 从默认资源菜单中隐藏 Workbench 自身、低层基础设施、模板和发行版，保留全局搜索和管理员视图 → `WFB-NAV-001`、`WFB-SEC-001`、`WFB-QA-001`。
 
 现有实现入口：[`axi-resources.json`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json:143)、[`workspace-resource-registry.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs:52)、[`app-registry.tsx`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx:185)。
 
 ### 2.4 当前验证阻塞与证据边界
 
-> **状态：✅ 审计采集完成（2026-09-14）**
+> **状态：⚠️ 2026-09-15 复核完成，剩余项已拆分至第 0 节原子任务**
 
-以下结果是 2026-09-14 子代理执行的只读审计结果，不等同于本 TODO 已经完成的验收。每个失败项必须由对应 Owner 项目修复或明确登记为环境阻塞后，Workbench 才能显示可信状态。
+以下结果是当前只读复核结果，不等同于本专项已经完成发布验收。每个失败项必须由对应 Owner 项目修复并提供新鲜证据后，Workbench 才能显示可信状态。
 
-**已执行验证命令摘要（2026-09-14）：**
+**已执行验证命令摘要（2026-09-15）：**
 
 | 验证项 | 命令 | 退出码 | 状态 | 证据摘要 |
 |--------|------|--------|------|----------|
@@ -171,25 +298,27 @@
 | axi-ui check/typecheck/test/build | `pnpm check:file-lines && pnpm test` | 0 | ✅ PASS | 完整检查、93 tests 和 Gallery build 通过 |
 | axi-rules validate | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | indexes validated |
 | axi-skills runtime verify | `cd .../axi-skills && python3 scripts/verify.py` | 0 | ✅ PASS | errors=0，9 warnings |
-| axi-skills i18n manifest | `cd .../axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` | 1 | ❌ FAIL | 79 个技能路径未进入 translation batches |
+| axi-skills i18n manifest | `cd .../axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` | 0 | ✅ PASS | 当前 manifest 检查通过 |
 | axi-docs verify | `cd .../axi-docs && pnpm --dir app verify` | 0 | ✅ PASS | build/verify 通过 |
 | axi-registry health | `cd .../axi-registry && npm run health` | 0 | ✅ PASS | Axi registry healthy |
 | workspace:audit | `pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Admissions 3, Incubations 4; Errors 0 |
+| dashboard production build | `pnpm --dir apps/devsvc-dashboard build` | 1 | ❌ FAIL | `axi-core` chunk 1.48 MB，超过 1 MB 门禁 |
+| drift-check | `node apps/devsvc-dashboard/scripts/drift-check.mjs /Volumes/code/workspace` | 0 | ✅ PASS | 0 warnings；无参数入口仍不稳定 |
 
-**当前阻塞项：**
+**当前阻塞项（原子任务入口）：**
 
-- [ ] `axi-skills` i18n manifest：79 个技能路径未进入 translation batches；需补批次清单并重新运行 i18n verifier。
-- [ ] Resource Registry 验证数据：当前所有资源均为 `path-found`，graph 的 `verify` 没有转换为 `verifyCommands`，也没有 `lastVerifiedAt` / `verificationSource` 数据。
-- [ ] `visibility: "admin"`：当前类型只允许 `always/deferred/hidden`，过滤逻辑也未处理 `admin`；需统一配置语义。
-- [ ] `menuGroup`：配置字段已存在，但 `makeHostNavGroups` 仍将资源平铺到单一 `axi-resources` children；需实现真实分组。
-- [ ] 真实用户角色：`Shell.tsx` 调用 `translateNavGroups` 时未传入用户角色，当前始终使用默认 `developer`。
-- [ ] 资源详情页：仍未展示 Owner、验证摘要、验证来源、证据链接和 verify commands。
+- [ ] `WFB-REL-001`：Dashboard production build 仍被 chunk-size 门禁阻塞。
+- [ ] `WFB-NAV-001`：真实 Shell 角色尚未贯通，不能声称三类角色权限已完成。
+- [ ] `WFB-REG-002`：四类 Resource Index 专属 metadata 的实际数据输入尚无充分证据。
+- [ ] `WFB-REG-003`：验证结果当前仍需明确受控持久化来源和重启后可读证据。
+- [ ] `WFB-QA-001`：尚未完成三类角色的真实浏览器 UI 验收。
+- [ ] `WFB-HOST-001`、`WFB-PACK-001`：Hosted App 健康失败治理和版本化 Registry 消费仍待验收。
 
 **当前已通过的验证项：**
 - workspace validate、Workbench boundary、Dashboard typecheck/test、axi-ui 完整检查、axi-rules、axi-docs、axi-registry 和 workspace governance audit 均已在本轮复跑通过。
 
 **验证等级明确：**
-- 本地结构检查、CI 验证、运行时服务健康、真实用户界面和生产部署不得合并成一个“ready”状态；本轮尚未完成三种角色的真实浏览器 UI 验证。
+- 本地结构检查、CI 验证、运行时服务健康、真实用户界面和生产部署不得合并成一个“ready”状态；本轮仍未完成生产构建和三种角色的真实浏览器 UI 验证。
 
 ## 3. 分层绑定目标
 
@@ -206,40 +335,40 @@
 
 ### 3.2 Workbench Resource Registry 层
 
-**当前实现状态（2026-09-14 复核）：**
+**当前实现状态（2026-09-15 复核）：**
 
 > **状态：⚠️ 基础字段和生命周期函数已落地，验证数据与导航语义未闭合**
 
 | 期望字段/状态 | 当前实现 | 未完成项 |
 |--------------|------|------|
-| 资源状态：`registered`/`path-found`/`verified`/`stale`/`failed`/`missing` | `computeLifecycleStatus` 已实现 | 当前 49 个资源均为 `path-found`，没有实际验证记录 |
-| `menuGroup` | `axi-resources.json` 已配置 | `app-registry.tsx` 未按此字段生成分组 |
-| `visibility` | 已配置 `hidden`、`deferred`、`admin` | 类型不接受 `admin`，过滤逻辑也未处理 `admin` |
-| `audience` | 类型已定义 | Shell 未注入真实用户角色，配置中也未形成完整角色矩阵 |
-| `owner` / `docsRoute` | 类型已定义 | 基础资源配置没有系统性填充值，详情页未展示 Owner |
-| `lastVerifiedAt` / `verificationSource` / `verificationSummary` / `evidenceLink` | 类型已定义 | graph/static config 没有完整验证数据 |
-| `verifyCommands` | 类型和注册器输出已定义 | graph 使用 `verify`，当前转换结果为 0 条 |
+| 资源状态：`registered`/`path-found`/`verified`/`stale`/`failed`/`missing` | `computeLifecycleStatus` 已实现 | 需要由 `WFB-REG-003` 提供可追溯结果和新鲜快照 |
+| `menuGroup` | `axi-resources.json` 和 `app-registry.tsx` 已接入 | 需要由 `WFB-QA-001` 完成真实角色菜单验收 |
+| `visibility` | 已支持 `hidden`、`deferred`、`admin` | 实际角色链路由 `WFB-NAV-001` 收口 |
+| `audience` | 类型和过滤逻辑已定义 | Shell 尚未携带真实用户角色 |
+| `owner` / `docsRoute` | 类型、列表和详情渲染已存在 | 四类资源的实际填充由 `WFB-REG-002` 验收 |
+| `lastVerifiedAt` / `verificationSource` / `verificationSummary` / `evidenceLink` | 字段和详情渲染已存在 | 持久化和新鲜度证据由 `WFB-REG-003` 验收 |
+| `verifyCommands` | graph `verify` 转换逻辑已实现 | 需要验证真实输出、失败映射和安全边界 |
 
 **当前展示覆盖：**
 - `axi-workbench`、`axi-registry`、`axi-workspace-governance` 已配置 `hidden`。
-- `axi-skills` 已配置 `deferred`，但当前代码会将其从导航中直接排除，不是真正的延迟加载。
-- `axi-ui`、`axi-rules`、发行版和 Tauri 模板使用了 `admin`，但该值尚未被过滤逻辑支持。
+- `axi-skills` 的 `deferred` 仍需通过角色和搜索验收确认“延迟发现”语义，而不是无条件丢失。
+- `axi-ui`、`axi-rules`、发行版和 Tauri 模板的 `admin` 配置已被代码支持，但真实角色注入和浏览器验收仍待完成。
 
 **当前剩余实现：**
-1. 将资源元数据从配置输入贯通到 Resource Registry 和导航层
-2. 统一 `admin` / `hidden` / `deferred` 的配置和过滤语义
-3. 将 graph 的验证命令和结果接入资源状态
+1. `WFB-REG-002`：补齐四类 Resource Index 的真实 metadata 数据输入
+2. `WFB-NAV-001`：完成真实角色注入和 visibility/audience 行为验证
+3. `WFB-REG-003`：完成验证结果持久化、新鲜度和失败状态证据
 
-- [ ] 保持 `workspace-resource-registry.mjs` 从 graph 生成资源的主流程。
-- [ ] 将静态 `axi-resources.json` 限定为展示覆盖：标题、图标、surface、路由、菜单分组、角色和说明。
-- [ ] 禁止静态资源配置隐藏 graph 已注册项目，除非有明确的 `visibilityPolicy` 和审计记录。
-- [ ] 将资源状态拆分为 `registered`、`path-found`、`verified`、`stale`、`failed`、`missing`。
-- [ ] 让 `ResourceLifecycleStatus` 类型去掉 `| string`，避免任意状态绕过类型约束。
-- [ ] 将 graph 中的 `verify` 命令转换为只读验证元数据，不允许前端拼接任意 shell 命令。
-- [ ] 将验证结果实际写入 graph snapshot 或受控 verification endpoint，避免所有资源长期停留在 `path-found`。
-- [ ] 增加 `lastVerifiedAt`、`verificationSource`、`verificationSummary` 和 `evidenceLink`。
-- [ ] 私有仓库在普通 UI 中只显示项目名、状态、Owner 和受控文档入口；不展示绝对本地路径、私有文件内容或未经授权的 GitHub 页面。
-- [ ] 对缺少 Owner、验证命令或文档入口的资源显示治理缺口，而不是显示为完整可用。
+- [x] 保持 `workspace-resource-registry.mjs` 从 graph 生成资源的主流程。
+- [x] 将静态 `axi-resources.json` 限定为展示覆盖：标题、图标、surface、路由、菜单分组、角色和说明。
+- [ ] 禁止静态资源配置隐藏 graph 已注册项目，除非有明确的 `visibilityPolicy` 和审计记录 → `WFB-GOV-001`。
+- [x] 将资源状态拆分为 `registered`、`path-found`、`verified`、`stale`、`failed`、`missing`。
+- [ ] 让 `ResourceLifecycleStatus` 类型去掉 `| string`，避免任意状态绕过类型约束 → `WFB-REG-001`。
+- [x] 将 graph 中的 `verify` 命令转换为只读验证元数据，不允许前端拼接任意 shell 命令。
+- [ ] 将验证结果实际写入 graph snapshot 或受控 verification endpoint，避免所有资源长期停留在 `path-found` → `WFB-REG-003`。
+- [ ] 增加 `lastVerifiedAt`、`verificationSource`、`verificationSummary` 和 `evidenceLink` 的真实来源证据 → `WFB-REG-002`、`WFB-REG-003`。
+- [ ] 私有仓库在普通 UI 中只显示项目名、状态、Owner 和受控文档入口；不展示绝对本地路径、私有文件内容或未经授权的 GitHub 页面 → `WFB-SEC-001`。
+- [ ] 对缺少 Owner、验证命令或文档入口的资源显示治理缺口，而不是显示为完整可用 → `WFB-REG-002`。
 
 验收：资源索引同时能说明“项目已注册”和“最近验证是否通过”；删除或移动路径后状态能变为 `missing`；静态配置和 graph 不发生事实冲突。
 
@@ -343,16 +472,16 @@
 
 ### 5.1 工作区与 Workbench 验证
 
-**2026-09-14 执行结果：**
+**2026-09-15 复核结果：**
 
 - [x] `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate` → ✅ PASS
 - [x] `pnpm check:boundaries` → ✅ PASS
 - [x] `pnpm --dir apps/devsvc-dashboard typecheck` → ✅ PASS
 - [x] `pnpm --dir apps/devsvc-dashboard test` → ✅ PASS (25/25)
-- [ ] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource 和路由行为。
-- [ ] 验证 Hosted App 和 Resource Index 的路由互不混淆。
-- [ ] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现。
-- [ ] 验证 1440px Web 导航、资源列表、详情页、搜索、面包屑和错误态。
+- [ ] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource 和路由行为 → `WFB-REG-002`、`WFB-REG-003`。
+- [ ] 验证 Hosted App 和 Resource Index 的路由互不混淆 → `WFB-HOST-001`、`WFB-QA-001`。
+- [ ] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现 → `WFB-SEC-001`、`WFB-QA-001`。
+- [ ] 验证 1440px Web 导航、资源列表、详情页、搜索、面包屑和错误态 → `WFB-QA-001`。
 
 ### 5.2 Provider / Governance 项目验证
 
@@ -363,19 +492,20 @@
 | axi-ui | `pnpm check:file-lines && pnpm test` | 0 | ✅ PASS | 完整检查、93 tests 和 Gallery build 通过 |
 | axi-rules | `cd .../axi-rules && python3 scripts/validate-index.py` | 0 | ✅ PASS | indexes validated |
 | axi-skills runtime | `cd .../axi-skills && python3 scripts/verify.py` | 0 | ✅ PASS | errors=0，9 warnings |
-| axi-skills i18n | `cd .../axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` | 1 | ❌ FAIL | 79 个技能路径未进入 translation batches |
+| axi-skills i18n | `cd .../axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` | 0 | ✅ PASS | 当前 manifest 检查通过 |
 | axi-docs | `cd .../axi-docs && pnpm --dir app verify` | 0 | ✅ PASS | build/verify 通过 |
 | axi-registry | `cd .../axi-registry && npm run health` | 0 | ✅ PASS | Axi registry healthy |
 | axi-governance | `cd .../axi-workspace-governance && pnpm workspace:audit` | 0 | ✅ PASS | Entries 22, Errors 0 |
 
-- [ ] `cd /Volumes/code/workspace/shared/axi-ui && pnpm check:file-lines && pnpm typecheck && pnpm test`
+- [x] `cd /Volumes/code/workspace/shared/axi-ui && pnpm check:file-lines && pnpm typecheck && pnpm test` → ✅ PASS（typecheck、93 tests 和 Gallery build 通过）
 - [x] `cd /Volumes/code/workspace/projects/axi-rules && python3 scripts/validate-index.py` → ✅ PASS
 - [x] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify.py` → ✅ PASS（errors=0，9 warnings）
-- [ ] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` → ❌ FAIL（79 项）
+- [x] `cd /Volumes/code/workspace/shared/axi-skills && python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff` → ✅ PASS（当前 manifest 检查通过）
 - [x] `cd /Volumes/code/workspace/projects/axi-docs && pnpm --dir app verify` → ✅ PASS
 - [x] `cd /Volumes/code/workspace/infra/axi-registry && npm run health` → ✅ PASS
 - [x] `cd /Volumes/code/workspace/infra/axi-workspace-governance && pnpm workspace:audit` → ✅ PASS
-- [ ] 将每次验证的命令、时间、分支、结果和证据链接写入项目 completion 或治理快照。
+- [ ] 将每次验证的命令、时间、分支、结果和证据链接写入项目 completion 或治理快照 → `WFB-EVID-001`
+- [ ] `pnpm --dir apps/devsvc-dashboard build` → ❌ FAIL（`WFB-REL-001`）
 
 ### 5.3 证据新鲜度
 
@@ -384,9 +514,9 @@
 - [ ] 不因路径存在、菜单出现或构建成功而声称项目已完成生产接入。
 - [ ] 发现命令过期时，先更新 Owner 项目的 TDD/CHANGELOG，再更新 Workbench 资源元数据。
 
-## 5.4 子代理调查报告（2026-09-14）
+## 5.4 历史调查报告与当前修订（2026-09-15）
 
-> **状态：✅ 调查已完成**
+> **状态：✅ 历史调查已吸收；过时结论不再作为当前状态**
 
 ### 资源注册器复核摘要
 
@@ -394,16 +524,15 @@
 
 当前状态字段已扩展为：`registered` | `path-found` | `verified` | `stale` | `failed` | `missing`。
 
-**当前仍有差距：**
-1. 当前运行结果为 49 个资源全部 `path-found`，没有实际 `verified`/`stale`/`failed` 记录
-2. `menuGroup` 已进入配置，但导航实现仍未按字段生成真实分组
-3. `visibility: "admin"` 不在类型和过滤逻辑支持范围内
-4. graph 的 `verify` 尚未转换为 `verifyCommands`，当前输出为 0 条
+**已完成的差距：**
+1. `menuGroup` 已按字段生成真实分组，行为测试通过。
+2. `visibility: "admin"` 已进入类型和过滤逻辑。
+3. graph 的 `verify` 已具备转换为 `verifyCommands` 的实现。
 
-**下一步：**
-- 接通验证命令和验证结果数据源
-- 统一 visibility/audience 语义并注入真实角色
-- 按 menuGroup 构造资源中心分组并增加行为测试
+**当前仍需执行：**
+- `WFB-REG-002`：证明四类 Resource Index metadata 真实进入 registry 输出。
+- `WFB-REG-003`：证明验证结果可持久化、可过期和可追溯。
+- `WFB-NAV-001`：将真实用户角色接入 Shell 调用链。
 
 ### Hosted App 代理报告摘要
 
@@ -419,10 +548,10 @@
 - 启动命令包管理器不统一
 - 失败态尚未形成统一的重试、降级和 Owner 处置流程
 
-**下一步：**
-1. 增加 readiness endpoint 或健康检查合同
-2. 实现失败重试、降级和 Owner 处置 UI
-3. 为 Hosted App 启停和健康状态保留证据
+**对应原子任务：**
+1. `WFB-HOST-001`：增加 readiness endpoint 或健康检查合同。
+2. `WFB-HOST-001`：实现失败重试、降级和 Owner 处置 UI。
+3. `WFB-EVID-001`：为 Hosted App 启停和健康状态保留证据。
 
 ## 6. 分阶段执行顺序
 
@@ -436,11 +565,11 @@
 - [x] 解决 `axi-workbench` graph remediation 的 `missing_owner` blocker。
 - [x] 建立每个项目的 canonical path、repo remote、private/public 状态和工作区分支模型快照。
 - [x] 确认 `axi-skills` 不作为 Workbench runtime 依赖，除非先建立正式消费契约。
-- [ ] 固化私有仓库不向普通用户暴露的权限规则。
+- [ ] 固化私有仓库不向普通用户暴露的权限规则 → `WFB-SEC-001`。
 - [ ] 对照 `workspace.json`、`workspace.graph.json` 和本地 `git remote`，确认仓库 canonical remote 的唯一来源；发现 `axiomaticworld/*` 与 `MoseLu/*` 不一致时，记录是迁移别名、镜像还是实际漂移。
-- [ ] 对照 workspace registry 与 graph 的项目覆盖，确认三个 Workbench distributions 是有意的 graph-only registration，还是需要补入治理 registry。
-- [ ] 对 `axi-ui`、`axi-registry` 等项目做正向 consumers 与反向 `workspace-project consumers` 对账，消除图谱中的消费者缺失或说明其原因。
-- [x] 为当前 2026-09-14 工作树建立过审计记录；该快照在后续提交后已过期，必须重新生成后才能作为当前证据。
+- [ ] 对照 workspace registry 与 graph 的项目覆盖，确认三个 Workbench distributions 是有意的 graph-only registration，还是需要补入治理 registry → `WFB-GOV-001`。
+- [ ] 对 `axi-ui`、`axi-registry` 等项目做正向 consumers 与反向 `workspace-project consumers` 对账，消除图谱中的消费者缺失或说明其原因 → `WFB-GOV-001`。
+- [ ] 为当前工作树重新生成审计记录；旧快照已过期 → `WFB-EVID-001`。
 
 完成标准：注册表通过；所有基础项目 Owner 不再缺失；安全边界和项目关系有单一权威来源。
 
@@ -449,12 +578,12 @@
 > **状态：⚠️ 字段和基础过滤代码已落地，实际语义与验证数据链路未闭合**
 
 - [x] 设计并落地资源元数据字段。
-- [ ] 修正资源生命周期语义：当前函数已支持多状态，但数据源未提供验证记录，49 个资源均为 `path-found`。
-- [ ] 增加菜单分组和角色过滤。
-- [ ] 隐藏 Workbench 自身、Registry、Governance、模板和发行版的默认菜单项，并修复 `visibility: "admin"` 未被过滤的问题。
-- [ ] 完成 `axi-skills`、Governance、Registry 的展示覆盖、Owner、文档和验证元数据。
-- [ ] 完成资源详情、面包屑、全局搜索和错误态。
-- [ ] 为验证失败的 `axi-ui`、`axi-skills`、`axi-registry` 增加失败详情和重试/外部修复说明，禁止只显示一个不可解释的红色状态。
+- [ ] 修正资源生命周期证据和状态类型 → `WFB-REG-001`、`WFB-REG-003`。
+- [x] 增加基于 `menuGroup` 的菜单分组和基础角色过滤；真实 Shell 角色验收仍由 `WFB-NAV-001`、`WFB-QA-001` 负责。
+- [ ] 隐藏 Workbench 自身、Registry、Governance、模板和发行版的默认菜单项，并完成真实角色验收 → `WFB-NAV-001`、`WFB-SEC-001`。
+- [ ] 完成 `axi-skills`、Governance、Registry 的展示覆盖、Owner、文档和验证元数据 → `WFB-REG-002`。
+- [ ] 完成资源详情、面包屑、全局搜索和错误态的浏览器验收 → `WFB-QA-001`。
+- [ ] 为验证失败的资源增加失败详情和重试/外部修复说明 → `WFB-HOST-001`、`WFB-REG-003`。
 
 完成标准：普通用户看到清晰的资源中心；开发者可以找到 UI/Rules/Skills；管理员可查看治理和交付资源；不会出现几十个平铺资源菜单。
 
@@ -482,12 +611,12 @@
 
 ### P2：自动化、观测和维护
 
-- [ ] 增加 graph/config drift 检查，发现资源静态覆盖缺失、重复或路由冲突时失败。
-- [ ] 增加资源注册器的单元测试和资源菜单快照测试。
-- [ ] 增加 Owner 缺失、验证过期、私有资源暴露和无文档入口的治理报告。
-- [ ] 增加 repo visibility、functional Owner、canonical remote、graph/registry 覆盖差异的定期报告。
-- [ ] 将资源验证摘要同步到 Axi Docs，但保留治理项目为生成源。
-- [ ] 将专项完成状态回写到 Workbench 的 milestone、CHANGELOG 和项目 completion。
+- [ ] 增加带默认 workspace root 的 graph/config drift 检查入口 → `WFB-DRIFT-001`。
+- [x] 增加资源注册器单元测试；菜单快照和角色行为仍由 `WFB-QA-001` 验收。
+- [ ] 增加 Owner 缺失、验证过期、私有资源暴露和无文档入口的治理报告 → `WFB-SEC-001`、`WFB-EVID-001`。
+- [ ] 增加 repo visibility、functional Owner、canonical remote、graph/registry 覆盖差异的定期报告 → `WFB-GOV-001`。
+- [ ] 将资源验证摘要同步到 Axi Docs，但保留治理项目为生成源 → `WFB-EVID-001`。
+- [ ] 将专项完成状态回写到 Workbench 的 milestone、CHANGELOG 和项目 completion → `WFB-DOC-002`。
 
 ## 7. 明确不做的事情
 
@@ -504,20 +633,26 @@
 
 ## 8. 依赖与阻塞项
 
-> **状态：✅ 阻塞项已识别（2026-09-14）**
+> **状态：⚠️ 阻塞项已按原子任务拆分（2026-09-15）**
 
 | 阻塞/依赖 | 影响 | 解除方式 | Owner |
 | --- | --- | --- | --- |
 | ~~功能 Owner 缺失~~ | 核心项目已登记，graph remediation 当前为 `supported` | 继续维护 Owner 来源和交接证据 | Governance |
-| `axi-skills` i18n manifest 缺失 | i18n verifier 失败 79 项，技能翻译批次不完整 | 补齐 translation batches 后重跑 verifier | axi-skills |
+| ~~`axi-skills` i18n manifest 缺失~~ | 当前 manifest 检查已通过 | 保留当前验证证据，后续变更重新复核 | axi-skills |
 | `axi-skills` 消费契约不明确 | 不能判断 Workbench 是否可读取技能内容 | 仅做目录展示；若需要 runtime 消费，先建立版本化契约和 graph edge | `axi-skills` + Workbench |
-| `visibility: "admin"` 语义未实现 | admin 资源可能对 developer 可见 | 统一 visibility 类型或改用 audience，并接入真实角色 | Workbench |
-| `menuGroup` 未参与导航分组 | 资源仍会平铺在单一资源组下 | 按 menuGroup 构造分组并补行为测试 | Workbench |
-| 验证命令未接通 | 所有资源均为 `path-found`，无法显示 verified/stale/failed | 将 graph 的 `verify` 映射到资源 verification 数据 | Governance + Workbench |
-| 资源详情信息不完整 | UI 不展示 Owner、验证摘要和 evidence | 完成资源详情字段渲染和受控链接 | Workbench |
+| `WFB-REL-001` | Dashboard production build 被 1 MB chunk-size 门禁阻塞 | 拆分入口或依赖后重新构建 | Workbench |
+| `WFB-NAV-001` | Shell 未接入真实用户角色，权限展示可能退化为默认 developer | 从认证上下文传入 role 并补三角色测试 | Workbench |
+| `WFB-REG-002` | 四类 Resource Index metadata 没有充分的实际数据源证据 | 接通 graph、受控配置或 Owner API，并测试非空输出 | Workbench + Provider Owners |
+| `WFB-REG-003` | 验证缓存为进程内存，重启后缺少可追溯证据 | 建立受控持久化来源并验证 stale/failed | Governance + Workbench |
+| `WFB-QA-001` | 真实角色 UI、搜索、详情和隐藏路由尚无浏览器证据 | 完成 1440px 三角色验收 | Workbench |
+| `WFB-HOST-001` | Hosted App 健康检查和失败处置仍不统一 | 增加 readiness contract、重试、降级和 Owner 提示 | Workbench + Hosted Owners |
+| `WFB-PACK-001` | 版本化 Registry 消费尚无完整消费者回归 | 发布包并验证所有列出的消费者 | axi-ui + axi-registry + Workbench |
+| `WFB-DRIFT-001` | drift-check 无参数入口不能稳定运行 | 增加 wrapper/package script 和默认入口测试 | Workbench |
+| `WFB-GOV-001` | remote、graph、registry 覆盖和消费者对账证据未刷新 | 重新采集并记录差异解释 | Governance + Workbench |
+| `WFB-DOC-002` | TODO、CHANGELOG、MILESTONE、completion 尚未完成本批次一致性回写 | 以本批原子任务状态更新四处文档 | Workbench |
 | 私有仓库访问策略未完成端到端验证 | 可能泄露源码路径或依赖 GitHub 登录 | 本地注册表优先，GitHub 链接仅管理员可见，并补角色测试 | Governance + Workbench |
 | `axi-ui` 当前本地未提交变更较多 | 升级或清理可能覆盖用户工作 | 变更前读取状态，Provider 任务与 Workbench 任务分离 | `axi-ui` Owner |
-| graph 与静态资源配置双源漂移 | 菜单、标题、路由和项目事实不一致 | graph 管事实，静态配置只做展示覆盖 | Governance + Workbench |
+| graph 与静态资源配置双源漂移 | 菜单、标题、路由和项目事实可能不一致 | graph 管事实，静态配置只做展示覆盖，并由 `WFB-DRIFT-001` 检查 | Governance + Workbench |
 
 ## 9. Definition of Done
 
