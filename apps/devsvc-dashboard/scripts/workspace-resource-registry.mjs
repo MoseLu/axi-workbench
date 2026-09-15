@@ -2,11 +2,35 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-// Verification cache: key = resourceId, value = cached verification result
+import {
+  getPersistentCacheDir,
+  loadPersistentVerification,
+  savePersistentVerification,
+  loadAllPersistentVerifications
+} from "./verification-persistence.mjs";
+
+// Verification cache: key = resourceId, value = cached verification result.
+// Two-tier design:
+//   1. Persistent tier — JSON files under .cache/verification/, survives restart.
+//   2. In-memory tier  — fast-path Map populated from the persistent tier on
+//                        startup and updated as verifications run.
+// A record's provenance is recorded in `cacheSource` ("persistent" | "in-memory"
+// | "none") so the API can distinguish a fresh restart (in-memory cache empty
+// but persistent cache hit) from a warm cache (both tiers hit).
 const verificationCache = new Map();
+const verificationCacheSource = new Map();
 
 // Cache TTL: 24 hours in milliseconds
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// Module-level persistent cache directory; set on first call to
+// loadWorkspaceResourceRegistry so the in-memory and persistent tiers share
+// one workspace-aware directory.
+let persistentCacheDir = null;
+
+function recordCacheSource(resourceId, source) {
+  verificationCacheSource.set(resourceId, source);
+}
 
 /**
  * Check if a cached verification result is stale (older than 24 hours).
@@ -32,14 +56,53 @@ export function getCachedVerification(resourceId) {
 }
 
 /**
+ * Return which tier served the cached result for a resource:
+ *   - "persistent" — loaded from disk this session (typical after restart),
+ *   - "in-memory"  — written during this process,
+ *   - "none"       — no cached record.
+ * @param {string} resourceId
+ * @returns {"persistent"|"in-memory"|"none"}
+ */
+export function getCacheSource(resourceId) {
+  return verificationCacheSource.get(resourceId) || "none";
+}
+
+/**
  * Clear verification cache for a specific resource or all resources.
+ * Also removes the matching persistent file so the cleared state survives
+ * a restart.
+ *
  * @param {string|null} resourceId - Optional resource ID to clear, or null to clear all
  */
 export function clearVerificationCache(resourceId = null) {
   if (resourceId) {
     verificationCache.delete(resourceId);
+    verificationCacheSource.delete(resourceId);
+    if (persistentCacheDir) {
+      try {
+        const filePath = path.join(
+          persistentCacheDir,
+          `${String(resourceId).replaceAll(/[^A-Za-z0-9_-]/g, "_")}.json`
+        );
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch {
+        // best-effort
+      }
+    }
   } else {
     verificationCache.clear();
+    verificationCacheSource.clear();
+    if (persistentCacheDir) {
+      try {
+        for (const entry of fs.readdirSync(persistentCacheDir)) {
+          if (entry.endsWith(".json")) {
+            fs.unlinkSync(path.join(persistentCacheDir, entry));
+          }
+        }
+      } catch {
+        // best-effort
+      }
+    }
   }
 }
 
@@ -358,6 +421,23 @@ export async function loadWorkspaceResourceRegistry({
   // Cache options: enabled (default true), forceRefresh (default false)
   const { enabled = true, forceRefresh = false } = cacheOptions;
 
+  // Resolve the persistent cache directory for this workspace once per call.
+  // We refresh the module-level pointer so clearVerificationCache() can find
+  // it later without re-deriving the path.
+  persistentCacheDir = getPersistentCacheDir(workspaceRoot);
+
+  // On startup (or whenever the in-memory cache is empty), hydrate from the
+  // persistent tier so a fresh process still sees recent verification
+  // evidence. Each loaded record is tagged as "persistent" so the API can
+  // distinguish it from records written during this process.
+  if (enabled && verificationCache.size === 0) {
+    const persistentRecords = loadAllPersistentVerifications(persistentCacheDir);
+    for (const [resourceId, record] of Object.entries(persistentRecords)) {
+      verificationCache.set(resourceId, record);
+      verificationCacheSource.set(resourceId, "persistent");
+    }
+  }
+
   const graph = readJson(graphPath, { projects: {} });
   const staticResources = readJson(staticResourcesPath, []);
   const staticById = new Map(staticResources.map((resource) => [resource.id, resource]));
@@ -369,6 +449,7 @@ export async function loadWorkspaceResourceRegistry({
     // Determine whether to use cache or run fresh verification
     let verificationResult;
     const cachedResult = enabled ? getCachedVerification(id) : null;
+    const cachedSource = enabled ? getCacheSource(id) : "none";
     const needsRefresh = forceRefresh || !cachedResult || isStale(id);
 
     if (needsRefresh) {
@@ -381,16 +462,28 @@ export async function loadWorkspaceResourceRegistry({
 
       // Cache the verification result for future requests
       if (enabled && verificationResult.lastVerifiedAt) {
-        verificationCache.set(id, {
+        const cacheEntry = {
           lastVerifiedAt: verificationResult.lastVerifiedAt,
           verificationSource: verificationResult.verificationSource,
           verificationSummary: verificationResult.verificationSummary,
           verificationResults: verificationResult.verificationResults,
           status: verificationResult.status
-        });
+        };
+        verificationCache.set(id, cacheEntry);
+        verificationCacheSource.set(id, "in-memory");
+
+        // Persist to disk so a service restart can re-hydrate from this
+        // record. Best-effort: a failed write must not break the registry.
+        try {
+          savePersistentVerification(id, cacheEntry, persistentCacheDir);
+        } catch {
+          // intentionally ignored — in-memory cache still works for this run
+        }
       }
     } else {
-      // Use cached result
+      // Use cached result. cacheSource distinguishes persistent (loaded from
+      // disk this session) from in-memory (written during this process) so
+      // callers can tell which tier served the record.
       verificationResult = {
         lastVerifiedAt: cachedResult.lastVerifiedAt,
         verificationSource: cachedResult.verificationSource,
@@ -414,7 +507,10 @@ export async function loadWorkspaceResourceRegistry({
       merged.verificationSummary = verificationResult.verificationSummary;
     }
 
-    // Add cache metadata for debugging/transparency
+    // Add cache metadata for debugging/transparency. `cacheSource` records
+    // which tier served the record; `fromCache` is true whenever a cache hit
+    // (any tier) was used.
+    merged.cacheSource = cachedSource;
     merged.fromCache = !needsRefresh && Boolean(verificationResult.lastVerifiedAt);
 
     // Finalize evidence link based on final merged state
@@ -428,7 +524,7 @@ export async function loadWorkspaceResourceRegistry({
     const ownerPath = resolveWorkspaceValue(resource.ownerPath || "", workspaceRoot);
     const ownerPathExists = Boolean(ownerPath) && fs.existsSync(ownerPath);
 
-    resources.push(mergeResource({
+    const mergedStatic = mergeResource({
       id,
       title: resource.title || id,
       kind: resource.kind || "workspace-resource",
@@ -440,7 +536,13 @@ export async function loadWorkspaceResourceRegistry({
       capabilities: [],
       notes: "",
       verifyCommands: []
-    }, resource, workspaceRoot));
+    }, resource, workspaceRoot);
+
+    // Static-only entries have no verification provenance.
+    mergedStatic.cacheSource = "none";
+    mergedStatic.fromCache = false;
+
+    resources.push(mergedStatic);
   }
 
   return resources.sort((left, right) => left.title.localeCompare(right.title, "en"));

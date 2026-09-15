@@ -1,13 +1,51 @@
 import { api } from "../../lib/api";
 
-// Resource lifecycle status for registration → verification → expiration lifecycle
-export type ResourceLifecycleStatus =
-  | 'registered'  // Project exists in graph with path
-  | 'path-found'   // ownerPath resolved but not yet verified
-  | 'verified'     // Recent successful verification
-  | 'stale'        // Verification older than 24 hours
-  | 'failed'       // Verification failed
-  | 'missing';     // Path does not exist
+export const RESOURCE_LIFECYCLE_STATUSES = [
+  'registered',
+  'path-found',
+  'verified',
+  'stale',
+  'failed',
+  'missing'
+] as const;
+
+export type ResourceLifecycleStatus = typeof RESOURCE_LIFECYCLE_STATUSES[number];
+
+const RESOURCE_LIFECYCLE_STATUS_SET: ReadonlySet<ResourceLifecycleStatus> = new Set(
+  RESOURCE_LIFECYCLE_STATUSES
+);
+
+/**
+ * Normalize an externally supplied lifecycle status into the strict
+ * `ResourceLifecycleStatus` union.
+ *
+ * The Workbench Resource Registry receives `status` over the API boundary
+ * from the Node-side registry script and static configuration. Both
+ * sources may carry unknown strings (legacy entries, graph drift, manual
+ * overrides). The UI must not let arbitrary strings bypass the type
+ * contract: unknown values collapse to a deterministic fallback
+ * (`'path-found'`) and emit a single `console.warn` per offending value.
+ *
+ * Returns the same reference for known values so callers and tests can
+ * compare strictly without losing identity.
+ */
+export function normalizeResourceStatus(value: unknown): ResourceLifecycleStatus {
+  if (typeof value === 'string' && RESOURCE_LIFECYCLE_STATUS_SET.has(value as ResourceLifecycleStatus)) {
+    return value as ResourceLifecycleStatus;
+  }
+  // Unknown / null / undefined / wrong type → safe fallback.
+  // `'path-found'` is the conservative choice: the project is registered
+  // in the graph but verification has not produced authoritative evidence.
+  // It signals "needs verification" rather than "verified" or "failed".
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    const observed = value === undefined ? 'undefined' : JSON.stringify(value);
+    console.warn(
+      `[axi-resources] Unknown ResourceLifecycleStatus ${observed}; ` +
+      'normalizing to "path-found". Update graph or static config to a known status.'
+    );
+  }
+  return 'path-found';
+}
 
 // Verification command descriptor (read-only, from graph config)
 export type VerifyCommand = {
@@ -63,7 +101,7 @@ export type AxiResource = {
   title: string;
   kind: string;
   surface: string;
-  status: ResourceLifecycleStatus | string;
+  status: ResourceLifecycleStatus;
   ownerPath: string;
   ownerPathExists?: boolean;
   dashboardRoute?: string;
@@ -83,6 +121,13 @@ export type AxiResource = {
   verificationSummary?: string; // Human-readable summary
   evidenceLink?: string;       // Evidence URL
 
+  // Cache provenance (WFB-REG-003): which tier served the cached record.
+  //   - "persistent" — loaded from disk during this process (typical after restart)
+  //   - "in-memory"  — written during this process
+  //   - "none"       — no cached record was available
+  cacheSource?: 'persistent' | 'in-memory' | 'none';
+  fromCache?: boolean;          // true when a cache hit (any tier) was used
+
   // Verify commands (read-only, from graph config only)
   verifyCommands?: VerifyCommand[];
 
@@ -101,7 +146,15 @@ export type AxiResourcesPayload = {
 
 export async function listAxiResources(): Promise<AxiResource[]> {
   const body = await api("/api/axi/resources") as AxiResourcesPayload;
-  return body.resources || [];
+  const resources = body.resources || [];
+  // The API boundary can deliver arbitrary strings in `status`; the
+  // front-end must never let them escape the typed surface. Normalize
+  // here once, at the parse boundary, so downstream consumers (page,
+  // status chip, search, detail view) can rely on the strict union.
+  return resources.map((resource) => ({
+    ...resource,
+    status: normalizeResourceStatus(resource.status)
+  }));
 }
 
 export function axiResourceRoute(resource: Pick<AxiResource, "dashboardRoute" | "id" | "surface">) {

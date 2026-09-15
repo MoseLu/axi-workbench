@@ -26,7 +26,7 @@ import { useRecentAccessTracker } from "../recent-access";
 import { useAppSettings } from "../settings/useAppSettings";
 import { normalizeTabKeys, readPinnedTabKeys, writePinnedTabKeys } from "../tab-state";
 import { antdModeTokens } from "../theme/tokens";
-import { adminUsername, readAvatarFile, getUserRole, type AuthUser } from "../features/auth/auth";
+import { adminUsername, readAvatarFile, type AuthUser } from "../features/auth/auth";
 import { AxiResourcesPage } from "../features/axi-resources/AxiResourcesPage";
 import { listAxiResources, type AxiResource } from "../features/axi-resources/axiResources";
 import { useDashboardData } from "../features/dashboard/useDashboardData";
@@ -86,7 +86,7 @@ export function Shell({
   const currentHostedApp = useMemo(() => findHostedApp(selectedKey, hostedApps), [hostedApps, selectedKey]);
   const canUseSubappMode = Boolean(isHostedPage && currentHostedApp?.menuGroups.length);
   const visibleNavigationMode: NavigationMode = canUseSubappMode && navigationMode === "subapp" ? "subapp" : "host";
-  const hostNavGroups = useMemo(() => translateNavGroups(t, hostedApps, axiResources, user.role || getUserRole()), [axiResources, hostedApps, language, t, user.role]);
+  const hostNavGroups = useMemo(() => translateNavGroups(t, hostedApps, axiResources, user.role), [axiResources, hostedApps, language, t, user.role]);
   const subappNavGroups = useMemo(() => makeHostedNavGroups(currentHostedApp, t), [currentHostedApp, language, t]);
   const activeNavGroups = visibleNavigationMode === "subapp" ? subappNavGroups : hostNavGroups;
   const activeNavKey = visibleNavigationMode === "host" && currentHostedApp ? hostedAppRoute(currentHostedApp) as NavRouteKey : selectedKey;
@@ -272,8 +272,8 @@ export function Shell({
       <Route path="/deploy" element={<DeployPage />} />
       <Route path="/alerts" element={<AlertsPage />} />
       <Route path="/servers" element={<ServersPage />} />
-      <Route path="/axi-resources" element={<AxiResourcesPage />} />
-      <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage />} />
+      <Route path="/axi-resources" element={<AxiResourcesPage userRole={user.role} />} />
+      <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage userRole={user.role} />} />
       <Route path="/apps/:appId/*" element={<HostedAppPage mode={themeState.mode} preference={themeState.preference} theme={themeState.theme} />} />
       <Route path="/logs" element={<Navigate to="/services" replace />} />
     </Routes>
@@ -337,7 +337,7 @@ export function Shell({
           ].filter(Boolean).join(" ")}
           contentClassName={`${isTablePage ? "app-page app-page-table services-content" : "app-page"} ${isHostedPage ? "app-page-hosted" : ""}`}
           contentFullscreen={contentFullscreen}
-          globalSearch={<GlobalSearchBox axiResources={axiResources} hostedApps={hostedApps} projects={projects} recentAccessKeys={recentAccess.map((item) => item.key)} onClearRecentAccess={clearRecentAccess} onSelectSearchItem={addRecentAccess} />}
+          globalSearch={<GlobalSearchBox axiResources={axiResources} hostedApps={hostedApps} projects={projects} recentAccessKeys={recentAccess.map((item) => item.key)} onClearRecentAccess={clearRecentAccess} onSelectSearchItem={addRecentAccess} userRole={user.role} />}
           navGroups={dashboardNavGroups}
           onBack={() => navigate(-1)}
           onFullscreenToggle={toggleContentFullscreen}

@@ -15,8 +15,20 @@ export type AuthUser = {
   deviceKey: string;
   loginAt: number;
   avatarDataUrl?: string;
-  role?: UserRole;
+  role: UserRole;
 };
+
+/**
+ * Resolve the role for a username. The login UI knows the username, so
+ * resolving here keeps `AuthUser.role` mandatory and prevents the Shell
+ * from falling back to `developer` when role is missing.
+ *
+ * @returns User role. Defaults to `developer` for unknown usernames.
+ */
+export function resolveRoleForUsername(username: string): UserRole {
+  if (username === adminUsername) return 'admin';
+  return 'developer';
+}
 
 /**
  * Get user role from multiple sources with the following priority:
@@ -90,9 +102,9 @@ export function readStoredAuth(): AuthUser | null {
         deviceKey: getDeviceKey(),
         loginAt: parsed.loginAt || Date.now(),
         avatarDataUrl: parsed.avatarDataUrl,
-        role: parsed.role
+        role: parsed.role ?? resolveRoleForUsername(parsed.username)
       };
-      if (parsed.deviceKey !== nextUser.deviceKey) {
+      if (parsed.deviceKey !== nextUser.deviceKey || parsed.role == null) {
         writeStoredAuth(nextUser);
       }
       return nextUser;

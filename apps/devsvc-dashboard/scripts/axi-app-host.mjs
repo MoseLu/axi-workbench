@@ -5,7 +5,40 @@ import net from "node:net";
 import path from "node:path";
 
 const frameFlag = "__axi_frame";
-const statusOrder = new Set(["idle", "starting", "ready", "stopped", "error"]);
+const statusOrder = new Set(["idle", "starting", "ready", "stopped", "error", "degraded"]);
+const READINESS_TIMEOUT_MS = 1500;
+const READINESS_MAX_ATTEMPTS = 45;
+const START_RETRY_DELAY_MS = 750;
+const START_RETRY_MAX = 1;
+
+/**
+ * Resolve the readiness path for a hosted app.
+ * If the registry entry defines `readinessPath`, use it; otherwise fall back
+ * to `healthPath` so existing entries keep working.
+ *
+ * @param {object} app hosted app registry entry
+ * @returns {string} readiness path beginning with "/"
+ */
+export function resolveReadinessPath(app) {
+  const candidate = typeof app?.readinessPath === "string" && app.readinessPath.trim().length > 0
+    ? app.readinessPath.trim()
+    : app?.healthPath;
+  return candidate && candidate.startsWith("/") ? candidate : "/";
+}
+
+/**
+ * Resolve the health (page accessibility) path for a hosted app.
+ * Falls back to `/` if `healthPath` is missing or malformed.
+ *
+ * @param {object} app hosted app registry entry
+ * @returns {string} health path beginning with "/"
+ */
+export function resolveHealthPath(app) {
+  const candidate = typeof app?.healthPath === "string" && app.healthPath.trim().length > 0
+    ? app.healthPath.trim()
+    : "/";
+  return candidate.startsWith("/") ? candidate : "/";
+}
 
 export function defaultAxiAppRegistry(workspaceRoot) {
   const node22 = path.join(workspaceRoot, "scripts", "run-node22-command.sh");
@@ -22,6 +55,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
         fallback: "服务不可用时仅显示状态，不在 Host 复刻执行按钮"
       },
       healthPath: "/",
+      readinessPath: "/",
       icon: "database",
       menuGroups: [
         {
@@ -62,6 +96,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
         fallback: "不可用时保留受控入口与错误状态，不由 Host 执行任务"
       },
       healthPath: "/",
+      readinessPath: "/",
       icon: "workbench",
       menuGroups: [
         {
@@ -110,6 +145,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
         fallback: "原生桥接不可用时仅报告不可用，不把邮件动作复制到 Host"
       },
       healthPath: "/",
+      readinessPath: "/",
       icon: "auth",
       menuGroups: [
         {
@@ -133,6 +169,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       cwd: path.join(workspaceRoot, "projects", "axi-docs", "app"),
       defaultRoute: "/",
       healthPath: "/",
+      readinessPath: "/",
       icon: "search",
       menuGroups: [
         {
@@ -156,6 +193,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       cwd: path.join(workspaceRoot, "projects", "axi-image-preview"),
       defaultRoute: "/",
       healthPath: "/",
+      readinessPath: "/",
       icon: "app",
       menuGroups: [
         {
@@ -179,6 +217,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       cwd: path.join(workspaceRoot, "projects", "axi-agent-platform", "frontend"),
       defaultRoute: "/",
       healthPath: "/",
+      readinessPath: "/",
       icon: "work",
       menuGroups: [
         {
@@ -277,9 +316,17 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
       nativeFallback: Boolean(app.nativeFallback),
       route: appRoute(app),
       routes: app.routes || [],
+      healthPath: resolveHealthPath(app),
+      readinessPath: resolveReadinessPath(app),
       running: state?.status === "ready" || state?.status === "starting",
       status: statusOrder.has(state?.status) ? state.status : "idle",
       title: app.title,
+      healthContract: {
+        healthPath: resolveHealthPath(app),
+        readinessPath: resolveReadinessPath(app)
+      },
+      failure: state?.failure || null,
+      attempt: state?.attempt || null,
       updatedAt: state?.updatedAt || null
     };
   }
@@ -291,11 +338,12 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
   }
 
   async function healthCheck(state) {
-    const target = new URL(state.app.healthPath || "/", `http://127.0.0.1:${state.port}`);
+    const target = new URL(resolveHealthPath(state.app), `http://127.0.0.1:${state.port}`);
     return new Promise((resolve) => {
       const req = http.request(target, { method: "GET", timeout: 1500 }, (res) => {
         res.resume();
-        resolve((res.statusCode || 500) < 500);
+        const code = res.statusCode || 500;
+        resolve(code >= 200 && code < 400);
       });
       req.on("timeout", () => {
         req.destroy();
@@ -306,19 +354,88 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
     });
   }
 
+  /**
+   * Probe the readiness endpoint of an app. Returns the HTTP status code
+   * (or 0 if the connection failed) and never throws.
+   *
+   * A readiness endpoint is distinct from a page-level health endpoint:
+   * it should return 200 only when the underlying runtime/service is ready
+   * to handle traffic. A 200 on the root page does not imply readiness.
+   */
+  async function checkReadiness(state) {
+    const target = new URL(resolveReadinessPath(state.app), `http://127.0.0.1:${state.port}`);
+    return new Promise((resolve) => {
+      const req = http.request(
+        target,
+        { method: "GET", timeout: READINESS_TIMEOUT_MS },
+        (res) => {
+          res.resume();
+          resolve(res.statusCode || 500);
+        }
+      );
+      req.on("timeout", () => {
+        req.destroy();
+        resolve(0);
+      });
+      req.on("error", () => resolve(0));
+      req.end();
+    });
+  }
+
+  /**
+   * Classify the combined readiness + page-accessibility probe into one of:
+   * - "ready": readiness 200 AND health < 500
+   * - "page-only": readiness non-200 but health < 500 (page accessible, service not ready)
+   * - "unavailable": both readiness and health failed
+   *
+   * @returns {Promise<{status: "ready"|"page-only"|"unavailable", readinessCode: number, healthOk: boolean}>}
+   */
+  async function classifyHealth(state) {
+    const [readinessCode, healthOk] = await Promise.all([
+      checkReadiness(state),
+      healthCheck(state)
+    ]);
+    let status;
+    if (readinessCode >= 200 && readinessCode < 300 && healthOk) status = "ready";
+    else if (healthOk) status = "page-only";
+    else status = "unavailable";
+    return { status, readinessCode, healthOk };
+  }
+
   async function waitForReady(state) {
-    for (let index = 0; index < 45; index += 1) {
-      if (await healthCheck(state)) return true;
+    let lastResult = null;
+    for (let index = 0; index < READINESS_MAX_ATTEMPTS; index += 1) {
+      const result = await classifyHealth(state);
+      lastResult = result;
+      if (result.status === "ready") return result;
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    return false;
+    return lastResult;
+  }
+
+  /**
+   * Build the failure description shown in the dashboard when an app cannot
+   * be brought up. Includes owner, suggested actions, and retry hints.
+   */
+  function buildFailureState(state, error) {
+    const boundary = state.app.executionBoundary || {};
+    return {
+      owner: boundary.owner || state.app.title || state.app.appId,
+      authorization: boundary.authorization || null,
+      fallback: boundary.fallback || null,
+      suggestion: error?.suggestion
+        || "检查启动日志、端口冲突或上游依赖，必要时联系 Owner 项目维护者。",
+      retryable: true,
+      lastError: error?.message || "readiness contract did not converge",
+      logs: state.logs.slice(-20)
+    };
   }
 
   async function startApp(appId) {
     const app = apps.get(appId);
     if (!app) throw new Error(`unknown axi app: ${appId}`);
     const existing = runtime.get(appId);
-    if (existing?.child && existing.status !== "stopped" && existing.status !== "error") {
+    if (existing?.child && existing.status !== "stopped" && existing.status !== "error" && existing.status !== "degraded") {
       if (existing.status === "starting") {
         const ready = existing.readyPromise ? await existing.readyPromise : await waitForReady(existing);
         if (ready) {
@@ -327,13 +444,37 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
           return publicApp(app, existing);
         }
       }
-      if (existing.status === "ready" || await healthCheck(existing)) {
+      if (existing.status === "ready") {
+        return publicApp(app, existing);
+      }
+      // Page-accessible but not fully ready (e.g. running service without /ready endpoint)
+      const live = await classifyHealth(existing);
+      if (live.status === "ready") {
         existing.status = "ready";
+        existing.updatedAt = new Date().toISOString();
+        return publicApp(app, existing);
+      }
+      if (live.status === "page-only") {
+        existing.status = "degraded";
+        existing.failure = buildFailureState(existing, {
+          message: `readiness endpoint ${resolveReadinessPath(app)} returned ${live.readinessCode}, page is accessible`,
+          suggestion: `${app.title} 的根页面已可访问，但 readiness 端点未返回 200，请联系 Owner 项目确认运行时健康状态。`
+        });
         existing.updatedAt = new Date().toISOString();
         return publicApp(app, existing);
       }
     }
 
+    return attemptStart(appId);
+  }
+
+  /**
+   * Spawn the app process and wait for it to become ready.
+   * On failure, performs at most START_RETRY_MAX retries before
+   * recording a structured failure state with owner context.
+   */
+  async function attemptStart(appId, attempt = 0) {
+    const app = apps.get(appId);
     const port = await allocatePort();
     const base = appBase(appId);
     const command = app.startCommand.replaceAll("${port}", String(port)).replaceAll("${base}", base);
@@ -345,7 +486,8 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
       port,
       readyPromise: null,
       status: "starting",
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      attempt: attempt + 1
     };
     const env = {
       ...process.env,
@@ -359,21 +501,71 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
       VITE_AXI_APP_BASE: base,
       VITE_AXI_HOSTED_APP: "1"
     };
-    const child = spawn(command, { cwd: app.cwd, env, shell: true, stdio: ["ignore", "pipe", "pipe"] });
+    let child;
+    try {
+      child = spawn(command, { cwd: app.cwd, env, shell: true, stdio: ["ignore", "pipe", "pipe"] });
+    } catch (error) {
+      pushLog(state, `spawn failed: ${error.message}`);
+      return finalizeStartFailure(app, state, attempt, { message: `spawn failed: ${error.message}` });
+    }
     state.child = child;
     runtime.set(appId, state);
     child.stdout.on("data", (chunk) => pushLog(state, chunk));
     child.stderr.on("data", (chunk) => pushLog(state, chunk));
+    let exitedEarly = false;
+    let exitInfo = null;
     child.on("exit", (code, signal) => {
-      state.status = code === 0 ? "stopped" : "error";
-      state.updatedAt = new Date().toISOString();
+      exitedEarly = true;
+      exitInfo = { code, signal };
       pushLog(state, `process exited: code=${code ?? "-"} signal=${signal ?? "-"}`);
     });
 
-    state.readyPromise = waitForReady(state);
-    state.status = await state.readyPromise ? "ready" : "error";
+    const result = await waitForReady(state);
+    if (result && result.status === "ready") {
+      state.status = "ready";
+      state.failure = null;
+      state.updatedAt = new Date().toISOString();
+      return publicApp(app, state);
+    }
+
+    // Distinguish between a process that died vs. one that is alive but not ready.
+    if (exitedEarly) {
+      const reason = exitInfo?.code === 0
+        ? "process exited cleanly before readiness contract converged"
+        : `process exited with code=${exitInfo?.code ?? "?"} signal=${exitInfo?.signal ?? "?"}`;
+      return finalizeStartFailure(app, state, attempt, { message: reason });
+    }
+    if (result && result.status === "page-only") {
+      state.status = "degraded";
+      state.failure = buildFailureState(state, {
+        message: `readiness endpoint ${resolveReadinessPath(app)} returned ${result.readinessCode}, page is accessible`,
+        suggestion: `${app.title} 的根页面已可访问，但 readiness 端点未返回 200，请联系 Owner 项目确认运行时健康状态。`
+      });
+      state.updatedAt = new Date().toISOString();
+      return publicApp(app, state);
+    }
+    return finalizeStartFailure(app, state, attempt, {
+      message: `readiness contract did not converge at ${resolveReadinessPath(app)} within ${READINESS_MAX_ATTEMPTS} attempts`
+    });
+  }
+
+  async function finalizeStartFailure(app, state, attempt, error) {
+    if (state.child && !state.child.killed) {
+      try {
+        state.child.kill("SIGTERM");
+      } catch {
+        /* ignore - child may already have exited */
+      }
+    }
+    if (attempt < START_RETRY_MAX) {
+      pushLog(state, `start attempt ${attempt + 1} failed: ${error.message}; retrying once`);
+      await new Promise((resolve) => setTimeout(resolve, START_RETRY_DELAY_MS));
+      return attemptStart(app.appId, attempt + 1);
+    }
+    state.status = "error";
+    state.failure = buildFailureState(state, error);
     state.updatedAt = new Date().toISOString();
-    if (state.status === "error") pushLog(state, "health check did not become ready");
+    pushLog(state, `start failed permanently after ${attempt + 1} attempt(s): ${error.message}`);
     return publicApp(app, state);
   }
 
@@ -384,6 +576,8 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
     if (state?.child && state.status !== "stopped") {
       state.child.kill("SIGTERM");
       state.status = "stopped";
+      state.failure = null;
+      state.attempt = null;
       state.updatedAt = new Date().toISOString();
     }
     return publicApp(app, state);
@@ -517,5 +711,15 @@ export function createAxiAppHost({ workspaceRoot, registry = loadAxiAppRegistry(
     return true;
   }
 
-  return { handleApi, handleUpgrade, proxyRequest, startApp, stopApp, statusFor };
+  return {
+    handleApi,
+    handleUpgrade,
+    proxyRequest,
+    startApp,
+    stopApp,
+    statusFor,
+    classifyHealth,
+    resolveHealthPath,
+    resolveReadinessPath
+  };
 }

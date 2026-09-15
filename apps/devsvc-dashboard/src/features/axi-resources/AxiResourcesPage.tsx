@@ -8,6 +8,7 @@ import { AxiTable } from "@axi/crud";
 import { AxiTag } from "@axi/core";
 import { api, requestErrorMessage } from "../../lib/api";
 import { metricTagType, StatusChip } from "../status/status";
+import type { UserRole } from "../auth/auth";
 import type { AxiResource, AxiResourcesPayload, VerifyCommand } from "./axiResources";
 
 const surfaceLabels: Record<string, string> = {
@@ -16,6 +17,68 @@ const surfaceLabels: Record<string, string> = {
   "hosted-subroute": "托管子路由",
   "resource-index": "资源索引"
 };
+
+/**
+ * Redact an `AxiResource` for a given role.
+ *
+ * Ordinary users (`user`) must never see private repository absolute paths
+ * or any field that may embed source code, credentials, or unauthorized
+ * remote URLs. The dashboard backend is allowed to keep `ownerPath`,
+ * `evidenceLink`, `docsRoute` and other absolute-path fields on the wire,
+ * but the UI MUST strip them for non-admin roles before they reach any
+ * renderer, table column, or tooltip.
+ *
+ * Admin keeps the full record; developer gets a developer-revealing subset
+ * (no absolute owner paths, but a non-PII indicator is allowed).
+ *
+ * Pure function so security tests can call it with mock data without
+ * mounting React.
+ */
+export function redactResourceForRole<T extends Partial<AxiResource>>(
+  resource: T,
+  role: UserRole
+): T {
+  if (role === "admin") return resource;
+  // For both `user` and `developer` we strip absolute paths and remote
+  // links that would force a privileged network call.
+  const sanitized: Partial<AxiResource> & Pick<T, keyof T> = {
+    ...resource
+  };
+  delete sanitized.ownerPath;
+  if (role === "user") {
+    delete sanitized.evidenceLink;
+    delete sanitized.docsRoute;
+  }
+  return sanitized as T;
+}
+
+/**
+ * Decide whether a role is allowed to access a hidden / private resource
+ * by route. This is the source of truth used by both the page render and
+ * the security tests, so hidden-route behavior cannot drift between UI
+ * and tests.
+ */
+export function canRoleAccessResource(
+  resource: Pick<AxiResource, "visibility" | "audience"> | undefined,
+  role: UserRole
+): boolean {
+  if (!resource) return false;
+  // `deferred` means "not surfaced yet" — even admin must wait for the
+  // resource to be promoted out of deferred.
+  if (resource.visibility === "deferred") return false;
+  // `hidden` is the admin-only escape hatch: ordinary users and developers
+  // must be redirected to an authorization error when they reach a hidden
+  // route directly; admins can still browse the controlled info.
+  if (role === "admin") return true;
+  if (resource.visibility === "hidden") return false;
+  if (resource.visibility === "admin") return false;
+  if (resource.audience) {
+    const priority: Record<UserRole, number> = { user: 0, developer: 1, admin: 2 };
+    const audienceLevel = priority[resource.audience];
+    if (typeof audienceLevel === "number" && priority[role] < audienceLevel) return false;
+  }
+  return true;
+}
 
 // Helper to format relative time
 function formatRelativeTime(isoTimestamp?: string): string {
@@ -430,7 +493,7 @@ function AxiResourceDetail({ resource }: { resource: AxiResource }) {
   );
 }
 
-export function AxiResourcesPage() {
+export function AxiResourcesPage({ userRole = "developer" as UserRole }: { userRole?: UserRole } = {}) {
   const { t } = useTranslation();
   const { resourceId } = useParams();
   const tableToolbarContainer = useTableToolbarSlot();
@@ -438,8 +501,15 @@ export function AxiResourcesPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const resources = data?.resources || [];
-  const visibleResources = resourceId ? resources.filter((resource) => resource.id === resourceId) : resources;
+  // Hidden / admin / private-visibility resources are dropped for the
+  // current role before they reach any column renderer. This mirrors the
+  // nav filtering so the table and the sidebar cannot disagree.
+  const roleVisibleResources = resources.filter((resource) => canRoleAccessResource(resource, userRole));
+  const visibleResources = resourceId ? roleVisibleResources.filter((resource) => resource.id === resourceId) : roleVisibleResources;
   const singleResource = resourceId && visibleResources.length === 1 ? visibleResources[0] : null;
+  // When the URL is asking for a hidden resource, surface an authorization
+  // error instead of rendering it. Admin still gets the full record.
+  const accessDenied = Boolean(resourceId) && !singleResource && resources.some((resource) => resource.id === resourceId);
 
   async function load() {
     setLoading(true);
@@ -502,15 +572,22 @@ export function AxiResourcesPage() {
           dataIndex: "evidenceLink",
           align: "center" as const,
           width: 100,
-          render: (value?: string) => value ? (
-            <Tooltip title={value}>
-              <AntButton href={value} size="small" type="link" target="_blank" icon="link">
-                {t("查看")}
-              </AntButton>
-            </Tooltip>
-          ) : (
-            <span className="service-desc">—</span>
-          )
+          render: (value?: string) => {
+            // Hidden / private / admin-only resources must never expose a
+            // remote evidence link to a non-admin user. The redactor drops
+            // the field entirely for `user`; admins keep it.
+            const safeResource = redactResourceForRole({ evidenceLink: value } as Pick<AxiResource, "evidenceLink">, userRole);
+            const safeLink = (safeResource as Pick<AxiResource, "evidenceLink">).evidenceLink;
+            return safeLink ? (
+              <Tooltip title={safeLink}>
+                <AntButton href={safeLink} size="small" type="link" target="_blank" icon="link">
+                  {t("查看")}
+                </AntButton>
+              </Tooltip>
+            ) : (
+              <span className="service-desc">—</span>
+            );
+          }
         },
         {
           title: t("resources.column.axiEntry"),
@@ -534,24 +611,31 @@ export function AxiResourcesPage() {
           title: t("Owner 路径"),
           dataIndex: "ownerPath",
           width: 360,
-          render: (value: string, resource: AxiResource) => (
-            <div className="service-cell">
-              <div className="service-name">{resource.ownerPathExists ? t("已登记") : t("未配置")}</div>
-              {/* 不暴露绝对路径，只显示存在状态 */}
-              <div className="service-desc">—</div>
-              {resource.owner && (
-                <div className="service-desc" style={{ color: resource.status === "failed" ? "var(--red)" : "inherit" }}>
-                  {resource.status === "failed" ? (
-                    <Tooltip title={t("请联系 Owner 解决验证失败问题")}>
-                      <span>{t("联系 Owner")}: {resource.owner}</span>
-                    </Tooltip>
-                  ) : (
-                    <span>{t("Owner")}: {resource.owner}</span>
-                  )}
-                </div>
-              )}
-            </div>
-          )
+          render: (value: string, resource: AxiResource) => {
+            // ownerPath is the local absolute workspace path. We never
+            // render the raw string for non-admin roles; only the
+            // existence indicator and the redacted owner handle survive.
+            const safeResource = redactResourceForRole({ ownerPath: value } as Pick<AxiResource, "ownerPath">, userRole);
+            const safePath = (safeResource as Pick<AxiResource, "ownerPath">).ownerPath;
+            return (
+              <div className="service-cell">
+                <div className="service-name">{resource.ownerPathExists ? t("已登记") : t("未配置")}</div>
+                {/* 不暴露绝对路径，只显示存在状态 */}
+                <div className="service-desc" data-owner-path={userRole === "admin" ? safePath : ""}>{userRole === "admin" && safePath ? t("已配置路径") : "—"}</div>
+                {resource.owner && (
+                  <div className="service-desc" style={{ color: resource.status === "failed" ? "var(--red)" : "inherit" }}>
+                    {resource.status === "failed" ? (
+                      <Tooltip title={t("请联系 Owner 解决验证失败问题")}>
+                        <span>{t("联系 Owner")}: {resource.owner}</span>
+                      </Tooltip>
+                    ) : (
+                      <span>{t("Owner")}: {resource.owner}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          }
         },
         {
           title: t("能力"),
@@ -573,22 +657,30 @@ export function AxiResourcesPage() {
           dataIndex: "docsRoute",
           align: "center" as const,
           width: 100,
-          render: (value?: string) => value ? (
-            <AntButton href={value} size="small" type="link" target="_blank" icon="book">
-              {t("文档")}
-            </AntButton>
-          ) : (
-            <span className="service-desc">—</span>
-          )
+          render: (value?: string) => {
+            const safeResource = redactResourceForRole({ docsRoute: value } as Pick<AxiResource, "docsRoute">, userRole);
+            const safeDocs = (safeResource as Pick<AxiResource, "docsRoute">).docsRoute;
+            return safeDocs ? (
+              <AntButton href={safeDocs} size="small" type="link" target="_blank" icon="book">
+                {t("文档")}
+              </AntButton>
+            ) : (
+              <span className="service-desc">—</span>
+            );
+          }
         }
       ]
     }
-  ], [t]);
+  ], [t, userRole]);
 
   return (
     <section className="panel services-panel">
       {error ? <div className="hosted-app-state is-error">{error}</div> : null}
-      {singleResource ? (
+      {accessDenied ? (
+        <div className="hosted-app-state is-error" data-testid="axi-resources-access-denied" role="alert">
+          {t("无权访问该资源")}
+        </div>
+      ) : singleResource ? (
         <>
           <AxiResourceDetail resource={singleResource} />
           <AxiTable<AxiResource>

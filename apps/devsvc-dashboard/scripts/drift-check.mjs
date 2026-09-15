@@ -1,6 +1,11 @@
 /**
  * Graph/Config Drift Checker
  * Detects missing static overrides, duplicates, or route conflicts
+ *
+ * Usage:
+ *   node scripts/drift-check.mjs                       # auto-detect workspace root
+ *   node scripts/drift-check.mjs /Volumes/code/workspace  # explicit workspace root
+ *   WORKSPACE_ROOT=/Volumes/code/workspace node scripts/drift-check.mjs
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -13,7 +18,34 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-const workspaceRoot = process.argv[2] || path.resolve(__dirname, "..", "..", "..", "..");
+/**
+ * Resolve the Axi workspace root from explicit arg, env, or by walking up
+ * the filesystem looking for `workspace.graph.json`. This makes the script
+ * usable both from the devsvc-dashboard package and from CI scripts that
+ * do not pass an explicit argument.
+ */
+function resolveWorkspaceRoot() {
+  const explicit = process.argv[2] || process.env.WORKSPACE_ROOT;
+  if (explicit) {
+    return path.resolve(explicit);
+  }
+
+  // Walk up from the script location until we find workspace.graph.json
+  let cursor = __dirname;
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (fs.existsSync(path.join(cursor, "workspace.graph.json"))) {
+      return cursor;
+    }
+    const parent = path.dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+
+  // Fallback: 5 levels up from this script (apps/devsvc-dashboard/scripts -> workspace root)
+  return path.resolve(__dirname, "..", "..", "..", "..", "..");
+}
+
+const workspaceRoot = resolveWorkspaceRoot();
 const workbenchRoot = path.resolve(workspaceRoot, "projects", "axi-workbench");
 const graphPath = path.join(workspaceRoot, "workspace.graph.json");
 const staticResourcesPath = path.join(workbenchRoot, "apps", "devsvc-dashboard", "config", "axi-resources.json");
@@ -22,7 +54,10 @@ const graph = readJson(graphPath);
 const staticResources = readJson(staticResourcesPath) || [];
 
 if (!graph) {
-  console.error("ERROR: workspace.graph.json not found");
+  console.error(`ERROR: workspace.graph.json not found at ${graphPath}`);
+  console.error("Hint: pass the workspace root explicitly, e.g.");
+  console.error("    node scripts/drift-check.mjs /Volumes/code/workspace");
+  console.error("or set the WORKSPACE_ROOT environment variable.");
   process.exit(1);
 }
 
@@ -83,7 +118,10 @@ if (errors.length > 0) {
 }
 
 if (warnings.length === 0 && errors.length === 0) {
-  console.log("\n✅ No drift detected");
+  console.log("\n0 warnings, 0 errors");
+  console.log("✅ No drift detected");
+} else {
+  console.log(`\n${warnings.length} warnings, ${errors.length} errors`);
 }
 
 process.exit(errors.length > 0 ? 1 : 0);

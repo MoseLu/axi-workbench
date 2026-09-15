@@ -336,8 +336,13 @@ export function filterNavGroups(groups: NavGroup[], keyword: string): NavGroup[]
     .filter(Boolean) as NavGroup[];
 }
 
-export function makeGlobalSearchItems(t: AppTFunction, apps: HostedApp[] = [], resources: AxiResource[] = []): GlobalSearchItem[] {
-  return translateNavGroups(t, apps, resources).flatMap((group) =>
+export function makeGlobalSearchItems(
+  t: AppTFunction,
+  apps: HostedApp[] = [],
+  resources: AxiResource[] = [],
+  userRole: 'user' | 'developer' | 'admin' = 'developer'
+): GlobalSearchItem[] {
+  return translateNavGroups(t, apps, resources, userRole).flatMap((group) =>
     group.children.map((item) => {
       const groupTitle = group.label;
       const itemTitle = item.label;
@@ -352,6 +357,31 @@ export function makeGlobalSearchItems(t: AppTFunction, apps: HostedApp[] = [], r
         keywords: `${groupTitle} ${itemTitle} ${item.key}`.toLowerCase()
       };
     })
+  );
+}
+
+/**
+ * Return a flat, role-aware list of nav keys + labels for a given role.
+ *
+ * This is the canonical helper used by security / role-based access tests
+ * and the global search box. It mirrors the visibility / audience filtering
+ * applied by `makeHostNavGroups`, so the keys returned here are exactly the
+ * keys the Shell will render for the same role.
+ *
+ * Caller MUST pass a role; there is no implicit "developer" default. Tests
+ * that compare across roles call this three times with the same input.
+ */
+export function getNavItemsByRole(
+  userRole: 'user' | 'developer' | 'admin',
+  apps: HostedApp[] = [],
+  resources: AxiResource[] = []
+): Array<{ key: NavRouteKey; label: string; group: string }> {
+  return makeHostNavGroups(apps, resources, userRole).flatMap((group) =>
+    group.children.map((item) => ({
+      key: item.key,
+      label: item.label,
+      group: group.key
+    }))
   );
 }
 

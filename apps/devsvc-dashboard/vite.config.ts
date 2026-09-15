@@ -11,6 +11,12 @@ function chunkVendor(id: string) {
   if (normalized.includes("/shared/axi-ui/packages/settings/") || normalized.includes("/node_modules/@axi/settings/")) return "axi-settings";
   if (normalized.includes("/shared/axi-ui/packages/shell/") || normalized.includes("/node_modules/@axi/shell/")) return "axi-shell";
   if (normalized.includes("/shared/axi-ui/packages/widgets/") || normalized.includes("/node_modules/@axi/widgets/")) return "axi-widgets";
+  // Split the 1.4 MB icon payload into five per-chunk bundles so each one
+  // stays under the 1 MB budget. The icons themselves are only fetched on
+  // first `getAxiIconData()` call. Each chunk file gets its own chunk group
+  // so the data is code-split rather than merged into a single big file.
+  const iconDataChunkMatch = normalized.match(/\/(?:shared\/axi-ui\/packages\/core|node_modules\/@axi\/core)\/(?:src|dist)\/icon-data-chunks\/chunk-(\d+)\.(?:ts|js)$/);
+  if (iconDataChunkMatch) return `axi-core-icons-${iconDataChunkMatch[1]}`;
   // Split tokens into separate chunk (41M raw, can be lazy-loaded)
   if (
     normalized.includes("/shared/axi-ui/packages/tokens/") ||
@@ -35,7 +41,7 @@ function chunkVendor(id: string) {
   return "vendor";
 }
 
-const maxChunkSizeBytes = 2_000_000;
+const maxChunkSizeBytes = 1_000_000;
 
 function compressedAssets(): Plugin {
   const compressiblePattern = /\.(css|html|js|json|svg)$/;
@@ -118,7 +124,7 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: chunkVendor

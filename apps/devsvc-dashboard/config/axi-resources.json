@@ -83,7 +83,37 @@
     ],
     "notes": "Workspace rule authority is surfaced from the shared workspace graph; policy ownership remains with Axi Rules.",
     "visibility": "admin",
-    "menuGroup": "workspace-ops"
+    "menuGroup": "workspace-ops",
+    "rulesMetadata": {
+      "ruleFamilies": [
+        "agent-routing",
+        "routing",
+        "change",
+        "memory",
+        "verification",
+        "safety",
+        "handoff",
+        "lifecycle",
+        "project-bootstrap",
+        "development-sop",
+        "git-automation",
+        "cicd",
+        "codex-tooling"
+      ],
+      "applicableScopes": [
+        "project",
+        "workspace",
+        "system",
+        "shared-package"
+      ],
+      "sourcePrecedence": [
+        "system_developer_user",
+        "axi-rules",
+        "local-codex-memory",
+        "axi-docs",
+        "live-workspace-inspection"
+      ]
+    }
   },
   {
     "id": "axi-skills",
@@ -100,7 +130,24 @@
     ],
     "notes": "Shared skill registry consumed by agents across the workspace.",
     "visibility": "deferred",
-    "menuGroup": "workspace-ops"
+    "menuGroup": "workspace-ops",
+    "skillsMetadata": {
+      "skillCategories": [
+        "axi-orchestration",
+        "agent-runtime",
+        "frontend-ui",
+        "backend-api",
+        "workspace-ops",
+        "testing-debugging",
+        "ai-integration",
+        "devtools-cli",
+        "cicd-release",
+        "specialized-domains"
+      ],
+      "version": "0.1.0",
+      "i18nStatus": "partial",
+      "skillCount": 879
+    }
   },
   {
     "id": "axi-workspace-governance",
@@ -117,7 +164,16 @@
     ],
     "notes": "Workspace governance infrastructure for project admission, registration, and handoff chain.",
     "visibility": "hidden",
-    "menuGroup": "system"
+    "menuGroup": "system",
+    "governanceMetadata": {
+      "projectCount": 22,
+      "graphValidation": {
+        "valid": true,
+        "errorCount": 0,
+        "warningCount": 0
+      },
+      "lastValidatedAt": "2026-09-14T15:35:46.787Z"
+    }
   },
   {
     "id": "axi-image-preview",
@@ -224,7 +280,13 @@
     ],
     "notes": "Local distribution boundary for @axi/* packages.",
     "visibility": "hidden",
-    "menuGroup": "system"
+    "menuGroup": "system",
+    "registryMetadata": {
+      "registryUrl": "http://127.0.0.1:4873",
+      "packageCount": 4,
+      "healthStatus": "unknown",
+      "healthEndpoint": "http://127.0.0.1:4873/-/ping"
+    }
   },
   {
     "id": "axi-tauri-starter",

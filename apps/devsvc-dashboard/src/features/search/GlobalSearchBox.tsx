@@ -6,6 +6,7 @@ import { CornerDownLeft, Search, Star, X } from "lucide-react";
 
 import { makeGlobalSearchItems, type AppTFunction, type GlobalSearchItem, type NavRouteKey } from "../../app-registry";
 import { AxiSvgIcon } from "@axi/core";
+import type { UserRole } from "../auth/auth";
 import type { AxiResource } from "../axi-resources/axiResources";
 import type { HostedApp } from "../hosted/hostedApps";
 
@@ -59,7 +60,8 @@ export function GlobalSearchBox({
   projects,
   recentAccessKeys,
   onClearRecentAccess,
-  onSelectSearchItem
+  onSelectSearchItem,
+  userRole
 }: {
   hostedApps?: HostedApp[];
   axiResources?: AxiResource[];
@@ -67,6 +69,7 @@ export function GlobalSearchBox({
   recentAccessKeys: NavRouteKey[];
   onClearRecentAccess: () => void;
   onSelectSearchItem: (key: NavRouteKey) => void;
+  userRole: UserRole;
 }) {
   const { i18n, t } = useTranslation();
   const language = i18n.resolvedLanguage || i18n.language;
@@ -76,9 +79,9 @@ export function GlobalSearchBox({
   const [keyword, setKeyword] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const globalSearchItems = useMemo(() => [
-    ...makeGlobalSearchItems(t, hostedApps, axiResources),
+    ...makeGlobalSearchItems(t, hostedApps, axiResources, userRole),
     ...makeProjectSearchItems(projects, t)
-  ], [axiResources, hostedApps, language, projects, t]);
+  ], [axiResources, hostedApps, language, projects, t, userRole]);
   const normalizedKeyword = keyword.trim().toLowerCase();
   const results = useMemo(() => {
     if (!normalizedKeyword) return globalSearchItems;

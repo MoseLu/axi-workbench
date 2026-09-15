@@ -14,6 +14,7 @@
     "packageManager": "npm",
     "defaultRoute": "/dashboard",
     "healthPath": "/",
+    "readinessPath": "/",
     "routes": [
       "/dashboard",
       "/devices",
@@ -90,6 +91,7 @@
     "packageManager": "pnpm",
     "defaultRoute": "/overview",
     "healthPath": "/",
+    "readinessPath": "/",
     "routes": [
       "/overview",
       "/terminal",
@@ -179,6 +181,7 @@
     "packageManager": "npm",
     "defaultRoute": "/",
     "healthPath": "/",
+    "readinessPath": "/",
     "routes": [
       "/"
     ],
@@ -220,6 +223,7 @@
     "packageManager": "pnpm",
     "defaultRoute": "/",
     "healthPath": "/",
+    "readinessPath": "/",
     "routes": [
       "/"
     ],
@@ -256,6 +260,7 @@
     "packageManager": "npm",
     "defaultRoute": "/",
     "healthPath": "/",
+    "readinessPath": "/",
     "routes": [
       "/",
       "/homeViewLook/:wallpaperId"
@@ -299,6 +304,7 @@
     "packageManager": "npm",
     "defaultRoute": "/",
     "healthPath": "/",
+    "readinessPath": "/",
     "routes": [
       "/",
       "/dashboard",

@@ -10,10 +10,12 @@
     "check:file-lines:push": "node scripts/check-file-lines.mjs --push",
     "check:file-lines:staged": "node scripts/check-file-lines.mjs --staged",
     "dev": "PATH=\"$HOME/.local/share/micromamba/envs/ielts-mac-runtime/bin:$PATH\" vite --host 127.0.0.1 --port 17889 --strictPort",
+    "drift-check": "node scripts/drift-check.mjs",
     "prepare": "node scripts/install-git-hooks.mjs",
     "preview": "PATH=\"$HOME/.local/share/micromamba/envs/ielts-mac-runtime/bin:$PATH\" vite preview --host 127.0.0.1 --port 17890 --strictPort",
     "tauri": "tauri",
-    "test": "node --test scripts/*.test.mjs",
+    "test": "node --import ./scripts/test-loader.mjs --test scripts/*.test.mjs",
+    "test:legacy": "node --test scripts/*.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,8 +31,8 @@
     "antd": "^6.4.3",
     "i18next": "^26.2.0",
     "lucide-react": "^0.561.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "react-i18next": "^17.0.8",
     "react-router-dom": "^7.11.0",
     "recharts": "^3.5.1",
@@ -49,7 +51,9 @@
       "brace-expansion@<1.1.18": "1.1.18",
       "js-yaml@>=3.0.0 <3.15.1": "3.15.1",
       "js-yaml@>=4.0.0 <4.3.1": "4.3.1",
-      "postcss@<=8.5.22": "8.5.23"
+      "postcss@<=8.5.22": "8.5.23",
+      "react": "19.2.6",
+      "react-dom": "19.2.6"
     }
   }
 }
