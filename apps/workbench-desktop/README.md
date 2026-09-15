@@ -196,14 +196,17 @@ xcrun notarytool store-credentials "workbench-desktop-notary" \
 
 ## 应用图标
 
-桌面端中央标记使用与 Web 端完全一致的六色大尺寸层叠圆润花瓣，六瓣沿径向边界相接、不留间距且不互相覆盖；外轮廓阴影、内层压边和高光线构成立体线条，围绕一个中心圆核按
-60° 旋转构造。图标画布保持透明，不附加深色圆角方底。标记源文件为
-`apps/workbench/public/favicon.svg`，`src-tauri/icons/icon.svg` 是由脚本生成的
-桌面应用图标母版。生成全部 Tauri 图标资源：
+桌面端与 Web 端使用七成员团子大家族图标。Web 标记源文件为
+`apps/workbench/public/favicon.svg`，桌面端源图为
+`src-tauri/icons/dango-family.png`，`src-tauri/icons/icon.svg` 是生成后的桌面应用图标母版。
+普通本机版/正式版构建会保留已提交的视觉资源，不会自动重新生成图标：
 
 ```bash
 pnpm --dir apps/workbench-desktop icon
 ```
+
+只有明确要更新整套图标资源时才运行上面的命令；应用构建本身如需临时刷新图标，必须显式传入
+`--refresh-icons`，否则构建完成会校验视觉资源哈希没有变化。
 
 ## 校验脚本
 
@@ -220,7 +223,7 @@ pnpm --filter @axi/workbench-desktop verify:contracts
 | 现象 | 处理 |
 | --- | --- |
 | `cargo` 报错 `failed to fetch crate` | 确认 `~/.cargo/config.toml` 的源设置；国内环境考虑换镜像 |
-| `tauri build` 报 icon 不合法 | 跑 `pnpm --filter @axi/workbench-desktop icon` 重新生成 |
+| `tauri build` 报 icon 不合法 | 先确认已提交的团子图标资源完整；只有需要更新资源时才运行 `pnpm --filter @axi/workbench-desktop icon` |
 | 窗口白屏 | 检查 `tauri.conf.json` 的 `devUrl` 是否能 `curl http://127.0.0.1:5173` 成功 |
 | macOS Gatekeeper 拦截 | `xattr -dr com.apple.quarantine <path>`，或走完整公证流程 |
 | 单实例锁与开发模式冲突 | 调试期可在 `tauri.conf.json` 关闭 `plugins.singleInstance.enabled` |

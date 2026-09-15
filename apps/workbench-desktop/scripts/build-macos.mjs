@@ -3,10 +3,12 @@ import {
   existsSync,
   mkdtempSync,
   readdirSync,
+  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -19,7 +21,8 @@ const dmgPrefix = 'Axi 工作台_'
 const appPath = resolve(packageRoot, `src-tauri/target/release/bundle/macos/${appBundleName}`)
 const args = process.argv.slice(2)
 const isLocalBuild = args.includes('--local')
-const tauriArgs = args.filter((arg) => arg !== '--local')
+const refreshIcons = args.includes('--refresh-icons')
+const tauriArgs = args.filter((arg) => arg !== '--local' && arg !== '--refresh-icons')
 const isCi = process.env.CI === 'true' || process.env.CI === '1'
 const configuredIdentity = process.env.APPLE_SIGNING_IDENTITY?.trim()
 const signingIdentity = configuredIdentity || (isCi ? '' : '-')
@@ -27,6 +30,50 @@ const defaultPackagedGatewayBaseURL = 'https://workbench.axiomaticworld.com'
 const localGatewayBaseURL = 'https://workbench.axiomaticworld.com:8443'
 const allowLocalGateway = isLocalBuild || process.env.AXI_DESKTOP_ALLOW_LOCAL_GATEWAY === 'true'
 const buildProfilePath = resolve(packageRoot, 'src-tauri/.build-profile')
+const protectedVisualFiles = [
+  'apps/workbench/public/apple-touch-icon.png',
+  'apps/workbench/public/favicon-32.png',
+  'apps/workbench/public/favicon-48.png',
+  'apps/workbench/public/favicon.svg',
+  'apps/workbench-desktop/scripts/generate-source-icon.mjs',
+  'apps/workbench-desktop/src-tauri/icons/128x128.png',
+  'apps/workbench-desktop/src-tauri/icons/128x128@2x.png',
+  'apps/workbench-desktop/src-tauri/icons/32x32.png',
+  'apps/workbench-desktop/src-tauri/icons/64x64.png',
+  'apps/workbench-desktop/src-tauri/icons/icon.icns',
+  'apps/workbench-desktop/src-tauri/icons/icon.ico',
+  'apps/workbench-desktop/src-tauri/icons/icon.png',
+  'apps/workbench-desktop/src-tauri/icons/icon.svg',
+]
+
+function fileDigest(filePath) {
+  return createHash('sha256').update(readFileSync(filePath)).digest('hex')
+}
+
+function snapshotProtectedVisualFiles() {
+  return new Map(
+    protectedVisualFiles
+      .map((relativePath) => [relativePath, resolve(packageRoot, relativePath)])
+      .filter(([, filePath]) => existsSync(filePath))
+      .map(([relativePath, filePath]) => [relativePath, fileDigest(filePath)]),
+  )
+}
+
+function assertProtectedVisualFilesUnchanged(snapshot) {
+  if (refreshIcons) return
+  const changed = []
+  for (const [relativePath, beforeDigest] of snapshot) {
+    const filePath = resolve(packageRoot, relativePath)
+    if (!existsSync(filePath) || fileDigest(filePath) !== beforeDigest) changed.push(relativePath)
+  }
+  if (changed.length > 0) {
+    throw new Error(
+      `[macos-build] 普通构建不得修改视觉资源；请检查: ${changed.join(', ')}`,
+    )
+  }
+}
+
+const protectedVisualSnapshot = snapshotProtectedVisualFiles()
 
 if (isLocalBuild) {
   process.env.AXI_DESKTOP_LOCAL = 'true'
@@ -90,8 +137,13 @@ if (!signingIdentity) {
   process.exit(1)
 }
 
-run(process.execPath, ['scripts/generate-source-icon.mjs'])
-run('pnpm', ['exec', 'tauri', 'icon', 'src-tauri/icons/icon.svg', '--output', 'src-tauri/icons'])
+if (refreshIcons) {
+  console.log('[macos-build] explicit --refresh-icons: regenerating desktop icon assets')
+  run(process.execPath, ['scripts/generate-source-icon.mjs'])
+  run('pnpm', ['exec', 'tauri', 'icon', 'src-tauri/icons/icon.svg', '--output', 'src-tauri/icons'])
+} else {
+  console.log('[macos-build] preserving tracked visual assets (use --refresh-icons explicitly to regenerate)')
+}
 
 const configOverlay = JSON.stringify({
   bundle: {
@@ -202,7 +254,8 @@ try {
   if (wantsDmg) {
     // Tauri 清理 DMG 打包后的 macos/Axi 工作台.app，先保留已验签版本。
     tauriBuild('app')
-    verifyApp(appPath)
+verifyApp(appPath)
+assertProtectedVisualFilesUnchanged(protectedVisualSnapshot)
     cpSync(appPath, stagedAppPath, { recursive: true })
 
     tauriBuild('dmg')
