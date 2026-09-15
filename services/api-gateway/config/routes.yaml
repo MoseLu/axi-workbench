@@ -106,7 +106,7 @@ routes:
 
   # Mobile control plane proxy routes - uses MobileControlProxy for /internal/mobile/v1/ prefix
   - id: mobile-pair
-    path: /api/v1/mobile/pair/**
+    path: /api/v1/mobile/pair/*path
     handler: MobileControlProxy
     predicates:
       - Method=POST,GET
@@ -115,7 +115,7 @@ routes:
       - Audit
 
   - id: mobile-auth
-    path: /api/v1/mobile/auth/**
+    path: /api/v1/mobile/auth/*path
     handler: MobileControlProxy
     predicates:
       - Method=POST
@@ -123,14 +123,14 @@ routes:
       - RateLimit=mobile
 
   - id: mobile-workspace
-    path: /api/v1/mobile/workspace/**
+    path: /api/v1/mobile/workspace/*path
     handler: MobileControlProxy
     predicates:
       - Method=GET
     filters: []
 
   - id: mobile-handoffs
-    path: /api/v1/mobile/handoffs/**
+    path: /api/v1/mobile/handoffs/*path
     handler: MobileControlProxy
     predicates:
       - Method=GET
@@ -212,7 +212,7 @@ routes:
 
   # File routes (proxy to file service)
   - id: files
-    path: /api/v1/files/**
+    path: /api/v1/files/*path
     upstream: ${FILE_SERVICE_URL}
     upstreamType: file
     predicates:
@@ -261,7 +261,7 @@ routes:
 
   # Web control plane routes (protected) - uses ProxyWebControl for /internal/web/v1/ prefix
   - id: control-plane
-    path: /api/v1/control-plane/**
+    path: /api/v1/control-plane/*path
     handler: ProxyWebControl
     predicates:
       - Method=GET,POST
@@ -270,14 +270,14 @@ routes:
 
   # Mobile proxy routes - uses MobileControlProxy for /internal/mobile/v1/ prefix
   - id: mobile-jobs
-    path: /api/v1/mobile/jobs/**
+    path: /api/v1/mobile/jobs/*path
     handler: MobileControlProxy
     predicates:
       - Method=POST
     filters: []
 
   - id: mobile-approvals
-    path: /api/v1/mobile/approvals/:id/decision/**
+    path: /api/v1/mobile/approvals/:id/decision/*path
     handler: MobileControlProxy
     predicates:
       - Method=POST
