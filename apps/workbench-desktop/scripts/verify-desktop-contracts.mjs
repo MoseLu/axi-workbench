@@ -11,8 +11,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const desktopDir = join(__dirname, '..')
 const repoRoot = join(desktopDir, '..', '..')
 
-// Favicon 几何契约单源:apps/workbench-shared/src/brand/favicon-geometry.json。
-// 改了 favicon SVG 必须同步这个 JSON,否则 desktop + mobile 双端 verify 会 fail。
+// Dango-family favicon contract source: apps/workbench-shared/src/brand/favicon-geometry.json.
+// Web, mobile, and desktop must keep the same family image and fixed order.
 const faviconGeometryPath = join(
   repoRoot,
   'apps',
@@ -103,22 +103,21 @@ const mainWindow = config?.app?.windows?.find((window) => window.label === 'main
 if (
   config?.productName !== 'Axi 工作台' ||
   loginWindow?.title !== 'Axi 工作台 — 登录' ||
-  loginWindow?.width !== 800 ||
-  loginWindow?.height !== 365 ||
-  loginWindow?.minWidth !== 800 ||
-  loginWindow?.minHeight !== 365 ||
+  loginWindow?.width !== 380 ||
+  loginWindow?.height !== 440 ||
+  loginWindow?.minWidth !== 380 ||
+  loginWindow?.minHeight !== 440 ||
   loginWindow?.resizable !== false ||
   loginWindow?.maximizable !== false ||
-  loginWindow?.titleBarStyle !== 'Overlay' ||
-  loginWindow?.hiddenTitle !== true ||
-  JSON.stringify(loginWindow?.trafficLightPosition) !== JSON.stringify({ x: 13, y: 26 }) ||
+  loginWindow?.decorations !== false ||
+  loginWindow?.transparent !== true ||
   loginWindow?.theme !== 'Light' ||
-  loginWindow?.backgroundColor?.toLowerCase() !== '#ffffff'
+  loginWindow?.backgroundColor?.toLowerCase() !== '#00000000'
 ) {
   console.error(`[verify-desktop-contracts] FAIL: 应用名称或登录窗口必须符合中文客户端契约: ${tauriConfig}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 登录窗口使用固定 800x365 Overlay 浅色紧凑画布')
+  console.log('[verify-desktop-contracts] OK: 登录窗口使用固定 380x440 无原生装饰透明圆角画布')
 }
 if (
   mainWindow?.title !== 'Axi 工作台' ||
@@ -164,6 +163,7 @@ if (!Array.isArray(capabilities?.windows) || !capabilities.windows.includes('log
 }
 if (
   !loginPage.includes('data-tauri-drag-region') ||
+  !loginPage.includes('axi-login-window-close') ||
   !loginStyles.includes('.axi-login-drag-region') ||
   !loginStyles.includes('cursor: default') ||
   /cursor:\s*(?:grab|grabbing)\b/.test(loginStyles)
@@ -171,87 +171,45 @@ if (
   console.error(`[verify-desktop-contracts] FAIL: 登录窗口缺少可用的 macOS 拖拽区域: ${loginPageSource}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 登录窗口提供 Overlay 标题栏拖拽区域')
+  console.log('[verify-desktop-contracts] OK: 登录窗口提供自定义关闭按钮和拖拽区域')
 }
 
 const favicon = existsSync(webIcon) ? readFileSync(webIcon, 'utf8') : ''
-// 几何契约来自 apps/workbench-shared/src/brand/favicon-geometry.json,与 mobile 端共用同源。
-const requiredIconGeometry = faviconGeometry
-  ? [
-      ...faviconGeometry.fills,
-      faviconGeometry.pathAnchors.outerPetal,
-      faviconGeometry.pathAnchors.petalVein,
-      `stroke="${faviconGeometry.stroke}"`,
-      `stroke-width="${faviconGeometry.strokeWidth}"`,
-      `stroke-linecap="${faviconGeometry.strokeLinecap}"`,
-      `stroke-linejoin="${faviconGeometry.strokeLinejoin}"`,
-      ...faviconGeometry.petalTransforms,
-      faviconGeometry.centerSwirlAttribute,
-      ...faviconGeometry.centerPieceAnchors,
-      faviconGeometry.pathAnchors.centerPetal,
-    ]
+const escapedImageHref = faviconGeometry?.imageHref?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const forbiddenLegacyElements = faviconGeometry
+  ? new RegExp(faviconGeometry.invariants.forbiddenLegacyElementsPattern)
   : null
-const forbiddenWebElements = faviconGeometry
-  ? new RegExp(faviconGeometry.invariants.forbiddenWebElementsPattern)
-  : null
-const forbiddenWebFills = faviconGeometry
-  ? new RegExp(faviconGeometry.invariants.forbiddenWebFillsPattern)
-  : null
-const forbiddenDesktopLayout = faviconGeometry
-  ? new RegExp(faviconGeometry.invariants.forbiddenDesktopLayoutPattern)
-  : null
-if (!existsSync(webIcon) || !faviconGeometry || requiredIconGeometry.some((path) => !favicon.includes(path))) {
-  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不是中心对称的十二色弧形花心: ${webIcon}`)
-  failed = true
-} else if (forbiddenWebElements.test(favicon)) {
-  console.error(`[verify-desktop-contracts] FAIL: Web favicon 不得包含不透明背景底板: ${webIcon}`)
-  failed = true
-} else if (forbiddenWebFills.test(favicon)) {
-  console.error('[verify-desktop-contracts] FAIL: 花瓣双层边缘必须使用干净黑色线条，不得保留白色或透明重影描边')
-  failed = true
-} else if (
-  (favicon.match(/<path\b/g) ?? []).length !== faviconGeometry.invariants.totalPaths ||
-  forbiddenDesktopLayout.test(favicon)
+if (
+  !existsSync(webIcon) ||
+  !faviconGeometry ||
+  !favicon.includes(`viewBox="${faviconGeometry.viewBox}"`) ||
+  !new RegExp(`<image[^>]+href="${escapedImageHref}"`).test(favicon) ||
+  !favicon.includes(`data-family-layout="${faviconGeometry.layoutAttribute}"`)
 ) {
-  console.error('[verify-desktop-contracts] FAIL: 六瓣花心必须由六个连续弧形花心瓣组成，且花瓣根部不得被中心覆盖')
+  console.error(`[verify-desktop-contracts] FAIL: Web favicon 未使用七成员团子大家族主图: ${webIcon}`)
+  failed = true
+} else if (forbiddenLegacyElements.test(favicon)) {
+  console.error('[verify-desktop-contracts] FAIL: Web favicon 仍包含已归档的六瓣花几何')
   failed = true
 } else {
-  const fills = [...favicon.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color)
-  const outerFills = fills.slice(0, faviconGeometry.invariants.uniqueOuterColors)
-  const centerFills = fills.slice(
-    faviconGeometry.invariants.uniqueOuterColors,
-    faviconGeometry.invariants.uniqueOuterColors + faviconGeometry.invariants.uniqueCenterColors,
-  )
-  if (
-    new Set([...outerFills, ...centerFills]).size !== faviconGeometry.invariants.uniqueOuterPlusCenterColors ||
-    centerFills.some((color) => outerFills.includes(color))
-  ) {
-    console.error('[verify-desktop-contracts] FAIL: 花瓣与花心必须使用互不重复的十二种颜色')
-    failed = true
-  } else {
-    console.log('[verify-desktop-contracts] OK: Web favicon 为中心对称的十二色弧形花瓣')
-  }
+  console.log('[verify-desktop-contracts] OK: Web favicon 使用七成员团子大家族主图')
 }
 
 const desktopIcon = existsSync(desktopIconSource) ? readFileSync(desktopIconSource, 'utf8') : ''
-const desktopIconTreatment = faviconGeometry
-  ? [...faviconGeometry.invariants.requiredDesktopTreatments]
-  : ['scale(31)', 'fill="none"']
-const forbiddenDesktopElements = faviconGeometry
-  ? new RegExp(faviconGeometry.invariants.forbiddenDesktopElementsPattern)
-  : null
 if (!existsSync(desktopIconSource)) {
   console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版不存在: ${desktopIconSource}`)
   failed = true
 } else if (
   !faviconGeometry ||
-  [...requiredIconGeometry, ...desktopIconTreatment].some((entry) => !desktopIcon.includes(entry)) ||
-  forbiddenDesktopElements.test(desktopIcon)
+  !desktopIcon.includes(faviconGeometry.invariants.requiredDesktopViewBox) ||
+  !desktopIcon.includes(faviconGeometry.invariants.requiredDesktopImage) ||
+  !desktopIcon.includes(`data-family-layout="${faviconGeometry.layoutAttribute}"`) ||
+  !desktopIcon.includes('preserveAspectRatio="xMidYMid meet"')
 ) {
-  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步透明双线花瓣几何: ${desktopIconSource}`)
+  console.error(`[verify-desktop-contracts] FAIL: 桌面图标母版未同步团子大家族主图: ${desktopIconSource}`)
   failed = true
 } else {
-  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用透明双线花瓣几何')
+  console.log('[verify-desktop-contracts] OK: 桌面图标母版使用团子大家族主图')
 }
 
 if (failed) process.exit(1)
