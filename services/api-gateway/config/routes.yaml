@@ -58,6 +58,13 @@ routes:
       - Method=GET
     filters: []
 
+  - id: email-verifications
+    path: /api/v1/auth/email-verifications
+    handler: ProxyToIdentity
+    predicates:
+      - Method=POST
+    filters: []
+
   # REST session resource (new style)
   - id: session-current
     path: /api/v1/sessions/current
