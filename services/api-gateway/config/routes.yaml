@@ -305,6 +305,70 @@ routes:
       - Method=POST
     filters: []
 
+  # Commit Ledger routes (proxy to Control Plane at /internal/web/v1/commit-ledger/*)
+  - id: commit-ledger-summary
+    path: /api/v1/commit-ledger/summary
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/summary
+    upstreamType: control-plane
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: commit-ledger-commits
+    path: /api/v1/commit-ledger/commits
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/commits
+    upstreamType: control-plane
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: commit-ledger-commits-detail
+    path: /api/v1/commit-ledger/commits/*path
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/commits
+    upstreamType: control-plane
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: commit-ledger-projects
+    path: /api/v1/commit-ledger/projects/*path
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/projects
+    upstreamType: control-plane
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: commit-ledger-verification
+    path: /api/v1/commit-ledger/verification
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/verification
+    upstreamType: control-plane
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: commit-ledger-sources
+    path: /api/v1/commit-ledger/sources
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/sources
+    upstreamType: control-plane
+    predicates:
+      - Method=GET
+    filters:
+      - RequireIdentity
+
+  - id: commit-ledger-sync
+    path: /api/v1/commit-ledger/sync
+    upstream: ${CONTROL_PLANE_URL}/internal/web/v1/commit-ledger/sync
+    upstreamType: control-plane
+    predicates:
+      - Method=POST
+    filters:
+      - RequireIdentity
+
 # Route groups for common filter combinations
 routeGroups:
   standardProtected:
