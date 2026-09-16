@@ -73,6 +73,10 @@ export function createControlPlaneHttpServer({
     controlPlane.expireHandoffs?.();
     // Helpers bound to this server instance (closure over coreApiToken, ownerApprovalSecret, allowedOrigins).
     function sendRaw(res, statusCode, body, url) {
+      if (res.headersSent || res.writableEnded) {
+        try { res.end(); } catch {}
+        return;
+      }
       const headers = {
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Axi-Internal-Token, X-Axi-Subject, X-Axi-Owner-Token, X-Axi-QR-Poll-Token",
@@ -360,6 +364,20 @@ export function createControlPlaneHttpServer({
     if (gatewayWebAuth && req.method === "GET" && url.pathname === "/snapshot") {
       return sendJson(res, 200, controlPlane.snapshot(), url);
     }
+
+    // Commit Ledger routes - proxy from /internal/web/v1/commit-ledger/*
+    // Gateway exposes at /api/v1/commit-ledger/*
+    if (gatewayWebAuth && url.pathname.startsWith("/commit-ledger")) {
+      const { registerCommitLedgerRoutes } = await import("./commit-ledger/api-routes.mjs");
+      const handlers = registerCommitLedgerRoutes({});
+      // Wrap sendJson to bind `res` and `url` since handler expects (statusCode, body, url)
+      const handlerSendJson = (statusCode, body, handlerUrl) => sendJson(res, statusCode, body, handlerUrl || url);
+      const handlerSendJsonError = (statusCode, body, handlerUrl) => sendJson(res, statusCode, body, handlerUrl || url);
+      const result = await handlers.handleCommitLedgerRequest(req, url, handlerSendJson, handlerSendJsonError);
+      if (result !== null && result !== undefined) return;
+      return sendJson(res, 404, { error: "commit ledger endpoint not found", path: url.pathname }, url);
+    }
+
     const personalOsPath = url.pathname === "/personal-os" || url.pathname.startsWith("/personal-os/");
     if (personalOsPath) {
       if (!controlPlane.personalOs) return sendJson(res, 503, { error: "personal OS is not configured" }, url);
@@ -947,8 +965,14 @@ const pairingRequired = controlPlane.pairingEnabled || Boolean(controlPlane.pair
 const server = createControlPlaneHttpServer({ controlPlane, mobileOwnerToken, pairingRequired });
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  server.listen(port, "127.0.0.1", () => {
-    console.log(`control-plane listening on http://127.0.0.1:${port}`);
+  // Local development keeps the legacy 127.0.0.1 bind for safety. Container
+  // deployments (Dockerfile / docker-compose.backend.yml) set
+  // CONTROL_PLANE_BIND=0.0.0.0 so the API Gateway can reach this service
+  // through the Compose network. Production must never bind to 0.0.0.0
+  // without an upstream reverse proxy or service mesh.
+  const bindHost = process.env.CONTROL_PLANE_BIND || "127.0.0.1";
+  server.listen(port, bindHost, () => {
+    console.log(`control-plane listening on http://${bindHost}:${port}`);
   });
 }
 

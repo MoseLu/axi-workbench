@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node src/server.mjs",
     "start": "node src/server.mjs",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/*.test.mjs src/**/*.test.ts",
     "smoke": "node src/smoke.mjs"
   },
   "dependencies": {
