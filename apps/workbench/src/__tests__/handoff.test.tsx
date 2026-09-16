@@ -47,7 +47,7 @@ describe('HandoffCreate', () => {
 
   beforeEach(() => {
     fetchMock = vi.fn();
-    global.fetch = fetchMock;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
 
   afterEach(() => {
