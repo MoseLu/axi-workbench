@@ -43,7 +43,7 @@ describe('IncomingHandoffs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock global fetch
-    global.fetch = __mockFetch as unknown as typeof fetch;
+    globalThis.fetch = __mockFetch as unknown as typeof fetch;
   });
 
   afterEach(() => {
