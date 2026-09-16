@@ -20,6 +20,9 @@ coverage/
 *.pem
 *.key
 .local/workbench-tls/
+# Local service credentials; never commit or package these files.
+.local/secrets/
+.local/secrets/qq-smtp-password
 apps/workbench-desktop/src-tauri/.build-profile
 *.log
 npm-debug.log*
@@ -35,6 +38,7 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env*.local
+.env.deploy
 
 # IDE
 .idea/
