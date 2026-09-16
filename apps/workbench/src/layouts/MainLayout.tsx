@@ -30,7 +30,7 @@ import {
   closeAll,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
-import { emitShellUnread } from '../lib/shell';
+import { emitShellLogout, emitShellUnread } from '../lib/shell';
 import {
   workbenchDesktopNavGroupsWithKeys,
   workbenchMenuRouteMap,
@@ -425,8 +425,9 @@ const MainLayout: React.FC = () => {
               key: 'logout',
               label: t('layout.avatar.logout'),
               iconName: axiWorkbenchIconMap.logout,
-              onClick: () => {
-                logout();
+              onClick: async () => {
+                await logout();
+                await emitShellLogout();
                 navigate('/login');
               },
             },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, theme as antdTheme } from 'antd';
 import enUS from 'antd/locale/en_US';
@@ -35,9 +35,10 @@ import AuthCallback from './pages/AuthCallback';
 import LegalDocument from './pages/LegalDocument';
 import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
 import RequireSession from './components/Auth/RequireSession';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
-import { isTauriShell } from './lib/shell';
+import { getShellWindowLabel, isTauriShell, listenShell } from './lib/shell';
+import { SHELL_EVENTS } from '@axi/workbench-foundation/shell-contracts';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,7 @@ const WorkbenchSurface: React.FC = () => {
         <QueryClientProvider client={queryClient}>
           <I18nProvider>
             <BrowserRouter>
+              <ShellSessionBridge />
               <Routes>
                   {/* Web 与移动端拥有独立 UI；登录协议统一通过 Axi Identity OIDC。 */}
                   <Route path="/login" element={<Login />} />
@@ -123,6 +125,39 @@ const WorkbenchSurface: React.FC = () => {
       </ConfigProvider>
     </AxiLocaleProvider>
   );
+};
+
+/**
+ * 登录窗完成认证后，主窗仍可能停留在它启动时的 /login 路由。
+ * 主窗只负责接收成功事件、刷新自己的 HttpOnly 会话并进入工作台。
+ */
+const ShellSessionBridge: React.FC = () => {
+  const navigate = useNavigate();
+  const { refreshSession } = useAuth();
+
+  React.useEffect(() => {
+    if (!isTauriShell() || getShellWindowLabel() !== 'main') return undefined;
+
+    let cancelled = false;
+    let unsubscribe: () => void = () => undefined;
+    void listenShell(SHELL_EVENTS.LOGIN_SUCCESS, () => {
+      void refreshSession().then((authenticated) => {
+        if (!cancelled && authenticated) {
+          navigate('/admin/dashboard', { replace: true });
+        }
+      });
+    }).then((off) => {
+      if (cancelled) off();
+      else unsubscribe = off;
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [navigate, refreshSession]);
+
+  return null;
 };
 
 const App: React.FC = () => (
