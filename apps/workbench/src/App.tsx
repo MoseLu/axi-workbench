@@ -21,6 +21,7 @@ import Dashboard from './pages/admin/Dashboard';
 import Operations from './pages/admin/Operations';
 import Workspace from './pages/admin/Workspace';
 import Team from './pages/admin/Team';
+import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import MenuList from './pages/admin/MenuList';
@@ -92,6 +93,7 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/personal-os/today" element={<PersonalOsToday />} />
                     <Route path="admin/personal-os/workbench" element={<PersonalOsWorkbench />} />
                     <Route path="admin/operations" element={<Operations />} />
+                    <Route path="admin/operations/commit-ledger" element={<CommitLedgerPage />} />
                     <Route path="admin/project" element={<Projects />} />
                     <Route path="admin/project/:id" element={<ProjectDetail />} />
                     <Route path="admin/task" element={<Workspace />} />

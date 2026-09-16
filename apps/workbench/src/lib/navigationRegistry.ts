@@ -74,6 +74,15 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
     ],
   },
   {
+    key: 'ops',
+    label: '运维',
+    labelKey: 'nav.group.ops',
+    iconName: axiWorkbenchIconMap.operations,
+    children: [
+      { key: '/admin/operations/commit-ledger', label: 'Commit Ledger', labelKey: 'nav.commitLedger', iconName: axiWorkbenchIconMap.commit },
+    ],
+  },
+  {
     key: 'work',
     label: '项目与工作',
     labelKey: 'nav.group.work',
@@ -121,6 +130,7 @@ export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
   '/admin/personal-os/workbench': { label: '项目队列', labelKey: 'personalOs.nav.workbench' },
   '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard' },
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations' },
+  '/admin/operations/commit-ledger': { label: 'Commit Ledger', labelKey: 'nav.commitLedger' },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects' },
   '/admin/task': { label: '工作项', labelKey: 'nav.tasks' },
   '/admin/team': { label: '团队', labelKey: 'nav.team' },
