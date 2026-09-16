@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-09-14T15:55:50.750Z",
+  "generatedAt": "2026-09-15T15:35:56.264Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 40,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -361,7 +361,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -723,13 +723,13 @@
         "present": [
           "README.md",
           "AGENTS.md",
+          "CHANGELOG.md",
           "TODO.md",
           "docs/HANDOFF.md",
           "docs/project-docs.manifest.json",
           "VERIFICATION.md"
         ],
         "missing": [
-          "CHANGELOG.md",
           "MILESTONE.md",
           "docs/PRD.md",
           "docs/TDD.md"
@@ -775,7 +775,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -888,7 +888,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1096,7 +1096,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1219,7 +1219,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1628,7 +1628,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1765,7 +1765,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1824,7 +1824,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1884,7 +1884,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1995,7 +1995,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2053,7 +2053,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2161,7 +2161,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2220,7 +2220,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2281,7 +2281,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2338,7 +2338,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2395,7 +2395,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2459,7 +2459,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2587,7 +2587,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-14T15:55:50.750Z",
+      "updatedAt": "2026-09-15T15:35:56.264Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
