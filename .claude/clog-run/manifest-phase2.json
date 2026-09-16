@@ -1,0 +1,89 @@
+{
+  "executionIntent": "execute",
+  "deliveryMode": "implementation",
+  "expectedTaskIds": ["CL-007", "CL-008", "CL-009", "CL-010", "CL-011", "CL-012", "CL-013", "CL-014", "CL-015", "CL-016", "CL-017", "CL-018", "CL-019", "CL-020"],
+  "phase": "phase2-implementation",
+  "phase1Summary": {
+    "totalProjects": 35,
+    "gitRepos": 24,
+    "totalCommits": 7400,
+    "auditResources": 24,
+    "recommendedOwner": "control-plane",
+    "existingApiRoutes": 7,
+    "existingHandlers": ["handleSummary", "handleCommits", "handleProjectCommits", "handleVerification", "handleSources", "handleSync"]
+  },
+  "tasks": [
+    {
+      "id": "CL-007",
+      "title": "确定Commit Ledger canonical owner和事实源边界",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "基于第一阶段盘点结果，确定 Commit Ledger 的：\n\n1. Canonical owner: control-plane\n2. 数据采集边界：projects (11) + products (5) + shared/infra/tools (8) = 24 仓库\n3. 事实源优先级：Git commit > submit log > CHANGELOG > test report\n4. 数据权限边界：只读 Git，存储在 control-plane\n5. 读写边界：Collector 写，API 读，UI 展示\n6. 输出 ADR 文档到 services/control-plane/src/commit-ledger/ADR-001-canonical-owner.md\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/ADR-001-canonical-owner.md",
+      "agent": "general-purpose",
+      "dependsOn": ["CL-001", "CL-002", "CL-003", "CL-004", "CL-005", "CL-006"],
+      "resourceKeys": ["control-plane"],
+      "readOnly": false,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/ADR-001-canonical-owner.md && wc -l /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/ADR-001-canonical-owner.md",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-008",
+      "title": "Commit Ledger v1 JSON Schema",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "创建 Commit Ledger v1 数据模型 schema：\n\n1. 创建 /packages/commit-ledger-schema/src/commit-ledger.v1.schema.json\n2. 必须字段：schemaVersion, recordId (sha256), repo.repoId, commit.sha, commit.parentShas, commit.subject, commit.body, commit.type, commit.scope, actor (redacted), refs, diff, trailers, workspaceState, verification, provenance, ingestion\n3. repoId + commitSha 作为幂等键\n4. provenance.source 必须可枚举：git|submit-log|changelog|test-report\n5. ingestion.status 必须可枚举：new|updated|unchanged|conflict\n6. 验证命令: ajv validate -s ./src/commit-ledger.v1.schema.json -d ./test-fixtures/*.json\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/packages/commit-ledger-schema/src/commit-ledger.v1.schema.json && cat /Volumes/code/workspace/projects/axi-workbench/packages/commit-ledger-schema/src/commit-ledger.v1.schema.json | jq '.properties.recordId'",
+      "agent": "general-purpose",
+      "dependsOn": ["CL-007"],
+      "resourceKeys": ["schema"],
+      "readOnly": false,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/packages/commit-ledger-schema/src/commit-ledger.v1.schema.json && jq 'has(\"properties\")' /Volumes/code/workspace/projects/axi-workbench/packages/commit-ledger-schema/src/commit-ledger.v1.schema.json",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-009",
+      "title": "Git commit collector 实现",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "实现全量/增量 Git commit collector：\n\n1. 创建 services/control-plane/src/commit-ledger/collector.ts\n2. 读取第一阶段盘点结果确定的所有 24 个 Git 仓库\n3. 实现增量采集：支持 --since, --until, --limit 参数\n4. 实现幂等：基于 repoId + commitSha 生成 recordId\n5. 采集所有必要字段：sha, parents, subject, body, author, committer, time, refs, diff stat, trailers\n6. 采集 provenance：采集命令、时间\n7. 单仓库失败隔离\n8. 输出 JSONL 到 /tmp/commit-ledger-{timestamp}.jsonl\n\n验证命令: cd /Volumes/code/workspace/projects/axi-workbench && node -e \"const c = require('./services/control-plane/src/commit-ledger/collector'); console.log(typeof c.collect)\"",
+      "agent": "general-purpose",
+      "dependsOn": ["CL-007", "CL-008"],
+      "resourceKeys": ["collector"],
+      "readOnly": false,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/collector.ts && wc -l /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/collector.ts",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-010",
+      "title": "Evidence linker 和质量状态归一化",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "实现 commit evidence linker：\n\n1. 创建 services/control-plane/src/commit-ledger/evidence-linker.ts\n2. 解析 commit trailers：Tested, Not-tested, Confidence, Scope-risk, Directive, Refs\n3. 关联 submit log、CHANGELOG、test report 证据\n4. 输出 verification status：verified|partial|unverified|failed|unknown|conflict\n5. 不基于 commit message 内容判定 verified\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/evidence-linker.ts",
+      "agent": "general-purpose",
+      "dependsOn": ["CL-008", "CL-009"],
+      "resourceKeys": ["evidence-linker"],
+      "readOnly": false,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/evidence-linker.ts",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-011",
+      "title": "本地持久化/入库适配器",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "实现本地持久化入库接口：\n\n1. 创建 services/control-plane/src/commit-ledger/persistence.ts\n2. 实现 full snapshot import\n3. 实现 incremental commit import\n4. 实现 upsert by repoId + commitSha\n5. 实现 conflict detection\n6. 实现 provenance preservation\n7. 实现 source refresh 和 stale detection\n8. 实现 pagination, filter, sort, cursor\n9. 使用 JSONL 文件作为本地存储适配器\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/persistence.ts",
+      "agent": "general-purpose",
+      "dependsOn": ["CL-008", "CL-009", "CL-010"],
+      "resourceKeys": ["persistence"],
+      "readOnly": false,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/persistence.ts",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-012",
+      "title": "幂等、重复导入、冲突测试",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "实现入库测试：\n\n1. 创建 services/control-plane/src/commit-ledger/persistence.test.ts\n2. 测试相同 repoId + commitSha 不产生重复记录\n3. 测试不同来源冲突进入 conflict 状态\n4. 测试失败仓库可单独重试\n5. 测试 pagination 和 filter\n\n验证命令: cd /Volumes/code/workspace/projects/axi-workbench && pnpm --filter @axi/workstation-control-plane test -- --testPathPattern=commit-ledger/persistence",
+      "agent": "general-purpose",
+      "dependsOn": ["CL-011"],
+      "resourceKeys": ["persistence-test"],
+      "readOnly": false,
+      "verifyCommand": "cd /Volumes/code/workspace/projects/axi-workbench && pnpm --filter @axi/workstation-control-plane test -- --testPathPattern=commit-ledger 2>&1 | head -50",
+      "maxAttempts": 2
+    }
+  ]
+}

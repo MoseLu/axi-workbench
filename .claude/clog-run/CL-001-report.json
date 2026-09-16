@@ -1,0 +1,606 @@
+{
+  "taskId": "CL-001",
+  "timestamp": "2026-09-15T00:00:00.000Z",
+  "projects": [
+    {
+      "projectId": "axi-workbench",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-workbench",
+      "owner": "libu",
+      "projectKind": "axi-workbench-monorepo",
+      "provides": [
+        "workstation-control-plane",
+        "axi-dashboard-host",
+        "project-development-workbench",
+        "ops-dashboard",
+        "docs-search-surface",
+        "verification-inbox",
+        "local-ai-menu-assistant",
+        "axi-app-scaffolder",
+        "workflow-agent-orchestration-v1"
+      ],
+      "consumes": [
+        "codex-app-projects",
+        "axi-workspace-governance",
+        "axi-rules",
+        "axi-docs",
+        "axi-ui",
+        "axi-registry",
+        "axi-agent-platform",
+        "axi-accounts",
+        "axi-notify",
+        "axi-tauri-starter",
+        "ai-capability",
+        "ollama-local",
+        "minimax-tokenplan",
+        "sub2api",
+        "ai-resource-orchestration"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-coder",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-workbench",
+      "owner": "Axi Core Projects",
+      "projectKind": "full-development-workbench",
+      "provides": [
+        "project-development-workbench",
+        "mac-desktop-client",
+        "mobile-companion-client",
+        "cli-orchestration",
+        "agent-task-console",
+        "model-routing-adapter",
+        "terminal-sessions",
+        "artifact-review"
+      ],
+      "consumes": [
+        "axi-workbench",
+        "axi-agent-platform",
+        "axi-model-gateway",
+        "axi-accounts",
+        "axi-notify"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-model-gateway",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-workbench",
+      "owner": "Axi Core Projects",
+      "projectKind": "infrastructure-contract-consumed-by-axi-coder",
+      "provides": [
+        "provider-profile-contract",
+        "credential-ref-routing",
+        "cli-compatible-model-proxy"
+      ],
+      "consumes": [
+        "axi-accounts",
+        "ai-capability",
+        "ollama-local",
+        "minimax-tokenplan",
+        "sub2api"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-agent-platform",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-agent-platform",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-agent-platform",
+      "owner": "libu",
+      "projectKind": "axi-agent-monorepo",
+      "provides": [
+        "agent-runtime-owner",
+        "managed-agent-tasks",
+        "workstation-agent-task-api",
+        "mcp-quality-gate-runtime",
+        "agent-tool-runtime",
+        "terminal-agent-transport",
+        "remote-codex-session-bridge",
+        "local-task-ledger",
+        "bounded-agent-runtime-v1"
+      ],
+      "consumes": [
+        "axi-workspace-governance",
+        "axi-rules",
+        "axi-docs",
+        "axi-ui",
+        "axi-registry",
+        "ai-capability",
+        "ollama-local",
+        "minimax-tokenplan",
+        "sub2api",
+        "ai-resource-orchestration"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-notify",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-notify",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-notify",
+      "owner": "hubu",
+      "projectKind": "axi-notify-mobile-monorepo",
+      "provides": [
+        "relay-server",
+        "workflow-contracts",
+        "mobile-event-inbox",
+        "android-agent-notification-client",
+        "mobile-workbench",
+        "android-workspace-donor",
+        "workflow-agent-donor"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-image-preview",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-image-preview",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-image-preview",
+      "owner": "libu",
+      "projectKind": "axi-image-preview-app",
+      "provides": [
+        "image-preview",
+        "wallpaper-gallery-preview",
+        "visual-reference-preview"
+      ],
+      "consumes": [
+        "axi-ui"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-pet",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-pet",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-pet",
+      "owner": "libu",
+      "projectKind": "axi-pet-virtual-companion",
+      "provides": [
+        "virtual-companion-stage",
+        "live2d-stage-web",
+        "local-stt-experiment",
+        "provider-configuration-surface"
+      ],
+      "consumes": [
+        "codex-app-projects",
+        "ai-capability",
+        "minimax-tokenplan"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-pet-desktop",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-pet-desktop",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-pet-desktop",
+      "owner": "libu",
+      "projectKind": "axi-pet-desktop-monorepo",
+      "provides": [
+        "desktop-tamagotchi-app",
+        "desktop-pet-macos-vrm",
+        "electron-bridge-packages",
+        "stage-core-self-contained",
+        "godot-desktop-integration"
+      ],
+      "consumes": [
+        "codex-app-projects",
+        "ai-capability",
+        "minimax-tokenplan"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-docs",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-docs",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-docs",
+      "owner": "libu",
+      "projectKind": "axi-docs-project",
+      "provides": [
+        "docs-hub",
+        "knowledge-browser",
+        "docs-mcp",
+        "agent-safe-docs-context-v1"
+      ],
+      "consumes": [
+        "axi-workspace-governance"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-rules",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-rules",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-rules",
+      "owner": "libu",
+      "projectKind": "shared-rule-index",
+      "provides": [
+        "agent-routing-rules",
+        "workspace-rule-index",
+        "memory-source-precedence",
+        "task-routing-policy-v1"
+      ],
+      "consumes": [
+        "codex-app-projects",
+        "axi-workspace-governance",
+        "axi-docs"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "sports-management",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-sports-management-app",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-sports-management-app",
+      "owner": "hubu",
+      "projectKind": "sports-fullstack-app",
+      "provides": [
+        "sports-management-web",
+        "sports-management-mobile",
+        "sports-management-backend"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-artboard",
+      "canonicalPath": "/Volumes/code/workspace/products/axi-artboard",
+      "gitRoot": "/Volumes/code/workspace/products/axi-artboard",
+      "owner": "libu",
+      "projectKind": "product",
+      "provides": [
+        "agent-node-picker",
+        "right-click-pin-react-element",
+        "left-drag-marquee-region-select",
+        "ambient-language-anchoring",
+        "chrome-mcp-observer-loop"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "ielts-vocab",
+      "canonicalPath": "/Volumes/code/workspace/products/ielts-vocab",
+      "gitRoot": "/Volumes/code/workspace/products/ielts-vocab",
+      "owner": "libu",
+      "projectKind": "product",
+      "provides": [
+        "ielts-learning-app",
+        "upload-asr-api",
+        "realtime-asr-socket",
+        "tts-backend"
+      ],
+      "consumes": [
+        "ai-capability",
+        "minimax-tokenplan",
+        "ollama-local"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "story-graph",
+      "canonicalPath": "/Volumes/code/workspace/products/story-graph",
+      "gitRoot": "/Volumes/code/workspace/products/story-graph",
+      "owner": "Mose",
+      "projectKind": "standalone-product",
+      "provides": [
+        "story-graph-workbench",
+        "novel-relationship-graph",
+        "evidence-driven-story-analysis"
+      ],
+      "consumes": [
+        "axi-ui",
+        "axi-registry"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-soul-world",
+      "canonicalPath": "/Volumes/code/workspace/products/axi-soul-world",
+      "gitRoot": "/Volumes/code/workspace/products/axi-soul-world",
+      "owner": "libu",
+      "projectKind": "standalone-product",
+      "provides": [
+        "axi-soul-world-product-contract",
+        "axi-soul-world-local-first-runtime-boundary",
+        "axi-mood-private-records"
+      ],
+      "consumes": [
+        "ai-resource-orchestration"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "ai-resource-orchestration",
+      "canonicalPath": "/Volumes/code/workspace/products/ai-resource-orchestration",
+      "gitRoot": "/Volumes/code/workspace/products/ai-resource-orchestration",
+      "owner": "libu",
+      "projectKind": "standalone-product",
+      "provides": [
+        "resource-orchestration-workbench",
+        "bounded-resource-tool-selection",
+        "deterministic-resource-validation"
+      ],
+      "consumes": [
+        "axi-image-preview",
+        "axi-docs",
+        "axi-skills",
+        "minimax-tokenplan"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-ui",
+      "canonicalPath": "/Volumes/code/workspace/shared/axi-ui",
+      "gitRoot": "/Volumes/code/workspace/shared/axi-ui",
+      "owner": "libu",
+      "projectKind": "shared-ui-runtime",
+      "provides": [
+        "axi-design-tokens",
+        "axi-preset-library",
+        "axi-core-primitives",
+        "axi-shell-admin-chrome",
+        "axi-settings-panel",
+        "axi-crud-runtime",
+        "axi-widgets",
+        "axi-addons"
+      ],
+      "consumes": [
+        "axi-registry"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-skills",
+      "canonicalPath": "/Volumes/code/workspace/shared/axi-skills",
+      "gitRoot": "/Volumes/code/workspace/shared/axi-skills",
+      "owner": "libu",
+      "projectKind": "shared-skill-catalog",
+      "provides": [
+        "codex-skill-catalog",
+        "shared-agent-skill-source",
+        "apm-agent-context-package",
+        "skill-i18n-batch-contract",
+        "global-skill-root-cutover"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-registry",
+      "canonicalPath": "/Volumes/code/workspace/infra/axi-registry",
+      "gitRoot": "/Volumes/code/workspace/infra/axi-registry",
+      "owner": "libu",
+      "projectKind": "local-package-registry",
+      "provides": [
+        "axi-private-package-registry"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-workspace-governance",
+      "canonicalPath": "/Volumes/code/workspace/infra/axi-workspace-governance",
+      "gitRoot": "/Volumes/code/workspace/infra/axi-workspace-governance",
+      "owner": "libu",
+      "projectKind": "axi-workspace-governance",
+      "provides": [
+        "workspace-registry",
+        "project-catalog",
+        "workspace-audit",
+        "task-execution-routing/v1"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-tauri-starter",
+      "canonicalPath": "/Volumes/code/workspace/shared/axi-tauri-starter",
+      "gitRoot": "/Volumes/code/workspace/shared/axi-tauri-starter",
+      "owner": "Axi Core Projects",
+      "projectKind": "shared-template",
+      "provides": [
+        "tauri-shell-template",
+        "tauri-cache-bootstrap"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-proxy-companion",
+      "canonicalPath": "/Volumes/code/workspace/tools/axi-proxy-companion",
+      "gitRoot": "/Volumes/code/workspace/tools/axi-proxy-companion",
+      "owner": "libu",
+      "projectKind": "macos-tool",
+      "provides": [
+        "proxycloud-menu-control",
+        "local-proxy-health-ui"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-video-downloader",
+      "canonicalPath": "/Volumes/code/workspace/tools/axi-video-downloader",
+      "gitRoot": "/Volumes/code/workspace/tools/axi-video-downloader",
+      "owner": "libu",
+      "projectKind": "local-tool",
+      "provides": [
+        "local-video-download-tool"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-feishu-codex-bridge",
+      "canonicalPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
+      "gitRoot": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
+      "owner": "libu",
+      "projectKind": "local-integration-tool",
+      "provides": [
+        "feishu-codex-bridge",
+        "feishu-codex-channel-adapter",
+        "feishu-bot-runtime"
+      ],
+      "consumes": [
+        "axi-rules",
+        "codex-app-projects",
+        "ollama-local"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "sub2api",
+      "canonicalPath": "/Volumes/code/workspace/references/sub2api",
+      "gitRoot": "/Volumes/code/workspace/references/sub2api",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-service",
+      "provides": [
+        "subscription-api-tooling"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "cliproxyapi",
+      "canonicalPath": "/Volumes/code/workspace/references/cliproxyapi",
+      "gitRoot": "/Volumes/code/workspace/references/cliproxyapi",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-service",
+      "provides": [
+        "cli-compatible-api-proxy-reference",
+        "oauth-account-routing-reference",
+        "codex-claude-gemini-proxy-reference"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "image2prompt",
+      "canonicalPath": "/Volumes/code/workspace/references/image2prompt",
+      "gitRoot": "/Volumes/code/workspace/references/image2prompt",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-browser-extension",
+      "provides": [
+        "image-to-prompt-extension-reference",
+        "visual-prompting-ux-reference"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "opencodex",
+      "canonicalPath": "/Volumes/code/workspace/references/opencodex",
+      "gitRoot": "/Volumes/code/workspace/references/opencodex",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-local-codex-gateway",
+      "provides": [
+        "codex-local-gateway-reference",
+        "codex-computer-use-proxy-reference",
+        "macos-wrapper-app-reference"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "cockpit-tools",
+      "canonicalPath": "/Volumes/code/workspace/references/cockpit-tools",
+      "gitRoot": "/Volumes/code/workspace/references/cockpit-tools",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-desktop-product",
+      "provides": [
+        "cockpit-desktop-tooling-reference",
+        "external-account-runtime-ui-reference"
+      ],
+      "consumes": [
+        "axi-tauri-starter",
+        "axi-workbench"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "blinko",
+      "canonicalPath": "/Volumes/code/workspace/references/blinko",
+      "gitRoot": "/Volumes/code/workspace/references/blinko",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-project",
+      "provides": [
+        "blinko-reference"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "comfyui",
+      "canonicalPath": "/Volumes/code/workspace/references/comfyui",
+      "gitRoot": "/Volumes/code/workspace/references/comfyui",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-project",
+      "provides": [
+        "comfyui-reference"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "dbskill",
+      "canonicalPath": "/Volumes/code/workspace/references/dbskill",
+      "gitRoot": "/Volumes/code/workspace/references/dbskill",
+      "owner": "AxiomaticWorld workspace owner",
+      "projectKind": "reference-project",
+      "provides": [
+        "dbskill-reference",
+        "diagnostic-skill-pack-reference",
+        "agent-skill-methodology-reference"
+      ],
+      "consumes": [],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-workbench-web-dist",
+      "canonicalPath": "/Volumes/code/workspace/distributions/axi-workbench-web",
+      "gitRoot": "/Volumes/code/workspace/distributions/axi-workbench-web",
+      "owner": "libu",
+      "projectKind": "distribution",
+      "provides": [
+        "axi-workbench-web-distribution",
+        "axi-workbench-web-standalone"
+      ],
+      "consumes": [
+        "axi-ui",
+        "axi-registry"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-workbench-mobile-dist",
+      "canonicalPath": "/Volumes/code/workspace/distributions/axi-workbench-mobile",
+      "gitRoot": "/Volumes/code/workspace/distributions/axi-workbench-mobile",
+      "owner": "libu",
+      "projectKind": "distribution",
+      "provides": [
+        "axi-workbench-mobile-distribution",
+        "axi-workbench-mobile-standalone"
+      ],
+      "consumes": [
+        "axi-ui",
+        "axi-registry"
+      ],
+      "includedInCommitLedger": true
+    },
+    {
+      "projectId": "axi-workbench-desktop-dist",
+      "canonicalPath": "/Volumes/code/workspace/distributions/axi-workbench-desktop",
+      "gitRoot": "/Volumes/code/workspace/distributions/axi-workbench-desktop",
+      "owner": "libu",
+      "projectKind": "distribution",
+      "provides": [
+        "axi-workbench-desktop-distribution",
+        "axi-workbench-desktop-standalone",
+        "tauri-desktop-app"
+      ],
+      "consumes": [
+        "axi-ui",
+        "axi-registry"
+      ],
+      "includedInCommitLedger": true
+    }
+  ],
+  "totalProjects": 35,
+  "canonicalOwner": "libu"
+}
