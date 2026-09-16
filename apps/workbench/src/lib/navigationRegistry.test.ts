@@ -9,6 +9,7 @@ describe('navigationRegistry', () => {
       '/admin/personal-os/workbench',
       '/admin/dashboard',
       '/admin/operations',
+      '/admin/operations/commit-ledger',
       '/admin/project',
       '/admin/task',
       '/admin/team',
