@@ -308,7 +308,8 @@ const Login: React.FC = () => {
   const handleAccountEnterRef = useRef<() => void>(() => {});
   const [localRuntimeStatus, setLocalRuntimeStatus] = useState<LocalRuntimeStatus | null>(null);
   const [localRuntimeStatusResolved, setLocalRuntimeStatusResolved] = useState(() => !isTauriShell());
-  const localRuntimeRequired = isTauriShell();
+  const localRuntimeRequired = isTauriShell()
+    && import.meta.env.VITE_DESKTOP_LOCAL_RUNTIME === 'true';
   const localRuntimeBlocked = isLocalRuntimeBlocked(
     localRuntimeRequired,
     localRuntimeStatusResolved,

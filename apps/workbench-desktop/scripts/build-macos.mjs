@@ -81,6 +81,7 @@ if (isLocalBuild) {
 } else {
   delete process.env.AXI_DESKTOP_LOCAL
 }
+process.env.VITE_DESKTOP_LOCAL_RUNTIME = isLocalBuild ? 'true' : 'false'
 writeFileSync(buildProfilePath, `${isLocalBuild ? 'local' : 'public'}\n`, 'utf8')
 
 function normalizePackagedGatewayBaseURL(value) {

@@ -22,6 +22,13 @@ use runtime::LocalRuntime;
 const APP_NAME: &str = "Axi 工作台";
 const DEFAULT_GATEWAY_BASE_URL: &str = runtime::REMOTE_GATEWAY_ORIGIN;
 const WORKBENCH_PUBLIC_HOST: &str = "workbench.axiomaticworld.com";
+// This packaged local-project build uses the Windows workstation as its
+// remote HTTPS server. Keep the public hostname for TLS/SNI and certificate
+// validation, but avoid the router's unsupported LAN-to-public-IP hairpin.
+const REMOTE_GATEWAY_LAN_ADDR: SocketAddr = SocketAddr::new(
+    std::net::IpAddr::V4(std::net::Ipv4Addr::new(192, 168, 101, 6)),
+    443,
+);
 const LOCAL_HTTPS_PORT: u16 = 8443;
 const LOCAL_RUNTIME_STATUS_EVENT: &str = "shell://local-runtime-status";
 
@@ -126,7 +133,13 @@ async fn proxy_gateway_request(
     let mut client_builder = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(30));
-    if target_url.port() == Some(LOCAL_HTTPS_PORT) {
+    if target_url.host_str() == Some(WORKBENCH_PUBLIC_HOST)
+        && target_url.port_or_known_default() == Some(443)
+    {
+        client_builder = client_builder
+            .no_proxy()
+            .resolve(WORKBENCH_PUBLIC_HOST, REMOTE_GATEWAY_LAN_ADDR);
+    } else if target_url.port() == Some(LOCAL_HTTPS_PORT) {
         client_builder = client_builder
             .no_proxy()
             .resolve(
