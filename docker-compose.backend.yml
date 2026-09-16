@@ -1,4 +1,10 @@
 services:
+  # Remote backend does not need Mailpit's host ports. Keep SMTP available to
+  # notification-service over the Compose network and avoid colliding with a
+  # developer Mailpit already bound on the Windows host.
+  mailpit:
+    ports: !override []
+
   identity-migrate:
     profiles: [backend]
     build:
@@ -166,7 +172,9 @@ services:
       IDENTITY_ADAPTER_URL: http://identity-adapter:8081
       PLATFORM_CORE_URL: http://platform-core:8082
       WORKFLOW_SERVICE_URL: http://workflow-engine:8083
+      WORKFLOW_URL: http://workflow-engine:8083
       NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      NOTIFICATION_URL: http://notification-service:8084
       FILE_SERVICE_URL: http://file-service:8085
       CONTROL_PLANE_URL: http://control-plane:8092
       GATEWAY_IDENTITY_INTERNAL_TOKEN: axi-development-internal-token
@@ -203,12 +211,11 @@ services:
       AXI_MOBILE_PAIRING_ENABLED: "false"
     healthcheck:
       # Probe the existing /health route exposed by
-      # services/control-plane/src/server.mjs:144. The container ships
-      # only a distroless Node runtime (no curl/wget), so we use a tiny
-      # Node one-liner that exits 0 on 200 and non-zero otherwise. This
-      # is what the API Gateway `depends_on: condition: service_healthy`
-      # above will wait for.
-      test: ["CMD", "/nodejs/bin/node", "-e", "require('http').get('http://127.0.0.1:8092/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      # services/control-plane/src/server.mjs:144. The image has Node but
+      # no curl/wget, so use a tiny Node one-liner that exits 0 on 200 and
+      # non-zero otherwise. This is what the API Gateway
+      # `depends_on: condition: service_healthy` above will wait for.
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8092/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 5

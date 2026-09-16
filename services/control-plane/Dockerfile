@@ -9,7 +9,7 @@
 #               version, then run `pnpm deploy` to produce a self-contained
 #               /out/app tree with only production dependencies for the
 #               control-plane package.
-#   2. runtime — distroless Node 22, non-root, only the deployed /out/app.
+#   2. runtime — Node 22 slim, non-root, only the deployed /out/app.
 #
 # This image is intentionally separate from the API Gateway image: the
 # Control Plane is a Node service on 8092, while the API Gateway is a
@@ -24,9 +24,11 @@
 FROM node:22.13-bookworm-slim AS build
 WORKDIR /src
 
-# package.json pins the exact pnpm release (including its integrity hash).
-# Let Corepack honor that pin instead of silently building with another 9.x.
-RUN corepack enable
+# Node 22's bundled Corepack currently fails to validate the pnpm signing key
+# in this Windows build environment. Install the exact package-manager version
+# declared by package.json through npm instead of disabling verification or
+# silently selecting a different pnpm release.
+RUN npm install --global pnpm@9.6.0
 
 # Copy only manifests and the workspace declaration first so the install
 # layer caches when only source code changes.
@@ -44,15 +46,20 @@ COPY . .
 RUN pnpm --filter @axi/workstation-control-plane deploy --prod /out/app
 
 # ----------------------------------------------------------------------------
-# Stage 2 — runtime (distroless Node 22, non-root)
+# Stage 2 — runtime (Node 22, non-root)
 # ----------------------------------------------------------------------------
-FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runtime
+FROM node:22.13-bookworm-slim AS runtime
 WORKDIR /app
 
 # /out/app contains the deployed package (its own package.json plus a
-# pruned node_modules tree). Copying it in one shot keeps the runtime
-# image as small as distroless + the app tree.
+# pruned node_modules tree). The Node slim image is used here because the
+# Windows network can reach the configured Docker Hub mirror but not gcr.io.
 COPY --from=build /out/app /app
+
+# The idempotency service creates this cache on first boot. Prepare it while
+# still root, then hand the complete application tree to the node user.
+RUN mkdir -p /app/.cache/epap-control-plane \
+    && chown -R node:node /app
 
 # Bind to 0.0.0.0 inside the container so the API Gateway (and the
 # docker-compose healthcheck) can reach the service through the Compose
@@ -64,9 +71,6 @@ ENV CONTROL_PLANE_BIND=0.0.0.0 \
 
 EXPOSE 8092
 
-USER nonroot:nonroot
+USER node:node
 
-# Distroless has no shell, so HEALTHCHECK is intentionally not declared
-# here. The reverse proxy and docker-compose healthcheck probe /health
-# over HTTP from outside the container.
-ENTRYPOINT ["/nodejs/bin/node", "src/server.mjs"]
+ENTRYPOINT ["node", "src/server.mjs"]
