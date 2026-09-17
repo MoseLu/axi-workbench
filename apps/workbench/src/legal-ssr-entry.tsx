@@ -1,5 +1,5 @@
 import React from 'react';
-import { StaticRouter } from 'react-router-dom/server';
+import { StaticRouter } from 'react-router';
 import { renderToStaticMarkup } from 'react-dom/server';
 import LegalDocument from './pages/LegalDocument';
 
