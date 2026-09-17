@@ -1,0 +1,239 @@
+# `@axi/workbench-desktop` — Axi Workbench Mac App
+
+Axi Workbench 的 **macOS 原生壳**，对标 Bilibili Mac 客户端形态。
+
+> **核心原则**：UI 1:1 复用 `apps/workbench` 现有 Web 端，**不重写、不双维护**；本包只在外层套一层 macOS 原生壳（菜单栏 / 托盘 / 全局快捷键 / 单实例锁 / 系统通知 / Apple 公证打包）。
+
+| 项 | 值 |
+| --- | --- |
+| 目录 | `apps/workbench-desktop` |
+| 包名 | `@axi/workbench-desktop` |
+| 桌面壳 | **Tauri 2**（Rust + WKWebView） |
+| 复用 UI | `apps/workbench` 的 Vite 构建产物 |
+| 启动开发 | `pnpm dev:desktop`（仅本机项目模式） |
+| 打包远程 .app | `pnpm build:desktop:remote`（本地 ad hoc 签名） |
+| 打包本机项目 .app | `pnpm build:desktop:local`（仅开发机） |
+| 打包 .dmg + 公证 | `pnpm build:desktop:dmg` + `apps/workbench-desktop/scripts/notarize.sh` |
+| 输出 | `apps/workbench-desktop/src-tauri/target/release/bundle/{macos,dmg}/`（应用名为 `Axi 工作台`） |
+
+## 一键启动
+
+桌面端正式包按 Codex App / 哔哩哔哩客户端的方式工作：**打开 App 即可**，只连接远程
+HTTPS Gateway，不在用户 Mac 上启动后端。
+
+- 远程包（`build:desktop:remote` / `build:desktop`）使用 `https://workbench.axiomaticworld.com`，不拉本机 Node、Go、Docker 或本机 HTTPS。
+- 本机项目包（`tauri dev`、`build:desktop:local`）仍用于开发和故障排查，会自动拉起本机完整链路；它不是正式分发包。
+
+开发一键入口：
+
+```bash
+pnpm dev:desktop
+```
+
+会同时拉起本机 API 平面、Vite 和 Tauri 窗口。
+
+## Gateway 地址
+
+远程包默认使用 `https://workbench.axiomaticworld.com`，由 Windows 服务器提供 HTTPS
+和 Gateway；Mac App 不启动本机后端。Tauri WebView
+不直接从 `tauri://` / `tauri.localhost` 发起 Gateway 请求，而是由 Rust 原生层转发，
+因此登录二维码、轮询和 HttpOnly 会话 cookie 走同一条稳定链路。
+
+本机项目包才使用 `https://workbench.axiomaticworld.com:8443`，由 Rust 层映射到本机
+HTTPS 入口，再反代到 `127.0.0.1:8088`。
+
+远程构建入口：
+
+```bash
+pnpm build:desktop:remote
+```
+
+`build-macos.mjs` 会把远程包的 `VITE_API_BASE_URL` 固定为公网地址，并在打包校验中
+确认远程地址已经注入。本机项目包必须显式使用 `pnpm build:desktop:local`。
+
+原生层只接受本地 Gateway `:8088`、本机 HTTPS `:8443`，或精确的
+`https://workbench.axiomaticworld.com`；远程包不会
+接受任意外部 URL，也不会把会话 cookie 发给父域下的其他项目。该主机应与 Web
+静态站点共用同一入口，使 `/api/*`
+和页面同源。正式启用前，需要为该子域名配置 DNS 与覆盖该主机名的 HTTPS 证书。
+
+### 本机 HTTPS 部署
+
+本机项目包不要求修改 `/etc/hosts`。在项目 `.env` 中配置证书和私钥路径：
+
+```bash
+WORKBENCH_TLS_CERT_FILE=.local/workbench-tls/workbench.axiomaticworld.com.pem
+WORKBENCH_TLS_KEY_FILE=.local/workbench-tls/workbench.axiomaticworld.com.key
+```
+
+入口地址为 `https://workbench.axiomaticworld.com:8443`，`/api/*` 会反代到本机
+Gateway `:8088`。桌面包可直接使用：
+
+```bash
+pnpm build:desktop:local
+```
+
+证书和私钥只从本地 `.env` 读取，不应复制到仓库或提交 Git。
+
+## 与其他端的关系
+
+| 端 | 路径 | 形态 | 是否复用 |
+| --- | --- | --- | --- |
+| Web 工作台 | `apps/workbench` | Vite + React，浏览器 | **是** —— 1:1 套壳 |
+| 移动端 | `apps/workbench-mobile` | Vite + React，独立 IA | **否** —— 见其 README 第 29–31 行 |
+| Mac 桌面 | `apps/workbench-desktop`（本包） | Tauri 2 壳 + WKWebView | 是（套 web 端） |
+
+## 开发前准备
+
+1. **Rust 工具链**：`cargo` / `rustc` ≥ 1.77。已装。
+3. **macOS 平台依赖**（仅 macOS）：`xcode-select --install` 安装 Xcode Command Line Tools。
+4. **Node ≥ 18**、**pnpm ≥ 8**。已装。
+
+## 本地开发
+
+### 一键启动（推荐）
+
+```bash
+pnpm --filter @axi/workbench-desktop dev
+# 或
+pnpm dev:desktop
+```
+
+`scripts/dev-desktop.mjs` 会自动拉起 vite（监听 `127.0.0.1:5183`）+ Tauri dev 两个进程，
+等端口就绪后再起 Tauri WebView；Ctrl+C 一并退出。
+
+### 手动双终端（高级）
+
+如果需要分别看 vite 和 tauri 的日志：
+
+```bash
+# 终端 A：web 端 dev server（Tauri 窗口的 web 内容源）
+pnpm dev:workbench
+
+# 终端 B：等终端 A 输出 ready 后再起 Tauri 窗口
+pnpm --filter @axi/workbench-desktop dev:split
+```
+
+也可以打印这两条命令方便复制：
+
+```bash
+node apps/workbench-desktop/scripts/dev-desktop.mjs --print-only
+```
+
+### 注意
+
+- **端口冲突**：`5183` 已被其他项目占用时 vite 启动失败（`EADDRINUSE`），释放端口或改
+  `apps/workbench/vite.config.ts` 的 `server.port` 后同步修改 `apps/workbench-desktop/src-tauri/tauri.conf.json` 的
+  `devUrl`。
+- **Tauri 系统要求**：macOS 11+、Xcode Command Line Tools（`xcode-select --install`）、
+  rustup 工具链（`cargo` / `rustc` ≥ 1.77）。
+- 第一次 `tauri dev` 会触发 `cargo` 拉依赖，需要几分钟。
+
+## 打包 .app / .dmg
+
+```bash
+# 仅打包 .app（快速本地验证）
+pnpm build:desktop
+
+# 打包本机项目版 .app（双击自动启动本地后端）
+pnpm build:desktop:local
+
+# 打包 .app + .dmg（分发用）
+pnpm build:desktop:dmg
+```
+
+产物路径：
+
+```
+apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app
+apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_0.1.0_<arch>.dmg
+```
+
+本地构建使用 ad hoc 签名，未经过 Apple 公证的 `.app` 仍可能被 Gatekeeper 拦截（提示“无法打开，因为它来自身份不明的开发者”）。本地开发期可以：
+
+```bash
+xattr -dr com.apple.quarantine 'apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app'
+```
+
+## Apple 公证
+
+```bash
+APPLE_ID=you@example.com \
+APPLE_TEAM_ID=ABCDE12345 \
+APPLE_APP_SPECIFIC_PASSWORD=abcd-efgh-ijkl-mnop \
+./apps/workbench-desktop/scripts/notarize.sh \
+  'apps/workbench-desktop/src-tauri/target/release/bundle/macos/Axi 工作台.app' \
+  'apps/workbench-desktop/src-tauri/target/release/bundle/dmg/Axi 工作台_0.1.0_<arch>.dmg'
+```
+
+第一次使用前需在 Keychain 注册 `workbench-desktop-notary` profile：
+
+```bash
+xcrun notarytool store-credentials "workbench-desktop-notary" \
+  --apple-id "$APPLE_ID" \
+  --team-id  "$APPLE_TEAM_ID" \
+  --password  "$APPLE_APP_SPECIFIC_PASSWORD"
+```
+
+## CI Developer ID 签名与公证（推荐）
+
+`.github/workflows/axi-desktop-macos.yml` 在 `axi-workbench/v*` tag 推送时自动跑：
+
+1. 装 Rust + Node + pnpm；
+2. 跑 `pnpm --filter @axi/workbench build` 与 `verify:contracts`；
+3. `pnpm --filter @axi/workbench-desktop build:dmg` 出 `.app` + `.dmg`；
+4. 调 `notarize.sh` 公证 + staple；
+5. 上传为 workflow artifact，并把 `.dmg` + 打包好的 `.app.zip` 附到对应 GitHub Release。
+
+需在仓库 GitHub Secrets 配置：
+
+| Secret | 说明 |
+| --- | --- |
+| `APPLE_ID` | Apple Developer 邮箱 |
+| `APPLE_TEAM_ID` | 10 位 Team ID（developer.apple.com → Membership） |
+| `APPLE_APP_SPECIFIC_PASSWORD` | appleid.apple.com → App-Specific Passwords 生成 |
+| `APPLE_CERTIFICATE` | Base64 编码的 Developer ID Application `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | `.p12` 导出密码 |
+| `APPLE_SIGNING_IDENTITY` | 可选；不提供时从导入的证书自动解析 |
+
+手动 dispatch 且不勾选 `sign` 时使用 ad hoc 签名，方便验证构建产物；tag 发布或手动勾选 `sign` 时必须提供 Developer ID 证书，否则构建会失败，不会产出冒充可分发的未签名包。
+
+## 应用图标
+
+桌面端与 Web 端使用七成员团子大家族图标。Web 标记源文件为
+`apps/workbench/public/favicon.svg`，桌面端源图为
+`src-tauri/icons/dango-family.png`，`src-tauri/icons/icon.svg` 是生成后的桌面应用图标母版。
+普通本机版/正式版构建会保留已提交的视觉资源，不会自动重新生成图标：
+
+```bash
+pnpm --dir apps/workbench-desktop icon
+```
+
+只有明确要更新整套图标资源时才运行上面的命令；应用构建本身如需临时刷新图标，必须显式传入
+`--refresh-icons`，否则构建完成会校验视觉资源哈希没有变化。
+
+## 校验脚本
+
+```bash
+pnpm --filter @axi/workbench-desktop verify:contracts
+```
+
+会检查：
+- `apps/workbench/dist` 已存在并镜像到 `apps/workbench-desktop/workbench-dist/`；
+- `apps/workbench-desktop/src-tauri/icons/icon.icns` 已就位。
+
+## 故障排查
+
+| 现象 | 处理 |
+| --- | --- |
+| `cargo` 报错 `failed to fetch crate` | 确认 `~/.cargo/config.toml` 的源设置；国内环境考虑换镜像 |
+| `tauri build` 报 icon 不合法 | 先确认已提交的团子图标资源完整；只有需要更新资源时才运行 `pnpm --filter @axi/workbench-desktop icon` |
+| 窗口白屏 | 检查 `tauri.conf.json` 的 `devUrl` 是否能 `curl http://127.0.0.1:5173` 成功 |
+| macOS Gatekeeper 拦截 | `xattr -dr com.apple.quarantine <path>`，或走完整公证流程 |
+| 单实例锁与开发模式冲突 | 调试期可在 `tauri.conf.json` 关闭 `plugins.singleInstance.enabled` |
+
+## 相关文档
+
+- `docs/specs/2026-09-01-workbench-mac-packaging/PRD.md` —— 本次打包的产品/技术决策
+- `apps/workbench/README.md` —— Web 端入口
+- `apps/workbench-mobile/README.md` —— 移动端边界（明确不复用此路径）

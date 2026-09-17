@@ -14,6 +14,7 @@ enum ComposerChromeMetrics {
     static let containerCornerRadius = DesignTokens.CornerRadius.composer
     static let slashMenuCornerRadius = DesignTokens.CornerRadius.popover
     static let chipCornerRadius = DesignTokens.CornerRadius.control
+    static let maximumWidth: CGFloat = 760
 }
 
 struct ComposerBarView: View {
@@ -124,7 +125,8 @@ struct ComposerBarView: View {
                 .stroke(AppTheme.borderStrong, lineWidth: DesignTokens.Stroke.hairline)
         )
         .clipShape(RoundedRectangle(cornerRadius: ComposerChromeMetrics.containerCornerRadius))
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: ComposerChromeMetrics.maximumWidth)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var textArea: some View {

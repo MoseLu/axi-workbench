@@ -8,7 +8,7 @@ describe("Axi Mobile companion model", () => {
     expect(snapshot.mobile).toMatchObject({
       owner: "axi-mobile",
       packageName: "com.mosscoder.notify",
-      projectPath: "/Volumes/code/workspace/projects/axi-notify/android-app",
+      projectPath: "workspace://project/axi-notify/android-app",
       latestGoal70Artifact: expect.stringContaining("goal70-20260525-093736"),
       deepLinks: expect.arrayContaining(["axi://chat", "axi://todo", "axi://workbench"]),
     });

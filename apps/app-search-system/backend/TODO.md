@@ -88,7 +88,7 @@
 |------|------|------|
 | TODO.md (this) | `./TODO.md` | 后端模块任务（当前） |
 | TODO.md (parent) | `../TODO.md` | 全项目任务 |
-| MILESTONES.md | `./MILESTONES.md` | 后端模块里程碑 |
+| MILESTONE.md | `./MILESTONE.md` | 后端模块里程碑 |
 | AGENTS.md | `./AGENTS.md` | 后端目录 AI 文档 |
 
 ### Quick Commands

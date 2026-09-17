@@ -357,7 +357,7 @@ export default function SearchBox({
               background: isRecording ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
               border: isRecording ? '1px solid rgba(239, 68, 68, 0.3)' : 'none',
               borderRadius: '50%', cursor: 'pointer',
-              color: isRecording ? '#ef4444' : 'var(--text-muted)',
+              color: isRecording ? 'var(--axi-danger, #ef4444)' : 'var(--text-muted)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s',
             }}
@@ -379,7 +379,7 @@ export default function SearchBox({
             style={{
               position: 'absolute', right: 72, top: 12,
               width: 8, height: 8,
-              background: '#ef4444', borderRadius: '50%',
+              background: 'var(--axi-danger, #ef4444)', borderRadius: '50%',
               animation: 'pulse 1s infinite',
             }}
           />

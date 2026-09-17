@@ -1,0 +1,111 @@
+{
+  "taskId": "CL-004",
+  "timestamp": "2026-09-15T07:58:00.000Z",
+  "partitions": {
+    "shared": [
+      {
+        "projectId": "axi-ui",
+        "path": "/Volumes/code/workspace/shared/axi-ui",
+        "branch": "dev",
+        "commit": "2d5aa3d6c1f050e1c61cb4cdb2b176e52a52f1db",
+        "remote": "https://github.com/MoseLu/axi-ui.git",
+        "status": "A docs/logs/submit/20260915-000209-auto-submit.md",
+        "classification": "shared_provider"
+      },
+      {
+        "projectId": "axi-tauri-starter",
+        "path": "/Volumes/code/workspace/shared/axi-tauri-starter",
+        "branch": "dev",
+        "commit": "54336b3635c75af324fecec3baec58e127c050ef",
+        "remote": "https://github.com/MoseLu/axi-tauri-starter.git",
+        "status": "A docs/logs/submit/20260914-095921-auto-submit.md",
+        "classification": "shared_provider"
+      },
+      {
+        "projectId": "axi-skills",
+        "path": "/Volumes/code/workspace/shared/axi-skills",
+        "branch": "dev",
+        "commit": "ec0ef26dd68700e543f607ed4099fdbab3d4c938",
+        "remote": "https://github.com/MoseLu/axi-skills.git",
+        "status": "A 7 auto-submit log files",
+        "classification": "shared_provider"
+      }
+    ],
+    "infra": [
+      {
+        "projectId": "axi-workspace-governance",
+        "path": "/Volumes/code/workspace/infra/axi-workspace-governance",
+        "branch": "agent/workspace-incubator",
+        "commit": "978e231a64ecf33b509d55dcb2050127065d20aa",
+        "remote": "https://github.com/MoseLu/axi-workspace-governance.git",
+        "status": "M 12 files including docs and package.json",
+        "classification": "infrastructure"
+      },
+      {
+        "projectId": "axi-registry",
+        "path": "/Volumes/code/workspace/infra/axi-registry",
+        "branch": "dev",
+        "commit": "635fd2d8bd4cd7349219151dee923a8363d4dc50",
+        "remote": "https://github.com/MoseLu/axi-registry.git",
+        "status": "A docs/logs/submit/20260914-095921-auto-submit.md",
+        "classification": "infrastructure"
+      }
+    ],
+    "tools": [
+      {
+        "projectId": "axi-video-downloader",
+        "path": "/Volumes/code/workspace/tools/axi-video-downloader",
+        "branch": "dev",
+        "commit": "5b7512651300355469a6d657f78374c32db80ced",
+        "remote": "https://github.com/MoseLu/Axi-Video-Downloader.git",
+        "status": "clean",
+        "classification": "tool"
+      },
+      {
+        "projectId": "axi-proxy-companion",
+        "path": "/Volumes/code/workspace/tools/axi-proxy-companion",
+        "branch": "dev",
+        "commit": "bfcac03f4c30b0c1889a1b6135aed27fdb283005",
+        "remote": "https://github.com/MoseLu/axi-proxy-companion.git",
+        "status": "clean",
+        "classification": "tool"
+      },
+      {
+        "projectId": "axi-feishu-codex-bridge",
+        "path": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
+        "branch": "dev",
+        "commit": "5b4aa067e8223943041394401544ba6e924e0f3a",
+        "remote": "https://github.com/MoseLu/axi-feishu-codex-bridge.git",
+        "status": "A docs/logs/submit/20260915-045901-auto-submit.md",
+        "classification": "tool"
+      }
+    ]
+  },
+  "sharedProviders": [
+    "axi-ui",
+    "axi-tauri-starter",
+    "axi-skills"
+  ],
+  "infrastructureRepos": [
+    "axi-workspace-governance",
+    "axi-registry"
+  ],
+  "toolRepos": [
+    "axi-video-downloader",
+    "axi-proxy-companion",
+    "axi-feishu-codex-bridge"
+  ],
+  "totalRepos": 8,
+  "axiWorkbenchDependencies": {
+    "workspaceDefinition": "axi-workbench is the monorepo itself (at /Volumes/code/workspace/projects/axi-workbench)",
+    "referencedBy": [
+      "axi-workspace-governance documents project-catalog integration",
+      "axi-registry serves as package registry for workbench"
+    ],
+    "usesSharedProviders": [
+      "axi-ui for UI components",
+      "axi-tauri-starter for desktop builds",
+      "axi-skills for skill system"
+    ]
+  }
+}

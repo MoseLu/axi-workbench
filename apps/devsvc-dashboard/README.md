@@ -8,13 +8,13 @@ The dashboard source lives in this project, but the running PM2 service is
 started by the workspace wrapper:
 
 ```bash
-/Volumes/code/workspace/scripts/devsvc restart devsvc-dashboard
+/Volumes/code/workspace/scripts/service/devsvc/devsvc restart devsvc-dashboard
 ```
 
 Production assets are served by:
 
 ```text
-/Volumes/code/workspace/scripts/devsvc-dashboard.mjs
+/Volumes/code/workspace/scripts/service/devsvc/devsvc-dashboard.mjs
 ```
 
 ## Development
@@ -39,7 +39,7 @@ window loads the local dashboard service at `http://127.0.0.1:17888`, so keep
 `workspace:devsvc-dashboard` running before opening the app:
 
 ```bash
-/Volumes/code/workspace/scripts/devsvc start devsvc-dashboard
+/Volumes/code/workspace/scripts/service/devsvc/devsvc start devsvc-dashboard
 pnpm tauri build
 open "src-tauri/target/release/bundle/macos/Axi Dashboard.app"
 ```

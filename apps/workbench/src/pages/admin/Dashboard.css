@@ -1,0 +1,32 @@
+.dashboard-crud .axi-crud-table,
+.dashboard-crud .axi-table-wrapper {
+  width: 100%;
+}
+
+.dashboard-crud__governance {
+  margin-top: var(--axi-space-3, 12px);
+}
+
+.dashboard-crud__governance-stats {
+  display: grid;
+  gap: var(--axi-space-2, 8px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: var(--axi-space-3, 12px);
+}
+
+.dashboard-crud__governance-stats span,
+.dashboard-crud__governance-sources span {
+  display: flex;
+  gap: var(--axi-space-1, 4px);
+}
+
+.dashboard-crud__governance-sources {
+  display: grid;
+  gap: var(--axi-space-1, 4px);
+  margin-bottom: var(--axi-space-3, 12px);
+}
+
+.dashboard-crud__governance-sources code {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

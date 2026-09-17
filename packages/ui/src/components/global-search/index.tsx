@@ -44,6 +44,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === hotkey) {
         e.preventDefault();
+        setQuery('');
         setOpen(true);
       }
       if (e.key === 'Escape') setOpen(false);
@@ -53,10 +54,9 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
   }, [hotkey]);
 
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    if (!open) return;
+    const timeoutId = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(timeoutId);
   }, [open]);
 
   if (!open) return null;

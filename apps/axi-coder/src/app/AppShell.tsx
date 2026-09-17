@@ -2,8 +2,8 @@ import {
   AxiDashboardShell,
   AxiSidebarSearchResults,
   type AxiDashboardAvatarAction,
+  type AxiDashboardAction,
   type AxiDashboardNavGroup,
-  type AxiDashboardTopbarPluginAction,
 } from "@axi/shell";
 import { useAxiTheme } from "@axi/core";
 import { useMemo, useState, type ReactNode } from "react";
@@ -121,7 +121,7 @@ export function AppShell({
     { iconName: "my", key: "profile", label: "个人中心", onClick: onSettings },
     { iconName: "exit", key: "logout", label: "退出登录", onClick: leaveConsoleSession },
   ];
-  const topbarPluginActions = useMemo<AxiDashboardTopbarPluginAction[]>(() => [
+  const topbarPluginActions = useMemo<AxiDashboardAction[]>(() => [
     {
       href: "https://github.com/MoseLu/axi-coder",
       iconName: "github",

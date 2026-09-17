@@ -140,7 +140,7 @@ struct AssistantPanelConversationContentView<ComposerContent: View>: View {
                 .accessibilityIdentifier("newChat.prompt")
 
             composer
-                .frame(maxWidth: 760)
+                .frame(maxWidth: ComposerChromeMetrics.maximumWidth)
 
             Spacer(minLength: 0)
         }

@@ -1,0 +1,443 @@
+# Axi Workbench PRD
+
+> 版本：v5 · 状态：产品架构已定；P1/P2 本地验收完成，公网移动访问整改待执行 · 更新：2026-09-14
+>
+> 本 PRD 的变更规格、公开案例研究和能力台账位于 [`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)。当前源码角色仍以 [`docs/architecture/source-catalog.md`](../architecture/source-catalog.md) 为准；本文不把规划能力写成既有实现。
+
+**P0 状态（2026-08-22）**：产品架构与能力盘点已完成。详细能力台账见 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)；跨端交接协议草案见 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)。
+
+## 1. 产品决策：不是响应式后台，而是“控制—执行—专业工具”架构
+
+**Axi Workbench 是多端后台管理系统：Web 是完整的管理控制中心；移动端是围绕在途、值班和即时任务的角色执行端；专业运维能力留在专用工具。**
+
+移动端仍是整体管理体系中的**辅助管理端**，但“辅助”不等于残缺版后台：对值班或现场角色，它应能闭环少量高频、单对象、边界清晰的任务；它不承担跨组织治理、全局配置和批量编排。Web 与移动端共享业务事实和动作合同，不共享页面或导航。
+
+Workbench 的可见产品表面分为三类，下面再由一层共享业务底座支撑：
+
+| 层次 | 产品表面 | 主要用户与场景 | 核心职责 | 明确不承担 |
+| --- | --- | --- | --- | --- |
+| 管理控制 | `apps/workbench` Web | 系统管理员、平台 Owner、项目/运营负责人；需要比较、配置、批量处理、复盘时 | 完整后台管理、跨项目治理、流程编排、审计和导出 | 移动页面或扫码入口替代桌面后台信息架构 |
+| 角色执行 | `apps/workbench-mobile` Mobile | 值班、外出、现场执行者；需要知道“现在该我处理什么”时 | 个人待办、告警、责任范围状态、受控单对象动作、结果回执 | 租户/RBAC/全局配置、批量和全量审计 |
+| 专业操作 | Fleet、Axi Coder、Verification Inbox 等实际执行工具；DevSvc Host 只负责发现/托管入口 | 开发者、本机运维者或明确的专业角色 | 物理资源、编码、验证或其他高专业度操作 | 作为第三个通用用户后台或 Web/Mobile 的一级菜单集合 |
+| 共享底座（非 UI） | Identity、领域 API/Schema、授权、审计、通知与交接合同 | 上述所有表面 | 对同一业务对象提供权威状态、动作政策和审计事实 | 共享页面、路由或设备会话 |
+
+用户/交易前台、IM 渠道或外部合作方界面不属于 Workbench 管理表面的范围；其中 IM 层和通信层仍遵守六层控制面边界，不能承接项目状态或 Agent 执行。
+
+## 2. 公开多端产品形态参照
+
+本定位不是凭目录结构推断，也不是复刻外部产品。我们只研究淘宝/千牛、美团、携程和飞猪的**官方公开产品形态**，从中提炼“消费者、商家、运营者、专业伙伴为什么不应共用同一套界面”的产品原则；不推断其未公开的内部技术架构、组织结构或数据实现。
+
+| 公开观察 | 对 Workbench 的可迁移结论 | 不直接照搬的内容 |
+| --- | --- | --- |
+| 千牛将商家经营工作台描述为面向多端、多角色协同的平台，并公开消息、数字、端能力和轻任务等接入方式。 | 控制中心应聚合任务、通知、能力入口与领域事实；同一业务可为不同角色提供不同任务视图。 | 不在本期建设插件市场、第三方开放生态或模仿其功能清单。 |
+| 美团外卖商家版的公开说明同时覆盖网站、App、客户端和小程序，并以商家角色、订单和提醒为服务场景。 | 端的划分以角色和工作时机为先，移动端可以有独立、完整的受限任务闭环，而不是 Web 的缩小版。 | 不把美团的业务、数据或渠道模型映射为 Workbench 的领域模型。 |
+| 携程 eBooking 公开列出信息、价格/库存、订单、营销、分析与结算等后台能力，同时提供酒店商户端 App。 | 桌面端适合承载跨对象经营管理；移动端可承接同一商家角色的即时处理，但两端不必同页同功能。 | 不以旅游供应链能力决定 Workbench 的具体菜单。 |
+| 飞猪商家中心的公开流程同时出现资质、合同、资金等治理事项，并允许特定续签流程在手机端完成。 | 风险分端不能只看“操作重要不重要”；必须看对象数、影响范围、授权、二次确认、服务端复核与审计。 | 不因有手机流程就把组织级或批量治理整体开放到 Mobile。 |
+
+完整证据、链接、研究边界及推导记录见 [`MARKET-REFERENCE.md`](../specs/2026-08-09-multi-surface-admin-positioning/MARKET-REFERENCE.md)。桌面工作台的二次调研及“通用扫码不属于 Web 控制中心”的校正见 [`DESKTOP-WORKBENCH-RESEARCH.md`](../specs/2026-08-09-multi-surface-admin-positioning/DESKTOP-WORKBENCH-RESEARCH.md)。两份文档都是产品形态参考，不是竞品功能需求列表。
+
+## 3. 要解决的问题
+
+当前工程已有两个独立应用，但若产品仍按“一个后台在不同宽度显示”理解，就会产生四类混杂：
+
+- Web 被按移动卡片和底栏组织，失去后台需要的信息密度、跨对象比较、批量处理和复盘能力。
+- 移动端被要求复制完整后台，形成过深导航、复杂表单和不清晰的高影响操作。
+- Host、Hosted App 和垂直工具被误当成“又一个后台”，让用户入口、权限和审计边界失焦。
+- 同一业务对象在两端缺少共同的动作政策和交接合同；同名功能甚至被误认作同一条流程，例如两种“扫码”。
+
+本 PRD 用“**角色 + 任务时机 + 动作等级 + 专业上下文**”决定表面归属，而非按屏幕尺寸或页面复用决定。
+
+## 4. 目标用户与核心任务
+
+| 用户 | 典型任务 | 首选表面 | 成功结果 |
+| --- | --- | --- | --- |
+| 系统管理员 / 平台 Owner | 配置租户、成员、权限、服务、工作流和审计策略 | Web 控制中心 | 在可检索、可批量处理、可追溯的工作台完成闭环。 |
+| 项目 / 运营负责人 | 查看项目组合、分派工作、比较异常、复盘全量记录 | Web 控制中心 | 能跨项目筛选、编辑、比较和导出，而非在碎片卡片中反复跳转。 |
+| 值班 / 外出 / 现场执行者 | 接收告警、查看本人责任、处理待办或确认动作 | Mobile 执行端 | 在少量步骤内知道“现在要做什么”，服务端验证后完成被授权的单对象动作。 |
+| 开发者 / 本机运维者 | 启动服务、诊断本地运行状态、进入专项工具 | DevSvc Host / 垂直工具 | 在专业工具中完成物理或开发操作，不把工具行为伪装成通用后台模块。 |
+
+## 5. 范围与非目标
+
+### 本期范围
+
+- 固化 Web 控制中心、Mobile 角色执行端和专业工具三类表面的任务、信息架构和交接规则。
+- 为每项新能力建立“角色—动作等级—表面—授权/审计—不支持端交接”的归属记录。
+- 保持两个用户端共享身份、授权语义、API/Schema 合同、领域事实和审计链路。
+- 用产品与工程护栏，阻止 Web 混入移动壳，阻止 Mobile 变成缩小的全量后台。
+
+### 非目标
+
+- 不合并两个 Vite 应用，不通过 viewport 条件把移动组件塞进 Web 路由树。
+- 不把 DevSvc Dashboard、Axi Coder、Fleet、App Search 等变成用户后台模块。
+- 不在本期建设类似千牛的插件市场、消费者端、商家生态或第三方应用分发能力。
+- 不在此次产品定义中迁移 `@epap/*`、`packages/ui` 或其他兼容层；它们按独立的消费者验证计划收敛。
+- 本期不承诺操作系统或外部应用级跨端深链接、推送、离线或设备生物识别能力；P3 只建设受认证保护的产品内交接入口，并先完成安全设计。
+
+## 6. 动作等级与能力归属矩阵
+
+同一对象可在不同端出现，但每个动作必须先归类；**复用业务事实不等于复用 UI 或放开相同权限**。
+
+| 动作等级 | 典型特征 | 允许表面 | 最低安全/体验条件 |
+| --- | --- | --- | --- |
+| A：观察与提醒 | 查询状态、接收告警、查看本人相关摘要；不改写领域事实 | Web / Mobile / 专业工具的各自上下文 | 明确数据更新时间、责任范围与权威来源。 |
+| B：受控单对象执行 | 单一对象、当前责任明确、影响可在当前页完整说明 | Web；Mobile 可在动作政策明确允许时执行 | 服务端重新取数与鉴权、明确确认、幂等/失败反馈、审计事件；跨端时关联 `handoff correlation id`。 |
+| C：管理与治理 | 跨项目比较、复杂编辑、批量、全局/组织配置、RBAC、导出、流程编排 | Web 控制中心 | 桌面级筛选、影响范围展示、必要的审批/二次确认与完整审计。 |
+| D：专业/物理操作 | 机器、设备、端口、进程、服务启停、编码或诊断等 | 对应的实际执行垂直工具 | 遵守该工具的权限、审计和六层控制面边界；DevSvc Host 只提供发现/托管入口，Web 只提供状态、审计和受控入口，Mobile 只提供相关提醒或被允许的单对象确认。 |
+
+每项领域能力还必须声明一份**动作政策**：哪些角色可在何种表面执行哪个等级、服务端如何重验、何时要求确认/审批、产生什么审计、无法完成时如何交接。动作政策是领域合同，不是前端组件开关。
+
+| 能力域 | Web 控制中心 | Mobile 执行端 | 专业工具 / 规则 |
+| --- | --- | --- | --- |
+| 全局概览、项目组合、跨项目筛选 | 全量数据、筛选、比较、下钻、导出 | 仅显示本人/当前职责相关的摘要与异常 | 同一领域事实，读取范围与呈现深度不同。 |
+| 项目与任务 | 创建、编辑、分派、批量调整、历史追溯 | 查看负责项目、处理分配给自己的待办、回报状态 | Mobile 不承担全量项目编排。 |
+| 工作流与 Agent 管理 | 配置、编排、观察全局执行、处理异常 | 查看本人待处理节点；可做满足 B 级政策的确认/拒绝 | C 级操作留在 Web；服务端重新授权与审计。 |
+| 租户、成员、RBAC、字典与系统设置 | 完整管理能力 | 仅自身身份与个人偏好 | 组织级配置不开放至 Mobile。 |
+| 资源、服务与物理运维 | 状态汇总、审计和受控入口 | 责任范围异常、被允许的确认 | 真实启停/诊断在 Fleet 等实际执行工具完成；DevSvc 只负责相应工具的发现/托管入口。 |
+| 审计、报表、批量导入导出 | 完整查询、过滤、导出、复盘 | 不提供全量审计与批量能力 | 后台主端的核心价值。 |
+| 通知与待办 | 全量收件箱、规则配置、历史记录 | 个人待办、告警、快速回执和结果反馈 | 通知不是权威事实；权威状态由业务 API 返回。 |
+| 扫码 | 不提供通用摄像头扫码；桌面端只承接扫码结果所归属对象的项目、工作项或交接续办 | **审批扫码确认**：解析受控二维码并提交被授权的 B 级动作；Identity 网页登录确认走独立入口 | 审批扫码、网页登录确认的 URI、权限、审计事件、失败提示和验收标准必须分开。 |
+| 个人设置 | 工作台偏好和账号相关入口 | 账户、会话、通知、展示偏好 | 布局不共享。 |
+
+## 7. 各表面产品设计
+
+### 7.1 Web：完整管理控制中心
+
+Web 主导航按“管理对象和控制动作”组织，不复刻移动底栏。当前已实现的信息架构只暴露有事实源的工作面：
+
+1. **工作台概览**：当前 Control Plane 投影中的项目、受管任务和运行环境。
+2. **运行状态**：跨项目的需要处理事项、项目健康和已登记运行环境；用于观察、筛选、分流和进入关联对象。
+3. **项目与工作**：项目组合、可筛选的受管工作项与待处理审批队列。
+4. **组织与访问**：团队、角色、菜单及其他已有服务端事实源支持的管理页。
+5. **账号与设置**：个人账户、会话、通知和偏好。
+
+自动化、资源、审计或专业工具只有在具备真实数据与动作合同后才能成为导航项；不能以零值统计、空表或“即将支持”卡片占位。交互原则是高信息密度表格、可组合筛选、对象详情、明确的影响范围和可回溯历史。在窄屏浏览器中保持后台语义，不用移动底栏、移动顶部栏或通用扫码入口替代；需要在移动端闭环的 B 级动作走明确的交接流程。
+
+### 7.2 Mobile：角色执行端，而非缩小后台
+
+Mobile 服务“现在需要我处理什么”。它可以是值班或现场角色的首选任务端，但仍是整体管理控制体系中的辅助端。优先承接：
+
+- 个人待办、告警、审批、结果回执和责任范围内的状态查看。
+- 与当前项目/工作区相关的轻量浏览、状态更新和满足 B 级动作政策的单对象确认。
+- 通过受控二维码完成审批确认；身份登录或设备配对只在独立流程中定义。
+- 账户、会话、通知和展示偏好。
+
+每一个 Mobile 写操作必须在当前流程中呈现：对象、当前服务端状态、执行人责任、影响说明、确认结果和失败/转 Web 路径。应用启动、前台恢复、下拉刷新或提交后应重新获取服务端状态；通知和本地缓存仅用于提示，离线快照必须标示更新时间，不能据此执行敏感操作。
+
+当任务属于 C 级，或需要多条件筛选、批量更改、复杂编辑、组织级授权、全量审计时，Mobile 必须解释原因并将对象和上下文交给 Web，而非在小屏中堆叠后台表单。
+
+当前导航基线是 **4 个常驻导航项 + 1 个顶部扫码动作**：
+
+| 类别 | 当前语义 | 说明 |
+| --- | --- | --- |
+| Home | 当班摘要、告警和个人待办 | 行动起点。 |
+| Projects | 本人有关的项目与状态 | 不替代 Web 的项目组合管理。 |
+| Workspace | 当前工作上下文、可处理工作项 | 本期聚焦当前工作，不是项目配置器。 |
+| Me | 身份、会话、偏好与通知设置 | 不提供组织级配置。 |
+| Scan（顶部动作） | 扫描并确认受控审批二维码 | 本期只覆盖审批确认；身份登录或设备配对需独立命名、入口和安全设计。它不是第五个底栏页签。 |
+
+### 7.3 专业工具：受控入口，不是第三个用户门户
+
+DevSvc Dashboard 是本地服务与已托管工具的 Host/发现入口，不是 D 级动作的执行 Owner；Axi Coder、Verification Inbox、Fleet、App Search、Ollama Menu Assistant 等实际工具承载明确的专项工作。它们可从 Web 获得受控入口和统一审计线索，也可向 Mobile 产生责任相关提醒；但其信息架构、权限与专业操作不应被复制进两个用户应用。
+
+## 8. 跨端连续性与技术护栏
+
+### 8.1 共享的是领域事实与动作合同，不是页面
+
+- 两端共享 Axi Identity 的身份与授权语义、服务端 RBAC、API/Schema 合同、语言偏好和 design tokens；各端设备会话、凭据存储与失效管理独立。
+- `packages/workbench-foundation` 只承载认证会话和语言偏好，不导出页面、路由或布局。
+- 每端的路由、页面组合、导航、布局和交互组件独立拥有；任何跨端 UI 复用先证明它不是布局/页面耦合。
+- 领域 API 对每一个写动作提供动作政策所需的对象、状态、权限、审计和结果合同；前端不能从“能看见按钮”推断“有权执行”。
+
+### 8.2 交接规则
+
+当 Mobile 无法安全或高效完成任务时，应交接：任务标识、业务对象、当前状态/筛选上下文、未满足的动作等级或权限原因、返回入口。Web 打开后应能继续同一对象，而不是要求用户重新寻找。每次跨端交接生成可追溯的 `handoff correlation id`；源端交接、目标端打开及后续最终动作均记录该标识。
+
+跨端动作的权威结果以业务 API 及审计事件为准；客户端缓存、推送或扫码解析结果不能替代服务端授权或最终状态。P3 的交接入口限定为登录后产品内流程，不要求操作系统或外部应用级深链接。
+
+### 8.3 安全与审计
+
+- Mobile 的 B 级确认必须服务端再次鉴权、重新取数并产生与 Web 同一领域模型下可追溯的审计事件；若由跨端交接发起，还应写入 `handoff correlation id`。
+- Web 不提供通用扫码；Mobile 审批扫码不应降级为仅复制文本。Identity 网页登录确认只能走独立登录流程，不能占用 Mobile 顶部 Scan。
+- C 级操作仅在 Web 按动作政策执行；D 级操作仅在对应专业工具按动作政策执行。高影响操作显示作用范围和结果，失败时给出可理解的回退或交接路径。
+
+## 9. 需求与验收标准
+
+### 产品架构需求
+
+| ID | 需求 | 验收标准 |
+| --- | --- | --- |
+| REQ-POSITION-001 | 固定角色化多端定位。 | PRD、导航文档和后续设计把 Web 表述为管理控制中心，Mobile 表述为角色执行/辅助管理端，专业工具表述为专项表面；不再将两端描述为同一 SPA 的响应式分支。 |
+| REQ-ARCH-001 | 固定三类可见表面与共享底座。 | 每个端侧任务/动作都记录所属表面；同一领域能力可在多个表面有不同任务与允许动作。共享底座只提供事实、授权、审计、通知与合同，不拥有页面。消费者/IM 前台不被混入 Workbench 后台信息架构。 |
+| REQ-ACTION-001 | 以动作等级而非屏幕尺寸分端。 | 每项新能力在开发前记录 A/B/C/D 等级、角色、允许表面、服务端重验/确认、审计和不支持端交接；C 级仅在 Web，D 级仅在专业工具。 |
+| REQ-REFERENCE-001 | 外部案例只作为可追溯的产品形态参照。 | `MARKET-REFERENCE.md` 列出官方来源、观察、推导与非推导边界；任何后续设计不把竞品功能清单或未公开实现当作 Workbench 事实。 |
+| REQ-SURFACE-001 | 固定产品表面边界。 | DevSvc Dashboard 被描述为 Host/运维壳；Hosted App 与垂直工具不出现在用户后台一级导航中。 |
+| REQ-WEB-001 | Web 承担有事实源的控制中心工作。 | 工作台概览、运行状态、项目组合、工作项、组织/RBAC 和已有设置入口均从领域或 Control Plane 投影读取；没有真实数据与动作来源的自动化、资源、审计菜单不新增空页面。 |
+| REQ-WEB-002 | Web 保持后台交互语义。 | Web 合同校验与浏览器验收不出现移动底栏、移动顶部栏、通用摄像头扫码或“用手机页面替代后台”的 viewport 分支。 |
+| REQ-MOBILE-001 | Mobile 承接有边界的角色执行。 | Mobile 的导航、页面说明和验收围绕个人待办、状态、受控 B 级动作、扫码审批和个人设置；不包含 C 级组织/全量后台配置。每个写动作都有对象、在线复核、授权、影响说明、审计和 Web 回退。 |
+| REQ-MOBILE-002 | 固定当前移动导航事实。 | 产品文档和合同验证以 4 个常驻导航项（Home / Projects / Workspace / Me）和顶部 Scan 动作为基线；不再写“五项底栏”。 |
+| REQ-CROSS-001 | 双端共享业务事实并可连续交接。 | 每个双端能力定义权威数据源、端侧动作范围、服务端授权/审计和无法完成时的 Web 交接方式；`handoff correlation id` 关联源端、目标端和最终动作。 |
+| REQ-SCAN-001 | 固定扫码的受控领域归属。 | 顶部 Mobile Scan 只用于领域审批确认；Identity 网页登录确认只走独立入口。两条流程使用不同 URI、接口、文案、审计事件和验收用例；Web 不公开通用扫码。 |
+| REQ-BOUNDARY-001 | 保持独立应用和跨项目边界。 | Web / Mobile 不互相导入页面或布局实现；共享仅走 foundation、API、schema、locale 和 tokens；`pnpm check:boundaries` 继续阻断违规耦合。 |
+| REQ-DELIVERY-001 | 建立可执行的分端能力台账。 | 每项拟交付能力在开发前依照 [`CAPABILITY-OWNERSHIP.md`](../specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-OWNERSHIP.md) 记录表面、任务角色、动作等级、允许动作、数据/授权、审计/交接关联、验收和不支持端交接；由产品 Owner 与目标端维护者复核。 |
+
+### 工程与治理护栏（保留）
+
+| ID | 要求 | 验收标准 |
+| --- | --- | --- |
+| REQ-DOC-001 | 保持根文档系统可追溯。 | PRD、TDD、TODO、Milestone、manifest、Handoff 和 Changelog 互相可追溯，且事实与实现边界一致。 |
+| REQ-VERIFY-001 | 验证命令保持真实。 | TDD 只列当前可运行的项目命令或精确 blocker；按变更表面选择最小验证。 |
+| REQ-VERIFY-002 | 两端 UI 合同独立验证。 | Web 与 Mobile 的 type-check、test、build、各自 UI contract verifier 可分别运行；共享基础变更须双端验证。 |
+| REQ-CONTROLPLANE-001 | Agent 和跨层流程仍受六层控制面约束。 | 新流程声明入口、权威事实源、允许下游、渲染、审计和验证；通信层不拥有项目状态。 |
+| REQ-COMMUNICATION-001 | 通信层只负责 envelope 路由。 | route 绑定、配对、审批、附件引用、幂等、回执与渠道渲染不越界为项目状态或 Agent 执行。 |
+| REQ-WORKBENCH-001 | 保持两个正式用户应用。 | `apps/workbench` 与 `apps/workbench-mobile` 是唯一的 Web / 移动用户端；不新增第三个重复门户。 |
+| REQ-WORKBENCH-002 | 保持两端渲染边界。 | Web 专有桌面 Dashboard Chrome，移动端专有移动壳；两端不在同一 React 路由树中以 viewport 分支互相渲染。 |
+| REQ-MILESTONE-001 | 跟踪阶段交付状态。 | 每个阶段记录目标、证据、退出条件与未解决风险。 |
+| REQ-LOG-001 | 保持可审计变更记录。 | 对用户、运维或下游 Agent 可见的变更进入 Changelog，并由提交日志提供批次证据。 |
+| REQ-AXI-CODER-001 | Axi Coder 不硬编码邻居项目资源路径。 | 项目快照通过 `workspace://` 合同和环境配置解析，不将邻居项目实现路径写入运行时。 |
+
+## 10. 路线图与退出条件
+
+| 阶段 | 目标 | 可交付物 | 退出条件 |
+| --- | --- | --- | --- |
+| P0：产品架构与能力盘点 | 将产品形态参照转化为 Workbench 的角色/动作归属 | 完整当前能力盘点、动作政策模板、扫码语义台账、产品命名统一 | **已完成（2026-08-22）**：全量盘点记录于 [`CAPABILITY-INVENTORY.json`](../specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-INVENTORY.json)；结构化台账见 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)；跨端交接协议草案见 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)。 |
+| P1：Web 控制中心收敛 | 形成后台级信息架构 | Web 主导航、复杂管理页面优先级、桌面交互规范 | **本地验收完成（2026-09-13）**：桌面 Dashboard、工作项、运行状态、法律页、登录、交接详情当前状态重取与窄屏边界均有 UI 合同、184 项单测、25 项浏览器验收、类型检查和生产构建证据；核心管理员任务可在桌面端闭环，不需要借用移动交互。 |
+| P2：Mobile 角色执行收敛 | 让高频、即时、个人化任务安全闭环 | 待办、告警、审批、项目状态和安全扫码流程 | **本地验收完成（2026-09-13）**：Mobile 33 项单测、1 项浏览器验收、合同验证、类型检查和生产构建通过；每个 Mobile 写动作满足 B 级政策，C 级任务交接 Web。 |
+| P3：共享动作合同与跨端连续性 | 让用户不丢失对象、状态和责任上下文 | 统一对象标识、服务端动作政策、登录后产品内交接入口、`handoff correlation id` | **已完成（2026-09-15）**：双向交接类型、路由、API、UI 全部实现；动作等级 A/B/C/D 评估体系；场景化 SLA 配置（`DEFAULT_SLA`、`SCENARIO_SLA`、`getScenarioSla`）；批量交接（`createBatchHandoff`，batchId 关联，审计事件）；Web → Mobile HTTP POST 路由；Mobile 交接路由（`/handoffs`、`/handoffs/:id`）；Control Plane 260/260 测试通过（批量 10、SLA 12、Web→Mobile 13、审批扫描 17）；Web 191/191、Mobile 41/41；类型检查全部通过。 |
+| P4：专业工具治理 | 让专业操作保留在正确表面 | 工具入口、授权、审计与异常提醒规范 | **本地边界与持久化依赖验收完成，外部运行验收待完成**：D 级操作保留在专业工具，DevSvc 仅负责发现/托管；边界、Go API race、Helm、本地 Mailpit SMTP、PostgreSQL RLS 和真实 Redis 会话集成校验通过，真实集群、ZITADEL、生产 SMTP 和故障注入仍是外部门禁。 |
+| P5：持续治理 | 防止重新混杂 | PRD/TDD/合同检查和设计评审清单 | **进行中**：PRD/TDD/TODO/MILESTONE/CHANGELOG、六层声明、边界检查和提交记录已持续维护；Control Plane 在 production 缺少或仍使用开发默认 gateway internal token 时 fail closed；生产 Grant source owner 尚未在工作区注册，真实内部 caller identity 仍待外部合同，当前执行保持 secure default deny。 |
+
+## 11. 成功指标
+
+- **归属完整性**：100% 的新用户能力在设计评审前标明角色、动作等级、所属表面和不支持端交接。
+- **Web 完整性**：管理员高频任务（配置、查询、批量处理、审计）不要求切换到 Mobile 才能完成。
+- **Mobile 闭环质量**：Mobile 新增写操作均能在当前流程说明对象、影响与授权，并在服务端复核后给出结果或交接，不出现缩小版治理表单。
+- **专业边界稳定性**：D 级物理/专项操作不被塞入通用后台；专用工具入口、权限和审计可追溯。
+- **跨端连续性**：双端动作可关联同一业务对象、服务端授权和审计事实；发生交接时可追溯 `handoff correlation id`。
+
+## 12. 已知风险与开放项
+
+| 风险 / 开放项 | 处理原则 |
+| --- | --- |
+| 将竞品界面或功能表直接复制为需求 | 外部研究只提供角色分工和动作治理启发；每项 Workbench 能力仍需用户任务、业务价值和技术边界证据。 |
+| 将“移动端辅助”误解为“移动端不能完成工作” | 用动作等级决定能力：B 级可在满足政策时由 Mobile 闭环，C/D 级回到 Web/专业工具。 |
+| 将所有重要操作一律锁在 Web | 不按重要性单因素判断；按对象数、影响范围、授权、服务端重验、确认和审计判断。 |
+| “扫码”继续掩盖不同安全模型，或被误加到 Web 当作通用工具 | 只保留 Mobile 领域审批与 Identity 登录确认两条受控流程；Web 通过项目、工作项和交接处理真实对象，不公开通用扫码。 |
+| 旧文档仍称移动端为五项底栏 | 以 4 项常驻导航 + Scan 动作为本期事实，后续变更需走信息架构决策。 |
+| Web legacy UI / `@epap/*` 兼容层影响视觉收敛 | 已完成第一阶段消费者验证与 Web 无活跃死消费者清理；后续兼容包退役仍需独立治理批次。 |
+| 缺少本项目实际用户研究数据 | 本版是 Owner 方向、源码事实和公开产品形态的设计基线；P0 应补充管理员、值班和现场角色的任务访谈/可用性验证。 |
+| Mobile 推送、离线与设备安全能力未完全验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 |
+
+## 12. Open Questions 与解决计划
+
+| 问题 | 状态 | 解决计划 | 负责人 |
+| --- | --- | --- | --- |
+| 竞品功能表直接复制为需求 | 已防护 | 外部研究只提供角色分工和动作治理启发；每项 Workbench 能力需用户任务、业务价值和技术边界证据。 | 产品 Owner |
+| "移动端辅助"误解为"移动端不能完成工作" | 已防护 | 用动作等级决定能力：B 级可在满足政策时由 Mobile 闭环。 | 产品 Owner |
+| 所有重要操作一律锁在 Web | 已防护 | 按对象数、影响范围、授权、服务端重验、确认和审计判断，不按重要性单因素判断。 | 产品 Owner |
+| "扫码"继续掩盖不同安全模型 | 已防护 | 只保留 Mobile 领域审批与 Identity 登录确认两条受控流程；Web 不公开通用扫码。 | 产品 Owner |
+| 旧文档仍称移动端为五项底栏 | 已防护 | 以 4 项常驻导航 + Scan 动作为本期事实。 | 产品 Owner |
+| Web legacy UI 影响视觉收敛 | 已处理（2026-09-13） | 已确认并清理 `@epap/ui` 的两个无活跃引用文件，Web 当前由 `AxiDashboardShell` 与 `@axi/*` 运行时提供；`@epap/ui` 包本身与 `@epap/api-client` API 兼容出口的最终退役仍需独立治理批次，详见 [`20260913-web-legacy-consumer-validation.md`](../audit/20260913-web-legacy-consumer-validation.md)。 | 前端 Owner |
+| 缺少实际用户研究数据 | 待处理 | P0 应补充管理员、值班和现场角色的任务访谈/可用性验证。 | 产品 Owner |
+| Mobile 推送、离线与设备安全能力 | 待验证 | 不写入现状承诺；进入具体交付前做安全、权限和服务端状态设计。 | 产品 Owner + 安全 |
+| 交接超时 SLA 默认值 | 已确定基线 | 通用交接默认 24h；运行时已实现后台 worker、惰性过期、审计和正整数 `handoffExpiryMs`/`AXI_HANDOFF_EXPIRY_MS` 配置覆盖，代码参数优先且非法值回退默认，不同场景的更短 SLA 另行评审。 | Control Plane + 产品 Owner |
+| 交接拒绝场景 | 已完成（2026-09-13） | `pending/opened → rejected` 已由 Control Plane 与 Web 实现；拒绝原因、验证主体、关联标识和审计均持久化，详见 `HANDOFF-PROTOCOL.md`。 | Control Plane + Web |
+| Web → Mobile 交接 | 已完成（2026-09-15） | POST `/internal/web/v1/handoffs` 端点已实现；`createWebToMobileHandoff` 函数、审计事件、状态机（created → delivered → accepted/completed/rejected/failed）全部完成。 | Control Plane + Web |
+| 批量交接语义 | 已完成（2026-09-15） | `createBatchHandoff` 实现：batchId 关联、批量审计事件、riskLevel 映射（A/B/C/D）、`actionSummary` 自动生成；Web `HandoffCreate` 页面支持批量操作。 | Control Plane + Web |
+
+## 13. 可追溯文档
+
+- 公开案例研究：[`MARKET-REFERENCE.md`](../specs/2026-08-09-multi-surface-admin-positioning/MARKET-REFERENCE.md)
+- 能力归属与动作政策模板：[`CAPABILITY-OWNERSHIP.md`](../specs/2026-08-09-multi-surface-admin-positioning/CAPABILITY-OWNERSHIP.md)
+- 技术与验证策略：[`docs/state/TDD.md`](./TDD.md)
+- 实施待办：[`docs/state/TODO.md`](./TODO.md)
+- 阶段状态：[`docs/state/MILESTONE.md`](./MILESTONE.md)
+- 当前源码角色：[`docs/architecture/source-catalog.md`](../architecture/source-catalog.md)
+- 变更规格：[`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)
+
+## 14. 公网移动访问整改 PRD（蜂窝网络 / 非局域网）
+
+### 14.1 背景与当前证据
+
+用户希望 Android 移动端在 4G/5G 等非 Wi‑Fi 环境下，直接通过公网域名访问 Workbench，而不是依赖开发机局域网地址。当前代码已经具备这条产品路径的本地基础：Android Release 默认 Gateway 为 `https://workbench.axiomaticworld.com/api/v1/`，Helm Chart 规划同一域名下 `/api` → API Gateway、`/` → Web 静态站点，配对二维码在生产环境可由 `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL` 注入公网地址。
+
+当前线上证据显示“域名可访问”不等于“Workbench 公网 API 已部署”：
+
+| 探针 | 当前结果 | 结论 |
+| --- | --- | --- |
+| `https://workbench.axiomaticworld.com/legal/terms` | HTTP 200，但返回页标题为“雅思冲刺 - IELTS Vocabulary” | 当前域名静态内容与 Workbench 不是同一已验证发布面，不能据此证明 Workbench 已上线。 |
+| `https://workbench.axiomaticworld.com/api/v1/health` | HTTP 404，JSON `{"detail":"Not Found"}` | 当前公网 `/api` 未返回 Workbench Gateway 健康合同。 |
+| `https://workbench.axiomaticworld.com/api/v1/auth/session` | HTTP 404 | OIDC/session API 未接通，移动端 Release 不能依赖该域名登录。 |
+| 局域网真机验收 | `192.168.101.14` 手机 → `192.168.101.13` 开发机，扫码、审批、会话恢复成功 | 产品流程与 Android 客户端可用；证据不代表公网部署已完成。 |
+
+因此，本整改不是“把 Android 地址改成域名”这么简单，而是一次完整的公网 API 平面、域名入口、认证、二维码地址传播和蜂窝网络验收工作。
+
+### 14.2 产品目标
+
+1. 已安装 Android Release 的用户无需连接与开发机同一 Wi‑Fi；只要手机能访问互联网，即可完成首次设备配对、工作区同步和后续会话恢复。
+2. 桌面 Web owner 在已登录状态生成的手机配对 QR 必须携带公网 HTTPS Gateway 地址；手机不得要求用户手工输入域名、IP 或端口。
+3. 公网 API 必须通过 `https://workbench.axiomaticworld.com/api/v1/` 提供 Workbench Gateway 合同，不得继续把其他产品静态站点或其他服务的 404 当作 Workbench 入口。
+4. Web、Android、Control Plane、Identity 和 API Gateway 对同一生产域名、OIDC 回调、CORS、session/bearer 边界保持一致。
+5. 所有上线声明必须由公网探针、真实蜂窝网络设备测试和服务端审计证据共同支撑；本地/集群内健康检查不能替代公网验收。
+
+### 14.3 非目标与边界
+
+- 不把公网部署改造成设备间 P2P、局域网发现或手写配对协议；手机只访问受 TLS 保护的 API Gateway。
+- 不把控制面端口（默认 `8092`）暴露到公网；外部只暴露 API Gateway 的 `/api` 路径。
+- 不在客户端内置 owner approval secret、内部服务 token、数据库凭据或静态 JWT。
+- 不为了复用现有域名而覆盖/删除当前由其他产品拥有的站点；必须先完成域名 owner、DNS、入口路由和证书归属确认。
+- 不承诺离线登录、无网络访问、后台常驻同步或公网环境下绕过 OIDC/设备审批。
+
+### 14.4 目标架构与数据流
+
+```text
+Android Release（4G/5G）
+        │ HTTPS + /api/v1/mobile/* + device bearer
+        ▼
+workbench.axiomaticworld.com
+        │ NGINX Ingress：/api → API Gateway；/ → Workbench Web 静态站
+        ▼
+API Gateway（公网唯一业务入口）
+        ├─ OIDC / session / CORS / rate limit
+        ├─ /api/v1/control-plane/mobile/pair/qr（已登录 Web owner）
+        ├─ /api/v1/mobile/pair/qr/scan（手机首次配对）
+        ├─ /api/v1/mobile/pair/status（手机轮询）
+        ├─ /api/v1/mobile/auth/nonces + /tokens（设备会话）
+        └─ /api/v1/mobile/workspace（工作区读取）
+        ▼
+Control Plane / Identity Adapter / Platform Core / Notification / File
+        （仅集群内 ClusterIP，不直接暴露）
+```
+
+首次配对流程：
+
+1. Web owner 访问同一域名的 Workbench Web 并完成 OIDC/session 登录。
+2. Web 调用 `/api/v1/control-plane/mobile/pair/qr`；Gateway 将请求转发至 Control Plane。
+3. Control Plane 返回短期 `webPairingId`、一次性 `scanToken` 和生产 `gatewayUrl=https://workbench.axiomaticworld.com/api/v1/`。
+4. Web 将上述内容编码为 `axi-mobile-pair-v1` QR；QR 不包含 cookie、owner secret、access token 或内部地址。
+5. Android 通过蜂窝网络扫描 QR，从 `gatewayUrl` 自动配置 endpoint，调用 `/api/v1/mobile/pair/qr/scan`。
+6. Web owner 在设备管理页确认；Android 轮询 `/api/v1/mobile/pair/status`，换取 device ID、nonce 和短期 access token。
+7. Android 通过 `/api/v1/mobile/workspace` 加载工作区；强制停止/重启后从 Android Keystore + DataStore 恢复，不重新要求输入 Gateway。
+
+### 14.5 生产合同要求
+
+#### 域名、DNS、TLS 与入口
+
+- `workbench.axiomaticworld.com` 的 A/AAAA/CNAME 必须指向实际承载 Workbench Ingress 的入口；禁止指向其他产品的静态站点而继续宣称 Workbench 已上线。
+- 证书覆盖该域名，TLS 最低为 TLS 1.2；HTTP 必须 301/308 到 HTTPS。
+- Ingress 必须精确分流：`/api` → `api-gateway`，其他 Workbench Web 路径 → Workbench 静态站点；`/legal/terms` 和 `/legal/privacy` 必须由 Workbench Web 或明确的产品外链策略拥有。
+- Gateway、Control Plane、Identity Adapter、Platform Core 等 Service 保持 `ClusterIP`；不得开放 `8092` 或内部服务端口。
+
+#### Gateway 与 API 路由
+
+公网必须返回 Workbench API 合同，而不是通用 404：
+
+| 方法 | 公网路径 | 未认证预期 | 已配对/已认证预期 |
+| --- | --- | --- | --- |
+| `GET` | `/api/v1/auth/session` | `200` 未认证 JSON 或明确 `401` 合同 | `200`，返回已验证主体，不泄露 session ID |
+| `POST` | `/api/v1/control-plane/mobile/pair/qr` | `401` | 已登录 Web owner 返回短期 QR transaction + `gatewayUrl` |
+| `POST` | `/api/v1/mobile/pair/qr/scan` | 由一次性 QR bearer + Gateway 内部边界校验 | `200`，返回 pending pairing，不回显 scan bearer |
+| `POST` | `/api/v1/mobile/pair/status` | 无效/过期返回明确错误 | `200` pending/approved |
+| `POST` | `/api/v1/mobile/auth/nonces` | 无设备 bearer 拒绝 | 已配对设备返回 nonce |
+| `POST` | `/api/v1/mobile/auth/tokens` | 无有效设备签名拒绝 | 返回短期 mobile access token |
+| `GET` | `/api/v1/mobile/workspace` | `401` | `200`，返回当前设备被授权的真实工作区 |
+
+#### 生产配置
+
+- Control Plane：`ENVIRONMENT=production`，`AXI_MOBILE_GATEWAY_BASE_URL=https://workbench.axiomaticworld.com/api/v1/`（或等价 `GATEWAY_PUBLIC_URL`）。生产禁止依赖网卡枚举推断公网地址。
+- API Gateway：`publicBaseURL=https://workbench.axiomaticworld.com`、`cors.allowedOrigins` 精确包含 Workbench Web origin；启用 rate limit、OIDC audience/scope、Redis session 与内部服务 token。
+- Identity：生产 OIDC issuer、client、callback URL、allowed return URLs 与该域名一致；生产 SMTP、Webhook secret、数据库和 Redis 使用外部 Secret。
+- Android Release：默认 `GATEWAY_BASE_URL=https://workbench.axiomaticworld.com/api/v1/`；禁止通过发布包写入局域网 IP、`10.0.2.2` 或控制面端口。
+- 配对 QR：生产 payload 只能使用 HTTPS 公网 Gateway；Android 继续拒绝公网 HTTP、非受信域名、凭据嵌入、query/hash 和控制面端口。
+
+### 14.6 子任务拆分（可直接分派给 Agent）
+
+以下任务按依赖排序；每个 Agent 必须只修改自己拥有的路径，保留其他未提交改动，并在完成时返回“改动、证据、未验证项、回滚方式”。
+
+| ID | 子任务 / Owner | 依赖 | 负责范围 | 完成定义 |
+| --- | --- | --- | --- | --- |
+| PUB-00 | 现状基线与域名 owner 核验 / Release Agent | 无 | DNS、证书、当前 Nginx/Ingress、线上站点与 API 探针；不改生产 | 输出 DNS/TLS/HTTP 状态表，确认当前域名 owner、静态站点 owner、API owner；明确冲突与回滚入口。 |
+| PUB-01 | 公网入口与 Ingress 路由 / Platform Agent | PUB-00 | `infra/helm/axi-workbench-platform/**`、Ingress、证书、DNS 变更说明 | `/api/v1/auth/session` 到达 Workbench Gateway；`/api` 不再 404；HTTP 强制 HTTPS；内部端口不可公网访问。提交 `curl` 探针和 `helm lint/template` 证据。 |
+| PUB-02 | Gateway 生产配置与路由合同 / Go Gateway Agent | PUB-00 | `services/api-gateway/**`、CORS、OIDC、rate limit、mobile routes | 所有移动配对/会话/workspace 路由在公网前缀下可达；未授权返回合同化 401/403；不转发浏览器 cookie/内部 token 到错误下游；Go 单测/race 通过。 |
+| PUB-03 | Control Plane 公网 QR 地址与生产 fail-closed / Control Plane Agent | PUB-01、PUB-02 | `services/control-plane/src/server.mjs`、相关测试、运行时 Secret 文档 | 生产 QR 必含配置的 HTTPS `gatewayUrl`；未配置时不猜地址并产生可观测失败；开发环境仍可自动枚举私有 IPv4；QR 状态接口不回显 scan token；Node 测试通过。 |
+| PUB-04 | Web owner QR 与公网 API 消费 / Web Agent | PUB-02、PUB-03 | `apps/workbench/src/lib/mobilePairing.ts`、设备管理页、Web tests | Web 生成 QR 使用服务端 `gatewayUrl`；不会把 cookie、owner secret、poll token 写入 QR；生产 Web 通过同源 `/api` 创建/轮询/确认；type-check、unit、UI contract 通过。 |
+| PUB-05 | Android Release 公网 endpoint 与安全校验 / Android Agent | PUB-03 | `apps/workbench-mobile/android/**`、Release config、DataStore、Scan/Profile | Release 默认公网 HTTPS；扫码自动写入并优先使用 QR endpoint；局域网/模拟器只留 Debug；个人页显示设备会话已登录；Android unit、Debug/Release build 通过。 |
+| PUB-06 | Identity/OIDC/CORS/Session 联调 / Identity Agent | PUB-01、PUB-02 | `services/identity-adapter/**`、Gateway OIDC 配置、Redis session、生产 Secret 清单 | Web owner 可在公网域名登录；`auth/session` 语义稳定；callback/return URL 精确匹配；CORS 与 cookie 安全属性通过；不能用测试邮箱/开发 token 代替生产身份。 |
+| PUB-07 | 公网安全与观测门禁 / Security Agent | PUB-01、PUB-02、PUB-06 | Ingress headers、rate limit、audit/metrics/logging、Secret 扫描 | TLS、HSTS、CORS、rate limit、内部 token、审计事件和敏感字段脱敏通过；无 JWT/API key/owner secret 进入日志、QR、客户端或 Git。 |
+| PUB-08 | 蜂窝网络真机 E2E / Device QA Agent | PUB-01…PUB-07 | 真实 Android Release/Debug 设备、4G/5G、Web owner、截图/日志 | 关闭 Wi‑Fi、无 `adb reverse`：生成 QR → 手机扫描 → Gateway scanned → Web approved → workspace 200 → force-stop/relaunch 恢复；记录手机公网运营商网络、时间、服务版本、响应状态和截图。 |
+| PUB-09 | 生产发布、回滚与文档收口 / Release Agent | PUB-01…PUB-08 | Helm release、runbook、`docs/08-todo.md`、CHANGELOG/HANDOFF | 发布前门禁全部有证据；提供 DNS/Ingress/Gateway/Secret/Android 版本回滚顺序；更新 PRD/TODO/CHANGELOG/HANDOFF；任何未完成外部门禁明确标记为未验收。 |
+
+#### 并行执行建议
+
+```text
+PUB-00
+  ├─ PUB-01 ─┬─ PUB-03 ─┬─ PUB-04
+  │          │          └─ PUB-05
+  │          └─ PUB-02 ─── PUB-06 ── PUB-07
+  └─────────────────────────────── PUB-08 ── PUB-09
+```
+
+PUB-01、PUB-02 可在 PUB-00 完成后并行；PUB-03 依赖公网路径和 Gateway 合同；PUB-04/05 可并行；PUB-06/07 需要 API 路由稳定；PUB-08 必须最后执行，且不得用局域网、VPN、`adb reverse` 或本地 hosts 覆盖冒充公网证据。
+
+### 14.7 验收矩阵与门禁
+
+#### L0：静态/合同门禁
+
+- Android Release BuildConfig 为 `https://workbench.axiomaticworld.com/api/v1/`，无局域网 IP、`10.0.2.2`、控制面端口。
+- Helm lint/template、Gateway Go test/race、Control Plane Node tests、Web/Mobile type-check/test/contract verifier 全部通过。
+- QR payload schema 只包含 `kind`、`webPairingId`、`scanToken`、`gatewayUrl`；不包含 cookie、owner secret、poll token、access token。
+
+#### L1：公网探针门禁
+
+- DNS/TLS 正确；HTTP → HTTPS。
+- `/api/v1/auth/session` 返回 Workbench 合同，而不是其他产品 404。
+- 未认证移动写接口返回明确 401/403；不存在“200 + 空数据”假成功。
+- Gateway 到 Control Plane 的内部 token 和 subject 传递可审计，外部响应不泄露内部地址。
+
+#### L2：公网身份与配对门禁
+
+- Web owner 在公网域名完成真实 OIDC/session 登录。
+- Web 生成的 QR 包含公网 HTTPS Gateway；二维码过期、重复扫描、跨 owner 扫描、未确认状态均符合合同。
+- 手机使用蜂窝网络完成 scanned → approved → token/workspace；服务端审计包含 owner、device、webPairingId、结果和时间。
+
+#### L3：真实设备恢复门禁
+
+- 关闭手机 Wi‑Fi；不设置 `adb reverse`、VPN、静态 hosts 或手工 Gateway。
+- 首次配对后，Android 工作区至少成功读取一次真实项目快照。
+- force-stop、冷启动、Gateway 任一副本重启后，设备会话按设计恢复；撤销/过期后必须回到重新配对，而不是继续使用旧 token。
+- 保存截图、HTTP 状态、应用版本、Gateway/Control Plane 版本、时区和网络类型；证据不得包含完整 token。
+
+#### L4：回滚门禁
+
+- DNS/Ingress 可回滚到上一稳定入口。
+- Gateway/Control Plane 镜像、ConfigMap、Secret 变更均有前一版本引用。
+- Android 客户端无法热回滚时，服务端仍能拒绝错误版本并给出可解释提示；禁止临时开放控制面端口或要求用户手写 IP 作为生产补丁。
+
+### 14.8 失败处理与回滚
+
+| 失败 | 处理 | 禁止做法 |
+| --- | --- | --- |
+| `/api` 仍 404 | 回到 PUB-01，修复 DNS/Ingress/静态站点冲突；保留旧站点可恢复 | 不在 Android 端增加另一套隐藏域名或让用户填写 IP。 |
+| Gateway 可达但 OIDC/session 失败 | 回到 PUB-06，检查 issuer、audience、callback、Redis、cookie/CORS | 不把 owner token、JWT 或内部 token 写入 APK/QR。 |
+| QR 无 `gatewayUrl` | 回到 PUB-03，修复生产环境变量和发布配置 | 不让 Release 自动枚举局域网网卡作为公网地址。 |
+| 蜂窝扫码超时 | 分层判断 DNS/TLS/Ingress/Gateway/下游/移动运营商；保留 request ID 与审计 | 不用 `adb reverse`、VPN 或局域网成功替代公网证据。 |
+| 配对成功但工作区 401 | 检查 nonce 签名、device scope、token TTL、撤销状态和 DataStore/Keystore 恢复 | 不关闭 bearer 校验或把 mobile token 当 Web cookie。 |
+| 线上域名仍由其他产品占用 | 暂停切流，建立独立 `api.workbench.axiomaticworld.com` 或明确同域路由方案并重新签发证书 | 不覆盖其他产品站点，也不把 404 解读为 API “暂时不可用”。 |
+
+### 14.9 交付物清单
+
+- 生产 DNS/TLS/Ingress 变更记录与可回滚版本。
+- API Gateway 公网路由、OIDC、CORS、rate limit、内部 token 和审计配置。
+- Control Plane `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL` 配置与 Secret 管理说明。
+- Web/Android QR schema、Release endpoint、错误文案和兼容策略。
+- 蜂窝网络真机 E2E 报告（不含完整 token）与截图。
+- `docs/08-todo.md` 子任务状态、`CHANGELOG.md`、`HANDOFF.md`、生产 runbook 和回滚手册。
+
+### 14.10 完成定义
+
+只有同时满足以下条件，才能把“移动端支持公网/蜂窝网络登录”标记为完成：
+
+1. 公网域名的 `/api` 确实到达 Workbench API Gateway，不再返回其他产品或通用 404。
+2. 生产 QR 自动携带 HTTPS Gateway，Android Release 不需要用户手填地址。
+3. 真实手机关闭 Wi‑Fi、无反向代理/静态 hosts，完成扫码、Web owner 确认、工作区读取和重启恢复。
+4. OIDC/session、device bearer、Control Plane 审批、审计、TLS/CORS/rate limit 和生产 Secret 均通过门禁。
+5. 有发布版本、时间、网络类型、HTTP/审计结果、截图和回滚证据；未验证的集群、身份、SMTP 或故障注入项单独标记，不得用本地结果覆盖。

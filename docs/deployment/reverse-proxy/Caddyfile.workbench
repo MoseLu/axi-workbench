@@ -1,0 +1,126 @@
+# Axi Workbench — Windows reverse proxy (Caddy) template
+#
+# Status: PLACEHOLDER. Every __REPLACE_ME__ below must be supplied by a
+# human operator before this file is loaded by Caddy. The TLS private
+# key MUST NOT be committed to Git, copied into the repository, or
+# embedded in the .app / DMG. Drop the certificate and key into the
+# Caddy data directory on the Windows host and reference them here.
+#
+# Scope: serves ONLY workbench.axiomaticworld.com. The existing
+# axi-gallery-api on 17920 and MySQL on 3306 are NOT touched by this
+# file. Caddy must be installed on the Windows host and run as a
+# Windows service under a dedicated low-privilege account.
+#
+# Backend upstream:
+#   http://127.0.0.1:18088/...   (API Gateway, see docker-compose.backend.yml
+#                                 api-gateway.ports: "127.0.0.1:18088:8080")
+#
+# Usage:
+#   1. Copy this file to C:\caddy\Caddyfile
+#   2. Replace every __REPLACE_ME__ placeholder
+#   3. Validate:  caddy validate --config C:\caddy\Caddyfile
+#   4. Reload:    caddy reload --config C:\caddy\Caddyfile
+#   5. Test:      curl.exe --fail-with-body https://workbench.axiomaticworld.com/health
+
+# ---------------------------------------------------------------------------
+# Global options
+# ---------------------------------------------------------------------------
+{
+    # Local Caddy data dir. Service account must have read access.
+    storage file_system {
+        root C:/caddy/data
+    }
+    # ACME staging endpoint is fine for staging; switch to the production
+    # endpoint (the default) once DNS resolves workbench.axiomaticworld.com
+    # to the Windows host's public IP.
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+    email __REPLACE_ME_admin_email__
+    admin 127.0.0.1:2019
+    log {
+        output file "C:\caddy\logs\workbench.log" {
+            roll_size 50MiB
+            roll_keep 10
+        }
+        level INFO
+    }
+}
+
+# ---------------------------------------------------------------------------
+# HTTP -> HTTPS redirect (port 80 reserved for ACME only)
+# ---------------------------------------------------------------------------
+http://workbench.axiomaticworld.com {
+    bind 0.0.0.0
+    redir https://{host}{uri} permanent
+}
+
+# ---------------------------------------------------------------------------
+# Public HTTPS entrypoint
+# ---------------------------------------------------------------------------
+https://workbench.axiomaticworld.com {
+    bind 0.0.0.0:443
+    tls {
+        # Preferred path: managed certificate. If you import a static
+        # certificate instead, switch to the `load` block below.
+        # load /CN=workbench.axiomaticworld.com {
+        #     key  "C:\caddy\certs\workbench.axiomaticworld.com.key"
+        #     cert "C:\caddy\certs\workbench.axiomaticworld.com.crt"
+        # }
+        protocols tls1.2 tls1.3
+        # Reasonable defaults; tighten if the client matrix is known.
+        ciphers TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    }
+
+    @healthready path /health /ready
+    handle @healthready {
+        respond "ok" 200 {
+            close
+            header Content-Type text/plain
+        }
+    }
+
+    # Expose only the API namespace. Do not proxy arbitrary paths to the
+    # Gateway, because that would accidentally publish internal endpoints.
+    handle /api/* {
+        request_body {
+            max_size 25MB
+        }
+        reverse_proxy http://127.0.0.1:18088 {
+            header_up Host {host}
+            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+            transport http {
+                dial_timeout 5s
+                response_header_timeout 30s
+                read_timeout 30s
+                write_timeout 30s
+            }
+            health_uri /health
+            health_interval 10s
+            health_timeout 3s
+            health_status 200
+        }
+    }
+
+    handle {
+        respond "not found" 404
+    }
+
+    # Surface a short, non-informative error to clients; full details
+    # stay in Caddy's structured log on the Windows host.
+    handle_errors {
+        @5xx expression `{err.status_code} >= 500`
+        rewrite @5xx /__caddy_error
+        respond @5xx "upstream unavailable" 502 {
+            close
+            header Content-Type text/plain
+        }
+        @4xx expression `{err.status_code} >= 400 && {err.status_code} < 500`
+        respond @4xx "bad request" 400 {
+            close
+            header Content-Type text/plain
+        }
+    }
+
+    encode zstd gzip
+}

@@ -148,6 +148,14 @@ export function HostedAppPage({ mode, preference, theme }: HostedAppThemeState) 
 
   return (
     <div className="hosted-app-frame-wrap" ref={hostRef}>
+      {app?.executionBoundary ? (
+        <aside className="hosted-app-boundary" aria-label="专业工具执行边界">
+          <strong>执行权归属：{app.executionBoundary.owner}</strong>
+          <span>授权：{app.executionBoundary.authorization}</span>
+          <span>审计：{app.executionBoundary.audit}</span>
+          <span>回退：{app.executionBoundary.fallback}</span>
+        </aside>
+      ) : null}
       {!app || app.status === "starting" ? (
         <div className="hosted-app-state">
           <LoaderCircle className="hosted-app-spinner" size={18} />

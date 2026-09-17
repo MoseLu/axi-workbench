@@ -24,6 +24,14 @@
   line-height: 1.5;
 }
 
+.app-view-container-services {
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .services-table .ant-table {
   background: var(--panel);
   color: var(--text);
@@ -84,6 +92,127 @@
   justify-content: space-between;
   gap: 12px;
   white-space: nowrap;
+}
+
+.services-pagination .axi-pagination {
+  --ant-pagination-item-active-bg: var(--primary);
+  --ant-pagination-item-active-color: var(--text-inverse);
+  --ant-pagination-item-bg: var(--panel);
+  --ant-pagination-item-input-bg: var(--panel);
+  --ant-pagination-item-link-bg: var(--panel);
+  --ant-pagination-item-size-sm: 24px;
+  --ant-pagination-item-size: 24px;
+  color: var(--text);
+}
+
+.services-pagination .ant-pagination-total-text {
+  color: var(--muted) !important;
+}
+
+.services-pagination .ant-pagination-item,
+.services-pagination .ant-pagination-prev,
+.services-pagination .ant-pagination-next,
+.services-pagination .ant-pagination-jump-prev,
+.services-pagination .ant-pagination-jump-next {
+  min-width: 24px;
+  height: 24px;
+  margin-inline-end: 6px;
+  border-color: var(--line) !important;
+  border-radius: 6px;
+  background: var(--panel) !important;
+  color: var(--muted) !important;
+  line-height: 22px;
+}
+
+.services-pagination .ant-pagination-item a,
+.services-pagination .ant-pagination-prev button,
+.services-pagination .ant-pagination-next button,
+.services-pagination .ant-pagination-item-link {
+  color: var(--muted) !important;
+}
+
+.services-pagination .ant-pagination-item:hover,
+.services-pagination .ant-pagination-prev:hover,
+.services-pagination .ant-pagination-next:hover {
+  border-color: color-mix(in srgb, var(--primary), var(--line) 32%) !important;
+  background: var(--surface-hover) !important;
+}
+
+.services-pagination .ant-pagination-item-active {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary), transparent 70%);
+}
+
+.services-pagination .ant-pagination-item-active a {
+  color: var(--text-inverse) !important;
+  font-weight: 700;
+}
+
+.services-pagination .ant-pagination-options {
+  margin-inline-start: 8px;
+}
+
+.services-pagination .ant-pagination-options .ant-select-selector {
+  height: 24px !important;
+  border-color: var(--line) !important;
+  border-radius: 6px !important;
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+.services-pagination .ant-pagination-options .ant-select {
+  min-width: 92px;
+  height: 24px;
+  border: 1px solid var(--line) !important;
+  border-radius: 6px;
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+.services-pagination .ant-pagination-options .ant-select-content {
+  height: 22px;
+  padding-inline: 9px 24px;
+  color: var(--text) !important;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.services-pagination .ant-pagination-options .ant-select-selection-item {
+  color: var(--text) !important;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px !important;
+}
+
+.services-pagination .ant-pagination-options .ant-select-suffix,
+.services-pagination .ant-pagination-options .ant-select-arrow {
+  color: var(--muted) !important;
+}
+
+.services-pagination .ant-pagination-options .ant-select:hover .ant-select-selector,
+.services-pagination .ant-pagination-options .ant-select-focused .ant-select-selector {
+  border-color: color-mix(in srgb, var(--primary), var(--line) 32%) !important;
+  background: var(--surface-hover) !important;
+}
+
+.services-pagination .ant-pagination-options .ant-select:hover,
+.services-pagination .ant-pagination-options .ant-select-focused {
+  border-color: color-mix(in srgb, var(--primary), var(--line) 32%) !important;
+  background: var(--surface-hover) !important;
+}
+
+.ant-select-dropdown .ant-select-item {
+  color: var(--text) !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled),
+.ant-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: var(--surface-hover) !important;
+  color: var(--text) !important;
 }
 
 .services-table .ant-table-container {
@@ -207,7 +336,20 @@
   min-width: 70px;
   max-width: 100%;
   gap: 3px;
-  border-left-width: 4px;
+  border-left-width: 1px;
+}
+
+.services-table .axi-tag {
+  justify-content: center;
+  text-align: center;
+}
+
+.services-table .axi-tag__content {
+  width: 100%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .status-chip .axi-tag__content {
@@ -221,12 +363,7 @@
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--axi-tag-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--axi-tag-color), transparent 82%);
+  display: none;
 }
 
 .status-chip-value {

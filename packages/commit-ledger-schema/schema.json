@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.axi.dev/commit-ledger/v1",
+  "title": "Commit Ledger v1",
+  "description": "Axi 工作区 Git 提交日志规范化数据模型",
+  "type": "object",
+  "required": ["schemaVersion", "recordId", "repo", "commit", "actor", "ingestion"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "commit-ledger.v1",
+      "description": "Schema 版本标识"
+    },
+    "recordId": {
+      "type": "string",
+      "description": "sha256(repoId:commitSha) 格式的唯一记录 ID",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "repo": {
+      "type": "object",
+      "required": ["projectId", "canonicalPath", "gitRoot", "defaultBranch"],
+      "properties": {
+        "projectId": { "type": "string" },
+        "canonicalPath": { "type": "string", "format": "uri" },
+        "gitRoot": { "type": "string", "format": "uri" },
+        "remote": { "type": ["string", "null"] },
+        "defaultBranch": { "type": "string" }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "required": ["sha", "shortSha", "parentShas", "subject", "authoredAt", "committedAt"],
+      "properties": {
+        "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "shortSha": { "type": "string", "pattern": "^[0-9a-f]{7,12}$" },
+        "parentShas": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{40}$" } },
+        "subject": { "type": "string", "maxLength": 256 },
+        "body": { "type": "string", "maxLength": 4096 },
+        "type": { "type": "string", "enum": ["feat", "fix", "docs", "style", "refactor", "perf", "test", "chore", "build", "ci", "revert", "unknown"] },
+        "scope": { "type": ["string", "null"], "maxLength": 64 },
+        "breaking": { "type": "boolean" },
+        "authoredAt": { "type": "string", "format": "date-time" },
+        "committedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": ["string", "null"] }
+      }
+    },
+    "refs": {
+      "type": "object",
+      "properties": {
+        "branches": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "diff": {
+      "type": "object",
+      "properties": {
+        "filesChanged": { "type": "integer", "minimum": 0 },
+        "insertions": { "type": "integer", "minimum": 0 },
+        "deletions": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "trailers": {
+      "type": "object",
+      "properties": {
+        "tested": { "type": "array", "items": { "type": "string" } },
+        "notTested": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "scopeRisk": { "type": ["string", "null"] },
+        "directive": { "type": ["string", "null"] },
+        "refs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "workspaceState": {
+      "type": "object",
+      "properties": {
+        "observedBranch": { "type": "string" },
+        "isDirty": { "type": "boolean" },
+        "ahead": { "type": "integer" },
+        "behind": { "type": "integer" },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["verified", "partial", "unverified", "failed", "conflict", "unknown"] },
+        "commands": { "type": "array", "items": { "type": "string" } },
+        "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "sourcePath", "observedAt"],
+      "properties": {
+        "source": { "type": "string", "enum": ["git", "submit-log", "changelog", "test-report", "workspace-snapshot"] },
+        "sourcePath": { "type": "string" },
+        "sourceCommand": { "type": "string", "maxLength": 256 },
+        "sourceHash": { "type": "string" },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ingestion": {
+      "type": "object",
+      "required": ["idempotencyKey", "firstSeenAt", "status"],
+      "properties": {
+        "idempotencyKey": { "type": "string" },
+        "firstSeenAt": { "type": "string", "format": "date-time" },
+        "lastSeenAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["new", "updated", "unchanged", "conflict"] }
+      }
+    }
+  }
+}
