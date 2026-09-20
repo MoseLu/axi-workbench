@@ -1,0 +1,39 @@
+{
+  "name": "@axi/resource-orchestration-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/crud": "link:../../../../shared/axi-ui/packages/crud",
+    "@axi/presets": "link:../../../../shared/axi-ui/packages/presets",
+    "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",
+    "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
+    "@axi/widgets": "link:../../../../shared/axi-ui/packages/widgets",
+    "antd": "link:../../../../shared/axi-ui/node_modules/antd",
+    "react": "link:../../../../shared/axi-ui/node_modules/react",
+    "react-dom": "link:../../../../shared/axi-ui/node_modules/react-dom",
+    "@axi/gateway-contracts": "workspace:*",
+    "@axi/resource-adapters": "workspace:*",
+    "@axi/resource-orchestrator": "workspace:*",
+    "@axi/resource-session": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.0",
+    "jsdom": "^24.0.0",
+    "sass": "^1.77.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.21",
+    "vitest": "^1.6.0"
+  }
+}
