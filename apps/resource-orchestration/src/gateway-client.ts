@@ -730,12 +730,13 @@ export class GatewayProbeError extends Error {
     message: string,
     options: { status?: number; envelopeCode?: string; requestId?: string; cause?: unknown } = {},
   ) {
-    super(message, options.cause ? { cause: options.cause } : undefined);
+    super(message);
     this.name = "GatewayProbeError";
     this.code = code;
     if (options.status !== undefined) this.status = options.status;
     if (options.envelopeCode !== undefined) this.envelopeCode = options.envelopeCode;
     if (options.requestId !== undefined) this.requestId = options.requestId;
+    if (options.cause !== undefined) (this as { cause?: unknown }).cause = options.cause;
   }
 }
 

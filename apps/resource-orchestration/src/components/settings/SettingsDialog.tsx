@@ -76,7 +76,8 @@ export function SettingsDialog({
       closable={false}
       footer={null}
       keyboard
-      mask={{ closable: true }}
+      maskClosable
+      mask
       open={open}
       width={720}
       onCancel={onClose}

@@ -143,7 +143,8 @@ const sessionAppendJsonResponse = () => ({
   }),
 });
 
-const installFetch = (gatewayFetcher: ReturnType<typeof vi.fn>, settingsResponse = memorySettingsJsonResponse()) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const installFetch = (gatewayFetcher: any, settingsResponse = memorySettingsJsonResponse()) => {
   const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? "GET";
@@ -192,7 +193,8 @@ const installFetch = (gatewayFetcher: ReturnType<typeof vi.fn>, settingsResponse
   return fetcher;
 };
 
-const collectRequestBodies = (fetchMock: ReturnType<typeof vi.fn>): Array<Record<string, unknown>> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const collectRequestBodies = (fetchMock: any): Array<Record<string, unknown>> => {
   const bodies: Array<Record<string, unknown>> = [];
   for (const call of fetchMock.mock.calls) {
     const init = call[1] as RequestInit | undefined;

@@ -65,7 +65,9 @@ describe("useTheme", () => {
 
   it("follows system preference when choice is system", () => {
     const mq = createMatchMediaMock();
-    vi.spyOn(window, "matchMedia").mockImplementation(() => mq as unknown as MediaQueryList);
+    // jsdom does not implement window.matchMedia; stub it directly
+    // rather than spyOn (which requires an existing function property).
+    vi.stubGlobal("matchMedia", () => mq);
 
     const { result } = renderHook(() => useTheme());
     act(() => {

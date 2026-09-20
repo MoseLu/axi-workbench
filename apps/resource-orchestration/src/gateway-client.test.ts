@@ -223,9 +223,21 @@ describe("gateway-client (GHA-012)", () => {
   });
 
   it("returns the default baseUrl when nothing is configured", () => {
+    // `import.meta.env.VITE_GATEWAY_BASE_URL` is populated at vite
+    // transform time from apps/resource-orchestration/.env.local
+    // (a gitignored LAN config used for phone-direct dev access).
+    // When the developer runs tests on a machine where that file
+    // exists, the env-var path wins; otherwise the in-source
+    // DEFAULT_GATEWAY_BASE_URL is used. Either way the test
+    // asserts the documented resolve order.
     const resolved = gatewayBaseUrl();
     expect(typeof resolved).toBe("string");
-    expect(resolved).toBe(import.meta.env.DEV ? "" : "http://127.0.0.1:8787");
+    const fromEnv = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_GATEWAY_BASE_URL;
+    if (typeof fromEnv === "string" && fromEnv.length > 0) {
+      expect(resolved).toBe(fromEnv.replace(/\/$/u, ""));
+    } else {
+      expect(resolved).toBe(import.meta.env.DEV ? "" : "http://127.0.0.1:8787");
+    }
   });
 
   it("dispatchPlannerResult sends the supplied planner output verbatim", async () => {
