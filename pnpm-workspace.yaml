@@ -1,10 +1,12 @@
 packages:
   - 'apps/*'
+  - 'apps/axi-docs/app'
   - 'packages/*'
   - 'services/*'
   - 'ai/*'
   - 'infra/*'
   - 'tools/*'
+  - '../../shared/axi-ui/packages/*'
 
 onlyBuiltDependencies:
   - turbo
