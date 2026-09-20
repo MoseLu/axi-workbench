@@ -104,13 +104,22 @@ function inspectImplementationFile(file) {
   if (isFixtureOrTemplate(relative)) {
     return;
   }
-  // `apps/axi-docs/` is an internal sub-monorepo (formerly
-  // projects/axi-docs, merged into Axi Workbench on 2026-09-20). Its
-  // own scripts and lib files are allowed to reference workspace
-  // paths because they own workspace-wide indexing / drift checks
-  // that need physical paths. The boundary check still enforces the
-  // pattern on all other apps/services/packages.
-  if (relative.startsWith("apps/axi-docs/")) {
+  // `apps/axi-docs/` is an internal sub-monorepo carve-out
+  // (formerly projects/axi-docs, merged into axi Workbench on
+  // 2026-09-20). Its scripts and lib files are workspace-wide
+  // indexing / drift-check tools; its UI components are a
+  // workspace doc surface that legitimately embeds physical
+  // workspace paths in UX copy (e.g. `cd <root>` instructions
+  // for maintainers). The boundary check still enforces the
+  // pattern on every other path under apps/axi-docs/ — in
+  // particular apps/axi-docs/app/src/mcp/ and any new
+  // business logic files must use the registry / env contracts.
+  if (
+    relative.startsWith("apps/axi-docs/app/scripts/") ||
+    relative.startsWith("apps/axi-docs/app/src/lib/") ||
+    relative.startsWith("apps/axi-docs/app/src/components/") ||
+    relative.startsWith("apps/axi-docs/infra/")
+  ) {
     return;
   }
   const text = fs.readFileSync(file, "utf8");
