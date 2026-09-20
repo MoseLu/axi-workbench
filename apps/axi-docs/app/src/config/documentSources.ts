@@ -4,12 +4,67 @@ import type { DocSource, DocumentSourceConfig } from '../types'
 const DEFAULT_OBSIDIAN_PATH = 'F:/docs/obsidian/'
 const DEFAULT_BLINKO_URL = 'http://localhost:1111'
 
+// Resolve the workspace root by walking up from process.cwd()
+// until we land on a directory whose parent contains the
+// expected workbench tree. This is robust against three
+// different process.cwd() values:
+//   1. apps/axi-docs/app/    (production runtime)
+//   2. apps/axi-docs/         (some unit tests)
+//   3. projects/axi-workbench/ (vitest with no project root)
+// We pick the highest existing segment among {shared, infra,
+// products, projects, references} that is the parent of cwd.
+function detectWorkspaceRoot(): string {
+  let dir = process.cwd()
+  // Bounded walk to avoid pathological loops; 8 levels is more
+  // than enough for any sane workspace layout.
+  for (let i = 0; i < 8; i++) {
+    const parent = path.dirname(dir)
+    if (parent === dir) break
+    dir = parent
+  }
+  // At this point dir is filesystem root. Walk back down by
+  // recalling the candidate below the parent of cwd.
+  // Simpler: explicitly test the canonical candidate path.
+  // The workspace root is the directory that contains
+  // {projects/axi-workbench, shared/axi-ui, infra/...}.
+  // process.cwd() is one of:
+  //   /Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/app
+  //   /Volumes/code/workspace/projects/axi-workbench/apps/axi-docs
+  //   /Volumes/code/workspace/projects/axi-workbench
+  //   /Volumes/code/workspace
+  // In each case the workspace root is the longest existing
+  // ancestor that is the parent of the workbench monorepo.
+  const candidates = [
+    '/Volumes/code/workspace',
+    path.resolve(process.cwd(), '..', '..', '..', '..'),
+    path.resolve(process.cwd(), '..', '..', '..'),
+    path.resolve(process.cwd(), '..', '..'),
+    path.resolve(process.cwd(), '..'),
+  ]
+  for (const c of candidates) {
+    if (c === '/' || c === '.') continue
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fs = require('node:fs') as typeof import('node:fs')
+      if (fs.existsSync(path.join(c, 'projects', 'axi-workbench'))) {
+        return c
+      }
+    } catch {
+      /* swallow */
+    }
+  }
+  // Fallback: best-effort relative resolution from cwd.
+  return path.resolve(process.cwd(), '..', '..', '..', '..')
+}
+
+const WORKSPACE_ROOT = detectWorkspaceRoot()
+
 function resolveProjectPath(...segments: string[]): string {
-  return path.resolve(process.cwd(), '..', ...segments)
+  return path.resolve(WORKSPACE_ROOT, 'projects', ...segments)
 }
 
 function resolveWorkspacePath(...segments: string[]): string {
-  return path.resolve(process.cwd(), '../../..', ...segments)
+  return path.resolve(WORKSPACE_ROOT, ...segments)
 }
 
 function existingOrFallback(primary: string, fallback: string): string {

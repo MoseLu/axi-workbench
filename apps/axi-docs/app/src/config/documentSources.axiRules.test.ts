@@ -44,8 +44,8 @@ describe('documentSourceRegistry axi-rules', () => {
     ]) {
       expect(ids.has(expected)).toBe(true)
     }
-    // 8 original + 1 new = 9 total.
-    expect(sources.length).toBe(9)
+    // 8 original + skill-registry + axi-rules = 10 total.
+    expect(sources.length).toBe(10)
   })
 
   it('passes registry validation with axi-rules enabled', () => {
