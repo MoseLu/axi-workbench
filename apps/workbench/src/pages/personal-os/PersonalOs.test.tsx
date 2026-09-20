@@ -10,7 +10,7 @@ import {
   usePersonalOsQueue,
   useUpdatePersonalOsFocus,
   useUpdatePersonalOsProject,
-} from '@epap/api-client';
+} from '@axi/api-client';
 import { I18nProvider } from '../../i18n';
 import { AuthProvider } from '../../contexts/AuthContext';
 import { PersonalOsToday, PersonalOsWorkbench } from './PersonalOs';
@@ -35,7 +35,7 @@ vi.mock('@axi/shell', () => ({
   ),
 }));
 
-vi.mock('@epap/api-client', () => ({
+vi.mock('@axi/api-client', () => ({
   usePersonalOsFocus: vi.fn(),
   usePersonalOsQueue: vi.fn(),
   useUpdatePersonalOsFocus: vi.fn(),

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Button, Descriptions, Empty, Space } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
-import { useControlSnapshot } from '@epap/api-client';
+import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../i18n';
 import {
   getProjectConsumers,

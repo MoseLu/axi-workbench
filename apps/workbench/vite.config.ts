@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
-      // Workspace packages such as @epap/api-client declare React Query as a
+      // Workspace packages such as @axi/api-client declare React Query as a
       // peer dependency. Force the app and those linked packages to share the
       // same module instance, otherwise QueryClientProvider and useQuery can
       // read different React contexts in the packaged WebView.

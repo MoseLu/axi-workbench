@@ -8,7 +8,7 @@ import {
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
-import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@epap/api-client';
+import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {
   getProjectGitStatus,

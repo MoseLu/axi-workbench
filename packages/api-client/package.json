@@ -1,5 +1,5 @@
 {
-  "name": "@epap/api-client",
+  "name": "@axi/api-client",
   "version": "1.0.0",
   "private": true,
   "type": "module",
