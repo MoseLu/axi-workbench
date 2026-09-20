@@ -166,7 +166,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-docs",
       capabilities: ["web", "docs", "knowledge", "search"],
-      cwd: path.join(workspaceRoot, "projects", "axi-docs", "app"),
+      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-docs", "app"),
       defaultRoute: "/",
       healthPath: "/",
       readinessPath: "/",
@@ -212,9 +212,9 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       title: "Axi Image Preview"
     },
     {
-      appId: "axi-agent-platform",
+      appId: "axi-agent",
       capabilities: ["web", "agent-runtime", "tasks", "memory"],
-      cwd: path.join(workspaceRoot, "projects", "axi-agent-platform", "frontend"),
+      cwd: path.join(workspaceRoot, "projects", "axi-agent", "frontend"),
       defaultRoute: "/",
       healthPath: "/",
       readinessPath: "/",
@@ -236,6 +236,83 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       routes: ["/", "/dashboard", "/settings"],
       startCommand: `${node22} npm exec vite -- --host 127.0.0.1 --port \${port} --strictPort`,
       title: "Axi Agent Platform"
+    },
+    {
+      appId: "axi-artboard",
+      capabilities: ["web", "canvas", "node-picker", "perception"],
+      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-artboard"),
+      defaultRoute: "/",
+      healthPath: "/",
+      readinessPath: "/",
+      icon: "canvas",
+      menuGroups: [
+        {
+          key: "canvas",
+          label: "画布",
+          icon: "canvas",
+          children: [
+            { key: "home", label: "Artboard", icon: "canvas", route: "/" }
+          ]
+        }
+      ],
+      nativeFallback: false,
+      packageManager: "pnpm",
+      routes: [
+        "/",
+        "/@axi-artboard/perception",
+        "/@axi-artboard/perception/stream"
+      ],
+      startCommand: `${node22} pnpm exec vite --host 127.0.0.1 --port \${port} --strictPort`,
+      title: "Axi Artboard"
+    },
+    {
+      appId: "axi-resource-orchestration",
+      capabilities: ["web", "orchestration", "resource-gateway", "memory", "session"],
+      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "resource-orchestration"),
+      defaultRoute: "/",
+      healthPath: "/",
+      readinessPath: "/",
+      icon: "orchestration",
+      menuGroups: [
+        {
+          key: "orchestration",
+          label: "资源编排",
+          icon: "orchestration",
+          children: [
+            { key: "chat", label: "对话规划", icon: "chat", route: "/" },
+            { key: "memory", label: "记忆管理", icon: "memory", route: "/memory" }
+          ]
+        }
+      ],
+      nativeFallback: false,
+      packageManager: "pnpm",
+      routes: ["/", "/chat", "/memory", "/sessions"],
+      startCommand: `${node22} pnpm exec vite --host 127.0.0.1 --port \${port} --strictPort`,
+      title: "Resource Orchestration"
+    },
+    {
+      appId: "axi-resource-gateway",
+      capabilities: ["service", "gateway", "memory", "session", "metrics"],
+      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "services", "resource-gateway"),
+      defaultRoute: "/health/live",
+      healthPath: "/health/live",
+      readinessPath: "/health/ready",
+      icon: "gateway",
+      menuGroups: [],
+      nativeFallback: false,
+      packageManager: "pnpm",
+      routes: [
+        "/health/live",
+        "/health/ready",
+        "/gateway/run",
+        "/resource/search",
+        "/memory",
+        "/sessions",
+        "/metrics",
+        "/openapi.json"
+      ],
+      startCommand: `${node22} pnpm --filter @axi/resource-gateway start`,
+      title: "Resource Gateway"
     }
   ];
 }
