@@ -10,19 +10,19 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
-    "@axi/crud": "link:../../../../shared/axi-ui/packages/crud",
-    "@axi/presets": "link:../../../../shared/axi-ui/packages/presets",
-    "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",
-    "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
-    "@axi/widgets": "link:../../../../shared/axi-ui/packages/widgets",
-    "antd": "link:../../../../shared/axi-ui/node_modules/antd",
-    "react": "link:../../../../shared/axi-ui/node_modules/react",
-    "react-dom": "link:../../../../shared/axi-ui/node_modules/react-dom",
+    "@axi/core": "workspace:*",
+    "@axi/crud": "workspace:*",
+    "@axi/presets": "workspace:*",
+    "@axi/settings": "workspace:*",
+    "@axi/tokens": "workspace:*",
+    "@axi/widgets": "workspace:*",
     "@axi/gateway-contracts": "workspace:*",
     "@axi/resource-adapters": "workspace:*",
     "@axi/resource-orchestrator": "workspace:*",
-    "@axi/resource-session": "workspace:*"
+    "@axi/resource-session": "workspace:*",
+    "antd": "^5.21.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
@@ -34,6 +34,6 @@
     "sass": "^1.77.0",
     "typescript": "^5.3.3",
     "vite": "^5.4.21",
-    "vitest": "^1.6.0"
+    "vitest": "^3.2.7"
   }
 }
