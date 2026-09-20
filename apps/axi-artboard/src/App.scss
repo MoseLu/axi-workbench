@@ -1,0 +1,9 @@
+// App.scss — Layer: layout.
+//
+// App's top-level styles. Tailwind utility classes on the root
+// containers handle the actual layout in App.tsx; this SCSS file
+// keeps the legacy .app-root / .main class rules intact so external
+// host apps that mount <OverlayCanvas /> into their own tree can
+// still rely on the semantic class names.
+
+@use 'styles/layout/app-shell';

@@ -1,0 +1,18 @@
+// abstracts/_index.scss — barrel re-export for the abstracts layer.
+// Lets consumers write:
+//
+//   @use 'abstracts' as a;
+//   a.$pin
+//   @include a.mono;
+//
+// instead of:
+//
+//   @use 'abstracts/variables' as v;
+//   @use 'abstracts/mixins' as m;
+//
+// (Sass forbids forwarding the same name from multiple partials, so
+// this barrel only forwards tokens + mixins; functions and
+// placeholders stay directly importable when needed.)
+
+@forward 'variables';
+@forward 'mixins';
