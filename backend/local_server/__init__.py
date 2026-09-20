@@ -637,8 +637,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 "type": "error",
                 "error": str(e),
             })
-        except:
-            pass
+        except Exception as send_err:
+            # Silently ignore send failures — websocket may already be closed
+            print(f"[ws] Failed to send error to client: {send_err}")
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
