@@ -86,7 +86,7 @@
     ],
     "consumes": [
       "axi-workbench",
-      "axi-agent-platform",
+      "axi-agent",
       "axi-accounts",
       "axi-notify",
       "ai-capability",

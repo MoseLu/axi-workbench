@@ -37,7 +37,7 @@ A side-by-side of `last commit date (per project HEAD)` against
 | axi-image-preview | 2026-07-22 | 2026-07-22   | 0          |
 | axi-notify      | 2026-07-29  | (no entry)     | 41+        |
 | axi-pet-desktop | 2026-08-03  | (no entry)     | 36+        |
-| axi-agent-platform | 2026-07-22 | 2026-06-18   | 34         |
+| axi-agent | 2026-07-22 | 2026-06-18   | 34         |
 | axi-pet         | 2026-06-18  | 2026-06-11     | 7          |
 | axi-docs        | 2026-08-07  | 2026-06-18     | 50         |
 | axi-rules       | 2026-07-28  | 2026-06-11     | 47         |
@@ -106,7 +106,7 @@ that lean on rules-side indexes will mis-report for these projects.
 2. Manual stale-eviction for `agents-multi`, `axi-pet-renderer`,
    `axi-sports-management-app`, `codex-plus-app` in rules/index.
 3. Refresh `axi-docs`'s dossier for at least `axi-rules`,
-   `axi-pet-desktop`, `axi-notify-mobile`, `axi-agent-platform`,
+   `axi-pet-desktop`, `axi-notify-mobile`, `axi-agent`,
    `axi-pet`, `story-graph` with their v3-era summaries. Today only
    `axi-workbench` + `story-graph` were updated; the others still
    describe pre-2026-06 state.

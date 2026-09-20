@@ -89,9 +89,9 @@
 
 ---
 
-## 2. axi-agent-platform
+## 2. axi-agent
 
-- 路径：`/Volumes/code/workspace/projects/axi-agent-platform`
+- 路径：`/Volumes/code/workspace/projects/axi-agent`
 - 分支：`feature/unified-personal-todo`（远程 `origin/feature/unified-personal-todo`）
 - 远程同步状态：无 ahead/behind 信息
 - 最近 10 个 commit：
@@ -485,7 +485,7 @@
 | 项目 | 验证时间 | 来源 |
 |------|----------|------|
 | axi-workbench | 2026-09-15（本快照时间 `09:27:36+0800`） | 本快照为当前批次证据 |
-| axi-agent-platform | 2026-09-14（ahead/bhind 不变） | 历史快照，本轮未触发新验证 |
+| axi-agent | 2026-09-14（ahead/bhind 不变） | 历史快照，本轮未触发新验证 |
 | axi-docs | 2026-09-15（ahead 2） | 本次文档同步 |
 | axi-ui | 2026-09-15（ahead 25 → 0 落地后） | `2d5aa3d chore(axi-ui): sync pending changes to dev` 已将大改动落到 dev |
 | axi-rules | 2026-09-14 | 历史快照 |
@@ -502,7 +502,7 @@
 | 项目 | 2026-09-14 未提交 | 2026-09-15 未提交 | 关键变化 |
 |------|-------------------|-------------------|----------|
 | axi-workbench | 6（5M + 1??） | 19 M + 14 ?? + 1 ahead | Commit Ledger 专项 + WFB 相关 dashboard 改动落地 |
-| axi-agent-platform | 26（6M + 1A + 19??） | 6M + 1A + 19?? | 改动项不变，仅 ahead 计数变化 |
+| axi-agent | 26（6M + 1A + 19??） | 6M + 1A + 19?? | 改动项不变，仅 ahead 计数变化 |
 | axi-docs | 10（7M + 3A） | 9M + 3A | 1 个文档改回 |
 | axi-ui | ~130（ahead 25） | 1 A | **显著改善**：从 ~130 改动落地到 dev，仅剩 1 个 submit log |
 | axi-rules | 8（7M + 1A） | 7M + 1A | 1 个改动回退 |
@@ -518,7 +518,7 @@
 
 ## 验收要点
 
-- ✅ 所有纳入范围项目（axi-workbench、axi-agent-platform、axi-docs、axi-ui、axi-rules、axi-skills、axi-registry、axi-workspace-governance、axi-tauri-starter、3 个 distributions）均采集了 `git status --short --branch`。
+- ✅ 所有纳入范围项目（axi-workbench、axi-agent、axi-docs、axi-ui、axi-rules、axi-skills、axi-registry、axi-workspace-governance、axi-tauri-starter、3 个 distributions）均采集了 `git status --short --branch`。
 - ✅ 每个项目记录了分支、远程同步状态、最近 10 个 commit。
 - ✅ axi-workbench 中 `commit-ledger`、`gateway` 改动明确标记为 **不属于 WFB 专项**（属于 Commit Ledger 专项 CL-014..CL-020）。
 - ✅ 提供了与 2026-09-14 快照的对比，方便审查工作进度。

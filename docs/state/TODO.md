@@ -41,6 +41,12 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 - [x] REQ-VERIFY-001: Keep verification commands accurate for the real project stack.
   - Test: every command listed in `TDD.md` runs against the current monorepo or the blocker is recorded in `docs/state/CHANGELOG.md`.
 
+- [x] LOG-STD-003: Fix Silent catch blocks.
+  - Fixed 16 silent catch blocks across: `backend/local_server/__init__.py`, `apps/axi-docs/app/project_manager.py`, `apps/app-search-system/backend/build_embedding.py`, `apps/app-search-system/backend/build_parallel.py`, `apps/app-search-system/backend/scripts/run_pipeline.py`, `apps/app-search-system/backend/api_sop.py`, `apps/app-search-system/backend/scripts/build_chroma.py`, `backend/mini_agent/skills/slack-gif-creator/core/typography.py`, `backend/mini_agent/skills/slack-gif-creator/core/validators.py`, `backend/mini_agent/skills/slack-gif-creator/core/frame_composer.py`.
+
+- [x] LOG-STD-007: Go zerolog时间戳改为RFC3339.
+  - Changed `zerolog.TimeFieldFormat` from `zerolog.TimeFormatUnix` to `time.RFC3339` in `services/api-gateway/cmd/gateway/main.go:160` to comply with unified log timestamp standard.
+
 - [x] REQ-BOUNDARY-002: Service contracts declare six-layer paths before merge.
   - Test: every modified service under `services/` has its `entry / authority / downstream / renderer / audit / verification` declared in the PR description and verified against `docs/rules/epap-six-layer-sop.md`.
 

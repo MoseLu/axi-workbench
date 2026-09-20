@@ -8,7 +8,7 @@
 | 项目 | 分支 | Ahead | 未提交文件 | Staged Changes |
 |------|------|-------|-----------|----------------|
 | axi-workbench | dev | 2 | 6 (5M + 1??) | 无 |
-| axi-agent-platform | feature/unified-personal-todo | 1 | 26 (6M + 1A + 19??) | 有 |
+| axi-agent | feature/unified-personal-todo | 1 | 26 (6M + 1A + 19??) | 有 |
 | axi-docs | codex/sync-axi-soul-world-dossier-20260824 | 2 | 10 (7M + 3A) | 有 |
 | axi-ui | dev | 25 | ~130 (大量M + 2??) | 有 |
 | axi-rules | dev | 4 | 8 (7M + 1A) | 有 |
@@ -41,9 +41,9 @@
 
 ---
 
-## 2. axi-agent-platform
+## 2. axi-agent
 
-**路径**: `/Volumes/code/workspace/projects/axi-agent-platform`
+**路径**: `/Volumes/code/workspace/projects/axi-agent`
 **分支**: `feature/unified-personal-todo`
 **远程**: `origin/feature/unified-personal-todo`
 **状态**: `[ahead 1]`
@@ -222,7 +222,7 @@
 
 ## 后续操作建议
 
-1. **axi-agent-platform**: 积压19个未跟踪的submit日志文件，建议清理或提交
+1. **axi-agent**: 积压19个未跟踪的submit日志文件，建议清理或提交
 2. **axi-ui**: 有大量未提交更改(约130个文件)，ahead 25个提交，建议尽快push
 3. **axi-workspace-governance**: 分支与默认分支分离(ahead 10)，需确认工作流
 4. 所有项目的auto-submit日志文件格式一致，可考虑归档策略

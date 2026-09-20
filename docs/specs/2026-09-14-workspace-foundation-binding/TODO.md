@@ -8,7 +8,7 @@
 >
 > 责任侧：Axi Workbench（统一入口、资源注册、导航和状态呈现）
 >
-> 相关项目：`axi-workbench`、`axi-ui`、`axi-rules`、`axi-skills`、`axi-docs`、`axi-registry`、`axi-workspace-governance`、`axi-agent-platform`、`axi-tauri-starter` 及 Workbench Web/Mobile/Desktop 发行版
+> 相关项目：`axi-workbench`、`axi-ui`、`axi-rules`、`axi-skills`、`axi-docs`、`axi-registry`、`axi-workspace-governance`、`axi-agent`、`axi-tauri-starter` 及 Workbench Web/Mobile/Desktop 发行版
 >
 > **提交范围（截至 2026-09-15 `bf77988b`）**：`90fc786d`（核心绑定）、`1b7ce6d0`/`eb23cf32`（CHANGELOG 补录）、`af671324`/`913d1eb9`/`997b4c0b`（P0 修复）、`cfe4ac89`/`e4de9898`（P2 资源详情与角色）、`7f4565dd`/`3eebc64c`/`e2571033`（Gateway 模块化与 race）、`7c8ee5d1`（25/25 测试）、`367c9cf3`/`337b60bf`（Gateway 增强）、`343e2cb5`（handoff registry 刷新）、`5220ad09`（PRD/HANDOFF P3）、`685f04d0`（P3 batch/sla/web-to-mobile）、`6a8671c9`（direction-aware handoff）、`bf77988b`（拆分原子任务）、`af3017d3`（Shell 角色注入 + chunk-size 修复）
 
@@ -172,7 +172,7 @@
 
 #### `WFB-HOST-001`：统一 Hosted App 健康与失败处置
 
-- [x] 为 `axi-docs` 和 `axi-agent-platform` 定义可区分 readiness 与页面可访问性的 health contract。
+- [x] 为 `axi-docs` 和 `axi-agent` 定义可区分 readiness 与页面可访问性的 health contract。
 - [x] 为启动失败定义一次重试、降级展示和 Owner 处置提示，并记录停止策略。
 - [x] 验收只接受：健康、超时、启动失败三种状态在 Workbench 中可区分，且不把根页面响应伪装成完整服务健康。
 - **证据**：[`apps/devsvc-dashboard/scripts/axi-app-host.mjs`](../../../../apps/devsvc-dashboard/scripts/axi-app-host.mjs) 中 `resolveReadinessPath`、`probeReadiness`、`classifyHealth`、`buildFailureState` 与 `attemptStart` 重试链路；[`apps/devsvc-dashboard/config/axi-apps.json`](../../../../apps/devsvc-dashboard/config/axi-apps.json) 每个 app 已声明 `readinessPath`；[`apps/devsvc-dashboard/scripts/axi-app-host.test.mjs`](../../../../apps/devsvc-dashboard/scripts/axi-app-host.test.mjs) 17/17 通过（含 `classifyHealth distinguishes ready, page-only, and unavailable`、`startApp retries once and then exposes an error state with owner hint when readiness never converges`、`startApp reports degraded state when page is accessible but readiness endpoint never returns 200`、`stopApp clears failure and attempt metadata so the next start begins fresh`）。
@@ -268,7 +268,7 @@
 
 - [x] 运行 `node /Volumes/code/workspace/infra/axi-workspace-governance/scripts/workspace-project-cli.mjs validate`。
 - [x] 当前结果：`workspace graph and handoff registry ok`。
-- [x] `axi-workbench` 已在 graph 中声明消费 `axi-workspace-governance`、`axi-rules`、`axi-docs`、`axi-ui`、`axi-registry`、`axi-agent-platform` 和 `axi-tauri-starter`。
+- [x] `axi-workbench` 已在 graph 中声明消费 `axi-workspace-governance`、`axi-rules`、`axi-docs`、`axi-ui`、`axi-registry`、`axi-agent` 和 `axi-tauri-starter`。
 - [x] 为每个基础项目补齐功能 Owner、备份 Owner、升级联系人和失联处理方式。
   - **调查结果**：已汇总到 [TODO.md 同目录的 OWNER_INVENTORY.md](OWNER_INVENTORY.md)
   - 核心项目 graph 当前均为 `remediation_status: supported`、`remediation_reason: has_owner_and_verify`
@@ -286,7 +286,7 @@
 | 项目 | Canonical path | GitHub 可见性 | 分支 | 未提交项 | 本专项角色 |
 | --- | --- | --- | --- | ---: | --- |
 | `axi-workbench` | `/Volumes/code/workspace/projects/axi-workbench` | public | `dev` | 0 | 统一入口和控制面 |
-| `axi-agent-platform` | `/Volumes/code/workspace/projects/axi-agent-platform` | public | `feature/unified-personal-todo` | 27 | Agent runtime / Hosted App |
+| `axi-agent` | `/Volumes/code/workspace/projects/axi-agent` | public | `feature/unified-personal-todo` | 27 | Agent runtime / Hosted App |
 | `axi-docs` | `/Volumes/code/workspace/projects/axi-docs` | public | `codex/sync-axi-soul-world-dossier-20260824` | 12 | Docs Hosted App |
 | `axi-ui` | `/Volumes/code/workspace/shared/axi-ui` | private | `dev` | 129 | UI Provider / Gallery |
 | `axi-rules` | `/Volumes/code/workspace/projects/axi-rules` | private | `dev` | 8 | 规则权威 |
@@ -305,7 +305,7 @@
 > **状态：✅ 基线已确认（2026-09-14）**
 
 - [x] `axi-docs` 已注册为 Hosted App，入口为 `/apps/axi-docs/`。
-- [x] `axi-agent-platform` 已注册为 Hosted App，入口为 `/apps/axi-agent-platform/`。
+- [x] `axi-agent` 已注册为 Hosted App，入口为 `/apps/axi-agent/`。
 - [x] `axi-rules` 已注册为 Resource Index，入口为 `/axi-resources/axi-rules`。
 - [x] `axi-ui` 已注册为共享 runtime resource，当前通过资源索引承载。
 - [x] `axi-skills` 已被 workspace graph 注册，Resource Registry 会自动生成 `/axi-resources/axi-skills`。
@@ -422,7 +422,7 @@
 
 相关约束：[`axi-workbench-boundary-sop.md`](/Volumes/code/workspace/projects/axi-workbench/docs/rules/axi-workbench-boundary-sop.md:17)、[`axi-ui/INTEGRATION.md`](/Volumes/code/workspace/shared/axi-ui/docs/INTEGRATION.md)。
 
-### 3.4 Hosted App 层：`axi-docs` / `axi-agent-platform`
+### 3.4 Hosted App 层：`axi-docs` / `axi-agent`
 
 **配置分析（2026-09-15 复核）：**
 
@@ -434,7 +434,7 @@
 | `axi-coder` | `pnpm exec vite` | 来自 `axi-apps.json` | ✅ 有 | - |
 | `axi-verification-inbox` | `npm run dev` | 来自 `axi-apps.json` | ✅ 有 | - |
 | `axi-docs` | `pnpm exec vite` | `readinessPath` 已声明 | ✅ 有 | 健康合同已统一 |
-| `axi-agent-platform` | `npm exec vite` | `readinessPath` 已声明 | ✅ 有 | 健康合同已统一 |
+| `axi-agent` | `npm exec vite` | `readinessPath` 已声明 | ✅ 有 | 健康合同已统一 |
 | `axi-image-preview` | `npm exec vite` | 来自 `axi-apps.json` | ✅ 有 | - |
 
 **已解决差距（`WFB-HOST-001`）：**
@@ -446,7 +446,7 @@
 - ✅ 启动、停止、健康证据均记录在进程内缓存，并由 `WFB-REG-003` 持久化层覆盖。
 
 - [x] 保持 `axi-docs` 的运行时 Owner 在 `axi-docs`，Workbench 只负责发现、启动、挂载和导航。
-- [x] 保持 `axi-agent-platform` 的 Agent runtime/API/MCP/Transport Owner 在 `axi-agent-platform`，Workbench 只通过既有 API、MCP 或文档契约调用。
+- [x] 保持 `axi-agent` 的 Agent runtime/API/MCP/Transport Owner 在 `axi-agent`，Workbench 只通过既有 API、MCP 或文档契约调用。
 - [x] 为每个 Hosted App 记录 `cwd`、启动命令、端口分配、健康检查、失败回退和停止策略（`axi-apps.json` + `axi-app-host.mjs`）。
 - [x] Hosted App 的内部菜单由 Hosted App 自己声明；Workbench 只提供外层导航和面包屑。
 - [x] 避免把 Hosted App 内部业务页面复制到 Workbench 的资源详情页。
@@ -624,7 +624,7 @@
 
 > **状态：✅ Hosted App 健康合同、失败治理、文档入口与资源 Owner 呈现均已落地**
 
-- [x] 验证 `axi-docs` 和 `axi-agent-platform` 的 Hosted App 启动和失败回退 → `WFB-HOST-001`（2026-09-15 完成，`axi-app-host.test.mjs` 17/17）。
+- [x] 验证 `axi-docs` 和 `axi-agent` 的 Hosted App 启动和失败回退 → `WFB-HOST-001`（2026-09-15 完成，`axi-app-host.test.mjs` 17/17）。
 - [x] 为 `axi-rules` 和 `axi-skills` 建立到 Axi Docs 的受控文档入口（`WFB-REG-002`，2026-09-15 完成）。
 - [x] 为 `axi-ui` 建立到 Gallery 的受控入口；Gallery 不被复制到 Workbench（`boundary-sop` + `axi-resources.json`）。
 - [x] 将资源 Owner、契约和验证命令呈现在详情页（`WFB-REG-002`，2026-09-15 完成）。
@@ -695,7 +695,7 @@
 - [x] 所有纳入范围的基础项目都有 canonical path、仓库可见性、功能 Owner、契约、文档入口和验证命令（`workspace.graph.json` + `WORKSPACE-RELATION-AUDIT_2026-09-15.md` 已对账）。
 - [x] Workbench 只有一个资源中心一级入口，并按角色和任务分层显示（`WFB-NAV-001`，2026-09-15 完成；浏览器级闭环仍由 `WFB-QA-001` 收口）。
 - [x] `axi-ui`、`axi-rules`、`axi-skills` 具备清晰的资源详情和 canonical Owner 链接（`WFB-REG-002`，2026-09-15 完成）。
-- [x] `axi-docs`、`axi-agent-platform` 的 Hosted App 入口可用且不复制实现（`WFB-HOST-001`，2026-09-15 完成）。
+- [x] `axi-docs`、`axi-agent` 的 Hosted App 入口可用且不复制实现（`WFB-HOST-001`，2026-09-15 完成）。
 - [x] Resource Registry 能区分注册、路径存在、已验证、过期和失败（`WFB-REG-003`，2026-09-15 完成；6 个状态字段已落地）。
 - [x] 普通用户不会看到私有仓库源码、绝对路径、凭据或未授权 GitHub 内容（`WFB-SEC-001`，2026-09-15 完成，`security-private-resources.test.mjs` 15/15）。
 - [x] Workbench、Axi UI、Axi Rules、Axi Skills、Axi Docs、Registry 和 Governance 的最小验证命令均有成功或明确阻塞证据（§5.2 + `WORKTREE_SNAPSHOT_2026-09-15.md` + `WORKSPACE-RELATION-AUDIT_2026-09-15.md`）。

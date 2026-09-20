@@ -33,7 +33,7 @@
 | Graph ID | Git Origin (canonical) | Graph `repo` | Notes |
 |----------|------------------------|--------------|-------|
 | `axi-workbench` | `https://github.com/MoseLu/axi-workbench.git` | 同 | 本仓另有 `upstream = BellisGit/enterprise-project-automation-platform.git`（历史 fork 来源，见 §1.3） |
-| `axi-agent-platform` | `https://github.com/MoseLu/axi-agent-platform.git` | 同 | |
+| `axi-agent` | `https://github.com/MoseLu/axi-agent.git` | 同 | |
 | `axi-artboard` | `https://github.com/MoseLu/axi-artboard.git` | 同 | |
 | `axi-docs` | `https://github.com/MoseLu/axi-docs.git` | 同 | |
 | `axi-feishu-codex-bridge` | `https://github.com/MoseLu/axi-feishu-codex-bridge.git` | 同 | |
@@ -91,7 +91,7 @@
 | `story-graph` | `https://github.com/MoseLu/story-graph.git` | 故意不登记：product 同上 |
 | `sub2api` | `https://github.com/Wei-Shaw/sub2api.git` | 故意不登记 |
 
-> 注：`ai-resource-orchestration` 是 §4 中唯一一条真实漂移候选，但本地路径 `/Volumes/code/workspace/products/ai-resource-orchestration` 当前没有 `.git` 目录；下游消费者（`axi-workbench`、`axi-agent-platform`、`axi-soul-world`）与 graph 一致，建议作为 `WFB-EVID-001`/`WFB-DRIFT-001` 后续 Owner 任务而非本审计阻断项。
+> 注：`ai-resource-orchestration` 是 §4 中唯一一条真实漂移候选，但本地路径 `/Volumes/code/workspace/products/ai-resource-orchestration` 当前没有 `.git` 目录；下游消费者（`axi-workbench`、`axi-agent`、`axi-soul-world`）与 graph 一致，建议作为 `WFB-EVID-001`/`WFB-DRIFT-001` 后续 Owner 任务而非本审计阻断项。
 
 ---
 
@@ -164,11 +164,11 @@
 
 ### 3.1 `axi-ui`
 
-- **正向 consumers**（CLI）：`axi-agent-platform`, `axi-image-preview`, `axi-workbench`, `axi-workbench-desktop-dist`, `axi-workbench-mobile-dist`, `axi-workbench-web-dist`, `story-graph`
+- **正向 consumers**（CLI）：`axi-agent`, `axi-image-preview`, `axi-workbench`, `axi-workbench-desktop-dist`, `axi-workbench-mobile-dist`, `axi-workbench-web-dist`, `story-graph`
 - **Graph `consumers` 字段**：完全相同
 - **反向 audit**（每个 consumer 是否在自身 `consumes` 中声明 `axi-ui`）：
   - `axi-workbench` ✓（`consumes` 含 `axi-ui`，`workspace.graph.json:axi-workbench:relationships`）
-  - `axi-agent-platform` ✓（`consumes` 含 `axi-ui`）
+  - `axi-agent` ✓（`consumes` 含 `axi-ui`）
   - `axi-image-preview` ✓（`consumes` 含 `axi-ui`）
   - `story-graph` ✓（`consumes` 含 `axi-ui`）
   - `axi-workbench-{web,mobile,desktop}-dist` ✓（每个 distribution 的 `consumes` 均含 `axi-ui`）
@@ -176,7 +176,7 @@
 
 ### 3.2 `axi-registry`
 
-- **正向 consumers**（CLI）：`axi-agent-platform`, `axi-ui`, `axi-workbench`, `axi-workbench-desktop-dist`, `axi-workbench-mobile-dist`, `axi-workbench-web-dist`, `story-graph`
+- **正向 consumers**（CLI）：`axi-agent`, `axi-ui`, `axi-workbench`, `axi-workbench-desktop-dist`, `axi-workbench-mobile-dist`, `axi-workbench-web-dist`, `story-graph`
 - **Graph `consumers` 字段**：完全相同
 - **反向 audit**：
   - 7/7 consumer 都在自身 `consumes` 中声明 `axi-registry`
@@ -184,7 +184,7 @@
 
 ### 3.3 `axi-workspace-governance`
 
-- **正向 consumers**（CLI）：`axi-agent-platform`, `axi-docs`, `axi-rules`, `axi-workbench`
+- **正向 consumers**（CLI）：`axi-agent`, `axi-docs`, `axi-rules`, `axi-workbench`
 - **Graph `consumers` 字段**：完全相同
 - **反向 audit**：
   - 4/4 consumer 都在自身 `consumes` 中声明 `axi-workspace-governance`
@@ -192,17 +192,17 @@
 
 ### 3.4 `axi-rules`
 
-- **正向 consumers**（CLI）：`axi-agent-platform`, `axi-feishu-codex-bridge`, `axi-workbench`
+- **正向 consumers**（CLI）：`axi-agent`, `axi-feishu-codex-bridge`, `axi-workbench`
 - **Graph `consumers` 字段**：完全相同
 - **反向 audit**：
   - `axi-workbench` ✓
-  - `axi-agent-platform` ✓
+  - `axi-agent` ✓
   - `axi-feishu-codex-bridge` ✓
 - **结论**：3/3 一致，**无漂移**。
 
 ### 3.5 `axi-docs`
 
-- **正向 consumers**（CLI）：`ai-resource-orchestration`, `axi-agent-platform`, `axi-rules`, `axi-workbench`
+- **正向 consumers**（CLI）：`ai-resource-orchestration`, `axi-agent`, `axi-rules`, `axi-workbench`
 - **Graph `consumers` 字段**：完全相同
 - **反向 audit**：4/4 一致。
 - **结论**：4/4 一致，**无漂移**。注意 `axi-docs` 与 `axi-rules` 之间互为 consumer：`axi-docs` 把 `axi-rules` 列在 `consumers`，`axi-rules` 也把 `axi-docs` 列在 `consumers`，这是双向阅读契约（rules ↔ docs），由 graph 关系语义保留。

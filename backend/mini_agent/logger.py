@@ -19,10 +19,10 @@ class AgentLogger:
     def __init__(self):
         """Initialize logger
 
-        Logs are stored in ~/.mini-agent/log/ directory
+        Logs are stored in ~/.axi/logs/mini-agent/ directory
         """
-        # Use ~/.mini-agent/log/ directory for logs
-        self.log_dir = Path.home() / ".mini-agent" / "log"
+        # Use ~/.axi/logs/mini-agent/ directory for logs
+        self.log_dir = Path.home() / ".axi" / "logs" / "mini-agent"
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = None
         self.log_index = 0

@@ -4,7 +4,7 @@
 >
 > 责任侧：Axi Workbench Dashboard
 >
-> 相关项目：`shared/axi-ui`（Provider）、`infra/axi-registry`（Verdaccio registry）、`apps/axi-coder`、`projects/axi-agent-platform/frontend`、`distributions/axi-workbench-{web,mobile,desktop}`
+> 相关项目：`shared/axi-ui`（Provider）、`infra/axi-registry`（Verdaccio registry）、`apps/axi-coder`、`projects/axi-agent/frontend`、`distributions/axi-workbench-{web,mobile,desktop}`
 >
 > 本文件仅做版本与消费方式的**只读记录**。任何对 `package.json` 中 `@axi/*` 实际依赖的升级或切换必须在所属 Provider 仓库完成，并通过 `axi-registry` 发布后再重新执行本表验证。
 
@@ -82,7 +82,7 @@
 | 消费者 | `package.json` 路径 | `@axi/*` 消费情况 | 当前状态 |
 |--------|-------------------|-------------------|---------|
 | `apps/axi-coder` | [`apps/axi-coder/package.json`](../../axi-coder/package.json) | `link:` 消费 `@axi/core`、`@axi/shell`、`@axi/tokens`（与 Dashboard 一致） | ✅ 已通过 link 消费；Registry 切流待 `WFB-PACK-002` |
-| `projects/axi-agent-platform/frontend` | [`projects/axi-agent-platform/frontend/package.json`](../../../../../projects/axi-agent-platform/frontend/package.json) | **未直接消费 `@axi/*` 包**（仅自包含依赖，无 `@axi/core/shell/tokens` 等） | ⚠️ 当前与 `axi-ui` 无 runtime 耦合；如需引入，必须先在 graph 中建立契约 |
+| `projects/axi-agent/frontend` | [`projects/axi-agent/frontend/package.json`](../../../../../projects/axi-agent/frontend/package.json) | **未直接消费 `@axi/*` 包**（仅自包含依赖，无 `@axi/core/shell/tokens` 等） | ⚠️ 当前与 `axi-ui` 无 runtime 耦合；如需引入，必须先在 graph 中建立契约 |
 | `distributions/axi-workbench-web` | [`distributions/axi-workbench-web/package.json`](../../../../../distributions/axi-workbench-web/package.json) | 顶层 `package.json` 仅声明 `turbo/typescript/sass`；`@axi/*` 消费由子包 `packages/*` 完成 | ⚠️ 顶层无 `@axi/*`；需要审计子包后才给出明确阻塞或成功证据 |
 | `distributions/axi-workbench-mobile` | [`distributions/axi-workbench-mobile/package.json`](../../../../../distributions/axi-workbench-mobile/package.json) | 顶层 `package.json` 仅声明 `turbo/typescript/sass`；未引用 `@axi/*` | ⚠️ 顶层无 `@axi/*`；需要审计子包 |
 | `distributions/axi-workbench-desktop` | [`distributions/axi-workbench-desktop/package.json`](../../../../../distributions/axi-workbench-desktop/package.json) | 顶层 `package.json` 仅声明 `turbo/typescript/sass`；未引用 `@axi/*` | ⚠️ 顶层无 `@axi/*`；需要审计子包 |

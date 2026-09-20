@@ -82,9 +82,9 @@
           "ingestion.idempotencyKey"
         ],
         "sampleRecordId": "b9b1cdab4b62b94323f964e091df9730ebaa6a8108ca93b9928584ff0f19b03a",
-        "sampleProjectId": "axi-agent-platform",
+        "sampleProjectId": "axi-agent",
         "sampleSha": "c19fb525a3aac9219b7ded4554a61a8b39ef05c8",
-        "sampleIdempotencyKey": "axi-agent-platform:c19fb525a3aac9219b7ded4554a61a8b39ef05c8"
+        "sampleIdempotencyKey": "axi-agent:c19fb525a3aac9219b7ded4554a61a8b39ef05c8"
       },
       "timestamp": "2026-09-15T02:47:28.263Z"
     },

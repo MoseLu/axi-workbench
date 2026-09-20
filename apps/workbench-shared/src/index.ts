@@ -14,7 +14,7 @@
  * - `./types`    —— 共享类型导出
  *
  * 不归这里：
- * - 任何带 fetch 的 API 客户端（请用 @epap/api-client）
+ * - 任何带 fetch 的 API 客户端（请用 @axi/api-client）
  * - 任何带路由的页面级工具（各端自管理）
  * - 任何 i18n / locale（请用 @axi/workbench-foundation）
  */

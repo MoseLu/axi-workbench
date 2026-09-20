@@ -24,8 +24,8 @@ def log(msg):
     try:
         with open(PROJECT_LOG, "a", encoding="utf-8") as f:
             f.write(line + "\n")
-    except:
-        pass
+    except Exception as ex:
+        print(f"[log] Failed to write to {PROJECT_LOG}: {ex}")
 
 
 def kill_proc_tree(pid):
@@ -33,8 +33,8 @@ def kill_proc_tree(pid):
         subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)],
                       capture_output=True,
                       creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS)
-    except:
-        pass
+    except Exception as ex:
+        print(f"[kill] Failed to kill process {pid}: {ex}")
 
 
 def get_port_in_use(port):
@@ -56,8 +56,8 @@ class ProjectManager:
             try:
                 kill_proc_tree(self.frontend_proc.pid)
                 log("[frontend] Stopped")
-            except:
-                pass
+            except Exception as ex:
+                log(f"[cleanup] Failed to stop frontend: {ex}")
 
     def start_frontend(self):
         log("Starting frontend...")

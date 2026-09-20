@@ -20,6 +20,19 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 - **Axi Dashboard Apps**：可以在 DevSvc Dashboard 中打开的应用。
 - **Axi Resources**：服务、合同、工具、shared runtime 和本地基础设施的完整能力索引。
 
+## EPAP 迁移状态（Legacy）
+
+本仓库曾使用 EPAP（Enterprise Project Automation Platform）命名体系，已完成主要迁移：
+
+| 遗留入口 | 状态 | 迁移目标 |
+|---------|------|---------|
+| `packages/epap-schemas-compat/` | **Legacy** | `@axi/workstation-contracts` |
+| `package.json --filter=@epap/*` | **Legacy** | `@axi/workstation-*` |
+| `tsconfig @epap/*` 路径别名 | **Legacy** | `@axi/*` |
+| 远端仓库 EPAP 名称 | **Transitional** | Axi 命名空间 |
+
+> **注意**: 迁移验证完成前保留兼容入口是为了确保下游消费者（如其他 Axi Dashboard Apps）平滑过渡。新的公共服务/合同包应直接使用 `@axi/workstation-control-plane`、`@axi/workstation-communication-gateway` 与 `@axi/workstation-contracts`。
+
 ## 生产后端演进（2026-08）
 
 用户应用是两个独立部署的客户端：**Web 是完整的后台管理控制中心，移动端是面向待办、告警和受控单对象执行的角色化辅助管理端**。再高专业度或物理操作保留在 DevSvc/Fleet 等专用工具中。两端拥有各自的 UI、路由和交互；共享的仅是 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。详细的产品架构、动作分级和公开案例参照见 [`docs/state/PRD.md`](docs/state/PRD.md)。
@@ -50,7 +63,7 @@ axi-workbench/
 │   ├── api-client/
 │   ├── axi-rag/                # 当前源码目录，尚未纳入根 pnpm package 生命周期
 │   ├── schemas/
-│   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口
+│   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口（**legacy**）
 │   ├── types/
 │   ├── ui/                    # legacy layout（仅 workbench 过渡期）
 │   ├── workbench-foundation/  # Web / 移动端共享认证与语言状态
@@ -117,4 +130,4 @@ make docker-backend-down
 - 本仓库是批准保留的项目级 monorepo 之一。
 - `btc-shopflow-monorepo` 已归档为 Vue/qiankun 骨架参考；本仓库不迁入其业务 app、`@btc/*` 包或品牌资产。
 - 跨项目共享能力应通过 `shared/*` 包或显式服务边界接入，而不是直接 vendoring 外部应用树。
-- 新的公共服务/合同包使用 `@axi/workstation-control-plane`、`@axi/workstation-communication-gateway` 与 `@axi/workstation-contracts`；`@epap/schemas` 仅保留为迁移兼容转发。
+- 新的公共服务/合同包使用 `@axi/workstation-control-plane`、`@axi/workstation-communication-gateway` 与 `@axi/workstation-contracts`；`@epap/schemas` **仅保留为迁移兼容转发（legacy）**。
