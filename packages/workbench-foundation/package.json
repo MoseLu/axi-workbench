@@ -17,7 +17,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/core": "workspace:*",
     "@axi/workstation-contracts": "workspace:*"
   },
   "peerDependencies": {

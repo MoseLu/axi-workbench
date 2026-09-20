@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@axi/workstation-contracts": "workspace:*",
-    "@epap/api-client": "workspace:*",
-    "@epap/types": "workspace:*",
-    "@epap/utils": "workspace:*"
+    "@axi/api-client": "workspace:*",
+    "@axi/types": "workspace:*",
+    "@axi/utils": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.2.0"
