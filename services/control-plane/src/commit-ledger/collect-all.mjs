@@ -13,7 +13,7 @@ import path from 'path';
 // Canonical 仓库列表 - 从 workspace-project 获取
 const CANONICAL_REPOS = [
   // projects 分区
-  { projectId: 'axi-agent-platform', partition: 'projects' },
+  { projectId: 'axi-agent', partition: 'projects' },
   { projectId: 'axi-docs', partition: 'projects' },
   { projectId: 'axi-image-preview', partition: 'projects' },
   { projectId: 'axi-notify', partition: 'projects' },
@@ -43,8 +43,8 @@ const CANONICAL_REPOS = [
 
 // 路径映射
 const PATH_MAP = {
-  'axi-agent-platform': '/Volumes/code/workspace/projects/axi-agent-platform',
-  'axi-docs': '/Volumes/code/workspace/projects/axi-docs',
+  'axi-agent': '/Volumes/code/workspace/projects/axi-agent',
+  'axi-docs': '/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs',
   'axi-image-preview': '/Volumes/code/workspace/projects/axi-image-preview',
   'axi-notify': '/Volumes/code/workspace/projects/axi-notify',
   'axi-pet': '/Volumes/code/workspace/projects/axi-pet',
@@ -52,8 +52,8 @@ const PATH_MAP = {
   'axi-rules': '/Volumes/code/workspace/projects/axi-rules',
   'axi-sports-management-app': '/Volumes/code/workspace/projects/axi-sports-management-app',
   'axi-workbench': '/Volumes/code/workspace/projects/axi-workbench',
-  'ai-resource-orchestration': '/Volumes/code/workspace/products/ai-resource-orchestration',
-  'axi-artboard': '/Volumes/code/workspace/products/axi-artboard',
+  'ai-resource-orchestration': '/Volumes/code/workspace/projects/axi-workbench/services/resource-gateway',
+  'axi-artboard': '/Volumes/code/workspace/projects/axi-workbench/apps/axi-artboard',
   'axi-soul-world': '/Volumes/code/workspace/products/axi-soul-world',
   'ielts-vocab': '/Volumes/code/workspace/products/ielts-vocab',
   'story-graph': '/Volumes/code/workspace/products/story-graph',

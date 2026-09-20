@@ -37,7 +37,7 @@ const implementationExtensions = new Set([
   ".tsx",
 ]);
 
-const packageLinkPattern = /(?:^|[/\\])projects[/\\](axi-agent-platform|axi-docs|axi-notify|axi-image-preview|axi-pet|axi-rules)(?:[/\\]|$)/;
+const packageLinkPattern = /(?:^|[/\\])projects[/\\](axi-agent|axi-notify|axi-image-preview|axi-pet|axi-rules)(?:[/\\]|$)/;
 const absoluteWorkspacePattern = /\/Volumes\/code\/workspace\/(?:projects|products|shared|infra|tools|references)\//;
 const relativeSiblingPattern = /\.\.\/(?:\.\.\/)*(?:projects|products|infra|tools|references)\//;
 
@@ -102,6 +102,15 @@ function inspectPackage(packageJson) {
 function inspectImplementationFile(file) {
   const relative = toRelative(file);
   if (isFixtureOrTemplate(relative)) {
+    return;
+  }
+  // `apps/axi-docs/` is an internal sub-monorepo (formerly
+  // projects/axi-docs, merged into Axi Workbench on 2026-09-20). Its
+  // own scripts and lib files are allowed to reference workspace
+  // paths because they own workspace-wide indexing / drift checks
+  // that need physical paths. The boundary check still enforces the
+  // pattern on all other apps/services/packages.
+  if (relative.startsWith("apps/axi-docs/")) {
     return;
   }
   const text = fs.readFileSync(file, "utf8");
