@@ -20,7 +20,10 @@ describe('documentSourceRegistry axi-rules', () => {
       delete process.env.AXI_RULES_PATH
       const sources = getDocumentSourceRegistry()
       const axiRules = sources.find((s) => s.id === 'axi-rules')
-      expect(axiRules?.path).toBe('/Volumes/code/workspace/projects/axi-rules')
+      // The default path is computed by detectWorkspaceRoot();
+      // verify the suffix rather than the absolute path so the
+      // test stays portable across machines.
+      expect(axiRules?.path?.endsWith(`${require('path').sep}projects${require('path').sep}axi-rules`)).toBe(true)
 
       process.env.AXI_RULES_PATH = '/custom/axi-rules'
       const sources2 = getDocumentSourceRegistry()
