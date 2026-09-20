@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  axi-docs:
+    container_name: axi-docs
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+      - MCP_HTTP_PORT=5173
+      # Blinko 配置
+      - BLINKO_URL=http://host.docker.internal:1111
+      - BLINKO_TOKEN=${BLINKO_TOKEN:-}
+      # Obsidian 配置（如需要挂载本地目录）
+      # - OBSIDIAN_PATH=/data/obsidian
+    volumes:
+      # 如需要访问本地 Obsidian Vault，取消注释
+      # - /path/to/your/obsidian:/data/obsidian:ro
+      - axi-docs-data:/app/blinko-notes
+    restart: unless-stopped
+    # 允许访问宿主机服务（如 Blinko）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  axi-docs-data:

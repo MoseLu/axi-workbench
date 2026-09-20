@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.axi-docs-token
+
+# Build outputs
+dist/
+build/
+.output/
+
+# Logs and runtime
+logs/
+*.log
+.runtime/
+.playwright-cli/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local content and scratch data
+output/
+blinko-notes/
+
+# Editor files
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

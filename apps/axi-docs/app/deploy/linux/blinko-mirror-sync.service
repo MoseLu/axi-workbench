@@ -1,0 +1,12 @@
+[Unit]
+Description=Blinko mirror sync with WebDAV
+After=network-online.target axi-docs.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/.hermes/apps/axi-docs/app
+EnvironmentFile=-/root/.hermes/apps/axi-docs/app/.env.server
+EnvironmentFile=-/etc/blinko-sync.env
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash /root/.hermes/apps/axi-docs/app/deploy/linux/blinko-nutstore-sync.sh

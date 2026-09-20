@@ -1,0 +1,8 @@
+{
+  "axi-docs": {
+    "command": "pnpm",
+    "args": ["--dir", "F:/enterprise-workspace/projects/axi-docs/app", "run", "mcp"],
+    "env": {},
+    "enabled": true
+  }
+}
