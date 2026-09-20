@@ -5,7 +5,7 @@ import {
   useDecideWorkflowEngineApproval,
   useWorkflowEngineApprovals,
   useWorkflowEngineExecution,
-} from '@epap/api-client';
+} from '@axi/api-client';
 import type { WorkflowEngineApproval, WorkflowEngineWorkflow } from '@axi/workstation-contracts';
 import { useI18n } from '../../i18n';
 import {

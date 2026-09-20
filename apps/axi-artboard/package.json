@@ -1,0 +1,43 @@
+{
+  "name": "@axi/axi-artboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:host": "vite --host",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc -b --noEmit",
+    "check:tokens": "node scripts/check-tokens.mjs",
+    "check": "pnpm lint && pnpm check:tokens && pnpm typecheck"
+  },
+  "dependencies": {
+    "@axi/artboard-vite-plugin": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.19",
+    "clsx": "^2.1.1",
+    "jsdom": "^24.0.0",
+    "oxlint": "^1.69.0",
+    "postcss": "^8.4.39",
+    "sass": "^1.77.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.21",
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,0 +1,13 @@
+/* index.scss — Layer: composed
+ *
+ * Built from the 7-1 main.scss pipeline plus all the rule fragments
+ * that belong under :root and the body-level reset that the 7-1
+ * base/ partials ship through main.scss already. By @using main.scss
+ * we get every abstract / vendor / base / layout / component / page /
+ * theme partial exactly once, in the canonical order.
+ *
+ * See src/styles/README.md (a future doc) and the @use block in
+ * src/styles/main.scss for the layer ordering.
+ */
+
+@use 'styles/main';

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "2026-06-11",
+  "generatedAt": "2026-06-11T05:34:37.955Z",
+  "source": "infra/axi-workspace-governance/workspace.json",
+  "summary": {
+    "total": 5,
+    "verified": 4,
+    "documented": 1,
+    "stale": 0,
+    "unready": 0
+  },
+  "projects": [
+    {
+      "id": "axi-docs",
+      "name": "Axi Docs",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs",
+      "kind": "project",
+      "lifecycle": "active-canonical",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/HANDOFF.md",
+      "graphId": "axi-docs",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
+      "commands": {
+        "setup": [
+          "pnpm --dir app install --frozen-lockfile"
+        ],
+        "start": [
+          "pnpm --dir app dev",
+          "pnpm --dir app mcp:http"
+        ],
+        "health": [
+          "pnpm --dir app docs:check"
+        ],
+        "verify": [
+          "pnpm --dir app verify",
+          "pnpm --dir app test:run"
+        ],
+        "smoke": [
+          "pnpm --dir app docs:check",
+          "pnpm --dir app verify"
+        ]
+      },
+      "currentWork": {
+        "todo": "TODO.md",
+        "milestone": "MILESTONE.md",
+        "active": [
+          "Keep the project documentation contract complete."
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-06-11"
+    },
+    {
+      "id": "axi-rules",
+      "name": "Axi Rules",
+      "path": "/Volumes/code/workspace/projects/axi-rules",
+      "kind": "shared",
+      "lifecycle": "active-shared-provider",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "summary": "Rule index, source lock, and TODO governance for the Axi workspace.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [],
+        "verify": [
+          "node scripts/verify-rules.mjs"
+        ],
+        "smoke": []
+      },
+      "currentWork": {
+        "active": ["Rules handoff in progress"],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-06-11"
+    },
+    {
+      "id": "axi-pet",
+      "name": "Axi Pet",
+      "path": "/Volumes/code/workspace/projects/axi-pet",
+      "kind": "project",
+      "lifecycle": "active-local",
+      "owner": "libu",
+      "readiness": "documented",
+      "score": 8,
+      "summary": "Local desktop pet companion.",
+      "commands": {
+        "verify": ["pnpm test"],
+        "smoke": []
+      },
+      "currentWork": { "active": [], "knownFailures": [] },
+      "lastVerifiedAt": "2026-06-10"
+    },
+    {
+      "id": "axi-feishu-codex-bridge",
+      "name": "Axi Feishu Codex Bridge",
+      "path": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
+      "kind": "tool",
+      "lifecycle": "active-tool-local-runtime",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 9,
+      "summary": "Feishu-to-Codex bridge for relay messages.",
+      "commands": {
+        "verify": ["pnpm test", "pnpm build"],
+        "smoke": []
+      },
+      "currentWork": { "active": [], "knownFailures": [] },
+      "lastVerifiedAt": "2026-06-11"
+    },
+    {
+      "id": "axi-registry",
+      "name": "Axi Registry",
+      "path": "/Volumes/code/workspace/infra/axi-registry",
+      "kind": "infra",
+      "lifecycle": "active-infra",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 9,
+      "summary": "Verdaccio local registry.",
+      "commands": {
+        "verify": ["pnpm --dir infra/axi-registry test"],
+        "smoke": []
+      },
+      "currentWork": { "active": [], "knownFailures": [] },
+      "lastVerifiedAt": "2026-06-11"
+    }
+  ]
+}

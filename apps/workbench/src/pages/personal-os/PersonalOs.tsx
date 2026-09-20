@@ -8,7 +8,7 @@ import {
   usePersonalOsQueue,
   useUpdatePersonalOsFocus,
   useUpdatePersonalOsProject,
-} from '@epap/api-client';
+} from '@axi/api-client';
 import type { PersonalOsLifecycle, PersonalOsView, ProjectQueueItem } from '@axi/workstation-contracts';
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { useI18n } from '../../i18n';

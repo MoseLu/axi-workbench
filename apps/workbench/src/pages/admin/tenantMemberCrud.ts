@@ -1,4 +1,4 @@
-import type { TenantMembership, TenantRole } from '@epap/api-client';
+import type { TenantMembership, TenantRole } from '@axi/api-client';
 
 /**
  * AxiCrud expects record-shaped rows.  Keep this adapter local to the desktop

@@ -34,13 +34,13 @@
     "menuGroup": "system"
   },
   {
-    "id": "axi-agent-platform",
+    "id": "axi-agent",
     "title": "Axi Agent Platform",
     "kind": "agent-runtime",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-agent-platform",
-    "dashboardRoute": "/apps/axi-agent-platform/",
+    "ownerPath": "${workspaceRoot}/projects/axi-agent",
+    "dashboardRoute": "/apps/axi-agent/",
     "capabilities": [
       "web",
       "agent-runtime",
@@ -56,7 +56,7 @@
     "kind": "knowledge-service",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-docs/app",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-docs/app",
     "dashboardRoute": "/apps/axi-docs/",
     "capabilities": [
       "web",
@@ -65,8 +65,8 @@
       "manifest",
       "search"
     ],
-    "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime.",
-    "menuGroup": "workspace-ops"
+    "notes": "Docs/Knowledge UI is hosted by the dashboard while Axi Docs remains the owner runtime. Migrated into Axi Workbench as a hosted sub-app on 2026-09-20.",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "axi-rules",
@@ -439,17 +439,18 @@
     "id": "axi-artboard",
     "title": "Axi Artboard",
     "kind": "canvas-app",
-    "surface": "resource-index",
+    "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-artboard",
-    "dashboardRoute": "/axi-resources",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-artboard",
+    "dashboardRoute": "/apps/axi-artboard/",
     "capabilities": [
       "canvas",
+      "node-picker",
+      "agent-feedback",
       "workspace-ops"
     ],
-    "notes": "Canvas workspace operations application.",
-    "visibility": "admin",
-    "menuGroup": "workspace-ops"
+    "notes": "Canvas workspace operations application; migrated into Axi Workbench as a hosted sub-app (2026-09-20).",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "ielts-vocab",
@@ -489,17 +490,19 @@
     "id": "ai-resource-orchestration",
     "title": "AI Resource Orchestration",
     "kind": "resource-orchestration",
-    "surface": "resource-index",
+    "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/ai-resource-orchestration",
-    "dashboardRoute": "/axi-resources",
+    "ownerPath": "${workspaceRoot}/projects/axi-workbench/services/resource-gateway",
+    "dashboardRoute": "/apps/resource-orchestration/",
     "capabilities": [
       "orchestration",
-      "resource-management"
+      "resource-management",
+      "gateway",
+      "memory",
+      "session"
     ],
-    "notes": "AI resource orchestration service for workspace resource management.",
-    "visibility": "admin",
-    "menuGroup": "workspace-ops"
+    "notes": "Resource orchestration gateway and workbench; merged into Axi Workbench on 2026-09-20. Gateway serves at 127.0.0.1:8787.",
+    "menuGroup": "axi-apps"
   },
   {
     "id": "sports-management",

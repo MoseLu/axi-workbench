@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useCancelAgentTask, useControlQuery, useControlSnapshot, useDecideApproval, useRunControlCommand } from '@epap/api-client';
+import { useCancelAgentTask, useControlQuery, useControlSnapshot, useDecideApproval, useRunControlCommand } from '@axi/api-client';
 import type { AgentTask, ApprovalRequest, ControlRun, LayerKind, ManagedResource, RouteBinding } from '@axi/workstation-contracts';
 
 const layerLabels: Record<LayerKind, string> = {

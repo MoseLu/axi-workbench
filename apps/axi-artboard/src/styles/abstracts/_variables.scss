@@ -1,0 +1,55 @@
+// abstracts/_variables.scss — Sass variables for the entire project.
+// Layer: abstracts (no CSS output on its own; consumed via @use).
+//
+// This file is the SCSS-side source of truth for design tokens. It
+// must stay in sync with:
+//   - src/styles/tailwind.css (Tailwind 4 @theme block)
+//   - src/styles/base/_root-vars.scss (:root CSS variables)
+//
+// See docs/process/tdd-driven-prd.md for the design-token contract.
+
+// --- Palette ----------------------------------------------------
+
+$ink-0: #0a0e14;          // deepest paper
+$ink-1: #11161f;          // side panel
+$ink-2: #161d28;          // raised surface
+$ink-3: #1d2533;          // hover surface
+
+$rule-1: #1f2937;         // hairline
+$rule-2: #2a3a52;         // visible rule
+$rule-3: #3a4d6a;         // strong rule
+
+$bone: #f4ede0;           // warm paper label bg
+$bone-soft: #ece4d3;
+$ink-text: #d8dde5;
+$ink-mute: #8896a8;
+$ink-dim: #5a6779;
+
+$pin: #7fff00;            // chartreuse — primary signal
+$pin-soft: rgba(127, 255, 0, 0.18);
+$pin-ghost: rgba(127, 255, 0, 0.06);
+$coral: #ff6b5b;          // clear / destructive
+$amber: #f5b73c;          // attention
+$steel: #4f7cff;          // accent
+$steel-soft: rgba(79, 124, 255, 0.16);
+
+// --- Type --------------------------------------------------------
+
+$font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+$font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+// --- Geometry ----------------------------------------------------
+
+$r-sm: 4px;
+$r-md: 6px;
+$r-lg: 10px;
+
+$ruler-top: 22px;
+$ruler-left: 22px;
+
+// --- Breakpoints (used by responsive mixins) ----------------------
+
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+$bp-xl: 1280px;

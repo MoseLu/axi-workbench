@@ -1,0 +1,24 @@
+@layer tokens, foundation, pages, overrides, responsive, accessibility;
+
+/* Global tokens */
+@import './foundation/tokens.css' layer(tokens);
+
+/* Shared foundation */
+@import './modules/base.css' layer(foundation);
+
+/* Page and feature modules */
+@import './modules/graph-system.css' layer(pages);
+@import './modules/workspace-views.css' layer(pages);
+@import './modules/workspace-architecture.css' layer(pages);
+@import './modules/command-center-foundation.css' layer(pages);
+@import './modules/home-cockpit.css' layer(pages);
+@import './modules/knowledge-explorer.css' layer(pages);
+@import './modules/route-pages.css' layer(pages);
+
+/* Visual overrides */
+@import './modules/cockpit-refresh.css' layer(overrides);
+@import './modules/document-route.css' layer(overrides);
+
+/* Global responsive and accessibility rules */
+@import './foundation/responsive.css' layer(responsive);
+@import './foundation/accessibility.css' layer(accessibility);

@@ -1,0 +1,25 @@
+// layout/_app-shell.scss — top-level app shell (root + main).
+// Layer: layout (output CSS).
+//
+// App.tsx also adds Tailwind utility classes inline; this SCSS file
+// is the canonical rule for external host apps that mount OverlayCanvas
+// into their own root.
+
+@use '../abstracts/variables' as v;
+
+.app-root,
+.app-root-blank {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+  position: relative;
+}
+
+.main,
+.main-blank {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}

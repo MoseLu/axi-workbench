@@ -7,7 +7,7 @@
 
 /**
  * 用户角色类型
- * 与 @epap/types/auth.ts 保持一致
+ * 与 @axi/types/auth.ts 保持一致
  */
 export type UserRole = "admin" | "developer" | "user" | "guest";
 

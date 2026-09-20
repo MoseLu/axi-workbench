@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { cn, differenceInDays, formatDate, maskEmail, slugify, truncate } from "../src/index"
 
-describe("@epap/utils", () => {
+describe("@axi/utils", () => {
   it("merges conditional Tailwind classes with the last conflicting utility", () => {
     expect(cn("px-2", false && "text-red-500", "px-4", "font-medium")).toBe("px-4 font-medium")
   })

@@ -21,7 +21,10 @@ const dashboardAppIds = [
   "axi-verification-inbox",
   "axi-docs",
   "axi-image-preview",
-  "axi-agent-platform"
+  "axi-agent",
+  "axi-artboard",
+  "axi-resource-orchestration",
+  "axi-resource-gateway"
 ];
 
 /**
@@ -147,7 +150,7 @@ test("registry loader reads the renamed dashboard config path by default", () =>
 
 test("D-level specialist entries declare owner, authorization, audit, and fallback without becoming host actions", () => {
   for (const registry of [defaultAxiAppRegistry("/workspace"), loadAxiAppRegistry("/workspace", path.join(projectRoot, "config", "axi-apps.json"))]) {
-    for (const appId of ["axi-fleet-console", "axi-coder", "axi-verification-inbox"]) {
+    for (const appId of ["axi-fleet-console", "axi-coder", "axi-verification-inbox", "axi-artboard", "axi-resource-orchestration", "axi-resource-gateway"]) {
       const boundary = registry.find((app) => app.appId === appId)?.executionBoundary;
       assert.ok(boundary?.owner, `${appId} owner`);
       assert.ok(boundary?.authorization, `${appId} authorization`);
@@ -321,7 +324,7 @@ test("startApp reports degraded state when page is accessible but readiness endp
     workspaceRoot: "/workspace",
     registry: [
       {
-        appId: "axi-agent-platform",
+        appId: "axi-agent",
         title: "Axi Agent Platform",
         cwd: "/tmp",
         defaultRoute: "/",
@@ -347,7 +350,7 @@ test("startApp reports degraded state when page is accessible but readiness endp
   try {
     // First, prove classifyHealth correctly identifies the page-only state.
     const live = await host.classifyHealth({
-      app: host.statusFor("axi-agent-platform"),
+      app: host.statusFor("axi-agent"),
       port: upstream.port
     });
     assert.equal(live.status, "page-only");
@@ -355,7 +358,7 @@ test("startApp reports degraded state when page is accessible but readiness endp
     assert.equal(live.healthOk, true);
 
     // Now drive startApp — it should converge to "degraded" once waitForReady exits.
-    const result = await host.startApp("axi-agent-platform");
+    const result = await host.startApp("axi-agent");
     assert.equal(
       result.status,
       "degraded",
@@ -368,7 +371,7 @@ test("startApp reports degraded state when page is accessible but readiness endp
     assert.deepEqual(result.healthContract, { healthPath: "/", readinessPath: "/__ready" });
   } finally {
     await upstream.close();
-    await host.stopApp("axi-agent-platform");
+    await host.stopApp("axi-agent");
   }
 });
 

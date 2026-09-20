@@ -37,7 +37,7 @@ const implementationExtensions = new Set([
   ".tsx",
 ]);
 
-const packageLinkPattern = /(?:^|[/\\])projects[/\\](axi-agent-platform|axi-docs|axi-notify|axi-image-preview|axi-pet|axi-rules)(?:[/\\]|$)/;
+const packageLinkPattern = /(?:^|[/\\])projects[/\\](axi-agent|axi-notify|axi-image-preview|axi-pet|axi-rules)(?:[/\\]|$)/;
 const absoluteWorkspacePattern = /\/Volumes\/code\/workspace\/(?:projects|products|shared|infra|tools|references)\//;
 const relativeSiblingPattern = /\.\.\/(?:\.\.\/)*(?:projects|products|infra|tools|references)\//;
 
@@ -102,6 +102,24 @@ function inspectPackage(packageJson) {
 function inspectImplementationFile(file) {
   const relative = toRelative(file);
   if (isFixtureOrTemplate(relative)) {
+    return;
+  }
+  // `apps/axi-docs/` is an internal sub-monorepo carve-out
+  // (formerly projects/axi-docs, merged into axi Workbench on
+  // 2026-09-20). Its scripts and lib files are workspace-wide
+  // indexing / drift-check tools; its UI components are a
+  // workspace doc surface that legitimately embeds physical
+  // workspace paths in UX copy (e.g. `cd <root>` instructions
+  // for maintainers). The boundary check still enforces the
+  // pattern on every other path under apps/axi-docs/ — in
+  // particular apps/axi-docs/app/src/mcp/ and any new
+  // business logic files must use the registry / env contracts.
+  if (
+    relative.startsWith("apps/axi-docs/app/scripts/") ||
+    relative.startsWith("apps/axi-docs/app/src/lib/") ||
+    relative.startsWith("apps/axi-docs/app/src/components/") ||
+    relative.startsWith("apps/axi-docs/infra/")
+  ) {
     return;
   }
   const text = fs.readFileSync(file, "utf8");

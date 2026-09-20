@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios"
-import type { ApiResponse } from "@epap/types"
+import type { ApiResponse } from "@axi/types"
 
 const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {}
 // Browser applications use a relative /api path in development and an explicit

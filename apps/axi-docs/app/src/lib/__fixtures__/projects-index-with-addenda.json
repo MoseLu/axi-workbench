@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-11T05:30:00.000Z",
+  "source": "WORKSPACE_INDEX.md",
+  "count": 3,
+  "preservedAddenda": ["dbskill"],
+  "projects": [
+    {
+      "id": "axi-workbench",
+      "name": "Axi Workbench",
+      "partition": "projects",
+      "path": "/Volumes/code/workspace/projects/axi-workbench",
+      "purpose": "Canonical workbench monorepo.",
+      "stack": "React, TypeScript, Tauri",
+      "status": "active",
+      "notes": "",
+      "section": "core"
+    },
+    {
+      "id": "axi-ui",
+      "name": "Axi UI",
+      "partition": "shared",
+      "path": "/Volumes/code/workspace/shared/axi-ui",
+      "purpose": "Shared UI package.",
+      "stack": "React, Tailwind",
+      "status": "active",
+      "notes": "",
+      "section": "shared"
+    },
+    {
+      "id": "dbskill",
+      "name": "dbskill",
+      "partition": "shared",
+      "path": "/Volumes/code/workspace/shared/dbskill",
+      "purpose": "Content-engineering skill family.",
+      "stack": "Markdown, Agent Skills",
+      "status": "hand-curated-active",
+      "notes": "Hand-curated mirror; not in WORKSPACE_INDEX.md.",
+      "section": "shared"
+    }
+  ]
+}
