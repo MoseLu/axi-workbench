@@ -10,7 +10,7 @@
 | 项目 | graph remediation_status | remediation_owner | Owner 来源 |
 |------|-------------------------|-------------------|------------|
 | `axi-workbench` | supported | libu | workspace.json registry |
-| `axi-agent-platform` | supported | libu | workspace.json registry |
+| `axi-agent` | supported | libu | workspace.json registry |
 | `axi-notify` | supported | hubu | workspace.json registry |
 | `axi-image-preview` | supported | libu | workspace.json registry |
 | `axi-pet` | supported | libu | workspace.json registry |

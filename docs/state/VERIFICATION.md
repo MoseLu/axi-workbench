@@ -45,7 +45,7 @@
 - [ ] 工作区页面完整渲染
 - [ ] 资源中心加载所有注册资源
 - [ ] Hosted App（axi-docs）可启动
-- [ ] Hosted App（axi-agent-platform）可启动
+- [ ] Hosted App（axi-agent）可启动
 - [ ] Resource Index（axi-rules）详情页可访问
 - [ ] Resource Index（axi-skills）详情页可访问
 - [ ] 全局搜索功能正常

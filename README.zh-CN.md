@@ -48,7 +48,7 @@ axi-workbench/
 │   ├── axi-rag/
 │   ├── desktop/
 │   ├── schemas/
-│   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口
+│   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口（**legacy**）
 │   ├── types/
 │   ├── ui/
 │   ├── utils/
@@ -107,4 +107,4 @@ make migrate-platform
 - 本仓库是批准保留的项目级 monorepo 之一。
 - `btc-shopflow-monorepo` 已归档为 Vue/qiankun 骨架参考；本仓库不迁入其业务 app、`@btc/*` 包或品牌资产。
 - 跨项目共享能力应通过 `shared/*` 包或显式服务边界接入，而不是直接 vendoring 外部应用树。
-- 新的公共服务/合同包使用 `@axi/workstation-control-plane`、`@axi/workstation-communication-gateway` 与 `@axi/workstation-contracts`；`@epap/schemas` 仅保留为迁移兼容转发。
+- 新的公共服务/合同包使用 `@axi/workstation-control-plane`、`@axi/workstation-communication-gateway` 与 `@axi/workstation-contracts`；`@epap/schemas` **仅保留为迁移兼容转发（legacy）**。

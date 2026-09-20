@@ -4,7 +4,7 @@
 > 工作台下的应用（`apps/*`）、服务（`services/*`）、共享包（`packages/*`）、工具（`tools/axi-app-cli/`）均有各自的子级 `AGENTS.md`；本文件不重复子目录的细节，只描述「**项目门面 + 跨项目边界 + 六层控制面（Six-Layer Control Plane）**」的运行约束。
 > **两者的关系：根级 AGENTS = 跨项目边界与六层 SOP；`apps/AGENTS.md` / `services/AGENTS.md` / `packages/AGENTS.md` / `tools/AGENTS.md` / `prompts/AGENTS.md` / `ai/AGENTS.md` = 子树内部实现与契约。** 修改 `apps/` `services/` `packages/` `tools/` `ai/` `prompts/` 任一子树前，先读对应子树的 `AGENTS.md`；任何对仓库结构、跨项目契约、六层控制面边界的判断先读本文件。
 
-*最后更新：2026-06-07 — 在保留 2026-05-30 手工维护的六层 SOP 之上，补强 Authoritative Sources / Cross-Project Boundary / Verification / House Rules 段，由 workspace-docs-gap 子代理 W1 落地。*
+*最后更新：2026-09-19 — 更新项目结构（三个 apps、三套 distributions 合并）、Verification 命令（添加 verify:ci）、添加 Recent Changes 区段。*
 
 ---
 
@@ -27,9 +27,9 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 
 | 路径 | 是否项目内 | 说明 |
 |------|------------|------|
-| `apps/` | 是 | 混合源码树：两个正式用户端（workbench Web / workbench-mobile）、Host（devsvc-dashboard）及 Hosted/垂直工具；角色与根 workspace membership 见 [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md)，子树 `apps/AGENTS.md` 详述 |
+| `apps/` | 是 | 混合源码树：三个正式用户端（workbench Web / workbench-mobile (Capacitor) / workbench-desktop (Tauri)）、Host（devsvc-dashboard）及 Hosted/垂直工具；角色与根 workspace membership 见 [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md)，子树 `apps/AGENTS.md` 详述；**axi-ui** 通过 `workspace:*` 引用 |
 | `services/` | 是 | 生产 Go API 平面、控制面、通信网关、迁移兼容服务与专职服务；不要按目录数量把它们视为同一运行时，详见 [`services/AGENTS.md`](services/AGENTS.md) |
-| `packages/` | 是 | 共享包（含 api-client / schemas / epap-schemas-compat / types / ui / utils / workbench-foundation），子树 `packages/AGENTS.md` 详述 |
+| `packages/` | 是 | 共享包（含 api-client / schemas / **epap-schemas-compat（legacy 迁移兼容）** / types / ui / utils / workbench-foundation），子树 `packages/AGENTS.md` 详述 |
 | `tools/axi-app-cli/` | 是 | Axi 应用脚手架 CLI（独立子 monorepo），以 `tools/axi-app-cli/AGENTS.md` / `README.md` 为权威入口；**不引用**子包内 `README.md` |
 | `ai/` | 是 | 知识库 / Agent Platform 集成层（`ai/AGENTS.md`） |
 | `prompts/` | 是 | Prompt 分层底座（system / global / projects），`prompts/AGENTS.md` 与 `prompts/README.md` 详述 |
@@ -86,7 +86,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 - 治理 PR 模板与发布流程：[`/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md`](/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md)、[`/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md)
 - 工作区级 i18n 总览与缺口审计：[`/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md)、[`/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md)
 - 工作区图谱 CLI：[`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project)（`deps axi-workbench` / `consumers axi-workbench` / `validate`）
-- 邻居项目（被本工作台控制面消费）：`/Volumes/code/workspace/projects/axi-notify/`、`/Volumes/code/workspace/projects/axi-pet/`、`/Volumes/code/workspace/projects/axi-agent-platform/`、`/Volumes/code/workspace/projects/axi-docs/`、`/Volumes/code/workspace/projects/axi-image-preview/`、`/Volumes/code/workspace/shared/axi-ui/`、`/Volumes/code/workspace/shared/axi-registry/`、`/Volumes/code/workspace/tools/axi-app-cli/`
+- 邻居项目（被本工作台控制面消费）：`/Volumes/code/workspace/projects/axi-notify/`、`/Volumes/code/workspace/projects/axi-pet/`、`/Volumes/code/workspace/projects/axi-agent/`、`/Volumes/code/workspace/projects/axi-docs/`、`/Volumes/code/workspace/projects/axi-image-preview/`、`/Volumes/code/workspace/shared/axi-ui/`、`/Volumes/code/workspace/shared/axi-registry/`、`/Volumes/code/workspace/tools/axi-app-cli/`
 
 ---
 
@@ -97,6 +97,9 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 ```bash
 # 跨项目契约与图谱完整性
 /Volumes/code/workspace/scripts/workspace-project validate
+
+# 整库 CI 验证（含 distributions 构建验证）
+pnpm verify:ci
 
 # 整库默认类型检查
 pnpm type-check
@@ -119,6 +122,8 @@ npm --prefix apps/verification-inbox run typecheck
 # Fleet Console
 python3 infra/fleet-console/scripts/fleetctl.py validate
 ```
+
+> **Distributions 构建统一**：所有 distributions（workbench / workbench-mobile / workbench-desktop）现已合并为统一构建流程，由 `pnpm verify:ci` 驱动 CI 验证。
 
 变更驱动的最小验证选择：
 
@@ -201,6 +206,13 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 ### manifest 状态说明
 
 `docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**（参见 `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 清单）。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的状态文档。
+
+## Recent Changes
+
+| 日期 | 变更 |
+|------|------|
+| 2026-09-19 | Distributions CI 合并入主 monorepo（workbench / workbench-mobile / workbench-desktop 三套构建流程统一） |
+| 2026-09-19 | axiom-ui 引用方式更新为 `workspace:*` 协议 |
 
 ## Relationship Metadata
 

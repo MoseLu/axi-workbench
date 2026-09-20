@@ -1,12 +1,132 @@
 # Axi Workbench PRD
 
-> 版本：v5 · 状态：产品架构已定；P1/P2 本地验收完成，公网移动访问整改待执行 · 更新：2026-09-14
+> 版本：v6 · 状态：产品架构已定；P1/P2 本地验收完成，公网移动访问整改待执行 · 更新：2026-09-17
 >
 > 本 PRD 的变更规格、公开案例研究和能力台账位于 [`docs/specs/2026-08-09-multi-surface-admin-positioning/`](../specs/2026-08-09-multi-surface-admin-positioning/)。当前源码角色仍以 [`docs/architecture/source-catalog.md`](../architecture/source-catalog.md) 为准；本文不把规划能力写成既有实现。
 
 **P0 状态（2026-08-22）**：产品架构与能力盘点已完成。详细能力台账见 [`CAPABILITY-OWNERSHIP.md`](./CAPABILITY-OWNERSHIP.md)；跨端交接协议草案见 [`HANDOFF-PROTOCOL.md`](./HANDOFF-PROTOCOL.md)。
 
-## 1. 产品决策：不是响应式后台，而是“控制—执行—专业工具”架构
+---
+
+## 0. 项目概述与工作区职责
+
+### 0.1 项目定位
+
+Axi Workbench（中文：**Axi 工作台**）是 AxiomaticWorld（公理世界）产品线的本地工作站控制面，也是 Axi 工作台大项目的权威 owner。
+
+**核心定位**：
+- 本地工作站控制平面（Control Plane）
+- Web 管理控制中心 + 移动端辅助管理端
+- 跨运行时应用 Host 与编排引擎
+- 知识型 Agent 任务的发起与管理入口
+
+**品牌语境**：
+- 父品牌：AxiomaticWorld（公理世界），域名 `axiomaticworld.com`
+- 产品前缀：Axi（用于 app id、包作用域、Dashboard 标签）
+- 中文 slogan：**以第一性原则，构建可验证的工作世界。**
+
+### 0.2 项目演进背景
+
+Axi Workbench 由以下独立根项目整合而成：
+
+| 吸收来源 | 主要职责 |
+|---------|---------|
+| Axi Workstation 控制面 | Web Portal、`IMEnvelope`、`AgentTask` 协议 |
+| DevSvc Dashboard | 本地服务管理和 Axi 应用 Host（运维壳） |
+| Axi Coder | 编码工具（可被 Host 挂载） |
+| Verification Inbox | 验证码收件箱 |
+| App Search | 嵌入式多运行时 Docs/Search 工具 |
+| Fleet Console | 物理服务层工具 |
+| Ollama Menu Assistant | macOS Swift 菜单助手 |
+| Axi App CLI | 独立嵌套 monorepo 的脚手架 CLI |
+
+### 0.3 在工作区中的职责
+
+**工作区定位图谱**：
+
+```
+/Volumes/code/workspace/
+├── projects/axi-workbench/     ★ 本项目：工作台控制面与 Dashboard 入口
+├── projects/axi-notify/        被本项目消费：通知服务
+├── projects/axi-pet/           被本项目消费：宠物/设备管理
+├── projects/axi-agent/ 被本项目消费：Agent 执行引擎
+├── projects/axi-docs/          被本项目消费：文档服务
+├── projects/axi-image-preview/  被本项目消费：图片预览服务
+├── shared/axi-ui/              被本项目消费：共享 UI 组件
+├── shared/axi-registry/        被本项目消费：服务注册表
+└── tools/axi-app-cli/         被本项目提供：脚手架能力
+```
+
+**核心职责**：
+
+| 职责域 | 说明 |
+|--------|------|
+| **Dashboard 入口** | 唯一 Web 管理控制中心，C 级复杂管理/治理只属于这里 |
+| **移动端执行端** | 唯一移动角色执行/辅助端，面向待办、告警和受控单对象执行 |
+| **应用 Host** | 本地服务管理和 Axi 应用挂载编排（非第二用户门户） |
+| **控制平面** | 标准化 `IMEnvelope` 和 `AgentTask` 协议，管理任务生命周期 |
+| **通信网关** | Route 绑定、配对、审批、幂等、回执和渠道渲染 |
+| **共享契约** | `@axi/workstation-*` 包定义的服务接口和类型系统 |
+| **Prompt 分层** | system / global / projects 三层 prompt 底座 |
+
+### 0.4 核心功能模块概览
+
+| 模块 | 路径 | 说明 |
+|------|------|------|
+| Web 管理端 | `apps/workbench` | 唯一 Web 管理控制中心 |
+| 移动端 | `apps/workbench-mobile` | Web + 原生 Android 角色执行端 |
+| DevSvc Dashboard | `apps/devsvc-dashboard` | 本地服务管理和应用 Host（运维壳） |
+| API Gateway | `services/api-gateway` | Go/Gin 唯一业务 API 入口 |
+| Identity Adapter | `services/identity-adapter` | Go/Gin Axi Identity 适配边界 |
+| Platform Core | `services/platform-core` | Go/Gin 租户与业务模块核心 |
+| Control Plane | `services/control-plane` | 控制平面编排 |
+| Communication Gateway | `services/communication-gateway` | 通信路由 |
+| Workbench Foundation | `packages/workbench-foundation` | 认证与语言状态共享 |
+
+### 0.5 技术架构
+
+**整体技术栈**：
+
+| 层次 | 技术选型 |
+|------|---------|
+| 前端 | React 18 + TypeScript + Vite + Turborepo |
+| 后端 | Go/Gin + ZITADEL OIDC；Python/Node 专职能力 |
+| AI | LangChain, Qdrant, RAG, Multi-Agent |
+| 基础设施 | PostgreSQL, Redis, Kafka, MinIO, Kubernetes, Terraform |
+
+**六层控制面架构**：
+
+Axi Workbench 采用六层控制面模型，所有工作流必须遵循此边界：
+
+| 层级 | 名称 | 拥有什么 | 不得拥有什么 |
+|------|------|---------|-------------|
+| 1 | IM 层 | 用户输入、消息展示、渠道 UX | 路由策略、业务判断、项目状态 |
+| 2 | 通信层 | RouteBinding、配对、审批 UI、幂等、回执 | Codex 执行、记忆读取、项目目录扫描 |
+| 3 | 软件层 | 项目、服务、工作流、AgentTask、运行时状态 | 物理机器所有权、密钥材料 |
+| 4 | 基础服务层 | 记忆、文档、文件、审计、工具注册表、MCP/skills | IM route 决策、项目所有权 |
+| 5 | 物理服务层 | 服务器、端口、进程、网络可达性 | 项目、工作流、用户意图 |
+| 6 | 外接能力层 | 第三方 API、托管模型、远端 Agent API | 本地项目状态、物理资源所有权 |
+
+### 0.6 包作用域
+
+| 命名空间 | 用途 | 状态 |
+|---------|------|------|
+| `@axi/workstation-control-plane` | 控制面合同 | 生产 |
+| `@axi/workstation-communication-gateway` | 通信网关合同 | 生产 |
+| `@axi/workstation-contracts` | 共享合同 | 生产 |
+| `@epap/*` | 兼容转发 | Legacy |
+
+### 0.7 EPAP 迁移状态
+
+| 遗留入口 | 状态 | 迁移目标 |
+|---------|------|---------|
+| `packages/epap-schemas-compat/` | Legacy | `@axi/workstation-contracts` |
+| `package.json --filter=@epap/*` | Legacy | `@axi/workstation-*` |
+| 远端仓库 EPAP 名称 | Transitional | Axi 命名空间 |
+
+---
+
+## 1. 产品决策：不是响应式后台，而是”控制—执行—专业工具”架构
 
 **Axi Workbench 是多端后台管理系统：Web 是完整的管理控制中心；移动端是围绕在途、值班和即时任务的角色执行端；专业运维能力留在专用工具。**
 

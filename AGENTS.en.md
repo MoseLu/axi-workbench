@@ -21,7 +21,9 @@
 
 ## Project Boundary
 
-Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canonical owner of the Axi Workbench grand project. It was formed by absorbing the original Axi Workstation control plane together with DevSvc Dashboard, Axi Coder, Verification Inbox, App Search, Fleet Console, Ollama Menu Assistant, and Axi App CLI, carrying the Web portal, `IMEnvelope`, `AgentTask`, resource snapshots, audit, artifact service boundaries, and the local workbench entry point. The remote repository name and a small set of `EPAP_*` / `@epap/*` compatibility entry points are kept until the migration verification is complete.
+Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canonical owner of the Axi Workbench grand project. It was formed by absorbing the original Axi Workstation control plane together with DevSvc Dashboard, Axi Coder, Verification Inbox, App Search, Fleet Console, Ollama Menu Assistant, and Axi App CLI, carrying the Web portal, `IMEnvelope`, `AgentTask`, resource snapshots, audit, artifact service boundaries, and the local workbench entry point.
+
+> **EPAP Legacy Note**: The remote repository name and a small set of `EPAP_*` / `@epap/*` compatibility entry points are transitional and kept only until migration verification is complete. New packages should use `@axi/workstation-*` naming.
 
 **Project boundary** (i.e. the modification radius of this agent):
 
@@ -29,7 +31,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 |------|------------|------|
 | `apps/` | yes | 6 Dashboard Apps (web-portal / devsvc-dashboard / axi-coder / verification-inbox / app-search-system / ollama-menu-assistant), detailed in subtree `apps/AGENTS.md` |
 | `services/` | yes | 8 microservices (api-gateway / auth-service / core-service / file-service / notification-service / communication-gateway / control-plane / workflow-engine), detailed in subtree `services/AGENTS.md` |
-| `packages/` | yes | 8 shared packages (api-client / axi-rag / desktop / schemas / epap-schemas-compat / types / ui / utils / web), detailed in subtree `packages/AGENTS.md` |
+| `packages/` | yes | 8 shared packages (api-client / axi-rag / desktop / schemas / **epap-schemas-compat (legacy transitional)** / types / ui / utils / web), detailed in subtree `packages/AGENTS.md` |
 | `tools/axi-app-cli/` | yes | Axi app scaffolding CLI (standalone sub-monorepo); the authoritative entry points are `tools/axi-app-cli/AGENTS.md` / `README.md`; **do not cite** sub-package `README.md` |
 | `ai/` | yes | Knowledge base / Agent Platform integration layer (`ai/AGENTS.md`) |
 | `prompts/` | yes | Prompt layered foundation (system / global / projects), detailed in `prompts/AGENTS.md` and `prompts/README.md` |
@@ -84,7 +86,7 @@ The executive overview requires that, when filling in the ROOT_AGENTS of an owne
 - Governance PR template and release process: [`/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md`](/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md), [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md)
 - Workspace-level i18n overview and gap audit: [`/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md), [`/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md)
 - Workspace graph CLI: [`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project) (`deps axi-workbench` / `consumers axi-workbench` / `validate`)
-- Neighbour projects (consumed by this workbench control plane): `/Volumes/code/workspace/projects/axi-notify/`, `/Volumes/code/workspace/projects/axi-pet/`, `/Volumes/code/workspace/projects/axi-agent-platform/`, `/Volumes/code/workspace/projects/axi-docs/`, `/Volumes/code/workspace/projects/axi-image-preview/`, `/Volumes/code/workspace/shared/axi-ui/`, `/Volumes/code/workspace/shared/axi-registry/`, `/Volumes/code/workspace/tools/axi-app-cli/`
+- Neighbour projects (consumed by this workbench control plane): `/Volumes/code/workspace/projects/axi-notify/`, `/Volumes/code/workspace/projects/axi-pet/`, `/Volumes/code/workspace/projects/axi-agent/`, `/Volumes/code/workspace/projects/axi-docs/`, `/Volumes/code/workspace/projects/axi-image-preview/`, `/Volumes/code/workspace/shared/axi-ui/`, `/Volumes/code/workspace/shared/axi-registry/`, `/Volumes/code/workspace/tools/axi-app-cli/`
 
 ---
 
