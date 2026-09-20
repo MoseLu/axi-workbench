@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { artboardVitePlugin } from '@axi/artboard-vite-plugin'
+import artboardVitePlugin from '@axi/artboard-vite-plugin'
 
 /**
  * Axi Artboard — hosted sub-app configuration.
