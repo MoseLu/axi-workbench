@@ -535,7 +535,7 @@ private data class ChineseWorkCopy(
 private val chineseWorkCatalog = mapOf(
     "axi-docs" to ChineseWorkCopy("文档与知识", "检索规范、方案与项目文档", 10),
     "axi-coder" to ChineseWorkCopy("开发与编程", "编码任务、终端与本地开发", 20),
-    "axi-agent-platform" to ChineseWorkCopy("智能体任务", "运行、调度与质量检查", 30),
+    "axi-agent" to ChineseWorkCopy("智能体任务", "运行、调度与质量检查", 30),
     "axi-rules" to ChineseWorkCopy("工作规范", "规则、流程与验收依据", 40),
     "axi-workbench" to ChineseWorkCopy("个人工作台", "项目、任务与工作区协作", 50),
     "axi-notify" to ChineseWorkCopy("消息与协作", "通知、提醒与移动工作入口", 60),
@@ -619,7 +619,7 @@ private val englishPersonalWorkbenchGroups = mapOf(
 private val personalWorkbenchGroupByProjectId = mapOf(
     "axi-docs" to PersonalWorkbenchGroupId.DAILY_WORK,
     "axi-coder" to PersonalWorkbenchGroupId.DAILY_WORK,
-    "axi-agent-platform" to PersonalWorkbenchGroupId.DAILY_WORK,
+    "axi-agent" to PersonalWorkbenchGroupId.DAILY_WORK,
     "axi-rules" to PersonalWorkbenchGroupId.DAILY_WORK,
     "axi-workbench" to PersonalWorkbenchGroupId.DAILY_WORK,
     "axi-notify" to PersonalWorkbenchGroupId.DAILY_WORK,

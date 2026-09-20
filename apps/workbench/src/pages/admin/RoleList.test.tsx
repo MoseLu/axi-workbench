@@ -12,7 +12,7 @@ const members = [
   },
 ];
 
-vi.mock('@epap/api-client', () => ({
+vi.mock('@axi/api-client', () => ({
   useCreateTenant: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useSaveTenantMember: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useTenantMembers: () => ({

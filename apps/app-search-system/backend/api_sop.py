@@ -431,7 +431,7 @@ def parse_json_field(field: str) -> list:
         return []
     try:
         return json.loads(field)
-    except:
+    except (json.JSONDecodeError, ValueError, TypeError):
         return []
 
 

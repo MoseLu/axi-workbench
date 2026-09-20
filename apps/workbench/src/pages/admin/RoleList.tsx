@@ -16,7 +16,7 @@ import {
   useTenantMembers,
   useTenants,
   type TenantRole,
-} from '@epap/api-client';
+} from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
 import { ControlPlaneState } from './ControlPlaneState';

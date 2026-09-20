@@ -235,8 +235,8 @@ def get_page_info_by_vision(image_bytes: bytes) -> dict:
                 "project": data.get("project", ""),
                 "keywords": data.get("keywords", [])
             }
-        except:
-            pass
+        except Exception as ex:
+            print(f"[build_embedding] Failed to parse job metadata: {ex}")
 
     return {"job_name": "__NO_JOB__", "part_numbers": [], "project": "", "keywords": []}
 
@@ -843,8 +843,8 @@ def search_by_job_name(
                         match_found = True
                         match_type = "part_number"
                         break
-            except:
-                pass
+            except Exception as ex:
+                print(f"[build_embedding] Failed to parse part_numbers: {ex}")
 
         # 3. 搜索项目名称
         if not match_found:
@@ -863,8 +863,8 @@ def search_by_job_name(
                         match_found = True
                         match_type = "keyword"
                         break
-            except:
-                pass
+            except Exception as ex:
+                print(f"[build_embedding] Failed to parse keywords: {ex}")
 
         if match_found and doc_id not in seen_ids:
             seen_ids.add(doc_id)
