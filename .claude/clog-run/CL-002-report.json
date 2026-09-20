@@ -102,10 +102,10 @@
       "failureReason": null
     },
     {
-      "path": "/Volumes/code/workspace/projects/axi-agent-platform",
+      "path": "/Volumes/code/workspace/projects/axi-agent",
       "branch": "feature/unified-personal-todo",
       "head": "c19fb525a3aac9219b7ded4554a61a8b39ef05c8",
-      "remote": "https://github.com/MoseLu/axi-agent-platform.git",
+      "remote": "https://github.com/MoseLu/axi-agent.git",
       "dirty": true,
       "untracked": 18,
       "commitCount": 128,
@@ -130,7 +130,7 @@
       "failureReason": null
     },
     {
-      "path": "/Volumes/code/workspace/projects/axi-agent-platform/services/agent-bff",
+      "path": "/Volumes/code/workspace/projects/axi-agent/services/agent-bff",
       "branch": "main",
       "head": "5082162f14c8439d7254a0b64f5cf6d0de59dd79",
       "remote": null,

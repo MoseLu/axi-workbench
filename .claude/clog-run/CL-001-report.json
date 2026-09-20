@@ -26,7 +26,7 @@
         "axi-docs",
         "axi-ui",
         "axi-registry",
-        "axi-agent-platform",
+        "axi-agent",
         "axi-accounts",
         "axi-notify",
         "axi-tauri-starter",
@@ -56,7 +56,7 @@
       ],
       "consumes": [
         "axi-workbench",
-        "axi-agent-platform",
+        "axi-agent",
         "axi-model-gateway",
         "axi-accounts",
         "axi-notify"
@@ -84,9 +84,9 @@
       "includedInCommitLedger": true
     },
     {
-      "projectId": "axi-agent-platform",
-      "canonicalPath": "/Volumes/code/workspace/projects/axi-agent-platform",
-      "gitRoot": "/Volumes/code/workspace/projects/axi-agent-platform",
+      "projectId": "axi-agent",
+      "canonicalPath": "/Volumes/code/workspace/projects/axi-agent",
+      "gitRoot": "/Volumes/code/workspace/projects/axi-agent",
       "owner": "libu",
       "projectKind": "axi-agent-monorepo",
       "provides": [

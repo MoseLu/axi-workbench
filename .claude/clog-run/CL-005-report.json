@@ -148,7 +148,7 @@
     },
     {
       "type": "changelog",
-      "path": "/Volumes/code/workspace/projects/axi-agent-platform/docs/state/CHANGELOG.md",
+      "path": "/Volumes/code/workspace/projects/axi-agent/docs/state/CHANGELOG.md",
       "format": "md",
       "appendable": true,
       "commitShaLinkable": true,
