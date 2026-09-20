@@ -1,43 +1,46 @@
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DesktopSettingsPage } from './DesktopSettingsPage';
 
-// react-router 7 (workbench ^7.18) requires the new data-router API
-// (createMemoryRouter + RouterProvider). The pre-existing test used
-// <StaticRouter> from react-router, which now leaves useNavigate()
-// consumers without a context. Migrating this test is a pre-existing
-// follow-up (WFB-ROUTER-001) tracked outside the baseline-merge
-// commits; the markup assertions are kept under describe.skip so
-// the test file remains in the test runner's index without
-// consuming resources on a known-bad shape.
-describe.skip('DesktopSettingsPage (skip: react-router 7 data-router migration — WFB-ROUTER-001)', () => {
+/**
+ * WFB-ROUTER-001: react-router 7 moved the location context into
+ * RouterProvider. The original test used the v6 <StaticRouter>
+ * shape which leaves useNavigate() consumers without a context.
+ *
+ * react-router 7 in jsdom under vitest 4 still raises an internal
+ * "Cannot read properties of null (reading 'unstable_runWithPriority')"
+ * during RouterProvider mount when the test environment does not
+ * pre-allocate the React scheduler hook. Switching to the
+ * jsdom-friendly entry point (createMemoryRouter + RouterProvider
+ * with the same route definition the page actually serves) gives
+ * the consumer tree a usable location. The test renders to static
+ * markup under that provider; the markup assertions match the
+ * pre-existing intent.
+ */
+describe('DesktopSettingsPage (react-router 7 data router)', () => {
   it('uses the desktop CRUD split workspace instead of the retired mobile subpage chrome', () => {
-    // Stubbed imports to keep the file type-clean while the test is
-    // skipped; restore renderToStaticMarkup / StaticRouter when the
-    // WFB-ROUTER-001 migration lands.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _renderToStaticMarkup = (_el: React.ReactNode): string => '';
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _StaticRouter = (_: { children: React.ReactNode; location: string }) => null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _DesktopSettingsPage = DesktopSettingsPage;
-    // The body below is the original assertion; it is unreachable
-    // while describe.skip is in effect.
-    if (false) {
-      const markup = _renderToStaticMarkup(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <_StaticRouter location="/admin/me/theme">
-          <_DesktopSettingsPage activeKey="/admin/me/theme" title="主题外观">
-            <div>内容</div>
-          </_DesktopSettingsPage>
-        </_StaticRouter>,
-      );
-      expect(markup).toContain('axi-filter-group');
-      expect(markup).toContain('axi-master-list');
-      expect(markup).toContain('系统设置');
-      expect(markup).not.toContain('个人中心');
-      expect(markup).not.toContain('通知中心');
-      expect(markup).not.toContain('wb-me-sub');
-    }
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/admin/me/:key',
+          element: (
+            <DesktopSettingsPage activeKey="/admin/me/theme" title="主题外观">
+              <div>内容</div>
+            </DesktopSettingsPage>
+          ),
+        },
+      ],
+      { initialEntries: ['/admin/me/theme'] },
+    );
+    const markup = renderToStaticMarkup(<RouterProvider router={router} />);
+
+    expect(markup).toContain('axi-filter-group');
+    expect(markup).toContain('axi-master-list');
+    expect(markup).toContain('系统设置');
+    expect(markup).not.toContain('个人中心');
+    expect(markup).not.toContain('通知中心');
+    expect(markup).not.toContain('wb-me-sub');
   });
 });
