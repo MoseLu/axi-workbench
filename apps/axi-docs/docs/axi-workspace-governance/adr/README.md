@@ -4,14 +4,14 @@ title: Axi Workspace ADR Index
 type: reference
 status: evergreen
 tags: [workspace, adr, governance]
-created: 2026-09-16
-modified: 2026-09-16
+created: 2026-09-21
+modified: 2026-09-21
 agent-readable: true
 ---
 
 # Axi Workspace ADR Index
 
-最后生成：2026-09-16
+最后生成：2026-09-21
 
 ## ADR 列表
 

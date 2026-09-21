@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-09-16
-modified: 2026-09-16
+created: 2026-09-21
+modified: 2026-09-21
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-09-16
+最后生成：2026-09-21
 
 ## 控制面
 
@@ -39,32 +39,28 @@ agent-readable: true
 
 ## Projects
 
-- `../../projects/axi-agent` | Axi Agent Platform | branch=`dev` | canonical=yes | compliance=`polyrepo-mixed-stack`
-  remote: https://github.com/axiomaticworld/axi-agent-platform.git
-- `../../projects/axi-docs` | Axi Docs | branch=`codex/sync-axi-soul-world-dossier-20260824` | canonical=yes | compliance=`node-single-repo`
-  remote: https://github.com/axiomaticworld/axi-docs.git
 - `../../projects/axi-image-preview` | Axi Image Preview | branch=`dev` | canonical=yes | compliance=`node-single-repo`
-  remote: https://github.com/axiomaticworld/axi-image-preview.git
+  remote: https://github.com/MoseLu/axi-image-preview.git
+- `../../projects/axi-kernel` | Axi Kernel | branch=`dev` | canonical=yes | compliance=`object-registry`
+  remote: https://github.com/MoseLu/axi-kernel.git
 - `../../projects/axi-notify` | Axi Notify | branch=`dev` | canonical=yes | compliance=`android-fullstack`
-  remote: https://github.com/axiomaticworld/axi-notify.git
+  remote: https://github.com/MoseLu/axi-notify.git
 - `../../projects/axi-pet` | Axi Pet | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
+  upstream: https://github.com/moeru-ai/airi.git
 - `../../projects/axi-pet-desktop` | Axi Pet Desktop | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
 - `../../projects/axi-sports-management-app` | 体育管理应用 | branch=`dev` | canonical=yes | compliance=`polyrepo-mixed-stack`
-  remote: https://github.com/axiomaticworld/sports-management-app.git
+  remote: https://github.com/MoseLu/axi-sports-management-app.git
 - `../../projects/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
-  remote: https://github.com/axiomaticworld/axi-workbench.git
+  remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
 
-- `../../products/ai-resource-orchestration` | 资源调度中心 | branch=`fix/image-search-pagination` | canonical=yes | compliance=`node-monorepo-approved`
-- `../../products/axi-artboard` | Axi Artboard | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
-  remote: https://github.com/MoseLu/axi-artboard.git
 - `../../products/axi-soul-world` | Axi Soul World | branch=`lane-c/web-admin-resource-search` | canonical=yes | compliance=`android-fullstack`
   remote: https://github.com/MoseLu/Axi-Soul-World.git
 - `../../products/ielts-vocab` | IELTS Vocabulary | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
-  remote: https://github.com/axiomaticworld/ielts-vocab.git
+  remote: https://github.com/MoseLu/ielts-vocab.git
 - `../../products/story-graph` | Story Graph | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/story-graph.git
 
@@ -75,23 +71,18 @@ agent-readable: true
 - `../../shared/axi-skills` | Axi Skills | branch=`dev` | canonical=yes | compliance=`agent-skill-catalog`
   remote: https://github.com/MoseLu/axi-skills.git
 - `../../shared/axi-tauri-starter` | Axi Tauri Starter | branch=`dev` | canonical=yes | compliance=`template-reference`
-  remote: https://github.com/axiomaticworld/axi-tauri-starter.git
+  remote: https://github.com/MoseLu/axi-tauri-starter.git
 - `../../shared/axi-ui` | Axi UI | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
-  remote: https://github.com/axiomaticworld/axi-ui.git
+  remote: https://github.com/MoseLu/axi-ui.git
 
 ## Tools
 
-- `../../references/archives/axi-video-downloader-2026-09-17` | Axi Video Downloader | branch=`dev` | canonical=yes | compliance=`python-tool`
-  remote: https://github.com/MoseLu/Axi-Video-Downloader.git
 - `../../tools/axi-feishu-codex-bridge` | Axi Feishu Codex Bridge | branch=`dev` | canonical=yes | compliance=`python-tool-local-runtime`
   remote: https://github.com/MoseLu/axi-feishu-codex-bridge.git
-- `../../tools/axi-proxy-companion` | Axi Proxy Companion | branch=`dev` | canonical=yes | compliance=`swift-tool`
-  remote: https://github.com/axiomaticworld/axi-proxy-companion.git
 
 ## 已批准项目级 Monorepo
 
 - `../../projects/axi-workbench`
-- `../../projects/axi-docs`
 - `../../projects/axi-pet`
 - `../../products/ielts-vocab`
 - `../../shared/axi-ui`

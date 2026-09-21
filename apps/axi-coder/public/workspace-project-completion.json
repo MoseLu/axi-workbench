@@ -1,22 +1,22 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-09-20T03:54:16.754Z",
+  "generatedAt": "2026-09-21T01:31:35.680Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 39,
+    "total": 38,
     "axiTotal": 22,
     "complete": 1,
     "usableOrBetter": 12,
     "blocked": 0,
     "byStage": {
-      "unassessed": 26,
+      "unassessed": 25,
       "usable": 10,
       "complete": 1,
       "building": 1,
       "maintenance": 1
     },
     "byConfidence": {
-      "low": 20,
+      "low": 19,
       "high": 9,
       "medium": 10
     }
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -148,65 +148,6 @@
       ]
     },
     {
-      "id": "axi-artboard",
-      "name": "Axi Artboard",
-      "path": "/Volumes/code/workspace/products/axi-artboard",
-      "kind": "product",
-      "isAxi": true,
-      "stage": "unassessed",
-      "stageLabel": "未评估",
-      "confidence": "low",
-      "confidenceLabel": "低",
-      "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
-      "evidence": [
-        "docs:partial",
-        "handoff:verified",
-        "verify:pnpm build | pnpm dev",
-        "health:test -f package.json",
-        "contracts:3",
-        "package-scripts:test,build"
-      ],
-      "remaining": [
-        "补齐 TODO.md，让待办和里程碑可审计。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
-      ],
-      "docs": {
-        "status": "partial",
-        "present": [
-          "README.md",
-          "AGENTS.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
-        ],
-        "missing": [
-          "CHANGELOG.md",
-          "TODO.md",
-          "MILESTONE.md",
-          "docs/PRD.md",
-          "docs/TDD.md"
-        ]
-      },
-      "handoff": {
-        "status": "verified",
-        "score": 10,
-        "errors": []
-      },
-      "verify": [
-        "pnpm build",
-        "pnpm dev"
-      ],
-      "health": [
-        "test -f package.json"
-      ],
-      "contracts": [
-        "README.md",
-        "AGENTS.md",
-        "package.json"
-      ]
-    },
-    {
       "id": "axi-coder",
       "name": "Axi Coder",
       "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
@@ -273,61 +214,6 @@
       ]
     },
     {
-      "id": "axi-docs",
-      "name": "Axi Docs",
-      "path": "/Volumes/code/workspace/projects/axi-docs",
-      "kind": "shared-docs-hub",
-      "isAxi": true,
-      "stage": "unassessed",
-      "stageLabel": "未评估",
-      "confidence": "low",
-      "confidenceLabel": "低",
-      "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
-      "evidence": [
-        "docs:partial",
-        "handoff:verified",
-        "verify:pnpm --dir app docs:check | pnpm --dir app source:check | pnpm --dir app verify",
-        "health:test -f app/package.json",
-        "contracts:2"
-      ],
-      "remaining": [],
-      "docs": {
-        "status": "partial",
-        "present": [
-          "README.md",
-          "AGENTS.md",
-          "CHANGELOG.md",
-          "TODO.md",
-          "MILESTONE.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
-        ],
-        "missing": [
-          "docs/PRD.md",
-          "docs/TDD.md"
-        ]
-      },
-      "handoff": {
-        "status": "verified",
-        "score": 10,
-        "errors": []
-      },
-      "verify": [
-        "pnpm --dir app docs:check",
-        "pnpm --dir app source:check",
-        "pnpm --dir app verify"
-      ],
-      "health": [
-        "test -f app/package.json"
-      ],
-      "contracts": [
-        "README.md",
-        "app/package.json"
-      ]
-    },
-    {
       "id": "axi-feishu-codex-bridge",
       "name": "Axi Feishu Codex Bridge",
       "path": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
@@ -338,7 +224,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -452,6 +338,53 @@
         "src",
         "data/wallpaper-sections.json"
       ]
+    },
+    {
+      "id": "axi-kernel",
+      "name": "Axi Kernel",
+      "path": "/Volumes/code/workspace/projects/axi-kernel",
+      "kind": "object-registry",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:verified"
+      ],
+      "remaining": [
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
     },
     {
       "id": "axi-model-gateway",
@@ -813,7 +746,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -843,7 +776,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 34 days old (max 30)"
+          "verification is stale: 35 days old (max 30)"
         ]
       },
       "verify": [
@@ -1023,7 +956,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1209,6 +1142,53 @@
         "services/control-plane/src/control-plane.mjs",
         "services/workflow-engine/services/executor.py"
       ]
+    },
+    {
+      "id": "axi-workbench-cli",
+      "name": "AXI Personal OS Workbench CLI",
+      "path": "/Volumes/code/workspace/projects/axi-workbench-cli",
+      "kind": "personal-os-cli",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:verified"
+      ],
+      "remaining": [
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
     },
     {
       "id": "axi-workbench-desktop-dist",
@@ -1501,7 +1481,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1548,66 +1528,6 @@
       ]
     },
     {
-      "id": "ai-resource-orchestration",
-      "name": "AI Resource Orchestration",
-      "path": "/Volumes/code/workspace/products/ai-resource-orchestration",
-      "kind": "product",
-      "isAxi": false,
-      "stage": "unassessed",
-      "stageLabel": "未评估",
-      "confidence": "low",
-      "confidenceLabel": "低",
-      "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
-      "evidence": [
-        "docs:partial",
-        "handoff:verified",
-        "verify:pnpm typecheck | pnpm test",
-        "health:test -f package.json | test -d apps/gateway",
-        "contracts:3",
-        "package-scripts:test,build"
-      ],
-      "remaining": [
-        "补齐 TODO.md，让待办和里程碑可审计。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。"
-      ],
-      "docs": {
-        "status": "partial",
-        "present": [
-          "README.md",
-          "AGENTS.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
-        ],
-        "missing": [
-          "CHANGELOG.md",
-          "TODO.md",
-          "MILESTONE.md",
-          "docs/PRD.md",
-          "docs/TDD.md"
-        ]
-      },
-      "handoff": {
-        "status": "verified",
-        "score": 10,
-        "errors": []
-      },
-      "verify": [
-        "pnpm typecheck",
-        "pnpm test"
-      ],
-      "health": [
-        "test -f package.json",
-        "test -d apps/gateway"
-      ],
-      "contracts": [
-        "README.md",
-        "packages/contracts/src/gateway.ts",
-        "apps/gateway/src/composition.ts"
-      ]
-    },
-    {
       "id": "android-page-patrol",
       "name": "Android Page Patrol",
       "path": "/Volumes/code/workspace/tools/android-page-patrol",
@@ -1618,7 +1538,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:legacy",
         "handoff:unready",
@@ -1677,7 +1597,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1736,7 +1656,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1847,7 +1767,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1905,7 +1825,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2012,7 +1932,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2072,7 +1992,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2133,7 +2053,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2190,7 +2110,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2247,7 +2167,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2311,7 +2231,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2440,7 +2360,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-20T03:54:16.754Z",
+      "updatedAt": "2026-09-21T01:31:35.680Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",

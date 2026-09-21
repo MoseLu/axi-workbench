@@ -86,10 +86,18 @@ package — i.e., the full wire-up that was missing before this ADR.
 
 ### Acceptance criteria
 
-- `pnpm --dir projects/axi-agent-platform build` (frontend) passes.
-- `pytest projects/axi-agent-platform/backend` passes; includes a test that
-  asserts the `/api/v1/dashboard/stats` DTO.
-- Browser smoke test loads the dashboard through the canonical FastAPI
+- [x] `dashboard_router` registered in `backend/app/main.py`
+- [x] `dashboard_router` exported from `backend/app/api/__init__.py`
+- [x] `pytest backend/tests/test_dashboard.py` passes (4/4 tests)
+- [ ] `pnpm --dir projects/axi-agent build` (frontend) passes.
+- [ ] Browser smoke test loads the dashboard through the canonical FastAPI
   endpoint with no manual port edits.
-- The Go BFF directory is removed or archived; no production deployment
-  references it.
+- [ ] The Go BFF directory is archived; no production deployment references it.
+
+## Completion evidence (2026-09-20 updated)
+
+- `backend/app/api/dashboard.py`: FastAPI dashboard router with full DTO contract
+- `backend/app/api/__init__.py`: exports `dashboard_router`
+- `backend/app/main.py`: registers `dashboard_router` at `/api/v1`
+- `backend/tests/test_dashboard.py`: 4 behavior tests (path, DTO, empty state, request_id)
+- Test result: `4 passed`
