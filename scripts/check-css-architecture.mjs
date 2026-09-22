@@ -74,6 +74,11 @@ const summary = {
 
 console.log(JSON.stringify({ summary, duplicatedTokens: duplicates.slice(0, 40), findings: findings.slice(0, 120) }, null, 2));
 
+if (summary.important > 0) {
+  console.error(`CSS architecture check failed: ${summary.important} !important declarations remain.`);
+  process.exitCode = 1;
+}
+
 if (process.argv.includes('--strict') && duplicates.length > 0) {
   console.error(`CSS architecture check failed: ${duplicates.length} tokens are declared in multiple style files.`);
   process.exitCode = 1;

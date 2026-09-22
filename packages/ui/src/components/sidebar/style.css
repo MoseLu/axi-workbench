@@ -8,7 +8,7 @@
 
 .mpms-menu.is-collapsed .mpms-menu__item {
   justify-content: center;
-  padding: 0 !important;
+  padding: 0;
 }
 
 .mpms-menu__item {

@@ -8,7 +8,7 @@
 }
 
 .iconfont-sys {
-  font-family: 'iconfont-sys' !important;
+  font-family: 'iconfont-sys';
   font-size: var(--axi-font-size-md, 16px);
   font-style: normal;
   -webkit-font-smoothing: antialiased;

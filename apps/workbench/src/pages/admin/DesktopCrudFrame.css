@@ -184,7 +184,7 @@
 
 /* 表格内分页贴 Cool Admin：右对齐、共 N 条 */
 .wb-crud-page .ant-pagination {
-  margin: var(--axi-space-3, 12px) var(--axi-space-3, 12px) var(--axi-space-1, 4px) !important;
+  margin: var(--axi-space-3, 12px) var(--axi-space-3, 12px) var(--axi-space-1, 4px);
   justify-content: flex-end;
 }
 

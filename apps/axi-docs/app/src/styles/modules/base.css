@@ -336,7 +336,7 @@ a, button { touch-action: manipulation; }
 .heading-anchor {
   position: absolute; left: -22px; top: 50%; transform: translateY(-50%);
   width: 18px; text-align: right; font-size: 0.8em; font-weight: 400;
-  color: var(--color-text-subtle); opacity: 0; text-decoration: none !important;
+  color: var(--color-text-subtle); opacity: 0; text-decoration: none;
   transition: opacity var(--transition); user-select: none;
 }
 .markdown-body h1 .heading-anchor { top: 42%; }
@@ -410,7 +410,7 @@ a, button { touch-action: manipulation; }
   white-space: nowrap;
 }
 .copy-btn:hover { color: #e5e5e5; border-color: #6d6d6d; background: #3d3d3d; }
-.copy-btn--copied { color: #30d158 !important; border-color: #30d158 !important; background: rgba(48,209,88,0.1) !important; }
+.copy-btn--copied { color: #30d158; border-color: #30d158; background: rgba(48,209,88,0.1); }
 
 .code-block pre {
   margin: 0; padding: 16px 20px; overflow-x: auto; scrollbar-width: thin;

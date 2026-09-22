@@ -162,7 +162,7 @@ html[data-axi-docs-theme='light'] .app-main--document {
 .axi-theme-switching .app-layout--home .header-search--global,
 .axi-theme-switching .app-layout--home .header-search__trigger,
 .axi-theme-switching .app-layout--home .header-search__trigger * {
-  transition: none !important;
+  transition: none;
 }
 
 .header-vp-nav {
@@ -1294,9 +1294,9 @@ html[data-axi-docs-theme='light'] .app-main--document {
 }
 
 .document-detail-page__reader .copy-btn--copied {
-  color: #3dd68c !important;
-  border-color: rgba(61, 214, 140, 0.42) !important;
-  background: rgba(61, 214, 140, 0.12) !important;
+  color: #3dd68c;
+  border-color: rgba(61, 214, 140, 0.42);
+  background: rgba(61, 214, 140, 0.12);
 }
 
 .document-detail-page__reader .code-block pre {

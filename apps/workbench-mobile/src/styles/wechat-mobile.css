@@ -545,7 +545,7 @@ body {
 .axi-mobile-login__form > button { border-radius: 7px; background: var(--wb-success); box-shadow: none; }
 .axi-mobile-login__error { color: var(--wb-badge); }
 .axi-mobile-login__link, .axi-mobile-login__file { display: block; color: var(--wb-success); font-size: 13px; text-align: center; cursor: pointer; }
-.axi-mobile-login__secondary { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--wb-success) !important; background: transparent !important; }
+.axi-mobile-login__secondary { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--wb-success); background: transparent; }
 .wb-login-confirm-video { display: block; width: 100%; min-height: 180px; border-radius: 8px; background: var(--axi-bg-elevated, #171717); object-fit: cover; }
 
 /* ── 扫一扫：独立全屏，不与常驻顶部或底栏竞争空间。 ── */

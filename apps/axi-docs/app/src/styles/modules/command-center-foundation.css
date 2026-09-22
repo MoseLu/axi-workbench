@@ -259,7 +259,7 @@ body {
 }
 
 .header-search-modal__field .header-search-input:focus-visible {
-  outline: 0 !important;
+  outline: 0;
   outline-offset: 0;
 }
 

@@ -628,17 +628,17 @@ body {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
   }
 }
 
 /* TitleBar 关闭按钮 hover */
 .title-bar-btn-close:hover {
-  background: var(--error) !important;
-  color: var(--text-inverse) !important;
+  background: var(--error);
+  color: var(--text-inverse);
 }
 
 /* 侧边栏导航按钮 */
@@ -651,17 +651,17 @@ body {
 
 /* Dashboard 浏览按钮 hover */
 .browse-btn:hover {
-  background: var(--shadow) !important;
+  background: var(--shadow);
 }
 
 /* DisplayApp 退出按钮 hover */
 .quit-btn:hover {
-  background: var(--error-light) !important;
+  background: var(--error-light);
 }
 
 /* JobAutocomplete 建议项 hover */
 .job-suggest-item:hover {
-  background: var(--bg-tertiary) !important;
+  background: var(--bg-tertiary);
 }
 
 /* SearchBox spinner — 符合 prefers-reduced-motion */
