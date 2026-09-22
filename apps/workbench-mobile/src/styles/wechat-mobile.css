@@ -26,12 +26,7 @@ body {
   --wb-success: var(--axi-success, #07c160);
   --wb-badge: var(--axi-danger, #fa5151);
   --wb-bottom-height: 60px;
-  --mobile-canvas: var(--wb-page);
-  --mobile-surface: var(--wb-surface);
-  --mobile-surface-soft: var(--wb-surface);
-  --mobile-text: var(--wb-ink);
-  --mobile-muted: var(--wb-ink-muted);
-  --mobile-border: var(--wb-divider);
+  /* Shared mobile tokens are owned by index.css; only the WeChat accent is local. */
   --mobile-primary: var(--wb-success);
   --mobile-primary-soft: color-mix(in srgb, var(--wb-success) 12%, transparent);
   display: flex;

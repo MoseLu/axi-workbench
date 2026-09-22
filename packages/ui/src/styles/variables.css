@@ -1,5 +1,9 @@
 /* ========== Axi UI Design Tokens ==========
  *
+ * @deprecated Legacy compatibility aliases. New styles must use --axi-* tokens
+ * from @axi/tokens. This file is retained only while the legacy package is
+ * migrated; do not add new --mpms-* definitions here.
+ *
  * 默认主题 = 深色（对齐 COOL-ADMIN 工作台基线）：
  *   layout-bg / sidebar-bg / header-bg / tabbar-bg / content-bg 全部走深色
  *   sidebar 文本使用浅色，确保对比度
@@ -23,32 +27,32 @@
   --mpms-right-sidebar-width: 46px;
 
   /* ───────── Primary / Accent ───────── */
-  --mpms-primary-color: #4165d7;
-  --mpms-primary-color-hover: #5a7de0;
-  --mpms-primary-color-active: #3451b8;
-  --mpms-danger-color: #f56c6c;
+  --mpms-primary-color: var(--axi-primary, #E5B94A);
+  --mpms-primary-color-hover: var(--axi-primary-hover, #F0CB6E);
+  --mpms-primary-color-active: var(--axi-primary-hover, #F0CB6E);
+  --mpms-danger-color: var(--axi-danger, #EF4444);
 
   /* ───────── Layout surfaces (DARK default) ───────── */
-  --mpms-layout-bg: #0a0a0a;
-  --mpms-sidebar-bg: #141517;
-  --mpms-header-bg: #0a0a0a;
-  --mpms-tabbar-bg: #0a0a0a;
-  --mpms-content-bg: #141414;
-  --mpms-content-elevated: #1e1e1e;
-  --mpms-right-sidebar-bg: #0a0a0a;
-  --mpms-border-color: #2b2b2c;
+  --mpms-layout-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-sidebar-bg: var(--axi-bg-surface, #141414);
+  --mpms-header-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-tabbar-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-content-bg: var(--axi-bg-surface, #141414);
+  --mpms-content-elevated: var(--axi-bg-elevated, #262626);
+  --mpms-right-sidebar-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-border-color: var(--axi-border, #303030);
 
   /* ───────── Sidebar text (高对比度) ───────── */
-  --mpms-sidebar-text-primary: #f5f6f8;
-  --mpms-sidebar-text-secondary: #b3b8c2;
-  --mpms-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --mpms-sidebar-text-primary: var(--axi-text, #F1F5F9);
+  --mpms-sidebar-text-secondary: var(--axi-text-muted, #94A3B8);
+  --mpms-sidebar-hover-bg: var(--axi-bg-elevated, rgba(255, 255, 255, 0.06));
 
   /* ───────── General text (主区域) ───────── */
-  --mpms-text-primary: rgba(255, 255, 255, 0.88);
-  --mpms-text-secondary: rgba(255, 255, 255, 0.55);
+  --mpms-text-primary: var(--axi-text, #F1F5F9);
+  --mpms-text-secondary: var(--axi-text-secondary, #CBD5E1);
   --mpms-text-tertiary: rgba(255, 255, 255, 0.32);
   --mpms-text-disabled: rgba(255, 255, 255, 0.18);
-  --mpms-hover-bg: rgba(255, 255, 255, 0.06);
+  --mpms-hover-bg: var(--axi-bg-elevated, rgba(255, 255, 255, 0.06));
 
   /* ───────── Topbar aliases ───────── */
   --mpms-topbar-bg: var(--mpms-header-bg);
