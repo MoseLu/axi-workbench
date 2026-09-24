@@ -97,15 +97,16 @@
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.
 
+
 ## Ahead-batch snapshot (2026-09-24)
 
 - Branch: `dev`
 - Upstream: `origin/dev`
-- Ahead commits: 15
+- Ahead commits: 16
 - Per v2.1 PRD §4 batch-separation rule:
   - governance batch: 1
-  - docs batch: 8 (含本次 docs(handoff) commit)
+  - docs batch: 9
   - product batch (feat/fix/refactor): 1
-  - other (submit logs, agent sessions, etc.): 5
+  - other: 5
 - Next verification gate (project-local): `pnpm --filter @axi/workbench type-check && pnpm --filter @axi/workbench test && pnpm --filter @axi/workbench build`
 - Push strategy: owner decides; agent does not auto-push.

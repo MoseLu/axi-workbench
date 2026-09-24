@@ -48,3 +48,17 @@ rm docs/commit-ledger-*.md
 ## 活跃工作区 (待补充)
 
 参见 `docs/state/CHANGELOG.md` 获取完整历史变更。
+
+
+## Ahead-batch snapshot (2026-09-24)
+
+- Branch: `dev`
+- Upstream: `origin/dev`
+- Ahead commits: 16
+- Per v2.1 PRD §4 batch-separation rule:
+  - governance batch: 1
+  - docs batch: 9
+  - product batch (feat/fix/refactor): 1
+  - other: 5
+- Next verification gate (project-local): `pnpm --filter @axi/workbench type-check && pnpm --filter @axi/workbench test && pnpm --filter @axi/workbench build`
+- Push strategy: owner decides; agent does not auto-push.

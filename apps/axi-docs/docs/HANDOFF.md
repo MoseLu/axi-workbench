@@ -1,7 +1,7 @@
 # Axi Docs Handoff
 
 - Project: `axi-docs`
-- Path: `/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs`
+- Path: `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs`
 - Owner: `AxiomaticWorld workspace owner`
 - Readiness: `verified`
 - Purpose: Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.
@@ -84,3 +84,17 @@
 - Evidence: `The governance documentation gate exited successfully on 2026-06-11.`, `The production build exited successfully on 2026-06-11.`, `Manifest JSON and all declared relative paths were checked on 2026-06-11.`
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.
+
+
+## Ahead-batch snapshot (2026-09-24)
+
+- Branch: `dev`
+- Upstream: `origin/dev`
+- Ahead commits: 16
+- Per v2.1 PRD §4 batch-separation rule:
+  - governance batch: 1
+  - docs batch: 9
+  - product batch (feat/fix/refactor): 1
+  - other: 5
+- Next verification gate (project-local): `pnpm --filter @axi/workbench type-check && pnpm --filter @axi/workbench test && pnpm --filter @axi/workbench build`
+- Push strategy: owner decides; agent does not auto-push.
