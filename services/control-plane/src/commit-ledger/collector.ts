@@ -157,7 +157,7 @@ const CANONICAL_REPOS: RepoConfig[] = [
 // 路径映射
 const PATH_MAP: Record<string, string> = {
   'axi-workbench': '/Volumes/code/workspace/projects/axi-workbench',
-  'axi-docs': '/Volumes/code/workspace/projects/axi-docs',
+  'axi-docs': '/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs',
   'axi-image-preview': '/Volumes/code/workspace/projects/axi-image-preview',
   'axi-pet': '/Volumes/code/workspace/projects/axi-pet',
   'axi-rules': '/Volumes/code/workspace/projects/axi-rules',
