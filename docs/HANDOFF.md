@@ -1,7 +1,7 @@
 # Axi Workbench Handoff
 
 - Project: `axi-workbench`
-- Path: `/Volumes/code/workspace/projects/axi-workbench`
+- Path: `/Volumes/code/workspace/workbench/axi-workbench`
 - Owner: `Axi Core Projects`
 - Readiness: `verified`
 - Purpose: Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.
