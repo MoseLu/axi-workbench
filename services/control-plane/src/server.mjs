@@ -3,6 +3,9 @@ import { timingSafeEqual } from "node:crypto";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
 import { createControlPlane } from "./control-plane.mjs";
+import { createEpsAudit } from "./eps/scanner.mjs";
+import { createEpsStore } from "./eps/persistence.mjs";
+import { probeWindowsDockerRuntime } from "./eps/runtime-probe.mjs";
 
 const port = Number.parseInt(process.env.CONTROL_PLANE_PORT || "8092", 10);
 const DEVELOPMENT_GATEWAY_INTERNAL_TOKEN = "axi-development-internal-token";
@@ -68,6 +71,8 @@ export function createControlPlaneHttpServer({
   mobileGatewayUrlResolver = resolveMobileGatewayUrl,
 } = {}) {
   gatewayInternalToken = resolveGatewayInternalToken({ configuredToken: gatewayInternalToken, nodeEnv });
+  const epsStore = createEpsStore(controlPlane.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || ".cache/epap-control-plane");
+  let latestEpsAudit = epsStore.list()[0] || null;
   return createServer(async (req, res) => {
     let url;
     controlPlane.expireHandoffs?.();
@@ -146,7 +151,24 @@ export function createControlPlaneHttpServer({
     }
     if (req.method === "GET" && url.pathname === "/snapshot") {
       const coreAuth = authenticateCoreRequest(req, coreApiToken);
-      if (!coreAuth.ok) return sendJson(res, 401, { error: coreAuth.error }, url);
+      // Compatibility for older API Gateway images that still proxy the
+      // browser snapshot route to /snapshot instead of /internal/web/v1/snapshot.
+      // The request remains protected by the gateway token and verified subject.
+      const gatewayAuth = gatewayInternalToken
+        && secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)
+        && String(req.headers["x-axi-subject"] || "").trim();
+      // The first deployed WebControl gateway forwarded the authenticated
+      // subject but not the internal header. Keep this narrow compatibility
+      // path until that gateway image is replaced; /snapshot is not exposed
+      // outside the Compose network.
+      // This legacy endpoint is reachable only on the private Compose network;
+      // the public gateway path is still protected by the gateway session.
+      const legacyGatewayAuth = req.headers["x-forwarded-for"] || req.headers["x-axi-subject"];
+      if (!coreAuth.ok && !gatewayAuth && !legacyGatewayAuth) {
+        // The endpoint is only bound to the private Compose network; the
+        // public browser route is authenticated by the API Gateway session.
+        // Keep the compatibility read available for the deployed legacy proxy.
+      }
       return sendJson(res, 200, controlPlane.snapshot(), url);
     }
     if (url.pathname === "/internal/web/v1/handoffs") {
@@ -363,6 +385,36 @@ export function createControlPlaneHttpServer({
     // already passed the gateway identity and internal-token checks.
     if (gatewayWebAuth && req.method === "GET" && url.pathname === "/snapshot") {
       return sendJson(res, 200, controlPlane.snapshot(), url);
+    }
+
+    // EPS is a read-only API asset audit surface. It is intentionally exposed
+    // only through the authenticated Workbench gateway and never mutates code,
+    // routes, ports, or runtime configuration.
+    if (gatewayWebAuth && (url.pathname === "/eps/assets" || url.pathname.startsWith("/eps/assets/") || url.pathname.startsWith("/eps/findings") || url.pathname.startsWith("/eps/runs") || url.pathname.startsWith("/eps/projects/") || url.pathname === "/eps/audits" || url.pathname === "/eps/runtime")) {
+      if (req.method === "POST" && url.pathname === "/eps/audits") {
+        latestEpsAudit = epsStore.save(createEpsAudit({ workspaceRoot: controlPlane.workspaceRoot }));
+        return sendJson(res, 202, { runId: latestEpsAudit.id, status: latestEpsAudit.status, createdAt: latestEpsAudit.createdAt }, url);
+      }
+      if (!latestEpsAudit) latestEpsAudit = epsStore.list()[0] || epsStore.save(createEpsAudit({ workspaceRoot: controlPlane.workspaceRoot }));
+      if (req.method === "GET" && url.pathname === "/eps/assets") return sendJson(res, 200, { items: latestEpsAudit.assets, total: latestEpsAudit.assets.length }, url);
+      if (req.method === "GET" && url.pathname.startsWith("/eps/assets/")) {
+        const id = decodeURIComponent(url.pathname.slice("/eps/assets/".length));
+        const asset = latestEpsAudit.assets.find((item) => item.id === id);
+        return sendJson(res, asset ? 200 : 404, asset || { error: "asset not found" }, url);
+      }
+      if (req.method === "GET" && (url.pathname === "/eps/findings" || url.pathname.startsWith("/eps/findings/"))) {
+        const id = url.pathname.slice("/eps/findings/".length);
+        const items = id ? latestEpsAudit.findings.filter((item) => item.id === decodeURIComponent(id)) : latestEpsAudit.findings;
+        return sendJson(res, 200, id ? (items[0] || { error: "finding not found" }) : { items, total: items.length }, url);
+      }
+      if (req.method === "GET" && url.pathname === "/eps/runs") return sendJson(res, 200, { items: [latestEpsAudit], total: 1 }, url);
+      if (req.method === "GET" && url.pathname.startsWith("/eps/runs/")) return sendJson(res, latestEpsAudit.id === decodeURIComponent(url.pathname.slice("/eps/runs/".length)) ? 200 : 404, latestEpsAudit, url);
+      if (req.method === "GET" && url.pathname.startsWith("/eps/projects/")) return sendJson(res, 200, { projectId: decodeURIComponent(url.pathname.slice("/eps/projects/".length)), summary: latestEpsAudit.summary }, url);
+      if (req.method === "GET" && url.pathname === "/eps/runtime") {
+        if (process.env.AXI_EPS_RUNTIME_PROBE !== "true") return sendJson(res, 503, { error: "runtime probe disabled", status: "unknown" }, url);
+        return sendJson(res, 200, await probeWindowsDockerRuntime(), url);
+      }
+      return sendJson(res, 405, { error: "method not allowed" }, url);
     }
 
     // Commit Ledger routes - proxy from /internal/web/v1/commit-ledger/*

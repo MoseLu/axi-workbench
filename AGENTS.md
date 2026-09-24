@@ -4,7 +4,7 @@
 > 工作台下的应用（`apps/*`）、服务（`services/*`）、共享包（`packages/*`）、工具（`tools/axi-app-cli/`）均有各自的子级 `AGENTS.md`；本文件不重复子目录的细节，只描述「**项目门面 + 跨项目边界 + 六层控制面（Six-Layer Control Plane）**」的运行约束。
 > **两者的关系：根级 AGENTS = 跨项目边界与六层 SOP；`apps/AGENTS.md` / `services/AGENTS.md` / `packages/AGENTS.md` / `tools/AGENTS.md` / `prompts/AGENTS.md` / `ai/AGENTS.md` = 子树内部实现与契约。** 修改 `apps/` `services/` `packages/` `tools/` `ai/` `prompts/` 任一子树前，先读对应子树的 `AGENTS.md`；任何对仓库结构、跨项目契约、六层控制面边界的判断先读本文件。
 
-*最后更新：2026-09-19 — 更新项目结构（三个 apps、三套 distributions 合并）、Verification 命令（添加 verify:ci）、添加 Recent Changes 区段。*
+*最后更新：2026-09-24 — 按 2026-09-24-workspace-entrance-spatial-graph REMEDIATION-PLAN §WP-02 加入 "Workspace Entry Render Host Boundary" 声明；本仓库为渲染宿主而非事实 owner。*
 
 ---
 
@@ -87,6 +87,29 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 - 工作区级 i18n 总览与缺口审计：[`/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md)、[`/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md)
 - 工作区图谱 CLI：[`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project)（`deps axi-workbench` / `consumers axi-workbench` / `validate`）
 - 邻居项目（被本工作台控制面消费）：`/Volumes/code/workspace/projects/axi-notify/`、`/Volumes/code/workspace/projects/axi-pet/`、`/Volumes/code/workspace/projects/axi-agent/`、`/Volumes/code/workspace/projects/axi-docs/`、`/Volumes/code/workspace/projects/axi-image-preview/`、`/Volumes/code/workspace/shared/axi-ui/`、`/Volumes/code/workspace/shared/axi-registry/`、`/Volumes/code/workspace/tools/axi-app-cli/`
+
+### Workspace Entry Render Host Boundary（PRD §10.2 硬约束）
+
+本仓库是 **Workspace Entrance Spatial Graph** 的 **渲染宿主**，**不是事实 owner**。
+
+事实 owner 与数据平面的分工：
+
+| 层 | owner | 仓库 | 职责 |
+|---|---|---|---|
+| 事实源 | `axi-workspace-governance` | `infra/axi-workspace-governance/` | `workspace.json`、`workspace.graph.json`、catalog、handoff、completion、audit |
+| 数据平面 | `axi-kernel` (PRD-01) | `projects/axi-kernel/` | 对象注册、关系、变更、漂移检测（`Registry` v6 schema） |
+| 数据平面 | `axi-workbench-cli` (PRD-02) | `projects/axi-workbench-cli/` | 工作区扫描、8 项 health check、DOT/JSON 关系图、§7 度量原语；CLI + DOT/JSON，**无 Web UI** |
+| 渲染宿主 | `axi-workbench` (本仓库) | `projects/axi-workbench/` | `apps/workbench` Web / Desktop (Tauri 2) / Mobile (Capacitor)；只读消费数据平面，不持久化任何事实 |
+
+**对本仓库的硬约束**：
+
+1. **不得修改事实源**：本仓库任何代码不得直接修改 `/Volumes/code/workspace/infra/axi-workspace-governance/workspace.json`、`/Volumes/code/workspace/workspace.graph.json` 或 Kernel registry 任何字段。所有持久治理变更必须经过 `scripts/workspace-project-cli.mjs` 或 `axi_kernel.register_*` API。
+2. **必须以 peerDependencies 依赖数据平面**：`axi-kernel` 与 `axi-workbench-cli` 作为 `peerDependencies` 出现；版本契约由 `workspace.graph.json.contracts` 锁定。
+3. **纯渲染代码可本地修改**：不引入新事实的 UI / 交互 / 视图状态代码可以在本仓库修改。
+4. **引入新事实必须回到事实源**：节点、关系、布局坐标、镜头状态、详情面板任何字段若要成为工作区事实，必须先在 `workspace.json` / `workspace.graph.json` 增加权威字段，再由数据平面适配器暴露。
+5. **与 `axi-workbench-cli` 关系**：`axi-workbench-cli` 是本仓库的数据平面消费者对应物（CLI/DOT/JSON），不是第二个 Workbench UI；本仓库的 Web/Desktop/Mobile 形态是同一 Workbench 产品的三种交付形态。
+
+详细分层与 M1/M2/M3 触发条件见 [`docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`](../../infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md) §2.1 / §10.2 / §19 #9 / §21。
 
 ---
 

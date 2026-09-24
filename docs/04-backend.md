@@ -35,7 +35,19 @@ Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 
 
 ### 4.0.2 容器化生产形态 API 平面
 
-为验证容器边界与 Helm 服务拓扑，`docker-compose.backend.yml` 提供独立的 `backend` profile。它复用各业务服务自己的 Dockerfile，以 Compose DNS 连接 PostgreSQL、Redis 和 Mailpit；五类迁移作为一次性任务先执行成功，再启动 Identity、Platform、Workflow、Notification、File 和 API Gateway。容器网关映射到宿主机 `127.0.0.1:18088`，与进程形态网关 `8088` 并存，便于对比验证。
+为验证容器边界与 Helm 服务拓扑，`docker-compose.backend.yml` 提供独立的 `backend` profile。当前实际运行目标是 Windows `DESKTOP-519U63K` 上的 Docker Desktop。它复用各业务服务自己的 Dockerfile，以 Compose DNS 连接 PostgreSQL、Redis 和 Mailpit；五类迁移作为一次性任务先执行成功，再启动 Identity、Platform、Workflow、Notification、File、Control Plane 和 API Gateway。
+
+当前 Windows Docker 端口边界如下：
+
+| Windows 主机端口 | 容器端口 | 用途 |
+|---|---:|---|
+| `127.0.0.1:18088` | `api-gateway:8080` | 唯一业务 API 入口 |
+| `127.0.0.1:15432` | `postgres:5432` | 后端 PostgreSQL 开发数据库 |
+| `127.0.0.1:16379` | `redis:6379` | 后端 Redis |
+
+Identity Adapter `8081`、Platform Core `8082`、Workflow Engine `8083`、Notification Service `8084`、File Service `8085` 和 Control Plane `8092` 只在 Docker 网络内通信，不作为 Windows 主机端口开放。`18088` 当前绑定 Windows loopback，因此 Mac 或其他局域网客户端不能直接使用 Windows IP 访问，必须经过端口转发或反向代理。
+
+业务 API 按 `/api/v1/...` 的 REST 风格设计，并由 `packages/gateway-contracts` 与 `packages/resource-api-docs` 维护 OpenAPI 3.1 契约。当前运行中的 Windows API Gateway 已验证 `/health` 返回 200，但 `/openapi.json` 和 `/docs` 返回 404；因此 OpenAPI 契约已经存在，Swagger/Redoc 文档入口尚未接入当前 API Gateway 暴露面，不能把它描述成已上线的网关路由。
 
 ```bash
 make docker-backend

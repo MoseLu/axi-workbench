@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-09-21
-modified: 2026-09-21
+created: 2026-09-24
+modified: 2026-09-24
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-09-21
+最后生成：2026-09-24
 
 ## 控制面
 
@@ -39,8 +39,12 @@ agent-readable: true
 
 ## Projects
 
+- `../../projects/axi-apps` | Axi Applications | branch=`-` | canonical=yes | compliance=`axi-apps`
+- `../../projects/axi-docs` | Axi Docs | branch=`-` | canonical=no | compliance=`generated-docs-companion`
+  remote: https://github.com/MoseLu/axi-workbench.git
 - `../../projects/axi-image-preview` | Axi Image Preview | branch=`dev` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/MoseLu/axi-image-preview.git
+- `../../projects/axi-inbox` | Axi Inbox | branch=`-` | canonical=yes | compliance=`axi-inbox`
 - `../../projects/axi-kernel` | Axi Kernel | branch=`dev` | canonical=yes | compliance=`object-registry`
   remote: https://github.com/MoseLu/axi-kernel.git
 - `../../projects/axi-notify` | Axi Notify | branch=`dev` | canonical=yes | compliance=`android-fullstack`
@@ -50,10 +54,15 @@ agent-readable: true
   upstream: https://github.com/moeru-ai/airi.git
 - `../../projects/axi-pet-desktop` | Axi Pet Desktop | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
+- `../../projects/axi-runtime` | Axi Governance Runtime | branch=`dev` | canonical=yes | compliance=`axi-runtime`
+  remote: https://github.com/MoseLu/axi-runtime.git
 - `../../projects/axi-sports-management-app` | 体育管理应用 | branch=`dev` | canonical=yes | compliance=`polyrepo-mixed-stack`
   remote: https://github.com/MoseLu/axi-sports-management-app.git
+- `../../projects/axi-sync` | Axi Change Sync | branch=`dev` | canonical=yes | compliance=`axi-sync`
 - `../../projects/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
+- `../../projects/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`dev` | canonical=yes | compliance=`personal-os-cli`
+  remote: https://github.com/MoseLu/axi-workbench-cli.git
 
 ## Products
 

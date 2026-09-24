@@ -10,6 +10,7 @@
   "nav.settings.menu.configure": "Menu Configuration",
   "nav.settings.role.permission": "Roles and Permissions",
   "nav.operations": "Operations",
+  "nav.epsAudit": "API Asset Audit",
   "nav.handoff": "Cross-device Handoff",
   "nav.group.overview": "Overview",
   "nav.group.ops": "Operations",

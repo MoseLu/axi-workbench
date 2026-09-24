@@ -17,8 +17,9 @@ import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foun
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/admin/Dashboard';
+import Dashboard from './pages/admin/AxiOsDashboard';
 import Operations from './pages/admin/Operations';
+import EpsAudit from './pages/admin/EpsAudit';
 import Workspace from './pages/admin/Workspace';
 import Team from './pages/admin/Team';
 import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
@@ -93,6 +94,7 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/personal-os/today" element={<PersonalOsToday />} />
                     <Route path="admin/personal-os/workbench" element={<PersonalOsWorkbench />} />
                     <Route path="admin/operations" element={<Operations />} />
+                    <Route path="admin/operations/eps" element={<EpsAudit />} />
                     <Route path="admin/operations/commit-ledger" element={<CommitLedgerPage />} />
                     <Route path="admin/project" element={<Projects />} />
                     <Route path="admin/project/:id" element={<ProjectDetail />} />

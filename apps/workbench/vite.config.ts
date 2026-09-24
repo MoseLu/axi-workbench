@@ -79,6 +79,10 @@ export default defineConfig(({ mode }) => {
             apiBaseURL: env.VITE_API_BASE_URL,
           }),
           changeOrigin: true,
+          // Local Windows backends may expose a self-signed certificate on a
+          // private address. Keep verification strict by default; opt in only
+          // for an explicit local remote-backend session.
+          secure: env.VITE_API_PROXY_INSECURE === 'true' ? false : true,
         },
         // Keep the local control-plane behind the Web origin in development.
         // Production supplies VITE_CONTROL_PLANE_BASE_URL through its gateway.

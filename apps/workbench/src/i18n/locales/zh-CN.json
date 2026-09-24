@@ -10,6 +10,7 @@
   "nav.settings.menu.configure": "菜单配置",
   "nav.settings.role.permission": "角色权限",
   "nav.operations": "运行状态",
+  "nav.epsAudit": "API 资产审计",
   "nav.handoff": "跨端续办",
   "nav.group.overview": "概览",
   "nav.group.ops": "运维",

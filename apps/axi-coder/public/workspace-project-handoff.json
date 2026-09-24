@@ -1,15 +1,81 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-09-21T01:31:35.680Z",
+  "generatedAt": "2026-09-24T02:02:41.380Z",
   "source": "infra/axi-workspace-governance/workspace.json",
   "summary": {
-    "total": 17,
-    "verified": 16,
+    "total": 23,
+    "verified": 6,
     "documented": 0,
-    "stale": 1,
-    "unready": 0
+    "stale": 12,
+    "unready": 5
   },
   "projects": [
+    {
+      "id": "axi-apps",
+      "name": "Axi Applications",
+      "path": "/Volumes/code/workspace/projects/axi-apps",
+      "kind": "project",
+      "lifecycle": "active-promoted-incubation",
+      "owner": "libu",
+      "readiness": "unready",
+      "score": 0,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-apps/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-apps/docs/HANDOFF.md",
+      "graphId": "axi-apps",
+      "graphMatched": true,
+      "errors": [
+        "manifest file is missing"
+      ],
+      "warnings": [],
+      "summary": "AXI Personal OS Applications CLI (PRD-06, Phase 4). Promoted from /Volumes/code/workspace/incubator/applications on 2026-09-23.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [],
+        "verify": [],
+        "smoke": []
+      },
+      "currentWork": {
+        "todo": "",
+        "milestone": "",
+        "active": [],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": ""
+    },
+    {
+      "id": "axi-docs",
+      "name": "Axi Docs",
+      "path": "/Volumes/code/workspace/projects/axi-docs",
+      "kind": "project",
+      "lifecycle": "active-generated-companion",
+      "owner": "libu",
+      "readiness": "unready",
+      "score": 0,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-docs/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-docs/docs/HANDOFF.md",
+      "graphId": "axi-docs",
+      "graphMatched": true,
+      "errors": [
+        "manifest file is missing"
+      ],
+      "warnings": [],
+      "summary": "Generated workspace dossier companion for the Axi Docs application owned by axi-workbench/apps/axi-docs. This path is generated and is not an independent Git repository.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [],
+        "verify": [],
+        "smoke": []
+      },
+      "currentWork": {
+        "todo": "",
+        "milestone": "",
+        "active": [],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": ""
+    },
     {
       "id": "axi-feishu-codex-bridge",
       "name": "Axi Feishu Codex Bridge",
@@ -17,13 +83,15 @@
       "kind": "tool",
       "lifecycle": "active-tool-local-runtime",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/HANDOFF.md",
       "graphId": "axi-feishu-codex-bridge",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/tools/axi-feishu-codex-bridge/VERIFICATION.md"
       ],
@@ -70,13 +138,15 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-image-preview/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-image-preview/docs/HANDOFF.md",
       "graphId": "axi-image-preview",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Browser preview app for the Axi Image Preview target — wallpaper gallery, MCP-backed my-wallpapers writes, and CSS-to-SCSS migration.",
       "commands": {
@@ -107,6 +177,39 @@
         "knownFailures": []
       },
       "lastVerifiedAt": "2026-08-23"
+    },
+    {
+      "id": "axi-inbox",
+      "name": "Axi Inbox",
+      "path": "/Volumes/code/workspace/projects/axi-inbox",
+      "kind": "project",
+      "lifecycle": "active-promoted-incubation",
+      "owner": "libu",
+      "readiness": "unready",
+      "score": 0,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-inbox/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-inbox/docs/HANDOFF.md",
+      "graphId": "axi-inbox",
+      "graphMatched": true,
+      "errors": [
+        "manifest file is missing"
+      ],
+      "warnings": [],
+      "summary": "AXI Personal OS Inbox CLI (PRD-03, Phase 2). Promoted from /Volumes/code/workspace/incubator/resource-inbox on 2026-09-23.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [],
+        "verify": [],
+        "smoke": []
+      },
+      "currentWork": {
+        "todo": "",
+        "milestone": "",
+        "active": [],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": ""
     },
     {
       "id": "axi-kernel",
@@ -156,13 +259,15 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "hubu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-notify/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-notify/docs/HANDOFF.md",
       "graphId": "axi-notify",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-notify/VERIFICATION.md"
       ],
@@ -213,13 +318,15 @@
       "kind": "project",
       "lifecycle": "active-local",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-pet/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-pet/docs/HANDOFF.md",
       "graphId": "axi-pet",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/projects/axi-pet/docs/state/VERIFICATION.md"
       ],
@@ -315,13 +422,15 @@
       "kind": "infra",
       "lifecycle": "active-infra",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/infra/axi-registry/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/infra/axi-registry/docs/HANDOFF.md",
       "graphId": "axi-registry",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/infra/axi-registry/docs/state/VERIFICATION.md"
       ],
@@ -371,7 +480,7 @@
       "graphId": "axi-rules",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 35 days old (max 30)"
+        "verification is stale: 38 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Local authority for Axi agent routing, memory, safety, verification, and generated project/rule indexes, with a React visualization of the memory pipeline.",
@@ -414,19 +523,54 @@
       "lastVerifiedAt": "2026-08-17"
     },
     {
+      "id": "axi-runtime",
+      "name": "Axi Governance Runtime",
+      "path": "/Volumes/code/workspace/projects/axi-runtime",
+      "kind": "project",
+      "lifecycle": "active-promoted-incubation",
+      "owner": "libu",
+      "readiness": "unready",
+      "score": 0,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-runtime/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-runtime/docs/HANDOFF.md",
+      "graphId": "axi-runtime",
+      "graphMatched": true,
+      "errors": [
+        "manifest file is missing"
+      ],
+      "warnings": [],
+      "summary": "AXI Personal OS Governance Runtime CLI (PRD-05, Phase 3). Promoted from /Volumes/code/workspace/incubator/governance-runtime on 2026-09-23.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [],
+        "verify": [],
+        "smoke": []
+      },
+      "currentWork": {
+        "todo": "",
+        "milestone": "",
+        "active": [],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": ""
+    },
+    {
       "id": "axi-skills",
       "name": "Axi Skills",
       "path": "/Volumes/code/workspace/shared/axi-skills",
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/shared/axi-skills/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/shared/axi-skills/docs/HANDOFF.md",
       "graphId": "axi-skills",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
       "commands": {
@@ -517,19 +661,54 @@
       "lastVerifiedAt": "2026-08-25"
     },
     {
+      "id": "axi-sync",
+      "name": "Axi Change Sync",
+      "path": "/Volumes/code/workspace/projects/axi-sync",
+      "kind": "project",
+      "lifecycle": "active-promoted-incubation",
+      "owner": "libu",
+      "readiness": "unready",
+      "score": 0,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-sync/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-sync/docs/HANDOFF.md",
+      "graphId": "axi-sync",
+      "graphMatched": true,
+      "errors": [
+        "manifest file is missing"
+      ],
+      "warnings": [],
+      "summary": "AXI Personal OS Change Sync CLI (PRD-04, Phase 2/3). Promoted from /Volumes/code/workspace/incubator/change-sync on 2026-09-23.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [],
+        "verify": [],
+        "smoke": []
+      },
+      "currentWork": {
+        "todo": "",
+        "milestone": "",
+        "active": [],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": ""
+    },
+    {
       "id": "axi-tauri-starter",
       "name": "Axi Tauri Starter",
       "path": "/Volumes/code/workspace/shared/axi-tauri-starter",
       "kind": "shared",
       "lifecycle": "active-shared-reference",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/shared/axi-tauri-starter/docs/HANDOFF.md",
       "graphId": "axi-tauri-starter",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification references docs/state/VERIFICATION.md but the file does not exist at /Volumes/code/workspace/shared/axi-tauri-starter/docs/state/VERIFICATION.md"
       ],
@@ -572,13 +751,15 @@
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/shared/axi-ui/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/shared/axi-ui/docs/HANDOFF.md",
       "graphId": "axi-ui",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Canonical Axi Black Gold design tokens and theme runtime, plus shared React primitives, shell, settings, CRUD, widgets, addons, and Vite tooling published as @axi packages.",
       "commands": {
@@ -675,19 +856,60 @@
       "lastVerifiedAt": "2026-09-13"
     },
     {
+      "id": "axi-workbench-cli",
+      "name": "AXI Personal OS Workbench CLI",
+      "path": "/Volumes/code/workspace/projects/axi-workbench-cli",
+      "kind": "project",
+      "lifecycle": "active-promoted-incubation",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/projects/axi-workbench-cli/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/projects/axi-workbench-cli/docs/HANDOFF.md",
+      "graphId": "axi-workbench-cli",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "CLI for scanning, onboarding, health-checking and graphing AXI workspace projects through the PRD-01 Kernel.",
+      "commands": {
+        "setup": [],
+        "start": [],
+        "health": [
+          "python3 -m axi_workbench summary"
+        ],
+        "verify": [
+          "PYTHONPATH=cli:/Volumes/code/workspace/projects/axi-kernel:../axi-rules:../axi-pet-desktop-cli python3 -m unittest discover -s tests -v"
+        ],
+        "smoke": [
+          "PYTHONPATH=cli:/Volumes/code/workspace/projects/axi-kernel python3 -m axi_workbench --help"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/HANDOFF.md",
+        "milestone": "docs/HANDOFF.md",
+        "active": [
+          "Maintain CLI and evidence against the AXI Kernel"
+        ],
+        "knownFailures": []
+      },
+      "lastVerifiedAt": "2026-09-21"
+    },
+    {
       "id": "axi-workspace-governance",
       "name": "Axi Workspace Governance",
       "path": "/Volumes/code/workspace/infra/axi-workspace-governance",
       "kind": "axi-workspace-governance",
       "lifecycle": "active-governance",
       "owner": "",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/HANDOFF.md",
       "graphId": "axi-workspace-governance",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification is missing; run `pnpm workspace:docs:sync` to add `VERIFICATION.md` to the manifest"
       ],
@@ -726,13 +948,15 @@
       "kind": "product",
       "lifecycle": "active-product",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/products/ielts-vocab/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/products/ielts-vocab/docs/HANDOFF.md",
       "graphId": "ielts-vocab",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [
         "documents.verification references VERIFICATION.md but the file does not exist at /Volumes/code/workspace/products/ielts-vocab/VERIFICATION.md"
       ],
@@ -775,13 +999,15 @@
       "kind": "project",
       "lifecycle": "active-product",
       "owner": "hubu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/HANDOFF.md",
       "graphId": "sports-management",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 32 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Quasar and Vue 3 sports-management application skeleton with Pinia, Vue Router, Vue I18n, and a Capacitor Android wrapper; the backend directory is only a placeholder.",
       "commands": {

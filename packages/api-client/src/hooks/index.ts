@@ -22,6 +22,7 @@ import type {
   GovernanceRisk,
   GovernanceIncident,
 } from "@axi/workstation-contracts"
+import type { EpsAsset, EpsAudit, EpsFinding } from "../eps-types"
 import type { AxiosRequestConfig } from "axios"
 
 // Re-export platform hooks for tenant management
@@ -77,6 +78,34 @@ export const useControlSnapshot = (options?: AxiosRequestConfig) => {
     staleTime: 10_000,
   })
 }
+
+export const useEpsAssets = (options?: AxiosRequestConfig) => useQuery({
+  queryKey: ["eps", "assets"],
+  queryFn: () => controlPlaneClient.get<{ items: EpsAsset[]; total: number }>("/eps/assets", options).then((res) => res.data),
+  staleTime: 10_000,
+});
+
+export const useEpsFindings = (options?: AxiosRequestConfig) => useQuery({
+  queryKey: ["eps", "findings"],
+  queryFn: () => controlPlaneClient.get<{ items: EpsFinding[]; total: number }>("/eps/findings", options).then((res) => res.data),
+  staleTime: 10_000,
+});
+
+export const useEpsRuns = (options?: AxiosRequestConfig) => useQuery({
+  queryKey: ["eps", "runs"],
+  queryFn: () => controlPlaneClient.get<{ items: EpsAudit[]; total: number }>("/eps/runs", options).then((res) => res.data),
+  staleTime: 10_000,
+});
+
+export const useRunEpsAudit = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => controlPlaneClient.post<{ runId: string; status: string }>("/eps/audits", {}).then((res) => res.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["eps"] });
+    },
+  });
+};
 
 export type WorkspaceEventQuery = {
   eventType?: string;

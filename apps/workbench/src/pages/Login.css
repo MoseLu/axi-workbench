@@ -174,9 +174,9 @@
 }
 
 .axi-login-qr-frame .ant-qrcode {
-  width: 10rem !important;
-  height: 10rem !important;
-  background: var(--palette-white) !important;
+  width: 10rem;
+  height: 10rem;
+  background: var(--palette-white);
 }
 
 .axi-login-qr-column h1 {
@@ -198,12 +198,12 @@
 }
 
 .axi-login-qr-column .axi-login-qr-frame .ant-qrcode {
-  width: 10rem !important;
-  height: 10rem !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+  width: 10rem;
+  height: 10rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .axi-login-card__divider {
@@ -342,12 +342,12 @@
 }
 
 .axi-login-qr-frame .ant-qrcode {
-  width: 9.5rem !important;
-  height: 9.5rem !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: var(--palette-white) !important;
+  width: 9.5rem;
+  height: 9.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--palette-white);
 }
 
 .axi-login-qr-frame .ant-qrcode canvas,
@@ -1018,7 +1018,7 @@
   background: transparent;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  text-decoration: none !important;
+  text-decoration: none;
   transition: color 140ms ease;
 }
 
@@ -1060,6 +1060,38 @@
 .axi-login-email-code-row:focus-within {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--color-brand) 13%, transparent);
+}
+
+/* 验证码输入区：六位数字属于同一个输入控件，不使用六个突兀的白色卡片。 */
+.axi-login-form .axi-login-email-code-row .axi-one-time-code {
+  gap: 0;
+  padding: 0 0 0 var(--space-2);
+  background: color-mix(in srgb, var(--palette-white) 42%, transparent);
+  border-radius: 999px;
+}
+
+.axi-login-form .axi-login-email-code-row .axi-one-time-code__input {
+  height: 2.25rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--palette-gray-800);
+  background: transparent;
+  box-shadow: none;
+}
+
+.axi-login-form .axi-login-email-code-row .axi-one-time-code__input + .axi-one-time-code__input {
+  border-left: var(--space-px) solid color-mix(in srgb, var(--palette-gray-400) 22%, transparent);
+}
+
+.axi-login-form .axi-login-email-code-row .axi-one-time-code__input:focus {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--palette-white) 62%, transparent);
+  box-shadow: inset 0 0 0 var(--space-px) color-mix(in srgb, var(--color-brand) 42%, transparent);
+}
+
+.axi-login-form .axi-login-email-code-row .axi-one-time-code__input:focus + .axi-one-time-code__input {
+  border-left-color: transparent;
 }
 
 .axi-login-email-code-row.is-invalid {
@@ -1715,7 +1747,7 @@ body.axi-tauri-shell .axi-login-drag-region {
 
 .axi-login-account .axi-login-form--password .axi-login-form__row--input input {
   height: 100%;
-  min-height: 0 !important;
+  min-height: 0;
 }
 
 .axi-login-account .axi-login-form--password .axi-login-form-options {
@@ -1798,7 +1830,7 @@ body.axi-tauri-shell .axi-login-drag-region {
   block-size: .875rem;
   width: .875rem;
   height: .875rem;
-  min-height: .875rem !important;
+  min-height: .875rem;
   max-height: .875rem;
   min-inline-size: .875rem;
   max-inline-size: .875rem;
@@ -1834,7 +1866,7 @@ body.axi-tauri-shell .axi-login-drag-region {
 .axi-login-consent input:focus-visible {
   outline: calc(var(--space-px) * 2) solid var(--color-brand);
   outline-offset: var(--space-1);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .axi-login-form-switch {

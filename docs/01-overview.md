@@ -77,7 +77,7 @@ Enterprise Project Automation Platform（**EPAP**）是一个面向企业级软�
 | api-gateway | 8080 |
 | identity-adapter | 8081 |
 | platform-core | 8082 |
-| api-gateway（宿主机开发映射） | 8088 |
+| api-gateway（Windows Docker 宿主机映射） | 18088（容器内 8080） |
 | workflow-engine | 8083 |
 | notification-service | 8084 |
 | file-service | 8085 |

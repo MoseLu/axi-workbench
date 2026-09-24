@@ -4,14 +4,14 @@ title: Axi Workspace ADR Index
 type: reference
 status: evergreen
 tags: [workspace, adr, governance]
-created: 2026-09-21
-modified: 2026-09-21
+created: 2026-09-24
+modified: 2026-09-24
 agent-readable: true
 ---
 
 # Axi Workspace ADR Index
 
-最后生成：2026-09-21
+最后生成：2026-09-24
 
 ## ADR 列表
 
@@ -23,6 +23,7 @@ agent-readable: true
 - [ADR-005-workflow-first-bounded-agent](ADR-005-workflow-first-bounded-agent.md)
 - [ADR-006-gateway-taxonomy](ADR-006-gateway-taxonomy.md)
 - [ADR-007-naming-alias-contract](ADR-007-naming-alias-contract.md)
+- [ADR-008-personal-os-repository-topology](ADR-008-personal-os-repository-topology.md)
 
 ## 约束
 

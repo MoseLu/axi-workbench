@@ -4,14 +4,14 @@ title: Axi Workspace Ownership Matrix
 type: reference
 status: evergreen
 tags: [workspace, ownership, governance]
-created: 2026-09-21
-modified: 2026-09-21
+created: 2026-09-24
+modified: 2026-09-24
 agent-readable: true
 ---
 
 # Axi Workspace Ownership Matrix
 
-最后生成：2026-09-21
+最后生成：2026-09-24
 
 ## hubu
 
@@ -25,11 +25,17 @@ agent-readable: true
 | Repo | Section | Lifecycle | Canonical | Remote |
 |---|---|---|---|---|
 | `../../infra/axi-registry` | infra | active-infra | yes | [link](https://github.com/axiomaticworld/axi-registry.git) |
+| `../../projects/axi-apps` | projects | active-promoted-incubation | yes | - |
+| `../../projects/axi-docs` | projects | active-generated-companion | no | [link](https://github.com/MoseLu/axi-workbench.git) |
 | `../../projects/axi-image-preview` | projects | active-canonical | yes | [link](https://github.com/MoseLu/axi-image-preview.git) |
+| `../../projects/axi-inbox` | projects | active-promoted-incubation | yes | - |
 | `../../projects/axi-kernel` | projects | active-promoted-incubation | yes | [link](https://github.com/MoseLu/axi-kernel.git) |
 | `../../projects/axi-pet` | projects | active-local | yes | [link](https://github.com/moeru-ai/airi.git) |
 | `../../projects/axi-pet-desktop` | projects | active-local | yes | [link](https://github.com/moeru-ai/airi.git) |
+| `../../projects/axi-runtime` | projects | active-promoted-incubation | yes | - |
+| `../../projects/axi-sync` | projects | active-promoted-incubation | yes | - |
 | `../../projects/axi-workbench` | projects | active-canonical | yes | [link](https://github.com/MoseLu/axi-workbench.git) |
+| `../../projects/axi-workbench-cli` | projects | active-promoted-incubation | yes | [link](https://github.com/MoseLu/axi-workbench-cli.git) |
 | `../../products/ielts-vocab` | products | active-product | yes | [link](https://github.com/MoseLu/ielts-vocab.git) |
 | `../../projects/axi-rules` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-rules.git) |
 | `../../shared/axi-skills` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-skills.git) |

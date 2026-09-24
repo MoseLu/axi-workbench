@@ -9,6 +9,7 @@ export * from "./runtime";
 export * from "./http-api";
 export * from "./resource-search";
 export * from "./rule-waiver";
+export * from "./eps";
 
 export const resourceKindSchema = z.string().min(1).max(80);
 export const operationSchema = z.enum(["search", "inspect", "preview", "generate"]);

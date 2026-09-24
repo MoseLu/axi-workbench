@@ -147,7 +147,6 @@ func TestControlPlaneAndMobileCatchAllsAreExplicitAllowlists(t *testing.T) {
 		{http.MethodGet, "/api/v1/mobile/workspace", "/internal/mobile/v1/workspace", false},
 		{http.MethodPost, "/api/v1/mobile/pair/confirmations", "/internal/mobile/v1/pair/confirmations", false},
 		{http.MethodPost, "/api/v1/mobile/jobs/j-1/cancellations", "/internal/mobile/v1/jobs/j-1/cancellations", false},
-		{http.MethodPost, "/api/v1/auth/email-verifications/ch-1/redemptions", "/api/v1/auth/email-verifications/ch-1/redemptions", false},
 		{http.MethodPost, "/api/v1/auth/qr/transactions/qr-1/resumptions", "/api/v1/auth/qr/transactions/qr-1/resumptions", false},
 	}
 	for _, testCase := range allowed {
@@ -170,6 +169,20 @@ func TestControlPlaneAndMobileCatchAllsAreExplicitAllowlists(t *testing.T) {
 		if gotMethod != testCase.method || gotPath != testCase.want {
 			t.Fatalf("%s %s proxied as %s %s, want %s %s", testCase.method, testCase.path, gotMethod, gotPath, testCase.method, testCase.want)
 		}
+	}
+
+	// This route is intentionally bound to the Session handler rather than a
+	// public verification proxy. An anonymous request must not be forwarded or
+	// treated as a successful REST alias.
+	gotMethod, gotPath = "", ""
+	verificationRequest := httptest.NewRequest(http.MethodPost, "/api/v1/auth/email-verifications/ch-1/redemptions", nil)
+	verificationResponse := httptest.NewRecorder()
+	testSetupRouter(cfg, proxy, mobileControl, identityService, ratelimit.NewMemory(50, nil)).ServeHTTP(verificationResponse, verificationRequest)
+	if verificationResponse.Code != http.StatusUnauthorized {
+		t.Fatalf("anonymous email verification redemption status = %d, want %d", verificationResponse.Code, http.StatusUnauthorized)
+	}
+	if gotMethod != "" || gotPath != "" {
+		t.Fatalf("anonymous email verification redemption was forwarded as %s %s", gotMethod, gotPath)
 	}
 
 	blocked := []struct {

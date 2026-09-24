@@ -71,6 +71,7 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
     children: [
       { key: '/admin/dashboard', label: '工作台概览', labelKey: 'nav.dashboard', iconName: axiWorkbenchIconMap.overview },
       { key: '/admin/operations', label: '运行状态', labelKey: 'nav.operations', iconName: axiWorkbenchIconMap.laptop },
+      { key: '/admin/operations/eps', label: 'API 资产审计', labelKey: 'nav.epsAudit', iconName: axiWorkbenchIconMap.operations },
     ],
   },
   {
@@ -130,6 +131,7 @@ export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
   '/admin/personal-os/workbench': { label: '项目队列', labelKey: 'personalOs.nav.workbench' },
   '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard' },
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations' },
+  '/admin/operations/eps': { label: 'API 资产审计', labelKey: 'nav.epsAudit' },
   '/admin/operations/commit-ledger': { label: 'Commit Ledger', labelKey: 'nav.commitLedger' },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects' },
   '/admin/task': { label: '工作项', labelKey: 'nav.tasks' },

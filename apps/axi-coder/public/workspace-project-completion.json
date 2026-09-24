@@ -1,22 +1,22 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-09-21T01:31:35.680Z",
+  "generatedAt": "2026-09-24T02:02:41.380Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 38,
-    "axiTotal": 22,
+    "total": 43,
+    "axiTotal": 27,
     "complete": 1,
     "usableOrBetter": 12,
     "blocked": 0,
     "byStage": {
-      "unassessed": 25,
+      "unassessed": 30,
       "usable": 10,
       "complete": 1,
       "building": 1,
       "maintenance": 1
     },
     "byConfidence": {
-      "low": 19,
+      "low": 24,
       "high": 9,
       "medium": 10
     }
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -90,7 +90,7 @@
         "projects/axi-agent/infra/codex-remote-bridge/package.json (remote bridge)",
         "projects/axi-agent/tools/axi-todo/package.json (local task ledger)",
         "docs:ready",
-        "handoff:verified",
+        "handoff:stale",
         "verify:PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py | npm --prefix infra/axi-agent-mcp test | npm --prefix infra/axi-agent-transport test | npm --prefix infra/codex-remote-bridge test | npm --prefix tools/axi-todo test",
         "health:test -f backend/app/api/workstation.py | test -f infra/axi-agent-mcp/package.json | test -f infra/axi-agent-transport/package.json | test -f tools/axi-todo/package.json",
         "contracts:9"
@@ -118,9 +118,11 @@
         "missing": []
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "PYTHONPATH=. uv run --python 3.12 --with-requirements backend/requirements.txt pytest -q backend/tests/test_runtime_api_smoke.py backend/tests/test_workstation_agent_tasks.py backend/tests/test_task_scheduler_mcp_quality.py backend/tests/test_axi_agent_mcp_client.py",
@@ -148,6 +150,56 @@
       ]
     },
     {
+      "id": "axi-apps",
+      "name": "Axi Applications",
+      "path": "/Volumes/code/workspace/projects/axi-apps",
+      "kind": "applications-cli",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:unready"
+      ],
+      "remaining": [
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "docs/HANDOFF.md"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
+    },
+    {
       "id": "axi-coder",
       "name": "Axi Coder",
       "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
@@ -164,7 +216,7 @@
         "Hosted dashboard registration exposes Axi Coder under /apps/axi-coder/overview.",
         "The completion panel reads workspace-project-completion.json with a malformed-snapshot fallback; Axi Coder tests pass 14/14 and production build passes.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm typecheck | pnpm test",
         "health:test -f package.json | test -f src/features/product/axiCoderProductSurface.ts",
         "contracts:5",
@@ -193,9 +245,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm typecheck",
@@ -214,6 +268,54 @@
       ]
     },
     {
+      "id": "axi-docs",
+      "name": "Axi Docs",
+      "path": "/Volumes/code/workspace/projects/axi-docs",
+      "kind": "generated-docs-companion",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
+      "evidence": [
+        "handoff:unready"
+      ],
+      "remaining": [
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "missing",
+        "present": [],
+        "missing": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
+    },
+    {
       "id": "axi-feishu-codex-bridge",
       "name": "Axi Feishu Codex Bridge",
       "path": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge",
@@ -224,10 +326,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
         "health:test -f pyproject.toml | test -d src/codex_feishu_bridge",
         "contracts:5"
@@ -255,9 +357,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "PYTHONPATH=src .venv/bin/python -m unittest discover -s tests"
@@ -291,7 +395,7 @@
         "package.json exposes test, build, and mcp:wallpapers scripts.",
         "Workspace verify now checks pnpm test and pnpm build.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm test | pnpm build",
         "health:test -f package.json | test -f axi-image-preview.html",
         "contracts:6",
@@ -318,9 +422,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm test",
@@ -340,6 +446,56 @@
       ]
     },
     {
+      "id": "axi-inbox",
+      "name": "Axi Inbox",
+      "path": "/Volumes/code/workspace/projects/axi-inbox",
+      "kind": "inbox-cli",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:unready"
+      ],
+      "remaining": [
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "docs/HANDOFF.md"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
+    },
+    {
       "id": "axi-kernel",
       "name": "Axi Kernel",
       "path": "/Volumes/code/workspace/projects/axi-kernel",
@@ -350,7 +506,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:verified"
@@ -402,7 +558,7 @@
         "ProviderProfile tests guard credential-ref routing without plaintext secrets.",
         "Axi Coder proxy handles OpenAI, Claude Messages, and Gemini request shapes.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm typecheck",
         "health:test -f src/features/providers/axiProviderProfile.ts | test -f src-tauri/src/proxy/mod.rs",
         "contracts:3",
@@ -431,9 +587,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm typecheck"
@@ -464,7 +622,7 @@
         "Relay and local smoke verification are registered in the workspace graph.",
         "Axi Coder consumes Notify for mobile companion task and notification return paths.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:make test-relay | make smoke-relay-local",
         "health:make test-relay | test -d android-app/app | test -d donors/android-workspace-app | test -d donors/feiyu-agentflow",
         "contracts:7"
@@ -491,9 +649,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "make test-relay",
@@ -532,7 +692,7 @@
         "Local verification covers stage-web, stage-ui, and stage-layouts typechecks.",
         "13 packages confirmed using @proj-airi/* namespace (grep across apps/*/package.json + packages/*/package.json).",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:[object Object] | [object Object] | [object Object]",
         "health:test -f package.json | test -d apps/stage-web | test -d packages/stage-ui",
         "contracts:7",
@@ -561,9 +721,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         {
@@ -692,7 +854,7 @@
         "Workspace graph registers registry health verification.",
         "Axi UI declares the registry as its package distribution boundary.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:npm run health",
         "health:npm run health",
         "contracts:2",
@@ -720,9 +882,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "npm run health"
@@ -746,7 +910,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:stale",
@@ -776,7 +940,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 35 days old (max 30)"
+          "verification is stale: 38 days old (max 30)"
         ]
       },
       "verify": [
@@ -795,6 +959,56 @@
       ]
     },
     {
+      "id": "axi-runtime",
+      "name": "Axi Governance Runtime",
+      "path": "/Volumes/code/workspace/projects/axi-runtime",
+      "kind": "governance-runtime",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:unready"
+      ],
+      "remaining": [
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "docs/HANDOFF.md"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
+    },
+    {
       "id": "axi-skills",
       "name": "Axi Skills",
       "path": "/Volumes/code/workspace/shared/axi-skills",
@@ -811,7 +1025,7 @@
         "i18n verifier protects the English runtime source while tracking translation batch coverage.",
         "apm.yml exposes a focused zero-context bootstrap skill subset for cross-harness consumers.",
         "docs:ready",
-        "handoff:verified",
+        "handoff:stale",
         "verify:python3 scripts/verify.py | python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff | test -f apm.yml",
         "health:python3 scripts/verify.py",
         "contracts:13"
@@ -836,9 +1050,11 @@
         "missing": []
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "python3 scripts/verify.py",
@@ -946,6 +1162,56 @@
       ]
     },
     {
+      "id": "axi-sync",
+      "name": "Axi Change Sync",
+      "path": "/Volumes/code/workspace/projects/axi-sync",
+      "kind": "change-sync-cli",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:unready"
+      ],
+      "remaining": [
+        "补齐 docs/project-docs.manifest.json 文档接入清单。",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 workspace.graph.json verify 命令。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "docs/HANDOFF.md"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/PRD.md",
+          "docs/TDD.md",
+          "docs/project-docs.manifest.json",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "unready",
+        "score": 0,
+        "errors": [
+          "manifest file is missing"
+        ]
+      },
+      "verify": [],
+      "health": [],
+      "contracts": []
+    },
+    {
       "id": "axi-tauri-starter",
       "name": "Axi Tauri Starter",
       "path": "/Volumes/code/workspace/shared/axi-tauri-starter",
@@ -956,10 +1222,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:test -f scripts/tauri-env.sh",
         "health:test -f scripts/tauri-env.sh",
         "contracts:2"
@@ -985,9 +1251,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "test -f scripts/tauri-env.sh"
@@ -1016,7 +1284,7 @@
         "Workspace verify covers file-line guard, typecheck, and tests.",
         "Axi Coder and dashboard surfaces consume linked @axi packages.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm check:file-lines | pnpm typecheck | pnpm test",
         "health:pnpm check:file-lines | pnpm typecheck",
         "contracts:9",
@@ -1043,9 +1311,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm check:file-lines",
@@ -1154,7 +1424,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:verified"
@@ -1428,7 +1698,7 @@
         "workspace:docs:sync generates catalog and completion docs.",
         "workspace-project validate remains the root graph sanity check.",
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm workspace:audit",
         "health:test -f /Volumes/code/workspace/infra/axi-workspace-governance/workspace.json",
         "contracts:3"
@@ -1454,9 +1724,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm workspace:audit"
@@ -1481,7 +1753,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1538,7 +1810,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:legacy",
         "handoff:unready",
@@ -1597,7 +1869,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1656,7 +1928,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1767,7 +2039,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1825,7 +2097,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1932,10 +2204,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
         "health:pnpm --dir frontend verify:repo-guards",
         "contracts:4",
@@ -1963,9 +2235,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm --dir frontend verify:repo-guards",
@@ -1992,7 +2266,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2053,7 +2327,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2110,7 +2384,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2167,7 +2441,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2231,10 +2505,10 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
-        "handoff:verified",
+        "handoff:stale",
         "verify:pnpm test",
         "health:test -f package.json",
         "contracts:3",
@@ -2259,9 +2533,11 @@
         ]
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 32 days old (max 30)"
+        ]
       },
       "verify": [
         "pnpm test"
@@ -2360,7 +2636,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-21T01:31:35.680Z",
+      "updatedAt": "2026-09-24T02:02:41.380Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
