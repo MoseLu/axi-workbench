@@ -7,6 +7,30 @@ import { createEpsAudit } from "./eps/scanner.mjs";
 import { createEpsStore } from "./eps/persistence.mjs";
 import { probeWindowsDockerRuntime } from "./eps/runtime-probe.mjs";
 
+// PRD-07 phase 2: adopt the Axi observability Node SDK as an
+// optional dependency. When installed, diagnostic chatter goes
+// through structured JSON logs; when absent the service falls back
+// to bare console.* so installs without the SDK keep working.
+let log = null;
+try {
+  const mod = await import("@axi/observability-logging");
+  log = mod.createLogger({ service: "axi-workbench-control-plane" });
+} catch {
+  // SDK not installed; fall back to console.* below.
+}
+
+function _logInfo(message, extra) {
+  if (log) log.info(extra ?? {}, message);
+}
+
+function _logError(message, extra) {
+  if (log) log.error(extra ?? {}, message);
+}
+
+function _logWarn(message, extra) {
+  if (log) log.warn(extra ?? {}, message);
+}
+
 const port = Number.parseInt(process.env.CONTROL_PLANE_PORT || "8092", 10);
 const DEVELOPMENT_GATEWAY_INTERNAL_TOKEN = "axi-development-internal-token";
 
@@ -1023,6 +1047,47 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   // through the Compose network. Production must never bind to 0.0.0.0
   // without an upstream reverse proxy or service mesh.
   const bindHost = process.env.CONTROL_PLANE_BIND || "127.0.0.1";
+
+  // Initialize commit-ledger persistence store before serving traffic so
+  // existing JSONL records are loaded into memory and new syncs land on disk.
+  const commitLedgerApi = await import("./commit-ledger/api-routes.mjs");
+  const { initCommitLedgerStore, runSyncJob, syncJobsRegistry } = commitLedgerApi;
+  try {
+    await initCommitLedgerStore();
+    _logInfo("commit-ledger: persistence store loaded", { source: "commit-ledger" });
+  } catch (err) {
+    _logError("commit-ledger: failed to load persistence store", {
+      source: "commit-ledger",
+      error: String(err),
+    });
+  }
+
+  // Optional fs_watcher that turns `.git/` HEAD / refs changes into
+  // incremental sync jobs through the same in-process runSyncJob pipeline.
+  let fsWatcher = null;
+  if (process.env.AXI_COMMIT_LEDGER_FS_WATCHER === "enabled") {
+    try {
+      const { startFsWatcher } = await import("./commit-ledger/fs-watcher.mjs");
+      fsWatcher = startFsWatcher({
+        runJob: runSyncJob,
+        jobs: syncJobsRegistry,
+        enabled: true,
+        logger: console,
+      });
+      const shutdownWatcher = async () => {
+        if (!fsWatcher) return;
+        try { await fsWatcher.stop(); } catch (err) { _logError("fs-watcher stop", { error: String(err) }); }
+        fsWatcher = null;
+      };
+      process.once("SIGTERM", shutdownWatcher);
+      process.once("SIGINT", shutdownWatcher);
+    } catch (err) {
+      _logError("commit-ledger: failed to start fs_watcher", { error: String(err) });
+    }
+  } else {
+    _logInfo("commit-ledger: fs_watcher disabled (set AXI_COMMIT_LEDGER_FS_WATCHER=enabled to start)", { source: "commit-ledger" });
+  }
+
   server.listen(port, bindHost, () => {
     console.log(`control-plane listening on http://${bindHost}:${port}`);
   });
