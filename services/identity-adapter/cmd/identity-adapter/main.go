@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/axiomaticworld/observability/go/axilog"
 	"github.com/axi-workbench/identity-adapter/internal/config"
 	"github.com/axi-workbench/identity-adapter/internal/email"
 	"github.com/axi-workbench/identity-adapter/internal/httpapi"
@@ -24,7 +24,13 @@ func main() {
 		log.Fatalf("identity adapter configuration: %v", err)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// PRD-07 phase 2: adopt the Axi observability SDK so the JSON
+	// shape matches every other Axi service. axilog.New returns a
+	// *slog.Logger with the SDK mixin pre-applied, so the rest of
+	// the package keeps using slog semantics unchanged.
+	logger := axilog.New(axilog.Options{
+		Service: axilog.WithService("axi-identity-adapter"),
+	})
 	shutdownTelemetry, err := observability.Setup(context.Background(), "axi-identity-adapter", cfg.OTLPTracesEndpoint)
 	if err != nil {
 		log.Fatalf("identity adapter OpenTelemetry: %v", err)

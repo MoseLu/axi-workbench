@@ -1,0 +1,6 @@
+go 1.26.0
+
+use (
+	.
+	/Volumes/code/workspace/foundation/axi-observability/go/axilog
+)
