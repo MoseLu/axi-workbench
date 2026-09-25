@@ -13,6 +13,8 @@ describe('navigationRegistry', () => {
       '/admin/operations/commit-ledger',
       '/admin/operations/observability',
       '/admin/project',
+      '/admin/workspace',
+      '/admin/command-center',
       '/admin/team',
       '/admin/settings/menu',
       '/admin/settings/role',

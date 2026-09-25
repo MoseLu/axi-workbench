@@ -33,6 +33,11 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Team from './pages/admin/Team';
 import SearchPage from './pages/admin/Search';
+import Devices from './pages/admin/me/Devices';
+import NotificationsPage from './pages/admin/me/Notifications';
+import ThemePage from './pages/admin/me/Theme';
+import Workspace from './pages/admin/Workspace';
+import CommandCenter from './pages/CommandCenter';
 import RequireSession from './components/Auth/RequireSession';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
@@ -108,6 +113,8 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/project/:id" element={<ProjectDetail />} />
                     <Route path="admin/task" element={<AxiUiContractNotFound />} />
                     <Route path="admin/team" element={<Team />} />
+                    <Route path="admin/workspace" element={<Workspace />} />
+                    <Route path="admin/command-center" element={<CommandCenter />} />
                     {/* 历史扫码链接不再打开桌面摄像头工具，回到控制中心。 */}
                     <Route path="admin/scan" element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="admin/handoff" element={<Handoff />} />
@@ -119,9 +126,9 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/me" element={<AxiUiContractNotFound />} />
                     {/* Preserve old account bookmarks without a second account page. */}
                     <Route path="admin/me/account" element={<Navigate to="/admin/me" replace />} />
-                    <Route path="admin/me/devices" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/me/notifications" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/me/theme" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/me/devices" element={<Devices />} />
+                    <Route path="admin/me/notifications" element={<NotificationsPage />} />
+                    <Route path="admin/me/theme" element={<ThemePage />} />
                     {/* Retired settings table: preserve old bookmarks without rendering a duplicate settings page. */}
                     <Route path="admin/me/settings" element={<Navigate to="/admin/me/theme" replace />} />
                     <Route path="admin/settings/menu" element={<MenuList />} />

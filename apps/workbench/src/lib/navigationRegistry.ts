@@ -91,6 +91,8 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
     iconName: axiWorkbenchIconMap.project,
     children: [
       { key: '/admin/project', label: '项目组合', labelKey: 'nav.projects', iconName: axiWorkbenchIconMap.project },
+      { key: '/admin/workspace', label: '工作台工作队列', labelKey: 'nav.workspace', iconName: axiWorkbenchIconMap.workspace },
+      { key: '/admin/command-center', label: '工作命令中心', labelKey: 'nav.commandCenter', iconName: axiWorkbenchIconMap.team },
     ],
   },
   {
@@ -135,6 +137,8 @@ export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
   '/admin/operations/commit-ledger': { label: 'Commit Ledger', labelKey: 'nav.commitLedger' },
   '/admin/operations/observability': { label: '可观测性', labelKey: 'nav.observability' },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects' },
+  '/admin/workspace': { label: '工作台工作队列', labelKey: 'nav.workspace' },
+  '/admin/command-center': { label: '工作命令中心', labelKey: 'nav.commandCenter' },
   '/admin/team': { label: '团队', labelKey: 'nav.team' },
   '/admin/handoff': { label: '跨端续办', labelKey: 'nav.handoff' },
   // These routes open from the avatar menu and topbar notification action.
