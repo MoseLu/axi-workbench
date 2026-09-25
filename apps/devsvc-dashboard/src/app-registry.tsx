@@ -6,7 +6,7 @@ import { axiResourceIdFromRoute, axiResourceRoute, findAxiResourceByRoute, type 
 import { hostedAppRoute, type HostedApp, type HostedAppMenuGroup, type HostedAppMenuItem } from "./features/hosted/hostedApps";
 
 export type AppTFunction = TFunction<"translation", undefined>;
-export type StaticNavRouteKey = "/overview" | "/services" | "/deploy" | "/alerts" | "/servers" | "/axi-resources";
+export type StaticNavRouteKey = "/overview" | "/services" | "/deploy" | "/alerts" | "/servers" | "/axi-resources" | "/observability";
 export type AxiResourceRouteKey = `/axi-resources/${string}`;
 export type HostedRouteKey = `/apps/${string}`;
 export type NavRouteKey = StaticNavRouteKey | AxiResourceRouteKey | HostedRouteKey;
@@ -103,7 +103,8 @@ const staticNavGroups: NavGroup[] = [
     label: "release-observe",
     children: [
       { key: "/deploy", icon: navIcon("upload"), label: "上线" },
-      { key: "/alerts", icon: navIcon("notice"), label: "告警" }
+      { key: "/alerts", icon: navIcon("notice"), label: "告警" },
+      { key: "/observability", icon: navIcon("search"), label: "Observability" }
     ]
   },
   {

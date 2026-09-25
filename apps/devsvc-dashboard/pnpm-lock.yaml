@@ -9,26 +9,26 @@ importers:
   .:
     dependencies:
       '@axi/addons':
-        specifier: link:../../../../shared/axi-ui/packages/addons
-        version: link:../../../../shared/axi-ui/packages/addons
+        specifier: link:../../../../foundation/axi-ui/packages/addons
+        version: link:../../../../foundation/axi-ui/packages/addons
       '@axi/core':
-        specifier: link:../../../../shared/axi-ui/packages/core
-        version: link:../../../../shared/axi-ui/packages/core
+        specifier: link:../../../../foundation/axi-ui/packages/core
+        version: link:../../../../foundation/axi-ui/packages/core
       '@axi/crud':
-        specifier: link:../../../../shared/axi-ui/packages/crud
-        version: link:../../../../shared/axi-ui/packages/crud
+        specifier: link:../../../../foundation/axi-ui/packages/crud
+        version: link:../../../../foundation/axi-ui/packages/crud
       '@axi/settings':
-        specifier: link:../../../../shared/axi-ui/packages/settings
-        version: link:../../../../shared/axi-ui/packages/settings
+        specifier: link:../../../../foundation/axi-ui/packages/settings
+        version: link:../../../../foundation/axi-ui/packages/settings
       '@axi/shell':
-        specifier: link:../../../../shared/axi-ui/packages/shell
-        version: link:../../../../shared/axi-ui/packages/shell
+        specifier: link:../../../../foundation/axi-ui/packages/shell
+        version: link:../../../../foundation/axi-ui/packages/shell
       '@axi/tokens':
-        specifier: link:../../../../shared/axi-ui/packages/tokens
-        version: link:../../../../shared/axi-ui/packages/tokens
+        specifier: link:../../../../foundation/axi-ui/packages/tokens
+        version: link:../../../../foundation/axi-ui/packages/tokens
       '@axi/widgets':
-        specifier: link:../../../../shared/axi-ui/packages/widgets
-        version: link:../../../../shared/axi-ui/packages/widgets
+        specifier: link:../../../../foundation/axi-ui/packages/widgets
+        version: link:../../../../foundation/axi-ui/packages/widgets
       '@tauri-apps/api':
         specifier: ^2.10.0
         version: 2.11.0

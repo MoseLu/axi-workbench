@@ -32,6 +32,7 @@ import { listAxiResources, type AxiResource } from "../features/axi-resources/ax
 import { useDashboardData } from "../features/dashboard/useDashboardData";
 import { DeployPage } from "../features/deploy/DeployPage";
 import { AlertsPage } from "../features/alerts/AlertsPage";
+import { ObservabilityPage } from "../features/observability/ObservabilityPage";
 import { HostedAppPage } from "../features/hosted/HostedAppPage";
 import { hostedAppRoute, listHostedApps, type HostedApp } from "../features/hosted/hostedApps";
 import { OverviewPage } from "../features/overview/OverviewPage";
@@ -271,6 +272,7 @@ export function Shell({
       <Route path="/services" element={<ServicesPage data={data} />} />
       <Route path="/deploy" element={<DeployPage />} />
       <Route path="/alerts" element={<AlertsPage />} />
+      <Route path="/observability" element={<ObservabilityPage />} />
       <Route path="/servers" element={<ServersPage />} />
       <Route path="/axi-resources" element={<AxiResourcesPage userRole={user.role} />} />
       <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage userRole={user.role} />} />
