@@ -6,6 +6,7 @@ import { createControlPlane } from "./control-plane.mjs";
 import { createEpsAudit } from "./eps/scanner.mjs";
 import { createEpsStore } from "./eps/persistence.mjs";
 import { probeWindowsDockerRuntime } from "./eps/runtime-probe.mjs";
+import { emitObservabilityEvent } from "./observability-events.mjs";
 
 // PRD-07 phase 2: adopt the Axi observability Node SDK as an
 // optional dependency. When installed, diagnostic chatter goes
@@ -194,6 +195,84 @@ export function createControlPlaneHttpServer({
         // Keep the compatibility read available for the deployed legacy proxy.
       }
       return sendJson(res, 200, controlPlane.snapshot(), url);
+    }
+    // ─────────────── Observability query proxy (PRD-07 phase 4 follow-up) ───────────────
+    // The Workbench admin Observability page calls `/api/v1/observability/overview`
+    // and `/api/v1/observability/events`. The api-gateway already forwards these
+    // paths to the foundation observability control plane, but a misconfigured
+    // gateway leaves the Workbench page stranded. This block makes the
+    // Workbench control-plane itself answer the same paths so the page keeps
+    // working even when the gateway is down. The control plane emits events
+    // via `observability-events.mjs` (which still forwards to the foundation);
+    // queries are forwarded here with the gateway-equivalent auth headers so
+    // the foundation's `/api/v1/observability/*` handlers remain the source
+    // of truth. Routes live BEFORE the catch-all coreAuth check so the
+    // Workbench browser can reach them via the dev-server vite proxy without
+    // needing a gateway internal token.
+    {
+      const observabilityUpstream = String(process.env.AXI_OBSERVABILITY_URL || "http://127.0.0.1:13100").replace(/\/$/u, "");
+      const observabilityInternalToken = String(process.env.AXI_OBSERVABILITY_GATEWAY_TOKEN || process.env.AXI_OBSERVABILITY_INTERNAL_TOKEN || "").trim();
+      const observabilitySubject = String(req.headers["x-axi-subject"] || "user:workbench").trim();
+      const observabilityProjects = String(req.headers["x-axi-projects"] || "").trim();
+      const observabilityHeaders = {
+        accept: "application/json",
+        "content-type": "application/json",
+        "x-axi-internal-token": observabilityInternalToken,
+        "x-axi-subject": observabilitySubject,
+      };
+      if (observabilityProjects) observabilityHeaders["x-axi-projects"] = observabilityProjects;
+      const observabilityProxy = async (subPath, init = {}) => {
+        const target = new URL(`${observabilityUpstream}${subPath}`);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        try {
+          const response = await fetch(target, { ...init, headers: { ...observabilityHeaders, ...(init.headers || {}) }, signal: controller.signal });
+          const body = await response.text();
+          return { status: response.status, body };
+        } catch (error) {
+          return { status: 503, body: JSON.stringify({ ok: false, degraded: true, error: `observability upstream unreachable: ${error.message}` }) };
+        } finally {
+          clearTimeout(timer);
+        }
+      };
+      const sendObservability = (res, proxied, extraHeaders = {}) => {
+        let parsed;
+        try { parsed = JSON.parse(proxied.body); } catch { parsed = { ok: false, raw: proxied.body }; }
+        const headers = { "content-type": "application/json; charset=utf-8", ...extraHeaders };
+        res.writeHead(proxied.status, headers);
+        res.end(JSON.stringify(parsed));
+        return parsed;
+      };
+      if (req.method === "GET" && url.pathname === "/api/v1/observability/overview") {
+        return sendObservability(res, await observabilityProxy("/api/v1/observability/overview"));
+      }
+      if (req.method === "GET" && url.pathname === "/api/v1/observability/events") {
+        return sendObservability(res, await observabilityProxy(`/api/v1/observability/events${url.search}`));
+      }
+      const observabilityEventMatch = url.pathname.match(/^\/api\/v1\/observability\/events\/([^/]+)$/);
+      if (req.method === "GET" && observabilityEventMatch) {
+        return sendObservability(res, await observabilityProxy(`/api/v1/observability/events/${encodeURIComponent(observabilityEventMatch[1])}`));
+      }
+      if (req.method === "GET" && url.pathname === "/api/v1/observability/projects") {
+        return sendObservability(res, await observabilityProxy(`/api/v1/observability/projects${url.search}`));
+      }
+      if (req.method === "GET" && url.pathname === "/api/v1/observability/logs") {
+        return sendObservability(res, await observabilityProxy(`/api/v1/observability/logs${url.search}`));
+      }
+      if (req.method === "GET" && url.pathname === "/api/v1/observability/traces") {
+        return sendObservability(res, await observabilityProxy(`/api/v1/observability/traces${url.search}`));
+      }
+      if (req.method === "GET" && url.pathname === "/api/v1/observability/metrics") {
+        return sendObservability(res, await observabilityProxy(`/api/v1/observability/metrics${url.search}`));
+      }
+      const warningLifecycleMatch = url.pathname.match(/^\/api\/v1\/observability\/warnings\/([^/]+)\/(acknowledge|resolve)$/);
+      if (req.method === "POST" && warningLifecycleMatch) {
+        const body = await readJsonBody(req);
+        return sendObservability(res, await observabilityProxy(
+          `/api/v1/observability/warnings/${encodeURIComponent(warningLifecycleMatch[1])}/${warningLifecycleMatch[2]}`,
+          { method: "POST", body: JSON.stringify(body) }
+        ));
+      }
     }
     if (url.pathname === "/internal/web/v1/handoffs") {
       if (!gatewayInternalToken || !secureTokenEqual(req.headers["x-axi-internal-token"], gatewayInternalToken)) {
@@ -891,6 +970,28 @@ export function createControlPlaneHttpServer({
         subjectRef: coreSubjectRef,
       });
       if (!result.ok) return sendJson(res, result.httpStatus || 422, { error: result.error }, url);
+      const risk = result.risk || result.updatedRisk || result.record || {};
+      const status = String(risk.status || body.status || "open");
+      const eventType = status === "acknowledged"
+        ? "project.warning.acknowledged"
+        : status === "resolved" || status === "waived"
+          ? "project.warning.resolved"
+          : "project.warning.raised";
+      const projectId = String(risk.projectId || risk.projectRef || risk.targetRef || "axi-workspace");
+      const severity = String(risk.severity || risk.riskLevel || "warning").toLowerCase();
+      void emitObservabilityEvent({
+        eventType,
+        projectId,
+        serviceId: "axi-workbench-control-plane",
+        actorRef: String(req.headers["x-axi-subject"] || coreAuth.source || "unknown").trim(),
+        objectRef: `warning:${riskId}`,
+        correlationId: body.correlationId || riskId,
+        severity: ["critical", "error", "high"].includes(severity) ? "error" : severity === "info" || severity === "low" ? "info" : "warn",
+        status: status === "acknowledged" ? "acknowledged" : status === "resolved" || status === "waived" ? "resolved" : "open",
+        payload: { risk, reason: body.reason || null, sourceStatus: status },
+        provenance: { source: "axi-workbench.governance", sourceRef: riskId, sourceVersion: "governance-risk.v1" },
+        idempotencyKey: `project.warning:${riskId}:${status}:${risk.updatedAt || body.correlationId || Date.now()}`,
+      });
       return sendJson(res, 200, result, url);
     }
     if (req.method === "POST" && url.pathname === "/query") {

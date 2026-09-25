@@ -67,10 +67,19 @@ export default defineConfig(({ mode }) => {
       fs: {
         allow: [
           path.resolve(__dirname, '../..'),
-          path.resolve(__dirname, '../../../../shared/axi-ui'),
+          path.resolve(__dirname, '../../../../foundation/axi-ui'),
         ],
       },
       proxy: {
+        // Observability queries are answered by the workbench control-plane
+        // (services/control-plane/src/server.mjs) which proxies them to the
+        // foundation observability control plane. We declare the rule before
+        // the generic `/api` rule so the longest prefix wins regardless of
+        // object insertion order. Production routes this through the api-gateway.
+        '/api/v1/observability': {
+          target: env.VITE_CONTROL_PLANE_PROXY_TARGET || 'http://localhost:8092',
+          changeOrigin: true,
+        },
         // Priority: trimmed VITE_API_PROXY_TARGET, exact-loopback VITE_API_BASE_URL,
         // then the local 127.0.0.1:8088 default. loadEnv makes .env* values apply.
         '/api': {
