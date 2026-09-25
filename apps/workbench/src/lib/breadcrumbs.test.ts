@@ -22,13 +22,13 @@ const stripIcons = (items: ReturnType<typeof resolveBreadcrumbs>) =>
 describe('resolveBreadcrumbs', () => {
   it('root path collapses to a single active "工作台概览" item', () => {
     expect(stripIcons(resolveBreadcrumbs('/'))).toEqual([
-      { label: '工作台概览', isActive: true },
+      { label: '工作台概览', labelKey: 'nav.dashboard', isActive: true },
     ]);
     expect(stripIcons(resolveBreadcrumbs(''))).toEqual([
-      { label: '工作台概览', isActive: true },
+      { label: '工作台概览', labelKey: 'nav.dashboard', isActive: true },
     ]);
     expect(stripIcons(resolveBreadcrumbs('/admin/dashboard'))).toEqual([
-      { label: '工作台概览', isActive: true },
+      { label: '工作台概览', labelKey: 'nav.dashboard', isActive: true },
     ]);
   });
 
@@ -50,6 +50,9 @@ describe('resolveBreadcrumbs', () => {
   it('keeps the project catalog in the breadcrumb chain for project detail routes', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/project/axi-workbench'));
     expect(chain.map((item) => item.label)).toEqual(['工作台', '项目组合', '项目详情']);
+    expect(chain[0]?.labelKey).toBe('nav.crumb.workbench');
+    expect(chain[1]?.labelKey).toBe('nav.projects');
+    expect(chain[2]?.labelKey).toBe('nav.projectDetail');
     expect(chain[1]?.path).toBe('/admin/project');
     expect(chain[2]?.isActive).toBe(true);
   });
@@ -64,7 +67,7 @@ describe('resolveBreadcrumbs', () => {
 
   it('inserts the account hierarchy for settings/* routes', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/settings/role'));
-    expect(chain.map((c) => c.label)).toEqual(['账号与设置', '角色列表']);
+    expect(chain.map((c) => c.label)).toEqual(['账号与设置', '角色权限']);
     expect(chain[0]?.path).toBeUndefined();
     expect(chain[1]?.path).toBe('/admin/settings/role');
     expect(chain[1]?.isActive).toBe(true);

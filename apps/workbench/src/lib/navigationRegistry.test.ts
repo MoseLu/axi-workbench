@@ -21,12 +21,12 @@ describe('navigationRegistry', () => {
 
   it('keeps menu routes addressable by the shell tab registry', () => {
     expect(workbenchMenuRouteMap['/admin/settings/menu']).toEqual({
-      label: '菜单列表',
-      labelKey: 'nav.settings.menu',
+      label: '菜单配置',
+      labelKey: 'nav.settings.menu.configure',
     });
     expect(workbenchMenuRouteMap['/admin/settings/role']).toEqual({
-      label: '角色列表',
-      labelKey: 'nav.settings.role',
+      label: '角色权限',
+      labelKey: 'nav.settings.role.permission',
     });
   });
 

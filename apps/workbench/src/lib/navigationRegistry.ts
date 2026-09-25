@@ -141,8 +141,11 @@ export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
   // They remain addressable as tabs without becoming sidebar menu entries.
   '/admin/me': { label: '个人中心', labelKey: 'nav.crumb.profile' },
   '/admin/me/notifications': { label: '通知中心', labelKey: 'nav.crumb.notifications' },
-  '/admin/settings/menu': { label: '菜单列表', labelKey: 'nav.settings.menu' },
-  '/admin/settings/role': { label: '角色列表', labelKey: 'nav.settings.role' },
+  // Settings routes share their labelKey with the sidebar menu so the tab,
+  // breadcrumb, and menu all read from the same i18n entry. See
+  // `workbenchDesktopNavGroupsWithKeys` for the canonical definitions.
+  '/admin/settings/menu': { label: '菜单配置', labelKey: 'nav.settings.menu.configure' },
+  '/admin/settings/role': { label: '角色权限', labelKey: 'nav.settings.role.permission' },
 };
 
 export type RegisteredDesktopRoute = {

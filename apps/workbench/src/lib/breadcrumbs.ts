@@ -4,7 +4,7 @@
  * Inspired by:
  *  - apps/devsvc-dashboard/src/app-registry.tsx:285
  *    (reverse-lookup map `appGroupByRoute` + `findHostedMenuMatch` for prefix match)
- *  - shared/axi-ui/packages/shell/src/layout.tsx:411
+ *  - foundation/axi-ui/packages/shell/src/layout.tsx:411
  *    (three-state item: current / href / onClick)
  *
  * Contract:
@@ -93,6 +93,10 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
   '/admin/personal-os/today': { label: '今日', labelKey: 'personalOs.nav.today', icon: 'overview', parents: [WORKBENCH_PARENT] },
   '/admin/personal-os/workbench': { label: '项目队列', labelKey: 'personalOs.nav.workbench', icon: 'project', parents: [WORKBENCH_PARENT] },
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations', icon: 'laptop', parents: [WORKBENCH_PARENT] },
+  '/admin/operations/eps': { label: 'API 资产审计', labelKey: 'nav.epsAudit', icon: 'operations', parents: [WORKBENCH_PARENT] },
+  '/admin/operations/commit-ledger': { label: 'Commit Ledger', labelKey: 'nav.commitLedger', icon: 'commit', parents: [WORKBENCH_PARENT] },
+  '/admin/operations/observability': { label: '可观测性', labelKey: 'nav.observability', icon: 'operations', parents: [WORKBENCH_PARENT] },
+  '/admin/handoff': { label: '跨端续办', labelKey: 'nav.handoff', icon: 'forward', parents: [WORKBENCH_PARENT] },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects', icon: 'project', parents: [WORKBENCH_PARENT] },
   '/admin/task': { label: '工作项', labelKey: 'nav.tasks', icon: 'workspace', parents: [WORKBENCH_PARENT] },
   '/admin/team': { label: '团队', labelKey: 'nav.team', icon: 'team', parents: [WORKBENCH_PARENT] },
@@ -119,9 +123,12 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
     icon: 'settings',
     parents: [PREFERENCES_PARENT],
   },
+  // Settings routes share their labelKey with the sidebar menu so the tab,
+  // breadcrumb, and menu all read from the same i18n entry. See
+  // `workbenchDesktopNavGroupsWithKeys` for the canonical definitions.
   '/admin/settings/menu': {
-    label: '菜单列表',
-    labelKey: 'nav.settings.menu',
+    label: '菜单配置',
+    labelKey: 'nav.settings.menu.configure',
     icon: 'menu',
     parents: [ACCOUNT_PARENT],
   },
@@ -132,8 +139,8 @@ export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
     parents: [ACCOUNT_PARENT],
   },
   '/admin/settings/role': {
-    label: '角色列表',
-    labelKey: 'nav.settings.role',
+    label: '角色权限',
+    labelKey: 'nav.settings.role.permission',
     icon: 'roles',
     parents: [ACCOUNT_PARENT],
   },
@@ -190,14 +197,14 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const trimmed = pathname || '/';
 
   if (trimmed === '/' || trimmed === '/admin/dashboard' || trimmed === '') {
-    return [{ label: '工作台概览', isActive: true }];
+    return [{ label: '工作台概览', labelKey: 'nav.dashboard', isActive: true }];
   }
 
   if (trimmed.startsWith('/admin/project/')) {
     return [
-      { label: WORKBENCH_PARENT.label, icon: hint(WORKBENCH_PARENT.icon), path: WORKBENCH_PARENT.path },
-      { label: '项目组合', icon: hint('project'), path: '/admin/project' },
-      { label: '项目详情', icon: hint('project'), isActive: true },
+      { label: WORKBENCH_PARENT.label, labelKey: WORKBENCH_PARENT.labelKey, icon: hint(WORKBENCH_PARENT.icon), path: WORKBENCH_PARENT.path },
+      { label: '项目组合', labelKey: 'nav.projects', icon: hint('project'), path: '/admin/project' },
+      { label: '项目详情', labelKey: 'nav.projectDetail', icon: hint('project'), isActive: true },
     ];
   }
 
