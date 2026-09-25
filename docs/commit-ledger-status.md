@@ -1,6 +1,6 @@
 # Commit Ledger 实现状态
 
-> 最后更新: 2026-09-15 (CL-019)
+> 最后更新: 2026-09-25 (CL-019 follow-up: scheduler wiring)
 > 证据来源: 代码 + routes.yaml + navigationRegistry.ts + 模块文件存在性
 
 ## 状态分级
@@ -22,6 +22,7 @@
 | CL-017 | **integration_verified** | Web 路由 + 导航注册 + UI test 写入 (`apps/workbench/src/App.tsx:94`, `CommitLedgerPage.test.tsx`) |
 | CL-018 | **integration_verified** | E2E 6/6 PASS (`.claude/clog-run/final-phase/cl-018-evidence.json`) |
 | CL-019 | **module_verified** | 本文档已根据实际证据更新 |
+| CL-019b | **integration_verified** | Scheduler (`scheduler.mjs`) 接线完成，server.mjs 启动即触发 + 每 15 min 周期同步；end-to-end 验证从 874/13 → 6,361/36 (`server.mjs:1162-1187`, `scheduler.mjs`, `scheduler.test.ts` 9/9) |
 | CL-020 | pending | 最终集成审查待发布 |
 
 ## 本地 Todo (非 external gate)

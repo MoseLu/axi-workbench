@@ -7,6 +7,7 @@ export { collectAll, collectRepoCommits, generateRecordId, parseConventionalComm
 export { linkEvidence, linkEvidenceBatch, detectConflicts, detectStale, getVerificationStats, VerificationStatus } from './evidence-linker.mjs';
 export { upsert, upsertBatch, detectConflict, generateIdempotencyKey, IngestionStatus, ConflictResolution, resolveConflict } from './ingestion.mjs';
 export { registerCommitLedgerRoutes, getCommitLedgerStore, setCommitLedgerStore } from './api-routes.mjs';
+export { startScheduler } from './scheduler.mjs';
 
 // Schema version
 export const SCHEMA_VERSION = 'commit-ledger.v1';

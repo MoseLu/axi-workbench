@@ -1151,6 +1151,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 
   // Initialize commit-ledger persistence store before serving traffic so
   // existing JSONL records are loaded into memory and new syncs land on disk.
+  // Then arm the sync scheduler so the ledger stays in sync with the live
+  // workspace without anyone having to hit POST /commit-ledger/sync by hand.
   const commitLedgerApi = await import("./commit-ledger/api-routes.mjs");
   const { initCommitLedgerStore, runSyncJob, syncJobsRegistry } = commitLedgerApi;
   try {
@@ -1163,8 +1165,34 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     });
   }
 
+  let syncScheduler = null;
+  if (process.env.AXI_COMMIT_LEDGER_SYNC_DISABLED !== "1") {
+    try {
+      const { startScheduler } = await import("./commit-ledger/scheduler.mjs");
+      const intervalMs = Number.parseInt(process.env.AXI_COMMIT_LEDGER_SYNC_INTERVAL_MS || "", 10);
+      const startupMaxCommits = Number.parseInt(process.env.AXI_COMMIT_LEDGER_STARTUP_MAX_COMMITS || "", 10);
+      const periodicMaxCommits = Number.parseInt(process.env.AXI_COMMIT_LEDGER_SYNC_MAX_COMMITS || "", 10);
+      syncScheduler = startScheduler({
+        runJob: runSyncJob,
+        jobs: syncJobsRegistry,
+        intervalMs: Number.isFinite(intervalMs) ? intervalMs : undefined,
+        startupMaxCommits: Number.isFinite(startupMaxCommits) ? startupMaxCommits : undefined,
+        periodicMaxCommits: Number.isFinite(periodicMaxCommits) ? periodicMaxCommits : undefined,
+        logger: console,
+      });
+    } catch (err) {
+      _logError("commit-ledger: failed to start scheduler", { error: String(err) });
+    }
+  } else {
+    _logInfo("commit-ledger: scheduler disabled (AXI_COMMIT_LEDGER_SYNC_DISABLED=1)", { source: "commit-ledger" });
+  }
+
   // Optional fs_watcher that turns `.git/` HEAD / refs changes into
   // incremental sync jobs through the same in-process runSyncJob pipeline.
+  // The scheduler above is the always-on baseline; the watcher layers on top
+  // for workspaces where new commits need to land in the ledger faster than
+  // the interval. Opt-in because per-repo fs.watch has nontrivial cost on
+  // hosts with many worktrees.
   let fsWatcher = null;
   if (process.env.AXI_COMMIT_LEDGER_FS_WATCHER === "enabled") {
     try {
@@ -1175,19 +1203,25 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
         enabled: true,
         logger: console,
       });
-      const shutdownWatcher = async () => {
-        if (!fsWatcher) return;
-        try { await fsWatcher.stop(); } catch (err) { _logError("fs-watcher stop", { error: String(err) }); }
-        fsWatcher = null;
-      };
-      process.once("SIGTERM", shutdownWatcher);
-      process.once("SIGINT", shutdownWatcher);
     } catch (err) {
       _logError("commit-ledger: failed to start fs_watcher", { error: String(err) });
     }
   } else {
     _logInfo("commit-ledger: fs_watcher disabled (set AXI_COMMIT_LEDGER_FS_WATCHER=enabled to start)", { source: "commit-ledger" });
   }
+
+  const shutdownCommitLedger = async () => {
+    if (syncScheduler) {
+      try { await syncScheduler.stop(); } catch (err) { _logError("commit-ledger: scheduler stop", { error: String(err) }); }
+      syncScheduler = null;
+    }
+    if (fsWatcher) {
+      try { await fsWatcher.stop(); } catch (err) { _logError("fs-watcher stop", { error: String(err) }); }
+      fsWatcher = null;
+    }
+  };
+  process.once("SIGTERM", shutdownCommitLedger);
+  process.once("SIGINT", shutdownCommitLedger);
 
   server.listen(port, bindHost, () => {
     console.log(`control-plane listening on http://${bindHost}:${port}`);
