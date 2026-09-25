@@ -144,3 +144,10 @@ apps/workbench-mobile/android/local.properties
 apps/workbench-mobile/android/.kotlin/
 apps/workbench-mobile/ios/
 apps/workbench-mobile/dist/
+
+# Local databases / vector stores (gitignored, regenerated on first run)
+*.db
+*.sqlite3
+*.sqlite
+chroma_db/
+chroma/
