@@ -10,32 +10,29 @@ import {
   createAxiAntdTheme,
   useAxiTheme,
 } from '@axi/core';
-import { axiCrudLocaleContribution } from '@axi/crud';
+import { AxiExceptionPage, axiCrudLocaleContribution } from '@axi/crud';
 import { axiSettingsLocaleContribution } from '@axi/settings';
 import { axiShellLocaleContribution } from '@axi/shell';
 import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foundation';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/admin/AxiOsDashboard';
-import Operations from './pages/admin/Operations';
-import EpsAudit from './pages/admin/EpsAudit';
-import Workspace from './pages/admin/Workspace';
-import Team from './pages/admin/Team';
-import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
-import MenuList from './pages/admin/MenuList';
-import RoleList from './pages/admin/RoleList';
-import Handoff from './pages/admin/Handoff';
-import Search from './pages/admin/Search';
-import AccountInfo from './pages/admin/me/AccountInfo';
-import Devices from './pages/admin/me/Devices';
-import Notifications from './pages/admin/me/Notifications';
-import Theme from './pages/admin/me/Theme';
+import Dashboard from './pages/admin/Dashboard';
 import AuthCallback from './pages/AuthCallback';
 import LegalDocument from './pages/LegalDocument';
 import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
+import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
+import MenuList from './pages/admin/MenuList';
+import RoleList from './pages/admin/RoleList';
+import Handoff from './pages/admin/Handoff';
+import HandoffCreate from './pages/admin/HandoffCreate';
+import Operations from './pages/admin/Operations';
+import EpsAudit from './pages/admin/EpsAudit';
+import Observability from './pages/admin/Observability';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
+import Team from './pages/admin/Team';
+import SearchPage from './pages/admin/Search';
 import RequireSession from './components/Auth/RequireSession';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
@@ -50,6 +47,16 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/** 非 AXI UI 页面不再进入第二套页面体系，统一按 404 处理。 */
+const AxiUiContractNotFound: React.FC = () => (
+  <AxiExceptionPage
+    className="workbench-axi-contract-not-found"
+    status="404"
+    subTitle="该页面尚未通过 AXI UI 页面契约审核。"
+    title="页面暂不可用"
+  />
+);
 
 const WorkbenchSurface: React.FC = () => {
   const { mode, preset } = useAxiTheme();
@@ -96,24 +103,25 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/operations" element={<Operations />} />
                     <Route path="admin/operations/eps" element={<EpsAudit />} />
                     <Route path="admin/operations/commit-ledger" element={<CommitLedgerPage />} />
+                    <Route path="admin/operations/observability" element={<Observability />} />
                     <Route path="admin/project" element={<Projects />} />
                     <Route path="admin/project/:id" element={<ProjectDetail />} />
-                    <Route path="admin/task" element={<Workspace />} />
+                    <Route path="admin/task" element={<AxiUiContractNotFound />} />
                     <Route path="admin/team" element={<Team />} />
                     {/* 历史扫码链接不再打开桌面摄像头工具，回到控制中心。 */}
                     <Route path="admin/scan" element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="admin/handoff" element={<Handoff />} />
-                    <Route path="admin/handoff/:id" element={<Handoff />} />
+                    <Route path="admin/handoff/:id" element={<HandoffCreate />} />
                     {/* 全局联想搜索二级页 */}
-                    <Route path="admin/search" element={<Search />} />
+                    <Route path="admin/search" element={<SearchPage />} />
                     {/* 我的：入口 + 二级页 */}
                     {/* Cool Admin personal center is the canonical account form. */}
-                    <Route path="admin/me" element={<AccountInfo />} />
+                    <Route path="admin/me" element={<AxiUiContractNotFound />} />
                     {/* Preserve old account bookmarks without a second account page. */}
                     <Route path="admin/me/account" element={<Navigate to="/admin/me" replace />} />
-                    <Route path="admin/me/devices" element={<Devices />} />
-                    <Route path="admin/me/notifications" element={<Notifications />} />
-                    <Route path="admin/me/theme" element={<Theme />} />
+                    <Route path="admin/me/devices" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/me/notifications" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/me/theme" element={<AxiUiContractNotFound />} />
                     {/* Retired settings table: preserve old bookmarks without rendering a duplicate settings page. */}
                     <Route path="admin/me/settings" element={<Navigate to="/admin/me/theme" replace />} />
                     <Route path="admin/settings/menu" element={<MenuList />} />
@@ -121,7 +129,7 @@ const WorkbenchSurface: React.FC = () => {
                     <Route path="admin/settings/role" element={<RoleList />} />
                   </Route>
 
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<AxiUiContractNotFound />} />
               </Routes>
             </BrowserRouter>
           </I18nProvider>

@@ -54,16 +54,6 @@ export type WorkbenchNavGroup = {
 
 export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
   {
-    key: 'personal-os',
-    label: '个人操作系统',
-    labelKey: 'nav.group.personalOs',
-    iconName: axiWorkbenchIconMap.overview,
-    children: [
-      { key: '/admin/personal-os/today', label: '今日', labelKey: 'personalOs.nav.today', iconName: axiWorkbenchIconMap.overview },
-      { key: '/admin/personal-os/workbench', label: '项目队列', labelKey: 'personalOs.nav.workbench', iconName: axiWorkbenchIconMap.project },
-    ],
-  },
-  {
     key: 'overview',
     label: '概览',
     labelKey: 'nav.group.overview',
@@ -75,12 +65,23 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
     ],
   },
   {
+    key: 'personal-os',
+    label: '个人操作系统',
+    labelKey: 'nav.group.personalOs',
+    iconName: axiWorkbenchIconMap.overview,
+    children: [
+      { key: '/admin/personal-os/today', label: '今日', labelKey: 'personalOs.nav.today', iconName: axiWorkbenchIconMap.overview },
+      { key: '/admin/personal-os/workbench', label: '项目队列', labelKey: 'personalOs.nav.workbench', iconName: axiWorkbenchIconMap.project },
+    ],
+  },
+  {
     key: 'ops',
     label: '运维',
     labelKey: 'nav.group.ops',
     iconName: axiWorkbenchIconMap.operations,
     children: [
       { key: '/admin/operations/commit-ledger', label: 'Commit Ledger', labelKey: 'nav.commitLedger', iconName: axiWorkbenchIconMap.commit },
+      { key: '/admin/operations/observability', label: '可观测性', labelKey: 'nav.observability', iconName: axiWorkbenchIconMap.operations },
     ],
   },
   {
@@ -90,7 +91,6 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
     iconName: axiWorkbenchIconMap.project,
     children: [
       { key: '/admin/project', label: '项目组合', labelKey: 'nav.projects', iconName: axiWorkbenchIconMap.project },
-      { key: '/admin/task', label: '工作项', labelKey: 'nav.tasks', iconName: axiWorkbenchIconMap.workspace },
     ],
   },
   {
@@ -133,8 +133,8 @@ export const workbenchMenuRouteMap: Record<string, MenuRoute> = {
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations' },
   '/admin/operations/eps': { label: 'API 资产审计', labelKey: 'nav.epsAudit' },
   '/admin/operations/commit-ledger': { label: 'Commit Ledger', labelKey: 'nav.commitLedger' },
+  '/admin/operations/observability': { label: '可观测性', labelKey: 'nav.observability' },
   '/admin/project': { label: '项目组合', labelKey: 'nav.projects' },
-  '/admin/task': { label: '工作项', labelKey: 'nav.tasks' },
   '/admin/team': { label: '团队', labelKey: 'nav.team' },
   '/admin/handoff': { label: '跨端续办', labelKey: 'nav.handoff' },
   // These routes open from the avatar menu and topbar notification action.
