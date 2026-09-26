@@ -29,6 +29,12 @@ export {
   type WorkbenchNotificationType,
 } from './notifications';
 export {
+  filterWorkbenchHomeProjects,
+  type WorkbenchHomeFilter,
+  type WorkbenchHomeProject,
+  type WorkbenchHomeProjectStatus,
+} from './home';
+export {
   GENERATED_USERNAME_MAX_LENGTH,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,

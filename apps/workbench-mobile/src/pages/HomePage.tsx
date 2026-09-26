@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { type WorkbenchHomeProject, type WorkbenchHomeProjectStatus } from '@axi/workbench-foundation';
 import { MobileIcon } from '../components/MobileIcons';
 import { MobileProjectionState, formatProjectionTime } from '../components/MobileProjectionState';
 import { useMobileDeviceSession, useMobileWorkspaceQuery } from '../lib/mobileControl';
@@ -8,6 +9,15 @@ export default function HomePage() {
   const session = useMobileDeviceSession();
   const workspace = useMobileWorkspaceQuery();
   const snapshot = workspace.data;
+  const homeProjects: WorkbenchHomeProject[] = snapshot?.projects.map((project) => ({
+    id: project.id,
+    name: project.name,
+    status: mobileProjectStatus(project.health),
+    health: project.health,
+    summary: project.summary,
+    branch: null,
+    workspace: { changedEntries: 0, clean: null },
+  })) ?? [];
 
   return (
     <section className="axi-mobile-page axi-mobile-home">
@@ -33,9 +43,9 @@ export default function HomePage() {
             <h2>项目</h2>
             <button type="button" onClick={() => navigate('/projects')}>全部项目<MobileIcon name="arrow-right" size={15} /></button>
           </div>
-          {snapshot.projects.length ? (
+          {homeProjects.length ? (
             <div className="axi-mobile-card-list">
-              {snapshot.projects.slice(0, 4).map((project) => (
+              {homeProjects.slice(0, 4).map((project) => (
                 <button type="button" key={project.id} className="axi-mobile-project-card" onClick={() => navigate('/projects')}>
                   <span className="axi-mobile-project-card__mark is-green">{project.name.slice(0, 1)}</span>
                   <span className="axi-mobile-project-card__body">
@@ -51,4 +61,8 @@ export default function HomePage() {
       ) : null}
     </section>
   );
+}
+
+function mobileProjectStatus(health: WorkbenchHomeProject['health']): WorkbenchHomeProjectStatus {
+  return health === 'healthy' ? 'available' : health === 'unknown' ? 'unknown' : 'attention';
 }

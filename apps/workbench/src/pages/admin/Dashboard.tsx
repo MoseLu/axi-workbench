@@ -13,6 +13,7 @@ import {
 } from '@axi/crud';
 import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@axi/api-client';
+import { filterWorkbenchHomeProjects, type WorkbenchHomeProject } from '@axi/workbench-foundation';
 import { useI18n } from '../../i18n';
 import {
   getProjectGitStatus,
@@ -65,26 +66,36 @@ const Dashboard: React.FC = () => {
     workspacePending: t('projects.workspace.pending'),
     workspaceClean: t('projects.workspace.clean'),
   };
-  const projectRows = useMemo<ProjectRow[]>(
+  const homeProjects = useMemo<WorkbenchHomeProject[]>(
     () => projects.map((project) => {
       const git = getProjectGitStatus(project);
       return {
-        branch: git.branch || copy.branchUnregistered,
         id: getProjectResourceId(project),
-        label: getProjectResourceLabel(project),
-        state: project.status === 'available' ? copy.stateAvailable : project.status || copy.stateUnknown,
-        workspace: git.changedEntries > 0
-          ? copy.workspaceChanges.replace('{value}', `${git.changedEntries}`)
-          : git.clean === false
-            ? copy.workspacePending
-            : copy.workspaceClean,
+        name: getProjectResourceLabel(project),
+        status: project.status === 'available' ? 'available' : project.status === 'attention' ? 'attention' : 'unknown',
+        health: project.status === 'available' ? 'healthy' : 'unknown',
+        summary: git.clean === false ? copy.workspacePending : copy.workspaceClean,
+        branch: git.branch || null,
+        workspace: { changedEntries: git.changedEntries, clean: git.clean ?? null },
       };
     }),
-    [copy, projects],
+    [copy.workspaceClean, copy.workspacePending, projects],
   );
-  const filteredProjectRows = useMemo(
-    () => filterProjectRows(projectRows, { keyword, state: stateFilter, availableState: copy.stateAvailable }),
-    [copy.stateAvailable, keyword, projectRows, stateFilter],
+  const filteredHomeProjects = useMemo(
+    () => filterWorkbenchHomeProjects(homeProjects, { keyword, status: stateFilter === 'attention' ? 'attention' : stateFilter === 'available' ? 'available' : 'all' }),
+    [homeProjects, keyword, stateFilter],
+  );
+  const projectRows = useMemo<ProjectRow[]>(
+    () => filteredHomeProjects.map((project) => ({
+      branch: project.branch || copy.branchUnregistered,
+      id: project.id,
+      label: project.name,
+      state: project.status === 'available' ? copy.stateAvailable : project.status === 'attention' ? copy.stateUnknown : copy.stateUnknown,
+      workspace: project.workspace.changedEntries > 0
+        ? copy.workspaceChanges.replace('{value}', `${project.workspace.changedEntries}`)
+        : project.workspace.clean === false ? copy.workspacePending : copy.workspaceClean,
+    })),
+    [copy, filteredHomeProjects],
   );
   const projectColumns: AxiTableColumn<ProjectRow>[] = [
     { alwaysVisible: true, title: t('projects.column.index'), type: 'index', width: 64 },
@@ -118,7 +129,7 @@ const Dashboard: React.FC = () => {
   const showLoading = Boolean(isLoading && !snapshot);
 
   return (
-    <AxiCrud dataSource={filteredProjectRows} permission={{ extraFields: { page: true, list: true, info: true, add: false, update: false, delete: false } }}>
+    <AxiCrud dataSource={projectRows} permission={{ extraFields: { page: true, list: true, info: true, add: false, update: false, delete: false } }}>
       <DesktopCrudFrame
         ariaLabel={t('dashboard.title')}
         className="dashboard-crud"
@@ -166,9 +177,9 @@ const Dashboard: React.FC = () => {
             <AxiTableGroup className="dashboard-crud__table">
               <AxiCrudTable
                 columns={projectColumns}
-                data={filteredProjectRows}
+                data={projectRows}
                 operationButtons={projectOperationButtons}
-                pagination={desktopCrudPagination(filteredProjectRows.length)}
+                pagination={desktopCrudPagination(projectRows.length)}
                 rowKey="id"
                 rowSelection={false}
                 onRow={(row) => ({
@@ -196,21 +207,5 @@ const Dashboard: React.FC = () => {
     </AxiCrud>
   );
 };
-
-function filterProjectRows(
-  rows: ProjectRow[],
-  options: { keyword: string; state: 'all' | 'available' | 'attention'; availableState: string },
-): ProjectRow[] {
-  const normalized = options.keyword.trim().toLocaleLowerCase('zh-CN');
-  return rows.filter((row) => {
-    if (options.state === 'available' && row.state !== options.availableState) return false;
-    if (options.state === 'attention' && row.state === options.availableState) return false;
-    if (!normalized) return true;
-    return [row.label, row.branch, row.state, row.workspace]
-      .join(' ')
-      .toLocaleLowerCase('zh-CN')
-      .includes(normalized);
-  });
-}
 
 export default Dashboard;
