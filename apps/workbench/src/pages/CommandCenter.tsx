@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react';
+// axi-ui-escape-hatch: antd Input + Button drive the command-bar search row
+// because @axi/widgets.AxiSearchInput is not shipped yet. The wrapping
+// AxiRow + AxiTag/AxiCardBanner cluster stays consistent with the rest of
+// the desktop admin shell; swap the antd primitives once AxiSearchInput
+// lands.
+import { Button, Input } from 'antd';
 import { useCancelAgentTask, useControlQuery, useControlSnapshot, useDecideApproval, useRunControlCommand } from '@axi/api-client';
+import { AxiBasicBanner, AxiCardBanner, AxiPage, AxiTag } from '@axi/core';
+import { AxiBanner, AxiRow } from '@axi/widgets';
 import type { AgentTask, ApprovalRequest, ControlRun, LayerKind, ManagedResource, RouteBinding } from '@axi/workstation-contracts';
-
-const layerLabels: Record<LayerKind, string> = {
-  im: 'IM层',
-  communication: '通信层',
-  software: '软件层',
-  base_service: '基础服务层',
-  physical_service: '物理服务层',
-  external_capability: '外接能力层',
-};
+import { useI18n } from '../i18n';
 
 const layerOrder: LayerKind[] = [
   'im',
@@ -20,52 +20,23 @@ const layerOrder: LayerKind[] = [
   'external_capability',
 ];
 
-/**
- * Surface tokens (all colours reference `--axi-*` / `--palette-*` so the panel
- * automatically follows the active Axi theme). Defined inline rather than as a
- * CSS class so the panel keeps its existing compact, custom-rendered look.
- */
-const panelStyle: React.CSSProperties = {
-  padding: 18,
-  background: 'var(--axi-bg-elevated, var(--palette-indigo-50))',
-  border: '1px solid var(--axi-border, var(--palette-border-light))',
-  borderRadius: 'var(--axi-radius-md, 8px)',
-};
-
-const compactRowStyle: React.CSSProperties = {
-  padding: 10,
-  marginBottom: 8,
-  background: 'var(--axi-bg-elevated, var(--palette-indigo-50))',
-  border: '1px solid var(--axi-border, var(--palette-border-light))',
-  borderRadius: 'var(--axi-radius-sm, 6px)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 5,
-};
-
-const mutedTextStyle: React.CSSProperties = {
-  color: 'var(--axi-text-muted, var(--palette-gray-500))',
-  fontSize: 12,
-  overflowWrap: 'anywhere',
-};
-
-const smallButtonStyle: React.CSSProperties = {
-  padding: '5px 8px',
-  border: '1px solid var(--color-info-soft)',
-  borderRadius: 'var(--axi-radius-sm, 5px)',
-  color: 'var(--color-info-soft)',
-  background: 'var(--color-info-soft)',
-  cursor: 'pointer',
-  fontSize: 12,
+const layerCopyKey: Record<LayerKind, string> = {
+  im: 'commandCenter.layer.im',
+  communication: 'commandCenter.layer.communication',
+  software: 'commandCenter.layer.software',
+  base_service: 'commandCenter.layer.baseService',
+  physical_service: 'commandCenter.layer.physicalService',
+  external_capability: 'commandCenter.layer.externalCapability',
 };
 
 const CommandCenter: React.FC = () => {
+  const { t } = useI18n();
   const { data: snapshot, isLoading, error } = useControlSnapshot();
   const controlQuery = useControlQuery();
   const runCommand = useRunControlCommand();
   const cancelAgentTask = useCancelAgentTask();
   const decideApproval = useDecideApproval();
-  const [query, setQuery] = useState('查看所有项目状态');
+  const [query, setQuery] = useState(() => t('commandCenter.defaultQuery', '查看所有项目状态'));
   const [lastRun, setLastRun] = useState<ControlRun | null>(null);
 
   const resourcesByLayer = useMemo(() => {
@@ -90,199 +61,195 @@ const CommandCenter: React.FC = () => {
     setLastRun(run);
   };
 
-  return (
-    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
-        <div>
-          <h1 style={{ fontSize: 24, margin: 0, color: 'var(--color-bg-card)' }}>Command Center</h1>
-          <p style={{ marginTop: 6, color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 13 }}>
-            Natural-language control plane across IM, communication, software, base services, physical services, and external capabilities.
-          </p>
-        </div>
-        <div style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12, whiteSpace: 'nowrap' }}>
-          {snapshot ? `Updated ${new Date(snapshot.generatedAt).toLocaleString()}` : 'Snapshot unavailable'}
-        </div>
-      </header>
+  const snapshotMeta = snapshot
+    ? t('commandCenter.snapshotUpdated').replace('{value}', new Date(snapshot.generatedAt).toLocaleString())
+    : t('commandCenter.snapshotUnavailable');
 
-      <form onSubmit={handleSubmit} style={{ ...panelStyle, display: 'flex', gap: 10 }}>
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Ask: 跑一下 ielts-vocab 健康检查"
-          style={{
-            flex: 1,
-            minWidth: 0,
-            padding: '11px 13px',
-            color: 'var(--color-bg-card)',
-            background: 'var(--axi-bg-input, var(--axi-bg-elevated, var(--palette-indigo-50)))',
-            border: '1px solid var(--axi-border, var(--palette-border-light))',
-            borderRadius: 'var(--axi-radius-sm, 6px)',
-            outline: 'none',
-            fontSize: 14,
-          }}
-        />
-        <button
-          type="submit"
-          disabled={controlQuery.isPending}
-          style={{
-            padding: '0 16px',
-            border: 'none',
-            borderRadius: 'var(--axi-radius-sm, 6px)',
-            color: 'var(--color-on-primary, var(--palette-white))',
-            background: 'var(--color-chart-1)',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          {controlQuery.isPending ? 'Running' : 'Send'}
-        </button>
+  return (
+    <AxiPage responsive>
+      <AxiBasicBanner
+        actions={<span>{snapshotMeta}</span>}
+        description={t('commandCenter.description')}
+        title={t('commandCenter.title')}
+      />
+
+      <form onSubmit={handleSubmit}>
+        <AxiRow className="wb-crud-search-cluster" style={{ width: '100%' }}>
+          <Input
+            allowClear
+            aria-label={t('commandCenter.search.ariaLabel')}
+            className="cc-search-input"
+            placeholder={t('commandCenter.search.placeholder')}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <Button htmlType="submit" loading={controlQuery.isPending} type="primary">
+            {controlQuery.isPending ? t('commandCenter.search.running') : t('commandCenter.search.submit')}
+          </Button>
+        </AxiRow>
       </form>
 
       {lastRun && (
-        <section style={panelStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-            <strong style={{ color: 'var(--color-bg-card)', fontSize: 15 }}>{lastRun.intent}</strong>
-            <span style={{ color: lastRun.accepted ? 'var(--color-chart-2)' : 'var(--color-chart-4)', fontSize: 12 }}>
-              {lastRun.accepted ? 'accepted' : 'blocked'}
-            </span>
-          </div>
-          <p style={{ margin: 0, color: 'var(--axi-text-secondary, var(--palette-gray-600))', lineHeight: 1.6 }}>{lastRun.summary}</p>
+        <AxiCardBanner
+          actions={
+            <AxiTag type={lastRun.accepted ? 'success' : 'danger'} effect="dark">
+              {lastRun.accepted ? t('commandCenter.lastRun.accepted') : t('commandCenter.lastRun.blocked')}
+            </AxiTag>
+          }
+          title={lastRun.intent}
+        >
+          <p>{lastRun.summary}</p>
           {lastRun.actions.map((action, index) => (
-            <pre
-              key={`${action.commandId || 'action'}-${index}`}
-              style={{
-                marginTop: 12,
-                padding: 12,
-                overflow: 'auto',
-                color: 'var(--axi-text-secondary, var(--palette-gray-600))',
-                background: 'var(--palette-black-alpha-08)',
-                borderRadius: 'var(--axi-radius-sm, 6px)',
-                fontSize: 12,
-                whiteSpace: 'pre-wrap',
-              }}
-            >
+            <pre key={`${action.commandId || 'action'}-${index}`}>
               {[action.summary, action.stdout, action.stderr].filter(Boolean).join('\n')}
             </pre>
           ))}
-        </section>
+        </AxiCardBanner>
       )}
 
-      {isLoading && <div style={panelStyle}>Loading control-plane snapshot...</div>}
+      {isLoading && (
+        <AxiBanner tone="info" message={t('commandCenter.loading')} />
+      )}
       {error && (
-        <div style={{ ...panelStyle, color: 'var(--palette-red-antd-soft)' }}>
-          Control plane is not reachable. Start it with `pnpm --filter @axi/workstation-control-plane dev`.
-        </div>
+        <AxiBanner tone="danger" role="alert" aria-live="assertive" message={t('commandCenter.error.description')} />
       )}
 
       {snapshot && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <AxiRow style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           <RuntimePanel runtimes={snapshot.runtimes || []} />
           <RoutesPanel routes={snapshot.routes || []} />
-          <ApprovalsPanel approvals={snapshot.approvals || []} onDecision={(id, decision) => decideApproval.mutate({ id, decision })} />
-          <AgentTasksPanel tasks={snapshot.agentTasks || []} onCancel={(id) => cancelAgentTask.mutate(id)} />
-        </div>
+          <ApprovalsPanel
+            approvals={snapshot.approvals || []}
+            onDecision={(id, decision) => decideApproval.mutate({ id, decision })}
+          />
+          <AgentTasksPanel
+            tasks={snapshot.agentTasks || []}
+            onCancel={(id) => cancelAgentTask.mutate(id)}
+          />
+        </AxiRow>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+      <AxiRow style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
         {layerOrder.map((layer) => {
           const resources = resourcesByLayer.get(layer) || [];
           return (
-            <section key={layer} style={panelStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <h2 style={{ margin: 0, color: 'var(--color-bg-card)', fontSize: 16 }}>{layerLabels[layer]}</h2>
-                <span style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12 }}>{resources.length}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {resources.map((resource) => (
-                  <ResourceRow key={resource.id} resource={resource} onRunCommand={handleRunCommand} />
-                ))}
-                {resources.length === 0 && (
-                  <div style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 13 }}>No resources discovered.</div>
-                )}
-              </div>
-            </section>
+            <AxiCardBanner
+              key={layer}
+              actions={<AxiTag type="info">{resources.length}</AxiTag>}
+              title={t(layerCopyKey[layer])}
+            >
+              {resources.length === 0 ? (
+                <span>{t('commandCenter.resources.empty')}</span>
+              ) : (
+                <AxiRow style={{ flexDirection: 'column', gap: 10 }}>
+                  {resources.map((resource) => (
+                    <ResourceRow key={resource.id} resource={resource} onRunCommand={handleRunCommand} />
+                  ))}
+                </AxiRow>
+              )}
+            </AxiCardBanner>
           );
         })}
-      </div>
-    </div>
+      </AxiRow>
+    </AxiPage>
   );
 };
 
-const RuntimePanel: React.FC<{ runtimes: { kind: string; available: boolean; fallbackKind?: string; summary?: string }[] }> = ({ runtimes }) => (
-  <section style={panelStyle}>
-    <PanelHeader title="Runtime Sessions" count={runtimes.length} />
-    {runtimes.map((runtime) => (
-      <CompactRow key={runtime.kind}>
-        <strong style={{ color: 'var(--color-bg-card)' }}>{runtime.kind}</strong>
-        <span style={{ color: runtime.available ? 'var(--color-chart-2)' : 'var(--color-chart-3)', fontSize: 12 }}>
-          {runtime.available ? 'available' : `fallback ${runtime.fallbackKind || ''}`.trim()}
-        </span>
-        <span style={mutedTextStyle}>{runtime.summary || 'n/a'}</span>
-      </CompactRow>
-    ))}
-  </section>
-);
+interface RuntimeSession {
+  available: boolean;
+  fallbackKind?: string;
+  kind: string;
+  summary?: string;
+}
 
-const RoutesPanel: React.FC<{ routes: RouteBinding[] }> = ({ routes }) => (
-  <section style={panelStyle}>
-    <PanelHeader title="Routes" count={routes.length} />
-    {routes.length ? routes.slice(0, 5).map((route) => (
-      <CompactRow key={route.id}>
-        <strong style={{ color: 'var(--color-bg-card)' }}>{route.channel}</strong>
-        <span style={mutedTextStyle}>{route.profile} · {route.runtimePreference || 'default'}</span>
-        <span style={mutedTextStyle}>{route.routeKey}</span>
-      </CompactRow>
-    )) : <EmptyText text="No paired routes yet." />}
-  </section>
-);
+const RuntimePanel: React.FC<{ runtimes: RuntimeSession[] }> = ({ runtimes }) => {
+  const { t } = useI18n();
+  return (
+    <AxiCardBanner
+      actions={<AxiTag type="info">{runtimes.length}</AxiTag>}
+      title={t('commandCenter.runtime.title')}
+    >
+      {runtimes.map((runtime) => (
+        <AxiRow key={runtime.kind} className="cc-runtime-row" style={{ flexDirection: 'column', gap: 4 }}>
+          <strong>{runtime.kind}</strong>
+          <AxiTag type={runtime.available ? 'success' : 'warning'} effect="dark">
+            {runtime.available
+              ? t('commandCenter.runtime.available')
+              : t('commandCenter.runtime.fallback').replace('{value}', runtime.fallbackKind || '').trim()}
+          </AxiTag>
+          <span>{runtime.summary || t('commandCenter.runtime.summaryUnavailable')}</span>
+        </AxiRow>
+      ))}
+    </AxiCardBanner>
+  );
+};
 
-const ApprovalsPanel: React.FC<{ approvals: ApprovalRequest[]; onDecision: (id: string, decision: 'approved' | 'rejected') => void }> = ({ approvals, onDecision }) => (
-  <section style={panelStyle}>
-    <PanelHeader title="Approvals" count={approvals.length} />
-    {approvals.length ? approvals.slice(0, 5).map((approval) => (
-      <CompactRow key={approval.id}>
-        <strong style={{ color: 'var(--color-bg-card)' }}>{approval.riskLevel} · {approval.status}</strong>
-        <span style={mutedTextStyle}>{approval.actionSummary}</span>
-        {approval.status === 'pending' && (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={smallButtonStyle} onClick={() => onDecision(approval.id, 'approved')}>OK</button>
-            <button style={smallButtonStyle} onClick={() => onDecision(approval.id, 'rejected')}>NO</button>
-          </div>
-        )}
-      </CompactRow>
-    )) : <EmptyText text="No pending approvals." />}
-  </section>
-);
+const RoutesPanel: React.FC<{ routes: RouteBinding[] }> = ({ routes }) => {
+  const { t } = useI18n();
+  return (
+    <AxiCardBanner
+      actions={<AxiTag type="info">{routes.length}</AxiTag>}
+      title={t('commandCenter.routes.title')}
+    >
+      {routes.length ? routes.slice(0, 5).map((route) => (
+        <AxiRow key={route.id} className="cc-route-row" style={{ flexDirection: 'column', gap: 4 }}>
+          <strong>{route.channel}</strong>
+          <span>{route.profile} · {route.runtimePreference || t('commandCenter.routes.profileDefault')}</span>
+          <span>{route.routeKey}</span>
+        </AxiRow>
+      )) : <span>{t('commandCenter.routes.empty')}</span>}
+    </AxiCardBanner>
+  );
+};
 
-const AgentTasksPanel: React.FC<{ tasks: AgentTask[]; onCancel: (id: string) => void }> = ({ tasks, onCancel }) => (
-  <section style={panelStyle}>
-    <PanelHeader title="Agent Tasks" count={tasks.length} />
-    {tasks.length ? tasks.slice(0, 5).map((task) => (
-      <CompactRow key={task.id}>
-        <strong style={{ color: 'var(--color-bg-card)' }}>{task.runtime} · {task.status}</strong>
-        <span style={mutedTextStyle}>{task.targetId || 'workspace'} · {task.summary || task.prompt}</span>
-        {!['succeeded', 'failed', 'cancelled'].includes(task.status) && (
-          <button style={smallButtonStyle} onClick={() => onCancel(task.id)}>Cancel</button>
-        )}
-      </CompactRow>
-    )) : <EmptyText text="No agent tasks yet." />}
-  </section>
-);
+const ApprovalsPanel: React.FC<{ approvals: ApprovalRequest[]; onDecision: (id: string, decision: 'approved' | 'rejected') => void }> = ({ approvals, onDecision }) => {
+  const { t } = useI18n();
+  return (
+    <AxiCardBanner
+      actions={<AxiTag type="info">{approvals.length}</AxiTag>}
+      title={t('commandCenter.approvals.title')}
+    >
+      {approvals.length ? approvals.slice(0, 5).map((approval) => (
+        <AxiRow key={approval.id} className="cc-approval-row" style={{ flexDirection: 'column', gap: 6 }}>
+          <strong>{approval.riskLevel} · {approval.status}</strong>
+          <span>{approval.actionSummary}</span>
+          {approval.status === 'pending' && (
+            <AxiRow style={{ gap: 8 }}>
+              <Button onClick={() => onDecision(approval.id, 'approved')} size="small" type="primary">
+                {t('commandCenter.approvals.approve')}
+              </Button>
+              <Button danger onClick={() => onDecision(approval.id, 'rejected')} size="small">
+                {t('commandCenter.approvals.reject')}
+              </Button>
+            </AxiRow>
+          )}
+        </AxiRow>
+      )) : <span>{t('commandCenter.approvals.empty')}</span>}
+    </AxiCardBanner>
+  );
+};
 
-const PanelHeader: React.FC<{ title: string; count: number }> = ({ title, count }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-    <h2 style={{ margin: 0, color: 'var(--color-bg-card)', fontSize: 16 }}>{title}</h2>
-    <span style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12 }}>{count}</span>
-  </div>
-);
-
-const CompactRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={compactRowStyle}>{children}</div>
-);
-
-const EmptyText: React.FC<{ text: string }> = ({ text }) => (
-  <div style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 13 }}>{text}</div>
-);
+const AgentTasksPanel: React.FC<{ tasks: AgentTask[]; onCancel: (id: string) => void }> = ({ tasks, onCancel }) => {
+  const { t } = useI18n();
+  return (
+    <AxiCardBanner
+      actions={<AxiTag type="info">{tasks.length}</AxiTag>}
+      title={t('commandCenter.agentTasks.title')}
+    >
+      {tasks.length ? tasks.slice(0, 5).map((task) => (
+        <AxiRow key={task.id} className="cc-task-row" style={{ flexDirection: 'column', gap: 6 }}>
+          <strong>{task.runtime} · {task.status}</strong>
+          <span>{task.targetId || t('commandCenter.agentTasks.targetFallback')} · {task.summary || task.prompt}</span>
+          {!['succeeded', 'failed', 'cancelled'].includes(task.status) && (
+            <Button danger onClick={() => onCancel(task.id)} size="small">
+              {t('commandCenter.agentTasks.cancel')}
+            </Button>
+          )}
+        </AxiRow>
+      )) : <span>{t('commandCenter.agentTasks.empty')}</span>}
+    </AxiCardBanner>
+  );
+};
 
 interface ResourceRowProps {
   resource: ManagedResource;
@@ -290,44 +257,38 @@ interface ResourceRowProps {
 }
 
 const ResourceRow: React.FC<ResourceRowProps> = ({ resource, onRunCommand }) => {
+  const { t } = useI18n();
   const git = resource.metadata?.git as { branch?: string; changedEntries?: number } | null | undefined;
 
   return (
-    <div style={{ padding: 12, background: 'var(--axi-bg-elevated, var(--palette-indigo-50))', border: '1px solid var(--axi-border, var(--palette-border-light))', borderRadius: 'var(--axi-radius-sm, 6px)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-        <strong style={{ color: 'var(--color-bg-card)', fontSize: 14, overflowWrap: 'anywhere' }}>{resource.id}</strong>
-        <span style={{ color: resource.status === 'available' ? 'var(--color-chart-2)' : 'var(--color-chart-3)', fontSize: 12 }}>{resource.status}</span>
-      </div>
-      <div style={{ marginTop: 6, color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12, overflowWrap: 'anywhere' }}>
-        {resource.kind}{git ? ` · ${git.branch || 'git'} · ${git.changedEntries || 0} changes` : ''}
-      </div>
+    <AxiRow className="cc-resource-row" style={{ flexDirection: 'column', gap: 6 }}>
+      <AxiRow style={{ justifyContent: 'space-between', gap: 10 }}>
+        <strong>{resource.id}</strong>
+        <AxiTag type={resource.status === 'available' ? 'success' : 'warning'} effect="dark">
+          {resource.status}
+        </AxiTag>
+      </AxiRow>
+      <span>
+        {resource.kind}
+        {git ? ` · ${git.branch || 'git'} · ${git.changedEntries || 0} changes` : ''}
+      </span>
       {resource.provides.length > 0 && (
-        <div style={{ marginTop: 8, color: 'var(--axi-text-secondary, var(--palette-gray-600))', fontSize: 12 }}>
-          {resource.provides.slice(0, 3).join(', ')}
-        </div>
+        <span>{resource.provides.slice(0, 3).join(', ')}</span>
       )}
       {resource.commands.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+        <AxiRow style={{ gap: 8, flexWrap: 'wrap' }}>
           {resource.commands.slice(0, 2).map((command) => (
-            <button
+            <Button
               key={command.id}
               onClick={() => onRunCommand(command.id)}
-              style={{
-                padding: '5px 8px',
-                border: '1px solid var(--color-info-soft)',
-                borderRadius: 'var(--axi-radius-sm, 5px)',
-                color: 'var(--color-info-soft)',
-                background: 'var(--color-info-soft)',
-                cursor: 'pointer',
-                fontSize: 12,
-              }}
+              size="small"
             >
-              {command.intent === 'run_health' ? 'health' : 'verify'}
-            </button>
+              {command.intent === 'run_health' ? t('commandCenter.command.health') : t('commandCenter.command.verify')}
+            </Button>
           ))}
-        </div>
+        </AxiRow>
       )}
-    </div>
+    </AxiRow>
   );
 };
 
