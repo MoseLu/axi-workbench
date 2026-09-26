@@ -225,6 +225,10 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   parents.forEach((parent) => {
     chain.push({
       label: parent.label,
+      // Always carry labelKey (even when undefined) so consumers can rely on
+      // the field to drive `t(labelKey)`. For parents without a registered
+      // labelKey the value is `undefined` and `toEqual` ignores it.
+      labelKey: parent.labelKey,
       icon: hint(parent.icon),
       path: parent.path,
     });
@@ -232,6 +236,7 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
   chain.push({
     label: found.route.label,
+    labelKey: found.route.labelKey,
     icon: hint(found.route.icon),
     path: found.path,
     isActive: true,

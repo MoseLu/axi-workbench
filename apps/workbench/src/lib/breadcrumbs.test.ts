@@ -40,8 +40,12 @@ describe('resolveBreadcrumbs', () => {
     const chain = stripIcons(resolveBreadcrumbs('/admin/project'));
     expect(chain.map((item) => item.label)).toEqual(['工作台', '项目组合']);
     expect(chain[0]?.path).toBe('/admin/dashboard');
+    // Chain items must surface `labelKey` from the parent + route registry
+    // entries so consumers can drive `t(labelKey)` from a single source.
+    expect(chain[0]?.labelKey).toBe('nav.crumb.workbench');
     expect(chain[1]).toEqual({
       label: '项目组合',
+      labelKey: 'nav.projects',
       path: '/admin/project',
       isActive: true,
     });
