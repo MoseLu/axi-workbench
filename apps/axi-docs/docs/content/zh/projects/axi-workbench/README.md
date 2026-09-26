@@ -5,7 +5,7 @@ type: project
 status: active
 tags: [Axi Docs, Projects, projects, core]
 created: 2026-08-07
-modified: 2026-08-08
+modified: 2026-08-07
 graph-title: Axi Workbench
 graph-tags: [Projects, projects]
 description: Canonical AxiomaticWorld workbench for the six-layer control plane, two independent user applications (Web admin apps/workbench and mobile app apps/workbench-mobile), shared contracts, local services, AI integrations, fleet tooling, and app scaffolding.

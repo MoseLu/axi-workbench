@@ -1059,6 +1059,7 @@ const Login: React.FC = () => {
                 >
                   <div className={`axi-login-qr-frame ${deviceQrStatus === 'failed' || deviceQrStatus === 'expired' ? 'is-error' : ''}`}>
                     {deviceQr ? (
+                      // axi-ui-escape-hatch: antd QRCode 在 Axi UI 尚未提供等价组件前的临时替代
                       <QRCode
                         aria-label="电脑登录二维码"
                         value={webDeviceLoginQrPayload(deviceQr)}

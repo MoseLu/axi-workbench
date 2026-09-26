@@ -5,15 +5,20 @@ import com.workbench.mobile.ui.theme.ScanToolbarIcon
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -74,6 +79,25 @@ fun ScanScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    /**
+     * 跳转到本应用的系统设置详情页（`ACTION_APPLICATION_DETAILS_SETTINGS`）。
+     * 仅当 `shouldShowRequestPermissionRationale == false` 且权限仍被拒时
+     * 才调用——这表示用户已勾选"不再询问"或在系统设置中关闭了相机权限，
+     * 此时再发起 `RequestPermission` 不会有任何系统弹窗，必须直接打开
+     * App 信息页让用户手动允许。
+     */
+    fun openAppSystemSettings() {
+        val activity = context as? Activity ?: return
+        viewModel.openAppSettings()
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", activity.packageName, null),
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        activity.startActivity(intent)
+    }
 
     // 权限申请
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -183,10 +207,24 @@ fun ScanScreen(
             ) {
                 // 错误态优先
                 if (state.error != null) {
+                    // 永久拒绝（shouldShowRequestPermissionRationale == false）
+                    // 时显示"打开系统设置"入口；普通错误仍只显示重新尝试。
+                    val showSettings = state.status == ScanStatus.ERROR &&
+                        state.cameraReady.not() &&
+                        context is Activity &&
+                        !ActivityCompat.shouldShowRequestPermissionRationale(
+                            context,
+                            Manifest.permission.CAMERA,
+                        )
                     ErrorPanel(
                         title = state.error!!.title,
                         desc = state.error!!.desc,
-                        onRetry = { viewModel.retry() }
+                        onRetry = { viewModel.retry() },
+                        onOpenSettings = if (showSettings) {
+                            { openAppSystemSettings() }
+                        } else {
+                            null
+                        },
                     )
                 }
                 // 摄像头预览（cameraReady 为 true 时填充整个 Box）
@@ -443,7 +481,12 @@ private fun StatusBar(state: ScanState) {
 }
 
 @Composable
-private fun ErrorPanel(title: String, desc: String, onRetry: () -> Unit) {
+private fun ErrorPanel(
+    title: String,
+    desc: String,
+    onRetry: () -> Unit,
+    onOpenSettings: (() -> Unit)? = null,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -465,6 +508,12 @@ private fun ErrorPanel(title: String, desc: String, onRetry: () -> Unit) {
         )
         Spacer(Modifier.height(Spacing.s3))
         Button(onClick = onRetry) { Text("重新尝试") }
+        // 永久拒绝后才有"打开系统设置"入口：用户已经勾过"不再询问"或
+        // 在系统设置里手动关闭了相机权限，RequestPermission 不会再弹系统框。
+        if (onOpenSettings != null) {
+            Spacer(Modifier.height(Spacing.s2))
+            OutlinedButton(onClick = onOpenSettings) { Text("打开系统设置") }
+        }
     }
 }
 

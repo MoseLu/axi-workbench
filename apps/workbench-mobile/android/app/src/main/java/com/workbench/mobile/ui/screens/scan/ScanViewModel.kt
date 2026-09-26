@@ -340,4 +340,19 @@ class ScanViewModel @Inject constructor(
         lastScannedValue = null
         onPermissionGranted()
     }
+
+    /**
+     * 仅在 `shouldShowRequestPermissionRationale == false` 且权限仍被拒时由
+     * UI 调用：表示用户勾选了"不再询问"或在系统设置里手动关闭了相机权限。
+     * 此时再调 `permissionLauncher.launch(...)` 不会有任何系统弹窗，
+     * 必须直接跳到 `ACTION_APPLICATION_DETAILS_SETTINGS` 让用户在 App 信息
+     * 页里手动允许。是否需要走这条路径由 Composable 侧的
+     * `ActivityCompat.shouldShowRequestPermissionRationale` 决定。
+     */
+    fun openAppSettings() {
+        // 占位：真正的 Intent 由 Composable 拿到 Activity context 后启动；
+        // 这里只更新状态，确保 UI 进入"等待用户从系统设置返回"分支。
+        lastScannedValue = null
+        _state.update { it.copy(statusText = "请在系统设置中允许使用相机") }
+    }
 }

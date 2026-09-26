@@ -37,16 +37,16 @@ project:
 
 ## 技术栈
 
-| 接入面 | 技术 | 说明 |
+| Surface | Tech | Notes |
 | --- | --- | --- |
-| 产品核心 `axi-soul-api` | C++20 模块化骨架（CMake presets，domain/application/platform/infrastructure/transport 分层） | 领域 + 用例 + 稳定契约；不是 Android 工程 |
-| 本地运行时 | Android SQLite（目前唯一规范运行时） | 默认本地权威；显式开启同步后才接远端 |
-| Web BFF | `apps/web-bff` 契约，v1 并入核心后台进程 | Cookie 会话、登录 QR、管理页 DTO |
-| 管理 Web | `apps/web-admin` 网页 MVP | 大屏整理；后续同一 UI 打成 Mac |
-| Android 接入面 | Kotlin + XML View | Axi Mood 手机端：记录与扫码批准 |
-| JNI 辅助 | C++ `axi_core` | 仅手机端时间/相册分组，不是产品核心 |
-| 认证辅助 | Rust (`axi-auth-helper`) | 本机打开授权 URL，不是业务后台 |
-| 设计系统 | `axi_tokens.xml`、后续 `@axi/*` | 语义化设计 token |
+| Product core `axi-soul-api` | C++20 modular skeleton (CMake presets, domain/application/platform/infrastructure/transport layers) | Domain + use cases + stable contracts; not the Android app |
+| Local runtime | Android SQLite (currently the only canonical runtime) | Local-authority by default; explicit sync required for remote use |
+| Web BFF | `apps/web-bff` contract, v1 inlined into the core process | Cookie sessions, login QR, admin DTOs |
+| Admin Web | `apps/web-admin` web MVP | Big-screen triage; later packed as Mac |
+| Android client | Kotlin + XML View | The Axi Mood phone surface: records + scan-to-approve |
+| JNI helper | C++ `axi_core` | Phone-only time / album grouping, not the product core |
+| Auth helper | Rust (`axi-auth-helper`) | Local authorization helper, not the business backend |
+| Design system | `axi_tokens.xml`, future `@axi/*` | Semantic design tokens |
 
 ## 项目结构
 

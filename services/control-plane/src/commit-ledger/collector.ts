@@ -154,31 +154,38 @@ const CANONICAL_REPOS: RepoConfig[] = [
   { projectId: 'axi-feishu-codex-bridge', partition: 'tools' },
 ];
 
-// 路径映射
-const PATH_MAP: Record<string, string> = {
-  'axi-workbench': '/Volumes/code/workspace/projects/axi-workbench',
-  'axi-docs': '/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs',
-  'axi-image-preview': '/Volumes/code/workspace/projects/axi-image-preview',
-  'axi-pet': '/Volumes/code/workspace/projects/axi-pet',
-  'axi-rules': '/Volumes/code/workspace/projects/axi-rules',
-  'axi-notify': '/Volumes/code/workspace/projects/axi-notify',
-  'axi-sports-management-app': '/Volumes/code/workspace/projects/axi-sports-management-app',
-  'axi-agent-platform': '/Volumes/code/workspace/projects/axi-agent-platform',
-  'axi-pet-desktop': '/Volumes/code/workspace/projects/axi-pet-desktop',
-  'ielts-vocab': '/Volumes/code/workspace/products/ielts-vocab',
-  'ai-resource-orchestration': '/Volumes/code/workspace/products/ai-resource-orchestration',
-  'axi-artboard': '/Volumes/code/workspace/products/axi-artboard',
-  'axi-soul-world': '/Volumes/code/workspace/products/axi-soul-world',
-  'story-graph': '/Volumes/code/workspace/products/story-graph',
-  'axi-ui': '/Volumes/code/workspace/shared/axi-ui',
-  'axi-tauri-starter': '/Volumes/code/workspace/shared/axi-tauri-starter',
-  'axi-skills': '/Volumes/code/workspace/shared/axi-skills',
-  'axi-workspace-governance': '/Volumes/code/workspace/infra/axi-workspace-governance',
-  'axi-registry': '/Volumes/code/workspace/infra/axi-registry',
-  'axi-video-downloader': '/Volumes/code/workspace/tools/axi-video-downloader',
-  'axi-proxy-companion': '/Volumes/code/workspace/tools/axi-proxy-companion',
-  'axi-feishu-codex-bridge': '/Volumes/code/workspace/tools/axi-feishu-codex-bridge',
-};
+// 路径映射：从环境变量 AXI_WORKSPACE_ROOT 派生，便于移植到不同机器/容器
+function buildPathMap(): Record<string, string> {
+  const root = process.env.AXI_WORKSPACE_ROOT;
+  if (!root) return {};
+  const r = (suffix: string) => `${root.replace(/\/$/, '')}/${suffix}`;
+  return {
+    'axi-workbench': r('projects/axi-workbench'),
+    'axi-docs': r('projects/axi-workbench/apps/axi-docs'),
+    'axi-image-preview': r('projects/axi-image-preview'),
+    'axi-pet': r('projects/axi-pet'),
+    'axi-rules': r('projects/axi-rules'),
+    'axi-notify': r('projects/axi-notify'),
+    'axi-sports-management-app': r('projects/axi-sports-management-app'),
+    'axi-agent-platform': r('projects/axi-agent-platform'),
+    'axi-pet-desktop': r('projects/axi-pet-desktop'),
+    'ielts-vocab': r('products/ielts-vocab'),
+    'ai-resource-orchestration': r('products/ai-resource-orchestration'),
+    'axi-artboard': r('products/axi-artboard'),
+    'axi-soul-world': r('products/axi-soul-world'),
+    'story-graph': r('products/story-graph'),
+    'axi-ui': r('shared/axi-ui'),
+    'axi-tauri-starter': r('shared/axi-tauri-starter'),
+    'axi-skills': r('shared/axi-skills'),
+    'axi-workspace-governance': r('infra/axi-workspace-governance'),
+    'axi-registry': r('infra/axi-registry'),
+    'axi-video-downloader': r('tools/axi-video-downloader'),
+    'axi-proxy-companion': r('tools/axi-proxy-companion'),
+    'axi-feishu-codex-bridge': r('tools/axi-feishu-codex-bridge'),
+  };
+}
+
+const PATH_MAP: Record<string, string> = buildPathMap();
 
 // ============================================================================
 // Helper Functions

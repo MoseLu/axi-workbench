@@ -35,8 +35,8 @@ project:
 ## 技术栈
 
 - Node.js、pnpm
-- Markdown 文档
-- JSON Schema（项目录取、孵化、文档清单等）
+- Markdown docs
+- JSON Schema (project admission, incubation, project-docs manifest, etc.)
 
 ## 权威文档
 

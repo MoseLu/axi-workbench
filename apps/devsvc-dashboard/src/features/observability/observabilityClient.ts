@@ -100,10 +100,13 @@ export const dashboardObservabilityClient: ObservabilityClient = {
   project() {
     return Promise.resolve({ projectId: "axi-dashboard", events: [], nextCursor: null, total: 0 });
   },
-  async logs(params) {
-    const sinceMinutes = typeof params.since_minutes === "number" ? params.since_minutes : 60;
-    const limit = typeof params.limit === "number" ? params.limit : 50;
-    const query = typeof params.query === "string" ? params.query : undefined;
+  async logs(params?: Record<string, string | number | undefined>) {
+    const sinceMinutesRaw = params?.since_minutes;
+    const limitRaw = params?.limit;
+    const queryRaw = params?.query;
+    const sinceMinutes = typeof sinceMinutesRaw === "number" ? sinceMinutesRaw : 60;
+    const limit = typeof limitRaw === "number" ? limitRaw : 50;
+    const query = typeof queryRaw === "string" ? queryRaw : undefined;
     const result = await adapters.recentLogs(query, limit, sinceMinutes);
     const streams = result.results.map((entry) => ({
       stream: entry.labels,
@@ -111,14 +114,17 @@ export const dashboardObservabilityClient: ObservabilityClient = {
     }));
     return { data: { result: streams }, degraded: result.degraded, error: result.error };
   },
-  async metrics(params) {
-    const expr = typeof params.expr === "string" ? params.expr : "up";
+  async metrics(params?: Record<string, string | number | undefined>) {
+    const exprRaw = params?.expr;
+    const expr = typeof exprRaw === "string" ? exprRaw : "up";
     const result = await adapters.metrics(expr);
     return { data: { resultType: "vector", result: result.result as never[] }, degraded: result.degraded, error: result.error };
   },
-  async traces(params) {
-    const limit = typeof params.limit === "number" ? params.limit : 20;
-    const query = typeof params.query === "string" ? params.query : undefined;
+  async traces(params?: Record<string, string | number | undefined>) {
+    const limitRaw = params?.limit;
+    const queryRaw = params?.query;
+    const limit = typeof limitRaw === "number" ? limitRaw : 20;
+    const query = typeof queryRaw === "string" ? queryRaw : undefined;
     const result = await adapters.recentTraces(query, limit);
     return { traces: result.traces as never[], degraded: result.degraded, error: result.error };
   },

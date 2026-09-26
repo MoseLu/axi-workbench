@@ -242,6 +242,12 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       capabilities: ["web", "canvas", "node-picker", "perception"],
       cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-artboard"),
       defaultRoute: "/",
+      executionBoundary: {
+        owner: "Axi Artboard (overlay / agent node-picker)",
+        authorization: "Picker 与感知包由 Artboard 运行时授权",
+        audit: "Picker 操作与感知包事件审计",
+        fallback: "不可用时仅显示空白画布，不在 Host 复刻节点选择器"
+      },
       healthPath: "/",
       readinessPath: "/",
       icon: "canvas",
@@ -270,6 +276,12 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       capabilities: ["web", "orchestration", "resource-gateway", "memory", "session"],
       cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "resource-orchestration"),
       defaultRoute: "/",
+      executionBoundary: {
+        owner: "Resource Gateway (services/resource-gateway)",
+        authorization: "资源调度决策由 Gateway 运行时授权",
+        audit: "Gateway 路由、breaker、cache、memory 审计",
+        fallback: "Gateway 不可用时显示离线规划面板，不在 Host 复刻 Provider 路由"
+      },
       healthPath: "/",
       readinessPath: "/",
       icon: "orchestration",
@@ -295,10 +307,27 @@ export function defaultAxiAppRegistry(workspaceRoot) {
       capabilities: ["service", "gateway", "memory", "session", "metrics"],
       cwd: path.join(workspaceRoot, "projects", "axi-workbench", "services", "resource-gateway"),
       defaultRoute: "/health/live",
+      executionBoundary: {
+        owner: "Resource Gateway (services/resource-gateway)",
+        authorization: "Provider 调用由 Gateway 鉴权",
+        audit: "Provider 路由 + secret 访问审计",
+        fallback: "Gateway 不可用时显示健康检查失败页，不暴露 Provider secrets"
+      },
       healthPath: "/health/live",
       readinessPath: "/health/ready",
       icon: "gateway",
-      menuGroups: [],
+      menuGroups: [
+        {
+          key: "gateway",
+          label: "网关与健康检查",
+          icon: "gateway",
+          children: [
+            { key: "live", label: "Live", icon: "stats", route: "/health/live" },
+            { key: "ready", label: "Ready", icon: "stats", route: "/health/ready" },
+            { key: "metrics", label: "Metrics", icon: "stats", route: "/metrics" }
+          ]
+        }
+      ],
       nativeFallback: false,
       packageManager: "pnpm",
       routes: [

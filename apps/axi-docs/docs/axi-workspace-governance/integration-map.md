@@ -4,22 +4,22 @@ title: Axi Workspace Integration Map
 type: reference
 status: evergreen
 tags: [workspace, integration, contracts]
-created: 2026-09-24
-modified: 2026-09-24
+created: 2026-09-26
+modified: 2026-09-26
 agent-readable: true
 ---
 
 # Axi Workspace Integration Map
 
-最后生成：2026-09-24
+最后生成：2026-09-26
 
 ## 跨仓协作契约
 
 | Channel | Source | Target | Contract |
 |---|---|---|---|
 | registry | `workspace.json` | `.workspace/registry.json` | 工作区注册清单生成，不人工维护 |
-| docs | `/Volumes/code/workspace/infra/axi-workspace-governance/docs` | `/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/axi-workspace-governance` | 多仓索引文档镜像给 Axi Docs |
-| package distribution | `shared/axi-ui` -> `infra/axi-registry` | `@axi/*` Node 消费仓库 | 通过 Verdaccio 分发，不走 Git Submodule |
+| docs | `/Volumes/code/workspace/docs` | `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/axi-workspace-governance` | 多仓索引文档镜像给 Axi Docs |
+| package distribution | `foundation/axi-ui` -> `foundation/axi-registry` | `@axi/*` Node 消费仓库 | 通过 Verdaccio 分发，不走 Git Submodule |
 | orchestration | `C:\Users\12081\.openclaw` | 工作区子项目 | 外部 canonical infra 编排入口 |
 
 ## Canonical / Upstream 对齐
@@ -28,12 +28,13 @@ agent-readable: true
 
 ## 本地权威源（允许无远端）
 
-- `../../projects/axi-apps` | Axi Applications | compliance=`axi-apps`
-- `../../projects/axi-docs` | Axi Docs | compliance=`generated-docs-companion`
-- `../../projects/axi-inbox` | Axi Inbox | compliance=`axi-inbox`
-- `../../projects/axi-runtime` | Axi Governance Runtime | compliance=`axi-runtime`
-- `../../projects/axi-sync` | Axi Change Sync | compliance=`axi-sync`
-- `../../tools/axi-feishu-codex-bridge` | Axi Feishu Codex Bridge | compliance=`python-tool-local-runtime`
+- `candidates/pelagic` | Pelagic Open Water | compliance=`node-frontend-approved`
+- `foundation/axi-apps` | Axi Applications | compliance=`axi-apps`
+- `foundation/axi-inbox` | Axi Inbox | compliance=`axi-inbox`
+- `foundation/axi-runtime` | Axi Governance Runtime | compliance=`axi-runtime`
+- `foundation/axi-sync` | Axi Change Sync | compliance=`axi-sync`
+- `foundation/axi-observability` | Axi Observability | compliance=`node-monorepo-approved`
+- `agent-cluster/axi-agent/tools/axi-feishu-codex-bridge` | Axi Feishu Codex Bridge | compliance=`python-tool-local-runtime`
 
 ## 仓库命名策略
 

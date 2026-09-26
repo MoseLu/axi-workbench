@@ -351,11 +351,11 @@ describe('concurrent pairing attempts', () => {
 
 describe('concurrent session restore', () => {
   it('multiple restoreMobileDeviceSession calls share same activeSession', async () => {
-    const keyPair = await globalThis.crypto.subtle.generateKey(
+    const keyPair = (await globalThis.crypto.subtle.generateKey(
       { name: 'Ed25519' } as AlgorithmIdentifier,
       false,
       ['sign', 'verify'],
-    );
+    )) as CryptoKeyPair;
     const publicKey = await globalThis.crypto.subtle.exportKey('raw', keyPair.publicKey);
     const publicKeyHex = Array.from(new Uint8Array(publicKey), (b) => b.toString(16).padStart(2, '0')).join('');
 

@@ -41,30 +41,32 @@ const CANONICAL_REPOS = [
   { projectId: 'axi-video-downloader', partition: 'tools' },
 ];
 
-// 路径映射
+// 路径映射：从环境变量 AXI_WORKSPACE_ROOT 派生
+const _wsRoot = process.env.AXI_WORKSPACE_ROOT;
+const _r = (s) => _wsRoot ? `${_wsRoot.replace(/\/$/, '')}/${s}` : '';
 const PATH_MAP = {
-  'axi-agent': '/Volumes/code/workspace/projects/axi-agent',
-  'axi-docs': '/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs',
-  'axi-image-preview': '/Volumes/code/workspace/projects/axi-image-preview',
-  'axi-notify': '/Volumes/code/workspace/projects/axi-notify',
-  'axi-pet': '/Volumes/code/workspace/projects/axi-pet',
-  'axi-pet-desktop': '/Volumes/code/workspace/projects/axi-pet-desktop',
-  'axi-rules': '/Volumes/code/workspace/projects/axi-rules',
-  'axi-sports-management-app': '/Volumes/code/workspace/projects/axi-sports-management-app',
-  'axi-workbench': '/Volumes/code/workspace/projects/axi-workbench',
-  'ai-resource-orchestration': '/Volumes/code/workspace/projects/axi-workbench/services/resource-gateway',
-  'axi-artboard': '/Volumes/code/workspace/projects/axi-workbench/apps/axi-artboard',
-  'axi-soul-world': '/Volumes/code/workspace/products/axi-soul-world',
-  'ielts-vocab': '/Volumes/code/workspace/products/ielts-vocab',
-  'story-graph': '/Volumes/code/workspace/products/story-graph',
-  'axi-skills': '/Volumes/code/workspace/shared/axi-skills',
-  'axi-tauri-starter': '/Volumes/code/workspace/shared/axi-tauri-starter',
-  'axi-ui': '/Volumes/code/workspace/shared/axi-ui',
-  'axi-registry': '/Volumes/code/workspace/infra/axi-registry',
-  'axi-workspace-governance': '/Volumes/code/workspace/infra/axi-workspace-governance',
-  'axi-feishu-codex-bridge': '/Volumes/code/workspace/tools/axi-feishu-codex-bridge',
-  'axi-proxy-companion': '/Volumes/code/workspace/tools/axi-proxy-companion',
-  'axi-video-downloader': '/Volumes/code/workspace/tools/axi-video-downloader',
+  'axi-agent': _r('projects/axi-agent'),
+  'axi-docs': _r('projects/axi-workbench/apps/axi-docs'),
+  'axi-image-preview': _r('projects/axi-image-preview'),
+  'axi-notify': _r('projects/axi-notify'),
+  'axi-pet': _r('projects/axi-pet'),
+  'axi-pet-desktop': _r('projects/axi-pet-desktop'),
+  'axi-rules': _r('projects/axi-rules'),
+  'axi-sports-management-app': _r('projects/axi-sports-management-app'),
+  'axi-workbench': _r('projects/axi-workbench'),
+  'ai-resource-orchestration': _r('projects/axi-workbench/services/resource-gateway'),
+  'axi-artboard': _r('projects/axi-workbench/apps/axi-artboard'),
+  'axi-soul-world': _r('products/axi-soul-world'),
+  'ielts-vocab': _r('products/ielts-vocab'),
+  'story-graph': _r('products/story-graph'),
+  'axi-skills': _r('shared/axi-skills'),
+  'axi-tauri-starter': _r('shared/axi-tauri-starter'),
+  'axi-ui': _r('shared/axi-ui'),
+  'axi-registry': _r('infra/axi-registry'),
+  'axi-workspace-governance': _r('infra/axi-workspace-governance'),
+  'axi-feishu-codex-bridge': _r('tools/axi-feishu-codex-bridge'),
+  'axi-proxy-companion': _r('tools/axi-proxy-companion'),
+  'axi-video-downloader': _r('tools/axi-video-downloader'),
 };
 
 /**

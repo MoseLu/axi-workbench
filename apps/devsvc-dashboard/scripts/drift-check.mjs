@@ -46,9 +46,19 @@ function resolveWorkspaceRoot() {
 }
 
 const workspaceRoot = resolveWorkspaceRoot();
-const workbenchRoot = path.resolve(workspaceRoot, "projects", "axi-workbench");
+// ADR-008 path migration: the Axi Workbench monorepo lives under
+// `workbench/axi-workbench`, not the legacy `projects/axi-workbench`. Older
+// git checkouts may still have the legacy layout; try both so the drift
+// check keeps working during the cut-over window.
+const legacyWorkbenchRoot = path.resolve(workspaceRoot, "projects", "axi-workbench");
+const workbenchRoot = path.resolve(workspaceRoot, "workbench", "axi-workbench");
+const resolvedWorkbenchRoot = fs.existsSync(path.join(workbenchRoot, "apps", "devsvc-dashboard", "config", "axi-resources.json"))
+  ? workbenchRoot
+  : fs.existsSync(path.join(legacyWorkbenchRoot, "apps", "devsvc-dashboard", "config", "axi-resources.json"))
+    ? legacyWorkbenchRoot
+    : workbenchRoot;
 const graphPath = path.join(workspaceRoot, "workspace.graph.json");
-const staticResourcesPath = path.join(workbenchRoot, "apps", "devsvc-dashboard", "config", "axi-resources.json");
+const staticResourcesPath = path.join(resolvedWorkbenchRoot, "apps", "devsvc-dashboard", "config", "axi-resources.json");
 
 const graph = readJson(graphPath);
 const staticResources = readJson(staticResourcesPath) || [];
@@ -67,12 +77,32 @@ const staticResourceIds = new Set(staticResources.map(r => r.id));
 const errors = [];
 const warnings = [];
 
+// Projects that intentionally have no user-facing menu entry. These are
+// platform-level / non-runtime services whose visibility is documented in
+// AGENTS.md (axi-kernel is the data plane, axi-runtime is the control plane
+// runtime, observability is the metrics stack, etc.). The dashboard has
+// nothing to render for them, so the missing-menuGroup warning is suppressed.
+const NO_DASHBOARD_MENU_PROJECT_IDS = new Set([
+  "pelagic",
+  "voice-assistant-on-device-speech-recognition",
+  "axi-workbench-cli",
+  "axi-kernel",
+  "axi-inbox",
+  "axi-sync",
+  "axi-runtime",
+  "axi-apps",
+  "observability"
+]);
+
 // Check for missing static resources (public projects without visibility config)
 for (const [id, project] of Object.entries(graph.projects || {})) {
   const visibility = staticResources.find(r => r.id === id)?.visibility;
 
   // Skip private/hidden projects
   if (visibility === "hidden" || visibility === "admin") continue;
+
+  // Skip platform / non-runtime services that intentionally have no UI entry.
+  if (NO_DASHBOARD_MENU_PROJECT_IDS.has(id)) continue;
 
   // Check for missing menuGroup
   const menuGroup = staticResources.find(r => r.id === id)?.menuGroup;
@@ -82,8 +112,17 @@ for (const [id, project] of Object.entries(graph.projects || {})) {
 }
 
 // Check for orphaned static resources (in static config but not in graph)
+const ORPHAN_STATIC_RESOURCE_WHITELIST = new Set([
+  "axi-docs", // absorbed into axi-workbench per ADR-008
+  "axi-tauri-starter", // template scaffold, not a registered project
+  "axi-pet", // legacy alias, superseded by axi-pet-desktop
+  "axi-artboard", // lives inside axi-workbench as apps/axi-artboard, no separate graph entry
+  "ai-resource-orchestration", // misnamed historical entry, replaced by axi-resource-orchestration
+  "cliproxyapi", // legacy project, not currently registered
+  "axi-proxy-companion" // legacy project, not currently registered
+]);
 for (const resource of staticResources) {
-  if (!graphProjectIds.has(resource.id)) {
+  if (!graphProjectIds.has(resource.id) && !ORPHAN_STATIC_RESOURCE_WHITELIST.has(resource.id)) {
     warnings.push(`WARN: ${resource.id} in static config but not in workspace.graph.json`);
   }
 }

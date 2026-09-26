@@ -13,8 +13,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const repoRoot = process.env.AXI_WORKBENCH_REPO_ROOT
+  ?? path.resolve(new URL("..", import.meta.url).pathname, "..", "..", "..", "..");
 const TSX_STORE_ROOTS = [
-  "/Volumes/code/workspace/projects/axi-workbench/node_modules/.pnpm"
+  path.join(repoRoot, "node_modules", ".pnpm"),
 ];
 
 function findTsxLoader() {

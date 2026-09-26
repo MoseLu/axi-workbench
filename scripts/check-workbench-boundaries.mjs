@@ -38,7 +38,7 @@ const implementationExtensions = new Set([
 ]);
 
 const packageLinkPattern = /(?:^|[/\\])projects[/\\](axi-agent|axi-notify|axi-image-preview|axi-pet|axi-rules)(?:[/\\]|$)/;
-const absoluteWorkspacePattern = /\/Volumes\/code\/workspace\/(?:projects|products|shared|infra|tools|references)\//;
+const absoluteWorkspacePattern = /\/Volumes\/code\/workspace\/(?:projects|products|shared|infra|tools|references|workbench|foundation)\//;
 const relativeSiblingPattern = /\.\.\/(?:\.\.\/)*(?:projects|products|infra|tools|references)\//;
 
 const communicationGatewayForbidden = [

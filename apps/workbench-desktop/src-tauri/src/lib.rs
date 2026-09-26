@@ -10,11 +10,14 @@ use tauri::{
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::fs::{create_dir_all, read_to_string, OpenOptions};
+use std::io::Write;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::State;
+use tauri_plugin_shell::ShellExt;
 
 mod runtime;
 use runtime::LocalRuntime;
@@ -369,6 +372,48 @@ fn retry_local_runtime(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn show_login_window(app: AppHandle) -> Result<(), String> {
+    switch_to_login(&app);
+    Ok(())
+}
+
+/// 打开外部链接（条款 / 隐私页）。由 web 端
+/// `apps/workbench/src/lib/shell.ts:openExternalLegalPage` 调用；
+/// 在 macOS 下交给默认浏览器，纯浏览器模式下 web 端会降级为 `window.open`。
+///
+/// 安全性：
+/// 1. 只允许 http(s) 协议，避免 file:// / shell: 等被滥用；
+/// 2. host 必须在白名单（条款/隐私页固定走 `workbench.axiomaticworld.com`），
+///    其它 host 一律拒绝；
+/// 3. 调用 `tauri-plugin-shell::ShellExt::open`，由系统在 OS 默认浏览器里
+///    打开，不再走 WebView 内的 navigation（避免污染 SPA history）。
+#[tauri::command]
+fn open_external_url(app: AppHandle, url: String) -> Result<(), String> {
+    let parsed = reqwest::Url::parse(&url).map_err(|error| format!("invalid url: {error}"))?;
+    match parsed.scheme() {
+        "https" | "http" => {}
+        _ => return Err(format!("scheme not allowed: {}", parsed.scheme())),
+    }
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| "missing host".to_string())?;
+    if host != WORKBENCH_PUBLIC_HOST {
+        return Err(format!("host not allowed: {host}"));
+    }
+    if parsed.username() != ""
+        || parsed.password().is_some()
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+    {
+        return Err("url must not carry credentials / query / fragment".to_string());
+    }
+    app.shell()
+        .open(url, None)
+        .map_err(|error| format!("shell open failed: {error}"))?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -396,17 +441,21 @@ pub fn run() {
     let app = builder
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_shell::init())
         .manage(GatewaySession::default())
         .manage(LocalRuntime::default())
         .invoke_handler(tauri::generate_handler![
             proxy_gateway_request,
             local_runtime_status,
-            retry_local_runtime
+            retry_local_runtime,
+            show_login_window,
+            open_external_url
         ])
         .setup(|app| {
             if runtime::local_project_mode() {
                 start_local_runtime(app.handle());
             }
+            switch_to_startup_loading(app.handle());
             build_app_menu(app.handle())?;
             build_tray(app.handle())?;
             register_ipc_listeners(app.handle().clone());
@@ -729,6 +778,19 @@ fn switch_to_main(app: &AppHandle) {
         let _ = main.set_focus();
     } else {
         eprintln!("[shell] main window missing in tauri.conf.json");
+    }
+}
+
+/// 启动时只显示大主窗的加载页；小登录窗保持独立且隐藏。
+fn switch_to_startup_loading(app: &AppHandle) {
+    if let Some(login) = app.get_webview_window("login") {
+        let _ = login.hide();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.eval("window.history.replaceState({}, '', '/loading'); window.dispatchEvent(new PopStateEvent('popstate'));");
+        let _ = main.show();
+        let _ = main.unminimize();
+        let _ = main.set_focus();
     }
 }
 

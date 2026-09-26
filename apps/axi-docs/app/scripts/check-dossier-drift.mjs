@@ -16,8 +16,8 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-const enDir = '/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/content/en/projects';
-const zhDir = '/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/content/zh/projects';
+const enDir = '/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/content/en/projects';
+const zhDir = '/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/content/zh/projects';
 const SKIP = new Set(['codex-plus-app', 'dbskill']);
 const enDirs = new Set(
   (await readdir(enDir, { withFileTypes: true })).filter((e) => e.isDirectory()).map((e) => e.name),

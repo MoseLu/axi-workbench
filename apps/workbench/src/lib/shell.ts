@@ -86,6 +86,17 @@ export async function openExternalLegalPage(page: ExternalLegalPage): Promise<vo
   }
 }
 
+/** 主窗启动失败时切到独立的小登录窗，不在主窗渲染登录卡。 */
+export async function showLoginWindow(): Promise<void> {
+  const tauri = getTauri();
+  if (!tauri) return;
+  try {
+    await tauri.invoke('show_login_window');
+  } catch (error) {
+    console.debug('[shell] show login window failed', error);
+  }
+}
+
 /**
  * 关闭无原生装饰的登录窗口。浏览器预览没有对应的 shell 能力时静默跳过。
  */

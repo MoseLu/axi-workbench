@@ -53,10 +53,36 @@ const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 const workspaceRoot = path.dirname(path.dirname(path.dirname(projectRoot)));
 
-const rulesRoot = path.join(workspaceRoot, "projects", "axi-rules");
-const skillsRoot = path.join(workspaceRoot, "shared", "axi-skills");
-const registryRoot = path.join(workspaceRoot, "infra", "axi-registry");
-const governanceRoot = path.join(workspaceRoot, "infra", "axi-workspace-governance");
+// Workspace layout migrated (ADR-008 / package-layer-rationalization):
+// `projects/`, `shared/`, `infra/` partitions were flattened into `foundation/`
+// and `workbench/`. Resolve each root with a fallback so legacy checkouts
+// keep working while new checkouts use the canonical layout.
+function resolveFirstExisting(parent, candidates) {
+  for (const candidate of candidates) {
+    const full = path.join(parent, ...candidate);
+    if (fs.existsSync(full)) return full;
+  }
+  // Default to the first (canonical) candidate so error messages still point
+  // at the right place when none of the candidates exist.
+  return path.join(parent, ...candidates[0]);
+}
+
+const rulesRoot = resolveFirstExisting(workspaceRoot, [
+  ["foundation", "axi-rules"],
+  ["projects", "axi-rules"]
+]);
+const skillsRoot = resolveFirstExisting(workspaceRoot, [
+  ["foundation", "axi-skills"],
+  ["shared", "axi-skills"]
+]);
+const registryRoot = resolveFirstExisting(workspaceRoot, [
+  ["foundation", "axi-registry"],
+  ["infra", "axi-registry"]
+]);
+const governanceRoot = resolveFirstExisting(workspaceRoot, [
+  ["foundation", "workspace-governance"],
+  ["infra", "axi-workspace-governance"]
+]);
 
 const rulesIndex = JSON.parse(
   fs.readFileSync(path.join(rulesRoot, "index", "rules.json"), "utf8")

@@ -23,13 +23,155 @@ import {
   VerificationStatus,
   VerificationStats,
   Conflict,
-  StaleRecord
+  StaleRecord,
+  LedgerRecord
 } from './evidence-linker.js';
-import { collectAll, CommitRecord } from './collector.js';
+import { collectAll } from './collector.js';
 
 // Re-export types for consumers
 export type { CommitLedgerV1, QueryFilter, Pagination, QueryResult } from './persistence.js';
-export type { VerificationStats, Conflict, StaleRecord, VerificationStatus } from './evidence-linker.js';
+export type { VerificationStats, Conflict, StaleRecord, VerificationStatus, LedgerRecord } from './evidence-linker.js';
+
+// ============================================================================
+// Local Type Projections (commit-ledger domain)
+// ============================================================================
+
+/**
+ * Minimal subset of `CommitLedgerV1.repo` referenced by API projections.
+ * Matches the `repo` shape in `persistence.ts` but is declared here so we
+ * never reach for `as any` when the storage schema adds optional fields.
+ */
+export interface RepoSummary {
+  projectId: string;
+  canonicalPath: string;
+  gitRoot: string;
+  defaultBranch: string;
+  remote?: string;
+  partition?: string;
+}
+
+/**
+ * Minimal subset of `CommitLedgerV1.commit` used by ordering and summary
+ * computations.
+ */
+export interface CommitSummary {
+  sha: string;
+  shortSha: string;
+  parentShas: string[];
+  subject: string;
+  body?: string;
+  type?: string;
+  scope?: string | null;
+  breaking?: boolean;
+  authoredAt: string;
+  committedAt: string;
+}
+
+/**
+ * Minimal subset of `CommitLedgerV1.workspaceState` referenced by API
+ * projections.
+ */
+export interface WorkspaceStateSummary {
+  observedBranch?: string;
+  isDirty?: boolean;
+  ahead?: number;
+  behind?: number;
+  observedAt?: string;
+}
+
+/**
+ * Minimal subset of `CommitLedgerV1.verification` referenced by API
+ * projections.
+ */
+export interface VerificationSummary {
+  status?: VerificationStatus;
+  commands?: string[];
+  evidenceRefs?: string[];
+  observedAt?: string;
+}
+
+/**
+ * Minimal subset of `CommitLedgerV1.provenance` referenced by API
+ * projections.
+ */
+export interface ProvenanceSummary {
+  source: string;
+  sourcePath: string;
+  sourceCommand?: string;
+  sourceHash?: string;
+  observedAt: string;
+}
+
+/**
+ * Minimal subset of `CommitLedgerV1.ingestion` referenced by API
+ * projections.
+ */
+export interface IngestionSummary {
+  idempotencyKey: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  status: 'new' | 'updated' | 'unchanged' | 'conflict';
+}
+
+/**
+ * Commit-ledger record projection used by API handlers. The full record is
+ * defined in `persistence.ts`; this view is the union of every nested shape
+ * the handlers read from. When persistence adds new fields they should be
+ * appended here so call sites stay type-safe.
+ */
+export type CommitLedgerRecord = CommitLedgerV1;
+
+/**
+ * Strongly-typed commit-ledger query filter. Mirrors `QueryFilter` from
+ * `persistence.ts` so handlers never need `any` when building a query.
+ */
+export type CommitLedgerFilter = QueryFilter;
+
+/**
+ * Common read projection used by every accessor helper below. Both
+ * `CommitLedgerV1` (storage) and `LedgerRecord` (linker) carry the same
+ * sub-fields; we accept a union so handlers can stay agnostic about
+ * whether a record came from the store or the evidence linker.
+ */
+type AnyLedgerRecord = CommitLedgerV1 | LedgerRecord;
+
+/**
+ * Type-safe nested-field reader. Reads via an `unknown` indirection so we
+ * never need `as any` to traverse the union's overlapping sub-fields.
+ */
+function readField<T>(record: AnyLedgerRecord, key: keyof AnyLedgerRecord): T | undefined {
+  const value = (record as unknown as Record<string, unknown>)[key];
+  return (value ?? undefined) as T | undefined;
+}
+
+/**
+ * Type guard: narrows `LedgerRecord | CommitLedgerV1` to a value that has
+ * the `repo` projection populated. Used to avoid `as any` when downstream
+ * APIs require the full domain shape.
+ */
+function asRepo(record: AnyLedgerRecord): RepoSummary | undefined {
+  return readField<RepoSummary>(record, 'repo');
+}
+
+function asCommit(record: AnyLedgerRecord): CommitSummary | undefined {
+  return readField<CommitSummary>(record, 'commit');
+}
+
+function asWorkspaceState(record: AnyLedgerRecord): WorkspaceStateSummary | undefined {
+  return readField<WorkspaceStateSummary>(record, 'workspaceState');
+}
+
+function asVerification(record: AnyLedgerRecord): VerificationSummary | undefined {
+  return readField<VerificationSummary>(record, 'verification');
+}
+
+function asProvenance(record: AnyLedgerRecord): ProvenanceSummary | undefined {
+  return readField<ProvenanceSummary>(record, 'provenance');
+}
+
+function asIngestion(record: AnyLedgerRecord): IngestionSummary | undefined {
+  return readField<IngestionSummary>(record, 'ingestion');
+}
 
 // ============================================================================
 // Handler Context
@@ -181,41 +323,45 @@ export interface SyncResult {
  * Returns workspace-wide summary statistics
  */
 export function handleGetSummary(ctx: HandlerContext = getContext()): SummaryResponse {
-  const records = ctx.store.getAllRecords();
+  const records: LedgerRecord[] = ctx.store.getAllRecords();
 
   // Count by partition
   const byPartition: Record<string, { repos: number; commits: number }> = {};
   const partitions = ['projects', 'products', 'shared', 'infra', 'tools'];
 
   for (const p of partitions) {
-    const partitionRecords = records.filter(r => (r.repo as any)?.partition === p);
+    const partitionRecords = records.filter(r => asRepo(r)?.partition === p);
     byPartition[p] = {
-      repos: new Set(partitionRecords.map(r => (r.repo as any)?.projectId)).size,
+      repos: new Set(partitionRecords.map(r => asRepo(r)?.projectId).filter((id): id is string => Boolean(id))).size,
       commits: partitionRecords.length
     };
   }
 
   // Verification stats
-  const verification = getVerificationStats(records as any);
+  const verification = getVerificationStats(records);
 
   // Dirty workspaces
-  const dirtyWorkspaces = records.filter(r => (r.workspaceState as any)?.isDirty).length;
+  const dirtyWorkspaces = records.filter(r => asWorkspaceState(r)?.isDirty === true).length;
 
   // Conflicts
-  const conflicts = detectConflicts(records as any);
+  const conflicts = detectConflicts(records);
 
   // Find last commit
   let lastCommitAt: string | null = null;
   if (records.length > 0) {
     const sorted = [...records].sort((a, b) =>
-      new Date((b.commit as any)?.committedAt || 0).getTime() -
-      new Date((a.commit as any)?.committedAt || 0).getTime()
+      new Date(asCommit(b)?.committedAt || 0).getTime() -
+      new Date(asCommit(a)?.committedAt || 0).getTime()
     );
-    lastCommitAt = (sorted[0].commit as any)?.committedAt || null;
+    lastCommitAt = asCommit(sorted[0])?.committedAt || null;
   }
 
   // Count unique projects
-  const totalProjects = new Set(records.map(r => (r.repo as any)?.projectId)).size;
+  const totalProjects = new Set(
+    records
+      .map(r => asRepo(r)?.projectId)
+      .filter((id): id is string => Boolean(id))
+  ).size;
 
   return {
     workspace: {
@@ -245,9 +391,9 @@ export function handleGetCommits(
   query: CommitQuery,
   pagination: PaginationOptions = {},
   ctx: HandlerContext = getContext()
-): PaginatedResult<any> {
+): PaginatedResult<CommitLedgerRecord> {
   // Build filter object for persistence layer
-  const filter: any = {};
+  const filter: CommitLedgerFilter = {};
 
   if (query.projectId) filter.projectId = query.projectId;
   if (query.partition) filter.partition = query.partition;
@@ -261,14 +407,14 @@ export function handleGetCommits(
   if (query.dirty !== undefined) filter.dirty = query.dirty;
 
   // Build pagination options
-  const pageOptions: any = {
+  const pageOptions: Pagination = {
     cursor: pagination.cursor,
     limit: Math.min(pagination.limit || 50, 100),
     sortBy: pagination.sortBy || 'committedAt',
     sortOrder: pagination.sortOrder || 'desc'
   };
 
-  const result = ctx.store.query(filter, pageOptions);
+  const result: QueryResult = ctx.store.query(filter, pageOptions);
 
   return {
     data: result.data,
@@ -288,8 +434,8 @@ export function handleGetCommits(
 export function handleGetCommitById(
   recordId: string,
   ctx: HandlerContext = getContext()
-): { data: any } | { error: { code: string; message: string; recordId: string } } {
-  const record = ctx.store.getById(recordId);
+): { data: LedgerRecord } | { error: { code: string; message: string; recordId: string } } {
+  const record: CommitLedgerV1 | null = ctx.store.getById(recordId);
 
   if (!record) {
     return {
@@ -301,8 +447,11 @@ export function handleGetCommitById(
     };
   }
 
-  // Enhance with evidence linking
-  const linked = linkEvidenceBatch([record as any]);
+  // Enhance with evidence linking. `CommitLedgerV1` is structurally a stricter
+  // `LedgerRecord`, so the assignment is safe and required by the linker
+  // signature (linker accepts the wider optional shape).
+  const ledgerRecord: LedgerRecord = record;
+  const linked = linkEvidenceBatch([ledgerRecord]);
 
   return { data: linked[0] };
 }
@@ -316,8 +465,8 @@ export function handleGetProject(
   projectId: string,
   ctx: HandlerContext = getContext()
 ): { data: ProjectSummary } | { error: { code: string; message: string; projectId: string } } {
-  const result = ctx.store.query({ projectId }, { limit: 10000 });
-  const records = result.data;
+  const result: QueryResult = ctx.store.query({ projectId }, { limit: 10000 });
+  const records: LedgerRecord[] = result.data as LedgerRecord[];
 
   if (records.length === 0) {
     return {
@@ -329,14 +478,17 @@ export function handleGetProject(
     };
   }
 
-  const verification = getVerificationStats(records as any);
+  const verification = getVerificationStats(records);
 
   // Find latest commit
   const sorted = [...records].sort((a, b) =>
-    new Date((b.commit as any)?.committedAt || 0).getTime() -
-    new Date((a.commit as any)?.committedAt || 0).getTime()
+    new Date(asCommit(b)?.committedAt || 0).getTime() -
+    new Date(asCommit(a)?.committedAt || 0).getTime()
   );
-  const latest = sorted[0];
+  const latest: LedgerRecord = sorted[0];
+  const latestRepo = asRepo(latest);
+  const latestWorkspaceState = asWorkspaceState(latest);
+  const latestCommit = asCommit(latest);
 
   // Calculate coverage
   const coverage = records.length > 0
@@ -346,13 +498,13 @@ export function handleGetProject(
   return {
     data: {
       id: projectId,
-      canonicalPath: (latest.repo as any)?.canonicalPath || null,
-      partition: (latest.repo as any)?.partition || null,
-      branch: (latest.workspaceState as any)?.observedBranch || null,
-      head: (latest.commit as any)?.shortSha || null,
-      isDirty: (latest.workspaceState as any)?.isDirty || false,
+      canonicalPath: latestRepo?.canonicalPath || null,
+      partition: latestRepo?.partition || null,
+      branch: latestWorkspaceState?.observedBranch || null,
+      head: latestCommit?.shortSha || null,
+      isDirty: latestWorkspaceState?.isDirty || false,
       commitCount: records.length,
-      lastCommitAt: (latest.commit as any)?.committedAt || null,
+      lastCommitAt: latestCommit?.committedAt || null,
       verification,
       coverage
     }
@@ -367,7 +519,7 @@ export function handleGetProject(
 export function handleGetVerification(
   ctx: HandlerContext = getContext()
 ): {
-  status: any;
+  status: VerificationStats;
   byProject: Array<{
     projectId: string;
     verified: number;
@@ -387,14 +539,24 @@ export function handleGetVerification(
     staleDays: number;
   }>;
 } {
-  const records = ctx.store.getAllRecords();
-  const status = getVerificationStats(records as any);
+  const records: LedgerRecord[] = ctx.store.getAllRecords();
+  const status = getVerificationStats(records);
 
   // Group by project
-  const byProjectMap: Record<string, any> = {};
+  type ProjectBucket = {
+    projectId: string;
+    verified: number;
+    partial: number;
+    unverified: number;
+    failed: number;
+    conflict: number;
+    unknown: number;
+    total: number;
+  };
+  const byProjectMap: Record<string, ProjectBucket> = {};
 
   for (const record of records) {
-    const pid = (record.repo as any)?.projectId || 'unknown';
+    const pid: string = asRepo(record)?.projectId || 'unknown';
     if (!byProjectMap[pid]) {
       byProjectMap[pid] = {
         projectId: pid,
@@ -408,14 +570,15 @@ export function handleGetVerification(
       };
     }
     byProjectMap[pid].total++;
-    const recStatus = (record.verification as any)?.status || 'unknown';
+    const recStatus = asVerification(record)?.status || VerificationStatus.UNKNOWN;
     if (recStatus in byProjectMap[pid]) {
-      (byProjectMap[pid] as any)[recStatus]++;
+      const key = recStatus as keyof ProjectBucket;
+      byProjectMap[pid][key]++;
     }
   }
 
   // Calculate coverage per project
-  const byProject = Object.values(byProjectMap).map((p: any) => ({
+  const byProject = Object.values(byProjectMap).map((p) => ({
     ...p,
     coverage: p.total > 0
       ? Number(((p.verified + p.partial) / p.total).toFixed(2))
@@ -423,7 +586,7 @@ export function handleGetVerification(
   }));
 
   // Detect stale records
-  const staleRecords = detectStale(records as any);
+  const staleRecords = detectStale(records);
 
   return {
     status,
@@ -444,20 +607,20 @@ export function handleGetSources(
   total: number;
   failedSources: number;
 } {
-  const records = ctx.store.getAllRecords();
+  const records: LedgerRecord[] = ctx.store.getAllRecords();
 
   // Group by source path
   const sourceMap: Map<string, SourceInfo> = new Map();
 
   for (const record of records) {
-    const path = (record.provenance as any)?.sourcePath || (record.repo as any)?.canonicalPath || 'unknown';
-    const repoId = (record.repo as any)?.projectId || null;
+    const path = asProvenance(record)?.sourcePath || asRepo(record)?.canonicalPath || 'unknown';
+    const repoId = asRepo(record)?.projectId || null;
 
     if (!sourceMap.has(path)) {
       sourceMap.set(path, {
         repoId,
         path,
-        lastSeenAt: (record.ingestion as any)?.lastSeenAt || null,
+        lastSeenAt: asIngestion(record)?.lastSeenAt || null,
         commitCount: 0,
         status: 'active'
       });
@@ -467,7 +630,7 @@ export function handleGetSources(
     source.commitCount++;
 
     // Update last seen
-    const recordLastSeen = (record.ingestion as any)?.lastSeenAt;
+    const recordLastSeen = asIngestion(record)?.lastSeenAt;
     if (recordLastSeen && (!source.lastSeenAt || recordLastSeen > source.lastSeenAt)) {
       source.lastSeenAt = recordLastSeen;
     }
@@ -496,9 +659,14 @@ export async function handleSync(
   // Collect commits from all repos
   const collectResult = collectAll({});
 
-  // Link evidence to new records
-  const allNewRecords = collectResult.results.flatMap((r) => r.commits as CommitRecord[]);
-  const linkedRecords = linkEvidenceBatch(allNewRecords);
+  // Link evidence to new records. The collector returns CommitRecord shapes
+  // that are already LedgerRecord-compatible; we route them through a typed
+  // local view so the conversion stays explicit and typed.
+  type CollectEntry = { commits: LedgerRecord[] };
+  const allNewRecords: LedgerRecord[] = collectResult.results.flatMap(
+    (r: CollectEntry) => r.commits
+  );
+  const linkedRecords: LedgerRecord[] = linkEvidenceBatch(allNewRecords);
 
   // Upsert each record
   let newCount = 0;

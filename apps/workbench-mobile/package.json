@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test -c playwright.config.ts",
-    "verify:contracts": "node scripts/verify-mobile-contracts.mjs"
+    "verify:contracts": "node scripts/verify-mobile-contracts.mjs",
+    "verify:favicon-sync": "node scripts/check-favicon-sync.mjs"
   },
   "dependencies": {
     "@axi/core": "link:../../../../shared/axi-ui/packages/core",

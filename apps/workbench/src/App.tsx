@@ -17,31 +17,14 @@ import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foun
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/admin/Dashboard';
 import AuthCallback from './pages/AuthCallback';
 import LegalDocument from './pages/LegalDocument';
 import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
-import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
-import MenuList from './pages/admin/MenuList';
-import RoleList from './pages/admin/RoleList';
-import Handoff from './pages/admin/Handoff';
-import HandoffCreate from './pages/admin/HandoffCreate';
-import Operations from './pages/admin/Operations';
-import EpsAudit from './pages/admin/EpsAudit';
-import Observability from './pages/admin/Observability';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
-import Team from './pages/admin/Team';
-import SearchPage from './pages/admin/Search';
-import Devices from './pages/admin/me/Devices';
-import NotificationsPage from './pages/admin/me/Notifications';
-import ThemePage from './pages/admin/me/Theme';
-import Workspace from './pages/admin/Workspace';
-import CommandCenter from './pages/CommandCenter';
 import RequireSession from './components/Auth/RequireSession';
+import SessionLoading from './components/Auth/SessionLoading';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { I18nProvider } from './i18n';
-import { getShellWindowLabel, isTauriShell, listenShell } from './lib/shell';
+import { getShellWindowLabel, isTauriShell, listenShell, showLoginWindow } from './lib/shell';
 import { SHELL_EVENTS } from '@axi/workbench-foundation/shell-contracts';
 
 const queryClient = new QueryClient({
@@ -62,6 +45,29 @@ const AxiUiContractNotFound: React.FC = () => (
     title="页面暂不可用"
   />
 );
+
+/** 主窗启动页：只在 1280×800 主窗显示，登录卡永远留在独立小窗。 */
+const DesktopStartupLoading: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
+  const redirectedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isLoading || redirectedRef.current) return;
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+      return;
+    }
+    if (isTauriShell() && getShellWindowLabel() === 'main') {
+      redirectedRef.current = true;
+      void showLoginWindow();
+    } else {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  return <SessionLoading />;
+};
 
 const WorkbenchSurface: React.FC = () => {
   const { mode, preset } = useAxiTheme();
@@ -92,6 +98,7 @@ const WorkbenchSurface: React.FC = () => {
             <BrowserRouter>
               <ShellSessionBridge />
               <Routes>
+                  <Route path="/loading" element={<DesktopStartupLoading />} />
                   {/* Web 与移动端拥有独立 UI；登录协议统一通过 Axi Identity OIDC。 */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -102,38 +109,38 @@ const WorkbenchSurface: React.FC = () => {
                   {/* Web 管理端专属壳：Axi Dashboard Chrome。 */}
                   <Route path="/" element={<RequireSession><MainLayout /></RequireSession>}>
                     <Route index element={<Navigate to="admin/dashboard" replace />} />
-                    <Route path="admin/dashboard" element={<Dashboard />} />
+                    <Route path="admin/dashboard" element={<AxiUiContractNotFound />} />
                     <Route path="admin/personal-os/today" element={<PersonalOsToday />} />
                     <Route path="admin/personal-os/workbench" element={<PersonalOsWorkbench />} />
-                    <Route path="admin/operations" element={<Operations />} />
-                    <Route path="admin/operations/eps" element={<EpsAudit />} />
-                    <Route path="admin/operations/commit-ledger" element={<CommitLedgerPage />} />
-                    <Route path="admin/operations/observability" element={<Observability />} />
-                    <Route path="admin/project" element={<Projects />} />
-                    <Route path="admin/project/:id" element={<ProjectDetail />} />
+                    <Route path="admin/operations" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/operations/eps" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/operations/commit-ledger" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/operations/observability" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/project" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/project/:id" element={<AxiUiContractNotFound />} />
                     <Route path="admin/task" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/team" element={<Team />} />
-                    <Route path="admin/workspace" element={<Workspace />} />
-                    <Route path="admin/command-center" element={<CommandCenter />} />
+                    <Route path="admin/team" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/workspace" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/command-center" element={<AxiUiContractNotFound />} />
                     {/* 历史扫码链接不再打开桌面摄像头工具，回到控制中心。 */}
                     <Route path="admin/scan" element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="admin/handoff" element={<Handoff />} />
-                    <Route path="admin/handoff/:id" element={<HandoffCreate />} />
+                    <Route path="admin/handoff" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/handoff/:id" element={<AxiUiContractNotFound />} />
                     {/* 全局联想搜索二级页 */}
-                    <Route path="admin/search" element={<SearchPage />} />
+                    <Route path="admin/search" element={<AxiUiContractNotFound />} />
                     {/* 我的：入口 + 二级页 */}
                     {/* Cool Admin personal center is the canonical account form. */}
                     <Route path="admin/me" element={<AxiUiContractNotFound />} />
                     {/* Preserve old account bookmarks without a second account page. */}
                     <Route path="admin/me/account" element={<Navigate to="/admin/me" replace />} />
-                    <Route path="admin/me/devices" element={<Devices />} />
-                    <Route path="admin/me/notifications" element={<NotificationsPage />} />
-                    <Route path="admin/me/theme" element={<ThemePage />} />
+                    <Route path="admin/me/devices" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/me/notifications" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/me/theme" element={<AxiUiContractNotFound />} />
                     {/* Retired settings table: preserve old bookmarks without rendering a duplicate settings page. */}
                     <Route path="admin/me/settings" element={<Navigate to="/admin/me/theme" replace />} />
-                    <Route path="admin/settings/menu" element={<MenuList />} />
+                    <Route path="admin/settings/menu" element={<AxiUiContractNotFound />} />
                     <Route path="admin/settings/user" element={<Navigate to="/admin/me" replace />} />
-                    <Route path="admin/settings/role" element={<RoleList />} />
+                    <Route path="admin/settings/role" element={<AxiUiContractNotFound />} />
                   </Route>
 
                   <Route path="*" element={<AxiUiContractNotFound />} />
