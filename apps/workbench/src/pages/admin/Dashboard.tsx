@@ -11,7 +11,6 @@ import {
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
-import { AxiCardBanner } from '@axi/core';
 import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@axi/api-client';
 import { useI18n } from '../../i18n';
@@ -151,13 +150,6 @@ const Dashboard: React.FC = () => {
             <Button type="primary" onClick={runSearch}>{t('common.search')}</Button>
           </AxiRow>
         ) : undefined}
-        top={(
-          <AxiRow className="wb-crud-action-cluster">
-            <Button disabled={isFetching} onClick={() => void refetch()}>
-              {isFetching ? t('dashboard.refreshing') : t('dashboard.refresh')}
-            </Button>
-          </AxiRow>
-        )}
       >
         {showError ? (
           <ControlPlaneState
@@ -171,26 +163,20 @@ const Dashboard: React.FC = () => {
           <ControlPlaneState description={t('dashboard.loading.description')} loading title={t('dashboard.loading.title')} />
         ) : (
           <>
-            <AxiCardBanner
-              className="dashboard-crud__overview"
-              description={t('dashboard.title')}
-              title={t('dashboard.title')}
-            >
-              <AxiTableGroup className="dashboard-crud__table">
-                <AxiCrudTable
-                  columns={projectColumns}
-                  data={filteredProjectRows}
-                  operationButtons={projectOperationButtons}
-                  pagination={desktopCrudPagination(filteredProjectRows.length)}
-                  rowKey="id"
-                  rowSelection={false}
-                  onRow={(row) => ({
-                    onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                    style: { cursor: 'pointer' },
-                  })}
-                />
-              </AxiTableGroup>
-            </AxiCardBanner>
+            <AxiTableGroup className="dashboard-crud__table">
+              <AxiCrudTable
+                columns={projectColumns}
+                data={filteredProjectRows}
+                operationButtons={projectOperationButtons}
+                pagination={desktopCrudPagination(filteredProjectRows.length)}
+                rowKey="id"
+                rowSelection={false}
+                onRow={(row) => ({
+                  onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                  style: { cursor: 'pointer' },
+                })}
+              />
+            </AxiTableGroup>
             <GovernanceSummary
               governance={snapshot?.governance}
               onAutomationRun={async (automationId) => {

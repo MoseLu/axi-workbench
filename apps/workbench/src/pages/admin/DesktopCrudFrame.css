@@ -21,9 +21,9 @@
 
 /* loading / 空态不参与 body 的高度拉伸；按自身 min-height 撑开，才能在内部 grid 里居中 */
 .wb-crud-page__layout .axi-crud-layout__body > .wb-control-plane-state {
-  flex: 0 0 auto;
-  align-self: center;
-  width: auto;
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: 100%;
 }
 
 .wb-crud-page__layout .axi-crud-layout__body {
@@ -201,6 +201,11 @@
   padding: var(--axi-space-6);
   color: var(--axi-muted, rgba(255, 255, 255, .58));
   text-align: center;
+}
+
+/* 数据请求期间，状态层占满内容区，避免 loading 被工具栏挤到页面上方。 */
+.wb-control-plane-state.is-loading {
+  min-height: min(520px, calc(100vh - 180px));
 }
 
 .wb-control-plane-state .ant-empty {

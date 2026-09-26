@@ -26,7 +26,7 @@ export function ControlPlaneState({
   title,
 }: ControlPlaneStateProps) {
   return (
-    <section aria-live="polite" className="wb-control-plane-state" role="status">
+    <section aria-live="polite" className={`wb-control-plane-state${loading ? ' is-loading' : ''}`} role="status">
       {loading ? <Spin size="small" /> : <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />}
       <strong>{title}</strong>
       <p>{description}</p>
