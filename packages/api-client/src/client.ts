@@ -16,6 +16,10 @@ export const createApiClient = (config?: AxiosRequestConfig): AxiosInstance => {
     baseURL: API_BASE_URL,
     timeout: 30000,
     withCredentials: true,
+    // Packaged Tauri uses the window.fetch bridge to route /api requests
+    // through the authenticated native Gateway. Axios' default XHR adapter
+    // bypasses that bridge and leaves snapshot-backed pages empty.
+    adapter: 'fetch',
     headers: {
       "Content-Type": "application/json",
     },
