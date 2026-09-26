@@ -28,6 +28,7 @@ import {
   closeRight,
   closeOther,
   closeAll,
+  localizeTabLabels,
 } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
 import { emitShellLogout, emitShellUnread } from '../lib/shell';
@@ -201,12 +202,13 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     const path = location.pathname;
     const routeInfo = resolveMenuRoute(path);
-    if (!routeInfo) {
-      setActiveTab(path);
-      return;
-    }
     setTabs((prev) => {
-      const result = openTab(prev, {
+      const localized = localizeTabLabels(prev, (tabPath) => {
+        const tabRouteInfo = resolveMenuRoute(tabPath);
+        return tabRouteInfo ? t(tabRouteInfo.labelKey) : undefined;
+      });
+      if (!routeInfo) return localized;
+      const result = openTab(localized, {
         key: path,
         label: t(routeInfo.labelKey),
         path,
@@ -312,14 +314,17 @@ const MainLayout: React.FC = () => {
   );
 
   const desktopTabs = useMemo(
-    () => tabs.map((tab) => ({
+    () => localizeTabLabels(tabs, (path) => {
+      const routeInfo = resolveMenuRoute(path);
+      return routeInfo ? t(routeInfo.labelKey) : undefined;
+    }).map((tab) => ({
       key: tab.key,
       label: tab.label,
       closable: tab.closable !== false,
       pinned: tab.closable === false,
       status: 'ready' as const,
     })),
-    [tabs],
+    [t, tabs],
   );
 
   const stylePresetOptions = useMemo(

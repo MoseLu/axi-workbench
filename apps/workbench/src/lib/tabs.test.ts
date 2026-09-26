@@ -19,6 +19,7 @@ import {
   closeOther,
   closeAll,
   togglePin,
+  localizeTabLabels,
   type TabItem,
 } from './tabs';
 
@@ -45,6 +46,24 @@ describe('openTab', () => {
   it('defaults path to key when caller omits it (admin-shell convenience)', () => {
     const result = openTab([HOME], { key: '/x', label: 'X' });
     expect(result.tabs[1]?.path).toBe('/x');
+  });
+});
+
+describe('localizeTabLabels', () => {
+  it('updates every known persisted tab instead of only the active route', () => {
+    const tabs = [
+      { ...HOME, label: '工作台概览' },
+      { ...a, label: '项目组合' },
+      { ...b, label: '外部页面' },
+    ];
+
+    const result = localizeTabLabels(tabs, (path) => ({
+      [HOME.key]: 'Dashboard',
+      '/a': 'Projects',
+    })[path]);
+
+    expect(result.map((tab) => tab.label)).toEqual(['Dashboard', 'Projects', '外部页面']);
+    expect(result[2]).toBe(tabs[2]);
   });
 });
 

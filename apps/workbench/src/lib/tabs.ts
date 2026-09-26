@@ -36,6 +36,24 @@ export interface TabOpResult {
   nextActive: string | null;
 }
 
+/**
+ * Rebuild visible labels for persisted tabs when the workbench locale changes.
+ *
+ * Tab state is persisted with a label for backwards compatibility, but that
+ * label is a presentation value and must not become the source of truth for
+ * the active locale. Unknown routes keep their persisted label so extensions
+ * and deep links remain usable.
+ */
+export function localizeTabLabels(
+  tabs: TabItem[],
+  resolveLabel: (path: string) => string | undefined,
+): TabItem[] {
+  return tabs.map((tab) => {
+    const label = resolveLabel(tab.path);
+    return label === undefined || label === tab.label ? tab : { ...tab, label };
+  });
+}
+
 /** Default landing tab for an empty shell. */
 export const HOME_TAB: TabItem = {
   key: '/admin/dashboard',
