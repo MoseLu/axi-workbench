@@ -147,7 +147,7 @@ test('renders the NetEase-style login journey', async ({ page }) => {
   await expect(resend).toHaveText('重新发送');
   await expect(resend).toHaveCSS('text-decoration-line', 'none');
 
-  await page.locator('.axi-login-email-code-meta button').click();
+  await page.getByRole('button', { name: '密码登录', exact: true }).click();
   await expect(page.locator('#axi-login-password-email')).toBeVisible();
   await expect(page.locator('#axi-login-password')).toBeVisible();
   await expect(page.locator('.axi-login-form--password .axi-login-form__row--email')).toBeVisible();
@@ -354,6 +354,29 @@ test('code login action has no link underline', async ({ page }) => {
   await expect(codeLogin).toBeEnabled();
   await codeLogin.hover();
   await expect(codeLogin).toHaveCSS('text-decoration-line', 'none');
+});
+
+test('lets the user switch email after requesting a verification code', async ({ page }) => {
+  await mockUnauthenticated(page);
+  await page.route('**/api/v1/auth/email-verifications', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ challengeId: 'change-email-challenge', expiresAt: new Date(Date.now() + 60_000).toISOString() }),
+    });
+  });
+
+  await openAccountLogin(page);
+  await page.locator('#axi-login-email').fill('first@example.com');
+  await page.locator('.axi-login-consent input').check();
+  await page.getByRole('button', { name: '验证码登录', exact: true }).click();
+  await expect(page.locator('#axi-login-email-code')).toBeVisible();
+  await expect(page.locator('.axi-login-email-code-meta')).toContainText('first@qq.com');
+
+  await page.getByRole('button', { name: '换一个邮箱', exact: true }).click();
+  await expect(page.locator('#axi-login-email')).toBeVisible();
+  await expect(page.locator('#axi-login-email-code')).toHaveCount(0);
+  await expect(page.locator('.axi-login-banner--error')).toHaveCount(0);
 });
 
 test('one-tap login keeps the current form behind other methods', async ({ page }) => {

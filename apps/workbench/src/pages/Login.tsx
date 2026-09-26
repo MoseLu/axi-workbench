@@ -855,8 +855,11 @@ const Login: React.FC = () => {
   const handleChangeEmail = () => {
     setPhase('email');
     resetEmailChallenge();
+    setEmailAttempted(false);
+    setCodeAttempted(false);
     setError(null);
     setHint(null);
+    focusLoginField('axi-login-email');
   };
 
   const handleLoginModeChange = (mode: LoginMode) => {
@@ -1254,7 +1257,10 @@ const Login: React.FC = () => {
                         </button>
                       </div>
                       <div className="axi-login-email-code-meta">
-                        <span>{t('auth.login.codeSentShort')}</span>
+                        <span>{t('auth.login.codeSentShort').replace('{email}', sentTo)}</span>
+                        <button type="button" onClick={handleChangeEmail}>
+                          {t('auth.login.changeEmail')}
+                        </button>
                         <button type="button" onClick={() => handleLoginModeChange('password')}>
                           {t('auth.login.passwordLogin')}
                         </button>

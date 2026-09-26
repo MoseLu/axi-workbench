@@ -155,7 +155,7 @@
   "auth.login.codeLength": "The verification code must be 6 digits",
   "auth.login.codeInvalid": "Invalid or expired verification code. Please check and retry.",
   "auth.login.codeSentHint": "We sent the code to your email. Check the spam folder if you don't see it.",
-  "auth.login.codeSentShort": "Verification code sent to your email",
+  "auth.login.codeSentShort": "Verification code sent to {email}",
   "auth.login.agreeRequired": "Please read and accept the Terms of Service and Privacy Policy",
   "auth.login.agreeHint": "Please accept the terms",
   "auth.login.resentHint": "Verification code resent.",
