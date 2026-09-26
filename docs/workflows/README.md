@@ -14,7 +14,7 @@
 
 Axi Workbench 的具体工作流见上表。跨多个 Axi 项目的统一工作流（如工作区注册表变更、开发者 onboarding、共享包提交、治理审计）由 workspace 级索引统一登记：
 
-- 主索引：[`/Volumes/code/workspace/docs/workflows/README.md`](/Volumes/code/workspace/docs/workflows/README.md)
+- 主索引：[`/Volumes/code/workspace/foundation/workspace-governance/docs/workflows/README.md`](/Volumes/code/workspace/foundation/workspace-governance/docs/workflows/README.md)(已迁移到 governance 仓,branch `agent/config-governance`)
 - 工作流 ID 空间：`WF-*`（workspace 级）、`WB-*`（本项目专用）
 
 ## 工作流规范
