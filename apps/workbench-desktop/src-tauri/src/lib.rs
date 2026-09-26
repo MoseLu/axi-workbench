@@ -10,11 +10,9 @@ use tauri::{
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::fs::{create_dir_all, read_to_string, remove_file, OpenOptions};
+use std::fs::{create_dir_all, read_to_string, OpenOptions};
 use std::io::Write;
 use std::net::SocketAddr;
-#[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -36,81 +34,10 @@ const REMOTE_GATEWAY_LAN_ADDR: SocketAddr = SocketAddr::new(
 );
 const LOCAL_HTTPS_PORT: u16 = 8443;
 const LOCAL_RUNTIME_STATUS_EVENT: &str = "shell://local-runtime-status";
-const SESSION_COOKIE_FILE: &str = "gateway-session-cookie";
 
 #[derive(Default)]
 struct GatewaySession {
     cookie: Mutex<Option<String>>,
-}
-
-impl GatewaySession {
-    fn cookie_path(app: &AppHandle) -> Result<PathBuf, String> {
-        app.path()
-            .app_data_dir()
-            .map(|path| path.join(SESSION_COOKIE_FILE))
-            .map_err(|error| format!("gateway session path unavailable: {error}"))
-    }
-
-    fn load(&self, app: &AppHandle) -> Result<(), String> {
-        let path = Self::cookie_path(app)?;
-        let cookie = match read_to_string(path) {
-            Ok(value) => {
-                let value = value.trim().to_string();
-                (!value.is_empty()).then_some(value)
-            }
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
-            Err(error) => return Err(format!("gateway session load failed: {error}")),
-        };
-        *self
-            .cookie
-            .lock()
-            .map_err(|_| "gateway session lock failed".to_string())? = cookie;
-        Ok(())
-    }
-
-    fn save(&self, app: &AppHandle, cookie: Option<&str>) -> Result<(), String> {
-        let path = Self::cookie_path(app)?;
-        if let Some(cookie) = cookie.filter(|value| !value.trim().is_empty()) {
-            let parent = path
-                .parent()
-                .ok_or_else(|| "gateway session directory unavailable".to_string())?;
-            create_dir_all(parent)
-                .map_err(|error| format!("gateway session directory unavailable: {error}"))?;
-            let mut file = OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(&path)
-                .map_err(|error| format!("gateway session save failed: {error}"))?;
-            #[cfg(unix)]
-            file.set_permissions(std::fs::Permissions::from_mode(0o600))
-                .map_err(|error| format!("gateway session permissions failed: {error}"))?;
-            file.write_all(cookie.trim().as_bytes())
-                .map_err(|error| format!("gateway session save failed: {error}"))?;
-            return Ok(());
-        }
-
-        match remove_file(path) {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(error) => Err(format!("gateway session clear failed: {error}")),
-        }
-    }
-}
-
-fn session_cookie_from_header(value: &str) -> Option<&str> {
-    let cookie = value.split(';').next()?.trim();
-    let (name, value) = cookie.split_once('=')?;
-    if name.trim().is_empty()
-        || value.trim().is_empty()
-        || matches!(
-            name.trim().to_ascii_lowercase().as_str(),
-            "path" | "domain" | "expires" | "max-age" | "secure" | "httponly" | "samesite"
-        )
-    {
-        return None;
-    }
-    Some(cookie)
 }
 
 #[derive(Debug, Deserialize)]
@@ -194,7 +121,6 @@ fn resolve_gateway_url(base_url: Option<&str>, path: &str) -> Result<reqwest::Ur
 
 #[tauri::command]
 async fn proxy_gateway_request(
-    app: AppHandle,
     request: GatewayProxyRequest,
     session: State<'_, GatewaySession>,
     runtime: State<'_, LocalRuntime>,
@@ -266,29 +192,27 @@ async fn proxy_gateway_request(
         .get("set-cookie")
         .and_then(|value| value.to_str().ok())
     {
-        let lower_set_cookie = set_cookie.to_ascii_lowercase();
-        let deleted = lower_set_cookie.contains("max-age=0")
-            || lower_set_cookie.contains("expires=thu, 01 jan 1970");
+        let cookie = set_cookie
+            .split(';')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         let mut stored_cookie = session
             .cookie
             .lock()
             .map_err(|_| "gateway session lock failed")?;
-        if deleted {
+        if cookie.is_empty() || set_cookie.to_ascii_lowercase().contains("max-age=0") {
             *stored_cookie = None;
-            session.save(&app, None)?;
-        } else if let Some(cookie) = session_cookie_from_header(set_cookie) {
-            *stored_cookie = Some(cookie.to_string());
-            session.save(&app, Some(cookie))?;
         } else {
-            // Ignore malformed Set-Cookie values and retain the current session.
+            *stored_cookie = Some(cookie);
         }
     }
-    if request.path.ends_with("/logout") || matches!(status, 401 | 403) {
+    if request.path.ends_with("/logout") {
         *session
             .cookie
             .lock()
             .map_err(|_| "gateway session lock failed")? = None;
-        session.save(&app, None)?;
     }
 
     let mut headers = HashMap::new();
@@ -310,22 +234,7 @@ async fn proxy_gateway_request(
 
 #[cfg(test)]
 mod gateway_tests {
-    use super::{resolve_gateway_url, session_cookie_from_header};
-
-    #[test]
-    fn extracts_only_the_cookie_pair_from_set_cookie() {
-        assert_eq!(
-            session_cookie_from_header("axi_session=opaque-value; Path=/; HttpOnly"),
-            Some("axi_session=opaque-value")
-        );
-    }
-
-    #[test]
-    fn ignores_empty_or_malformed_set_cookie_values() {
-        assert_eq!(session_cookie_from_header("Path=/; HttpOnly"), None);
-        assert_eq!(session_cookie_from_header("axi_session=; Max-Age=0"), None);
-        assert_eq!(session_cookie_from_header("; Path=/"), None);
-    }
+    use super::resolve_gateway_url;
 
     #[test]
     fn uses_remote_https_gateway_by_default() {
@@ -543,7 +452,6 @@ pub fn run() {
             open_external_url
         ])
         .setup(|app| {
-            app.state::<GatewaySession>().load(app.handle())?;
             if runtime::local_project_mode() {
                 start_local_runtime(app.handle());
             }
