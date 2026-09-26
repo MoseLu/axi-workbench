@@ -135,6 +135,29 @@ enum PetAssetLoader {
         return sanitized.isEmpty ? "default" : sanitized
     }
 
+    static var selectedPetGroupID: String {
+        guard let value = ProcessInfo.processInfo.environment[PetRunnerIPC.groupIDEnvironmentKey]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty
+        else {
+            return PetRunnerIPC.groupID
+        }
+
+        return value
+    }
+
+    static var selectedPetLanguage: PetRunnerLanguage {
+        PetRunnerLanguage.resolved(
+            from: ProcessInfo.processInfo.environment[PetRunnerIPC.languageEnvironmentKey]
+        )
+    }
+
+    static var selectedPetDragMode: PetRunnerDragMode {
+        PetRunnerDragMode(
+            rawValue: UserDefaults.standard.string(forKey: PetRunnerIPC.dragModeDefaultsKey) ?? ""
+        ) ?? .individual
+    }
+
     static var selectedPetSlotIndex: Int {
         clampedIntegerEnvironmentValue(
             key: petSlotIndexEnvironmentKey,

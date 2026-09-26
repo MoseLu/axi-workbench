@@ -1,0 +1,31 @@
+{
+  "name": "@axi/resource-orchestrator",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts",
+    "./planner": "./src/planner.ts",
+    "./state-label": "./src/state-label.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.0",
+    "zod": "^3.23.8",
+    "@axi/gateway-contracts": "workspace:*",
+    "@axi/resource-adapters": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.5",
+    "ioredis-mock": "^8.9.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.7"
+  }
+}

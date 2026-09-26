@@ -1,0 +1,73 @@
+{
+  "manifestVersion": 1,
+  "providers": [
+    { "id": "image-factory", "factory": "image-factory" },
+    { "id": "docs-factory", "factory": "docs-factory" },
+    { "id": "minimax-factory", "factory": "minimax-factory" },
+    { "id": "fixture-factory", "factory": "fixture-factory" }
+  ],
+  "targets": [
+    { "id": "image-factory.axi-image-preview", "providerId": "axi-image-preview", "weight": 5, "timeoutMs": 8000 },
+    { "id": "image-factory.minimax-tokenplan-image", "providerId": "minimax-tokenplan-image", "weight": 1, "timeoutMs": 180000 },
+    { "id": "docs-factory.axi-docs", "providerId": "axi-docs", "weight": 3, "timeoutMs": 8000 },
+    { "id": "minimax-factory.minimax-tokenplan-search", "providerId": "minimax-tokenplan-search", "weight": 1, "timeoutMs": 30000 },
+    { "id": "docs-factory.axi-workspace-status", "providerId": "axi-workspace-status", "weight": 1, "timeoutMs": 8000 },
+    { "id": "fixture-factory.fixture-image-preview", "providerId": "fixture-image-preview", "fallback": true },
+    { "id": "fixture-factory.fixture-axi-docs", "providerId": "fixture-axi-docs", "fallback": true },
+    { "id": "fixture-factory.fixture-workspace", "providerId": "fixture-workspace", "fallback": true }
+  ],
+  "routes": [
+    {
+      "id": "route.image", "toolId": "resource.search.image", "description": "本地图库图片搜索",
+      "predicates": ["by-resource-kind-image"],
+      "targetIds": ["image-factory.axi-image-preview"],
+      "loadBalancer": "weighted-round-robin", "concurrency": 2, "cacheTtlMs": 60000
+    },
+    {
+      "id": "route.image-fallback", "toolId": "resource.search.image", "description": "本地图片 provider 不可用时降级",
+      "predicates": ["by-resource-kind-image"],
+      "targetIds": ["fixture-factory.fixture-image-preview"],
+      "loadBalancer": "failover-only"
+    },
+    {
+      "id": "route.skill", "toolId": "resource.search.skill", "description": "Axi Skills 工作流检索",
+      "predicates": ["by-resource-kind-skill"],
+      "targetIds": ["docs-factory.axi-docs"], "cacheTtlMs": 60000
+    },
+    {
+      "id": "route.skill-fallback", "toolId": "resource.search.skill", "description": "Axi Skills 不可用时降级",
+      "predicates": ["by-resource-kind-skill"],
+      "targetIds": ["fixture-factory.fixture-axi-docs"]
+    },
+    {
+      "id": "route.document", "toolId": "resource.search.document", "description": "Axi Docs 文档检索",
+      "predicates": ["by-resource-kind-document"],
+      "targetIds": ["docs-factory.axi-docs"], "cacheTtlMs": 60000
+    },
+    {
+      "id": "route.document-fallback", "toolId": "resource.search.document", "description": "Axi Docs 不可用时降级",
+      "predicates": ["by-resource-kind-document"],
+      "targetIds": ["fixture-factory.fixture-axi-docs"]
+    },
+    {
+      "id": "route.web", "toolId": "resource.search.web", "description": "MiniMax 全网搜索",
+      "predicates": ["by-resource-kind-web"],
+      "targetIds": ["minimax-factory.minimax-tokenplan-search"], "timeoutMs": 30000
+    },
+    {
+      "id": "route.workspace", "toolId": "resource.search.workspace", "description": "Axi 工作区状态",
+      "predicates": ["by-resource-kind-workspace"],
+      "targetIds": ["docs-factory.axi-workspace-status"]
+    },
+    {
+      "id": "route.generate-image", "toolId": "resource.generate.image", "description": "MiniMax 图片生成",
+      "predicates": ["by-resource-kind-image"],
+      "targetIds": ["image-factory.minimax-tokenplan-image"], "timeoutMs": 180000
+    }
+  ],
+  "fallbackChains": [
+    { "toolId": "resource.search.image", "chain": ["route.image-fallback"] },
+    { "toolId": "resource.search.skill", "chain": ["route.skill-fallback"] },
+    { "toolId": "resource.search.document", "chain": ["route.document-fallback"] }
+  ]
+}

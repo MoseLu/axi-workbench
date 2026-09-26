@@ -47,5 +47,5 @@ Secrets are stored in the system keychain. The SQLite database stores only a sec
 
 - `pnpm typecheck`, `pnpm test`, and `pnpm build` pass.
 - `cargo check --manifest-path src-tauri/Cargo.toml --offline` passes.
-- `cargo test --manifest-path src-tauri/Cargo.toml --offline` passes with 10 unit tests.
-- `/Users/mose/Desktop/API.txt` was used only for a local DeepSeek smoke test. The first key in that file successfully completed a minimal `/v1/chat/completions` request; another key returned 401 and was not stored.
+- `cargo test --manifest-path src-tauri/Cargo.toml --offline` passes with 19 unit tests.
+- Provider smoke tests must use local credential references; raw API keys are not stored in the repository or SQLite database.

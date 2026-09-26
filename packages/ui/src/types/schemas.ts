@@ -20,15 +20,6 @@
  */
 import { z } from 'zod';
 
-// ========== 辅助函数 ==========
-
-/**
- * 创建带自引用的 Schema
- */
-function lazyRecursive<T extends z.ZodTypeAny>(schemaFactory: () => T): T {
-  return z.lazy(() => schemaFactory()) as unknown as T;
-}
-
 // ========== 基础类型 Schema ==========
 
 /**
@@ -341,7 +332,7 @@ export const CardPropsSchema = z.object({
 /**
  * Table Column Props Schema
  */
-export const TableColumnPropsSchema = <T extends z.ZodTypeAny>(itemSchema: T) => z.object({
+export const TableColumnPropsSchema = (_itemSchema: z.ZodTypeAny) => z.object({
   dataIndex: z.string().optional(),
   title: z.unknown().optional(),
   key: z.string().optional(),
@@ -574,7 +565,10 @@ export type ZodButtonProps = z.infer<typeof ButtonPropsSchema>;
 export type ZodInputProps = z.infer<typeof InputPropsSchema>;
 
 /** SelectProps 类型推断 */
-export type ZodSelectProps<T = unknown> = z.infer<typeof SelectPropsSchema>;
+export type ZodSelectProps<T = unknown> = z.infer<typeof SelectPropsSchema> & {
+  value?: T | T[];
+  defaultValue?: T | T[];
+};
 
 /** ModalProps 类型推断 */
 export type ZodModalProps = z.infer<typeof ModalPropsSchema>;
@@ -589,7 +583,9 @@ export type ZodMenuProps = z.infer<typeof MenuPropsSchema>;
 export type ZodTabsProps = z.infer<typeof TabsPropsSchema>;
 
 /** TableProps 类型推断 */
-export type ZodTableProps<T = unknown> = z.infer<typeof TablePropsSchema>;
+export type ZodTableProps<T = unknown> = z.infer<typeof TablePropsSchema> & {
+  dataSource?: T[];
+};
 
 /** CardProps 类型推断 */
 export type ZodCardProps = z.infer<typeof CardPropsSchema>;

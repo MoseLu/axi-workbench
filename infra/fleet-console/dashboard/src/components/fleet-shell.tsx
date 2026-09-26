@@ -13,6 +13,7 @@ import { AxiDashboardShell, type AxiDashboardNavGroup } from "@axi/shell";
 import { Space } from "antd";
 import { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { t } from "../i18n";
 import type { FleetModel } from "../lib/fleet-types";
 
 const navItems = [
@@ -92,7 +93,7 @@ export function FleetShell({ model }: { model: FleetModel }) {
         avatar: <span>OP</span>,
         description: `${model.data.network} inventory`,
         imageSrc: avatarDataUrl || undefined,
-        label: "Axi Fleet Ops",
+        label: t("fleet.avatar.label"),
         menuItems: [
           { iconName: "my", key: "profile", label: "管理账号" },
           { iconName: "exit", key: "logout", label: "退出登录" },
@@ -123,7 +124,7 @@ export function FleetShell({ model }: { model: FleetModel }) {
         </Space>
       )}
       breadcrumbs={[
-        { key: "fleet", label: "Axi Fleet Console" },
+        { key: "fleet", label: t("fleet.breadcrumb.console") },
         { current: true, key: selectedKey, label: selectedItem.label, icon: selectedItem.icon },
       ]}
       className="fleet-dashboard-shell"

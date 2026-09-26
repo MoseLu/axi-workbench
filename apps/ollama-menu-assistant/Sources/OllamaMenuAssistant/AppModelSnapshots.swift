@@ -127,8 +127,8 @@ extension AppModel {
 private func makeSnapshotProjects() -> [ConversationProject] {
     let now = Date()
     return [
-        ConversationProject(name: "ollama-menu-assistant", path: "/Volumes/code/workspace/projects/axi-workbench/apps/ollama-menu-assistant", updatedAt: now.addingTimeInterval(-180)),
-        ConversationProject(name: "ielts-vocab", path: "/Volumes/code/workspace/products/ielts-vocab", updatedAt: now.addingTimeInterval(-86_000)),
+        ConversationProject(name: "ollama-menu-assistant", path: "workspace://project/axi-workbench/apps/ollama-menu-assistant", updatedAt: now.addingTimeInterval(-180)),
+        ConversationProject(name: "ielts-vocab", path: "workspace://project/ielts-vocab", updatedAt: now.addingTimeInterval(-86_000)),
     ]
 }
 

@@ -262,8 +262,8 @@ input {
 }
 
 .fleet-menu {
-  border-inline-end: 0 !important;
-  background: transparent !important;
+  border-inline-end: 0;
+  background: transparent;
 }
 
 .fleet-menu .ant-menu-item {
@@ -276,15 +276,15 @@ input {
 }
 
 .fleet-menu .ant-menu-item:hover {
-  color: #ffffff !important;
+  color: #ffffff;
   border-color: rgba(34, 211, 238, 0.55);
-  background: rgba(34, 211, 238, 0.1) !important;
+  background: rgba(34, 211, 238, 0.1);
 }
 
 .fleet-menu .ant-menu-item-selected {
-  color: #ffffff !important;
+  color: #ffffff;
   border-color: rgba(34, 211, 238, 0.78);
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.34), rgba(168, 85, 247, 0.26)) !important;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.34), rgba(168, 85, 247, 0.26));
   box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
 }
 
@@ -492,7 +492,7 @@ input {
 }
 
 .panel-count {
-  color: var(--cyan) !important;
+  color: var(--cyan);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 12px;
 }

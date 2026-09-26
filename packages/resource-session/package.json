@@ -1,0 +1,27 @@
+{
+  "name": "@axi/resource-session",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./store": "./src/store.ts",
+    "./redactor": "./src/redactor.ts",
+    "./projection": "./src/projection.ts",
+    "./helpers": "./src/helpers.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "@axi/gateway-contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.7"
+  }
+}

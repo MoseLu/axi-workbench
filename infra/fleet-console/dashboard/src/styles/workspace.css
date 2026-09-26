@@ -269,7 +269,7 @@
 
 .subtext {
   max-width: 210px;
-  color: var(--muted) !important;
+  color: var(--muted);
   font-size: 12px;
 }
 
@@ -391,24 +391,24 @@
 }
 
 .ant-table-thead > tr > th {
-  color: #bceaff !important;
-  background: rgba(8, 27, 68, 0.96) !important;
-  border-bottom-color: rgba(34, 211, 238, 0.24) !important;
+  color: #bceaff;
+  background: rgba(8, 27, 68, 0.96);
+  border-bottom-color: rgba(34, 211, 238, 0.24);
   font-size: 12px;
   font-weight: 800;
 }
 
 .ant-table-tbody > tr > td {
   vertical-align: middle;
-  border-bottom-color: rgba(96, 165, 250, 0.14) !important;
+  border-bottom-color: rgba(96, 165, 250, 0.14);
 }
 
 .ant-table-tbody > tr.ant-table-row:hover > td {
-  background: rgba(34, 211, 238, 0.08) !important;
+  background: rgba(34, 211, 238, 0.08);
 }
 
 .ant-table-cell::before {
-  background: rgba(34, 211, 238, 0.2) !important;
+  background: rgba(34, 211, 238, 0.2);
 }
 
 .ant-tag {
@@ -422,14 +422,14 @@
 }
 
 .ant-input-affix-wrapper {
-  background: rgba(4, 15, 38, 0.82) !important;
-  border-color: rgba(96, 165, 250, 0.28) !important;
+  background: rgba(4, 15, 38, 0.82);
+  border-color: rgba(96, 165, 250, 0.28);
 }
 
 .ant-input-affix-wrapper-focused,
 .ant-input-affix-wrapper:hover {
-  border-color: rgba(34, 211, 238, 0.72) !important;
-  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.12) !important;
+  border-color: rgba(34, 211, 238, 0.72);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.12);
 }
 
 .ant-progress-bg {
@@ -441,12 +441,12 @@
 }
 
 .ant-btn.ant-btn-two-chinese-chars::first-letter {
-  letter-spacing: 0 !important;
+  letter-spacing: 0;
 }
 
 .ant-btn.ant-btn-two-chinese-chars > *:not(.anticon) {
-  margin-inline-end: 0 !important;
-  letter-spacing: 0 !important;
+  margin-inline-end: 0;
+  letter-spacing: 0;
 }
 
 .ant-btn-primary.ant-btn-background-ghost {
@@ -456,9 +456,9 @@
 }
 
 .ant-btn-primary.ant-btn-background-ghost:hover {
-  border-color: var(--cyan) !important;
-  color: #ffffff !important;
-  background: rgba(34, 211, 238, 0.16) !important;
+  border-color: var(--cyan);
+  color: #ffffff;
+  background: rgba(34, 211, 238, 0.16);
 }
 
 @keyframes spin {

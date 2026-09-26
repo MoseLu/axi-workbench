@@ -140,7 +140,7 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
                     style={{
                       padding: '10px 20px', border: '1px solid rgba(239,68,68,0.3)',
                       borderRadius: 8, cursor: 'pointer', background: 'rgba(239,68,68,0.06)',
-                      color: '#ef4444', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
+                      color: 'var(--axi-danger, #ef4444)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
                     }}
                   >
                     <IconLogout /> 退出登录
@@ -165,7 +165,7 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
                         onClick={() => setTheme(opt.key)}
                         style={{
                           cursor: 'pointer',
-                          border: `2px solid ${theme === opt.key ? '#3B82F6' : 'transparent'}`,
+                          border: `2px solid ${theme === opt.key ? 'var(--axi-primary-hover, #3B82F6)' : 'transparent'}`,
                           borderRadius: 14,
                           transition: 'all 0.15s',
                         }}

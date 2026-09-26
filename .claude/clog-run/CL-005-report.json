@@ -1,0 +1,223 @@
+{
+  "taskId": "CL-005",
+  "timestamp": "2026-09-15T07:36:00.000Z",
+  "resources": [
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "submit-log",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/logs/submit/",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": false,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "audit",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/audit/",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": false,
+      "reproducible": true,
+      "hasHistoricalGaps": true
+    },
+    {
+      "type": "verification",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/commit-ledger-verification.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "verification",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/commit-ledger-status.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "verification",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/commit-ledger-final-report.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "verification",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/commit-ledger-architecture.md",
+      "format": "md",
+      "appendable": false,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "handoff",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/state/HANDOFF-PROTOCOL.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "handoff",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/docs/logs/handoff/",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": false,
+      "reproducible": true,
+      "hasHistoricalGaps": true
+    },
+    {
+      "type": "completion",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder/public/workspace-project-completion.json",
+      "format": "json",
+      "appendable": true,
+      "commitShaLinkable": false,
+      "reproducible": true,
+      "hasHistoricalGaps": true
+    },
+    {
+      "type": "completion",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder/dist/workspace-project-completion.json",
+      "format": "json",
+      "appendable": false,
+      "commitShaLinkable": false,
+      "reproducible": true,
+      "hasHistoricalGaps": true
+    },
+    {
+      "type": "audit",
+      "path": "/Volumes/code/workspace/projects/axi-workbench/services/control-plane/.cache/epap-control-plane/audit.jsonl",
+      "format": "jsonl",
+      "appendable": true,
+      "commitShaLinkable": false,
+      "reproducible": true,
+      "hasHistoricalGaps": true
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/infra/axi-registry/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/infra/axi-workspace-governance/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/products/ielts-vocab/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-agent/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-sports-management-app/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-pet-desktop/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-notify/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-rules/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/projects/axi-image-preview/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/tools/axi-feishu-codex-bridge/docs/state/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    },
+    {
+      "type": "changelog",
+      "path": "/Volumes/code/workspace/CHANGELOG.md",
+      "format": "md",
+      "appendable": true,
+      "commitShaLinkable": true,
+      "reproducible": true,
+      "hasHistoricalGaps": false
+    }
+  ],
+  "totalResources": 24
+}

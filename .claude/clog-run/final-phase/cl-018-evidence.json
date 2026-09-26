@@ -1,0 +1,133 @@
+{
+  "task": "CL-018",
+  "description": "End-to-end integration verification for Commit Ledger",
+  "startedAt": "2026-09-15T02:47:28.181Z",
+  "completedAt": "2026-09-15T02:47:28.793Z",
+  "totals": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6
+  },
+  "results": [
+    {
+      "step": "1-collector",
+      "status": "PASS",
+      "evidence": {
+        "totalCommits": 5311,
+        "successfulRepos": 22,
+        "failedRepos": 0,
+        "jsonlPath": "/tmp/clog-e2e-collector.jsonl",
+        "jsonlSizeKB": 12700
+      },
+      "timestamp": "2026-09-15T02:47:28.181Z"
+    },
+    {
+      "step": "2-ingestion-idempotency",
+      "status": "PASS",
+      "evidence": {
+        "incoming": 200,
+        "firstTotal": 200,
+        "secondNew": 0,
+        "secondUpdated": 0,
+        "secondUnchanged": 200,
+        "secondConflict": 0
+      },
+      "timestamp": "2026-09-15T02:47:28.221Z"
+    },
+    {
+      "step": "3-conflict-detection",
+      "status": "PASS",
+      "evidence": {
+        "conflictCount": 1,
+        "firstConflict": {
+          "recordId": "test-record-002",
+          "sha": "abc123def456",
+          "projectId": "test-repo",
+          "conflict": {
+            "recordA": "test-record-001",
+            "statusA": "verified",
+            "recordB": "test-record-002",
+            "statusB": "failed"
+          }
+        }
+      },
+      "timestamp": "2026-09-15T02:47:28.221Z"
+    },
+    {
+      "step": "5-stale-detection",
+      "status": "PASS",
+      "evidence": {
+        "filteredCount": 1,
+        "detectStaleCount": 1,
+        "firstStale": {
+          "recordId": "stale-record-001",
+          "sha": "old123",
+          "projectId": "old-repo",
+          "verifiedAt": "2026-06-07T02:47:28.221Z",
+          "staleDays": 100
+        }
+      },
+      "timestamp": "2026-09-15T02:47:28.221Z"
+    },
+    {
+      "step": "6-persistence",
+      "status": "PASS",
+      "evidence": {
+        "imported": 10,
+        "reloaded": 10,
+        "requiredFields": [
+          "recordId",
+          "repo.projectId",
+          "commit.sha",
+          "ingestion.idempotencyKey"
+        ],
+        "sampleRecordId": "b9b1cdab4b62b94323f964e091df9730ebaa6a8108ca93b9928584ff0f19b03a",
+        "sampleProjectId": "axi-agent",
+        "sampleSha": "c19fb525a3aac9219b7ded4554a61a8b39ef05c8",
+        "sampleIdempotencyKey": "axi-agent:c19fb525a3aac9219b7ded4554a61a8b39ef05c8"
+      },
+      "timestamp": "2026-09-15T02:47:28.263Z"
+    },
+    {
+      "step": "4-http-integration",
+      "status": "PASS",
+      "evidence": {
+        "status": 200,
+        "contentType": "application/json",
+        "endpoints": 4,
+        "endpointResults": [
+          {
+            "path": "/internal/web/v1/commit-ledger/summary",
+            "status": 200,
+            "expectStatus": 200,
+            "fieldOk": true,
+            "ok": true
+          },
+          {
+            "path": "/internal/web/v1/commit-ledger/sources",
+            "status": 200,
+            "expectStatus": 200,
+            "fieldOk": true,
+            "ok": true
+          },
+          {
+            "path": "/internal/web/v1/commit-ledger/verification",
+            "status": 200,
+            "expectStatus": 200,
+            "fieldOk": true,
+            "ok": true
+          },
+          {
+            "path": "/internal/web/v1/commit-ledger/commits",
+            "status": 200,
+            "expectStatus": 200,
+            "fieldOk": true,
+            "ok": true
+          }
+        ]
+      },
+      "timestamp": "2026-09-15T02:47:28.291Z"
+    }
+  ],
+  "exitCode": 0
+}

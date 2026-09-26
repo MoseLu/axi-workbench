@@ -1,0 +1,22 @@
+{
+  "schema_version": "axi-rules.frontend-test-contract.v1",
+  "project": "axi-docs",
+  "surfaces": [
+    {
+      "id": "axi-docs-app",
+      "path": "app",
+      "framework": "react-vite",
+      "runtime": "browser",
+      "risk_tier": "B",
+      "test_runner": "vitest",
+      "commands": {"typecheck": "pnpm --dir app exec tsc --noEmit", "lint": "pnpm --dir app lint", "test": "pnpm --dir app test:run", "coverage": "pnpm --dir app test:coverage", "build": "pnpm --dir app build", "e2e": null},
+      "required_layers": ["L0", "L1", "L2"],
+      "critical_flows": ["project search", "document detail", "handoff card"],
+      "critical_flow_tests": {"project search": ["src/components/HomeCommandCenter.test.tsx", "src/lib/knowledgeBase.axiRulesSearch.test.ts"], "document detail": ["src/components/DocumentDetailPage.test.tsx"], "handoff card": ["src/components/ProjectHandoffCard.test.tsx"]},
+      "test_globs": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+      "e2e_globs": [],
+      "coverage": {"lines": 70, "branches": 60},
+      "known_exceptions": [{"id": "axi-docs-browser-smoke", "status": "accepted", "reason": "The docs app has component behavior coverage; browser smoke remains a release-level check because the app is served with workspace document fixtures.", "next_action": "Run the documented browser smoke when the search or document-detail route changes."}, {"id": "axi-docs-coverage-floor", "status": "accepted", "reason": "The 2026-08-17 coverage run measured 58.65% lines and 52.42% branches, below the Tier B 70/60 baseline because sync, MCP, and knowledge explorer runtime modules remain outside the current component harness.", "next_action": "Add boundary tests for sync/MCP/knowledge explorer modules and raise the enforced 70/60 floor."}]
+    }
+  ]
+}

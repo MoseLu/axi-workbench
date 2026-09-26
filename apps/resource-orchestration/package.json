@@ -1,0 +1,39 @@
+{
+  "name": "@axi/resource-orchestration-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@axi/core": "workspace:*",
+    "@axi/crud": "workspace:*",
+    "@axi/presets": "workspace:*",
+    "@axi/settings": "workspace:*",
+    "@axi/tokens": "workspace:*",
+    "@axi/widgets": "workspace:*",
+    "@axi/gateway-contracts": "workspace:*",
+    "@axi/resource-adapters": "workspace:*",
+    "@axi/resource-orchestrator": "workspace:*",
+    "@axi/resource-session": "workspace:*",
+    "antd": "^5.21.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.0.0",
+    "jsdom": "^24.0.0",
+    "sass": "^1.77.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.4.21",
+    "vitest": "^3.2.7"
+  }
+}

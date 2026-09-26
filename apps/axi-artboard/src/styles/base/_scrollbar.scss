@@ -1,0 +1,21 @@
+// base/_scrollbar.scss — slim on-brand scrollbar.
+// Layer: base (output CSS).
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rule-3);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

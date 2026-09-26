@@ -1,0 +1,22 @@
+// base/_typography.scss — global typography baseline.
+// Layer: base (output CSS).
+//
+// Sets html / body / #root to the project defaults. Component-level
+// typography happens in components/* or as Tailwind utility classes.
+
+@use '../abstracts/variables' as v;
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--ink-0);
+  color: var(--ink-text);
+  font-family: v.$font-display;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

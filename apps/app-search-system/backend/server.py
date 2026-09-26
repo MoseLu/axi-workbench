@@ -140,14 +140,13 @@ config = load_config()
 
 
 def _configured_server_port() -> int:
+    raw = os.environ.get("PORT")
+    if not raw:
+        raise RuntimeError("PORT must be provided by the workspace dynamic port lease")
     try:
-        return int(
-            config.get("server", {}).get("port")
-            or config.get("server_port")
-            or 8765
-        )
-    except Exception:
-        return 8765
+        return int(raw)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid PORT: {raw}") from exc
 
 
 def _cli_server_port(default_port: int) -> int:

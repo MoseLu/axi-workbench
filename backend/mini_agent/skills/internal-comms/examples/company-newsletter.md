@@ -24,7 +24,7 @@ The company is pretty big: 1000+ people. There are a variety of different teams 
 Focus on:
 - Company-wide impact (not team-specific details)
 - Announcements from leadership
-- Major milestones and achievements
+- Major milestone and achievements
 - Information that affects most employees
 - External recognition or press
 

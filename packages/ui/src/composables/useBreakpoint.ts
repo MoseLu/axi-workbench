@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
 /** Responsive breakpoint hook */
 export function useBreakpoint(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth <= breakpoint : false
+  const query = `(max-width: ${breakpoint}px)`;
+
+  return useSyncExternalStore(
+    onStoreChange => {
+      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+        return () => undefined;
+      }
+
+      const mediaQuery = window.matchMedia(query);
+      mediaQuery.addEventListener('change', onStoreChange);
+      return () => mediaQuery.removeEventListener('change', onStoreChange);
+    },
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(query).matches
+      : false,
+    () => false,
   );
-
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    setIsMobile(mq.matches);
-    return () => mq.removeEventListener('change', handler);
-  }, [breakpoint]);
-
-  return isMobile;
 }

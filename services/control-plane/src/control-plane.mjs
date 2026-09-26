@@ -1,9 +1,12 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Annotation, END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
+import { createPairingService } from "./pairing.mjs";
+import { createIdempotencyService } from "./idempotency.mjs";
+import { createPersonalOsService } from "./personal-os.mjs";
 
 const DEFAULT_WORKSPACE_ROOT = "/Volumes/code/workspace";
 const WORKSTATION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -19,6 +22,23 @@ const EXTERNAL_CAPABILITY_IDS = new Set(["minimax-tokenplan"]);
 const COMMUNICATION_IDS = new Set(["codex-remote-bridge"]);
 const IM_IDS = new Set(["axi-mobile"]);
 const PHYSICAL_SERVICE_IDS = new Set(["fleet-console"]);
+const GOVERNANCE_RELATIONSHIP_TYPES = new Set(["OWNS", "CONTAINS", "PROVIDES_CAPABILITY", "CONSUMES_CAPABILITY", "DEPENDS_ON", "IMPLEMENTS_CONTRACT", "USES_RESOURCE", "DEPLOYED_TO", "GOVERNED_BY", "INHERITS_FROM", "OVERRIDES", "VERIFIED_BY", "ACTED_BY", "AFFECTS", "EVIDENCED_BY", "SUPERSEDES", "ARCHIVES"]);
+const GOVERNANCE_CONTRACT_VERSION = 1;
+const GOVERNANCE_OBSERVER = "axi-workstation-control-plane";
+const GOVERNANCE_COMPLETION_EVIDENCE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const GOVERNANCE_EXECUTION_EVIDENCE_TTL_MS = 15 * 60 * 1000;
+const APPROVAL_TTL_MS = 5 * 60 * 1000;
+const HANDOFF_TTL_MS = 24 * 60 * 60 * 1000;
+const GOVERNANCE_REGISTRY_COLLECTIONS = ["projects", "products", "shared", "infra", "tools", "references", "agent"];
+const GOVERNANCE_REGISTRY_OBJECT_TYPES = {
+  projects: "project",
+  products: "product",
+  shared: "shared_foundation",
+  infra: "infrastructure",
+  tools: "tool",
+  references: "reference",
+  agent: "agent_platform",
+};
 const BLOCK_PATTERNS = [
   /\brm\s+-[^\n;|&]*[rf]/i,
   /\bgit\s+reset\s+--hard\b/i,
@@ -30,33 +50,385 @@ const BLOCK_PATTERNS = [
   /生产.*(写|改|删|部署|发布)/,
 ];
 
-export function createControlPlane(options = {}) {
-  const workspaceRoot = resolve(options.workspaceRoot || process.env.AXI_WORKSTATION_ROOT || process.env.EPAP_WORKSPACE_ROOT || DEFAULT_WORKSPACE_ROOT);
-  const graphPath = options.graphPath || join(workspaceRoot, "workspace.graph.json");
-  const cacheDir = options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane");
-  const memoryDatabaseUrl = Object.hasOwn(options, "memoryDatabaseUrl")
-    ? options.memoryDatabaseUrl
-    : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL);
-  const memoryProjectReader = options.memoryProjectReader || (() => readMemoryProjects(memoryDatabaseUrl));
-  const agentTaskExecutor = options.agentTaskExecutor || executeAgentTask;
-  const roleAgentExecutor = options.roleAgentExecutor || executeRoleAgentRun;
-  const axiAgentTaskExecutor = options.axiAgentTaskExecutor || executeAxiAgentTask;
-  const heartbeatMs = options.heartbeatMs || JOB_HEARTBEAT_MS;
-  const codexBin = options.codexBin || process.env.CODEX_BIN || "codex";
-  const appServerBin = options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex";
-  const runs = new Map();
-  const envelopeRuns = new Map();
-  const agentTasks = new Map();
-  const approvals = new Map();
-  const jobs = new Map();
-  const jobEnvelopeIndex = new Map();
+/**
+ * Handoff 状态定义 - 支持双向交接
+ */
+export const HandoffStatus = {
+  CREATED: "created",
+  DELIVERED: "delivered",
+  ACCEPTED: "accepted",
+  COMPLETED: "completed",
+  FAILED: "failed",
+  REJECTED: "rejected",
+  EXPIRED: "expired",
+  PENDING: "pending",
+  OPENED: "opened",
+};
+
+/**
+ * 双向状态转换规则
+ */
+export const HandoffTransitions = {
+  "web->mobile": {
+    created: new Set(["delivered", "expired"]),
+    delivered: new Set(["accepted", "rejected", "expired"]),
+    accepted: new Set(["completed", "failed", "expired"]),
+    rejected: new Set(["expired"]),
+    completed: new Set(),
+    failed: new Set(),
+    expired: new Set(),
+  },
+  "mobile->web": {
+    pending: new Set(["opened", "expired"]),
+    opened: new Set(["completed", "rejected", "expired"]),
+    completed: new Set(),
+    rejected: new Set(),
+    expired: new Set(),
+    created: new Set(["delivered", "expired"]),
+    delivered: new Set(["accepted", "rejected", "expired"]),
+    accepted: new Set(["completed", "failed", "expired"]),
+    failed: new Set(),
+  },
+};
+
+/**
+ * 验证状态转换是否合法
+ */
+export function isValidHandoffTransition(direction, currentStatus, nextStatus) {
+  const rules = HandoffTransitions[direction];
+  if (!rules) return false;
+  const allowedTransitions = rules[currentStatus];
+  return allowedTransitions ? allowedTransitions.has(nextStatus) : false;
+}
+
+// SLA configuration for handoff expiry times
+export const DEFAULT_SLA = {
+  standard: 24 * 60 * 60 * 1000,      // 24 hours
+  urgent: 60 * 60 * 1000,              // 1 hour
+  lowPriority: 72 * 60 * 60 * 1000,    // 72 hours
+};
+
+export const SCENARIO_SLA = {
+  approval: { expiryMs: 60 * 60 * 1000, label: "urgent" },        // 1 hour
+  alert: { expiryMs: 15 * 60 * 1000, label: "urgent" },           // 15 minutes
+  task: { expiryMs: 24 * 60 * 60 * 1000, label: "standard" },   // 24 hours
+  project: { expiryMs: 72 * 60 * 60 * 1000, label: "lowPriority" }, // 72 hours
+};
+
+export function getScenarioSla(scenario) {
+  if (!scenario) return { expiryMs: DEFAULT_SLA.standard, label: "standard" };
+  const scenarioConfig = SCENARIO_SLA[scenario];
+  if (scenarioConfig) return scenarioConfig;
+  return { expiryMs: DEFAULT_SLA.standard, label: "standard" };
+}
+
+/**
+ * 创建批量交接
+ */
+export function createBatchHandoff({ params, cacheDir, handoffs, notifyExpired }) {
+  // Extract with defaults - only apply defaults when params is undefined
+  const direction = params?.direction ?? "mobile_to_web";
+  const targetSurface = params?.targetSurface ?? "web";
+  const actionLevel = params?.actionLevel ?? "B";
+  const objects = params?.objects ?? [];
+  const reason = params?.reason ?? "";
+
+  // Validation - use explicit checks to detect missing required fields
+  if (!params || !("direction" in params) || direction === null || direction === undefined || direction === "") {
+    return { ok: false, httpStatus: 400, error: "direction is required" };
+  }
+  if (!("targetSurface" in params) || targetSurface === null || targetSurface === undefined || targetSurface === "") {
+    return { ok: false, httpStatus: 400, error: "targetSurface is required" };
+  }
+  if (!Array.isArray(objects) || objects.length === 0) {
+    return { ok: false, httpStatus: 400, error: "objects must be a non-empty array" };
+  }
+  for (const obj of objects) {
+    if (!obj.type || !obj.id) {
+      return { ok: false, httpStatus: 400, error: "each object must have type and id" };
+    }
+  }
+
+  // Generate batch ID
+  const timestamp = Date.now();
+  const shortId = randomBytes(4).toString("hex");
+  const batchId = `BATCH-${timestamp}-${shortId}`;
+
+  const results = [];
+  const handoffIds = [];
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (const obj of objects) {
+    const id = `handoff_${timestamp}_${randomBytes(4).toString("hex")}`;
+    const handoffCorrelationId = `batch:${batchId}:${obj.type}:${obj.id}`;
+
+    const record = {
+      id,
+      batchId,
+      handoffCorrelationId,
+      direction,  // 添加 direction 字段
+      source: "batch",
+      sourceSurface: "batch",  // 批量交接统一使用 batch 作为源
+      targetSurface,
+      actionLevel,
+      object: obj,
+      status: "pending",
+      reason,
+      impact: reason,
+      actionSummary: `批量交接 ${objects.length} 个 ${obj.type} 对象`,
+      riskLevel: actionLevel === "D" ? "destructive" : actionLevel === "C" ? "high" : actionLevel === "B" ? "medium" : "low",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + HANDOFF_TTL_MS).toISOString(),
+    };
+
+    try {
+      // Persist to disk
+      persistJson(join(cacheDir, "handoffs", `${id}.json`), record);
+      handoffs.set(id, record);
+      handoffIds.push(id);
+      results.push({ ok: true, handoff: record });
+      successCount++;
+    } catch (error) {
+      results.push({ ok: false, error: String(error) });
+      failureCount++;
+    }
+  }
+
+  const status = failureCount === 0 ? "completed" : failureCount === objects.length ? "failed" : "partial";
+
+  // Record batch audit event
+  recordMobileAudit({ cacheDir, event: {
+    auditKind: "batch_handoff_created",
+    batchId,
+    direction,
+    targetSurface,
+    actionLevel,
+    outcome: `${successCount}/${objects.length}`,
+    reason,
+  }});
 
   return {
+    ok: true,
+    batchId,
+    totalCount: objects.length,
+    successCount,
+    failureCount,
+    status,
+    handoffs: handoffIds,
+    results,
+  };
+}
+
+/**
+ * 获取给定方向的所有合法目标状态
+ */
+export function getAllowedHandoffTransitions(direction, currentStatus) {
+  const rules = HandoffTransitions[direction];
+  if (!rules) return [];
+  const allowedTransitions = rules[currentStatus];
+  return allowedTransitions ? [...allowedTransitions] : [];
+}
+
+export function createControlPlane(options = {}) {
+  const workspaceRoot = workspaceRootOf(options);
+  const nodeEnv = options.nodeEnv || process.env.NODE_ENV || "development";
+  const cacheDir = options.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || process.env.EPAP_CONTROL_CACHE_DIR || join(process.cwd(), ".cache", "epap-control-plane");
+  const pairingEnabled = Object.hasOwn(options, "pairingEnabled")
+    ? options.pairingEnabled === true
+    : resolveMobilePairingEnabled({
+        configured: Object.hasOwn(process.env, "AXI_MOBILE_PAIRING_ENABLED"),
+        configuredValue: process.env.AXI_MOBILE_PAIRING_ENABLED,
+        cacheDir,
+        nodeEnv,
+      });
+  const ownerApprovalSecret = resolveMobilePairingOwnerApprovalSecret({
+    configured: Object.hasOwn(options, "ownerApprovalSecret") || Object.hasOwn(process.env, "AXI_OWNER_PAIR_APPROVAL_SECRET"),
+    configuredSecret: options.ownerApprovalSecret || process.env.AXI_OWNER_PAIR_APPROVAL_SECRET || "",
+    cacheDir,
+    pairingEnabled,
+    nodeEnv,
+  });
+  const deps = {
+    workspaceRoot,
+    graphPath: options.graphPath || join(workspaceRoot, "workspace.graph.json"),
+    registryPath: options.registryPath || join(workspaceRoot, "infra", "axi-workspace-governance", "workspace.json"),
+    cacheDir,
+    memoryDatabaseUrl: Object.hasOwn(options, "memoryDatabaseUrl")
+      ? options.memoryDatabaseUrl
+      : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL),
+    memoryProjectReader: options.memoryProjectReader || (() => readMemoryProjects(memoryDatabaseUrlOf(options))),
+    agentTaskExecutor: options.agentTaskExecutor || executeAgentTask,
+    roleAgentExecutor: options.roleAgentExecutor || executeRoleAgentRun,
+    axiAgentTaskExecutor: options.axiAgentTaskExecutor || executeAxiAgentTask,
+    personalOsService: options.personalOsService || null,
+    personalOsStore: options.personalOsStore,
+    personalOsRuntimeReader: options.personalOsRuntimeReader,
+    devsvcOverviewUrl: options.devsvcOverviewUrl,
+    heartbeatMs: options.heartbeatMs || JOB_HEARTBEAT_MS,
+    codexBin: options.codexBin || process.env.CODEX_BIN || "codex",
+    appServerBin: options.appServerBin || process.env.CODEX_APP_SERVER_BIN || "/Applications/Codex.app/Contents/Resources/codex",
+    eventSources: options.eventSources || parseEventSources(process.env.AXI_WORKSPACE_EVENT_SOURCES),
+    automationSchedulerEnabled: options.enableAutomationScheduler === true,
+    automationSchedulerIntervalMs: options.automationSchedulerIntervalMs,
+    handoffExpirySchedulerEnabled: options.enableHandoffExpiryScheduler !== false,
+    handoffExpirySchedulerIntervalMs: options.handoffExpirySchedulerIntervalMs,
+    handoffExpiryMs: normalizeHandoffExpiryMs(Object.hasOwn(options, "handoffExpiryMs") ? options.handoffExpiryMs : process.env.AXI_HANDOFF_EXPIRY_MS),
+    onHandoffExpired: typeof options.onHandoffExpired === "function" ? options.onHandoffExpired : null,
+    pairingEnabled,
+    ownerApprovalSecret,
+    pairingTokenSecret: resolveMobilePairingTokenSecret({
+      configuredSecret: options.pairingTokenSecret || process.env.AXI_MOBILE_TOKEN_SECRET || "",
+      cacheDir,
+      pairingEnabled,
+      nodeEnv,
+    }),
+    enforceExecutionPolicy: options.enforceExecutionPolicy !== false,
+  };
+  return buildControlPlaneSurface(deps);
+}
+
+/**
+ * 新设备仍需显式开启移动配对；但开发机已经持有私有配对密钥时，重启控制面
+ * 必须恢复该既有状态，不能让真机因漏传一个开发环境变量而全部断线。
+ * 显式 false（包括空值）与生产环境始终优先，避免把本地缓存变成生产授权来源。
+ */
+export function resolveMobilePairingEnabled({ configured = false, configuredValue = "", cacheDir, nodeEnv = "development" } = {}) {
+  if (configured) return configuredValue === "true";
+  if (nodeEnv !== "development" || !cacheDir) return false;
+  try {
+    return readFileSync(join(cacheDir, "mobile-pairing-token-secret"), "utf8").trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 本机开发配对密钥绝不进入源码、环境输出或移动端包。
+ * 只有显式启用移动配对且非生产环境时，才在控制面私有缓存中创建一个稳定随机值；
+ * 重启不会让已配对设备全部失效，生产仍必须从 Secret 注入 AXI_MOBILE_TOKEN_SECRET。
+ */
+export function resolveMobilePairingTokenSecret({ configuredSecret = "", cacheDir, pairingEnabled = false, nodeEnv = "development" } = {}) {
+  const explicit = typeof configuredSecret === "string" ? configuredSecret.trim() : "";
+  if (explicit) return explicit;
+  if (!pairingEnabled || nodeEnv === "production") return "";
+
+  const secretPath = join(cacheDir, "mobile-pairing-token-secret");
+  if (existsSync(secretPath)) {
+    const persisted = readFileSync(secretPath, "utf8").trim();
+    if (persisted) return persisted;
+  }
+
+  mkdirSync(cacheDir, { recursive: true, mode: 0o700 });
+  const generated = randomBytes(32).toString("hex");
+  writeFileSync(secretPath, `${generated}\n`, { mode: 0o600 });
+  chmodSync(secretPath, 0o600);
+  return generated;
+}
+
+/**
+ * The owner approval HMAC is a local development-only bootstrap.  It is
+ * persisted beside the device token secret so a DevSvc restart does not make
+ * the Web confirmation button fail closed for an otherwise valid local
+ * pairing.  Production and explicit configuration always remain authoritative.
+ */
+export function resolveMobilePairingOwnerApprovalSecret({ configured = false, configuredSecret = "", cacheDir, pairingEnabled = false, nodeEnv = "development" } = {}) {
+  const explicit = typeof configuredSecret === "string" ? configuredSecret.trim() : "";
+  if (explicit) return explicit;
+  if (configured || !pairingEnabled || nodeEnv !== "development" || !cacheDir) return "";
+
+  const secretPath = join(cacheDir, "mobile-owner-approval-secret");
+  if (existsSync(secretPath)) {
+    const persisted = readFileSync(secretPath, "utf8").trim();
+    if (persisted) return persisted;
+  }
+
+  mkdirSync(cacheDir, { recursive: true, mode: 0o700 });
+  const generated = randomBytes(32).toString("hex");
+  writeFileSync(secretPath, `${generated}\n`, { mode: 0o600 });
+  chmodSync(secretPath, 0o600);
+  return generated;
+}
+
+function workspaceRootOf(options) {
+  return resolve(options.workspaceRoot || process.env.AXI_WORKSTATION_ROOT || process.env.EPAP_WORKSPACE_ROOT || DEFAULT_WORKSPACE_ROOT);
+}
+function memoryDatabaseUrlOf(options) {
+  return Object.hasOwn(options, "memoryDatabaseUrl")
+    ? options.memoryDatabaseUrl
+    : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL);
+}
+
+function buildControlPlaneSurface({
+  workspaceRoot, graphPath, registryPath, cacheDir, memoryDatabaseUrl, memoryProjectReader,
+  agentTaskExecutor, roleAgentExecutor, axiAgentTaskExecutor, heartbeatMs,
+  codexBin, appServerBin, ownerApprovalSecret, pairingTokenSecret, pairingEnabled,
+  personalOsService, personalOsStore, personalOsRuntimeReader, devsvcOverviewUrl, eventSources,
+  enforceExecutionPolicy, automationSchedulerEnabled = false, automationSchedulerIntervalMs,
+  handoffExpirySchedulerEnabled = true, handoffExpirySchedulerIntervalMs, handoffExpiryMs = HANDOFF_TTL_MS, onHandoffExpired = null,
+}) {
+  const pairing = pairingTokenSecret
+    ? createPairingService({
+        cacheDir,
+        tokenSecret: pairingTokenSecret,
+        ownerApprovalSecret: ownerApprovalSecret || "",
+      })
+    : null;
+  const idempotency = createIdempotencyService({ cacheDir });
+  const runs = new Map();
+  const envelopeRuns = new Map();
+  // 受管任务和审批在控制面私有缓存中持久化；重启后移动快照仍需能解释
+  // 刚完成的诊断，而不能把真实结果退回为空白占位。
+  const agentTasks = loadPersistedRecordMap(join(cacheDir, "agent-tasks"));
+  const approvals = loadPersistedRecordMap(join(cacheDir, "approvals"));
+  const approvalScans = loadPersistedRecordMap(join(cacheDir, "approval-scans"));
+  const handoffs = loadPersistedRecordMap(join(cacheDir, "handoffs"));
+  const jobs = new Map();
+  const jobEnvelopeIndex = new Map();
+  const personalOs = personalOsService || createPersonalOsService({
     workspaceRoot,
     graphPath,
     cacheDir,
-    snapshot: () => buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
-    query: (input) => handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin }),
+    store: personalOsStore,
+    runtimeReader: personalOsRuntimeReader,
+    devsvcOverviewUrl,
+    snapshotReader: () => buildSnapshot({ workspaceRoot, graphPath, cacheDir, eventSources, agentTasks, approvals, codexBin, appServerBin }),
+  });
+
+  const surface = {
+    workspaceRoot,
+    graphPath,
+    cacheDir,
+    pairingEnabled,
+    pairing,
+    idempotency,
+    personalOs,
+    snapshot: () => buildSnapshot({ workspaceRoot, graphPath, cacheDir, eventSources, agentTasks, approvals, codexBin, appServerBin }),
+    mobileSnapshot: () => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }),
+    mobileProject: (id) => buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }).projects.find((project) => project.id === id) || null,
+    createApprovalScan: (input) => createApprovalScan({ input, cacheDir, approvals, approvalScans }),
+    resolveApprovalScan: (scanToken) => resolveApprovalScan({ scanToken, cacheDir, approvals, approvalScans }),
+    getHandoff: (id) => handoffs.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null),
+    listHandoffs: ({ status = "", actor = "", owner = "", direction = "" } = {}) => listHandoffs({ status, actor, owner, direction, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    handoffExpiry: { durationMs: handoffExpiryMs, defaultDurationMs: HANDOFF_TTL_MS },
+    expireHandoffs: () => expirePendingHandoffs({ cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    openHandoff: (id, subject) => openHandoff({ id, subject, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    completeHandoff: (id, subject, outcome) => completeHandoff({ id, subject, outcome, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    rejectHandoff: (id, subject, reason) => rejectHandoff({ id, subject, reason, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    // Web -> Mobile handoff methods
+    createBatchHandoff: (params) => createBatchHandoff({ params, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    createWebToMobileHandoff: (input) => createWebToMobileHandoff({ input, cacheDir, handoffs, handoffExpiryMs, notifyExpired: onHandoffExpired }),
+    deliverWebToMobileHandoff: (id, actor) => deliverWebToMobileHandoff({ id, actor, cacheDir, handoffs, notifyExpired: onHandoffExpired }),
+    acceptWebToMobileHandoff: (id, actor) => acceptWebToMobileHandoff({ id, actor, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    completeWebToMobileHandoff: (id, actor, outcome) => completeWebToMobileHandoff({ id, actor, outcome, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    failWebToMobileHandoff: (id, actor, reason) => failWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    rejectWebToMobileHandoff: (id, actor, reason) => rejectWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired: onHandoffExpired }),
+    query: (input, options = {}) => {
+      const policyEvaluator = options.policyEvaluator || (enforceExecutionPolicy
+        ? (policyInput) => evaluateSurfaceExecutionPolicy({ input, policyInput, workspaceRoot, registryPath, cacheDir })
+        : null);
+      return handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin, policyEvaluator });
+    },
     handleCommunicationMessage: (input, messageOptions = {}) => handleCommunicationMessage({
       input,
       options: messageOptions,
@@ -71,35 +443,1066 @@ export function createControlPlane(options = {}) {
       codexBin,
       appServerBin,
       memoryProjectReader,
+      policyEvaluator: messageOptions.policyEvaluator || (enforceExecutionPolicy
+        ? (policyInput) => evaluateSurfaceExecutionPolicy({ input, policyInput, workspaceRoot, registryPath, cacheDir })
+        : null),
     }),
-    runCommand: (commandId) => runCommandById({ commandId, workspaceRoot, graphPath, cacheDir, runs }),
+    runCommand: (commandId, internal = {}) => {
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, internal.policyDecisionRef, "registered command", cacheDir, { resourceRef: commandId, action: "execute", subjectRef: internal.subjectRef });
+      return guard || runCommandById({ commandId, workspaceRoot, graphPath, cacheDir, runs, policyDecisionRef: internal.policyDecisionRef || null });
+    },
+    runAutomation: (automationId, internal = {}) => {
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, internal.policyDecisionRef, "registered automation", cacheDir, { resourceRef: `automation:${automationId}`, action: "execute", subjectRef: internal.subjectRef });
+      return guard || runAutomationById({ automationId, workspaceRoot, graphPath, cacheDir, runs, policyDecisionRef: internal.policyDecisionRef || null });
+    },
     getRun: (id) => runs.get(id) || readRun(cacheDir, id),
     getAgentTask: (id) => agentTasks.get(id) || readJson(join(cacheDir, "agent-tasks", `${id}.json`), null),
-    cancelAgentTask: (id) => cancelAgentTask({ id, cacheDir, agentTasks }),
-    decideApproval: (input) => decideApproval({ input, cacheDir, approvals, agentTasks }),
-    createJob: (input) => createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }),
+    cancelAgentTask: (id, internal = {}) => {
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, internal.policyDecisionRef, "AgentTask cancellation", cacheDir, { resourceRef: `agent-task:${id}`, action: "write", subjectRef: internal.subjectRef });
+      return guard || cancelAgentTask({ id, cacheDir, agentTasks, policyDecisionRef: internal.policyDecisionRef || null });
+    },
+    decideApproval: null, // backfilled below — TDZ-safe bridge
+    createJob: (input, internal = {}) => {
+      const jobResourceRef = firstString(input?.resourceRef, input?.projectId, input?.targetId, input?.actionId, input?.envelope?.raw?.projectId) || "workspace";
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, internal.policyDecisionRef, "control job creation", cacheDir, { allowApproval: true, resourceRef: jobResourceRef, action: "execute", subjectRef: internal.subjectRef });
+      return guard || createControlJob({ input: internal.policyDecisionRef ? { ...input, __policyDecisionRef: internal.policyDecisionRef } : input, approvedApprovalId: internal.approvedApprovalId || null, forceApproval: internal.forceApproval === true, approvalSource: internal.approvalSource || "desktop", workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl });
+    },
+    createMobileProjectAction: (input, internal = {}) => {
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, internal.policyDecisionRef, "mobile project action", cacheDir, { allowApproval: true, resourceRef: input?.projectId || "workspace", action: "execute", subjectRef: internal.subjectRef });
+      if (guard) return guard;
+      return createMobileProjectAction({
+        input,
+        approvedApprovalId: internal.approvedApprovalId || null,
+        policyDecisionRef: internal.policyDecisionRef || null,
+        forceApproval: internal.forceApproval === true,
+        workspaceRoot,
+        graphPath,
+        cacheDir,
+        jobs,
+        jobEnvelopeIndex,
+        agentTasks,
+        approvals,
+        roleAgentExecutor,
+        axiAgentTaskExecutor,
+        codexBin,
+        appServerBin,
+        heartbeatMs,
+        memoryDatabaseUrl,
+      });
+    },
     getJob: (id) => jobs.get(id) || readJson(join(cacheDir, "jobs", id, "job.json"), null),
     getJobEvents: (id, options = {}) => readJobEvents({ cacheDir, id, afterEventId: options.afterEventId }),
     getJobArtifacts: (id) => listJobArtifacts({ cacheDir, id }),
-    cancelJob: (id) => cancelControlJob({ cacheDir, jobs, id }),
+    getWorkspaceEvents: (options = {}) => readWorkspaceEvents({ cacheDir, sources: eventSources, ...options }),
+    getWorkspaceEvent: (id) => readWorkspaceEvents({ cacheDir, sources: eventSources, eventId: id, limit: 1 }).events[0] || null,
+    transitionGovernanceRisk: (input = {}, internal = {}) => {
+      const policyDecisionRef = firstString(internal.policyDecisionRef, input.policyDecisionRef) || null;
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, policyDecisionRef, "risk transition", cacheDir, { resourceRef: `risk:${firstString(input.id)}`, action: "manage", subjectRef: firstString(internal.subjectRef, input.subjectRef) });
+      if (guard) return guard;
+      return transitionGovernanceRisk({ input: { ...input, policyDecisionRef }, cacheDir });
+    },
+    evaluateGovernancePolicy,
+    evaluateConfiguredGovernancePolicy: (input = {}) => evaluateConfiguredGovernancePolicy({ input, workspaceRoot, registryPath, cacheDir }),
+    getGovernancePolicyDecision: (id) => readJson(join(cacheDir, "policy-decisions", `${safeFileName(id)}.json`), null),
+    recordWorkspaceEvent: (event = {}) => appendAuditRecord(cacheDir, event),
+    cancelJob: (id, internal = {}) => {
+      const guard = requirePolicyDecisionRef(enforceExecutionPolicy, internal.policyDecisionRef, "control job cancellation", cacheDir, { resourceRef: `job:${id}`, action: "write", subjectRef: internal.subjectRef });
+      return guard || cancelControlJob({ cacheDir, jobs, id, policyDecisionRef: internal.policyDecisionRef || null });
+    },
     normalizeIMEnvelope,
+    recordMobileAudit: (event) => recordMobileAudit({ cacheDir, event }),
+    // TASK6: External fact refresh interface - reads declared external sources from workspace.graph.json
+    refreshExternalFacts: (options = {}) => refreshExternalFacts({ workspaceRoot, graphPath, cacheDir, ...options }),
+  };
+  // Wire the mobile approval bridge now that the surface exists.
+  surface.decideApproval = (input) => {
+    const guard = requirePolicyDecisionRef(enforceExecutionPolicy, input?.policyDecisionRef, "approval decision", cacheDir, { resourceRef: `approval:${firstString(input?.id)}`, action: "approve", subjectRef: input?.subjectRef });
+    if (guard) return guard;
+    return decideApproval({
+      input,
+      cacheDir,
+      approvals,
+      agentTasks,
+      dispatchApprovedJob: (seed) => surface.createJob(seed, { policyDecisionRef: seed.__policyDecisionRef || null, approvedApprovalId: input.id, approvalSource: seed.__approvalSource || "desktop", subjectRef: firstString(input?.subjectRef, input?.actorRef) }),
+      dispatchApprovedMobileAction: (approval) => surface.createMobileProjectAction({
+        projectId: approval.projectId,
+        actionId: approval.actionId,
+        actionType: approval.actionType,
+        idempotencyKey: approval.idempotencyKey,
+        deviceId: approval.sourceDeviceId,
+      }, { approvedApprovalId: approval.id, policyDecisionRef: approval.decisionPolicyDecisionRef || approval.policyDecisionRef || null, subjectRef: `user:${approval.sourceDeviceId}` }),
+    });
+  };
+  surface.decideApprovalScan = (input) => {
+    const guard = requirePolicyDecisionRef(enforceExecutionPolicy, input?.policyDecisionRef, "approval scan decision", cacheDir, { resourceRef: `approval-scan:${firstString(input?.scanId)}`, action: "approve", subjectRef: input?.subjectRef });
+    if (guard) return { ...guard, ok: false };
+    return decideApprovalScan({
+      input,
+      cacheDir,
+      approvalScans,
+      handoffs,
+      resolveApproval: surface.decideApproval,
+      recordAudit: surface.recordMobileAudit,
+      handoffExpiryMs,
+    });
+  };
+  const automationScheduler = createAutomationScheduler({
+    surface,
+    workspaceRoot,
+    registryPath,
+    cacheDir,
+    enabled: automationSchedulerEnabled,
+    intervalMs: automationSchedulerIntervalMs,
+  });
+  surface.runAutomationSchedulerTick = automationScheduler.tick;
+  surface.stopAutomationScheduler = automationScheduler.stop;
+  surface.automationScheduler = { enabled: automationSchedulerEnabled, intervalMs: automationScheduler.intervalMs };
+  automationScheduler.start();
+  const handoffExpiryScheduler = createHandoffExpiryScheduler({
+    surface,
+    enabled: handoffExpirySchedulerEnabled,
+    intervalMs: handoffExpirySchedulerIntervalMs,
+  });
+  surface.runHandoffExpirySweep = handoffExpiryScheduler.tick;
+  surface.stopHandoffExpiryScheduler = handoffExpiryScheduler.stop;
+  surface.handoffExpiryScheduler = { enabled: handoffExpirySchedulerEnabled, intervalMs: handoffExpiryScheduler.intervalMs };
+  handoffExpiryScheduler.start();
+  return surface;
+}
+
+function createAutomationScheduler({ surface, workspaceRoot, registryPath, cacheDir, enabled = false, intervalMs = 30_000 }) {
+  const schedulerIntervalMs = Number.isInteger(intervalMs) && intervalMs > 0 ? intervalMs : 30_000;
+  let timer = null;
+  let running = false;
+
+  async function tick() {
+    if (running) return [];
+    running = true;
+    try {
+      const snapshot = surface.snapshot();
+      const results = [];
+      for (const automation of snapshot.governance?.automations || []) {
+        if (automation.status !== "enabled" || automation.trigger !== "interval") continue;
+        const lastRunAt = dateFromValue(automation.lastRunAt);
+        if (lastRunAt && Date.now() - lastRunAt.getTime() < automation.intervalSeconds * 1000) continue;
+        const correlationId = `automation-tick:${automation.id}:${Date.now()}`;
+        const policy = evaluateSurfaceExecutionPolicy({
+          input: { subjectRef: `automation:${automation.id}` },
+          policyInput: { resourceRef: `automation:${automation.id}`, action: automation.policyAction, correlationId },
+          workspaceRoot,
+          registryPath,
+          cacheDir,
+        });
+        if (policy.decision.decision !== "allow") {
+          results.push({ automationId: automation.id, status: "blocked", policyDecisionRef: policy.decision.id });
+          continue;
+        }
+        const run = surface.runAutomation(automation.id, { policyDecisionRef: policy.decision.id, subjectRef: `automation:${automation.id}` });
+        results.push({ automationId: automation.id, status: run?.actions?.[0]?.status || "not_found", runId: run?.id || null, policyDecisionRef: policy.decision.id });
+      }
+      return results;
+    } finally {
+      running = false;
+    }
+  }
+
+  return {
+    intervalMs: schedulerIntervalMs,
+    start() {
+      if (!enabled) return;
+      timer = setInterval(() => { void tick(); }, schedulerIntervalMs);
+      timer.unref?.();
+      void tick();
+    },
+    stop() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    },
+    tick,
   };
 }
 
-export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), agentTasks = new Map(), approvals = new Map(), codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" } = {}) {
+function createHandoffExpiryScheduler({ surface, enabled = true, intervalMs = 60_000 }) {
+  const schedulerIntervalMs = Number.isInteger(intervalMs) && intervalMs > 0 ? intervalMs : 60_000;
+  let timer = null;
+  let running = false;
+
+  function tick() {
+    if (running) return { ok: true, expired: 0, skipped: true };
+    running = true;
+    try {
+      return surface.expireHandoffs();
+    } finally {
+      running = false;
+    }
+  }
+
+  return {
+    intervalMs: schedulerIntervalMs,
+    start() {
+      if (!enabled) return;
+      timer = setInterval(() => { tick(); }, schedulerIntervalMs);
+      timer.unref?.();
+      tick();
+    },
+    stop() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    },
+    tick,
+  };
+}
+
+/**
+ * Write one mobile_action entry into the existing audit.jsonl ledger
+ * (the same file the desktop control plane already uses).  Format:
+ *   { auditKind, deviceId, idempotencyKey, projectId, actionId, actionType,
+ *     approvalRef, handoffCorrelationId, handoffId, actorRef, sourceActorRef,
+ *     sourceOwnerRef,
+ *     outcome, reason,
+ *     status, occurredAt }
+ * chmod 600 on first write; existing files keep their permissions.
+ */
+export function recordMobileAudit({ cacheDir, event = {} }) {
+  if (!cacheDir) return { ok: false, error: "cacheDir required" };
+  const payload = {
+    auditKind: event.auditKind || "mobile_action",
+    deviceId: event.deviceId || null,
+    idempotencyKey: event.idempotencyKey || null,
+    projectId: event.projectId || null,
+    surface: event.surface || "mobile",
+    serviceId: event.serviceId || null,
+    runId: event.runId || null,
+    actionId: event.actionId || null,
+    actionType: event.actionType || null,
+    approvalRef: event.approvalRef || null,
+    policyDecisionRef: event.policyDecisionRef || null,
+    handoffCorrelationId: event.handoffCorrelationId || null,
+    handoffId: event.handoffId || null,
+    actorRef: event.actorRef || null,
+    sourceActorRef: event.sourceActorRef || null,
+    sourceOwnerRef: event.sourceOwnerRef || null,
+    sourceSurface: event.sourceSurface || null,
+    targetSurface: event.targetSurface || null,
+    direction: event.direction || null,
+    outcome: event.outcome || null,
+    reason: event.reason || null,
+    status: event.status || "executed",
+    occurredAt: Math.floor(Date.now() / 1000),
+  };
+  appendAuditRecord(cacheDir, payload);
+  return { ok: true };
+}
+
+/**
+ * Create a short-lived opaque approval scan record.  The URI contains only a
+ * random record id; the approval object, impact, and permitted decisions stay
+ * server-side and are resolved again when the mobile device scans it.
+ *
+ * This is intentionally a Control Plane operation, not a browser API.  A
+ * Web surface may later render the returned URI, but cannot manufacture a
+ * project/action pair in the QR payload.
+ */
+export function createApprovalScan({ input = {}, cacheDir, approvals, approvalScans }) {
+  const approvalId = String(input.approvalId || "").trim();
+  const approval = approvals?.get(approvalId) || readJson(join(cacheDir, "approvals", `${approvalId}.json`), null);
+  if (!approval) return { ok: false, httpStatus: 404, error: "approval not found" };
+  if (approval.status !== "pending") return { ok: false, httpStatus: 409, error: "approval is no longer pending" };
+  const requestedExpiry = Date.parse(String(input.expiresAt || ""));
+  const expiresAt = Number.isFinite(requestedExpiry) && requestedExpiry > Date.now()
+    ? new Date(requestedExpiry).toISOString()
+    : new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  // The source approval's policy is authoritative.  A caller creating a QR
+  // record cannot lower a C/D approval into a Mobile-confirmable B action.
+  const actionLevel = approvalActionLevel(approval);
+  const scan = {
+    id: `scan_${randomUUID()}`,
+    approvalId: approval.id,
+    status: "active",
+    actionLevel,
+    object: {
+      type: "approval",
+      id: approval.id,
+      projectId: approval.projectId || null,
+      actionId: approval.actionId || null,
+      actionType: approval.actionType || null,
+    },
+    impact: approval.actionSummary || "受控动作等待确认。",
+    riskLevel: approval.riskLevel || "medium",
+    availableDecisions: actionLevel === "B" ? ["approved", "rejected"] : ["handoff", "rejected"],
+    expiresAt,
+    createdAt: new Date().toISOString(),
+  };
+  approvalScans?.set(scan.id, scan);
+  persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+  recordMobileAudit({ cacheDir, event: { auditKind: "approval_scan_created", approvalRef: approval.id, status: "created" } });
+  return { ok: true, scanId: scan.id, uri: `axi://approval/${scan.id}`, expiresAt: scan.expiresAt };
+}
+
+export function resolveApprovalScan({ scanToken, cacheDir, approvals, approvalScans }) {
+  const scanId = String(scanToken || "").trim();
+  if (!/^scan_[A-Za-z0-9_-]{8,}$/.test(scanId)) return { ok: false, httpStatus: 400, error: "invalid approval scan token" };
+  const scan = approvalScans?.get(scanId) || readJson(join(cacheDir, "approval-scans", `${scanId}.json`), null);
+  if (!scan) return { ok: false, httpStatus: 404, error: "approval scan not found" };
+  if (scan.status !== "active") return { ok: false, httpStatus: 409, error: "approval scan is no longer active" };
+  if (Date.parse(scan.expiresAt) <= Date.now()) {
+    scan.status = "expired";
+    approvalScans?.set(scan.id, scan);
+    persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+    return { ok: false, httpStatus: 410, error: "approval scan expired" };
+  }
+  const approval = approvals?.get(scan.approvalId) || readJson(join(cacheDir, "approvals", `${scan.approvalId}.json`), null);
+  if (!approval || approval.status !== "pending") return { ok: false, httpStatus: 409, error: "approval state changed" };
+  return {
+    ok: true,
+    scanId: scan.id,
+    approvalId: approval.id,
+    object: scan.object,
+    impact: scan.impact,
+    riskLevel: scan.riskLevel,
+    currentStatus: approval.status,
+    availableDecisions: scan.availableDecisions,
+    expiresAt: scan.expiresAt,
+    handoffCorrelationId: `handoff:${scan.id}`,
+  };
+}
+
+function decideApprovalScan({ input = {}, cacheDir, approvalScans, handoffs, resolveApproval, recordAudit, handoffExpiryMs = HANDOFF_TTL_MS }) {
+  // The persisted approval is the authority after a process restart; clients
+  // never supply its project, action, or object identifiers.
+  const scan = approvalScans?.get(input.scanId) || readJson(join(cacheDir, "approval-scans", `${input.scanId}.json`), null);
+  const approval = scan ? readJson(join(cacheDir, "approvals", `${scan.approvalId}.json`), null) : null;
+  if (!scan || !approval) return { ok: false, httpStatus: 404, error: "approval scan not found" };
+  if (scan.status !== "active" || Date.parse(scan.expiresAt) <= Date.now() || approval.status !== "pending") {
+    return { ok: false, httpStatus: 409, error: "approval state changed or expired" };
+  }
+  if (!scan.availableDecisions.includes(input.decision)) return { ok: false, httpStatus: 422, error: "decision is not allowed for this approval scan" };
+  const correlationId = `handoff:${scan.id}`;
+  if (input.handoffCorrelationId !== correlationId) {
+    return { ok: false, httpStatus: 422, error: "handoff correlation does not match the approval scan" };
+  }
+  if (input.decision === "handoff") {
+    const handoff = {
+      id: `handoff_${randomUUID()}`,
+      handoffCorrelationId: correlationId,
+      sourceSurface: "mobile",
+      targetSurface: "web",
+      status: "pending",
+      approvalId: approval.id,
+      object: scan.object,
+      impact: scan.impact,
+      riskLevel: scan.riskLevel,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + handoffExpiryMs).toISOString(),
+      sourceActorRef: firstString(input.subjectRef, input.deviceId) || null,
+      sourceOwnerRef: firstString(input.sourceOwnerRef) || null,
+    };
+    handoffs?.set(handoff.id, handoff);
+    persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+    scan.status = "handed_off";
+    scan.handoffId = handoff.id;
+    approvalScans?.set(scan.id, scan);
+    persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+    recordAudit({ auditKind: "handoff_created", deviceId: input.deviceId, actorRef: handoff.sourceActorRef, sourceActorRef: handoff.sourceActorRef, sourceOwnerRef: handoff.sourceOwnerRef, idempotencyKey: input.idempotencyKey, approvalRef: approval.id, handoffCorrelationId: correlationId, handoffId: handoff.id, policyDecisionRef: input.policyDecisionRef || null, status: "handed_off", sourceSurface: handoff.sourceSurface, targetSurface: handoff.targetSurface });
+    return { ok: true, status: "handed_off", handoff };
+  }
+  const result = resolveApproval({ id: approval.id, decision: input.decision, policyDecisionRef: input.policyDecisionRef || null });
+  if (!result) return { ok: false, httpStatus: 404, error: "approval not found" };
+  scan.status = "decided";
+  scan.decidedAt = new Date().toISOString();
+  approvalScans?.set(scan.id, scan);
+  persistJson(join(cacheDir, "approval-scans", `${scan.id}.json`), scan);
+  recordAudit({ auditKind: "approval_scan_decided", deviceId: input.deviceId, idempotencyKey: input.idempotencyKey, approvalRef: approval.id, handoffCorrelationId: correlationId, policyDecisionRef: input.policyDecisionRef || null, status: result.status });
+  return { ok: true, status: result.status, approval: result, handoffCorrelationId: correlationId };
+}
+
+function openHandoff({ id, subject, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  const access = verifyHandoffOwner({ handoff, subject, cacheDir });
+  if (!access.ok) return access;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  const approvalAccess = verifyHandoffApproval({ handoff, subject, cacheDir, approvals, handoffs });
+  if (!approvalAccess.ok) return approvalAccess;
+  if (handoff.status === "pending") {
+    handoff.status = "opened";
+    handoff.openedAt = new Date().toISOString();
+    handoff.openedBy = subject;
+    handoffs?.set(handoff.id, handoff);
+    persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_opened", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "opened", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+  }
+  return handoff;
+}
+
+function completeHandoff({ id, subject, outcome, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  const access = verifyHandoffOwner({ handoff, subject, cacheDir });
+  if (!access.ok) return access;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (!["pending", "opened"].includes(handoff.status)) return handoff;
+  const approvalAccess = verifyHandoffApproval({ handoff, subject, cacheDir, approvals, handoffs });
+  if (!approvalAccess.ok) return approvalAccess;
+  handoff.status = "completed";
+  handoff.completedAt = new Date().toISOString();
+  handoff.finalAction = { outcome, performedBy: subject, occurredAt: handoff.completedAt };
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_completed", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, outcome, status: "completed", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+  return handoff;
+}
+
+function rejectHandoff({ id, subject, reason, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  const access = verifyHandoffOwner({ handoff, subject, cacheDir });
+  if (!access.ok) return access;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (!["pending", "opened"].includes(handoff.status)) return handoff;
+  const approvalAccess = verifyHandoffApproval({ handoff, subject, cacheDir, approvals, handoffs });
+  if (!approvalAccess.ok) return approvalAccess;
+  handoff.status = "rejected";
+  handoff.rejectedAt = new Date().toISOString();
+  handoff.rejectedBy = subject;
+  handoff.rejectionReason = reason;
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_rejected", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "rejected", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+  return handoff;
+}
+
+function listHandoffs({ status = "", actor = "", owner = "", direction = "", cacheDir, handoffs, notifyExpired }) {
+  expirePendingHandoffs({ cacheDir, handoffs, notifyExpired });
+  const normalizedStatus = String(status || "").trim();
+  const normalizedActor = String(actor || "").trim();
+  const normalizedOwner = String(owner || "").trim();
+  const normalizedDirection = String(direction || "").trim();
+  const allowedStatuses = new Set(["pending", "opened", "completed", "rejected", "expired", "created", "delivered", "accepted", "failed"]);
+  if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
+    return { ok: false, httpStatus: 400, error: "handoff status must be pending, opened, completed, rejected, expired, created, delivered, accepted, or failed" };
+  }
+  const allowedDirections = new Set(["web->mobile", "mobile->web"]);
+  if (normalizedDirection && !allowedDirections.has(normalizedDirection)) {
+    return { ok: false, httpStatus: 400, error: "handoff direction must be web->mobile or mobile->web" };
+  }
+  const records = [...(handoffs?.values() || [])]
+    .filter((handoff) => !normalizedStatus || handoff.status === normalizedStatus)
+    .filter((handoff) => !normalizedActor || handoff.sourceActorRef === normalizedActor)
+    .filter((handoff) => !normalizedOwner || !handoff.sourceOwnerRef || handoff.sourceOwnerRef === normalizedOwner)
+    .filter((handoff) => !normalizedDirection || handoff.direction === normalizedDirection)
+    .sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || "")) || String(right.id).localeCompare(String(left.id)));
+  return { ok: true, handoffs: records };
+}
+
+function verifyHandoffOwner({ handoff, subject, cacheDir }) {
+  const sourceOwnerRef = firstString(handoff?.sourceOwnerRef);
+  if (!sourceOwnerRef || sourceOwnerRef === String(subject || "").trim()) return { ok: true };
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason: "source owner subject mismatch", status: "denied", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+  return { ok: false, httpStatus: 403, error: "handoff owner authorization required" };
+}
+
+function verifyHandoffApproval({ handoff, subject, cacheDir, approvals, handoffs }) {
+  const approvalId = firstString(handoff?.approvalId);
+  if (!approvalId) return { ok: true };
+  const approval = approvals?.get(approvalId) || readJson(join(cacheDir, "approvals", `${approvalId}.json`), null);
+  if (approval?.status === "pending") {
+    const expiresAt = dateFromValue(approval.expiresAt);
+    if (!expiresAt || expiresAt.getTime() > Date.now()) return { ok: true };
+    approval.status = "expired";
+    approval.decisionText = "审批已过期。";
+    approval.decidedAt = new Date().toISOString();
+    approvals?.set(approval.id, approval);
+    persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+    handoff.status = "expired";
+    handoff.expiredAt = new Date().toISOString();
+    handoffs?.set(handoff.id, handoff);
+    persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+    appendAuditRecord(cacheDir, {
+      auditKind: "approval_expired",
+      approvalId: approval.id,
+      actorRef: "control-plane",
+      objectRef: firstString(approval.projectId, approval.taskId) || approval.id,
+      action: "approval_expiration",
+      correlationId: firstString(handoff.handoffCorrelationId, approval.envelopeId, approval.id) || approval.id,
+      policyDecisionRef: approval.policyDecisionRef || null,
+      result: approval.status,
+      status: approval.status,
+    });
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expired", actorRef: "system:approval-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approval.id, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason: "linked approval expired", status: "expired", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+    const reason = "approval expired";
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approval.id, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "denied", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+    return { ok: false, httpStatus: 409, error: "handoff approval is no longer pending" };
+  }
+  const reason = approval ? `approval status is ${approval.status || "unknown"}` : "approval record not found";
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: subject, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, reason, status: "denied", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+  return { ok: false, httpStatus: 409, error: "handoff approval is no longer pending" };
+}
+
+function expirePendingHandoffs({ cacheDir, handoffs, notifyExpired }) {
+  let expired = 0;
+  for (const handoff of handoffs?.values() || []) {
+    const before = handoff.status;
+    expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+    if (before !== "expired" && handoff.status === "expired") expired += 1;
+  }
+  return { ok: true, expired };
+}
+
+function expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired }) {
+  if (["completed", "rejected", "expired"].includes(handoff.status)) return handoff;
+  const createdAt = Date.parse(String(handoff.createdAt || ""));
+  const configuredExpiry = Date.parse(String(handoff.expiresAt || ""));
+  const expiresAt = Number.isFinite(configuredExpiry)
+    ? configuredExpiry
+    : Number.isFinite(createdAt)
+      ? createdAt + HANDOFF_TTL_MS
+      : NaN;
+  if (!Number.isFinite(expiresAt)) return handoff;
+  if (!handoff.expiresAt) handoff.expiresAt = new Date(expiresAt).toISOString();
+  if (expiresAt > Date.now()) return handoff;
+  handoff.status = "expired";
+  handoff.expiredAt = new Date().toISOString();
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expired", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "expired", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+  if (typeof notifyExpired === "function") {
+    try {
+      notifyExpired({ type: "handoff.expired", handoff: { ...handoff } });
+      recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expiry_notification_queued", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "notification_queued", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+    } catch {
+      recordMobileAudit({ cacheDir, event: { auditKind: "handoff_expiry_notification_failed", actorRef: "system:handoff-expiry", sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, approvalRef: handoff.approvalId, handoffCorrelationId: handoff.handoffCorrelationId, handoffId: handoff.id, status: "notification_failed", sourceSurface: handoff.sourceSurface || null, targetSurface: handoff.targetSurface || null } });
+    }
+  }
+  return handoff;
+}
+
+function approvalActionLevel(approval) {
+  if (["B", "C", "D"].includes(approval?.actionLevel)) return approval.actionLevel;
+  if (approval?.riskLevel === "destructive") return "D";
+  if (approval?.riskLevel === "high") return "C";
+  return "B";
+}
+
+/**
+ * Create a web-to-mobile handoff record
+ */
+function createWebToMobileHandoff({ input, cacheDir, handoffs, handoffExpiryMs, notifyExpired }) {
+  const now = new Date();
+  const expiresAt = handoffExpiryMs
+    ? new Date(now.getTime() + handoffExpiryMs).toISOString()
+    : new Date(now.getTime() + HANDOFF_TTL_MS).toISOString();
+  const handoff = {
+    id: `handoff_${randomUUID()}`,
+    direction: "web->mobile",
+    sourceSurface: "web",
+    targetSurface: "mobile",
+    status: "created",
+    createdAt: now.toISOString(),
+    expiresAt,
+    sourceActorRef: input.sourceActorRef || null,
+    sourceOwnerRef: input.sourceOwnerRef || null,
+    targetOwnerRef: input.targetOwnerRef || null,
+    object: {
+      type: "handoff",
+      projectId: input.projectId || null,
+      actionId: input.actionId || null,
+      actionType: input.actionType || null,
+    },
+    impact: input.impact || null,
+    riskLevel: input.riskLevel || "medium",
+    availableTransitions: ["delivered", "expired"],
+  };
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_created", actorRef: input.sourceActorRef || null, sourceActorRef: input.sourceActorRef || null, sourceOwnerRef: input.sourceOwnerRef || null, targetOwnerRef: input.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", projectId: input.projectId || null, actionId: input.actionId || null, actionType: input.actionType || null, handoffId: handoff.id, outcome: input.impact || null, status: "created" } });
+  return { ok: true, handoff };
+}
+
+/**
+ * Deliver a web-to-mobile handoff (created -> delivered)
+ */
+function deliverWebToMobileHandoff({ id, actor, cacheDir, handoffs, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "created") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "delivered")) return handoff;
+  handoff.status = "delivered";
+  handoff.deliveredAt = new Date().toISOString();
+  handoff.deliveredBy = actor;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_delivered", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, status: "delivered" } });
+  return handoff;
+}
+
+/**
+ * Accept a web-to-mobile handoff (delivered -> accepted)
+ */
+function acceptWebToMobileHandoff({ id, actor, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "delivered") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "accepted")) return handoff;
+  // Check target ownership
+  if (handoff.targetOwnerRef && handoff.targetOwnerRef !== actor) {
+    recordMobileAudit({ cacheDir, event: { auditKind: "handoff_access_denied", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, reason: "target owner authorization required", status: "denied" } });
+    return { ok: false, httpStatus: 403, error: "target owner authorization required" };
+  }
+  handoff.status = "accepted";
+  handoff.acceptedAt = new Date().toISOString();
+  handoff.acceptedBy = actor;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_accepted", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, status: "accepted" } });
+  return handoff;
+}
+
+/**
+ * Complete a web-to-mobile handoff (accepted -> completed)
+ */
+function completeWebToMobileHandoff({ id, actor, outcome, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "accepted") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "completed")) return handoff;
+  handoff.status = "completed";
+  handoff.completedAt = new Date().toISOString();
+  handoff.finalAction = { outcome, performedBy: actor, occurredAt: handoff.completedAt };
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_completed", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, outcome, status: "completed" } });
+  return handoff;
+}
+
+/**
+ * Fail a web-to-mobile handoff (accepted -> failed)
+ */
+function failWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "accepted") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "failed")) return handoff;
+  handoff.status = "failed";
+  handoff.failedAt = new Date().toISOString();
+  handoff.failureReason = reason;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_failed", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, reason, status: "failed" } });
+  return handoff;
+}
+
+/**
+ * Reject a web-to-mobile handoff (delivered -> rejected)
+ */
+function rejectWebToMobileHandoff({ id, actor, reason, cacheDir, handoffs, approvals, notifyExpired }) {
+  const handoff = handoffs?.get(id) || readJson(join(cacheDir, "handoffs", `${id}.json`), null);
+  if (!handoff) return null;
+  if (handoff.direction !== "web->mobile") return handoff;
+  expireHandoffIfNeeded({ handoff, cacheDir, handoffs, notifyExpired });
+  if (handoff.status === "expired") return handoff;
+  if (handoff.status !== "delivered") return handoff;
+  if (!isValidHandoffTransition("web->mobile", handoff.status, "rejected")) return handoff;
+  handoff.status = "rejected";
+  handoff.rejectedAt = new Date().toISOString();
+  handoff.rejectedBy = actor;
+  handoff.rejectionReason = reason;
+  handoff.availableTransitions = getAllowedHandoffTransitions("web->mobile", handoff.status);
+  handoffs?.set(handoff.id, handoff);
+  persistJson(join(cacheDir, "handoffs", `${handoff.id}.json`), handoff);
+  recordMobileAudit({ cacheDir, event: { auditKind: "handoff_rejected", actorRef: actor, sourceActorRef: handoff.sourceActorRef || null, sourceOwnerRef: handoff.sourceOwnerRef || null, targetOwnerRef: handoff.targetOwnerRef || null, sourceSurface: "web", targetSurface: "mobile", direction: "web->mobile", handoffId: handoff.id, reason, status: "rejected" } });
+  return handoff;
+}
+
+/**
+ * Mobile is a projection of the workstation control plane, never an
+ * independent project registry.  Projects may opt into an HTTPS preview with
+ * `mobile.preview` in workspace.graph.json; absent that declaration they get
+ * a navigable information card instead of an unsafe guessed URL.
+ */
+export function buildMobileWorkspaceSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), registryPath = join(workspaceRoot, "infra", "axi-workspace-governance", "workspace.json"), agentTasks = new Map(), approvals = new Map(), codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" } = {}) {
+  const snapshot = buildSnapshot({ workspaceRoot, graphPath, registryPath, agentTasks, approvals, codexBin, appServerBin });
+  const graph = readJson(graphPath, { projects: {} });
+  const completion = readJson(join(workspaceRoot, ".workspace", "project-completion.json"), { projects: [] });
+  const completionById = new Map(
+    (Array.isArray(completion.projects) ? completion.projects : [])
+      .filter((item) => item && typeof item.id === "string")
+      .map((item) => [item.id, item]),
+  );
+  const projects = Object.entries(graph.projects || {}).map(([id, project]) => {
+    const resource = snapshot.resources.find((item) => item.id === id);
+    const mobile = project.mobile || {};
+    const completionEntry = completionById.get(id) || null;
+    const preview = mobile.preview || {};
+    const previewUrl = typeof preview.url === "string" && /^https:\/\//.test(preview.url) ? preview.url : null;
+    const previewMode = previewUrl && ["embedded_web", "external_web"].includes(preview.mode) ? preview.mode : "none";
+    const lastVerifiedAt = mobile.lastVerifiedAt || completionEntry?.updatedAt || null;
+    const healthState = mobile.health
+      ? { health: mobile.health, reasonCode: mobile.reasonCode || reasonCodeForHealth(mobile.health) }
+      : deriveMobileHealthState({ resource, completion: completionEntry, lastVerifiedAt });
+    const health = healthState.health;
+    const progress = mobile.progress || buildMobileProgress(completionEntry);
+    const capabilities = normalizedStrings(mobile.capabilities || project.provides || []);
+    return {
+      id,
+      name: project.name || id,
+      kind: project.kind || "project",
+      status: resource?.status || project.status || "unknown",
+      health,
+      reasonCode: healthState.reasonCode,
+      summary: mobile.summary || project.description || (resource?.provides || []).join("，") || "尚未提供项目摘要。",
+      architecture: mobile.architecture || { provides: project.provides || [], consumes: project.consumes || [], contracts: project.contracts || [] },
+      phase: mobile.phase || "unknown",
+      lastVerifiedAt,
+      capabilities,
+      progress,
+      configuration: buildMobileConfiguration({ id, project, graph, workspaceRoot }),
+      preview: {
+        mode: previewMode,
+        url: previewUrl,
+        allowEmbedded: previewMode === "embedded_web" && preview.allowEmbedded === true,
+        coverUrl: typeof preview.coverUrl === "string" && /^https:\/\//.test(preview.coverUrl) ? preview.coverUrl : null,
+        infoPageUrl: typeof mobile.infoPageUrl === "string" && /^https:\/\//.test(mobile.infoPageUrl) ? mobile.infoPageUrl : null,
+        fallbackMessage: previewMode === "none" ? "该项目尚未登记受控预览；请查看项目摘要与架构信息。" : null,
+      },
+      actions: buildMobileProjectActions({ project: { id, name: project.name || id, health, reasonCode: healthState.reasonCode }, resource }),
+      source: "workspace.graph",
+    };
+  }).sort((left, right) => left.name.localeCompare(right.name));
+  const attentionItems = projects
+    .flatMap((project) => buildProjectAttention(project))
+    .concat(buildRuntimeAttention(snapshot))
+    .sort((left, right) => severityRank(right.severity) - severityRank(left.severity) || right.updatedAt.localeCompare(left.updatedAt));
+  const summary = {
+    total: projects.length,
+    healthy: projects.filter((project) => project.health === "healthy").length,
+    attention: projects.filter((project) => project.health === "attention").length,
+    blocked: projects.filter((project) => project.health === "blocked").length,
+    stale: projects.filter((project) => project.health === "stale").length,
+    unknown: projects.filter((project) => project.health === "unknown").length,
+  };
+  const mobileTasks = snapshot.agentTasks
+    .map((task) => mobileRunningTask(task))
+    .sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
+  return {
+    generatedAt: snapshot.generatedAt,
+    source: "workspace.graph",
+    summary,
+    attentionItems,
+    projects,
+    runningTasks: mobileTasks
+      .filter((task) => !["succeeded", "failed", "cancelled"].includes(task.status)),
+    // 已结束的受管任务不是“待处理”事项，但移动端必须能把审批闭环的真实
+    // 结果带回项目详情。只投影最近结果，不暴露命令、cwd 或原始 shell 输入。
+    recentTasks: mobileTasks
+      .filter((task) => ["succeeded", "failed", "cancelled"].includes(task.status))
+      .slice(0, 12),
+    approvals: snapshot.approvals
+      .filter((approval) => approval.status === "pending")
+      .map((approval) => mobileApproval(approval)),
+  };
+}
+
+function normalizedStrings(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim());
+}
+
+function mobileRunningTask(task) {
+  const status = task.status || "running";
+  const actionType = task.operation === "project_diagnosis"
+    ? "project_diagnosis"
+    : task.runtime === "registered_command" ? "project_verification" : null;
+  const reasonCode = status === "running"
+    ? "task_running"
+    : status === "failed"
+      ? actionType === "project_diagnosis" ? "diagnosis_failed" : "task_execution_failed"
+      : status === "cancelled"
+        ? "task_cancelled"
+        : actionType === "project_diagnosis" ? "diagnosis_completed" : "verification_completed";
+  return {
+    id: task.id || task.jobId || randomUUID(),
+    projectId: task.projectId || task.targetId || null,
+    status,
+    reasonCode,
+    summary: task.summary || "受管任务正在执行。",
+    actionType,
+    updatedAt: task.completedAt || task.updatedAt || task.startedAt || task.createdAt || new Date().toISOString(),
+  };
+}
+
+function mobileApproval(approval) {
+  return {
+    id: approval.id,
+    projectId: approval.projectId || null,
+    actionId: approval.actionId || null,
+    actionType: approval.actionType || null,
+    source: approval.source || "control-plane",
+    status: approval.status || "pending",
+    actionSummary: approval.actionSummary || "存在待审批事项",
+    riskLevel: approval.riskLevel || "medium",
+    createdAt: approval.createdAt || new Date().toISOString(),
+  };
+}
+
+function buildMobileProgress(completion) {
+  if (!completion) {
+    return {
+      stage: "unknown",
+      confidence: "unknown",
+      summary: "尚未生成项目完成度证据。",
+      updatedAt: null,
+      evidenceCount: 0,
+      remaining: [],
+    };
+  }
+  return {
+    stage: completion.stage || "unknown",
+    confidence: completion.confidence || "unknown",
+    summary: completion.summary || "尚未提供进展摘要。",
+    updatedAt: completion.updatedAt || null,
+    evidenceCount: Array.isArray(completion.evidence) ? completion.evidence.length : 0,
+    remaining: normalizedStrings(completion.remaining).slice(0, 8),
+  };
+}
+
+function buildMobileConfiguration({ id, project, graph, workspaceRoot }) {
+  const projectPath = typeof project.path === "string" ? project.path : "";
+  const relativePath = projectPath
+    ? relative(workspaceRoot, projectPath).replaceAll("\\", "/") || "."
+    : null;
+  const profiles = Object.entries(graph.profiles || {})
+    .filter(([, profile]) => profile?.projectId === id || profile?.project === id || profile?.owner === id)
+    .map(([profileId]) => profileId);
+  const projectFacts = [
+    { key: "kind", label: "类型", value: project.kind || "project" },
+    relativePath ? { key: "path", label: "工作区路径", value: relativePath } : null,
+    { key: "source", label: "事实源", value: "workspace.graph" },
+  ].filter(Boolean);
+  const architectureFacts = [
+    { key: "provides", label: "提供能力", value: String(normalizedStrings(project.provides).length) },
+    { key: "consumes", label: "消费依赖", value: String(normalizedStrings(project.consumes).length) },
+    { key: "contracts", label: "公开契约", value: String(normalizedStrings(project.contracts).length) },
+  ];
+  const runtimeFacts = [
+    typeof project.runtime === "string" ? { key: "runtime", label: "运行时", value: project.runtime } : null,
+    typeof project.packageManager === "string" ? { key: "packageManager", label: "包管理器", value: project.packageManager } : null,
+    profiles.length ? { key: "profiles", label: "启动配置", value: profiles.join("、") } : null,
+  ].filter(Boolean);
+  return [
+    { id: "project", title: "项目", facts: projectFacts },
+    { id: "architecture", title: "架构", facts: architectureFacts },
+    ...(runtimeFacts.length ? [{ id: "runtime", title: "运行", facts: runtimeFacts }] : []),
+  ];
+}
+
+function deriveMobileHealthState({ resource, completion, lastVerifiedAt }) {
+  if (resource?.status === "missing") return { health: "blocked", reasonCode: "project_unavailable" };
+  if (!completion) return { health: "unknown", reasonCode: "evidence_missing" };
+  if (completion.stage === "blocked" || completion.stage === "failed") return { health: "blocked", reasonCode: "project_blocked" };
+  if (completion.handoff?.status === "unready") return { health: "attention", reasonCode: "handoff_unready" };
+  if (isOlderThanDays(lastVerifiedAt, 30) || completion.handoff?.status === "stale") return { health: "stale", reasonCode: "evidence_stale" };
+  if (completion.confidence === "low" || completion.stage === "unassessed") return { health: "attention", reasonCode: "evidence_low_confidence" };
+  return { health: "healthy", reasonCode: "verified" };
+}
+
+function reasonCodeForHealth(health) {
+  return {
+    blocked: "project_blocked",
+    attention: "evidence_low_confidence",
+    stale: "evidence_stale",
+    unknown: "evidence_missing",
+    healthy: "verified",
+  }[health] || "evidence_missing";
+}
+
+function isOlderThanDays(value, days) {
+  if (typeof value !== "string" || !value) return false;
+  const epoch = Date.parse(value);
+  if (!Number.isFinite(epoch)) return false;
+  return Date.now() - epoch > days * 24 * 60 * 60 * 1000;
+}
+
+function buildProjectAttention(project) {
+  const updatedAt = project.progress?.updatedAt || project.lastVerifiedAt || new Date(0).toISOString();
+  switch (project.health) {
+    case "blocked":
+      return [{ id: `project:${project.id}:blocked`, projectId: project.id, severity: "critical", type: "project_blocked", reasonCode: project.reasonCode, title: `${project.name} 已阻塞`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
+    case "stale":
+      return [{ id: `project:${project.id}:stale`, projectId: project.id, severity: "warning", type: "verification_stale", reasonCode: project.reasonCode, title: `${project.name} 待核验`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
+    case "attention":
+      return [{ id: `project:${project.id}:attention`, projectId: project.id, severity: "warning", type: "project_attention", reasonCode: project.reasonCode, title: `${project.name} 需要关注`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
+    case "unknown":
+      return [{ id: `project:${project.id}:unknown`, projectId: project.id, severity: "info", type: "verification_needed", reasonCode: project.reasonCode, title: `${project.name} 待评估`, summary: mobileReasonSummary(project.reasonCode), updatedAt }];
+    default:
+      return [];
+  }
+}
+
+function mobileReasonSummary(reasonCode) {
+  return {
+    project_unavailable: "项目目录当前不可用，暂不能执行受管核验。",
+    evidence_missing: "尚未记录可用的完成度证据，建议先申请只读诊断。",
+    project_blocked: "项目已报告阻塞状态，请先查看下一步或申请诊断。",
+    handoff_unready: "交接信息尚未就绪，建议复核当前进展。",
+    evidence_stale: "最近核验或交接记录已超过有效期。",
+    evidence_low_confidence: "当前证据置信度不足，建议复核后再继续。",
+    task_execution_failed: "受管任务执行失败，请查看任务结果。",
+    diagnosis_failed: "诊断未完成，请查看任务结果后再处理。",
+    approval_pending: "该操作正在等待已配对的 owner 审批。",
+  }[reasonCode] || "该工作项需要进一步核验。";
+}
+
+function buildMobileProjectActions({ project, resource }) {
+  const healthCommand = (resource?.commands || []).find(isMobileReadOnlyHealthCommand);
+  const actions = [];
+  if (healthCommand) {
+    actions.push({
+      actionId: "verify",
+      commandId: healthCommand.id,
+      label: "重新核验",
+      intent: healthCommand.intent,
+      autoExecutable: true,
+      actionType: "project_verification",
+      actionLevel: "B",
+      executionMode: "immediate",
+      riskLevel: "low",
+      summary: "运行已登记的只读核验，并记录可追溯结果。",
+    });
+  }
+  if (resource?.status === "available" && project.health !== "healthy") {
+    actions.push({
+      actionId: "diagnose",
+      commandId: `diagnose:${project.id}`,
+      label: "申请诊断",
+      intent: "project_diagnosis",
+      autoExecutable: false,
+      actionType: "project_diagnosis",
+      actionLevel: "B",
+      executionMode: "requires_approval",
+      riskLevel: "medium",
+      summary: "只读复核项目状态与证据，不修改项目文件。",
+    });
+  }
+  return actions;
+}
+
+function isMobileReadOnlyHealthCommand(command) {
+  if (!command?.autoExecutable || command.intent !== "run_health") return false;
+  const source = String(command.command || "");
+  return !/\b(?:npm|pnpm|yarn)\s+(?:install|add|remove|update|publish)\b|\b(?:gradlew|\.\/gradlew)\b[^\n;|&]*(?:\bclean\b|\bassemble\b|\binstall\b|\bpublish\b)|\b(?:git\s+(?:commit|push|pull|merge|rebase|checkout|switch|reset|clean))\b/i.test(source);
+}
+
+function buildRuntimeAttention(snapshot) {
+  const now = snapshot.generatedAt;
+  const taskItems = snapshot.agentTasks
+    .filter((task) => ["failed", "blocked", "rejected_rework", "policy_violation"].includes(task.status))
+    .map((task) => ({
+      id: `task:${task.id || task.jobId || `${task.projectId || "unknown"}:${task.status}:${task.updatedAt || now}`}`,
+      // Registered mobile health checks retain their resource target in targetId.
+      // Keep that association when surfacing a failed task so mobile can put the
+      // result back under its project instead of showing an orphaned alert.
+      projectId: task.projectId || task.targetId || null,
+      severity: task.status === "failed" ? "critical" : "warning",
+      type: "task_attention",
+      reasonCode: task.runtime === "project_diagnosis" && task.status === "failed" ? "diagnosis_failed" : "task_execution_failed",
+      title: task.summary || task.title || "任务需要关注",
+      summary: mobileReasonSummary(task.runtime === "project_diagnosis" && task.status === "failed" ? "diagnosis_failed" : "task_execution_failed"),
+      updatedAt: task.updatedAt || now,
+    }));
+  const approvalItems = snapshot.approvals
+    .filter((approval) => approval.status === "pending")
+    .map((approval) => ({
+      id: `approval:${approval.id}`,
+      projectId: approval.projectId || null,
+      severity: "info",
+      type: "approval_pending",
+      reasonCode: "approval_pending",
+      title: approval.actionSummary || "存在待审批事项",
+      summary: mobileReasonSummary("approval_pending"),
+      updatedAt: approval.createdAt || now,
+    }));
+  return taskItems.concat(approvalItems);
+}
+
+function severityRank(value) {
+  return { critical: 3, warning: 2, info: 1 }[value] || 0;
+}
+
+function normalizeApprovalRecord(approval) {
+  if (dateFromValue(approval?.expiresAt)) return approval;
+  const createdAt = validIsoDate(approval?.createdAt) || new Date().toISOString();
+  return {
+    ...approval,
+    createdAt,
+    expiresAt: new Date(new Date(createdAt).getTime() + APPROVAL_TTL_MS).toISOString(),
+  };
+}
+
+export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), registryPath = join(workspaceRoot, "infra", "axi-workspace-governance", "workspace.json"), cacheDir = "", eventSources = [], agentTasks = new Map(), approvals = new Map(), codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" } = {}) {
   const graph = readJson(graphPath, { projects: {}, profiles: {} });
+  const registry = readJson(registryPath, null);
   const generatedAt = new Date().toISOString();
+  const resolvedEventSources = eventSources.length ? eventSources : resolveDeclaredWorkspaceEventSources({ graph, registry });
+  const risks = loadPersistedRecordMap(join(cacheDir, "risks"));
+  const incidents = loadPersistedRecordMap(join(cacheDir, "incidents"));
+  const evidenceRecords = loadPersistedRecordMap(join(cacheDir, "evidence"));
+  const policyDecisions = loadPersistedRecordMap(join(cacheDir, "policy-decisions"));
+  const automationRecords = loadPersistedRecordMap(join(cacheDir, "automations"));
   const resources = Object.entries(graph.projects || {}).map(([id, project]) =>
     buildResource({ id, project, graph, workspaceRoot })
   );
+
+  const communicationGatewayPath = resolveOptionalPath({
+    workspaceRoot: WORKSTATION_ROOT,
+    envNames: ["AXI_COMMUNICATION_GATEWAY_ROOT"],
+    canonicalRelative: ["services", "communication-gateway"],
+  });
+  const ccConnectPath = resolveOptionalPath({
+    workspaceRoot,
+    envNames: ["AXI_CC_CONNECT_ROOT", "CC_CONNECT_HOME"],
+  });
+  const notifyProjectPath = resolveRegisteredProjectPath({ id: "axi-notify", workspaceRoot, graph, registry, registryPath });
+  const mobilePath = resolveOptionalPath({
+    workspaceRoot,
+    envNames: ["AXI_MOBILE_ROOT"],
+    declaredPath: notifyProjectPath ? join(notifyProjectPath, "android-app") : "",
+  });
+  const notifyPath = resolveOptionalPath({
+    workspaceRoot,
+    envNames: ["AXI_NOTIFY_ROOT"],
+    declaredPath: notifyProjectPath,
+  });
+  const fleetConsolePath = resolveOptionalPath({
+    workspaceRoot,
+    envNames: ["AXI_FLEET_CONSOLE_ROOT"],
+    canonicalRelative: ["infra", "fleet-console"],
+  });
 
   addOptionalResource(resources, {
     id: "communication-gateway",
     name: "Axi Workstation Communication Gateway",
     layer: "communication",
     kind: "chat-codex-style-gateway",
-    path: join(WORKSTATION_ROOT, "services", "communication-gateway"),
-    status: existsSync(join(WORKSTATION_ROOT, "services", "communication-gateway")) ? "available" : "missing",
+    path: communicationGatewayPath || undefined,
+    status: pathBackedStatus(communicationGatewayPath),
     provides: ["route-binding", "pairing", "approval-routing", "attachment-refs", "im-rendering"],
     metadata: {
       role: "communication_gateway",
@@ -111,8 +1514,8 @@ export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPat
     name: "cc-connect",
     layer: "communication",
     kind: "im-gateway",
-    path: "/Users/mose/.cc-connect",
-    status: existsSync("/Users/mose/.cc-connect") ? "available" : "missing",
+    path: ccConnectPath || undefined,
+    status: pathBackedStatus(ccConnectPath),
     provides: ["message-normalization", "im-routing", "feishu-transport"],
     metadata: {
       role: "communication_gateway",
@@ -124,7 +1527,8 @@ export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPat
     name: "Feishu",
     layer: "im",
     kind: "intelligence-station",
-    status: existsSync("/Users/mose/.cc-connect") ? "available" : "missing",
+    path: ccConnectPath || undefined,
+    status: pathBackedStatus(ccConnectPath),
     provides: ["briefings", "status-intelligence", "alerts"],
     metadata: {
       role: "intelligence_station",
@@ -136,12 +1540,12 @@ export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPat
     name: "Axi Mobile",
     layer: "im",
     kind: "mobile-workbench",
-    path: join(workspaceRoot, "projects", "mosscoder", "android-app"),
-    status: existsSync(join(workspaceRoot, "projects", "mosscoder", "android-app")) ? "available" : "missing",
+    path: mobilePath || undefined,
+    status: pathBackedStatus(mobilePath),
     provides: ["mobile-workbench", "command-workspace", "notification-inbox"],
     metadata: {
-      role: "all_purpose_workbench",
-      focus: "Operate as the full workbench for issuing commands, managing work, and using richer tools.",
+      role: "role_execution_surface",
+      focus: "承接个人上下文、告警和受控的角色执行动作；完整后台管理仍由 Web 控制中心负责。",
     },
   });
   addOptionalResource(resources, {
@@ -149,8 +1553,8 @@ export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPat
     name: "Axi Notify",
     layer: "base_service",
     kind: "notification-relay",
-    path: join(workspaceRoot, "projects", "mosscoder"),
-    status: existsSync(join(workspaceRoot, "projects", "mosscoder")) ? "available" : "missing",
+    path: notifyPath || undefined,
+    status: pathBackedStatus(notifyPath),
     provides: ["relay-notifications", "workflow-events", "mobile-event-inbox"],
     metadata: {
       role: "notification_service",
@@ -174,8 +1578,8 @@ export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPat
     name: "Fleet Console",
     layer: "physical_service",
     kind: "physical-resource-registry",
-    path: join(workspaceRoot, "infra", "fleet-console"),
-    status: existsSync(join(workspaceRoot, "infra", "fleet-console")) ? "available" : "missing",
+    path: fleetConsolePath || undefined,
+    status: pathBackedStatus(fleetConsolePath),
     provides: ["machine-registry", "ansible-ops", "monitoring-targets"],
   });
 
@@ -184,25 +1588,1622 @@ export function buildSnapshot({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPat
     id,
     description: profile.description || "",
     projects: profile.projects || [],
-    commands: (profile.health || profile.verify || profile.start || []).map((command, index) =>
-      makeCommand({ ownerId: `profile:${id}`, intent: "run_health", label: `Profile ${id} command ${index + 1}`, command, cwd: workspaceRoot, index })
-    ),
+    commands: [
+      ...(profile.health || profile.verify || profile.start || []).map((command, index) =>
+        makeCommand({ ownerId: `profile:${id}`, intent: "run_health", label: `Profile ${id} command ${index + 1}`, command, cwd: workspaceRoot, index })
+      ),
+      ...(profile.remediation || []).map((command, index) =>
+        makeCommand({ ownerId: `profile:${id}`, intent: "run_remediation", label: `Profile ${id} remediation ${index + 1}`, command, cwd: workspaceRoot, index })
+      ),
+    ],
   }));
 
   return {
     generatedAt,
     resources: resources.sort((left, right) => layerRank(left.layer) - layerRank(right.layer) || left.id.localeCompare(right.id)),
     routes: [],
-    approvals: Array.from(approvals.values()),
+    approvals: Array.from(approvals.values()).map(normalizeApprovalRecord),
     agentTasks: Array.from(agentTasks.values()),
     runtimes: inspectAgentRuntimes({ codexBin, appServerBin }),
     axiResources,
+    governance: buildGovernanceSnapshot({ workspaceRoot, graphPath, registryPath, graph, registry, resources, generatedAt, cacheDir, eventSources: resolvedEventSources, evidenceRecords: Array.from(evidenceRecords.values()), risks: Array.from(risks.values()), incidents: Array.from(incidents.values()), policyDecisions: Array.from(policyDecisions.values()), automationRecords: Array.from(automationRecords.values()) }),
     profiles,
+};
+}
+
+/**
+ * Build the first read-only Governance Object + Evidence projection.
+ *
+ * Registry and graph are deliberately kept as separate declarations.  The
+ * projection chooses the registry for canonical identity fields when both
+ * sources know an object, but preserves conflicts and source references so a
+ * later importer can resolve them without last-write-wins data loss.
+ */
+export function buildGovernanceSnapshot({
+  workspaceRoot = DEFAULT_WORKSPACE_ROOT,
+  graphPath = join(workspaceRoot, "workspace.graph.json"),
+  registryPath = join(workspaceRoot, "infra", "axi-workspace-governance", "workspace.json"),
+  graph = readJson(graphPath, { projects: {} }),
+  registry = readJson(registryPath, null),
+  resources = [],
+  generatedAt = new Date().toISOString(),
+  cacheDir = "",
+  eventSources = [],
+  evidenceRecords = [],
+  risks = [],
+  incidents = [],
+  policyDecisions = [],
+  automationRecords = [],
+} = {}) {
+  const observedAt = validIsoDate(generatedAt) || new Date().toISOString();
+  const observedDate = new Date(observedAt);
+  const graphProjects = isRecord(graph?.projects) ? graph.projects : {};
+  const registryEntries = readGovernanceRegistryEntries(registry);
+  const registryById = new Map(registryEntries.map((entry) => [entry.id, entry]));
+  const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
+  const ids = [...new Set([...Object.keys(graphProjects), ...registryEntries.map((entry) => entry.id)])].sort();
+  const governanceObjectRefs = new Set(ids);
+  const evidence = evidenceRecords.filter(isRecord).map((record) => refreshPersistedEvidence(record, observedDate));
+  const documents = [];
+  const conflicts = [];
+  const warnings = [];
+  const automations = buildGovernanceAutomations({ graph, resources, graphPath, evidence, now: observedDate, automationRecords });
+
+  const units = ids.map((id) => {
+    const graphProject = isRecord(graphProjects[id]) ? graphProjects[id] : {};
+    const registryEntry = registryById.get(id) || null;
+    const resource = resourceById.get(id) || null;
+    const graphDeclaredPath = declaredAbsolutePath(graphProject.path, workspaceRoot);
+    const registryDeclaredPath = declaredAbsolutePath(registryEntry?.path, dirname(registryPath));
+    const unitConflicts = [];
+
+    if (graphDeclaredPath && registryDeclaredPath && graphDeclaredPath !== registryDeclaredPath) {
+      unitConflicts.push({
+        subjectRef: id,
+        field: "path",
+        values: [
+          { source: "workspace.graph", value: graphDeclaredPath },
+          { source: "workspace.registry", value: registryDeclaredPath },
+        ],
+      });
+    }
+
+    const graphOwner = firstString(graphProject.ownerRef, graphProject.owner);
+    const registryOwner = firstString(registryEntry?.ownerRef, registryEntry?.owner);
+    if (graphOwner && registryOwner && graphOwner !== registryOwner) {
+      unitConflicts.push({
+        subjectRef: id,
+        field: "ownerRef",
+        values: [
+          { source: "workspace.graph", value: graphOwner },
+          { source: "workspace.registry", value: registryOwner },
+        ],
+      });
+    }
+
+    const graphType = firstString(graphProject.objectType, graphProject.governanceUnitType);
+    const registryType = firstString(
+      registryEntry?.objectType,
+      registryEntry && GOVERNANCE_REGISTRY_OBJECT_TYPES[registryEntry.collection],
+    );
+    if (graphType && registryType && graphType !== registryType) {
+      unitConflicts.push({
+        subjectRef: id,
+        field: "objectType",
+        values: [
+          { source: "workspace.graph", value: graphType },
+          { source: "workspace.registry", value: registryType },
+        ],
+      });
+    }
+
+    conflicts.push(...unitConflicts);
+    for (const conflict of unitConflicts) warnings.push(`identity_conflict:${conflict.subjectRef}:${conflict.field}`);
+
+    const evidenceRefs = [];
+    evidenceRefs.push(...evidence.filter((item) => item.subjectRef === id).map((item) => item.id));
+    if (Object.hasOwn(graphProjects, id)) {
+      evidenceRefs.push(addGovernanceEvidence(evidence, {
+        id: `evidence:${id}:graph`,
+        source: "workspace.graph",
+        evidenceType: "declaration",
+        observedAt,
+        confidence: "medium",
+        status: "declared",
+        subjectRef: id,
+        artifactRef: graphPath,
+        now: observedDate,
+      }));
+    }
+    if (registryEntry) {
+      evidenceRefs.push(addGovernanceEvidence(evidence, {
+        id: `evidence:${id}:registry`,
+        source: "workspace.registry",
+        evidenceType: "declaration",
+        observedAt,
+        confidence: "high",
+        status: "declared",
+        subjectRef: id,
+        artifactRef: registryPath,
+        now: observedDate,
+      }));
+    }
+
+    const canonicalPath = registryDeclaredPath || graphDeclaredPath || resource?.path || "";
+    evidenceRefs.push(addGovernanceEvidence(evidence, {
+      id: `evidence:${id}:structure`,
+      source: "control-plane.filesystem",
+      evidenceType: "structural",
+      observedAt,
+      confidence: canonicalPath && !isForeignAbsolutePath(canonicalPath) ? "high" : "low",
+      status: canonicalPath
+        ? isForeignAbsolutePath(canonicalPath) ? "unknown" : (existsSync(canonicalPath) ? "available" : "missing")
+        : "unknown",
+      subjectRef: id,
+      artifactRef: canonicalPath || null,
+      now: observedDate,
+    }));
+
+    const completion = isRecord(graphProject.completion) ? graphProject.completion : null;
+    if (completion) {
+      const completionObservedAt = validIsoDate(completion.updatedAt) || observedAt;
+      const completionExpiry = new Date(new Date(completionObservedAt).getTime() + GOVERNANCE_COMPLETION_EVIDENCE_TTL_MS).toISOString();
+      const completionEvidenceId = addGovernanceEvidence(evidence, {
+        id: `evidence:${id}:completion`,
+        source: "workspace.graph.completion",
+        evidenceType: "declaration",
+        observedAt: completionObservedAt,
+        confidence: completion.confidence,
+        status: completion.stage || "declared",
+        subjectRef: id,
+        artifactRef: governanceStrings(completion.evidence)[0] || graphPath,
+        expiresAt: completionExpiry,
+        now: observedDate,
+      });
+      evidenceRefs.push(completionEvidenceId);
+      if (evidence.at(-1)?.freshness === "stale") warnings.push(`evidence_stale:${id}:completion`);
+    }
+
+    const ownerRef = firstString(registryOwner, graphOwner) || "unknown";
+    const ownerEvidenceRef = registryOwner
+      ? `evidence:${id}:registry`
+      : graphOwner
+        ? `evidence:${id}:graph`
+        : undefined;
+    const ownerStatus = ownerRef !== "unknown"
+      ? "resolved"
+      : isExternalGovernanceUnit(graphProject, registryEntry)
+        ? "external"
+        : "unknown";
+    if (ownerRef === "unknown") warnings.push(`owner_unresolved:${id}`);
+    const objectType = firstString(
+      registryType,
+      graphType,
+      registryEntry && GOVERNANCE_REGISTRY_OBJECT_TYPES[registryEntry.collection],
+      registryEntry?.kind,
+      graphProject.kind,
+      "unknown",
+    );
+    const lifecycle = firstString(registryEntry?.lifecycle, graphProject.lifecycle, "unknown");
+    const status = firstString(resource?.status, registryEntry?.status, "unknown");
+    const name = firstString(registryEntry?.name, graphProject.name, resource?.name, id);
+    const declarations = {
+      ...(Object.hasOwn(graphProjects, id) ? { graph: graphPath } : {}),
+      ...(registryEntry ? { registry: registryPath } : {}),
+    };
+    const documentProjection = buildProjectDocuments({ id, ownerRef, graphProject, registryEntry, projectRoot: canonicalPath, evidence, documents, warnings, conflicts, now: observedDate });
+    evidenceRefs.push(...documentProjection.evidenceRefs);
+    const documentRefs = documentProjection.documentRefs;
+    const unitFreshness = aggregateGovernanceFreshness(evidence, evidenceRefs);
+    const health = buildGovernanceHealth({ id, ownerRef, conflicts: unitConflicts, evidence, evidenceRefs });
+
+    return {
+      id,
+      objectType,
+      name,
+      scope: "workspace",
+      ownerRef,
+      ...(ownerEvidenceRef ? { ownerEvidenceRef } : {}),
+      ownerStatus,
+      lifecycle,
+      status,
+      identityStatus: unitConflicts.length ? "conflict" : registryEntry && Object.hasOwn(graphProjects, id) ? "aligned" : "partial",
+      freshness: unitFreshness,
+      health,
+      sourceOfTruth: firstString(registryEntry?.sourceOfTruth, registryEntry ? registryPath : "", graphProject.sourceOfTruth, graphPath),
+      ...(canonicalPath ? { path: canonicalPath } : {}),
+      ...(firstString(graphProject.kind, registryEntry?.kind) ? { kind: firstString(graphProject.kind, registryEntry?.kind) } : {}),
+      declarations,
+      relationships: buildGovernanceRelationships({ id, graphProject, registryEntry, graphPath, registryPath, knownObjectRefs: governanceObjectRefs, warnings }),
+      policyBindings: governanceStrings(graphProject.policyBindings || registryEntry?.policyBindings),
+      evidenceRefs,
+      documentRefs,
+    };
+  });
+
+  const relationships = deriveGovernanceRelationships(units);
+  applyDependencyHealthRollup(units, relationships);
+  const impact = buildGovernanceImpact(units, relationships);
+  const coverage = {
+    unitCount: units.length,
+    ownerResolvedCount: units.filter((unit) => unit.ownerStatus === "resolved").length,
+    ownerUnknownCount: units.filter((unit) => unit.ownerStatus === "unknown").length,
+    ownerExternalCount: units.filter((unit) => unit.ownerStatus === "external").length,
+    identityAlignedCount: units.filter((unit) => unit.identityStatus === "aligned").length,
+    identityPartialCount: units.filter((unit) => unit.identityStatus === "partial").length,
+    identityConflictCount: units.filter((unit) => unit.identityStatus === "conflict").length,
+  };
+  const declaredProjects = Object.values(graphProjects).filter(isRecord);
+  const graphExecutionCoverage = isRecord(graph?.executionCoverage) ? graph.executionCoverage : {};
+  // TASK4: Surface graph-declared remediation status buckets as declared coverage.
+  // We do NOT infer missing per-unit status; we expose whatever graph declares
+  // explicitly and validate declaredCount = supported + blocked + notSupported
+  // when all four fields are present. Unit-level `remediationStatus` field is
+  // still missing on 40/40 graph projects — that gap remains owner-owned.
+  const numOrNull = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const remediationSupportedCount = numOrNull(graphExecutionCoverage.remediationSupportedCount);
+  const remediationBlockedCount = numOrNull(graphExecutionCoverage.remediationBlockedCount);
+  const remediationNotSupportedCount = numOrNull(graphExecutionCoverage.remediationNotSupportedCount);
+  const sumDeclared =
+    remediationSupportedCount !== null &&
+    remediationBlockedCount !== null &&
+    remediationNotSupportedCount !== null
+      ? remediationSupportedCount + remediationBlockedCount + remediationNotSupportedCount
+      : null;
+  const remediationDeclaredGraph = numOrNull(graphExecutionCoverage.remediationDeclaredCount);
+  const coverageConsistent =
+    sumDeclared !== null && remediationDeclaredGraph !== null && sumDeclared === remediationDeclaredGraph;
+  const executionCoverage = {
+    declaredProjectCount: declaredProjects.length,
+    healthDeclaredCount: declaredProjects.filter((project) => Array.isArray(project.health) && project.health.length > 0).length,
+    verifyDeclaredCount: declaredProjects.filter((project) => Array.isArray(project.verify) && project.verify.length > 0).length,
+    remediationDeclaredCount: declaredProjects.filter((project) => Array.isArray(project.remediation) && project.remediation.length > 0).length,
+    remediationSupportedCount,
+    remediationBlockedCount,
+    remediationNotSupportedCount,
+    coverageSource: "graph_declaration",
+    coverageConsistent,
+  };
+  const dependencyEdges = relationships.filter((relationship) => relationship.relationshipType === "DEPENDS_ON");
+  const relationshipMetadataCoverage = {
+    dependencyEdgeCount: dependencyEdges.length,
+    scopeDeclaredCount: dependencyEdges.filter((relationship) => relationship.scope !== undefined).length,
+    requirednessDeclaredCount: dependencyEdges.filter((relationship) => relationship.requiredness !== undefined).length,
+    dependencyPhaseDeclaredCount: dependencyEdges.filter((relationship) => relationship.dependencyPhase !== undefined).length,
+    environmentDeclaredCount: dependencyEdges.filter((relationship) => relationship.environment !== undefined).length,
+    versionConstraintDeclaredCount: dependencyEdges.filter((relationship) => relationship.versionConstraint !== undefined).length,
+    validityWindowDeclaredCount: dependencyEdges.filter((relationship) => relationship.validFrom !== undefined || relationship.validTo !== undefined || relationship.validityWindow !== undefined).length,
+  };
+  const relationshipMetadataGaps = dependencyEdges.flatMap((relationship) => {
+    const missing = [
+      ["requiredness", relationship.requiredness === undefined],
+      ["dependencyPhase", relationship.dependencyPhase === undefined],
+      ["environment", relationship.environment === undefined],
+      ["versionConstraint", relationship.versionConstraint === undefined],
+      ["validityWindow", relationship.validFrom === undefined && relationship.validTo === undefined && relationship.validityWindow === undefined],
+    ].filter(([, absent]) => absent).map(([field]) => field);
+    return missing.length ? [{ sourceRef: relationship.sourceRef, targetRef: relationship.targetRef, relationshipType: "DEPENDS_ON", missing, provenance: relationship.provenance }] : [];
+  });
+  if (dependencyEdges.some((relationship) => relationship.requiredness === undefined || relationship.dependencyPhase === undefined || relationship.environment === undefined || relationship.versionConstraint === undefined || (relationship.validFrom === undefined && relationship.validTo === undefined && relationship.validityWindow === undefined))) {
+    warnings.push(`relationship_metadata_incomplete:${dependencyEdges.length}`);
+  }
+  const ruleProjection = buildGovernanceRules({ graph, graphPath, registry, registryPath, evidence, warnings, conflicts, now: observedDate });
+  relationships.push(...ruleProjection.relationships);
+  const rules = ruleProjection.rules;
+  const resolvedEventSources = eventSources.length ? eventSources : resolveDeclaredWorkspaceEventSources({ graph, registry });
+  const events = readWorkspaceEvents({ cacheDir, sources: resolvedEventSources, limit: null }).events;
+  const eventCoverage = {
+    declaredSourceCount: resolvedEventSources.length,
+    loadedSourceCount: new Set(events.map((event) => event.source)).size,
+    eventCount: events.length,
+    surfaceCount: new Set(events.map((event) => event.surfaceRef).filter(Boolean)).size,
+    projectCount: new Set(events.map((event) => event.projectRef).filter(Boolean)).size,
+    serviceCount: new Set(events.map((event) => event.serviceRef).filter(Boolean)).size,
+  };
+  const waivers = buildGovernanceWaivers({ risks, events, now: observedDate });
+  const violations = buildGovernanceViolations({ units, documents, rules, conflicts, evidence, events, waivers, now: observedDate });
+  const authorization = buildGovernanceAuthorization({ registry, registryPath, workspaceRoot });
+  warnings.push(...authorization.warnings);
+
+  if (!registry) warnings.push("workspace_registry_unavailable");
+  return {
+    contractVersion: GOVERNANCE_CONTRACT_VERSION,
+    generatedAt: observedAt,
+    sources: {
+      graph: graphPath,
+      ...(registry ? { registry: registryPath } : {}),
+    },
+    units,
+    evidence,
+    relationships,
+    impact,
+    coverage,
+    executionCoverage,
+    relationshipMetadataCoverage,
+    relationshipMetadataGaps,
+    eventCoverage,
+    documents,
+    rules,
+    events,
+    risks: risks.filter(isRecord),
+    incidents: incidents.filter(isRecord),
+    violations,
+    waivers,
+    automations,
+    governanceDocuments: buildWorkspaceGovernanceDocuments({ graph, now: observedDate }),
+    policyDecisions: policyDecisions.filter(isRecord).map((decision) => {
+      const eventRefs = events.filter((event) => event.policyDecisionRef === decision.id).map((event) => event.eventId);
+      return eventRefs.length ? { ...decision, eventRefs } : decision;
+    }),
+    authorization,
+    conflicts,
+    warnings: [...new Set(warnings)],
   };
 }
 
+/**
+ * TASK6: Build GovernanceDocument read model from workspace.graph.json declarations.
+ * Each GovernanceDocument has owner, evidenceRefs, requirement, and requirementSource.
+ */
+function buildWorkspaceGovernanceDocuments({ graph, now }) {
+  const declarations = Array.isArray(graph?.governanceDocuments) ? graph.governanceDocuments : [];
+  return declarations.map((doc) => {
+    // Validate evidence files exist
+    const evidenceRefs = Array.isArray(doc.evidenceRefs) ? doc.evidenceRefs : [];
+    const availableEvidence = evidenceRefs.filter((ref) => {
+      if (!ref || typeof ref !== "string") return false;
+      // Check if it's a path reference (starts with / or contains file extensions)
+      if (ref.startsWith("/")) {
+        return existsSync(ref);
+      }
+      return true;
+    });
+
+    // Determine status based on evidence availability
+    let status = "present";
+    if (evidenceRefs.length === 0) {
+      status = "unknown";
+    } else if (availableEvidence.length === 0) {
+      status = "missing";
+    } else if (availableEvidence.length < evidenceRefs.length) {
+      status = "partial";
+    }
+
+    return {
+      id: doc.id || `doc:unknown:${now.getTime()}`,
+      name: doc.name || "Unnamed Document",
+      description: doc.description || "",
+      requirement: doc.requirement || "optional",
+      requirementSource: doc.requirementSource || "unknown",
+      ownerRef: doc.owner || "unknown",
+      evidenceRefs,
+      availableEvidenceRefs: availableEvidence,
+      policyRef: doc.policyRef || null,
+      tags: Array.isArray(doc.tags) ? doc.tags : [],
+      effectiveAt: doc.effectiveAt || null,
+      status,
+      source: "workspace.graph.governanceDocuments",
+    };
+  });
+}
+
+function isExternalGovernanceUnit(graphProject, registryEntry) {
+  return graphProject?.external === true
+    || registryEntry?.external === true
+    || String(graphProject?.kind || registryEntry?.kind || "").startsWith("reference-")
+    || String(graphProject?.lifecycle || registryEntry?.lifecycle || "").includes("reference");
+}
+
+function resolveDeclaredWorkspaceEventSources({ graph, registry }) {
+  const graphSources = graph?.eventSources || graph?.event_sources;
+  const registrySources = registry?.settings?.eventSources || registry?.settings?.event_sources;
+  const sources = Array.isArray(graphSources) ? graphSources : Array.isArray(registrySources) ? registrySources : [];
+  return sources.filter((source) => typeof source === "string" || (source && typeof source === "object" && typeof source.path === "string"));
+}
+
+function buildGovernanceWaivers({ risks, events = [], now }) {
+  // TASK6: Support both waived and revoked status
+  return risks.filter((risk) => isRecord(risk) && (risk.status === "waived" || risk.status === "revoked")).flatMap((risk) => {
+    const sourceRiskRef = firstString(risk.id);
+    const subjectRef = firstString(risk.targetRef);
+    const reason = firstString(risk.statusReason, risk.reason);
+    if (!sourceRiskRef || !subjectRef || !reason) return [];
+
+    // TASK6: Support revoked status with revokedBy and revokedAt
+    const isRevoked = risk.status === "revoked";
+    const expiresAt = validIsoDate(risk.dueAt);
+    let status = isRevoked ? "revoked" : (expiresAt && new Date(expiresAt).getTime() <= now.getTime() ? "expired" : "active");
+
+    const eventRefs = events.filter((event) => event.objectRef === subjectRef || event.objectRef === sourceRiskRef).map((event) => event.eventId);
+
+    const waiver = {
+      id: `waiver:${sourceRiskRef}`,
+      subjectRef,
+      sourceRiskRef,
+      ownerRef: firstString(risk.ownerRef, "unknown"),
+      reason,
+      status,
+      evidenceRefs: Array.isArray(risk.evidenceRefs) ? risk.evidenceRefs.filter((value) => typeof value === "string") : [],
+      eventRefs,
+      issuedAt: validIsoDate(risk.updatedAt || risk.detectedAt) || now,
+      source: firstString(risk.source, "control-plane.risk"),
+    };
+
+    // TASK6: Add revoked metadata when waiver is revoked
+    if (isRevoked) {
+      waiver.revokedBy = risk.revokedBy || risk.ownerRef || "unknown";
+      waiver.revokedAt = validIsoDate(risk.revokedAt) || now;
+    }
+
+    if (expiresAt && !isRevoked) {
+      waiver.expiresAt = expiresAt;
+    }
+
+    return [waiver];
+  });
+}
+
+function buildGovernanceViolations({ units, documents, rules, conflicts, evidence, events = [], waivers = [], now }) {
+  const unitsById = new Map(units.map((unit) => [unit.id, unit]));
+  const rulesById = new Map(rules.map((rule) => [rule.id, rule]));
+  const waiversBySubject = new Map(waivers.filter((waiver) => waiver.status === "active").map((waiver) => [waiver.subjectRef, waiver]));
+  const violations = [];
+  for (const document of documents) {
+    const forbiddenPresent = document.requirement === "forbidden" && document.status === "present";
+    if (!document.required && !forbiddenPresent) continue;
+    if (!forbiddenPresent && document.status !== "missing" && document.status !== "stale" && document.status !== "conflict") continue;
+    const waiver = waiversBySubject.get(document.subjectRef);
+    const eventRefs = events.filter((event) => event.objectRef === document.subjectRef).map((event) => event.eventId);
+    violations.push({
+      id: `violation:${document.id}:${document.status}`,
+      subjectRef: document.subjectRef,
+      violationType: forbiddenPresent ? "document_forbidden_present" : `document_${document.status}`,
+      severity: "warning",
+      status: waiver ? "waived" : "open",
+      ownerRef: document.ownerRef,
+      reason: forbiddenPresent ? `forbidden document present: ${document.entrypoint}` : `document ${document.status}: ${document.entrypoint}`,
+      evidenceRefs: [document.evidenceRef],
+      eventRefs,
+      source: document.source,
+      detectedAt: now,
+      ...(waiver ? { waiverRef: waiver.id } : {}),
+    });
+  }
+  for (const [index, conflict] of conflicts.entries()) {
+    const ownerRef = unitsById.get(conflict.subjectRef)?.ownerRef || rulesById.get(conflict.subjectRef)?.ownerRef || "unknown";
+    const waiver = waiversBySubject.get(conflict.subjectRef);
+    const eventRefs = events.filter((event) => event.objectRef === conflict.subjectRef).map((event) => event.eventId);
+    const sourceEvidenceRefs = unitsById.get(conflict.subjectRef)?.evidenceRefs?.filter((ref) => ref.endsWith(":graph") || ref.endsWith(":registry"))
+      || rules.filter((rule) => rule.id === conflict.subjectRef).map((rule) => rule.evidenceRef).filter(Boolean);
+    const evidenceRef = sourceEvidenceRefs?.[0] || addGovernanceEvidence(evidence, {
+      id: `evidence:violation:conflict:${index + 1}`,
+      source: "control-plane.conflict-projection",
+      evidenceType: "declaration",
+      observedAt: now.toISOString(),
+      confidence: "high",
+      status: "conflict",
+      subjectRef: conflict.subjectRef,
+      artifactRef: null,
+      now,
+    });
+    violations.push({
+      id: `violation:${conflict.subjectRef}:${conflict.field}`,
+      subjectRef: conflict.subjectRef,
+      violationType: "declaration_conflict",
+      severity: "warning",
+      status: waiver ? "waived" : "open",
+      ownerRef,
+      reason: `conflicting declaration: ${conflict.field}`,
+      evidenceRefs: [evidenceRef],
+      eventRefs,
+      source: "control-plane.conflict-projection",
+      detectedAt: now,
+      ...(waiver ? { waiverRef: waiver.id } : {}),
+    });
+  }
+  return violations;
+}
+
+function buildGovernanceAuthorization({ registry, registryPath, workspaceRoot }) {
+  const configured = readConfiguredGovernanceGrants({ registry, registryPath, workspaceRoot });
+  return {
+    status: configured.status,
+    source: configured.source,
+    ownerRef: configured.ownerRef,
+    policyVersion: configured.policyVersion,
+    grantCount: configured.grants.length,
+    warnings: configured.warnings,
+  };
+}
+
+/**
+ * Normalize the existing append-only audit ledger into the Phase 4 event
+ * contract. Source ledgers remain authoritative; this is a safe read model
+ * with no raw payload passthrough and no mutation of historical records.
+ */
+export function readWorkspaceEvents({ cacheDir, sources = [], eventId = "", afterEventId = "", eventType = "", actorRef = "", objectRef = "", surfaceRef = "", projectRef = "", serviceRef = "", runRef = "", since = "", limit = 100 } = {}) {
+  const ledgerSources = dedupeEventSources([
+    ...(cacheDir ? [{ path: join(cacheDir, "audit.jsonl"), source: "control-plane.audit.jsonl" }] : []),
+    ...sources,
+  ]);
+  const normalized = [];
+  for (const ledger of ledgerSources) {
+    if (!existsSync(ledger.path)) continue;
+    const ledgerFiles = statSync(ledger.path).isDirectory()
+      ? readdirSync(ledger.path).filter((file) => file.endsWith(".jsonl")).sort().map((file) => ({
+        path: join(ledger.path, file),
+        source: `${ledger.source}/${file}`,
+      }))
+      : [ledger];
+    for (const ledgerFile of ledgerFiles) {
+      const records = readFileSync(ledgerFile.path, "utf8")
+        .split(/\r?\n/u)
+        .map((line) => {
+          try { return line.trim() ? JSON.parse(line) : null; } catch { return null; }
+        })
+        .filter(Boolean);
+      let previousHash = null;
+      for (const [index, record] of records.entries()) {
+        normalized.push(normalizeWorkspaceEvent(record, index, previousHash, ledgerFile.source));
+        previousHash = firstString(record.eventHash) || null;
+      }
+    }
+  }
+  const filtered = normalized
+    .filter((event) => !eventId || event.eventId === eventId)
+    .filter((event) => !eventType || event.eventType === eventType)
+    .filter((event) => !actorRef || event.actorRef === actorRef)
+    .filter((event) => !objectRef || event.objectRef === objectRef)
+    .filter((event) => !surfaceRef || event.surfaceRef === surfaceRef)
+    .filter((event) => !projectRef || event.projectRef === projectRef)
+    .filter((event) => !serviceRef || event.serviceRef === serviceRef)
+    .filter((event) => !runRef || event.runRef === runRef)
+    .filter((event) => !since || event.occurredAt >= since)
+    .sort((left, right) => left.occurredAt.localeCompare(right.occurredAt) || left.recordedAt.localeCompare(right.recordedAt) || left.eventId.localeCompare(right.eventId));
+  const afterIndex = afterEventId ? filtered.findIndex((event) => event.eventId === afterEventId) : -1;
+  const pageSource = filtered.slice(afterIndex >= 0 ? afterIndex + 1 : 0);
+  const pageSize = limit === null ? pageSource.length : Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 500) : 100;
+  const events = pageSource.slice(0, pageSize);
+  return {
+    events,
+    nextCursor: pageSource.length > events.length ? events.at(-1)?.eventId || null : null,
+  };
+}
+
+function normalizeWorkspaceEvent(record, index, previousHash = null, source = "control-plane.audit.jsonl") {
+  const fallbackEventId = source === "control-plane.audit.jsonl" ? `audit:${index + 1}` : `audit:${source}:${index + 1}`;
+  const eventId = firstString(record.eventId, record.id, record.auditId) || fallbackEventId;
+  const eventType = firstString(
+    record.eventType,
+    record.auditKind === "job_event" && record.type ? `job.${record.type}` : "",
+    record.auditKind,
+    record.type,
+    record.intent,
+    "observation",
+  );
+  const occurredAt = eventDate(record.occurredAt || record.createdAt || record.completedAt) || new Date(0).toISOString();
+  const actorRef = firstString(record.actorRef, record.actor, record.ownerSubject, record.deviceId, record.envelope?.senderId) || "unknown";
+  const objectRef = firstString(record.objectRef, record.handoffId, record.projectId, record.approvalRef, record.approvalId, record.jobId, record.taskId, record.targetId) || "workspace";
+  const correlationId = firstString(record.correlationId, record.handoffCorrelationId, record.envelope?.raw?.correlationId) || eventId;
+  const hash = calculateAuditHash(record, previousHash);
+  const storedHash = firstString(record.eventHash);
+  const storedPreviousHash = firstString(record.previousEventHash) || null;
+  const integrityStatus = storedHash
+    ? storedHash === hash && storedPreviousHash === previousHash ? "verified" : "invalid"
+    : "unverified";
+  return {
+    eventId,
+    eventType,
+    occurredAt,
+    recordedAt: eventDate(record.recordedAt) || occurredAt,
+    actorRef,
+    ...(firstString(record.surface) ? { surfaceRef: record.surface } : {}),
+    ...(firstString(record.projectId) ? { projectRef: record.projectId } : {}),
+    ...(firstString(record.serviceId) ? { serviceRef: record.serviceId } : {}),
+    ...(firstString(record.runId) ? { runRef: record.runId } : {}),
+    scopeRef: firstString(record.scopeRef, record.scope) || "workspace",
+    objectRef,
+    action: firstString(record.action, record.auditKind, record.type, record.intent) || eventType,
+    ...(firstString(record.beforeRef) ? { beforeRef: record.beforeRef } : {}),
+    ...(firstString(record.afterRef) ? { afterRef: record.afterRef } : {}),
+    correlationId,
+    ...(firstString(record.causationId) ? { causationId: record.causationId } : {}),
+    ...(firstString(record.policyDecisionRef) ? { policyDecisionRef: record.policyDecisionRef } : {}),
+    evidenceRefs: Array.isArray(record.evidenceRefs) ? record.evidenceRefs.filter((value) => typeof value === "string") : [],
+    result: firstString(record.result, record.status, record.verdict) || "observed",
+    source,
+    retentionClass: record.retentionClass === "legal_hold" || record.retentionClass === "extended" ? record.retentionClass : "default",
+    immutable: true,
+    integrity: { status: integrityStatus, hash, previousHash },
+  };
+}
+
+function dedupeEventSources(sources) {
+  const seen = new Set();
+  return sources
+    .map((value) => {
+      if (typeof value === "string") {
+        const path = expandEventSourcePath(value);
+        return { path, source: value };
+      }
+      if (!value || typeof value !== "object") return null;
+      const path = expandEventSourcePath(firstString(value.path));
+      return path ? { path, source: firstString(value.source, value.id) || path } : null;
+    })
+    .filter((value) => value && !seen.has(value.path) && seen.add(value.path));
+}
+
+function expandEventSourcePath(value) {
+  if (!value) return "";
+  let expanded = value.replace(/^~(?=\/|$)/u, process.env.HOME || "~");
+  expanded = expanded.replace(/\$\{([A-Z_][A-Z0-9_]*)\}|\$([A-Z_][A-Z0-9_]*)/gu, (match, braced, plain) => {
+    const name = braced || plain;
+    return Object.hasOwn(process.env, name) ? process.env[name] : match;
+  });
+  return expanded;
+}
+
+function parseEventSources(value) {
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Evaluate a Workspace RBAC grant set without mutating any source of truth.
+ * Scope inheritance is explicit, deny always wins, and no matching grant is
+ * a secure default deny. Group expansion and grant loading stay with the
+ * future identity/registry owner rather than being inferred here.
+ */
+export function evaluateGovernancePolicy({ subjectRef, scopeRef = "workspace", resourceRef, action, grants = [], now = new Date(), policyVersion = "workspace-rbac-v1", correlationId = "" } = {}) {
+  const createdAt = validIsoDate(now) || new Date().toISOString();
+  const current = new Date(createdAt);
+  const matching = grants
+    .filter((grant) => grant && grant.subjectRef === subjectRef && grant.action === action)
+    .filter((grant) => grant.resourceRef === "*" || grant.resourceRef === resourceRef)
+    .filter((grant) => grantMatchesScope(grant, scopeRef, resourceRef))
+    .filter((grant) => grantIsActive(grant, current))
+    .sort((left, right) => Number(right.priority || 0) - Number(left.priority || 0) || String(left.id).localeCompare(String(right.id)));
+  const matchedGrantRefs = matching.map((grant) => grant.id);
+  const denied = matching.filter((grant) => grant.effect === "deny");
+  const evidenceRequired = matching.filter((grant) => grant.effect === "require_additional_evidence");
+  const approvalRequired = matching.filter((grant) => grant.effect === "require_approval");
+  const allowed = matching.filter((grant) => grant.effect === "allow");
+  const decision = denied.length
+    ? "deny"
+    : evidenceRequired.length
+      ? "require_additional_evidence"
+      : approvalRequired.length
+        ? "require_approval"
+        : allowed.length
+          ? "allow"
+          : "deny";
+  const reason = denied.length
+    ? "deny_precedence"
+    : evidenceRequired.length
+      ? "additional_evidence_required"
+      : approvalRequired.length
+        ? "approval_required"
+        : allowed.length
+          ? "matched_allow_grant"
+          : "no_matching_grant";
+  const expiryTimes = matching
+    .map((grant) => dateFromValue(grant.validTo)?.getTime())
+    .filter((value) => Number.isFinite(value));
+  const expiresAt = expiryTimes.length ? new Date(Math.min(...expiryTimes)).toISOString() : null;
+  const decisionId = `policy-decision:${randomUUID()}`;
+  return {
+    id: decisionId,
+    subjectRef,
+    scopeRef,
+    resourceRef,
+    action,
+    decision,
+    reason,
+    matchedGrantRefs,
+    policyVersion,
+    correlationId: firstString(correlationId, decisionId),
+    createdAt,
+    expiresAt,
+    evidenceRefs: [...new Set(matching.flatMap((grant) => Array.isArray(grant.evidenceRefs) ? grant.evidenceRefs : []))],
+    denyPrecedence: true,
+  };
+}
+
+function evaluateConfiguredGovernancePolicy({ input = {}, workspaceRoot, registryPath, cacheDir = "" }) {
+  const registry = readJson(registryPath, null);
+  const configured = readConfiguredGovernanceGrants({ registry, registryPath, workspaceRoot });
+  const decision = evaluateGovernancePolicy({
+    subjectRef: firstString(input.subjectRef) || "unknown",
+    scopeRef: firstString(input.scopeRef) || "workspace",
+    resourceRef: firstString(input.resourceRef) || "unknown",
+    action: firstString(input.action) || "read",
+    grants: configured.grants,
+    policyVersion: configured.policyVersion,
+    correlationId: input.correlationId,
+  });
+  const evidence = createPolicyDecisionEvidence({ cacheDir, decision, grantsSource: configured.source });
+  if (evidence) decision.evidenceRefs = [...new Set([...decision.evidenceRefs, evidence.id])];
+  persistImmutableJson(join(cacheDir, "policy-decisions", `${safeFileName(decision.id)}.json`), decision);
+  return { decision, grantsSource: configured.source, warnings: configured.warnings };
+}
+
+function createPolicyDecisionEvidence({ cacheDir, decision, grantsSource }) {
+  if (!cacheDir) return null;
+  const expiresAt = decision.expiresAt ? validIsoDate(decision.expiresAt) : null;
+  const evidence = {
+    id: `evidence:policy:${randomUUID()}`,
+    observationKey: `policy:${decision.correlationId}`,
+    source: "control-plane.policy",
+    evidenceType: "process",
+    observedAt: decision.createdAt,
+    observer: GOVERNANCE_OBSERVER,
+    confidence: "high",
+    expiresAt,
+    freshness: expiresAt ? new Date(expiresAt).getTime() <= new Date(decision.createdAt).getTime() ? "stale" : "fresh" : "not_configured",
+    status: decision.decision,
+    subjectRef: decision.resourceRef,
+    artifactRef: grantsSource || null,
+  };
+  persistJson(join(cacheDir, "evidence", `${safeFileName(evidence.id)}.json`), evidence);
+  return evidence;
+}
+
+function readConfiguredGovernanceGrants({ registry, registryPath, workspaceRoot }) {
+  const rbac = isRecord(registry?.settings?.rbac) ? registry.settings.rbac : {};
+  const grantsRef = firstString(rbac.grants, registry?.settings?.rbacGrants);
+  const policyVersion = firstString(rbac.version) || "workspace-rbac-v1";
+  const ownerRef = firstString(rbac.ownerRef, rbac.owner) || "unknown";
+  if (!grantsRef) return { grants: [], policyVersion, source: null, ownerRef, status: "unconfigured", warnings: ["workspace_rbac_grants_unconfigured"] };
+  const grantsPath = declaredAbsolutePath(grantsRef, dirname(registryPath));
+  if (!grantsPath || isForeignAbsolutePath(grantsPath)) {
+    return { grants: [], policyVersion, source: grantsPath || grantsRef, ownerRef, status: "unresolved", warnings: [`workspace_rbac_grants_unresolved:${grantsRef}`] };
+  }
+  const payload = readJson(grantsPath, null);
+  if (!payload) return { grants: [], policyVersion, source: grantsPath, ownerRef, status: "missing", warnings: [`workspace_rbac_grants_missing:${grantsRef}`] };
+  const rawGrants = Array.isArray(payload) ? payload : Array.isArray(payload.grants) ? payload.grants : [];
+  const seenGrantIds = new Set();
+  let invalidEntry = false;
+  let duplicateGrantId = false;
+  const grants = rawGrants
+    .map((grant) => {
+      const normalized = normalizeConfiguredGrant(grant, grantsPath);
+      if (!normalized) invalidEntry = true;
+      return normalized;
+    })
+    .filter((grant) => {
+      if (!grant) return false;
+      if (seenGrantIds.has(grant.id)) {
+        duplicateGrantId = true;
+        return false;
+      }
+      seenGrantIds.add(grant.id);
+      return true;
+    });
+  const warnings = [
+    ...(invalidEntry ? ["workspace_rbac_grants_invalid_entries"] : []),
+    ...(duplicateGrantId ? ["workspace_rbac_grants_duplicate_ids"] : []),
+  ];
+  return {
+    grants,
+    policyVersion: firstString(payload.version) || policyVersion,
+    source: grantsPath,
+    ownerRef: firstString(payload.ownerRef, payload.owner, ownerRef) || "unknown",
+    status: warnings.length ? "invalid" : "configured",
+    warnings,
+  };
+}
+
+const GOVERNANCE_SCOPE_TYPES = new Set(["workspace", "unit", "object"]);
+const GOVERNANCE_ACTIONS = new Set(["read", "write", "execute", "deploy", "manage", "approve", "admin"]);
+const GOVERNANCE_DECISIONS = new Set(["allow", "deny", "require_approval", "require_additional_evidence"]);
+const GOVERNANCE_INHERITANCE = new Set(["required", "default", "optional", "forbidden"]);
+
+function normalizeConfiguredGrant(grant, source) {
+  if (!isRecord(grant)) return null;
+  // Detect grants.json (v1) format: nested subject/scope/action with grantId
+  const sourceGrantId = firstString(grant.grantId, grant.id);
+  const sourceSubject = isRecord(grant.subject) ? grant.subject : null;
+  const sourceScope = isRecord(grant.scope) ? grant.scope : null;
+  const sourceAction = isRecord(grant.action) ? grant.action : null;
+  const isV1Format = sourceGrantId && sourceSubject && sourceScope && sourceAction;
+  const required = ["id", "subjectRef", "roleRef", "scopeType", "scopeRef", "resourceRef", "action", "effect", "inheritance"];
+  if (required.some((field) => !firstString(grant[field]))) {
+    // If this looks like v1 format but missing internal fields, try to convert
+    if (isV1Format) {
+      const subjectId = firstString(sourceSubject.id, sourceSubject.type) || "*";
+      const subjectType = firstString(sourceSubject.type, "user");
+      const subjectRef = subjectType === "user"
+        ? (subjectId === "*" ? "user:*" : `user:${subjectId}`)
+        : subjectType === "agent"
+          ? `agent:${subjectId}`
+          : subjectType === "service"
+            ? `service:${subjectId}`
+            : `${subjectType}:${subjectId}`;
+      const scopeLevel = firstString(sourceScope.level) || "workspace";
+      const scopeRef = scopeLevel === "workspace"
+        ? "workspace"
+        : scopeLevel === "unit"
+          ? firstString(sourceScope.unit, sourceScope.workspace) || "workspace"
+          : scopeLevel === "object"
+            ? firstString(sourceScope.path, sourceScope.unit, sourceScope.workspace) || "workspace"
+            : "workspace";
+      const actionType = firstString(sourceAction.type) || "read";
+      const resourceRef = firstString(grant.resource) || "**";
+      const effect = firstString(grant.effect) || "deny";
+      const inheritance = "default"; // grants.json v1 doesn't have inheritance field
+      const priority = Number.isInteger(grant.priority) ? grant.priority : 0;
+      const validFrom = dateFromValue(grant.validFrom || grant.createdAt);
+      const validTo = dateFromValue(grant.validTo || grant.expiresAt);
+      if (validFrom && validTo && validFrom > validTo) return null; // validFrom must not be strictly after validTo
+      return {
+        id: sourceGrantId,
+        subjectRef,
+        roleRef: subjectId === "*" ? "*" : subjectId,
+        scopeType: scopeLevel,
+        scopeRef,
+        resourceRef,
+        action: actionType,
+        effect,
+        inheritance,
+        priority,
+        validFrom: validFrom ? validFrom.toISOString() : null,
+        validTo: validTo ? validTo.toISOString() : null,
+        source: `workspace-rbac:${source}`,
+        overrides: Array.isArray(grant.overrides) ? grant.overrides.filter((value) => typeof value === "string") : [],
+        evidenceRefs: Array.isArray(grant.evidenceRefs) ? grant.evidenceRefs.filter((value) => typeof value === "string")
+          : Array.isArray(grant.evidence) ? grant.evidence.filter((value) => typeof value === "string") : [],
+      };
+    }
+    return null;
+  }
+  if (!GOVERNANCE_SCOPE_TYPES.has(grant.scopeType) || !GOVERNANCE_ACTIONS.has(grant.action) || !GOVERNANCE_DECISIONS.has(grant.effect) || !GOVERNANCE_INHERITANCE.has(grant.inheritance)) return null;
+  if (grant.priority !== undefined && (!Number.isInteger(grant.priority) || grant.priority < 0)) return null;
+  for (const field of ["validFrom", "validTo"]) {
+    if (grant[field] !== undefined && grant[field] !== null && !dateFromValue(grant[field])) return null;
+  }
+  const validFrom = dateFromValue(grant.validFrom);
+  const validTo = dateFromValue(grant.validTo);
+  if (validFrom && validTo && validFrom > validTo) return null; // validFrom must not be strictly after validTo
+  return {
+    ...grant,
+    source: firstString(grant.source) || `workspace-rbac:${source}`,
+    priority: Number.isInteger(grant.priority) && grant.priority >= 0 ? grant.priority : 0,
+    overrides: Array.isArray(grant.overrides) ? grant.overrides.filter((value) => typeof value === "string") : [],
+    evidenceRefs: Array.isArray(grant.evidenceRefs) ? grant.evidenceRefs.filter((value) => typeof value === "string") : [],
+  };
+}
+
+function grantMatchesScope(grant, scopeRef, resourceRef) {
+  if (grant.inheritance === "forbidden") return grant.scopeRef === scopeRef || grant.scopeRef === resourceRef;
+  return grant.scopeRef === "workspace" || grant.scopeRef === scopeRef || grant.scopeRef === resourceRef;
+}
+
+function grantIsActive(grant, now) {
+  const validFrom = dateFromValue(grant.validFrom);
+  const validTo = dateFromValue(grant.validTo);
+  return (!validFrom || validFrom <= now) && (!validTo || validTo > now);
+}
+
+function dateFromValue(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function eventDate(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return new Date(value * 1000).toISOString();
+  return validIsoDate(value);
+}
+
+function calculateAuditHash(record, previousEventHash = null) {
+  const payload = { ...record };
+  delete payload.eventHash;
+  delete payload.previousEventHash;
+  return createHash("sha256")
+    .update(JSON.stringify({ previousEventHash, record: payload }))
+    .digest("hex");
+}
+
+function appendAuditRecord(cacheDir, record) {
+  mkdirSync(cacheDir, { recursive: true, mode: 0o700 });
+  const path = join(cacheDir, "audit.jsonl");
+  const previousEventHash = lastAuditEventHash(path);
+  const payload = {
+    ...record,
+    eventId: firstString(record.eventId, record.id, record.auditId) || randomUUID(),
+    recordedAt: firstString(record.recordedAt) || new Date().toISOString(),
+    previousEventHash,
+  };
+  payload.eventHash = calculateAuditHash(payload, previousEventHash);
+  const isNew = !existsSync(path);
+  appendFileSync(path, `${JSON.stringify(payload)}\n`, isNew ? { mode: 0o600 } : undefined);
+  if (isNew) {
+    try { chmodSync(path, 0o600); } catch { /* tolerate fs without chmod */ }
+  }
+  return payload;
+}
+
+function lastAuditEventHash(path) {
+  if (!existsSync(path)) return null;
+  const lines = readFileSync(path, "utf8").split(/\r?\n/u);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (!lines[index].trim()) continue;
+    try {
+      const record = JSON.parse(lines[index]);
+      // A legacy/unparseable tail intentionally starts a new verifiable
+      // segment; linking across an unverified record would be misleading.
+      return firstString(record.eventHash) || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function buildGovernanceRules({ graph, graphPath, registry, registryPath, evidence, warnings, conflicts, now }) {
+  const rules = [];
+  const relationships = [];
+  const seenRules = new Map();
+  const graphRules = Array.isArray(graph?.rules) ? graph.rules : [];
+  for (const [index, value] of graphRules.entries()) {
+    const normalized = normalizeGovernanceRule(value, index);
+    if (!normalized) continue;
+    const { id, statement, ownerRef, priority, inheritance, expiresAt, inheritedFrom, overrides } = normalized;
+    const evidenceRef = addGovernanceEvidence(evidence, {
+      id: `evidence:workspace:rule:graph:${index + 1}`,
+      source: "workspace.graph.rules",
+      evidenceType: "declaration",
+      observedAt: now.toISOString(),
+      confidence: "medium",
+      status: "declared",
+      subjectRef: "workspace",
+      artifactRef: graphPath || null,
+      expiresAt,
+      now,
+    });
+    const rule = {
+      id,
+      subjectRef: "workspace",
+      statement,
+      scope: "workspace",
+      ownerRef,
+      ...(priority === undefined ? {} : { priority }),
+      status: "declared",
+      inheritance,
+      expiresAt,
+      freshness: evidence.find((item) => item.id === evidenceRef)?.freshness || "not_configured",
+      inheritedFrom,
+      overrides,
+      source: "workspace.graph.rules",
+      evidenceRef,
+    };
+    registerRuleConflict(seenRules, rule, conflicts, warnings);
+    rules.push(rule);
+    for (const targetRef of inheritedFrom) relationships.push(makeGovernanceRuleRelationship(id, targetRef, "INHERITS_FROM"));
+    for (const targetRef of overrides) relationships.push(makeGovernanceRuleRelationship(id, targetRef, "OVERRIDES"));
+    if (rule.freshness === "stale") warnings.push(`rule_stale:${id}`);
+    if (ownerRef === "unknown") warnings.push(`rule_owner_unresolved:${id}`);
+  }
+
+  const policyRef = isRecord(registry?.settings)
+    ? firstString(registry.settings.projectAdmission?.policy, registry.settings.policy)
+    : "";
+  if (policyRef) {
+    const policyPath = declaredAbsolutePath(policyRef, dirname(registryPath));
+    const status = !policyPath || isForeignAbsolutePath(policyPath)
+      ? "unknown"
+      : existsSync(policyPath) ? "present" : "missing";
+    const evidenceRef = addGovernanceEvidence(evidence, {
+      id: "evidence:workspace:rule:registry-policy",
+      source: "workspace.registry.policy",
+      evidenceType: "structural",
+      observedAt: now.toISOString(),
+      confidence: status === "present" ? "high" : "low",
+      status,
+      subjectRef: "workspace",
+      artifactRef: policyPath || null,
+      now,
+    });
+    rules.push({
+      id: "rule:workspace:registry-policy",
+      subjectRef: "workspace",
+      statement: `admission policy: ${policyRef}`,
+      scope: "workspace",
+      ownerRef: "unknown",
+      status,
+      expiresAt: null,
+      freshness: "not_configured",
+      inheritedFrom: [],
+      overrides: [],
+      inheritance: "default",
+      source: "workspace.registry.policy",
+      evidenceRef,
+    });
+    if (status === "missing") warnings.push(`rule_missing:workspace:${policyRef}`);
+  }
+  return { rules, relationships };
+}
+
+function normalizeGovernanceRule(value, index) {
+  const object = isRecord(value) ? value : {};
+  const statement = typeof value === "string" ? value.trim() : firstString(object.statement, object.description);
+  if (!statement) return null;
+  const priority = Number.isInteger(object.priority) && object.priority >= 0 ? object.priority : typeof value === "string" ? index + 1 : undefined;
+  return {
+    id: firstString(object.id) || `rule:workspace:graph:${index + 1}`,
+    statement,
+    ownerRef: firstString(object.ownerRef, object.owner) || "unknown",
+    priority,
+    inheritance: ["required", "default", "optional", "forbidden"].includes(object.inheritance) ? object.inheritance : "default",
+    expiresAt: validIsoDate(object.expiresAt) || null,
+    inheritedFrom: governanceStrings(object.inheritedFrom || object.inheritsFrom),
+    overrides: governanceStrings(object.overrides),
+  };
+}
+
+function registerRuleConflict(seenRules, rule, conflicts, warnings) {
+  const previous = seenRules.get(rule.id);
+  if (previous) {
+    for (const field of ["statement", "ownerRef", "priority", "inheritance", "expiresAt", "inheritedFrom", "overrides"]) {
+      if (JSON.stringify(previous[field]) === JSON.stringify(rule[field])) continue;
+      conflicts.push({
+        subjectRef: rule.id,
+        field: `rule.${field}`,
+        values: [
+          { source: previous.source, value: previous[field] },
+          { source: rule.source, value: rule[field] },
+        ],
+      });
+      warnings.push(`rule_conflict:${rule.id}:${field}`);
+    }
+  } else {
+    seenRules.set(rule.id, rule);
+  }
+}
+
+function makeGovernanceRuleRelationship(sourceRef, targetRef, relationshipType) {
+  return {
+    sourceRef,
+    targetRef,
+    relationshipType,
+    scope: "workspace",
+    provenance: "workspace.graph.rules",
+    confidence: "medium",
+  };
+}
+
+function buildProjectDocuments({ id, ownerRef, graphProject, registryEntry, projectRoot, evidence, documents, warnings, conflicts, now }) {
+  const graphRequirements = graphProject.document_requirements || graphProject.documentRequirements;
+  const registryRequirements = registryEntry?.document_requirements || registryEntry?.documentRequirements;
+  if (Array.isArray(graphRequirements) && Array.isArray(registryRequirements)
+    && JSON.stringify(graphRequirements) !== JSON.stringify(registryRequirements)) {
+    conflicts.push({
+      subjectRef: id,
+      field: "document_requirements",
+      values: [
+        { source: "workspace.graph.document_requirements", value: graphRequirements },
+        { source: "workspace.registry.document_requirements", value: registryRequirements },
+      ],
+    });
+    warnings.push(`document_requirement_conflict:${id}`);
+  }
+  const declaredRequirements = graphRequirements || registryRequirements;
+  const requirements = Array.isArray(declaredRequirements)
+    ? declaredRequirements
+    : governanceStrings(graphProject.docs_entrypoints || graphProject.docsEntrypoints).map((entrypoint) => ({ entrypoint }));
+  const documentRefs = [];
+  const evidenceRefs = [];
+  for (const [index, rawRequirement] of requirements.entries()) {
+    const requirementRecord = isRecord(rawRequirement) ? rawRequirement : { entrypoint: rawRequirement };
+    const entrypoint = firstString(requirementRecord.entrypoint, requirementRecord.uri, requirementRecord.documentType);
+    if (!entrypoint) continue;
+    const requirement = ["required", "default", "optional", "forbidden"].includes(requirementRecord.requirement)
+      ? requirementRecord.requirement
+      : "required";
+    const required = typeof requirementRecord.required === "boolean" ? requirementRecord.required : requirement === "required";
+    const requirementSource = firstString(requirementRecord.requirementSource, requirementRecord.source,
+      Array.isArray(graphRequirements)
+        ? "workspace.graph.document_requirements"
+        : Array.isArray(registryRequirements) ? "workspace.registry.document_requirements" : "workspace.graph.docs_entrypoints");
+    const freshnessIntervalSeconds = parseGovernanceDurationSeconds(requirementRecord.freshnessIntervalSeconds ?? requirementRecord.freshness_interval);
+    const declaredPath = projectRoot && !isForeignAbsolutePath(projectRoot)
+      ? declaredAbsolutePath(entrypoint, projectRoot)
+      : "";
+    const documentPath = declaredPath || null;
+    let status = !documentPath || isForeignAbsolutePath(documentPath)
+      ? "unknown"
+      : existsSync(documentPath) ? "present" : "missing";
+    if (status === "present" && freshnessIntervalSeconds) {
+      try {
+        if (now.getTime() - statSync(documentPath).mtimeMs > freshnessIntervalSeconds * 1000) status = "stale";
+      } catch {
+        status = "unknown";
+      }
+    }
+    const evidenceRef = addGovernanceEvidence(evidence, {
+      id: `evidence:${id}:document:${index + 1}`,
+      source: requirementSource,
+      evidenceType: "structural",
+      observedAt: now.toISOString(),
+      confidence: status === "present" ? "high" : "low",
+      status,
+      subjectRef: id,
+      artifactRef: documentPath,
+      now,
+    });
+    const documentId = `document:${id}:${index + 1}`;
+    documents.push({
+      id: documentId,
+      subjectRef: id,
+      ownerRef,
+      entrypoint,
+      path: documentPath,
+      required,
+      requirement,
+      requirementSource,
+      ...(freshnessIntervalSeconds ? { freshnessIntervalSeconds } : {}),
+      status,
+      source: requirementSource,
+      evidenceRef,
+    });
+    if (status === "missing") warnings.push(`document_missing:${id}:${entrypoint}`);
+    documentRefs.push(documentId);
+    evidenceRefs.push(evidenceRef);
+  }
+  return { documentRefs, evidenceRefs };
+}
+
+function parseGovernanceDurationSeconds(value) {
+  if (Number.isInteger(value) && value > 0) return value;
+  if (typeof value !== "string") return undefined;
+  const match = value.trim().match(/^(\d+)\s*(s|m|h|d)$/iu);
+  if (!match) return undefined;
+  const amount = Number(match[1]);
+  const multiplier = { s: 1, m: 60, h: 3600, d: 86400 }[match[2].toLowerCase()];
+  const seconds = amount * multiplier;
+  return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : undefined;
+}
+
+function buildGovernanceHealth({ id, ownerRef, conflicts, evidence, evidenceRefs }) {
+  const unitEvidence = evidence.filter((item) => evidenceRefs.includes(item.id));
+  const structural = unitEvidence.find((item) => item.evidenceType === "structural");
+  const missingDocument = unitEvidence.find((item) => item.source === "workspace.graph.docs_entrypoints" && item.status === "missing");
+  const operationalEvidence = unitEvidence.filter((item) => ["process", "endpoint", "behavioral", "deployment", "production"].includes(item.evidenceType));
+  const failedOperational = operationalEvidence.find((item) => ["failed", "error", "unhealthy", "critical"].includes(String(item.status).toLowerCase()));
+
+  if (failedOperational) {
+    return {
+      status: "critical",
+      reason: "operational_evidence_failed",
+      evidenceRefs,
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "investigate_failed_observation",
+    };
+  }
+  if (conflicts.length) {
+    return {
+      status: "warning",
+      reason: "identity_conflict",
+      evidenceRefs: evidenceRefs.filter((ref) => ref.endsWith(":graph") || ref.endsWith(":registry")),
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "reconcile_registry_graph",
+    };
+  }
+  if (structural?.status === "missing") {
+    return {
+      status: "warning",
+      reason: "structural_missing",
+      evidenceRefs: structural ? [structural.id] : evidenceRefs,
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "restore_declared_artifact",
+    };
+  }
+  if (missingDocument) {
+    return {
+      status: "warning",
+      reason: "documentation_missing",
+      evidenceRefs: unitEvidence.filter((item) => item.source === "workspace.graph.docs_entrypoints" && item.status === "missing").map((item) => item.id),
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "restore_required_document",
+    };
+  }
+  if (unitEvidence.some((item) => item.freshness === "stale")) {
+    return {
+      status: "warning",
+      reason: "evidence_stale",
+      evidenceRefs: unitEvidence.filter((item) => item.freshness === "stale").map((item) => item.id),
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "refresh_verification_evidence",
+    };
+  }
+  if (ownerRef === "unknown") {
+    return {
+      status: "unknown",
+      reason: "owner_unresolved",
+      evidenceRefs,
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "resolve_owner_mapping",
+    };
+  }
+  if (!operationalEvidence.length) {
+    return {
+      status: "unknown",
+      reason: "runtime_evidence_missing",
+      evidenceRefs,
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "collect_runtime_evidence",
+    };
+  }
+  if (unitEvidence.some((item) => item.freshness === "unknown" || item.freshness === "not_configured")) {
+    return {
+      status: "unknown",
+      reason: "evidence_unknown",
+      evidenceRefs,
+      affectedObjectRefs: [id],
+      ownerRef,
+      recommendedAction: "collect_current_evidence",
+    };
+  }
+  return {
+    status: "healthy",
+    reason: "verified",
+    evidenceRefs,
+    affectedObjectRefs: [id],
+    ownerRef,
+    recommendedAction: "keep_observing",
+  };
+}
+
+function deriveGovernanceRelationships(units) {
+  const unitIds = new Set(units.map((unit) => unit.id));
+  const providersByCapability = new Map();
+  for (const unit of units) {
+    for (const relationship of unit.relationships) {
+      if (relationship.relationshipType !== "PROVIDES_CAPABILITY") continue;
+      const providers = providersByCapability.get(relationship.targetRef) || [];
+      providers.push(unit.id);
+      providersByCapability.set(relationship.targetRef, providers);
+    }
+  }
+
+  for (const unit of units) {
+    const existing = new Set(unit.relationships.map((relationship) => `${relationship.relationshipType}:${relationship.targetRef}`));
+    for (const relationship of [...unit.relationships]) {
+      if (relationship.relationshipType !== "CONSUMES_CAPABILITY") continue;
+      const capabilityProviders = providersByCapability.get(relationship.targetRef) || [];
+      const providerRefs = capabilityProviders.length
+        ? capabilityProviders
+        : unitIds.has(relationship.targetRef) ? [relationship.targetRef] : [];
+      for (const providerRef of providerRefs) {
+        if (providerRef === unit.id) continue;
+        const key = `DEPENDS_ON:${providerRef}`;
+        if (existing.has(key)) continue;
+        unit.relationships.push({
+          sourceRef: unit.id,
+          targetRef: providerRef,
+          relationshipType: "DEPENDS_ON",
+          provenance: capabilityProviders.length ? "derived:governance.capability" : "derived:governance.consumer-reference",
+          confidence: "medium",
+        });
+        existing.add(key);
+      }
+    }
+  }
+
+  return units.flatMap((unit) => unit.relationships);
+}
+
+function buildGovernanceImpact(units, relationships) {
+  const unitIds = new Set(units.map((unit) => unit.id));
+  const upstream = new Map(units.map((unit) => [unit.id, new Set()]));
+  const downstream = new Map(units.map((unit) => [unit.id, new Set()]));
+
+  for (const relationship of relationships) {
+    if (relationship.relationshipType !== "DEPENDS_ON" || !unitIds.has(relationship.targetRef)) continue;
+    upstream.get(relationship.sourceRef)?.add(relationship.targetRef);
+    downstream.get(relationship.targetRef)?.add(relationship.sourceRef);
+  }
+
+  return units.map((unit) => ({
+    subjectRef: unit.id,
+    directUpstreamRefs: sortedRefs(upstream.get(unit.id)),
+    directDownstreamRefs: sortedRefs(downstream.get(unit.id)),
+    transitiveUpstreamRefs: sortedRefs(collectReachable(unit.id, upstream)),
+    transitiveDownstreamRefs: sortedRefs(collectReachable(unit.id, downstream)),
+  }));
+}
+
+function applyDependencyHealthRollup(units, relationships) {
+  const unitsById = new Map(units.map((unit) => [unit.id, unit]));
+  for (const relationship of relationships) {
+    if (relationship.relationshipType !== "DEPENDS_ON") continue;
+    const source = unitsById.get(relationship.sourceRef);
+    const target = unitsById.get(relationship.targetRef);
+    if (!source || !target || source.health.status === "critical") continue;
+    if (target.health.status === "critical") {
+      source.health = {
+        status: "critical",
+        reason: "dependency_failed",
+        evidenceRefs: [...new Set([...source.health.evidenceRefs, ...target.health.evidenceRefs])],
+        affectedObjectRefs: [...new Set([source.id, target.id])],
+        ownerRef: source.ownerRef,
+        recommendedAction: "investigate_failed_dependency",
+      };
+    } else if (target.health.status === "warning" && source.health.status === "healthy") {
+      source.health = {
+        status: "warning",
+        reason: "dependency_degraded",
+        evidenceRefs: [...new Set([...source.health.evidenceRefs, ...target.health.evidenceRefs])],
+        affectedObjectRefs: [...new Set([source.id, target.id])],
+        ownerRef: source.ownerRef,
+        recommendedAction: "investigate_dependency_health",
+      };
+    } else if (target.health.status === "unknown" && source.health.status === "healthy") {
+      source.health = {
+        status: "unknown",
+        reason: "dependency_unknown",
+        evidenceRefs: [...new Set([...source.health.evidenceRefs, ...target.health.evidenceRefs])],
+        affectedObjectRefs: [...new Set([source.id, target.id])],
+        ownerRef: source.ownerRef,
+        recommendedAction: "collect_dependency_evidence",
+      };
+    }
+  }
+}
+
+function collectReachable(startRef, graph) {
+  const visited = new Set();
+  const queue = [...(graph.get(startRef) || [])];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || current === startRef || visited.has(current)) continue;
+    visited.add(current);
+    for (const next of graph.get(current) || []) queue.push(next);
+  }
+  return visited;
+}
+
+function sortedRefs(refs) {
+  return [...(refs || [])].sort();
+}
+
+function readGovernanceRegistryEntries(registry) {
+  if (!isRecord(registry)) return [];
+  return GOVERNANCE_REGISTRY_COLLECTIONS.flatMap((collection) => {
+    const value = registry[collection];
+    const entries = Array.isArray(value) ? value : isRecord(value) ? Object.values(value) : [];
+    return entries
+      .filter((entry) => isRecord(entry) && typeof entry.id === "string" && entry.id.trim())
+      .map((entry) => ({ ...entry, collection }));
+  });
+}
+
+function buildGovernanceRelationships({ id, graphProject, registryEntry, graphPath, registryPath, knownObjectRefs = new Set(), warnings = [] }) {
+  const relationships = [];
+  const add = (values, relationshipType, provenance) => {
+    for (const targetRef of governanceStrings(values)) {
+      relationships.push({
+        sourceRef: id,
+        targetRef,
+        relationshipType,
+        scope: "workspace",
+        provenance,
+        confidence: "medium",
+      });
+    }
+  };
+  const addExplicit = (values, provenance) => {
+    if (!Array.isArray(values)) return;
+    for (const value of values) {
+      if (!isRecord(value)) continue;
+      const targetRef = firstString(value.targetRef, value.target, value.targetId);
+      const relationshipType = firstString(value.relationshipType, value.type);
+      if (!targetRef || !GOVERNANCE_RELATIONSHIP_TYPES.has(relationshipType)) continue;
+      const sourceRef = firstString(value.sourceRef, id);
+      if (sourceRef !== id) {
+        warnings.push(`relationship_source_mismatch:${id}:${sourceRef}`);
+        continue;
+      }
+      if (sourceRef === targetRef) {
+        warnings.push(`relationship_self_reference:${id}:${relationshipType}`);
+        continue;
+      }
+      if (relationshipType === "DEPENDS_ON" && !knownObjectRefs.has(targetRef)) {
+        warnings.push(`relationship_target_unknown:${id}:${targetRef}`);
+        continue;
+      }
+      const relationship = {
+        sourceRef,
+        targetRef,
+        relationshipType,
+        scope: firstString(value.scope, "workspace"),
+        provenance: firstString(value.provenance, provenance),
+        confidence: normalizeGovernanceConfidence(value.confidence),
+      };
+      for (const field of ["requiredness", "dependencyPhase", "environment", "versionConstraint", "validityWindow"]) {
+        const fieldValue = firstString(value[field]);
+        if (fieldValue) relationship[field] = fieldValue;
+      }
+      for (const field of ["validFrom", "validTo"]) {
+        const dateValue = validIsoDate(value[field]);
+        if (dateValue) relationship[field] = dateValue;
+      }
+      relationships.push(relationship);
+    }
+  };
+  addExplicit(graphProject.relationships, graphPath);
+  addExplicit(registryEntry?.relationships, registryPath);
+  add(graphProject.provides, "PROVIDES_CAPABILITY", graphPath);
+  add(graphProject.consumes, "CONSUMES_CAPABILITY", graphPath);
+  add(graphProject.contracts, "IMPLEMENTS_CONTRACT", graphPath);
+  add(registryEntry?.provides, "PROVIDES_CAPABILITY", registryPath);
+  add(registryEntry?.consumes, "CONSUMES_CAPABILITY", registryPath);
+  add(registryEntry?.contracts, "IMPLEMENTS_CONTRACT", registryPath);
+  return relationships;
+}
+
+function addGovernanceEvidence(target, input) {
+  const now = input.now instanceof Date && !Number.isNaN(input.now.getTime()) ? input.now : new Date();
+  const observedAt = validIsoDate(input.observedAt) || now.toISOString();
+  const expiresAt = input.expiresAt ? validIsoDate(input.expiresAt) : null;
+  const freshness = expiresAt
+    ? new Date(expiresAt).getTime() <= now.getTime() ? "stale" : "fresh"
+    : "not_configured";
+  const evidence = {
+    id: input.id,
+    observationKey: firstString(input.observationKey, input.id),
+    source: input.source,
+    evidenceType: input.evidenceType,
+    observedAt,
+    observer: GOVERNANCE_OBSERVER,
+    confidence: normalizeGovernanceConfidence(input.confidence),
+    expiresAt,
+    freshness,
+    status: input.status || "observed",
+    subjectRef: input.subjectRef,
+    artifactRef: input.artifactRef || null,
+  };
+  target.push(evidence);
+  return evidence.id;
+}
+
+function refreshPersistedEvidence(record, now) {
+  const observedAt = validIsoDate(record.observedAt) || now.toISOString();
+  const expiresAt = record.expiresAt ? validIsoDate(record.expiresAt) : null;
+  return {
+    ...record,
+    source: firstString(record.source, "control-plane.persisted"),
+    evidenceType: firstString(record.evidenceType, "unknown"),
+    observedAt,
+    observer: firstString(record.observer, GOVERNANCE_OBSERVER),
+    confidence: normalizeGovernanceConfidence(record.confidence || "low"),
+    observationKey: firstString(record.observationKey, record.id),
+    expiresAt,
+    freshness: expiresAt ? new Date(expiresAt).getTime() <= now.getTime() ? "stale" : "fresh" : record.freshness || "unknown",
+    status: firstString(record.status, "unknown"),
+    subjectRef: firstString(record.subjectRef, "unknown"),
+    artifactRef: record.artifactRef || null,
+  };
+}
+
+function buildGovernanceAutomations({ graph, resources, graphPath, evidence, now, automationRecords = [] }) {
+  const declarations = Array.isArray(graph?.automations) ? graph.automations : [];
+  const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
+  const persistedById = new Map(automationRecords.filter(isRecord).map((record) => [record.id, record]));
+  return declarations
+    .filter(isRecord)
+    .map((declaration, index) => {
+      const id = firstString(declaration.id) || `automation:unregistered:${index + 1}`;
+      const targetRef = firstString(declaration.targetRef, declaration.projectId);
+      const ownerRef = firstString(declaration.ownerRef);
+      const commandId = firstString(declaration.commandId);
+      const resource = resourceById.get(targetRef);
+      const command = resource?.commands.find((item) => item.id === commandId);
+      const commandIsSafe = command && ["run_health", "run_verify"].includes(command.intent) && command.autoExecutable && command.ownerRef === ownerRef;
+      const trigger = declaration.trigger === "interval" ? "interval" : "manual";
+      const intervalSeconds = Number.isInteger(declaration.intervalSeconds) && declaration.intervalSeconds > 0 ? declaration.intervalSeconds : null;
+      const declarationEvidenceRef = addGovernanceEvidence(evidence, {
+        id: `evidence:${id}:declaration`,
+        source: graphPath,
+        evidenceType: "declaration",
+        observedAt: now.toISOString(),
+        confidence: "high",
+        status: "declared",
+        subjectRef: id,
+        artifactRef: graphPath,
+        now,
+      });
+      const enabled = declaration.enabled !== false;
+      const status = !targetRef || !ownerRef || !commandId ? "unregistered" : !enabled ? "paused" : !commandIsSafe || (trigger === "interval" && !intervalSeconds) ? "blocked" : "enabled";
+      const persisted = persistedById.get(id);
+      return {
+        id,
+        targetRef: targetRef || "unknown",
+        ownerRef: ownerRef || "unknown",
+        source: firstString(declaration.source, graphPath),
+        commandId: commandId || "unregistered",
+        policyAction: "execute",
+        trigger,
+        ...(intervalSeconds ? { intervalSeconds } : {}),
+        status,
+        enabled,
+        evidenceRefs: [declarationEvidenceRef],
+        ...(validIsoDate(persisted?.lastRunAt || declaration.lastRunAt) ? { lastRunAt: validIsoDate(persisted?.lastRunAt || declaration.lastRunAt) } : {}),
+      };
+    });
+}
+
+function aggregateGovernanceFreshness(evidence, refs) {
+  const values = refs.map((ref) => evidence.find((item) => item.id === ref)?.freshness).filter(Boolean);
+  if (values.includes("stale")) return "stale";
+  if (values.includes("unknown")) return "unknown";
+  if (values.includes("fresh")) return "fresh";
+  return "not_configured";
+}
+
+function normalizeGovernanceConfidence(value) {
+  return ["low", "medium", "high"].includes(value) ? value : "medium";
+}
+
+function governanceStrings(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((item) => typeof item === "string" && item.trim()).map((item) => item.trim()))];
+}
+
+function declaredAbsolutePath(value, basePath) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const trimmed = value.trim();
+  return isForeignAbsolutePath(trimmed) ? trimmed : resolve(basePath, trimmed);
+}
+
+function isForeignAbsolutePath(value) {
+  return /^[A-Za-z]:[\\/]/.test(String(value || "")) || String(value || "").startsWith("\\\\");
+}
+
+function validIsoDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function resolveRegisteredProjectPath({ id, workspaceRoot, graph, registry, registryPath }) {
+  const registryEntry = readGovernanceRegistryEntries(registry).find((entry) => entry.id === id);
+  const registryPathValue = declaredAbsolutePath(registryEntry?.path, dirname(registryPath));
+  if (registryPathValue) return registryPathValue;
+  return declaredAbsolutePath(graph?.projects?.[id]?.path, workspaceRoot);
+}
+
+function resolveOptionalPath({ workspaceRoot, envNames = [], declaredPath = "", canonicalRelative = [], legacyRelative = [] }) {
+  const configured = firstString(...envNames.map((name) => process.env[name]));
+  if (configured) return isForeignAbsolutePath(configured) ? configured : resolve(workspaceRoot, configured);
+  if (declaredPath) return declaredPath;
+  const candidates = [];
+  if (canonicalRelative.length) candidates.push(join(workspaceRoot, ...canonicalRelative));
+  if (legacyRelative.length) candidates.push(join(workspaceRoot, ...legacyRelative));
+  return candidates.find((candidate) => existsSync(candidate)) || "";
+}
+
+function pathBackedStatus(path) {
+  return path ? isForeignAbsolutePath(path) ? "unknown" : (existsSync(path) ? "available" : "missing") : "unknown";
+}
+
 function buildResource({ id, project, graph, workspaceRoot }) {
-  const path = project.path || "";
+  const path = declaredAbsolutePath(project.path, workspaceRoot);
   const commands = [];
   for (const [index, command] of (project.health || []).entries()) {
     commands.push(makeCommand({ ownerId: id, intent: "run_health", label: `Run ${id} health`, command, cwd: path || workspaceRoot, index }));
@@ -210,14 +3211,17 @@ function buildResource({ id, project, graph, workspaceRoot }) {
   for (const [index, command] of (project.verify || []).entries()) {
     commands.push(makeCommand({ ownerId: id, intent: "run_verify", label: `Run ${id} verify`, command, cwd: path || workspaceRoot, index }));
   }
+  for (const [index, command] of (project.remediation || []).entries()) {
+    commands.push(makeCommand({ ownerId: id, intent: "run_remediation", label: `Run ${id} remediation`, command, cwd: path || workspaceRoot, index }));
+  }
 
   return {
     id,
-    name: titleFromId(id),
+    name: firstString(project.name, titleFromId(id)),
     layer: classifyLayer(id, project),
     kind: project.kind || "resource",
     path,
-    status: existsSync(path) ? "available" : "missing",
+    status: path ? (existsSync(path) ? "available" : "missing") : "unknown",
     provides: project.provides || [],
     consumes: project.consumes || [],
     contracts: project.contracts || [],
@@ -395,11 +3399,14 @@ function classifyLayer(id, project) {
 function makeCommand({ ownerId, intent, label, command, cwd, index }) {
   return {
     id: `${ownerId}:${intent}:${index}`,
+    ownerRef: ownerId,
+    source: "workspace.graph",
+    executorRef: "control-plane.registered-command",
     intent,
     label,
     command,
     cwd,
-    autoExecutable: isSafeRegisteredCommand(command),
+    autoExecutable: intent !== "run_remediation" && isSafeRegisteredCommand(command),
   };
 }
 
@@ -435,7 +3442,7 @@ function normalizeText(text) {
   }
 }
 
-async function handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks = new Map(), approvals = new Map(), agentTaskExecutor = executeAgentTask, codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex" }) {
+async function handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks = new Map(), approvals = new Map(), agentTaskExecutor = executeAgentTask, codexBin = "codex", appServerBin = "/Applications/Codex.app/Contents/Resources/codex", policyEvaluator = null }) {
   const envelope = normalizeIMEnvelope(input?.envelope || input || {});
   if (envelopeRuns.has(envelope.id)) {
     return runs.get(envelopeRuns.get(envelope.id));
@@ -461,15 +3468,49 @@ async function handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, en
     run.summary = `已拒绝执行：${parsed.blockedReason}`;
     run.actions.push({ status: "blocked", summary: run.summary });
   } else if (parsed.intent === "start_agent_task") {
-    const task = createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin });
-    run.targetId = parsed.targetId;
-    run.summary = task.summary || `已创建受管 AgentTask：${task.id}`;
-    run.actions.push({ status: task.status === "failed" ? "failed" : "succeeded", summary: run.summary, stdout: JSON.stringify(task) });
-    run.metadata = { agentTaskId: task.id, runtime: task.runtime, requestedRuntime: task.requestedRuntime };
+    const policy = await evaluateExecutionPolicy(policyEvaluator, { resourceRef: parsed.targetId || "workspace", action: "execute", correlationId: envelope.id });
+    if (!policy.ok) {
+      run.accepted = false;
+      run.blockedReason = policy.reason;
+      run.summary = `已拒绝执行：${policy.reason}`;
+      run.actions.push({ status: "blocked", summary: run.summary });
+      run.metadata = { policyDecisionRef: policy.decisionRef };
+    } else {
+      const task = createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin, policyDecisionRef: policy.decisionRef });
+      run.targetId = parsed.targetId;
+      run.summary = task.summary || `已创建受管 AgentTask：${task.id}`;
+      run.actions.push({ status: task.status === "failed" ? "failed" : "succeeded", summary: run.summary, stdout: JSON.stringify(task), evidenceRefs: task.evidenceRefs || [] });
+      run.metadata = {
+        agentTaskId: task.id,
+        runtime: task.runtime,
+        requestedRuntime: task.requestedRuntime,
+        ...(policy.decisionRef ? { policyDecisionRef: policy.decisionRef } : {}),
+        ...(task.riskRef ? { riskRef: task.riskRef } : {}),
+        ...(task.incidentRef ? { incidentRef: task.incidentRef } : {}),
+      };
+    }
   } else if (parsed.command && input?.dryRun !== true) {
-    const result = executeManagedCommand(parsed.command);
-    run.actions.push(result);
-    run.summary = summarizeExecution(parsed, result);
+    const policy = await evaluateExecutionPolicy(policyEvaluator, { resourceRef: parsed.targetId || "workspace", action: "execute", correlationId: envelope.id });
+    if (!policy.ok) {
+      run.accepted = false;
+      run.blockedReason = policy.reason;
+      run.summary = `已拒绝执行：${policy.reason}`;
+      run.actions.push({ status: "blocked", summary: run.summary });
+      run.metadata = { policyDecisionRef: policy.decisionRef };
+    } else {
+      const result = executeManagedCommand(parsed.command);
+      const issue = result.status === "failed"
+        ? createExecutionIssue({ cacheDir, workspaceRoot, targetRef: parsed.targetId || "workspace", riskType: "command_failure", severity: "critical", likelihood: "likely", reason: result.summary, sourceAssessmentRef: null, policyDecisionRef: policy.decisionRef, correlationId: envelope.id })
+        : null;
+      const executionEvidence = result.status === "succeeded" ? createExecutionEvidence({ cacheDir, targetRef: parsed.targetId || "workspace", status: "succeeded" }) : null;
+      result.evidenceRefs = issue?.risk.evidenceRefs || (executionEvidence ? [executionEvidence.id] : []);
+      run.actions.push(result);
+      run.summary = summarizeExecution(parsed, result);
+      run.metadata = {
+        ...(policy.decisionRef ? { policyDecisionRef: policy.decisionRef } : {}),
+        ...(issue ? { riskRef: issue.risk.id, incidentRef: issue.incident.id } : {}),
+      };
+    }
   } else {
     run.summary = summarizeIntent(parsed, snapshot);
     if (parsed.command) {
@@ -482,7 +3523,82 @@ async function handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, en
   return run;
 }
 
-async function handleCommunicationMessage({ input, options, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin, memoryProjectReader }) {
+async function evaluateExecutionPolicy(policyEvaluator, input) {
+  if (typeof policyEvaluator !== "function") return { ok: true };
+  const response = await policyEvaluator(input);
+  const decision = response?.decision || {};
+  if (decision.decision === "allow") return { ok: true, decisionRef: decision.id };
+  return {
+    ok: false,
+    decisionRef: decision.id,
+    reason: `Workspace policy ${decision.decision || "deny"}: ${decision.reason || "no_matching_grant"}`,
+  };
+}
+
+function evaluateSurfaceExecutionPolicy({ input, policyInput, workspaceRoot, registryPath, cacheDir }) {
+  const envelope = input?.envelope || input || {};
+  const actorRef = firstString(input?.subjectRef, envelope?.subjectRef, envelope?.senderId) || "unknown";
+  const response = evaluateConfiguredGovernancePolicy({
+    input: { ...policyInput, subjectRef: actorRef },
+    workspaceRoot,
+    registryPath,
+    cacheDir,
+  });
+  appendAuditRecord(cacheDir, {
+    eventType: "policy_decision.evaluated",
+    actorRef,
+    scopeRef: firstString(policyInput?.scopeRef) || "workspace",
+    objectRef: firstString(policyInput?.resourceRef) || "unknown",
+    action: firstString(policyInput?.action) || "execute",
+    correlationId: firstString(policyInput?.correlationId) || response.decision.id,
+    policyDecisionRef: response.decision.id,
+    evidenceRefs: response.decision.evidenceRefs,
+    result: response.decision.decision,
+    status: response.decision.decision,
+  });
+  return response;
+}
+
+function requirePolicyDecisionRef(enforceExecutionPolicy, policyDecisionRef, action, cacheDir, { allowApproval = false, resourceRef = "", action: expectedAction = "", subjectRef = "" } = {}) {
+  if (!enforceExecutionPolicy) return null;
+  const expected = { resourceRef, action: expectedAction };
+  const reference = firstString(policyDecisionRef);
+  if (!/^policy-decision:[A-Za-z0-9-]+$/.test(reference)) {
+    return {
+      ok: false,
+      accepted: false,
+      httpStatus: 403,
+      status: 403,
+      error: `policy decision required before ${action}`,
+    };
+  }
+  const decision = readJson(join(cacheDir || "", "policy-decisions", `${safeFileName(reference)}.json`), null);
+  if (!decision) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision not found before ${action}` };
+  }
+  if (!subjectRef) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision subject required before ${action}` };
+  }
+  if (expected.resourceRef && decision.resourceRef !== expected.resourceRef) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision resource does not match ${action}` };
+  }
+  if (expected.action && decision.action !== expected.action) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision action does not match ${action}` };
+  }
+  if (subjectRef && decision.subjectRef !== subjectRef) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision subject does not match ${action}` };
+  }
+  if (decision.decision !== "allow" && !(allowApproval && decision.decision === "require_approval")) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision ${decision.decision || "deny"} cannot authorize ${action}` };
+  }
+  const expiresAt = dateFromValue(decision.expiresAt);
+  if (expiresAt && expiresAt.getTime() <= Date.now()) {
+    return { ok: false, accepted: false, httpStatus: 403, status: 403, error: `policy decision expired before ${action}` };
+  }
+  return null;
+}
+
+async function handleCommunicationMessage({ input, options, workspaceRoot, graphPath, cacheDir, runs, envelopeRuns, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin, memoryProjectReader, policyEvaluator = null }) {
   const direction = firstString(input?.direction, input?.messageDirection) || "inbound";
   if (direction !== "inbound") {
     return {
@@ -522,10 +3638,11 @@ async function handleCommunicationMessage({ input, options, workspaceRoot, graph
       envelopeRuns,
       agentTasks,
       approvals,
-      agentTaskExecutor,
-      codexBin,
-      appServerBin,
-    });
+        agentTaskExecutor,
+        codexBin,
+        appServerBin,
+        policyEvaluator,
+      });
 
   return {
     ignored: false,
@@ -574,6 +3691,10 @@ function parseIntent(text, snapshot) {
   if (blockedReason) return { intent: "blocked_action", blockedReason };
 
   const target = findTargetResource(query, snapshot);
+  if (/(remediation|remediate|修复|整改|恢复|补救)/i.test(query)) {
+    const command = target?.commands.find((item) => item.intent === "run_remediation");
+    return command ? { intent: "run_remediation", targetId: target.id, command } : { intent: "status_query", targetId: target?.id };
+  }
   if (/(agent|codex|执行|开始|启动|处理)/i.test(lowered)) {
     return { intent: "start_agent_task", targetId: target?.id };
   }
@@ -670,7 +3791,7 @@ function summarizeExecution(parsed, result) {
   return `${target}${parsed.intent} 执行失败。${result.summary}`;
 }
 
-function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, agentTaskExecutor, codexBin, appServerBin }) {
+function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, agentTaskExecutor, codexBin, appServerBin, policyDecisionRef = null }) {
   const snapshot = buildSnapshot({ workspaceRoot, graphPath: join(workspaceRoot, "workspace.graph.json"), agentTasks, approvals: new Map(), codexBin, appServerBin });
   const target = parsed.targetId ? snapshot.resources.find((item) => item.id === parsed.targetId) : null;
   const requestedRuntime = input?.runtimePreference || envelope.raw?.runtimePreference || (envelope.channel === "mosscoder" ? "codex_app" : "codex_cli");
@@ -685,6 +3806,7 @@ function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, age
     prompt: envelope.text,
     targetId: parsed.targetId,
     cwd: target?.path || workspaceRoot,
+    ...(policyDecisionRef ? { policyDecisionRef } : {}),
     summary: requestedRuntime !== runtime ? `codex_app 不可用，已降级到 ${runtime}。` : `已使用 ${runtime} 创建受管任务。`,
     createdAt: now,
     startedAt: now,
@@ -703,11 +3825,117 @@ function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, age
     task.stderr = result.stderr;
     task.completedAt = new Date().toISOString();
   }
+  const issue = task.status === "failed"
+    ? createExecutionIssue({ cacheDir, workspaceRoot, targetRef: task.targetId || task.id, riskType: "agent_task_failure", severity: "critical", likelihood: "likely", reason: task.summary || "受管 AgentTask 执行失败。", sourceAssessmentRef: task.id, policyDecisionRef, correlationId: firstString(envelope.raw?.correlationId) || envelope.id })
+    : null;
+  if (issue) {
+    task.riskRef = issue.risk.id;
+    task.incidentRef = issue.incident.id;
+    task.evidenceRefs = issue.risk.evidenceRefs;
+  } else if (task.status === "succeeded") {
+    const evidence = createExecutionEvidence({ cacheDir, targetRef: task.targetId || task.id, status: "succeeded", artifactRef: null, observedAt: task.completedAt });
+    task.evidenceRefs = evidence ? [evidence.id] : [];
+  }
   persistAgentTask(cacheDir, task);
+  appendAuditRecord(cacheDir, {
+    auditKind: "agent_task.created",
+    taskId: task.id,
+    actorRef: envelope.senderId,
+    objectRef: task.id,
+    action: "create",
+    correlationId: firstString(envelope.raw?.correlationId) || envelope.id,
+    policyDecisionRef: policyDecisionRef || null,
+    status: task.status,
+  });
   return task;
 }
 
-function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
+function createMobileProjectAction({ input = {}, approvedApprovalId = null, policyDecisionRef = null, forceApproval = false, workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
+  const rawExecutionFields = ["text", "command", "cwd", "workdir", "workingDirectory", "envelope"]
+    .filter((key) => Object.hasOwn(input, key));
+  if (rawExecutionFields.length) {
+    return { ok: false, httpStatus: 400, error: `mobile project actions do not accept raw execution fields: ${rawExecutionFields.join(", ")}` };
+  }
+  const resolved = resolveMobileProjectAction({ input, workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  if (!resolved.ok) return resolved;
+  const envelope = buildMobileProjectActionEnvelope({ input, action: resolved.action });
+  return createControlJob({
+    input: { ...input, envelope },
+    resolvedMobileAction: { ...resolved, approvedApprovalId, policyDecisionRef, forceApproval },
+    workspaceRoot,
+    graphPath,
+    cacheDir,
+    jobs,
+    jobEnvelopeIndex,
+    agentTasks,
+    approvals,
+    roleAgentExecutor,
+    axiAgentTaskExecutor,
+    codexBin,
+    appServerBin,
+    heartbeatMs,
+    memoryDatabaseUrl,
+  });
+}
+
+function resolveMobileProjectAction({ input = {}, workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin }) {
+  const projectId = String(input.projectId || "").trim();
+  const actionId = String(input.actionId || "").trim();
+  const actionType = String(input.actionType || "").trim();
+  const mobileSnapshot = buildMobileWorkspaceSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  const project = mobileSnapshot.projects.find((item) => item.id === projectId);
+  if (!project) return { ok: false, httpStatus: 404, error: "project not found" };
+  const action = project.actions.find((item) => item.actionId === actionId);
+  if (!action) return { ok: false, httpStatus: 422, error: "unsupported mobile project action" };
+  if (action.actionType !== actionType) return { ok: false, httpStatus: 422, error: "actionType does not match registered action" };
+
+  const snapshot = buildSnapshot({ workspaceRoot, graphPath, agentTasks, approvals, codexBin, appServerBin });
+  const resource = snapshot.resources.find((item) => item.id === projectId);
+  if (!resource || resource.status !== "available") return { ok: false, httpStatus: 422, error: "project is not available for managed action" };
+  const command = action.executionMode === "immediate"
+    ? resource.commands.find((item) => item.id === action.commandId && isMobileReadOnlyHealthCommand(item))
+    : null;
+  if (action.executionMode === "immediate" && !command) {
+    return { ok: false, httpStatus: 422, error: "registered action is no longer safe to execute" };
+  }
+  return { ok: true, project, resource, action, command };
+}
+
+function buildMobileProjectActionEnvelope({ input, action }) {
+  const idempotencyKey = String(input.idempotencyKey || "").trim();
+  return {
+    id: `mobile-action:${idempotencyKey}`,
+    channel: "axi-mobile",
+    conversationId: `mobile:${input.deviceId || "paired-owner"}`,
+    senderId: input.deviceId || "paired-owner",
+    text: action.label,
+    receivedAt: new Date().toISOString(),
+    raw: {
+      source: "mobile_project_action",
+      projectId: input.projectId,
+      actionId: action.actionId,
+      actionType: action.actionType,
+      idempotencyKey,
+    },
+  };
+}
+
+function assessProjectDiagnosis() {
+  return {
+    kind: "ops",
+    complexity: "small",
+    estimatedDuration: "sync",
+    requiresOrchestration: false,
+    requiresAudit: true,
+    requiresApproval: true,
+    requiresLibrarian: false,
+    risk: "medium",
+    summary: "项目只读诊断，需要 owner 明确审批",
+    nextUpdateSeconds: 30,
+  };
+}
+
+function createControlJob({ input, resolvedMobileAction = null, approvedApprovalId = null, forceApproval = false, approvalSource = "desktop", workspaceRoot, graphPath, cacheDir, jobs, jobEnvelopeIndex, agentTasks, approvals, roleAgentExecutor, axiAgentTaskExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl }) {
   const envelope = normalizeIMEnvelope(input?.envelope || input || {});
   if (jobEnvelopeIndex.has(envelope.id)) {
     const existingId = jobEnvelopeIndex.get(envelope.id);
@@ -715,13 +3943,70 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
     return buildJobAcceptedResult(existing, latestJobEvent({ cacheDir, id: existingId }));
   }
 
-  const registeredCommand = selectReadOnlyRegisteredCommand({ text: envelope.text, workspaceRoot, graphPath });
-  const axiAgentTask = registeredCommand ? null : selectAxiAgentTask({ text: envelope.text, workspaceRoot, graphPath });
+  const registeredCommand = resolvedMobileAction?.action.executionMode === "immediate"
+    ? { targetId: resolvedMobileAction.project.id, command: resolvedMobileAction.command }
+    : selectRegisteredCommand({ text: envelope.text, workspaceRoot, graphPath });
+  const projectDiagnosis = resolvedMobileAction?.action.executionMode === "requires_approval"
+    ? { targetId: resolvedMobileAction.project.id, project: resolvedMobileAction.project, resource: resolvedMobileAction.resource, action: resolvedMobileAction.action }
+    : null;
+  const axiAgentTask = registeredCommand || projectDiagnosis ? null : selectAxiAgentTask({ text: envelope.text, workspaceRoot, graphPath });
   const assessment = registeredCommand
-    ? assessReadOnlyRegisteredCommand()
-    : axiAgentTask
+    ? assessRegisteredCommand(registeredCommand.command)
+    : projectDiagnosis
+      ? assessProjectDiagnosis()
+      : axiAgentTask
       ? assessAxiAgentTask(axiAgentTask)
       : assessTask(envelope.text);
+
+  // DevHub / Axi Mobile stage-B item 7: requiresApproval gate.
+  // When the assessment says the action needs explicit owner approval,
+  // we DO NOT enqueue the job.  Instead we file a pending ApprovalRequest
+  // that the owner reviews via the existing decideApproval path; once
+  // approved, decideApproval re-enters createControlJob with the same
+  // envelope id and the gate short-circuits because the envelope id is
+  // already indexed by the approval entry.  The replay-safe index
+  // (jobEnvelopeIndex) is intentionally NOT populated here so a future
+  // direct createJob() with the same envelope id would still be gated
+  // by the approval's riskLevel rather than collapsing to a duplicate.
+  if ((forceApproval || assessment.requiresApproval || resolvedMobileAction?.forceApproval) && !approvedApprovalId && !resolvedMobileAction?.approvedApprovalId) {
+    const approval = {
+      id: `apr_${randomUUID()}`,
+      routeKey: envelope.raw?.routeKey || envelope.channel || "mobile",
+      runId: undefined,
+      taskId: undefined,
+      actionSummary: assessment.summary,
+      riskLevel: assessment.risk,
+      status: "pending",
+      source: resolvedMobileAction ? "mobile_project_action" : approvalSource,
+      sourceDeviceId: input?.deviceId || null,
+      projectId: input?.projectId || null,
+      actionId: input?.actionId || null,
+      idempotencyKey: input?.idempotencyKey || null,
+      actionType: input?.actionType || null,
+      actionLevel: resolvedMobileAction?.action.actionLevel || approvalActionLevel({ riskLevel: assessment.risk }),
+      policyDecisionRef: firstString(input?.__policyDecisionRef, resolvedMobileAction?.policyDecisionRef) || null,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + APPROVAL_TTL_MS).toISOString(),
+      envelopeId: envelope.id,
+      envelopeText: envelope.text,
+    };
+    approvals.set(approval.id, approval);
+    persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+    appendAuditRecord(cacheDir, {
+      auditKind: "approval_requested",
+      approvalId: approval.id,
+      deviceId: approval.sourceDeviceId,
+      idempotencyKey: approval.idempotencyKey,
+      projectId: approval.projectId,
+      actionId: approval.actionId,
+      actionType: approval.actionType,
+      riskLevel: approval.riskLevel,
+      policyDecisionRef: approval.policyDecisionRef || null,
+      occurredAt: Math.floor(Date.now() / 1000),
+    });
+    return { status: "pending_approval", approvalId: approval.id, riskLevel: approval.riskLevel, actionSummary: approval.actionSummary, expiresAt: approval.expiresAt };
+  }
+
   const now = new Date();
   const job = {
     id: randomUUID(),
@@ -737,7 +4022,11 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
     metadata: {
       requestedRuntime: envelope.raw?.runtimePreference || (envelope.channel === "mosscoder" ? "codex_app" : "codex_cli"),
       workspaceRoot,
+      ...(resolvedMobileAction?.approvedApprovalId ? { approvalId: resolvedMobileAction.approvedApprovalId } : {}),
+      ...(approvedApprovalId ? { approvalId: approvedApprovalId } : {}),
+      ...(firstString(input?.__policyDecisionRef, resolvedMobileAction?.policyDecisionRef) ? { policyDecisionRef: firstString(input?.__policyDecisionRef, resolvedMobileAction?.policyDecisionRef) } : {}),
       ...(registeredCommand ? { executionMode: "registered_command", commandId: registeredCommand.command.id } : {}),
+      ...(projectDiagnosis ? { executionMode: "project_diagnosis", actionId: projectDiagnosis.action.actionId, reasonCode: projectDiagnosis.project.reasonCode } : {}),
       ...(axiAgentTask ? { executionMode: "axi_agent", operation: axiAgentTask.operation } : {}),
     },
   };
@@ -751,7 +4040,9 @@ function createControlJob({ input, workspaceRoot, graphPath, cacheDir, jobs, job
   setImmediate(() => {
     const execution = registeredCommand
       ? runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agentTasks })
-      : axiAgentTask
+      : projectDiagnosis
+        ? runProjectDiagnosisJob({ job, projectDiagnosis, cacheDir, jobs, agentTasks })
+        : axiAgentTask
         ? runAxiAgentJob({ job, axiAgentTask, cacheDir, jobs, agentTasks, axiAgentTaskExecutor })
         : runWorkflowJob({ job, workspaceRoot, cacheDir, jobs, roleAgentExecutor, codexBin, appServerBin, heartbeatMs, memoryDatabaseUrl });
     Promise.resolve(execution).catch((error) => failJob(cacheDir, job, `workflow runtime 失败：${error?.message || String(error)}`));
@@ -795,22 +4086,29 @@ function buildJobAcceptedResponse(job) {
 }
 
 function selectReadOnlyRegisteredCommand({ text, workspaceRoot, graphPath }) {
+  const selected = selectRegisteredCommand({ text, workspaceRoot, graphPath });
+  return selected?.command.intent === "run_health" && selected.command.autoExecutable ? selected : null;
+}
+
+function selectRegisteredCommand({ text, workspaceRoot, graphPath }) {
   const snapshot = buildSnapshot({ workspaceRoot, graphPath });
   const parsed = parseIntent(text, snapshot);
-  if (parsed.intent !== "run_health" || !parsed.command?.autoExecutable) return null;
+  if (!parsed.command || !["run_health", "run_verify", "run_remediation"].includes(parsed.intent)) return null;
   return { targetId: parsed.targetId, command: parsed.command };
 }
 
-function assessReadOnlyRegisteredCommand() {
+function assessRegisteredCommand(command) {
+  const remediation = command.intent === "run_remediation";
   return {
     kind: "ops",
     complexity: "small",
     estimatedDuration: "sync",
     requiresOrchestration: false,
     requiresAudit: true,
+    requiresApproval: remediation,
     requiresLibrarian: false,
-    risk: "low",
-    summary: "ops / small / registered read-only command",
+    risk: remediation ? "high" : "low",
+    summary: remediation ? "ops / high / registered remediation command，需要 owner 审批" : "ops / small / registered read-only command",
     nextUpdateSeconds: 30,
   };
 }
@@ -868,6 +4166,7 @@ function assessAxiAgentTask(task = {}) {
     estimatedDuration: "sync",
     requiresOrchestration: false,
     requiresAudit: true,
+    requiresApproval: false,
     requiresLibrarian: false,
     risk: "low",
     summary: isToolResult ? "ops / small / axi-agent readonly tool result" : "code / small / axi-agent quality gate",
@@ -886,7 +4185,7 @@ function runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agent
     prompt: job.envelope.text,
     targetId: registeredCommand.targetId,
     cwd: registeredCommand.command.cwd,
-    summary: "执行已登记的只读健康检查命令。",
+    summary: registeredCommand.command.intent === "run_remediation" ? "执行已登记且经审批的整改命令。" : "执行已登记的只读命令。",
     createdAt: now,
     startedAt: now,
   };
@@ -894,7 +4193,7 @@ function runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agent
   job.metadata = { ...job.metadata, agentTaskId: task.id };
   persistAgentTask(cacheDir, task);
   persistJob(cacheDir, job);
-  transitionJob(cacheDir, job, "executing", `通过受管 AgentTask 执行 ${registeredCommand.targetId} 只读健康检查。`);
+  transitionJob(cacheDir, job, "executing", `通过受管 AgentTask 执行 ${registeredCommand.targetId} ${registeredCommand.command.intent}。`);
   appendJobEvent(cacheDir, job, {
     type: "agent_run",
     status: "executing",
@@ -902,14 +4201,14 @@ function runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agent
     data: { taskId: task.id, commandId: registeredCommand.command.id },
   });
 
-  const result = executeManagedCommand(registeredCommand.command);
+  const result = executeManagedCommand(registeredCommand.command, { allowRegisteredRemediation: Boolean(job.metadata?.approvalId) });
   task.status = result.status === "succeeded" ? "succeeded" : "failed";
   task.summary = result.summary;
   task.stdout = result.stdout;
   task.stderr = result.stderr;
   task.completedAt = new Date().toISOString();
-  persistAgentTask(cacheDir, task);
-  persistJson(join(jobDir(cacheDir, job.id), "artifacts", "registered-command.json"), {
+  const artifactPath = join(jobDir(cacheDir, job.id), "artifacts", "registered-command.json");
+  persistJson(artifactPath, {
     taskId: task.id,
     targetId: task.targetId,
     commandId: registeredCommand.command.id,
@@ -920,6 +4219,11 @@ function runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agent
     exitCode: result.exitCode,
     completedAt: task.completedAt,
   });
+  if (task.status === "succeeded") {
+    const evidence = createExecutionEvidence({ cacheDir, targetRef: task.targetId, status: "succeeded", artifactRef: artifactPath, observedAt: task.completedAt });
+    task.evidenceRefs = evidence ? [evidence.id] : [];
+  }
+  persistAgentTask(cacheDir, task);
   appendJobEvent(cacheDir, job, {
     type: "agent_run",
     status: "executing",
@@ -931,21 +4235,114 @@ function runRegisteredCommandJob({ job, registeredCommand, cacheDir, jobs, agent
     id: randomUUID(),
     jobId: job.id,
     verdict: task.status === "succeeded" ? "pass" : "reject",
-    summary: task.status === "succeeded" ? "已登记只读命令执行并审计通过。" : "已登记只读命令执行失败。",
+    summary: task.status === "succeeded" ? "已登记命令执行并审计通过。" : "已登记命令执行失败。",
     findings: task.status === "succeeded" ? [] : [task.summary],
+    evidenceRefs: task.evidenceRefs || [],
     createdAt: new Date().toISOString(),
   };
   job.auditReport = audit;
   persistJson(join(jobDir(cacheDir, job.id), "audit-report.json"), audit);
   appendJobEvent(cacheDir, job, { type: "audit", status: "auditing", message: audit.summary, data: { verdict: audit.verdict, taskId: task.id } });
   if (task.status !== "succeeded") {
-    failJob(cacheDir, job, audit.summary);
-    jobs.set(job.id, job);
-    return job;
+    const failedJob = failJob(cacheDir, job, audit.summary);
+    task.evidenceRefs = failedJob.metadata?.evidenceRefs || [];
+    failedJob.auditReport = { ...audit, evidenceRefs: task.evidenceRefs };
+    persistAgentTask(cacheDir, task);
+    persistJson(join(jobDir(cacheDir, job.id), "audit-report.json"), failedJob.auditReport);
+    persistJob(cacheDir, failedJob);
+    jobs.set(job.id, failedJob);
+    return failedJob;
   }
 
-  transitionJob(cacheDir, job, "notified", "只读巡检结果已准备给通信层回推。");
-  transitionJob(cacheDir, job, "completed", "只读巡检执行完成。");
+  transitionJob(cacheDir, job, "notified", "注册命令结果已准备给通信层回推。");
+  transitionJob(cacheDir, job, "completed", "注册命令执行完成。");
+  job.completedAt = new Date().toISOString();
+  persistJob(cacheDir, job);
+  jobs.set(job.id, job);
+  return job;
+}
+
+function runProjectDiagnosisJob({ job, projectDiagnosis, cacheDir, jobs, agentTasks }) {
+  const now = new Date().toISOString();
+  const { project, resource, action } = projectDiagnosis;
+  const diagnosis = {
+    projectId: project.id,
+    projectName: project.name,
+    health: project.health,
+    reasonCode: project.reasonCode,
+    source: "workspace.graph",
+    checkedAt: now,
+    findings: [
+      { code: project.reasonCode, summary: mobileReasonSummary(project.reasonCode) },
+      { code: "progress", summary: project.progress?.summary || "尚未提供进展摘要。" },
+      { code: "evidence", summary: `已登记 ${project.progress?.evidenceCount || 0} 条证据。` },
+    ],
+    nextStep: project.actions.some((item) => item.actionId === "verify")
+      ? "可在项目详情执行重新核验。"
+      : "请根据诊断结果补充项目证据或更新交接信息。",
+  };
+  const task = {
+    id: randomUUID(),
+    routeKey: job.routeKey,
+    runtime: "project_diagnosis",
+    requestedRuntime: "project_diagnosis",
+    operation: "project_diagnosis",
+    status: "running",
+    prompt: `对 ${project.name} 执行受控只读诊断。仅复核控制面状态和登记证据；不读取凭据、不执行 Shell、不修改项目文件。`,
+    targetId: project.id,
+    cwd: resource.path,
+    readOnly: true,
+    projectFileWrite: false,
+    writeScope: [],
+    approvalId: job.metadata?.approvalId || null,
+    summary: "正在汇总项目状态与登记证据。",
+    createdAt: now,
+    startedAt: now,
+  };
+  agentTasks.set(task.id, task);
+  job.metadata = { ...job.metadata, agentTaskId: task.id, projectFileWrite: false };
+  persistAgentTask(cacheDir, task);
+  persistJob(cacheDir, job);
+  transitionJob(cacheDir, job, "executing", `通过受管 AgentTask 对 ${project.name} 执行只读诊断。`);
+  appendJobEvent(cacheDir, job, {
+    type: "agent_run",
+    status: "executing",
+    message: "project_diagnosis 开始：仅复核控制面状态和证据。",
+    data: { taskId: task.id, projectId: project.id, actionId: action.actionId, readOnly: true, projectFileWrite: false },
+  });
+
+  task.status = "succeeded";
+  task.summary = "只读诊断完成，未修改项目文件。";
+  task.stdout = JSON.stringify(diagnosis);
+  task.completedAt = new Date().toISOString();
+  persistAgentTask(cacheDir, task);
+  persistJson(join(jobDir(cacheDir, job.id), "artifacts", "project-diagnosis.json"), {
+    taskId: task.id,
+    targetId: task.targetId,
+    runtime: task.runtime,
+    readOnly: true,
+    projectFileWrite: false,
+    diagnosis,
+    completedAt: task.completedAt,
+  });
+  const audit = {
+    id: randomUUID(),
+    jobId: job.id,
+    verdict: "pass",
+    summary: "项目只读诊断已完成，未修改项目文件。",
+    findings: [],
+    createdAt: new Date().toISOString(),
+  };
+  job.auditReport = audit;
+  persistJson(join(jobDir(cacheDir, job.id), "audit-report.json"), audit);
+  appendJobEvent(cacheDir, job, {
+    type: "audit",
+    status: "auditing",
+    message: audit.summary,
+    data: { verdict: audit.verdict, taskId: task.id, projectFileWrite: false },
+  });
+  transitionJob(cacheDir, job, "notified", "只读诊断结果已准备给移动端展示。");
+  transitionJob(cacheDir, job, "completed", "项目只读诊断完成。");
   job.completedAt = new Date().toISOString();
   persistJob(cacheDir, job);
   jobs.set(job.id, job);
@@ -1333,6 +4730,7 @@ function assessTask(text) {
     estimatedDuration,
     requiresOrchestration: kind !== "chat",
     requiresAudit: ["code", "ops", "docs"].includes(kind),
+    requiresApproval: risk === "destructive",
     requiresLibrarian: kind !== "chat",
     risk,
     summary: `${kind} / ${complexity} / ${estimatedDuration}`,
@@ -1541,27 +4939,72 @@ async function executeAxiAgentTask({ operation, agentTaskId, prompt, gateIds, to
   };
 }
 
-function cancelAgentTask({ id, cacheDir, agentTasks }) {
+function cancelAgentTask({ id, cacheDir, agentTasks, policyDecisionRef = null }) {
   const task = agentTasks.get(id) || readJson(join(cacheDir, "agent-tasks", `${id}.json`), null);
   if (!task) return null;
   if (["succeeded", "failed", "cancelled"].includes(task.status)) return task;
   task.status = "cancelled";
   task.summary = "任务已取消。";
   task.completedAt = new Date().toISOString();
+  if (policyDecisionRef) task.policyDecisionRef = policyDecisionRef;
   agentTasks.set(id, task);
   persistAgentTask(cacheDir, task);
+  appendAuditRecord(cacheDir, {
+    auditKind: "agent_task.cancelled",
+    taskId: task.id,
+    actorRef: "control-plane",
+    objectRef: task.id,
+    action: "cancel",
+    correlationId: firstString(task.correlationId) || task.id,
+    policyDecisionRef: policyDecisionRef || task.policyDecisionRef || null,
+    status: task.status,
+  });
   return task;
 }
 
-function decideApproval({ input, cacheDir, approvals, agentTasks }) {
-  const approval = approvals.get(input.id) || readJson(join(cacheDir, "approvals", `${input.id}.json`), null);
+function decideApproval({ input, cacheDir, approvals, agentTasks, dispatchApprovedJob, dispatchApprovedMobileAction }) {
+  const storedApproval = approvals.get(input.id) || readJson(join(cacheDir, "approvals", `${input.id}.json`), null);
+  const approval = storedApproval ? normalizeApprovalRecord(storedApproval) : null;
   if (!approval) return null;
   if (approval.status !== "pending") return approval;
+  if (dateFromValue(approval.expiresAt)?.getTime() <= Date.now()) {
+    approval.status = "expired";
+    approval.decisionText = "审批已过期。";
+    approval.decidedAt = new Date().toISOString();
+    approvals.set(approval.id, approval);
+    persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+    appendAuditRecord(cacheDir, {
+      auditKind: "approval_expired",
+      approvalId: approval.id,
+      actorRef: "control-plane",
+      objectRef: firstString(approval.projectId, approval.taskId) || approval.id,
+      action: "approval_decision",
+      correlationId: firstString(approval.envelopeId, approval.id) || approval.id,
+      policyDecisionRef: approval.policyDecisionRef || null,
+      result: approval.status,
+      status: approval.status,
+    });
+    return approval;
+  }
   approval.status = input.decision === "approved" ? "approved" : "rejected";
   approval.decisionText = input.decisionText || "";
   approval.decidedAt = new Date().toISOString();
+  if (firstString(input.policyDecisionRef)) approval.decisionPolicyDecisionRef = firstString(input.policyDecisionRef);
   approvals.set(approval.id, approval);
   persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+  appendAuditRecord(cacheDir, {
+    auditKind: "policy_decision",
+    approvalId: approval.id,
+    actorRef: firstString(input.actorRef, input.subjectRef, input.deviceId) || "unknown",
+    objectRef: firstString(approval.projectId, approval.taskId) || approval.id,
+    action: "approval_decision",
+    beforeRef: "approval:pending",
+    afterRef: `approval:${approval.status}`,
+    correlationId: firstString(input.correlationId, approval.handoffCorrelationId, approval.envelopeId) || approval.id,
+    policyDecisionRef: firstString(input.policyDecisionRef, approval.policyDecisionRef) || approval.id,
+    result: approval.status,
+    status: approval.status,
+  });
   if (approval.taskId) {
     const task = agentTasks.get(approval.taskId);
     if (task && task.status === "awaiting_approval" && approval.status === "rejected") {
@@ -1571,14 +5014,95 @@ function decideApproval({ input, cacheDir, approvals, agentTasks }) {
       persistAgentTask(cacheDir, task);
     }
   }
+  // Mobile project actions are resolved afresh from the current registry.
+  // Approval replay never trusts client text, a working directory, or a shell command.
+  if (approval.status === "approved" && approval.source === "mobile_project_action" && dispatchApprovedMobileAction) {
+    const jobResult = dispatchApprovedMobileAction(approval);
+    const dispatchedId = jobResult?.job?.id || jobResult?.id;
+    if (dispatchedId) {
+      approval.dispatchedJobId = dispatchedId;
+    } else if (jobResult?.error) {
+      approval.dispatchError = jobResult.error;
+    }
+    persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+  }
+  // Legacy mobile-pairing approvals retain their historical bridge so existing
+  // non-project communication routes remain compatible.  The /mobile/v1/jobs
+  // endpoint no longer reaches this branch.
+  if (approval.status === "approved" && ["desktop", "mobile_pairing"].includes(approval.source) && dispatchApprovedJob) {
+    const seeded = {
+      __approvalSource: approval.source,
+      envelope: {
+        id: approval.envelopeId,
+        channel: "unknown",
+        conversationId: "control-plane",
+        senderId: "approval-bridge",
+        text: approval.envelopeText || "",
+        receivedAt: new Date().toISOString(),
+        raw: { routeKey: approval.routeKey, sourceDeviceId: approval.sourceDeviceId, projectId: approval.projectId, idempotencyKey: approval.idempotencyKey, actionType: approval.actionType },
+      },
+      idempotencyKey: approval.idempotencyKey,
+      actionType: approval.actionType,
+      projectId: approval.projectId,
+      deviceId: approval.sourceDeviceId,
+      __policyDecisionRef: approval.decisionPolicyDecisionRef || approval.policyDecisionRef || null,
+    };
+    const jobResult = dispatchApprovedJob(seeded);
+    const dispatchedId = jobResult?.job?.id || jobResult?.id;
+    if (dispatchedId) {
+      approval.dispatchedJobId = dispatchedId;
+      persistJson(join(cacheDir, "approvals", `${approval.id}.json`), approval);
+    }
+  }
   return approval;
 }
 
-function runCommandById({ commandId, workspaceRoot, graphPath, cacheDir, runs }) {
+function runAutomationById({ automationId, workspaceRoot, graphPath, cacheDir, runs, policyDecisionRef = null }) {
+  const snapshot = buildSnapshot({ workspaceRoot, graphPath, cacheDir });
+  const automation = snapshot.governance?.automations.find((item) => item.id === automationId);
+  if (!automation) return null;
+  if (automation.status !== "enabled") {
+    return {
+      id: randomUUID(),
+      envelope: { id: `automation:${automation.id}:${Date.now()}`, channel: "unknown", conversationId: "control-plane", senderId: "api", text: automation.id, receivedAt: new Date().toISOString() },
+      intent: "run_health",
+      targetId: automation.targetRef,
+      accepted: false,
+      blockedReason: `registered automation is ${automation.status}`,
+      summary: `已拒绝执行自动化：${automation.id} 未处于 enabled 状态。`,
+      actions: [{ commandId: automation.commandId, status: "blocked", summary: `自动化状态为 ${automation.status}。` }],
+      metadata: { automationId: automation.id, ...(policyDecisionRef ? { policyDecisionRef } : {}) },
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    };
+  }
+  const run = runCommandById({ commandId: automation.commandId, workspaceRoot, graphPath, cacheDir, runs, policyDecisionRef, automationId: automation.id });
+  if (!run) return null;
+  persistJson(join(cacheDir, "automations", `${safeFileName(automation.id)}.json`), { ...automation, lastRunAt: new Date().toISOString() });
+  appendAuditRecord(cacheDir, {
+    auditKind: "automation.executed",
+    actorRef: "control-plane",
+    objectRef: automation.id,
+    action: "execute",
+    correlationId: run.envelope.id,
+    policyDecisionRef: policyDecisionRef || null,
+    evidenceRefs: run.actions?.[0]?.evidenceRefs || [],
+    result: run.actions?.[0]?.status || "observed",
+    status: run.actions?.[0]?.status || "observed",
+  });
+  return run;
+}
+
+function runCommandById({ commandId, workspaceRoot, graphPath, cacheDir, runs, policyDecisionRef = null, automationId = null }) {
   const snapshot = buildSnapshot({ workspaceRoot, graphPath });
   const command = snapshot.resources.flatMap((resource) => resource.commands).concat(snapshot.profiles.flatMap((profile) => profile.commands)).find((item) => item.id === commandId);
   if (!command) return null;
   const result = executeManagedCommand(command);
+  const issue = result.status === "failed"
+    ? createExecutionIssue({ cacheDir, workspaceRoot, targetRef: command.ownerId || command.id.split(":")[0], riskType: "command_failure", severity: "critical", likelihood: "likely", reason: result.summary, sourceAssessmentRef: null, policyDecisionRef, correlationId: `command:${command.id}` })
+    : null;
+  const executionEvidence = result.status === "succeeded" ? createExecutionEvidence({ cacheDir, targetRef: command.ownerId || command.id.split(":")[0], status: "succeeded" }) : null;
+  result.evidenceRefs = issue?.risk.evidenceRefs || (executionEvidence ? [executionEvidence.id] : []);
   const run = {
     id: randomUUID(),
     envelope: {
@@ -1594,26 +5118,43 @@ function runCommandById({ commandId, workspaceRoot, graphPath, cacheDir, runs })
     blockedReason: result.status === "blocked" ? result.summary : undefined,
     summary: result.summary,
     actions: [result],
+    metadata: {
+      ...(automationId ? { automationId } : {}),
+      ...(policyDecisionRef ? { policyDecisionRef } : {}),
+      ...(issue ? { riskRef: issue.risk.id, incidentRef: issue.incident.id } : {}),
+    },
     createdAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
   };
   runs.set(run.id, run);
   persistRun(cacheDir, run);
+  appendAuditRecord(cacheDir, {
+    auditKind: "command.executed",
+    actorRef: "control-plane",
+    objectRef: command.id,
+    action: "execute",
+    correlationId: run.envelope.id,
+    policyDecisionRef: policyDecisionRef || null,
+    result: result.status,
+    status: result.status,
+  });
   return run;
 }
 
-function executeManagedCommand(command) {
+function executeManagedCommand(command, { allowRegisteredRemediation = false } = {}) {
   const blockedReason = blockedReasonFor(command.command);
-  if (!command.autoExecutable || blockedReason) {
+  const argv = parseRegisteredCommand(command.command);
+  const remediationApproved = command.intent === "run_remediation" && allowRegisteredRemediation;
+  if ((!command.autoExecutable && !remediationApproved) || !argv || blockedReason) {
     return {
       commandId: command.id,
       status: "blocked",
-      summary: blockedReason || "命令未声明为可自动执行。",
+      summary: blockedReason || "命令不是可自动执行的单一注册程序。",
     };
   }
-  const result = spawnSync(command.command, {
+  const result = spawnSync(argv[0], argv.slice(1), {
     cwd: command.cwd,
-    shell: true,
+    shell: false,
     encoding: "utf8",
     timeout: COMMAND_TIMEOUT_MS,
     maxBuffer: 1024 * 1024,
@@ -1626,6 +5167,59 @@ function executeManagedCommand(command) {
     stderr: truncate(result.stderr || result.error?.message || ""),
     exitCode: result.status,
   };
+}
+
+const REGISTERED_EXECUTABLES = new Set(["cargo", "node", "npm", "pnpm", "python", "python3", "swift", "test", "uv", "yarn"]);
+
+function parseRegisteredCommand(value) {
+  const source = String(value || "").trim();
+  if (!source || /[\r\n;&|<>`$]/.test(source)) return null;
+  const argv = [];
+  let token = "";
+  let quote = "";
+  let escaped = false;
+  const pushToken = () => {
+    if (token) argv.push(token);
+    token = "";
+  };
+
+  for (const character of source) {
+    if (escaped) {
+      token += character;
+      escaped = false;
+      continue;
+    }
+    if (quote === "'") {
+      if (character === "'") quote = "";
+      else token += character;
+      continue;
+    }
+    if (quote === '"') {
+      if (character === '"') quote = "";
+      else token += character;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (character === "'" || character === '"') {
+      quote = character;
+      continue;
+    }
+    if (/\s/.test(character)) {
+      pushToken();
+      continue;
+    }
+    token += character;
+  }
+  if (escaped || quote) return null;
+  pushToken();
+  if (!argv.length) return null;
+  const executable = argv[0].split("/").pop();
+  if (!REGISTERED_EXECUTABLES.has(executable) || argv[0].includes("=")) return null;
+  if (argv.some((argument) => argument.startsWith("="))) return null;
+  return argv;
 }
 
 function buildCommunicationResponse(run) {
@@ -1652,8 +5246,7 @@ function formatCommunicationReply(run) {
 }
 
 function isSafeRegisteredCommand(command) {
-  if (blockedReasonFor(command)) return false;
-  return true;
+  return !blockedReasonFor(command) && Boolean(parseRegisteredCommand(command));
 }
 
 function blockedReasonFor(text) {
@@ -1669,11 +5262,13 @@ function readGitStatus(projectPath) {
   if (inside.status !== 0) return null;
   const branch = spawnSync("git", ["branch", "--show-current"], { cwd: projectPath, encoding: "utf8", timeout: 5_000 });
   const status = spawnSync("git", ["status", "--porcelain"], { cwd: projectPath, encoding: "utf8", timeout: 5_000 });
+  const lastCommit = spawnSync("git", ["log", "-1", "--format=%cI"], { cwd: projectPath, encoding: "utf8", timeout: 5_000 });
   const changedEntries = status.stdout ? status.stdout.trim().split(/\r?\n/).filter(Boolean).length : 0;
   return {
     branch: branch.stdout.trim(),
     changedEntries,
     clean: changedEntries === 0,
+    lastCommitAt: lastCommit.status === 0 && lastCommit.stdout.trim() ? lastCommit.stdout.trim() : null,
   };
 }
 
@@ -1842,18 +5437,300 @@ function transitionJob(cacheDir, job, status, message, data = {}) {
   appendJobEvent(cacheDir, job, { type: status === "completed" ? "completed" : "status", status, message, data });
 }
 
+function createExecutionIssue({ cacheDir, workspaceRoot, targetRef, riskType, severity, likelihood, reason, sourceAssessmentRef = null, policyDecisionRef = null, correlationId }) {
+  if (!cacheDir) return null;
+  const detectedAt = new Date().toISOString();
+  const riskId = `risk:${randomUUID()}`;
+  const incidentId = `incident:${randomUUID()}`;
+  const owner = resolveGovernanceOwner({ workspaceRoot, targetRef });
+  const evidence = createExecutionEvidence({ cacheDir, targetRef, status: "failed", artifactRef: sourceAssessmentRef || null, observedAt: detectedAt });
+  const risk = {
+    id: riskId,
+    targetRef: firstString(targetRef) || "workspace",
+    riskType,
+    severity,
+    likelihood,
+    status: "open",
+    ownerRef: owner.ownerRef,
+    ownerSource: owner.source,
+    reason: firstString(reason) || "受控执行失败。",
+    sourceAssessmentRef,
+    impactSnapshotRef: null,
+    ...(policyDecisionRef ? { policyDecisionRef } : {}),
+    evidenceRefs: [evidence.id],
+    correlationId: firstString(correlationId) || riskId,
+    detectedAt,
+    dueAt: null,
+    resolvedAt: null,
+    source: "control-plane.execution",
+    incidentRef: incidentId,
+  };
+  const incident = {
+    id: incidentId,
+    riskRef: riskId,
+    targetRef: risk.targetRef,
+    severity,
+    status: "open",
+    ownerRef: owner.ownerRef,
+    ownerSource: owner.source,
+    summary: risk.reason,
+    evidenceRefs: [evidence.id],
+    correlationId: risk.correlationId,
+    createdAt: detectedAt,
+    resolvedAt: null,
+    source: "control-plane.execution",
+  };
+  persistJson(join(cacheDir, "risks", `${safeFileName(risk.id)}.json`), risk);
+  persistJson(join(cacheDir, "incidents", `${safeFileName(incident.id)}.json`), incident);
+  appendAuditRecord(cacheDir, {
+    auditKind: "risk.created",
+    actorRef: "control-plane",
+    objectRef: risk.targetRef,
+    action: "create",
+    correlationId: risk.correlationId,
+    policyDecisionRef: policyDecisionRef || null,
+    result: risk.status,
+    status: risk.status,
+    evidenceRefs: risk.evidenceRefs,
+  });
+  appendAuditRecord(cacheDir, {
+    auditKind: "incident.created",
+    actorRef: "control-plane",
+    objectRef: incident.targetRef,
+    action: "create",
+    correlationId: incident.correlationId,
+    policyDecisionRef: policyDecisionRef || null,
+    result: incident.status,
+    status: incident.status,
+    evidenceRefs: incident.evidenceRefs,
+  });
+  return { risk, incident };
+}
+
+function createExecutionEvidence({ cacheDir, targetRef, status, artifactRef = null, observedAt = new Date().toISOString(), observationKey = "" }) {
+  if (!cacheDir) return null;
+  const observed = validIsoDate(observedAt) || new Date().toISOString();
+  const expiresAt = new Date(new Date(observed).getTime() + GOVERNANCE_EXECUTION_EVIDENCE_TTL_MS).toISOString();
+  const evidence = {
+    id: `evidence:execution:${randomUUID()}`,
+    observationKey: firstString(observationKey, `execution:${targetRef || "workspace"}`),
+    source: "control-plane.execution",
+    evidenceType: "behavioral",
+    observedAt: observed,
+    observer: GOVERNANCE_OBSERVER,
+    confidence: "high",
+    expiresAt,
+    freshness: "fresh",
+    status,
+    subjectRef: firstString(targetRef) || "workspace",
+    artifactRef: artifactRef || null,
+  };
+  persistJson(join(cacheDir, "evidence", `${safeFileName(evidence.id)}.json`), evidence);
+  return evidence;
+}
+
+function resolveGovernanceOwner({ workspaceRoot, targetRef }) {
+  const target = firstString(targetRef);
+  if (!target || !workspaceRoot) return { ownerRef: "unknown", source: "unresolved" };
+  const registryPath = join(workspaceRoot, "infra", "axi-workspace-governance", "workspace.json");
+  const registryEntry = readGovernanceRegistryEntries(readJson(registryPath, null)).find((entry) => entry.id === target);
+  const registryOwner = firstString(registryEntry?.ownerRef, registryEntry?.owner);
+  if (registryOwner) return { ownerRef: registryOwner, source: "workspace.registry" };
+  const graphProject = readJson(join(workspaceRoot, "workspace.graph.json"), null)?.projects?.[target];
+  const graphOwner = firstString(graphProject?.ownerRef, graphProject?.owner);
+  if (graphOwner) return { ownerRef: graphOwner, source: "workspace.graph" };
+  return { ownerRef: "unknown", source: "unresolved" };
+}
+
+export function transitionGovernanceRisk({ input = {}, cacheDir }) {
+  const riskId = firstString(input.id);
+  if (!riskId || !cacheDir) return { ok: false, httpStatus: 404, error: "risk not found" };
+  const risk = readJson(join(cacheDir, "risks", `${safeFileName(riskId)}.json`), null);
+  if (!risk) return { ok: false, httpStatus: 404, error: "risk not found" };
+  const current = risk.status;
+  const next = firstString(input.status);
+  // TASK6: Support revoked transition from waived state
+  const transitions = {
+    open: new Set(["acknowledged", "resolved", "waived"]),
+    acknowledged: new Set(["open", "resolved", "waived"]),
+    resolved: new Set(),
+    waived: new Set(["revoked"]), // TASK6: Owner can revoke an active waiver
+  };
+  if (current === next) return { ok: true, risk, incident: risk.incidentRef ? readJson(join(cacheDir, "incidents", `${safeFileName(risk.incidentRef)}.json`), null) : null };
+  if (!transitions[current]?.has(next)) return { ok: false, httpStatus: 409, error: `risk transition not allowed: ${current} -> ${next}` };
+  const reason = firstString(input.reason);
+  if (["resolved", "waived", "revoked"].includes(next) && !reason) return { ok: false, httpStatus: 422, error: "reason is required when resolving, waiving, or revoking a risk" };
+  const now = new Date().toISOString();
+  risk.status = next;
+  risk.updatedAt = now;
+  if (reason) risk.statusReason = reason;
+  risk.resolvedAt = ["resolved", "waived", "revoked"].includes(next) ? now : null;
+
+  // TASK6: Record revocation metadata when transitioning to revoked state
+  if (next === "revoked") {
+    risk.revokedBy = firstString(input.actorRef, input.revokedBy, "unknown");
+    risk.revokedAt = now;
+  }
+
+  persistJson(join(cacheDir, "risks", `${safeFileName(risk.id)}.json`), risk);
+
+  const incident = risk.incidentRef
+    ? readJson(join(cacheDir, "incidents", `${safeFileName(risk.incidentRef)}.json`), null)
+    : null;
+  if (incident) {
+    incident.status = next === "open" ? "open" : next === "acknowledged" ? "acknowledged" : "resolved";
+    incident.updatedAt = now;
+    if (reason) incident.statusReason = reason;
+    incident.resolvedAt = ["resolved", "waived", "revoked"].includes(next) ? now : null;
+    persistJson(join(cacheDir, "incidents", `${safeFileName(incident.id)}.json`), incident);
+  }
+  const actorRef = firstString(input.actorRef) || "unknown";
+  const policyDecisionRef = firstString(input.policyDecisionRef) || null;
+  const correlationId = firstString(input.correlationId, risk.correlationId, risk.id) || risk.id;
+
+  // TASK6: Write revocation audit event with waiver metadata
+  if (next === "revoked") {
+    appendAuditRecord(cacheDir, {
+      auditKind: "waiver.revoked", // TASK6: Dedicated waiver revocation event
+      actorRef,
+      objectRef: risk.targetRef,
+      action: "revoke",
+      correlationId,
+      policyDecisionRef,
+      beforeRef: `risk:${current}`,
+      afterRef: `risk:${next}`,
+      result: next,
+      status: next,
+      // TASK6: Include waiver revocation metadata
+      riskRef: risk.id,
+      revokedBy: risk.revokedBy,
+      revokedAt: risk.revokedAt,
+      reason: reason || null,
+      sourceRiskRef: risk.id,
+    });
+  } else {
+    appendAuditRecord(cacheDir, {
+      auditKind: "risk.transitioned",
+      actorRef,
+      objectRef: risk.targetRef,
+      action: "manage",
+      correlationId,
+      policyDecisionRef,
+      beforeRef: `risk:${current}`,
+      afterRef: `risk:${next}`,
+      result: next,
+      status: next,
+    });
+  }
+  if (incident) appendAuditRecord(cacheDir, {
+    auditKind: "incident.transitioned",
+    actorRef,
+    objectRef: incident.targetRef,
+    action: "manage",
+    correlationId,
+    policyDecisionRef,
+    beforeRef: `incident:${current}`,
+    afterRef: `incident:${incident.status}`,
+    result: incident.status,
+    status: incident.status,
+  });
+  return { ok: true, risk, incident };
+}
+
+/**
+ * TASK6: External fact refresh interface.
+ * Reads declared external sources from workspace.graph.json and refreshes cached facts.
+ * Returns the refreshed facts and audit event IDs for traceability.
+ */
+export function refreshExternalFacts({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), cacheDir = "", targetIds = [] } = {}) {
+  const graph = readJson(graphPath, null);
+  if (!graph) return { ok: false, error: "workspace.graph.json not found", refreshedFacts: [], eventIds: [] };
+
+  const externalSources = Array.isArray(graph.externalFacts) ? graph.externalFacts : [];
+  if (externalSources.length === 0) return { ok: true, refreshedFacts: [], eventIds: [], count: 0, message: "No external facts declared" };
+
+  const refreshedFacts = [];
+  const eventIds = [];
+  const now = new Date().toISOString();
+
+  for (const source of externalSources) {
+    if (!source || typeof source !== "object") continue;
+    // Filter by targetIds if specified
+    if (targetIds.length > 0 && !targetIds.includes(source.id)) continue;
+
+    const fact = {
+      id: source.id || `external:${randomUUID()}`,
+      name: source.name || source.id || "Unknown",
+      type: source.type || "external",
+      source: source.source || "workspace.graph.externalFacts",
+      targetRef: source.targetRef || source.subjectRef || null,
+      status: "available",
+      refreshedAt: now,
+      data: source.data || null,
+      url: source.url || null,
+      lastFetchedAt: source.lastFetchedAt || null,
+    };
+
+    refreshedFacts.push(fact);
+
+    // Write audit event for the refresh
+    if (cacheDir) {
+      const eventId = `external-fact:${fact.id}:${Date.now()}`;
+      appendAuditRecord(cacheDir, {
+        auditKind: "external_fact.refreshed",
+        eventId,
+        actorRef: "control-plane:external-fact-refresh",
+        objectRef: fact.targetRef || fact.id,
+        action: "refresh",
+        correlationId: `external-fact:${fact.id}`,
+        result: "refreshed",
+        status: "refreshed",
+        sourceRef: fact.source,
+        targetRef: fact.targetRef,
+        factId: fact.id,
+        factName: fact.name,
+        factType: fact.type,
+      });
+      eventIds.push(eventId);
+    }
+  }
+
+  return {
+    ok: true,
+    refreshedFacts,
+    eventIds,
+    count: refreshedFacts.length,
+    refreshedAt: now,
+  };
+}
+
 function failJob(cacheDir, job, message) {
+  const issue = job.metadata?.riskRef
+    ? null
+    : createExecutionIssue({
+        cacheDir,
+        workspaceRoot: job.metadata?.workspaceRoot || "",
+        targetRef: firstString(job.metadata?.targetRef, job.metadata?.projectId, job.envelope?.raw?.projectId, job.id) || job.id,
+        riskType: "execution_failure",
+        severity: ["high", "destructive"].includes(job.assessment?.risk) ? "critical" : "warning",
+        likelihood: "likely",
+        reason: message,
+        sourceAssessmentRef: job.id,
+        policyDecisionRef: job.metadata?.policyDecisionRef || null,
+        correlationId: firstString(job.envelope?.id, job.id) || job.id,
+      });
+  if (issue) job.metadata = { ...(job.metadata || {}), riskRef: issue.risk.id, incidentRef: issue.incident.id, evidenceRefs: issue.risk.evidenceRefs };
   job.status = "failed";
   job.currentStage = "failed";
   job.summary = message;
   job.updatedAt = new Date().toISOString();
   job.completedAt = new Date().toISOString();
   persistJob(cacheDir, job);
-  appendJobEvent(cacheDir, job, { type: "failed", status: "failed", message });
+  appendJobEvent(cacheDir, job, { type: "failed", status: "failed", message, data: issue ? { riskRef: issue.risk.id, incidentRef: issue.incident.id } : {} });
   return job;
 }
 
-function cancelControlJob({ cacheDir, jobs, id }) {
+function cancelControlJob({ cacheDir, jobs, id, policyDecisionRef = null }) {
   const job = jobs.get(id) || readJson(join(cacheDir, "jobs", id, "job.json"), null);
   if (!job) return null;
   if (["completed", "failed", "cancelled", "policy_violation"].includes(job.status)) return job;
@@ -1862,9 +5739,22 @@ function cancelControlJob({ cacheDir, jobs, id }) {
   job.summary = "任务已取消。";
   job.updatedAt = new Date().toISOString();
   job.completedAt = new Date().toISOString();
+  if (policyDecisionRef) {
+    job.metadata = { ...(job.metadata || {}), lastPolicyDecisionRef: policyDecisionRef };
+  }
   jobs.set(id, job);
   persistJob(cacheDir, job);
-  appendJobEvent(cacheDir, job, { type: "cancelled", status: "cancelled", message: "任务已取消。" });
+  appendJobEvent(cacheDir, job, { type: "cancelled", status: "cancelled", message: "任务已取消。", data: { policyDecisionRef } });
+  appendAuditRecord(cacheDir, {
+    auditKind: "job.cancelled",
+    actorRef: "control-plane",
+    objectRef: job.id,
+    action: "cancel",
+    correlationId: firstString(job.envelope?.id, job.id) || job.id,
+    policyDecisionRef: policyDecisionRef || null,
+    result: job.status,
+    status: job.status,
+  });
   return job;
 }
 
@@ -1903,7 +5793,7 @@ function appendJobEvent(cacheDir, job, event) {
   const eventsPath = join(jobDir(cacheDir, job.id), "events.jsonl");
   mkdirSync(dirname(eventsPath), { recursive: true });
   appendFileSync(eventsPath, `${JSON.stringify(payload)}\n`);
-  appendFileSync(join(cacheDir, "audit.jsonl"), `${JSON.stringify({ ...payload, auditKind: "job_event" })}\n`);
+  appendAuditRecord(cacheDir, { ...payload, auditKind: "job_event" });
   return payload;
 }
 
@@ -2013,6 +5903,11 @@ function firstString(...values) {
   return found ? found.trim() : "";
 }
 
+function normalizeHandoffExpiryMs(value) {
+  const numeric = typeof value === "string" && /^\d+$/u.test(value.trim()) ? Number(value.trim()) : value;
+  return Number.isSafeInteger(numeric) && numeric > 0 ? numeric : HANDOFF_TTL_MS;
+}
+
 function formatDateTime(value) {
   if (!value) return "未知";
   const date = new Date(value);
@@ -2032,7 +5927,7 @@ function persistRun(cacheDir, run) {
   const runPath = join(cacheDir, "runs", `${run.id}.json`);
   mkdirSync(dirname(runPath), { recursive: true });
   writeFileSync(runPath, `${JSON.stringify(run, null, 2)}\n`);
-  appendFileSync(join(cacheDir, "audit.jsonl"), `${JSON.stringify(run)}\n`);
+  appendAuditRecord(cacheDir, run);
 }
 
 function persistAgentTask(cacheDir, task) {
@@ -2042,6 +5937,15 @@ function persistAgentTask(cacheDir, task) {
 function persistJson(filePath, payload) {
   mkdirSync(dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function persistImmutableJson(filePath, payload) {
+  mkdirSync(dirname(filePath), { recursive: true });
+  try {
+    writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, { flag: "wx" });
+  } catch (error) {
+    if (error?.code !== "EEXIST") throw error;
+  }
 }
 
 function readRun(cacheDir, id) {
@@ -2056,6 +5960,15 @@ function readJson(filePath, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function loadPersistedRecordMap(directory) {
+  if (!existsSync(directory)) return new Map();
+  const records = readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => readJson(join(directory, entry.name), null))
+    .filter((record) => record && typeof record.id === "string" && record.id);
+  return new Map(records.map((record) => [record.id, record]));
 }
 
 function titleFromId(id) {

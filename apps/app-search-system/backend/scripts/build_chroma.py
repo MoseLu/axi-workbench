@@ -332,7 +332,8 @@ class ChromaIndexer:
         """获取索引统计"""
         try:
             count = self.collection.count()
-        except:
+        except Exception as ex:
+            print(f"[build_chroma] 获取索引统计失败: {ex}")
             count = 0
 
         return {

@@ -1,0 +1,18 @@
+{
+  "format": "dango-family-image",
+  "sourceAsset": "packages/core/src/assets/axi-dango-family.png",
+  "viewBox": "0 0 1254 1254",
+  "imageHref": "/favicon-48.png",
+  "memberCount": 7,
+  "layoutAttribute": "grandfather,grandmother;father,baby,mother;young-dango-1,young-dango-2",
+  "layout": [
+    ["grandfather", "grandmother"],
+    ["father", "baby", "mother"],
+    ["young-dango-1", "young-dango-2"]
+  ],
+  "invariants": {
+    "forbiddenLegacyElementsPattern": "<path\\b|data-center=|rotate\\(",
+    "requiredDesktopViewBox": "viewBox=\"0 0 1024 1024\"",
+    "requiredDesktopImage": "data:image/png;base64,"
+  }
+}

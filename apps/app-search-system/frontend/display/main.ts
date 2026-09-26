@@ -93,7 +93,7 @@ function createWindow(serverURL: string): void {
     frame: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: false,
-    backgroundColor: '#0d1117',
+    backgroundColor: 'var(--axi-bg-page, #0d1117)',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

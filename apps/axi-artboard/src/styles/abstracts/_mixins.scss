@@ -1,0 +1,57 @@
+// abstracts/_mixins.scss — reusable Sass mixins.
+// Layer: abstracts (no CSS output).
+//
+// Pull with @use 'abstracts/mixins' as m;
+//   then m.mono(), m.grid-header(), m.surface-raised(), etc.
+
+@use 'variables' as v;
+
+// --- Typography --------------------------------------------------
+
+// Monospace text — used by .overlay-legend-* typography.
+@mixin mono {
+  font-family: v.$font-mono;
+}
+
+// Display font — used for component-name callouts.
+@mixin display {
+  font-family: v.$font-display;
+}
+
+// --- Layout ------------------------------------------------------
+
+// Three-column header grid: auto / 1fr / auto (FAB on the right).
+@mixin grid-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+// Two-column row: label / value.
+@mixin grid-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+// --- Surfaces ----------------------------------------------------
+
+// The blueprinted-on-dark surface (legend body, target card).
+@mixin surface-raised {
+  background: v.$ink-2;
+  border: 1px solid v.$rule-1;
+}
+
+// Glow ring on the active chartreuse FAB dot.
+@mixin pin-glow($radius: 8px) {
+  box-shadow: 0 0 $radius v.$pin;
+}
+
+// --- Responsive --------------------------------------------------
+
+// Apply styles when viewport is at least $bp-md.
+@mixin from-md {
+  @media (min-width: v.$bp-md) {
+    @content;
+  }
+}

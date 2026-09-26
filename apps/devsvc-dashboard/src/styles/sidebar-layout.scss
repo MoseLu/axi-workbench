@@ -1,11 +1,11 @@
 .side-menu.ant-menu-dark .ant-menu-item-selected {
-  background: var(--primary) !important;
-  color: var(--text-inverse) !important;
+  background: var(--primary);
+  color: var(--text-inverse);
 }
 
 .sidebar.is-collapsed .side-menu .ant-menu-item-selected {
   width: calc(100% - 12px);
-  margin: 0 6px !important;
+  margin: 0 6px;
 }
 
 .side-menu .ant-menu-item .ant-menu-item-icon,
@@ -34,7 +34,7 @@
 }
 
 .side-menu .ant-menu-sub .ant-menu-item {
-  padding-inline-start: 43px !important;
+  padding-inline-start: 43px;
 }
 
 .side-menu .ant-menu-title-content {
@@ -72,7 +72,7 @@
 :root[data-mode="light"] .menu-style-design .sidebar,
 :root[data-mode="light"] .menu-style-design .brand,
 :root[data-mode="light"] .menu-style-design .axi-admin-brand {
-  background: var(--panel) !important;
+  background: var(--panel);
   color: var(--text);
 }
 
@@ -105,36 +105,36 @@
 :root[data-mode="light"] .menu-style-design .side-menu,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-sub,
 :root[data-mode="light"] .menu-style-design .side-menu.ant-menu-inline .ant-menu-sub.ant-menu-inline {
-  background: transparent !important;
+  background: transparent;
 }
 
 .menu-style-light .side-menu .ant-menu-item,
 .menu-style-light .side-menu .ant-menu-submenu-title,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-item,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-submenu-title {
-  color: var(--muted) !important;
+  color: var(--muted);
 }
 
 .menu-style-light .side-menu .ant-menu-item:hover,
 .menu-style-light .side-menu .ant-menu-submenu-title:hover,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-item:hover,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-submenu-title:hover {
-  background: var(--bg) !important;
-  color: var(--text) !important;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .menu-style-light .side-menu .ant-menu-submenu-open > .ant-menu-submenu-title,
 .menu-style-light .side-menu .ant-menu-submenu-selected > .ant-menu-submenu-title,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-submenu-open > .ant-menu-submenu-title,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
-  background: transparent !important;
-  color: var(--muted) !important;
+  background: transparent;
+  color: var(--muted);
 }
 
 .menu-style-light .side-menu .ant-menu-item-selected,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-item-selected {
-  background: var(--primary) !important;
-  color: var(--text-inverse) !important;
+  background: var(--primary);
+  color: var(--text-inverse);
 }
 
 .menu-style-light .side-menu .ant-menu-submenu-arrow,
@@ -143,16 +143,16 @@
 .menu-style-light .side-menu .ant-menu-submenu-title .ant-menu-item-icon,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-item .ant-menu-item-icon,
 :root[data-mode="light"] .menu-style-design .side-menu .ant-menu-submenu-title .ant-menu-item-icon {
-  color: currentColor !important;
+  color: currentColor;
 }
 
 .menu-style-design .sidebar {
-  background: var(--panel) !important;
+  background: var(--panel);
 }
 
 .menu-style-design .brand,
 .menu-style-design .axi-admin-brand {
-  background: var(--panel) !important;
+  background: var(--panel);
 }
 
 .content {
@@ -166,10 +166,10 @@
 
 @media (max-width: 768px) {
   .app-shell .sidebar.axi-admin-sider.ant-layout-sider {
-    flex: 0 0 var(--sidebar-collapsed-width) !important;
-    width: var(--sidebar-collapsed-width) !important;
-    min-width: var(--sidebar-collapsed-width) !important;
-    max-width: var(--sidebar-collapsed-width) !important;
+    flex: 0 0 var(--sidebar-collapsed-width);
+    width: var(--sidebar-collapsed-width);
+    min-width: var(--sidebar-collapsed-width);
+    max-width: var(--sidebar-collapsed-width);
   }
 
   .app-shell .brand strong,
@@ -189,7 +189,7 @@
   .app-shell .side-menu .ant-menu-item,
   .app-shell .side-menu .ant-menu-submenu-title {
     justify-content: center;
-    padding-inline: 0 !important;
+    padding-inline: 0;
   }
 
   .app-shell .main-layout {

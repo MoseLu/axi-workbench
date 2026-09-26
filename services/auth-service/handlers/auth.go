@@ -28,8 +28,9 @@ type RegisterRequest struct {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required"`
+	RememberMe  bool   `json:"rememberMe"`
 }
 
 type RefreshRequest struct {
@@ -94,7 +95,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.jwtManager.GenerateTokenPair(user.ID, user.Email)
+	refreshExpiry := h.jwtManager.RefreshExpiry()
+	if req.RememberMe {
+		refreshExpiry = h.jwtManager.RememberMeExpiry()
+	}
+
+	tokens, err := h.jwtManager.GenerateTokenPairWithExpiry(user.ID, user.Email, refreshExpiry)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate tokens"})
 		return

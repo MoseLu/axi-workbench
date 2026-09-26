@@ -5,6 +5,7 @@ struct SettingsPanelRouteView: View {
     private let general: () -> AnyView
     private let appearance: () -> AnyView
     private let configuration: () -> AnyView
+    private let agentPlatform: () -> AnyView
     private let personalization: () -> AnyView
     private let mcpServers: () -> AnyView
     private let git: () -> AnyView
@@ -14,11 +15,12 @@ struct SettingsPanelRouteView: View {
     private let archivedConversations: () -> AnyView
     private let usage: () -> AnyView
 
-    init<General: View, Appearance: View, Configuration: View, Personalization: View, MCPServers: View, Git: View, Environment: View, BrowserUsage: View, ComputerControl: View, ArchivedConversations: View, Usage: View>(
+    init<General: View, Appearance: View, Configuration: View, AgentPlatform: View, Personalization: View, MCPServers: View, Git: View, Environment: View, BrowserUsage: View, ComputerControl: View, ArchivedConversations: View, Usage: View>(
         selectedSection: SettingsSection,
         @ViewBuilder general: @escaping () -> General,
         @ViewBuilder appearance: @escaping () -> Appearance,
         @ViewBuilder configuration: @escaping () -> Configuration,
+        @ViewBuilder agentPlatform: @escaping () -> AgentPlatform,
         @ViewBuilder personalization: @escaping () -> Personalization,
         @ViewBuilder mcpServers: @escaping () -> MCPServers,
         @ViewBuilder git: @escaping () -> Git,
@@ -32,6 +34,7 @@ struct SettingsPanelRouteView: View {
         self.general = { AnyView(general()) }
         self.appearance = { AnyView(appearance()) }
         self.configuration = { AnyView(configuration()) }
+        self.agentPlatform = { AnyView(agentPlatform()) }
         self.personalization = { AnyView(personalization()) }
         self.mcpServers = { AnyView(mcpServers()) }
         self.git = { AnyView(git()) }
@@ -50,6 +53,8 @@ struct SettingsPanelRouteView: View {
             appearance()
         case .configuration:
             configuration()
+        case .agentPlatform:
+            agentPlatform()
         case .personalization:
             personalization()
         case .mcpServers:

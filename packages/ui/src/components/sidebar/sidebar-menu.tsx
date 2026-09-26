@@ -36,7 +36,9 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({
       <div key={item.key} className="mpms-menu__item-wrap">
         <div
           className={`mpms-menu__item ${isActive ? 'is-active' : ''} ${item.disabled ? 'is-disabled' : ''}`}
-          style={{ paddingLeft: collapsed ? 0 : 12 + level * 16 }}
+          style={{
+            '--mpms-menu-level': collapsed ? 0 : level,
+          } as React.CSSProperties}
           onClick={() => {
             if (item.disabled) return;
             if (hasChildren) {
