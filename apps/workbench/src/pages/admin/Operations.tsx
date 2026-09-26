@@ -287,29 +287,29 @@ const Operations: React.FC = () => {
       ) : showLoading ? (
         <ControlPlaneState description={t('operations.loading.description')} loading title={t('operations.loading.title')} />
       ) : (
-        <div className="operations-crud__grid">
-          <div className="operations-crud__main">
-            <AxiCardBanner
-              className="operations-crud__attention"
-              description={
-                filteredAttention.length
-                  ? `${filteredAttention.length}/${attentionRows.length}${t('operations.attention.count')}`
-                  : attentionRows.length
-                    ? t('operations.attention.emptyFiltered')
-                    : t('operations.attention.emptyAll')
-              }
-              title={t('operations.attention.title')}
-            >
-              <AxiTableGroup>
-                <AxiTable
-                  columns={attentionColumns}
-                  data={filteredAttention}
-                  pagination={desktopCrudPagination(filteredAttention.length)}
-                  rowKey="id"
-                  size="small"
-                />
-              </AxiTableGroup>
-            </AxiCardBanner>
+        <div className="operations-crud__split">
+          <AxiCardBanner
+            className="operations-crud__attention"
+            description={
+              filteredAttention.length
+                ? `${filteredAttention.length}/${attentionRows.length}${t('operations.attention.count')}`
+                : attentionRows.length
+                  ? t('operations.attention.emptyFiltered')
+                  : t('operations.attention.emptyAll')
+            }
+            title={t('operations.attention.title')}
+          >
+            <AxiTableGroup>
+              <AxiTable
+                columns={attentionColumns}
+                data={filteredAttention}
+                pagination={desktopCrudPagination(filteredAttention.length)}
+                rowKey="id"
+                size="small"
+              />
+            </AxiTableGroup>
+          </AxiCardBanner>
+          <div className="operations-crud__split-row">
             <AxiCardBanner
               className="operations-crud__projects"
               description={`${filteredProjects.length}/${projectRows.length}${t('operations.projects.count')}`}
@@ -329,8 +329,6 @@ const Operations: React.FC = () => {
                 />
               </AxiTableGroup>
             </AxiCardBanner>
-          </div>
-          <aside className="operations-crud__side">
             <AxiCardBanner
               className="operations-crud__runtimes"
               description={`${filteredRuntimes.length}/${runtimeRows.length}${t('operations.runtimes.count')}`}
@@ -346,7 +344,7 @@ const Operations: React.FC = () => {
                 />
               </AxiTableGroup>
             </AxiCardBanner>
-          </aside>
+          </div>
         </div>
       )}
     </DesktopCrudFrame>

@@ -1,28 +1,31 @@
-/* 双栏：左主栏（需要处理 + 项目健康），右副栏（运行环境） */
-.operations-crud__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
-  gap: var(--axi-space-3, 12px);
-  align-items: start;
-}
-
-.operations-crud__main,
-.operations-crud__side {
+/* 分栏布局：上方 attention（窄、置顶告警类），下方 projects + runtimes 左右两列 */
+.operations-crud__split {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: var(--axi-space-3, 12px);
 }
 
-.operations-crud__side {
-  position: sticky;
-  top: var(--axi-space-2, 8px);
+.operations-crud__split > .operations-crud__attention {
+  min-width: 0;
 }
 
-.operations-crud__projects,
-.operations-crud__runtimes,
-.operations-crud__attention {
+.operations-crud__split-row {
+  display: grid;
   min-width: 0;
+  align-items: start;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+  gap: var(--axi-space-3, 12px);
+}
+
+.operations-crud__split-row > .operations-crud__projects,
+.operations-crud__split-row > .operations-crud__runtimes {
+  min-width: 0;
+}
+
+.operations-crud__runtimes {
+  position: sticky;
+  top: var(--axi-space-2, 8px);
 }
 
 .operations-crud .axi-table-group {
@@ -34,12 +37,12 @@
   max-height: none;
 }
 
-@media (max-width: 1100px) {
-  .operations-crud__grid {
+@media (max-width: 1200px) {
+  .operations-crud__split-row {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .operations-crud__side {
+  .operations-crud__runtimes {
     position: static;
   }
 }
