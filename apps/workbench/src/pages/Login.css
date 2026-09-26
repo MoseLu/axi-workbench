@@ -2099,7 +2099,7 @@ body.axi-tauri-shell .axi-login-account {
 /* The desktop shell follows the compact reference layout: keep the form
  * width stable while reducing the field height so the card does not feel
  * stretched around a small amount of content. */
-body.axi-tauri-shell .axi-login-form input:not(.axi-one-time-code__input):not(.axi-login-email-code-input) {
+body.axi-tauri-shell .axi-login-form input:not(.axi-one-time-code__input):not(.axi-login-email-code-input):not([type='checkbox']) {
   min-height: 2.25rem;
 }
 
