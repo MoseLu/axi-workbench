@@ -90,31 +90,30 @@
 }
 
 /*
- * Web global search follows the Art-style framed trigger: it is a deliberate
- * 160px command affordance in the desktop topbar. Its height intentionally
- * matches the 26px icon buttons beside it; mobile owns a separate search page.
+ * Global search follows the compact shell design at every Web breakpoint:
+ * it is the same icon-button affordance as the surrounding topbar actions.
+ * The accessible name and title remain available even when the visual label
+ * is intentionally hidden; mobile owns a separate search page.
  */
 .workbench-axi-shell .axi-topbar .axi-global-search-trigger {
-  width: 160px;
-  min-width: 160px;
+  width: var(--workbench-chrome-control-size);
+  min-width: var(--workbench-chrome-control-size);
   height: var(--workbench-chrome-control-size);
   min-height: var(--workbench-chrome-control-size);
   box-sizing: border-box;
-  padding: 0 var(--axi-space-2-5, 10px);
+  justify-content: center;
+  gap: 0;
+  padding: 0;
   border-radius: var(--workbench-chrome-radius);
   background: transparent;
 }
 
 .workbench-axi-shell .axi-topbar .axi-global-search-trigger__label {
-  font-size: var(--axi-font-size-xs, 12px);
-  font-weight: var(--axi-font-weight-normal, 400);
+  display: none;
 }
 
 .workbench-axi-shell .axi-topbar .axi-global-search-trigger kbd {
-  height: 20px;
-  min-width: 0;
-  padding-inline: 6px;
-  border-radius: var(--axi-radius-sm, 4px);
+  display: none;
 }
 
 .workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only,
