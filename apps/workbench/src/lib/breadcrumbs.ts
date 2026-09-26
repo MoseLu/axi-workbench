@@ -76,6 +76,12 @@ const WORKBENCH_PARENT: BreadcrumbNode = {
   path: '/admin/dashboard',
 };
 
+const DASHBOARD_PARENT: BreadcrumbNode = {
+  label: '工作台',
+  labelKey: 'nav.crumb.workbench',
+  icon: 'overview',
+};
+
 const ACCOUNT_PARENT: BreadcrumbNode = {
   label: '账号与设置',
   labelKey: 'nav.crumb.account',
@@ -89,7 +95,7 @@ const PREFERENCES_PARENT: BreadcrumbNode = {
 };
 
 export const BREADCRUMB_REGISTRY: Record<string, BreadcrumbRoute> = {
-  '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard', icon: 'overview' },
+  '/admin/dashboard': { label: '工作台概览', labelKey: 'nav.dashboard', icon: 'overview', parents: [DASHBOARD_PARENT] },
   '/admin/personal-os/today': { label: '今日', labelKey: 'personalOs.nav.today', icon: 'overview', parents: [WORKBENCH_PARENT] },
   '/admin/personal-os/workbench': { label: '项目队列', labelKey: 'personalOs.nav.workbench', icon: 'project', parents: [WORKBENCH_PARENT] },
   '/admin/operations': { label: '运行状态', labelKey: 'nav.operations', icon: 'laptop', parents: [WORKBENCH_PARENT] },
@@ -196,7 +202,7 @@ function resolveRoute(pathname: string): { path: string; route: BreadcrumbRoute 
 export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const trimmed = pathname || '/';
 
-  if (trimmed === '/' || trimmed === '/admin/dashboard' || trimmed === '') {
+  if (trimmed === '/' || trimmed === '') {
     return [{ label: '工作台概览', labelKey: 'nav.dashboard', isActive: true }];
   }
 

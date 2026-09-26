@@ -4,7 +4,15 @@
 }
 
 .dashboard-crud__governance {
-  margin-top: var(--axi-space-3, 12px);
+  min-width: 0;
+}
+
+.dashboard-crud__view-group {
+  min-height: min(620px, calc(100vh - 250px));
+}
+
+.dashboard-crud__view-group .axi-view-group__content {
+  min-width: 0;
 }
 
 .dashboard-crud__governance-stats {

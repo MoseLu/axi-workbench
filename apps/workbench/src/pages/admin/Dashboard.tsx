@@ -12,6 +12,7 @@ import {
   type AxiTableOpButton,
 } from '@axi/crud';
 import { AxiRow } from '@axi/widgets';
+import { AxiViewGroup } from '@axi/shell';
 import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@axi/api-client';
 import { filterWorkbenchHomeProjects, type WorkbenchHomeProject } from '@axi/workbench-foundation';
 import { useI18n } from '../../i18n';
@@ -54,6 +55,7 @@ const Dashboard: React.FC = () => {
   const [keywordDraft, setKeywordDraft] = React.useState('');
   const [keyword, setKeyword] = React.useState('');
   const [stateFilter, setStateFilter] = React.useState<'all' | 'available' | 'attention'>('all');
+  const [dashboardSection, setDashboardSection] = React.useState<'projects' | 'governance'>('projects');
   const projects = useMemo(
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
     [snapshot],
@@ -173,35 +175,52 @@ const Dashboard: React.FC = () => {
         ) : showLoading ? (
           <ControlPlaneState description={t('dashboard.loading.description')} loading title={t('dashboard.loading.title')} />
         ) : (
-          <>
-            <AxiTableGroup className="dashboard-crud__table">
-              <AxiCrudTable
-                columns={projectColumns}
-                data={projectRows}
-                operationButtons={projectOperationButtons}
-                pagination={desktopCrudPagination(projectRows.length)}
-                rowKey="id"
-                rowSelection={false}
-                onRow={(row) => ({
-                  onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                  style: { cursor: 'pointer' },
-                })}
+          <AxiViewGroup
+            aria-label={t('dashboard.sections.ariaLabel')}
+            asideAriaLabel={t('dashboard.sections.ariaLabel')}
+            asideTitle={t('dashboard.sections.title')}
+            asideWidth={190}
+            asideMenu={[
+              { key: 'projects', label: t('dashboard.sections.projects') },
+              { key: 'governance', label: t('dashboard.sections.governance') },
+            ]}
+            asideMenuActiveKey={dashboardSection}
+            className="dashboard-crud__view-group"
+            onAsideMenuSelect={(key) => {
+              if (key === 'projects' || key === 'governance') setDashboardSection(key);
+            }}
+          >
+            {dashboardSection === 'projects' ? (
+              <AxiTableGroup className="dashboard-crud__table">
+                <AxiCrudTable
+                  columns={projectColumns}
+                  data={projectRows}
+                  operationButtons={projectOperationButtons}
+                  pagination={desktopCrudPagination(projectRows.length)}
+                  rowKey="id"
+                  rowSelection={false}
+                  onRow={(row) => ({
+                    onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                    style: { cursor: 'pointer' },
+                  })}
+                />
+              </AxiTableGroup>
+            ) : (
+              <GovernanceSummary
+                governance={snapshot?.governance}
+                onAutomationRun={async (automationId) => {
+                  await automationRun.mutateAsync(automationId);
+                  await refetch();
+                }}
+                automationRunPending={automationRun.isPending}
+                onRiskTransition={async ({ riskId, status, reason }) => {
+                  await riskTransition.mutateAsync({ riskId, status, reason });
+                  await refetch();
+                }}
+                riskTransitionPending={riskTransition.isPending}
               />
-            </AxiTableGroup>
-            <GovernanceSummary
-              governance={snapshot?.governance}
-              onAutomationRun={async (automationId) => {
-                await automationRun.mutateAsync(automationId);
-                await refetch();
-              }}
-              automationRunPending={automationRun.isPending}
-              onRiskTransition={async ({ riskId, status, reason }) => {
-                await riskTransition.mutateAsync({ riskId, status, reason });
-                await refetch();
-              }}
-              riskTransitionPending={riskTransition.isPending}
-            />
-          </>
+            )}
+          </AxiViewGroup>
         )}
       </DesktopCrudFrame>
     </AxiCrud>

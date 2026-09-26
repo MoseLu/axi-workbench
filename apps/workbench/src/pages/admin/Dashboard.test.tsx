@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -106,6 +106,10 @@ const i18nDict: Record<string, string> = {
   'dashboard.error.retry': '重新连接',
   'dashboard.loading.title': '正在同步工作台',
   'dashboard.loading.description': '正在读取项目、运行环境和治理态势。',
+  'dashboard.sections.ariaLabel': '仪表盘视图',
+  'dashboard.sections.title': '仪表盘分栏',
+  'dashboard.sections.projects': '项目总览',
+  'dashboard.sections.governance': '治理态势',
   'projects.column.index': '序号',
   'projects.column.label': '项目',
   'projects.column.workspace': '工作区',
@@ -221,7 +225,8 @@ describe('Dashboard', () => {
     expect(screen.getByLabelText('工作台概览')).toBeInTheDocument();
     // Project row is rendered with its label
     expect(screen.getByText('Axi Workbench')).toBeInTheDocument();
-    // Governance summary section is wired even when snapshot is healthy
+    expect(screen.getByRole('button', { name: '治理态势' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '治理态势' }));
     expect(screen.getByLabelText('治理态势摘要')).toBeInTheDocument();
   });
 
