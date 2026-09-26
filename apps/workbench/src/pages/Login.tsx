@@ -424,7 +424,14 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && !didNavigateRef.current && formLoginRef.current) {
+    // A browser refresh can land on /login while the HttpOnly session is still
+    // valid. That is already an authenticated entry, so it must not wait for a
+    // new form submit to leave the login surface.
+    if (
+      isAuthenticated
+      && !didNavigateRef.current
+      && (!isTauriShell() || formLoginRef.current)
+    ) {
       finishAuthenticatedEntry();
     }
   }, [isAuthenticated, navigate, next]);

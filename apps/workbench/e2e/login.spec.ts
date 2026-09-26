@@ -36,6 +36,22 @@ async function mockUnauthenticated(page: Page) {
   });
 }
 
+test('redirects an already authenticated browser away from login without a click', async ({ page }) => {
+  await page.route('**/api/**', async (route) => {
+    await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'not mocked' }) });
+  });
+  await page.route('**/api/v1/sessions/current*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ authenticated: true, user: { subject: 'owner', email: 'owner@axi.test', name: 'Owner' } }),
+    });
+  });
+
+  await page.goto('/login');
+  await expect(page).toHaveURL(/\/admin\/dashboard$/u);
+});
+
 test('renders the NetEase-style login journey', async ({ page }) => {
   const requestedEmails: string[] = [];
   await mockUnauthenticated(page);
