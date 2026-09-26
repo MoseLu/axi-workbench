@@ -18,6 +18,7 @@ import {
 } from './workspaceRegistry';
 import { DesktopCrudFrame } from './admin/DesktopCrudFrame';
 import { ControlPlaneState } from './admin/ControlPlaneState';
+import { DESKTOP_CRUD_PAGE_SIZE, desktopCrudPagination } from './admin/tenantMemberCrud';
 import './Projects.css';
 
 type ProjectFilter = 'all' | 'available' | 'attention';
@@ -138,7 +139,16 @@ const Projects: React.FC = () => {
           <AxiTable
             columns={columns}
             data={rows}
-            pagination={false}
+            pagination={rows.length > DESKTOP_CRUD_PAGE_SIZE
+              ? desktopCrudPagination(rows.length)
+              : {
+                  defaultPageSize: DESKTOP_CRUD_PAGE_SIZE,
+                  hideOnSinglePage: false,
+                  pageSize: DESKTOP_CRUD_PAGE_SIZE,
+                  showSizeChanger: true,
+                  showTotal: (count: number) => t('projects.pagination.total', `共 ${count} 条`),
+                  total: rows.length,
+                }}
             rowKey="id"
             onRow={(row) => ({
               onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),

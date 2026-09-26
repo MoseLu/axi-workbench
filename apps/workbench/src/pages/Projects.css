@@ -2,6 +2,40 @@
   min-height: min(560px, calc(100vh - 180px));
 }
 
+/* Projects page body — let it stretch so empty / unavailable states can be centered.
+   The shared .wb-crud-page__layout .axi-crud-layout__body is already flex column with
+   align-items: stretch; we give the body itself a min-height so a single
+   ControlPlaneState child can fill it and its inner grid centering can land in the
+   visible middle instead of floating near the top. */
+.projects-crud .axi-crud-layout__body {
+  min-height: min(640px, calc(100vh - 160px));
+}
+
+.projects-crud .axi-crud-layout__body > .wb-control-plane-state {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: min(520px, calc(100vh - 200px));
+}
+
+/* When AxiTable is empty (no rows after filtering), the inner Empty placeholder
+   should also sit centered inside the table group instead of clinging to the top. */
+.projects-crud .axi-table-group .ant-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: min(420px, calc(100vh - 240px));
+}
+
+.projects-crud .axi-table-group .ant-table-wrapper .ant-table {
+  flex: 1 1 auto;
+}
+
+.projects-crud .axi-table-group .ant-table-wrapper .ant-table-placeholder {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+}
+
 .projects-crud__search-input {
   width: min(320px, 100%);
   height: 32px;
