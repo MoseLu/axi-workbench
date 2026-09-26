@@ -78,18 +78,10 @@
   color: var(--axi-text-secondary);
 }
 
+/* Layout-only micro-adjustment for the toolbar search slot. Visual styling
+ * (border / background / focus ring) is intentionally delegated to the
+ * surrounding axi-ui input primitive to keep the Workspace page consistent
+ * with AxiTableGroup / AxiRow. */
 .workspace-crud__search-input {
   width: min(320px, 100%);
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--axi-border-color, #d9d9d9);
-  border-radius: 6px;
-  background: var(--axi-bg-color, #ffffff);
-  color: inherit;
-  font: inherit;
-}
-
-.workspace-crud__search-input:focus {
-  outline: 2px solid var(--axi-color-primary, #1677ff);
-  outline-offset: -1px;
 }

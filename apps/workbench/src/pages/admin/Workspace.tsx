@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-// axi-ui-escape-hatch: Segmented 没有 @axi/* 等价的筛选器三态切换控件。
-import { Segmented } from 'antd';
+// axi-ui-escape-hatch: @axi/widgets.AxiFilter 尚未实现三态切换前的临时方案，沿用 antd Segmented。
+import { Segmented, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
-import { AxiIconButton } from '@axi/core';
+import { AxiCardBanner, AxiIconButton } from '@axi/core';
 import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot, useWorkflowEngineWorkflows } from '@axi/api-client';
 import { useI18n } from '../../i18n';
@@ -132,6 +132,10 @@ const Workspace: React.FC = () => {
     { dataIndex: 'summary', title: t('workspace.column.summary') },
   ];
   const isRefreshing = isFetching || workflowQuery.isFetching;
+  const workflowData = workflowQuery.data;
+  const hasWorkflowData = Array.isArray(workflowData) && workflowData.length > 0;
+  const showWorkflowPanel = !workflowQuery.isError && hasWorkflowData;
+  const showWorkflowLoading = !workflowQuery.isError && !hasWorkflowData && workflowQuery.isLoading;
 
   return (
     <DesktopCrudFrame
@@ -199,11 +203,25 @@ const Workspace: React.FC = () => {
           </AxiTableGroup>
         </div>
       )}
-      <WorkflowEffectsPanel
-        error={workflowQuery.error}
-        isLoading={workflowQuery.isLoading}
-        workflows={workflowQuery.data ?? []}
-      />
+      {showWorkflowLoading ? (
+        <AxiCardBanner
+          className="workspace-crud__effects workspace-crud__effects--loading"
+          description={t('workspace.effects.loading')}
+          title={t('workspace.effects.title')}
+        >
+          <div aria-live="polite" className="workflow-effects__state">
+            <Spin size="small" />
+            <span>{t('workspace.effects.loading')}</span>
+          </div>
+        </AxiCardBanner>
+      ) : null}
+      {showWorkflowPanel ? (
+        <WorkflowEffectsPanel
+          error={workflowQuery.error}
+          isLoading={workflowQuery.isLoading}
+          workflows={workflowData ?? []}
+        />
+      ) : null}
     </DesktopCrudFrame>
   );
 };
