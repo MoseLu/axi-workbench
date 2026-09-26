@@ -20,36 +20,41 @@ const layerOrder: LayerKind[] = [
   'external_capability',
 ];
 
+/**
+ * Surface tokens (all colours reference `--axi-*` / `--palette-*` so the panel
+ * automatically follows the active Axi theme). Defined inline rather than as a
+ * CSS class so the panel keeps its existing compact, custom-rendered look.
+ */
 const panelStyle: React.CSSProperties = {
   padding: 18,
-  background: 'rgba(255, 255, 255, 0.025)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  borderRadius: 8,
+  background: 'var(--axi-bg-elevated, var(--palette-indigo-50))',
+  border: '1px solid var(--axi-border, var(--palette-border-light))',
+  borderRadius: 'var(--axi-radius-md, 8px)',
 };
 
 const compactRowStyle: React.CSSProperties = {
   padding: 10,
   marginBottom: 8,
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 6,
+  background: 'var(--axi-bg-elevated, var(--palette-indigo-50))',
+  border: '1px solid var(--axi-border, var(--palette-border-light))',
+  borderRadius: 'var(--axi-radius-sm, 6px)',
   display: 'flex',
   flexDirection: 'column',
   gap: 5,
 };
 
 const mutedTextStyle: React.CSSProperties = {
-  color: 'rgba(255,255,255,0.52)',
+  color: 'var(--axi-text-muted, var(--palette-gray-500))',
   fontSize: 12,
   overflowWrap: 'anywhere',
 };
 
 const smallButtonStyle: React.CSSProperties = {
   padding: '5px 8px',
-  border: '1px solid rgba(65,101,215,0.5)',
-  borderRadius: 5,
+  border: '1px solid var(--color-info-soft)',
+  borderRadius: 'var(--axi-radius-sm, 5px)',
   color: 'var(--color-info-soft)',
-  background: 'rgba(65,101,215,0.12)',
+  background: 'var(--color-info-soft)',
   cursor: 'pointer',
   fontSize: 12,
 };
@@ -90,11 +95,11 @@ const CommandCenter: React.FC = () => {
       <header style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 24, margin: 0, color: 'var(--color-bg-card)' }}>Command Center</h1>
-          <p style={{ marginTop: 6, color: 'rgba(255,255,255,0.48)', fontSize: 13 }}>
+          <p style={{ marginTop: 6, color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 13 }}>
             Natural-language control plane across IM, communication, software, base services, physical services, and external capabilities.
           </p>
         </div>
-        <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, whiteSpace: 'nowrap' }}>
+        <div style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12, whiteSpace: 'nowrap' }}>
           {snapshot ? `Updated ${new Date(snapshot.generatedAt).toLocaleString()}` : 'Snapshot unavailable'}
         </div>
       </header>
@@ -109,9 +114,9 @@ const CommandCenter: React.FC = () => {
             minWidth: 0,
             padding: '11px 13px',
             color: 'var(--color-bg-card)',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 6,
+            background: 'var(--axi-bg-input, var(--axi-bg-elevated, var(--palette-indigo-50)))',
+            border: '1px solid var(--axi-border, var(--palette-border-light))',
+            borderRadius: 'var(--axi-radius-sm, 6px)',
             outline: 'none',
             fontSize: 14,
           }}
@@ -122,8 +127,8 @@ const CommandCenter: React.FC = () => {
           style={{
             padding: '0 16px',
             border: 'none',
-            borderRadius: 6,
-            color: 'var(--color-bg-card)',
+            borderRadius: 'var(--axi-radius-sm, 6px)',
+            color: 'var(--color-on-primary, var(--palette-white))',
             background: 'var(--color-chart-1)',
             cursor: 'pointer',
             fontWeight: 600,
@@ -141,7 +146,7 @@ const CommandCenter: React.FC = () => {
               {lastRun.accepted ? 'accepted' : 'blocked'}
             </span>
           </div>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6 }}>{lastRun.summary}</p>
+          <p style={{ margin: 0, color: 'var(--axi-text-secondary, var(--palette-gray-600))', lineHeight: 1.6 }}>{lastRun.summary}</p>
           {lastRun.actions.map((action, index) => (
             <pre
               key={`${action.commandId || 'action'}-${index}`}
@@ -149,9 +154,9 @@ const CommandCenter: React.FC = () => {
                 marginTop: 12,
                 padding: 12,
                 overflow: 'auto',
-                color: 'rgba(255,255,255,0.7)',
-                background: 'rgba(0,0,0,0.22)',
-                borderRadius: 6,
+                color: 'var(--axi-text-secondary, var(--palette-gray-600))',
+                background: 'var(--palette-black-alpha-08)',
+                borderRadius: 'var(--axi-radius-sm, 6px)',
                 fontSize: 12,
                 whiteSpace: 'pre-wrap',
               }}
@@ -185,14 +190,14 @@ const CommandCenter: React.FC = () => {
             <section key={layer} style={panelStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h2 style={{ margin: 0, color: 'var(--color-bg-card)', fontSize: 16 }}>{layerLabels[layer]}</h2>
-                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{resources.length}</span>
+                <span style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12 }}>{resources.length}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {resources.map((resource) => (
                   <ResourceRow key={resource.id} resource={resource} onRunCommand={handleRunCommand} />
                 ))}
                 {resources.length === 0 && (
-                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>No resources discovered.</div>
+                  <div style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 13 }}>No resources discovered.</div>
                 )}
               </div>
             </section>
@@ -267,7 +272,7 @@ const AgentTasksPanel: React.FC<{ tasks: AgentTask[]; onCancel: (id: string) => 
 const PanelHeader: React.FC<{ title: string; count: number }> = ({ title, count }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
     <h2 style={{ margin: 0, color: 'var(--color-bg-card)', fontSize: 16 }}>{title}</h2>
-    <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{count}</span>
+    <span style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12 }}>{count}</span>
   </div>
 );
 
@@ -276,7 +281,7 @@ const CompactRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const EmptyText: React.FC<{ text: string }> = ({ text }) => (
-  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>{text}</div>
+  <div style={{ color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 13 }}>{text}</div>
 );
 
 interface ResourceRowProps {
@@ -288,16 +293,16 @@ const ResourceRow: React.FC<ResourceRowProps> = ({ resource, onRunCommand }) => 
   const git = resource.metadata?.git as { branch?: string; changedEntries?: number } | null | undefined;
 
   return (
-    <div style={{ padding: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6 }}>
+    <div style={{ padding: 12, background: 'var(--axi-bg-elevated, var(--palette-indigo-50))', border: '1px solid var(--axi-border, var(--palette-border-light))', borderRadius: 'var(--axi-radius-sm, 6px)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
         <strong style={{ color: 'var(--color-bg-card)', fontSize: 14, overflowWrap: 'anywhere' }}>{resource.id}</strong>
         <span style={{ color: resource.status === 'available' ? 'var(--color-chart-2)' : 'var(--color-chart-3)', fontSize: 12 }}>{resource.status}</span>
       </div>
-      <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.42)', fontSize: 12, overflowWrap: 'anywhere' }}>
+      <div style={{ marginTop: 6, color: 'var(--axi-text-muted, var(--palette-gray-500))', fontSize: 12, overflowWrap: 'anywhere' }}>
         {resource.kind}{git ? ` · ${git.branch || 'git'} · ${git.changedEntries || 0} changes` : ''}
       </div>
       {resource.provides.length > 0 && (
-        <div style={{ marginTop: 8, color: 'rgba(255,255,255,0.56)', fontSize: 12 }}>
+        <div style={{ marginTop: 8, color: 'var(--axi-text-secondary, var(--palette-gray-600))', fontSize: 12 }}>
           {resource.provides.slice(0, 3).join(', ')}
         </div>
       )}
@@ -309,10 +314,10 @@ const ResourceRow: React.FC<ResourceRowProps> = ({ resource, onRunCommand }) => 
               onClick={() => onRunCommand(command.id)}
               style={{
                 padding: '5px 8px',
-                border: '1px solid rgba(65,101,215,0.5)',
-                borderRadius: 5,
+                border: '1px solid var(--color-info-soft)',
+                borderRadius: 'var(--axi-radius-sm, 5px)',
                 color: 'var(--color-info-soft)',
-                background: 'rgba(65,101,215,0.12)',
+                background: 'var(--color-info-soft)',
                 cursor: 'pointer',
                 fontSize: 12,
               }}

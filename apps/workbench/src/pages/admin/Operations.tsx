@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from 'react';
+// axi-ui-escape-hatch: antd Button/Input/Select 暂时保留 — @axi/ui 暂无等价
+// 的「带 allowClear + onPressEnter 的搜索框」「带 loading 的刷新按钮」组合，
+// 等 @axi/widgets.AxiSearchInput 上线后再替换。
 import { Button, Input, Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
+import { AxiCardBanner, AxiTag } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {
@@ -246,7 +251,7 @@ const Operations: React.FC = () => {
         />
       ) : undefined}
       search={!showError && !showLoading ? (
-        <div className="wb-crud-search-cluster">
+        <AxiRow className="wb-crud-search-cluster">
           <Input
             allowClear
             aria-label={t('operations.search.ariaLabel')}
@@ -260,14 +265,15 @@ const Operations: React.FC = () => {
             onPressEnter={runSearch}
           />
           <Button type="primary" onClick={runSearch}>{t('common.search')}</Button>
-        </div>
+        </AxiRow>
       ) : undefined}
       top={(
-        <div className="wb-crud-action-cluster">
+        <AxiRow className="wb-crud-action-cluster">
+          <AxiTag type="info">{t('operations.title')}</AxiTag>
           <Button loading={isFetching} onClick={() => void refetch()}>
             {t('operations.refresh')}
           </Button>
-        </div>
+        </AxiRow>
       )}
     >
       {showError ? (
@@ -283,7 +289,7 @@ const Operations: React.FC = () => {
       ) : (
         <div className="operations-crud__grid">
           <div className="operations-crud__main">
-            <AxiTableGroup
+            <AxiCardBanner
               className="operations-crud__attention"
               description={
                 filteredAttention.length
@@ -294,46 +300,52 @@ const Operations: React.FC = () => {
               }
               title={t('operations.attention.title')}
             >
-              <AxiTable
-                columns={attentionColumns}
-                data={filteredAttention}
-                pagination={desktopCrudPagination(filteredAttention.length)}
-                rowKey="id"
-                size="small"
-              />
-            </AxiTableGroup>
-            <AxiTableGroup
+              <AxiTableGroup>
+                <AxiTable
+                  columns={attentionColumns}
+                  data={filteredAttention}
+                  pagination={desktopCrudPagination(filteredAttention.length)}
+                  rowKey="id"
+                  size="small"
+                />
+              </AxiTableGroup>
+            </AxiCardBanner>
+            <AxiCardBanner
               className="operations-crud__projects"
               description={`${filteredProjects.length}/${projectRows.length}${t('operations.projects.count')}`}
               title={t('operations.projects.title')}
             >
-              <AxiTable
-                columns={projectColumns}
-                data={filteredProjects}
-                pagination={desktopCrudPagination(filteredProjects.length)}
-                rowKey="id"
-                size="small"
-                onRow={(row) => ({
-                  onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                  style: { cursor: 'pointer' },
-                })}
-              />
-            </AxiTableGroup>
+              <AxiTableGroup>
+                <AxiTable
+                  columns={projectColumns}
+                  data={filteredProjects}
+                  pagination={desktopCrudPagination(filteredProjects.length)}
+                  rowKey="id"
+                  size="small"
+                  onRow={(row) => ({
+                    onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                    style: { cursor: 'pointer' },
+                  })}
+                />
+              </AxiTableGroup>
+            </AxiCardBanner>
           </div>
           <aside className="operations-crud__side">
-            <AxiTableGroup
+            <AxiCardBanner
               className="operations-crud__runtimes"
               description={`${filteredRuntimes.length}/${runtimeRows.length}${t('operations.runtimes.count')}`}
               title={t('operations.runtimes.title')}
             >
-              <AxiTable
-                columns={runtimeColumns}
-                data={filteredRuntimes}
-                pagination={false}
-                rowKey="key"
-                size="small"
-              />
-            </AxiTableGroup>
+              <AxiTableGroup>
+                <AxiTable
+                  columns={runtimeColumns}
+                  data={filteredRuntimes}
+                  pagination={false}
+                  rowKey="key"
+                  size="small"
+                />
+              </AxiTableGroup>
+            </AxiCardBanner>
           </aside>
         </div>
       )}

@@ -1,3 +1,10 @@
 .wb-search .axi-crud-layout__toolbar-end .ant-input-affix-wrapper {
   width: 300px;
 }
+
+.wb-search__empty {
+  padding: var(--axi-space-5, 24px);
+  text-align: center;
+  color: var(--axi-text-muted, var(--palette-gray-500));
+  font-size: var(--axi-font-size-sm, 13px);
+}

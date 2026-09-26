@@ -1,4 +1,7 @@
 import React, { useMemo, useState } from 'react';
+// axi-ui-escape-hatch: 本地关键字检索走 filterMenuRows，不依赖 CrudService.refresh，
+// @axi/crud 的 AxiSearchKey/AxiSearchBar 都与 CrudContext 强耦合，无法直接复用，
+// 因此保留 antd Input + PressEnter 触发的本地过滤路径。
 import { Input } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {

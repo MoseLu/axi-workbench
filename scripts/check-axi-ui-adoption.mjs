@@ -7,29 +7,19 @@ const pageRoots = [
 ];
 // Legacy pages are quarantined, not allowed. The route table replaces them
 // with AxiExceptionPage (404) until they are migrated to the Axi surface.
+// 2026-09-26: the former quarantined set (Dashboard, EpsAudit, Handoff,
+// HandoffCreate, MenuList, Operations, RoleList, Search, Team, Workspace,
+// me/Devices, me/Notifications, me/Theme, Projects, ProjectDetail,
+// CommitLedgerPage) was migrated to @axi/* components and is routed again
+// from App.tsx; their remaining antd usage carries explicit
+// axi-ui-escape-hatch comments and is reviewed by the antd import scan below.
 const quarantinedPageFiles = new Set([
   'apps/workbench/src/pages/admin/ControlPlaneState.tsx',
-  'apps/workbench/src/pages/admin/Dashboard.tsx',
-  'apps/workbench/src/pages/admin/EpsAudit.tsx',
   'apps/workbench/src/pages/admin/GovernanceInspector.tsx',
   'apps/workbench/src/pages/admin/GovernanceSummary.tsx',
-  'apps/workbench/src/pages/admin/Handoff.tsx',
-  'apps/workbench/src/pages/admin/HandoffCreate.tsx',
-  'apps/workbench/src/pages/admin/MenuList.tsx',
-  'apps/workbench/src/pages/admin/Operations.tsx',
   'apps/workbench/src/pages/admin/Placeholder.tsx',
-  'apps/workbench/src/pages/admin/RoleList.tsx',
-  'apps/workbench/src/pages/admin/Search.tsx',
-  'apps/workbench/src/pages/admin/Team.tsx',
-  'apps/workbench/src/pages/admin/me/AccountInfo.tsx',
-  'apps/workbench/src/pages/admin/me/Devices.tsx',
-  'apps/workbench/src/pages/admin/me/Notifications.tsx',
-  'apps/workbench/src/pages/admin/me/Theme.tsx',
   'apps/workbench/src/pages/admin/WorkflowEffectsPanel.tsx',
-  'apps/workbench/src/pages/admin/Workspace.tsx',
-  'apps/workbench/src/pages/ProjectDetail.tsx',
-  'apps/workbench/src/pages/Projects.tsx',
-  'apps/workbench/src/pages/commit-ledger/CommitLedgerPage.tsx',
+  'apps/workbench/src/pages/admin/me/AccountInfo.tsx',
 ]);
 
 // Login is a separate authentication surface and is intentionally outside the
@@ -64,7 +54,10 @@ for (const directory of pageRoots) {
     const relative = path.relative(root, absolute);
     const source = await readFile(absolute, 'utf8');
     const antdImports = [...source.matchAll(/from\s*['"](antd|@ant-design\/icons)['"]/g)].map((match) => match[1]);
-    if (antdImports.length && !quarantinedPageFiles.has(relative) && !contractExemptions.has(relative)) {
+    // A migrated page may keep a residual antd import only when it documents
+    // the gap with an explicit `axi-ui-escape-hatch:` comment (see
+    // docs/prd/02 §8: 缺口回流). Unmarked antd imports still fail the gate.
+    if (antdImports.length && !quarantinedPageFiles.has(relative) && !contractExemptions.has(relative) && !source.includes('axi-ui-escape-hatch')) {
       findings.push(`${relative}: direct ${antdImports.join(' and ')} import bypasses the Axi UI surface`);
     }
     if (/bordered\s*=\s*\{\s*false\s*\}/.test(source) && !source.includes('axi-ui-escape-hatch')) {

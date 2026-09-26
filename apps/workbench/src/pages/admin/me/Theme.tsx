@@ -1,7 +1,7 @@
 import React from 'react';
-import { Radio } from 'antd';
 import { AxiTableGroup } from '@axi/crud';
 import { useAxiTheme } from '@axi/core';
+import { AxiSelectButton } from '@axi/widgets';
 import { useI18n } from '../../../i18n';
 import { DesktopSettingsPage } from './DesktopSettingsPage';
 import './Theme.css';
@@ -21,7 +21,7 @@ const Theme: React.FC = () => {
   return (
     <DesktopSettingsPage activeKey="/admin/me/theme" title={t('account.theme.title')}>
       <AxiTableGroup title={t('account.theme.group')}>
-        <Radio.Group
+        <AxiSelectButton
           buttonStyle="solid"
           optionType="button"
           options={modes.map((mode) => ({ label: mode.label, value: mode.id }))}

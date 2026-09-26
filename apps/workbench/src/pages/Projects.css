@@ -1,3 +1,19 @@
 .projects-crud .axi-table-group {
   min-height: min(560px, calc(100vh - 180px));
 }
+
+.projects-crud__search-input {
+  width: min(320px, 100%);
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--axi-border-color, #d9d9d9);
+  border-radius: 6px;
+  background: var(--axi-bg-color, #ffffff);
+  color: inherit;
+  font: inherit;
+}
+
+.projects-crud__search-input:focus {
+  outline: 2px solid var(--axi-color-primary, #1677ff);
+  outline-offset: -1px;
+}

@@ -1,7 +1,10 @@
 import React, { useMemo } from 'react';
-import { Button, Descriptions, Empty, Space } from 'antd';
+// axi-ui-escape-hatch: antd Empty 没有 @axi/* 等价的占位控件。
+import { Empty } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
+import { AxiDescriptions, AxiIconButton } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../i18n';
 import {
@@ -55,10 +58,22 @@ const ProjectDetail: React.FC = () => {
       ariaLabel={t('projectDetail.title')}
       className="project-detail-crud"
       toolbar={(
-        <Space size={6}>
-          <Button size="small" onClick={() => navigate('/admin/project')}>{t('projectDetail.back')}</Button>
-          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? t('projectDetail.refreshing') : t('projectDetail.refresh')}</Button>
-        </Space>
+        <AxiRow className="project-detail-crud__toolbar" style={{ gap: 6 }}>
+          <AxiIconButton
+            aria-label={t('projectDetail.back')}
+            label={t('projectDetail.back')}
+            size="small"
+            onClick={() => navigate('/admin/project')}
+          />
+          <AxiIconButton
+            aria-label={t('projectDetail.refresh')}
+            disabled={isFetching}
+            label={isFetching ? t('projectDetail.refreshing') : t('projectDetail.refresh')}
+            loading={isFetching}
+            size="small"
+            onClick={() => void refetch()}
+          />
+        </AxiRow>
       )}
     >
       {error ? (
@@ -146,16 +161,20 @@ const ProjectDetailContent: React.FC<{
       ? workspacePending
       : workspaceClean;
   const commandsCount = `${project.commands.length}${t('projectDetail.commandsUnit')}`;
+  const stateText = project.status === 'available' ? availableState : project.status || unknownState;
 
   return (
     <>
       <AxiTableGroup description={getProjectResourceSummary(project)} title={getProjectResourceLabel(project)}>
-        <Descriptions column={2} colon={false} size="small">
-          <Descriptions.Item label={t('projectDetail.descriptions.state')}>{project.status === 'available' ? availableState : project.status || unknownState}</Descriptions.Item>
-          <Descriptions.Item label={t('projectDetail.descriptions.workspace')}>{workspaceState}</Descriptions.Item>
-          <Descriptions.Item label={t('projectDetail.descriptions.branch')}>{git.branch || unregisteredBranch}</Descriptions.Item>
-          <Descriptions.Item label={t('projectDetail.descriptions.commands')}>{commandsCount}</Descriptions.Item>
-        </Descriptions>
+        <AxiDescriptions
+          columns={2}
+          items={[
+            { key: 'state', label: t('projectDetail.descriptions.state'), value: stateText },
+            { key: 'workspace', label: t('projectDetail.descriptions.workspace'), value: workspaceState },
+            { key: 'branch', label: t('projectDetail.descriptions.branch'), value: git.branch || unregisteredBranch },
+            { key: 'commands', label: t('projectDetail.descriptions.commands'), value: commandsCount },
+          ]}
+        />
       </AxiTableGroup>
 
       <GovernanceInspector documents={governanceDocuments} evidence={governanceEvidence} impact={governanceImpact} locale={locale} unit={governanceUnit} violations={governanceViolations} waivers={governanceWaivers} policyDecisions={governancePolicyDecisions} />

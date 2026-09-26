@@ -1,7 +1,13 @@
 import React from 'react';
-import { Alert, Button, Empty, Spin } from 'antd';
+// axi-ui-escape-hatch: Button 在 @axi/core 仅导出 AxiIconButton（图标按钮变体），
+// 没有等价的主操作按钮组件；保留 antd Button 维持现有 size="small" / type="link" 行为。
+// axi-ui-escape-hatch: Empty 渲染通知列表的占位，@axi/* 未提供等价 Empty 组件。
+// axi-ui-escape-hatch: Spin 用于通知加载中的行内旋转占位，@axi/* 未提供等价 Spin 组件；
+// 保留 antd Spin size="small" 与原视觉一致。
+import { Button, Empty, Spin } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
+import { AxiBanner } from '@axi/widgets';
 import {
   announceNotificationChange,
   fetchNotifications,
@@ -111,11 +117,10 @@ const Notifications: React.FC = () => {
             <div className="wb-notification-center__state" role="status"><Spin size="small" /><span>{t('notification.loading')}</span></div>
           ) : null}
           {inbox.isError || mutationError ? (
-            <Alert
+            <AxiBanner
               action={<Button size="small" type="link" onClick={retry}>{t('notification.retry')}</Button>}
               message={t('notification.failed')}
-              showIcon
-              type="warning"
+              tone="warning"
             />
           ) : null}
           {!inbox.isPending && !inbox.isError && notifications.length === 0 ? (

@@ -27,7 +27,9 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'vite.apiProxyTarget.test.ts'],
     // Quarantined admin pages no longer reachable from App.tsx; their tests
     // would otherwise assert antd-era behavior that the new contract forbids.
-    exclude: ['src/pages/admin/**', 'src/pages/Projects.test.tsx', 'src/pages/ProjectDetail.test.tsx', 'src/pages/CommandCenter.test.tsx', 'src/pages/commit-ledger/**', 'src/pages/Settings.test.tsx'],
+    // 2026-09-26: Projects / ProjectDetail / admin pages have been migrated to
+    // @axi/ui components; the quarantined tests can run again.
+    exclude: ['src/pages/CommandCenter.test.tsx', 'src/pages/commit-ledger/**', 'src/pages/Settings.test.tsx'],
     // Mounting Handoff routes through slow Axi chrome; default 5s is too tight.
     testTimeout: 30_000,
     hookTimeout: 30_000,

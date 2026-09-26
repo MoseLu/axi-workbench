@@ -80,6 +80,19 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_CONTROL_PLANE_PROXY_TARGET || 'http://localhost:8092',
           changeOrigin: true,
         },
+        // @axi/api-client's `controlPlaneClient` targets /api/v1/control-plane/*,
+        // which the Go api-gateway (3209) exposes via ProxyWebControl: it
+        // verifies the HttpOnly session cookie, then forwards to the Node
+        // control-plane with X-Axi-Internal-Token + X-Axi-Subject. Keep this
+        // on the gateway so browser requests authenticate as the logged-in
+        // user instead of needing an owner bearer token.
+        '/api/v1/control-plane': {
+          target: selectApiProxyTarget({
+            apiProxyTarget: env.VITE_API_PROXY_TARGET,
+            apiBaseURL: env.VITE_API_BASE_URL,
+          }),
+          changeOrigin: true,
+        },
         // Priority: trimmed VITE_API_PROXY_TARGET, exact-loopback VITE_API_BASE_URL,
         // then the local 127.0.0.1:8088 default. loadEnv makes .env* values apply.
         '/api': {
@@ -99,6 +112,15 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_CONTROL_PLANE_PROXY_TARGET || 'http://localhost:8092',
           changeOrigin: true,
           rewrite: (requestPath) => requestPath.replace(/^\/control-plane/u, ''),
+        },
+        // Session bootstrap + email verification live on api-gateway (3209).
+        '/session': {
+          target: selectApiProxyTarget({
+            apiProxyTarget: env.VITE_API_PROXY_TARGET,
+            apiBaseURL: env.VITE_API_BASE_URL,
+          }),
+          changeOrigin: true,
+          secure: env.VITE_API_PROXY_INSECURE === 'true' ? false : true,
         },
       },
     },

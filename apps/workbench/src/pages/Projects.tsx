@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Input, Segmented, Space } from 'antd';
+// axi-ui-escape-hatch: Segmented 没有 @axi/* 等价控件（filter 三态切换），沿用 antd。
+import { Segmented } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
+import { AxiIconButton } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../i18n';
 import {
@@ -76,7 +79,15 @@ const Projects: React.FC = () => {
     {
       align: 'right',
       key: 'action',
-      render: (_, row) => <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}>{t('projects.column.action')}</Button>,
+      render: (_, row) => (
+        <AxiIconButton
+          aria-label={t('projects.column.action')}
+          label={t('projects.column.action')}
+          size="small"
+          variant="primary"
+          onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}
+        />
+      ),
       title: t('projects.column.actionHeader'),
       width: 100,
     },
@@ -87,24 +98,32 @@ const Projects: React.FC = () => {
       ariaLabel={t('projects.title')}
       className="projects-crud"
       search={(
-        <Input
-          allowClear
+        <input
           aria-label={t('projects.search.ariaLabel')}
+          className="projects-crud__search-input"
           placeholder={t('projects.search.placeholder')}
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
       )}
       toolbar={(
-        <Space size={8}>
+        <AxiRow className="projects-crud__toolbar" style={{ gap: 8 }}>
           <Segmented<ProjectFilter>
             options={projectFilters}
             size="small"
             value={filter}
             onChange={(value) => setFilter(value)}
           />
-          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? t('projects.refreshing') : t('projects.refresh')}</Button>
-        </Space>
+          <AxiIconButton
+            aria-label={t('projects.refresh')}
+            disabled={isFetching}
+            label={isFetching ? t('projects.refreshing') : t('projects.refresh')}
+            loading={isFetching}
+            size="small"
+            onClick={() => void refetch()}
+          />
+        </AxiRow>
       )}
     >
       {error ? (

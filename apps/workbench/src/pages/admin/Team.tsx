@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Button, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
+import { AxiIconButton } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {
@@ -44,7 +45,15 @@ const Team: React.FC = () => {
     {
       align: 'right',
       key: 'action',
-      render: (_, row) => <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}>{t('team.viewProject')}</Button>,
+      render: (_, row) => (
+        <AxiIconButton
+          aria-label={t('team.viewProject')}
+          label={t('team.viewProject')}
+          size="small"
+          variant="primary"
+          onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}
+        />
+      ),
       title: t('projects.column.actionHeader'),
       width: 110,
     },
@@ -55,10 +64,22 @@ const Team: React.FC = () => {
       ariaLabel={t('team.title')}
       className="team-crud"
       toolbar={(
-        <Space size={6}>
-          <Button size="small" onClick={() => navigate('/admin/project')}>{t('team.projectsLink')}</Button>
-          <Button disabled={isFetching} size="small" onClick={() => void refetch()}>{isFetching ? t('team.refreshing') : t('team.refresh')}</Button>
-        </Space>
+        <AxiRow className="team-crud__toolbar" style={{ gap: 6 }}>
+          <AxiIconButton
+            aria-label={t('team.projectsLink')}
+            label={t('team.projectsLink')}
+            size="small"
+            onClick={() => navigate('/admin/project')}
+          />
+          <AxiIconButton
+            aria-label={t('team.refresh')}
+            disabled={isFetching}
+            label={isFetching ? t('team.refreshing') : t('team.refresh')}
+            loading={isFetching}
+            size="small"
+            onClick={() => void refetch()}
+          />
+        </AxiRow>
       )}
     >
       {error ? (

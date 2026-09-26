@@ -4,6 +4,13 @@
   /* Uses DesktopCrudFrame layout */
 }
 
+.wb-empty {
+  padding: var(--axi-space-5, 24px);
+  text-align: center;
+  color: var(--axi-text-muted, var(--palette-gray-500));
+  font-size: var(--axi-font-size-sm, 13px);
+}
+
 /* Summary Cards Grid */
 .commit-ledger-summary-cards {
   display: grid;

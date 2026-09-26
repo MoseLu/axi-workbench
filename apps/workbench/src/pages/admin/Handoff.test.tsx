@@ -116,8 +116,7 @@ describe('Handoff', () => {
 
     expect(await screen.findByText('交接历史')).toBeInTheDocument();
     expect(screen.getByText('sample-app')).toBeInTheDocument();
-    await user.click(screen.getByLabelText('交接状态筛选'));
-    await user.click(await screen.findByText('已完成'));
+    await user.selectOptions(screen.getByLabelText('交接状态筛选'), 'completed');
     await waitFor(() => expect(fetchMock).toHaveBeenLastCalledWith(
       expect.stringContaining('/api/v1/handoffs?status=completed'),
       expect.objectContaining({ credentials: 'include' }),

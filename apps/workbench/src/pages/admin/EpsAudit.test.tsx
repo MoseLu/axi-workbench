@@ -8,10 +8,14 @@ import { AuthProvider } from '../../contexts/AuthContext';
 import EpsAudit from './EpsAudit';
 
 const mockUseEpsAssets = vi.fn();
+const mockUseEpsFindings = vi.fn();
+const mockUseEpsRuns = vi.fn();
 const mockUseRunEpsAudit = vi.fn();
 
 vi.mock('@axi/api-client', () => ({
   useEpsAssets: () => mockUseEpsAssets(),
+  useEpsFindings: () => mockUseEpsFindings(),
+  useEpsRuns: () => mockUseEpsRuns(),
   useRunEpsAudit: () => mockUseRunEpsAudit(),
 }));
 
@@ -69,6 +73,14 @@ describe('EpsAudit', () => {
       isPending: false,
       isError: false,
       mutate: vi.fn(),
+    });
+    mockUseEpsFindings.mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+    });
+    mockUseEpsRuns.mockReturnValue({
+      data: { items: [] },
+      isLoading: false,
     });
     Object.defineProperty(window, 'matchMedia', {
       writable: true,

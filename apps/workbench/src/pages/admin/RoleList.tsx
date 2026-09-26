@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Input, Select, message } from 'antd';
+// axi-ui-escape-hatch: Button 在 @axi/core 仅导出 AxiIconButton（图标按钮变体），
+// 没有等价的主操作按钮组件；保留 antd Button 维持现有 loading / type=primary 行为。
+// axi-ui-escape-hatch: Input 用于行内关键字检索（与 Button 共构搜索集群），
+// @axi/crud 的 AxiSearchKey/AxiSearchBar 假设走 CrudService.refresh 路径，
+// 这里仍由 filterTenantMembers 本地过滤；不切换数据通路。
+// axi-ui-escape-hatch: Select 承担 tenant / role 维度过滤，
+// @axi/* 未提供等价且可独立使用的 Select 组件（@axi/widgets 的 AxiSelect 仍 antd 包装），
+// 保留 antd Select 维持现有 options / allowClear 接口。
+import { Button, Input, Select } from 'antd';
 import {
   AxiCrud,
   AxiCrudTable,
@@ -10,6 +18,7 @@ import {
   type AxiTableColumn,
   type CrudService,
 } from '@axi/crud';
+import { AxiMessage } from '@axi/core';
 import {
   useCreateTenant,
   useSaveTenantMember,
@@ -132,7 +141,7 @@ const RoleList: React.FC = () => {
       if (!selectedTenantId) return;
       return crudRef.current?.refresh();
     }).catch(() => {
-      message.error(t('authority.refresh.failed'));
+      AxiMessage.error(t('authority.refresh.failed'));
     });
   };
 
@@ -149,9 +158,9 @@ const RoleList: React.FC = () => {
         slug,
       });
       setTenantId(tenant.id);
-      message.success(t('authority.bootstrap.success').replace('{name}', tenant.name));
+      AxiMessage.success(t('authority.bootstrap.success').replace('{name}', tenant.name));
     } catch {
-      message.error(t('authority.bootstrap.failed'));
+      AxiMessage.error(t('authority.bootstrap.failed'));
     }
   };
 
@@ -313,7 +322,7 @@ const RoleList: React.FC = () => {
         onSubmit={(form, event) => {
           void event.next(form).catch(() => {
             event.done();
-            message.error(t('authority.save.failed'));
+            AxiMessage.error(t('authority.save.failed'));
           });
         }}
       />

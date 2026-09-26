@@ -1,4 +1,7 @@
 import React, { useMemo } from 'react';
+// axi-ui-escape-hatch: antd Button/Input/Select 暂时保留 — @axi/ui 暂无等价
+// 的「带 allowClear + onPressEnter 的搜索框」「带 loading 的刷新按钮」组合，
+// 等 @axi/widgets.AxiSearchInput 上线后再替换。
 import { Button, Input, Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,6 +11,8 @@ import {
   type AxiTableColumn,
   type AxiTableOpButton,
 } from '@axi/crud';
+import { AxiCardBanner } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot, useRunGovernanceAutomation, useTransitionGovernanceRisk } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {
@@ -119,7 +124,7 @@ const Dashboard: React.FC = () => {
         ariaLabel={t('dashboard.title')}
         className="dashboard-crud"
         search={!showError && !showLoading ? (
-          <div className="wb-crud-query-cluster">
+          <AxiRow className="wb-crud-query-cluster">
             <Select
               aria-label={t('dashboard.filter.ariaLabel')}
               options={[
@@ -144,14 +149,14 @@ const Dashboard: React.FC = () => {
               onPressEnter={runSearch}
             />
             <Button type="primary" onClick={runSearch}>{t('common.search')}</Button>
-          </div>
+          </AxiRow>
         ) : undefined}
         top={(
-          <div className="wb-crud-action-cluster">
+          <AxiRow className="wb-crud-action-cluster">
             <Button disabled={isFetching} onClick={() => void refetch()}>
               {isFetching ? t('dashboard.refreshing') : t('dashboard.refresh')}
             </Button>
-          </div>
+          </AxiRow>
         )}
       >
         {showError ? (
@@ -166,20 +171,26 @@ const Dashboard: React.FC = () => {
           <ControlPlaneState description={t('dashboard.loading.description')} loading title={t('dashboard.loading.title')} />
         ) : (
           <>
-            <AxiTableGroup className="dashboard-crud__table">
-              <AxiCrudTable
-                columns={projectColumns}
-                data={filteredProjectRows}
-                operationButtons={projectOperationButtons}
-                pagination={desktopCrudPagination(filteredProjectRows.length)}
-                rowKey="id"
-                rowSelection={false}
-                onRow={(row) => ({
-                  onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
-                  style: { cursor: 'pointer' },
-                })}
-              />
-            </AxiTableGroup>
+            <AxiCardBanner
+              className="dashboard-crud__overview"
+              description={t('dashboard.title')}
+              title={t('dashboard.title')}
+            >
+              <AxiTableGroup className="dashboard-crud__table">
+                <AxiCrudTable
+                  columns={projectColumns}
+                  data={filteredProjectRows}
+                  operationButtons={projectOperationButtons}
+                  pagination={desktopCrudPagination(filteredProjectRows.length)}
+                  rowKey="id"
+                  rowSelection={false}
+                  onRow={(row) => ({
+                    onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
+                    style: { cursor: 'pointer' },
+                  })}
+                />
+              </AxiTableGroup>
+            </AxiCardBanner>
             <GovernanceSummary
               governance={snapshot?.governance}
               onAutomationRun={async (automationId) => {

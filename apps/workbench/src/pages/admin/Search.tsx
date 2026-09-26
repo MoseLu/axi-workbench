@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Empty, Input } from 'antd';
+// axi-ui-escape-hatch: antd Input.Search 是 DesktopCrudFrame 的 search 槽位
+// 唯一带 allowClear + 受控 value 的搜索框；@axi/widgets 暂无等价组合，等
+// @axi/widgets.AxiSearchInput 上线后再替换。
+import { Input } from 'antd';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../i18n';
@@ -48,8 +51,16 @@ const SearchPage: React.FC = () => {
         description={query.trim() ? t('search.results.count', `${results.length}`) : t('search.results.idle')}
         title={t('search.results.title')}
       >
-        {!query.trim() ? <Empty description={t('search.results.waiting')} image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
-        {query.trim() && results.length === 0 ? <Empty description={t('search.results.empty', query.trim())} image={Empty.PRESENTED_IMAGE_SIMPLE} /> : null}
+        {!query.trim() ? (
+          <div className="wb-search__empty" role="status">
+            {t('search.results.waiting')}
+          </div>
+        ) : null}
+        {query.trim() && results.length === 0 ? (
+          <div className="wb-search__empty" role="status">
+            {t('search.results.empty', query.trim())}
+          </div>
+        ) : null}
         {results.length > 0 ? (
           <AxiTable
             columns={columns}

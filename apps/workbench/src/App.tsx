@@ -20,6 +20,24 @@ import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
 import LegalDocument from './pages/LegalDocument';
 import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
+import Dashboard from './pages/admin/Dashboard';
+import Operations from './pages/admin/Operations';
+import EpsAudit from './pages/admin/EpsAudit';
+import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
+import Observability from './pages/admin/Observability';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
+import Team from './pages/admin/Team';
+import Workspace from './pages/admin/Workspace';
+import CommandCenter from './pages/CommandCenter';
+import Handoff from './pages/admin/Handoff';
+import HandoffCreate from './pages/admin/HandoffCreate';
+import MenuList from './pages/admin/MenuList';
+import RoleList from './pages/admin/RoleList';
+import Devices from './pages/admin/me/Devices';
+import NotificationsPage from './pages/admin/me/Notifications';
+import ThemePage from './pages/admin/me/Theme';
+import SearchPage from './pages/admin/Search';
 import RequireSession from './components/Auth/RequireSession';
 import SessionLoading from './components/Auth/SessionLoading';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -109,38 +127,38 @@ const WorkbenchSurface: React.FC = () => {
                   {/* Web 管理端专属壳：Axi Dashboard Chrome。 */}
                   <Route path="/" element={<RequireSession><MainLayout /></RequireSession>}>
                     <Route index element={<Navigate to="admin/dashboard" replace />} />
-                    <Route path="admin/dashboard" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/dashboard" element={<Dashboard />} />
                     <Route path="admin/personal-os/today" element={<PersonalOsToday />} />
                     <Route path="admin/personal-os/workbench" element={<PersonalOsWorkbench />} />
-                    <Route path="admin/operations" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/operations/eps" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/operations/commit-ledger" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/operations/observability" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/project" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/project/:id" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/operations" element={<Operations />} />
+                    <Route path="admin/operations/eps" element={<EpsAudit />} />
+                    <Route path="admin/operations/commit-ledger" element={<CommitLedgerPage />} />
+                    <Route path="admin/operations/observability" element={<Observability />} />
+                    <Route path="admin/project" element={<Projects />} />
+                    <Route path="admin/project/:id" element={<ProjectDetail />} />
                     <Route path="admin/task" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/team" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/workspace" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/command-center" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/team" element={<Team />} />
+                    <Route path="admin/workspace" element={<Workspace />} />
+                    <Route path="admin/command-center" element={<CommandCenter />} />
                     {/* 历史扫码链接不再打开桌面摄像头工具，回到控制中心。 */}
                     <Route path="admin/scan" element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="admin/handoff" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/handoff/:id" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/handoff" element={<Handoff />} />
+                    <Route path="admin/handoff/:id" element={<HandoffCreate />} />
                     {/* 全局联想搜索二级页 */}
-                    <Route path="admin/search" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/search" element={<SearchPage />} />
                     {/* 我的：入口 + 二级页 */}
                     {/* Cool Admin personal center is the canonical account form. */}
                     <Route path="admin/me" element={<AxiUiContractNotFound />} />
                     {/* Preserve old account bookmarks without a second account page. */}
                     <Route path="admin/me/account" element={<Navigate to="/admin/me" replace />} />
-                    <Route path="admin/me/devices" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/me/notifications" element={<AxiUiContractNotFound />} />
-                    <Route path="admin/me/theme" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/me/devices" element={<Devices />} />
+                    <Route path="admin/me/notifications" element={<NotificationsPage />} />
+                    <Route path="admin/me/theme" element={<ThemePage />} />
                     {/* Retired settings table: preserve old bookmarks without rendering a duplicate settings page. */}
                     <Route path="admin/me/settings" element={<Navigate to="/admin/me/theme" replace />} />
-                    <Route path="admin/settings/menu" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/settings/menu" element={<MenuList />} />
                     <Route path="admin/settings/user" element={<Navigate to="/admin/me" replace />} />
-                    <Route path="admin/settings/role" element={<AxiUiContractNotFound />} />
+                    <Route path="admin/settings/role" element={<RoleList />} />
                   </Route>
 
                   <Route path="*" element={<AxiUiContractNotFound />} />

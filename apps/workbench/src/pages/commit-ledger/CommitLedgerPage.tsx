@@ -12,7 +12,12 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Button, Card, Drawer, Empty, Input, Select, Space, Spin, Tag, Tooltip, Typography } from 'antd';
+// axi-ui-escape-hatch: antd Button/Input/Spin/Drawer/Tooltip/@ant-design/icons 暂
+// 时保留 — @axi/ui 暂无「带 allowClear + onPressEnter + onClear 的搜索输入」「带
+// loading 状态的刷新按钮」「Drawer 抽屉」「Spin 旋转」「Tooltip 悬浮提示」「Cool
+// Admin 历史图标集」等价组合，等 @axi/widgets.AxiSearchInput / AxiDrawer /
+// AxiSpin / AxiTooltip 上线后再替换。
+import { Button, Drawer, Input, Spin, Tooltip } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -23,6 +28,8 @@ import {
   ReloadOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
+import { AxiTag } from '@axi/core';
+import { AxiRow, AxiSelect } from '@axi/widgets';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { useCommitLedgerCommits, useCommitLedgerProjects, useCommitLedgerRecord, useCommitLedgerSummary, type CommitLedgerRecord } from '../../hooks/useCommitLedger';
 import { ControlPlaneState } from '../admin/ControlPlaneState';
@@ -30,8 +37,6 @@ import { DesktopCrudFrame } from '../admin/DesktopCrudFrame';
 import { desktopCrudPagination, DESKTOP_CRUD_PAGE_SIZE } from '../admin/tenantMemberCrud';
 import { useI18n } from '../../i18n';
 import './CommitLedger.css';
-
-const { Text, Paragraph } = Typography;
 
 // ============================================================
 // Types
@@ -240,9 +245,9 @@ function SummaryCards({
   if (loading && !summary) {
     return (
       <div className="commit-ledger-summary-cards">
-        <Card size="small" className="summary-card">
+        <div className="summary-card">
           <Spin size="small" />
-        </Card>
+        </div>
       </div>
     );
   }
@@ -255,39 +260,39 @@ function SummaryCards({
 
   return (
     <div className="commit-ledger-summary-cards">
-      <Card size="small" className="summary-card">
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.projects') || '项目数'}</div>
         <div className="stat-value">{summary.totalProjects}</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.totalCommits') || '提交总数'}</div>
         <div className="stat-value">{summary.totalCommits}</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.recentCommits') || '最近提交'}</div>
         <div className="stat-value">{formatRelativeTime(summary.lastUpdated)}</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.verified') || '已验证'}</div>
         <div className="stat-value success">{summary.verifiedCommits}</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.unverified') || '未验证'}</div>
         <div className="stat-value warning">{summary.unverifiedCommits}</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.coverage') || '覆盖率'}</div>
         <div className="stat-value">{coverage}%</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.dirty') || 'Dirty'}</div>
         <div className="stat-value error">{summary.dirtyWorkspaces}</div>
-      </Card>
-      <Card size="small" className="summary-card">
+      </div>
+      <div className="summary-card">
         <div className="stat-label">{t('commitLedger.summary.conflicts') || '冲突'}</div>
         <div className="stat-value error">{summary.conflictRecords}</div>
-      </Card>
-      <Card size="small" className="summary-card summary-card--refresh">
+      </div>
+      <div className="summary-card summary-card--refresh">
         <Button
           icon={<ReloadOutlined spin={isFetching} />}
           onClick={onRefresh}
@@ -296,7 +301,7 @@ function SummaryCards({
         >
           {t('common.refresh') || '刷新'}
         </Button>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -350,16 +355,16 @@ function CommitDetailDrawer({
           {/* Subject */}
           <div className="detail-section">
             <label className="detail-label">{t('commitLedger.detail.subject') || 'Subject'}</label>
-            <Text strong className="detail-value">{record.commit.subject}</Text>
+            <strong className="detail-value">{record.commit.subject}</strong>
           </div>
 
           {/* Body */}
           {record.commit.body && (
             <div className="detail-section">
               <label className="detail-label">{t('commitLedger.detail.body') || 'Body'}</label>
-              <Paragraph className="detail-value" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
+              <p className="detail-value" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
                 {record.commit.body}
-              </Paragraph>
+              </p>
             </div>
           )}
 
@@ -367,11 +372,11 @@ function CommitDetailDrawer({
           <div className="detail-section">
             <label className="detail-label">{t('commitLedger.detail.type') || 'Type'}</label>
             <div className="detail-value">
-              <Tag color={TYPE_COLORS[record.commit.type] || 'default'}>
+              <AxiTag color={TYPE_COLORS[record.commit.type] || 'default'}>
                 {record.commit.type}
                 {record.commit.scope && `:${record.commit.scope}`}
-              </Tag>
-              {record.commit.breaking && <Tag color="red">BREAKING</Tag>}
+              </AxiTag>
+              {record.commit.breaking && <AxiTag color="red">BREAKING</AxiTag>}
             </div>
           </div>
 
@@ -380,7 +385,7 @@ function CommitDetailDrawer({
             <label className="detail-label">{t('commitLedger.detail.author') || 'Author'}</label>
             <div className="detail-value">
               {record.actor.name}
-              {record.actor.email && <span style={{ color: '#888', marginLeft: 8 }}>&lt;{record.actor.email}&gt;</span>}
+              {record.actor.email && <span style={{ color: 'var(--palette-gray-500)', marginLeft: 8 }}>&lt;{record.actor.email}&gt;</span>}
             </div>
           </div>
 
@@ -399,10 +404,10 @@ function CommitDetailDrawer({
               <label className="detail-label">{t('commitLedger.detail.refs') || 'Refs'}</label>
               <div className="detail-value">
                 {record.refs.branches?.map((b, i) => (
-                  <Tag key={`b-${i}`} color="blue">{b}</Tag>
+                  <AxiTag key={`b-${i}`} color="blue">{b}</AxiTag>
                 ))}
                 {record.refs.tags?.map((t2, i) => (
-                  <Tag key={`t-${i}`} color="green">{t2}</Tag>
+                  <AxiTag key={`t-${i}`} color="green">{t2}</AxiTag>
                 ))}
               </div>
             </div>
@@ -413,11 +418,11 @@ function CommitDetailDrawer({
             <div className="detail-section">
               <label className="detail-label">{t('commitLedger.detail.diff') || 'Diff'}</label>
               <div className="detail-value">
-                <Tag icon={<CodeOutlined />} color="blue">
+                <AxiTag icon={<CodeOutlined />} color="blue">
                   {record.diff.filesChanged ?? 0} files
-                </Tag>
-                <Tag color="green">+{record.diff.insertions ?? 0}</Tag>
-                <Tag color="red">-{record.diff.deletions ?? 0}</Tag>
+                </AxiTag>
+                <AxiTag color="green">+{record.diff.insertions ?? 0}</AxiTag>
+                <AxiTag color="red">-{record.diff.deletions ?? 0}</AxiTag>
               </div>
             </div>
           )}
@@ -433,9 +438,9 @@ function CommitDetailDrawer({
                 <div>
                   {t('commitLedger.detail.dirty') || 'Dirty'}:
                   {record.workspaceState.isDirty ? (
-                    <Tag color="red">{t('common.yes') || '是'}</Tag>
+                    <AxiTag color="red">{t('common.yes') || '是'}</AxiTag>
                   ) : (
-                    <Tag color="green">{t('common.no') || '否'}</Tag>
+                    <AxiTag color="green">{t('common.no') || '否'}</AxiTag>
                   )}
                 </div>
                 {record.workspaceState.ahead !== undefined && (
@@ -459,9 +464,9 @@ function CommitDetailDrawer({
               {(() => {
                 const config = STATUS_CONFIG[record.verification?.status ?? 'unknown'];
                 return (
-                  <Tag color={config.color} icon={config.icon}>
+                  <AxiTag color={config.color} icon={config.icon}>
                     {config.label}
-                  </Tag>
+                  </AxiTag>
                 );
               })()}
             </div>
@@ -480,7 +485,7 @@ function CommitDetailDrawer({
                 <label>{t('commitLedger.detail.evidence') || 'Evidence'}:</label>
                 <ul>
                   {record.verification.evidenceRefs.map((ref, i) => (
-                    <li key={i}><Text code copyable>{ref}</Text></li>
+                    <li key={i}><code>{ref}</code></li>
                   ))}
                 </ul>
               </div>
@@ -492,14 +497,14 @@ function CommitDetailDrawer({
             <label className="detail-label">{t('commitLedger.detail.provenance') || '来源'}</label>
             <div className="detail-value">
               <div>Source: {record.provenance.source}</div>
-              <div style={{ fontSize: 12, wordBreak: 'break-all', color: '#666' }}>
+              <div style={{ fontSize: 12, wordBreak: 'break-all', color: 'var(--palette-gray-500)' }}>
                 {record.provenance.sourcePath}
               </div>
               {record.provenance.sourceCommand && (
                 <div><code style={{ fontSize: 11 }}>{record.provenance.sourceCommand}</code></div>
               )}
               {record.provenance.sourceHash && (
-                <div style={{ fontSize: 11, color: '#888' }}>
+                <div style={{ fontSize: 11, color: 'var(--palette-gray-500)' }}>
                   Hash: {record.provenance.sourceHash.slice(0, 8)}
                 </div>
               )}
@@ -511,17 +516,17 @@ function CommitDetailDrawer({
             <label className="detail-label">{t('commitLedger.detail.ingestion') || '摄取'}</label>
             <div className="detail-value">
               <div>Status: {record.ingestion.status}</div>
-              <div style={{ fontSize: 12, color: '#888' }}>
+              <div style={{ fontSize: 12, color: 'var(--palette-gray-500)' }}>
                 {t('commitLedger.detail.firstSeen') || 'First seen'}: {formatTime(record.ingestion.firstSeenAt)}
               </div>
-              <div style={{ fontSize: 12, color: '#888' }}>
+              <div style={{ fontSize: 12, color: 'var(--palette-gray-500)' }}>
                 {t('commitLedger.detail.lastSeen') || 'Last seen'}: {formatTime(record.ingestion.lastSeenAt)}
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <Empty description={t('commitLedger.detail.notFound') || '记录不存在'} />
+        <div className="wb-empty" role="status">{t('commitLedger.detail.notFound') || '记录不存在'}</div>
       )}
     </Drawer>
   );
@@ -605,7 +610,7 @@ export function CommitLedgerPage() {
       dataIndex: 'projectId',
       title: t('commitLedger.column.project') || '项目',
       width: 150,
-      render: (value) => <Tag color="blue">{value}</Tag>,
+      render: (value) => <AxiTag color="blue">{value}</AxiTag>,
     },
     {
       dataIndex: 'shortSha',
@@ -630,10 +635,10 @@ export function CommitLedgerPage() {
       title: t('commitLedger.column.type') || '类型',
       width: 100,
       render: (value, row) => (
-        <Space>
-          <Tag color={TYPE_COLORS[value] || 'default'}>{value}</Tag>
-          {row.breaking && <Tag color="red" style={{ fontSize: 10 }}>!</Tag>}
-        </Space>
+        <AxiRow>
+          <AxiTag color={TYPE_COLORS[value] || 'default'}>{value}</AxiTag>
+          {row.breaking && <AxiTag color="red" style={{ fontSize: 10 }}>!</AxiTag>}
+        </AxiRow>
       ),
     },
     {
@@ -658,9 +663,9 @@ export function CommitLedgerPage() {
       render: (value) => {
         const config = STATUS_CONFIG[value] || STATUS_CONFIG.unknown;
         return (
-          <Tag color={config.color} icon={config.icon}>
+          <AxiTag color={config.color} icon={config.icon}>
             {config.label}
-          </Tag>
+          </AxiTag>
         );
       },
     },
@@ -669,11 +674,11 @@ export function CommitLedgerPage() {
       title: t('commitLedger.column.dirty') || 'Dirty',
       width: 80,
       render: (value) => {
-        if (value === null) return <Tag>—</Tag>;
+        if (value === null) return <AxiTag>—</AxiTag>;
         return value ? (
-          <Tag color="red">Dirty</Tag>
+          <AxiTag color="red">Dirty</AxiTag>
         ) : (
-          <Tag color="green">Clean</Tag>
+          <AxiTag color="green">Clean</AxiTag>
         );
       },
     },
@@ -682,7 +687,7 @@ export function CommitLedgerPage() {
       title: t('commitLedger.column.evidence') || '证据',
       width: 70,
       render: (value) => (
-        <span style={{ color: value > 0 ? '#52c41a' : '#999' }}>
+        <span style={{ color: value > 0 ? 'var(--color-chart-2)' : 'var(--palette-gray-500)' }}>
           {value > 0 ? `${value}` : '—'}
         </span>
       ),
@@ -721,22 +726,22 @@ export function CommitLedgerPage() {
       dataIndex: 'ahead',
       title: t('commitLedger.column.ahead') || 'Ahead',
       width: 70,
-      render: (value) => value ? <span style={{ color: value > 0 ? '#fa8c16' : undefined }}>+{value}</span> : '—',
+      render: (value) => value ? <span style={{ color: value > 0 ? 'var(--palette-orange-500)' : undefined }}>+{value}</span> : '—',
     },
     {
       dataIndex: 'behind',
       title: t('commitLedger.column.behind') || 'Behind',
       width: 70,
-      render: (value) => value ? <span style={{ color: value > 0 ? '#1890ff' : undefined }}>-{value}</span> : '—',
+      render: (value) => value ? <span style={{ color: value > 0 ? 'var(--color-chart-1)' : undefined }}>-{value}</span> : '—',
     },
     {
       dataIndex: 'isDirty',
       title: t('commitLedger.column.dirty') || 'Dirty',
       width: 70,
       render: (value) => value ? (
-        <Tag color="red">Dirty</Tag>
+        <AxiTag color="red">Dirty</AxiTag>
       ) : (
-        <Tag color="green">Clean</Tag>
+        <AxiTag color="green">Clean</AxiTag>
       ),
     },
     {
@@ -752,9 +757,9 @@ export function CommitLedgerPage() {
       render: (value) => {
         const config = STATUS_CONFIG[value] || STATUS_CONFIG.unknown;
         return (
-          <Tag color={config.color} icon={config.icon}>
+          <AxiTag color={config.color} icon={config.icon}>
             {config.label}
-          </Tag>
+          </AxiTag>
         );
       },
     },
@@ -833,44 +838,44 @@ export function CommitLedgerPage() {
         </div>
       ) : undefined}
       filters={!showError && !showLoading ? (
-        <Space wrap>
-          <Select
+        <AxiRow style={{ gap: 'var(--axi-space-2, 8px)', flexWrap: 'wrap' }}>
+          <AxiSelect
             allowClear
             aria-label={t('commitLedger.filter.project') || 'Filter by project'}
             placeholder={t('commitLedger.filter.project') || '项目'}
             style={{ minWidth: 150 }}
             value={filters.projectId}
-            onChange={(val) => handleFilterChange('projectId', val ?? null)}
+            onChange={(val: unknown) => handleFilterChange('projectId', (val as string | undefined) ?? null)}
             options={projectOptions}
           />
-          <Select
+          <AxiSelect
             allowClear
             aria-label={t('commitLedger.filter.type') || 'Filter by type'}
             placeholder={t('commitLedger.filter.type') || '类型'}
             style={{ minWidth: 120 }}
             value={filters.type}
-            onChange={(val) => handleFilterChange('type', val ?? null)}
+            onChange={(val: unknown) => handleFilterChange('type', (val as string | undefined) ?? null)}
             options={COMMIT_TYPES}
           />
-          <Select
+          <AxiSelect
             allowClear
             aria-label={t('commitLedger.filter.status') || 'Filter by verification status'}
             placeholder={t('commitLedger.filter.status') || '验证状态'}
             style={{ minWidth: 120 }}
             value={filters.verificationStatus}
-            onChange={(val) => handleFilterChange('verificationStatus', val ?? null)}
+            onChange={(val: unknown) => handleFilterChange('verificationStatus', (val as string | undefined) ?? null)}
             options={VERIFICATION_STATUSES}
           />
-          <Select
+          <AxiSelect
             allowClear
             aria-label={t('commitLedger.filter.dirty') || 'Filter by dirty state'}
             placeholder={t('commitLedger.filter.dirty') || 'Dirty'}
             style={{ minWidth: 100 }}
             value={filters.isDirty === undefined ? undefined : String(filters.isDirty)}
-            onChange={(val) => handleFilterChange('isDirty', val === undefined ? null : val === 'true')}
+            onChange={(val: unknown) => handleFilterChange('isDirty', val === undefined ? null : String(val) === 'true')}
             options={DIRTY_OPTIONS}
           />
-        </Space>
+        </AxiRow>
       ) : undefined}
       top={!showError && !showLoading ? (
         <div className="wb-crud-action-cluster">
@@ -936,10 +941,9 @@ export function CommitLedgerPage() {
             {/* Empty State */}
             {showEmpty && (
               <div className="commit-ledger-empty">
-                <Empty
-                  description={t('commitLedger.empty.description') || '暂无提交记录'}
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
+                <div className="wb-empty" role="status">
+                  {t('commitLedger.empty.description') || '暂无提交记录'}
+                </div>
               </div>
             )}
           </div>

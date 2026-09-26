@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Input, Segmented, Space } from 'antd';
+// axi-ui-escape-hatch: Segmented 没有 @axi/* 等价的筛选器三态切换控件。
+import { Segmented } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
+import { AxiIconButton } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot, useWorkflowEngineWorkflows } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {
@@ -103,7 +106,15 @@ const Workspace: React.FC = () => {
     {
       dataIndex: 'targetLabel',
       render: (value, row) => value && row.targetId
-        ? <Button size="small" type="link" onClick={() => navigate(`/admin/project/${encodeURIComponent(row.targetId!)}`)}>{value}</Button>
+        ? (
+          <AxiIconButton
+            aria-label={value as string}
+            label={value as string}
+            size="small"
+            variant="primary"
+            onClick={() => navigate(`/admin/project/${encodeURIComponent(row.targetId!)}`)}
+          />
+        )
         : '—',
       title: t('workspace.column.target'),
       width: 180,
@@ -120,22 +131,24 @@ const Workspace: React.FC = () => {
     { dataIndex: 'available', title: t('workspace.column.status'), width: 100 },
     { dataIndex: 'summary', title: t('workspace.column.summary') },
   ];
+  const isRefreshing = isFetching || workflowQuery.isFetching;
 
   return (
     <DesktopCrudFrame
       ariaLabel={t('workspace.title')}
       className="workspace-crud"
       search={(
-        <Input
-          allowClear
+        <input
           aria-label={t('workspace.search.ariaLabel')}
+          className="workspace-crud__search-input"
           placeholder={t('workspace.search.placeholder')}
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
       )}
       toolbar={(
-        <Space size={8}>
+        <AxiRow className="workspace-crud__toolbar" style={{ gap: 8 }}>
           <Segmented<WorkQueueFilter>
             options={workQueueFilters.map((entry) => ({
               label: t(entry.labelKey),
@@ -145,14 +158,15 @@ const Workspace: React.FC = () => {
             value={filter}
             onChange={(value) => setFilter(value)}
           />
-          <Button
-            disabled={isFetching || workflowQuery.isFetching}
+          <AxiIconButton
+            aria-label={t('workspace.refresh')}
+            disabled={isRefreshing}
+            label={isRefreshing ? t('workspace.refreshing') : t('workspace.refresh')}
+            loading={isRefreshing}
             size="small"
             onClick={() => void Promise.all([refetch(), workflowQuery.refetch()])}
-          >
-            {isFetching || workflowQuery.isFetching ? t('workspace.refreshing') : t('workspace.refresh')}
-          </Button>
-        </Space>
+          />
+        </AxiRow>
       )}
     >
       {error ? (
