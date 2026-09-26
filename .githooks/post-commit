@@ -25,11 +25,17 @@ if [ -z "$_governance_root" ]; then
   echo "[axi-workspace-git-hooks] cannot locate governance root; skipping workspace propagation" >&2
   exit 0
 fi
-# Run both workspace telemetry hooks WITHOUT `|| true` so any failure surfaces
-# to the developer and CI. With `|| true`, the propagation and submit-log
-# failures (e.g., pnpm missing, Node incompat, git diff-tree errors) are
-# silently swallowed, leaving docs/workflows/executions/ inconsistent with
-# git history. Without it, any non-zero exit surfaces as a visible warning.
-# Mirrors foundation/workspace-governance fdee592.
-node "$_governance_root/scripts/git-hooks/axi-submit-log-post-commit.mjs" "$repo_root"
-node "$_governance_root/scripts/workspace-change-propagation.mjs" "$repo_root"
+status=0
+if ! node "$_governance_root/scripts/git-hooks/axi-submit-log-post-commit.mjs" "$repo_root"; then
+  echo "[axi-workspace-git-hooks] submit log failed" >&2
+  status=1
+fi
+if ! node "$_governance_root/scripts/workspace-change-ledger.mjs" record "$repo_root"; then
+  echo "[axi-workspace-git-hooks] change ledger record failed" >&2
+  status=1
+fi
+if ! node "$_governance_root/scripts/workspace-change-propagation.mjs" "$repo_root"; then
+  echo "[axi-workspace-git-hooks] workspace propagation failed" >&2
+  status=1
+fi
+exit "$status"
