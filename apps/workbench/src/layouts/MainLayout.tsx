@@ -294,12 +294,35 @@ const MainLayout: React.FC = () => {
     return filtered as unknown as AxiDashboardNavGroup[];
   }, [sidebarSearchValue, t, userRole]);
 
-  const shellNavGroups = useMemo(
-    () => isPersonalOsRoute
-      ? visibleDesktopNavGroups.filter((group) => group.key === 'personal-os')
-      : visibleDesktopNavGroups,
-    [isPersonalOsRoute, visibleDesktopNavGroups],
-  );
+  const shellNavGroups = useMemo<AxiDashboardNavGroup[]>(() => {
+    // Personal OS is a dedicated surface that intentionally lives outside the
+    // shared sidebar registry. When the route enters /admin/personal-os/* we
+    // swap the sidebar to a one-group projection so other workbench sections
+    // stay out of view, matching the fold-into-shared-AxiDashboardShell
+    // contract.
+    if (!isPersonalOsRoute) {
+      return visibleDesktopNavGroups;
+    }
+    const localizedToday = t('personalOs.nav.today');
+    const localizedWorkbench = t('personalOs.nav.workbench');
+    return [{
+      key: 'personal-os',
+      label: t('nav.group.personalOs'),
+      iconName: axiWorkbenchIconMap.overview,
+      children: [
+        {
+          key: '/admin/personal-os/today',
+          label: localizedToday,
+          iconName: axiWorkbenchIconMap.overview,
+        },
+        {
+          key: '/admin/personal-os/workbench',
+          label: localizedWorkbench,
+          iconName: axiWorkbenchIconMap.project,
+        },
+      ],
+    }];
+  }, [isPersonalOsRoute, t, visibleDesktopNavGroups]);
 
   const desktopBreadcrumbs = useMemo(
     () => resolveBreadcrumbs(location.pathname).map((item, index) => ({

@@ -52,6 +52,12 @@ export type WorkbenchNavGroup = {
   visibility?: VisibilityRole;
 };
 
+// Personal OS intentionally lives outside this registry: the workbench sidebar
+// exposes it as a dedicated surface through `MainLayout.isPersonalOsRoute`
+// instead of registering it as a top-level group here. Reintroducing a
+// `personal-os` group below would surface "个人操作系统" on every workbench
+// page and override the fold-into-shared-AxiDashboardShell contract verified
+// by `apps/workbench/scripts/verify-ui-contracts.mjs`.
 export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
   {
     key: 'overview',
@@ -62,16 +68,6 @@ export const workbenchDesktopNavGroupsWithKeys: WorkbenchNavGroup[] = [
       { key: '/admin/dashboard', label: '工作台概览', labelKey: 'nav.dashboard', iconName: axiWorkbenchIconMap.overview },
       { key: '/admin/operations', label: '运行状态', labelKey: 'nav.operations', iconName: axiWorkbenchIconMap.laptop },
       { key: '/admin/operations/eps', label: 'API 资产审计', labelKey: 'nav.epsAudit', iconName: axiWorkbenchIconMap.operations },
-    ],
-  },
-  {
-    key: 'personal-os',
-    label: '个人操作系统',
-    labelKey: 'nav.group.personalOs',
-    iconName: axiWorkbenchIconMap.overview,
-    children: [
-      { key: '/admin/personal-os/today', label: '今日', labelKey: 'personalOs.nav.today', iconName: axiWorkbenchIconMap.overview },
-      { key: '/admin/personal-os/workbench', label: '项目队列', labelKey: 'personalOs.nav.workbench', iconName: axiWorkbenchIconMap.project },
     ],
   },
   {
