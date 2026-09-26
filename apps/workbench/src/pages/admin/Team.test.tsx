@@ -71,8 +71,6 @@ vi.mock('./ControlPlaneState', () => ({
 
 const i18nDict: Record<string, string> = {
   'team.title': '团队',
-  'team.refresh': '刷新',
-  'team.refreshing': '刷新中',
   'team.error.title': '团队协作关系暂不可用',
   'team.error.description': '无法从控制面读取项目协作关系；不会显示伪造数据。',
   'team.loading.title': '正在读取协作关系',
@@ -82,7 +80,6 @@ const i18nDict: Record<string, string> = {
   'team.count': ' 项协作',
   'team.empty': '当前没有登记的项目协作关系。',
   'team.viewProject': '查看',
-  'team.projectsLink': '项目组合',
   'projects.column.label': '项目',
   'projects.column.actionHeader': '操作',
 };

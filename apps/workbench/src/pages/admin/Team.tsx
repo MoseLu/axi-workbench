@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { AxiIconButton } from '@axi/core';
-import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {
@@ -26,7 +25,7 @@ type CollaborationRow = {
 const Team: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
+  const { data: snapshot, error, isLoading } = useControlSnapshot();
   const projects = useMemo(
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
     [snapshot],
@@ -63,24 +62,6 @@ const Team: React.FC = () => {
     <DesktopCrudFrame
       ariaLabel={t('team.title')}
       className="team-crud"
-      toolbar={(
-        <AxiRow className="team-crud__toolbar" style={{ gap: 6 }}>
-          <AxiIconButton
-            aria-label={t('team.projectsLink')}
-            label={t('team.projectsLink')}
-            size="small"
-            onClick={() => navigate('/admin/project')}
-          />
-          <AxiIconButton
-            aria-label={t('team.refresh')}
-            disabled={isFetching}
-            label={isFetching ? t('team.refreshing') : t('team.refresh')}
-            loading={isFetching}
-            size="small"
-            onClick={() => void refetch()}
-          />
-        </AxiRow>
-      )}
     >
       {error ? (
         <ControlPlaneState

@@ -197,6 +197,7 @@
   min-height: min(420px, calc(100vh - 200px));
   align-content: center;
   justify-items: center;
+  place-items: center;
   gap: var(--axi-space-2, 8px);
   padding: var(--axi-space-6);
   color: var(--axi-muted, rgba(255, 255, 255, .58));
@@ -206,6 +207,14 @@
 /* 数据请求期间，状态层占满内容区，避免 loading 被工具栏挤到页面上方。 */
 .wb-control-plane-state.is-loading {
   min-height: min(520px, calc(100vh - 180px));
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+/* 当父布局没有 toolbar / footer 时，让 loading 区吃到父容器全部高度，
+   这样内部 grid 的 align-content: center 才能真正把 spinner / 文案推到中部。 */
+.wb-control-plane-state.is-loading:only-child {
+  height: 100%;
 }
 
 .wb-control-plane-state .ant-empty {
