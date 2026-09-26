@@ -801,6 +801,9 @@ importers:
       '@axi/core':
         specifier: link:../../../../shared/axi-ui/packages/core
         version: link:../../../../shared/axi-ui/packages/core
+      '@axi/shell':
+        specifier: link:../../../../shared/axi-ui/packages/shell
+        version: link:../../../../shared/axi-ui/packages/shell
       '@axi/tokens':
         specifier: link:../../../../shared/axi-ui/packages/tokens
         version: link:../../../../shared/axi-ui/packages/tokens

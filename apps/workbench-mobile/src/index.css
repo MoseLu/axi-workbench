@@ -34,6 +34,23 @@ button { -webkit-tap-highlight-color: transparent; }
     var(--mobile-canvas);
 }
 
+/* Shared @axi/shell floating dock sits above the mobile tab bar. */
+.axi-mobile-floating-tools {
+  --axi-floating-tool-dock-block-gutter: calc(var(--wb-bottom-height, 60px) + env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+.axi-mobile-floating-tools__panel {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  height: 100%;
+  padding: 20px;
+  color: var(--mobile-text);
+}
+
+.axi-mobile-floating-tools__panel strong { font-size: 16px; }
+.axi-mobile-floating-tools__panel span { color: var(--mobile-muted); font-size: 12px; }
+
 .axi-mobile-header {
   z-index: 5;
   display: flex;

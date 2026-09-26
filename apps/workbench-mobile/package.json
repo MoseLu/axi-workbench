@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
     "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
     "@axi/workbench-foundation": "workspace:*",
     "@tanstack/react-query": "^5.0.0",

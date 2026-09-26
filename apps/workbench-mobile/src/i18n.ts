@@ -140,6 +140,10 @@ const messages = {
     'handoff.rejectionReason': '拒绝原因',
     'common.refresh': '刷新',
     'common.retry': '重试',
+    'common.quickTools': '快捷工具',
+    'common.openQuickTools': '打开快捷工具',
+    'common.closeQuickTools': '关闭快捷工具',
+    'common.quickToolsHint': '跨端共享的工作台入口',
   },
   'en-US': {
     'app.name': 'Axi Workbench',
@@ -279,6 +283,10 @@ const messages = {
     'handoff.rejectionReason': 'Rejection reason',
     'common.refresh': 'Refresh',
     'common.retry': 'Retry',
+    'common.quickTools': 'Quick tools',
+    'common.openQuickTools': 'Open quick tools',
+    'common.closeQuickTools': 'Close quick tools',
+    'common.quickToolsHint': 'Shared Workbench entry points',
   },
 } as const;
 
