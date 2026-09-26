@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const repoRoot = process.env.AXI_WORKBENCH_REPO_ROOT
-  ?? path.resolve(new URL("..", import.meta.url).pathname, "..", "..", "..", "..");
+  ?? path.resolve(import.meta.dirname, "..", "..", "..");
 const TSX_STORE_ROOTS = [
   path.join(repoRoot, "node_modules", ".pnpm"),
 ];
