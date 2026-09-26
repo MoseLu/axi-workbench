@@ -31,6 +31,21 @@
   border-radius: var(--workbench-surface-radius);
 }
 
+/* Keep every routed page at the full height of the shell content viewport.
+ * Without an explicit stretch here, the transition wrapper collapses to the
+ * page's current content height and loading/empty states appear near the top. */
+.workbench-axi-shell .axi-dashboard-page-transition {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+}
+
+.workbench-axi-shell .axi-dashboard-page-transition > .axi-crud {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .workbench-axi-shell .axi-topbar {
   background: var(--axi-layout-chrome-bg, var(--axi-layout-surface, var(--axi-bg-surface)));
   border-bottom-color: var(--workbench-chrome-border);
