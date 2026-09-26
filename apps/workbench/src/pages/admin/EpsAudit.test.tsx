@@ -53,6 +53,36 @@ vi.mock('./DesktopCrudFrame', () => ({
   },
 }));
 
+// Mirror Dashboard.test.tsx: stub useI18n so the migrated component can resolve
+// epsAudit.* keys without an I18nProvider wrapper. The dict preserves the
+// existing Chinese literal assertions while still verifying the new key wiring.
+const i18nDict: Record<string, string> = {
+  'epsAudit.runAudit': '运行审计',
+  'epsAudit.error.startFailed': '审计启动失败，请检查控制面与 API Gateway 连接。',
+  'epsAudit.findings.title': '差异发现',
+  'epsAudit.findings.loading': '差异发现 (加载中)',
+  'epsAudit.findings.count': '共 {count} 项差异',
+  'epsAudit.assets.title': 'API 资产',
+  'epsAudit.assets.loading': 'API 资产 (加载中)',
+  'epsAudit.assets.empty': '暂无 API 资产',
+  'epsAudit.column.severity': '级别',
+  'epsAudit.column.message': '问题',
+  'epsAudit.column.refs': '来源',
+  'epsAudit.column.platform': '平台',
+  'epsAudit.column.method': '方法',
+  'epsAudit.column.path': '路径',
+  'epsAudit.column.service': '服务',
+  'epsAudit.column.source': '来源',
+};
+
+vi.mock('../../i18n', () => ({
+  useI18n: () => ({
+    locale: 'zh-CN' as const,
+    setLocale: () => undefined,
+    t: (key: string, fallback?: string) => i18nDict[key] ?? fallback ?? key,
+  }),
+}));
+
 function renderEpsAudit() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

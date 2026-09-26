@@ -1,12 +1,13 @@
 import React from 'react';
-// axi-ui-escape-hatch: antd Button 在 @axi/ui 暂无等价「带 loading 的 primary 触发按钮」前
-// 保留；触发行为完全等价，差异只是样式 token。等 @axi/widgets.AxiSearchInput 上线后
-// 一并替换为 AxiButton。
+// axi-ui-escape-hatch: antd Button 在 @axi/widgets 暂无等价「带 loading 的 primary 触发按钮」前
+// 保留；触发行为完全等价，差异只是样式 token。等 @axi/widgets.AxiButton 上线后
+// 一并替换。
 import { Button } from 'antd';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { AxiCardBanner, AxiTag } from '@axi/core';
-import { AxiBanner, AxiRow } from '@axi/widgets';
+import { AxiBanner } from '@axi/widgets';
 import { useEpsAssets, useEpsFindings, useEpsRuns, useRunEpsAudit } from '@axi/api-client';
+import { useI18n } from '../../i18n';
 import './EpsAudit.css';
 
 type EpsFinding = {
@@ -32,6 +33,7 @@ const severityTone = (severity: string): 'danger' | 'warning' | 'info' => {
 };
 
 const EpsAudit: React.FC = () => {
+  const { t } = useI18n();
   const assets = useEpsAssets();
   const findings = useEpsFindings();
   const runs = useEpsRuns();
@@ -39,81 +41,72 @@ const EpsAudit: React.FC = () => {
   const latest = runs.data?.items?.[0];
   const assetRows: EpsAsset[] = assets.data?.items ?? [];
   const findingRows: EpsFinding[] = findings.data?.items ?? [];
+  const findingsTotal = latest?.summary.findings ?? findings.data?.total ?? 0;
+  const findingsCountLabel = t('epsAudit.findings.count')
+    .replace('{count}', String(findingsTotal));
+  const findingsTitle = findings.isLoading
+    ? t('epsAudit.findings.loading')
+    : t('epsAudit.findings.title');
+  const assetsTitle = assets.isLoading
+    ? t('epsAudit.assets.loading')
+    : t('epsAudit.assets.title');
 
   const findingColumns: AxiTableColumn<EpsFinding>[] = [
     {
       dataIndex: 'severity',
-      title: '级别',
+      title: t('epsAudit.column.severity'),
       width: 96,
       render: (value: string) => (
         <AxiTag type={severityTone(value)} effect="dark">{value}</AxiTag>
       ),
     },
-    { dataIndex: 'message', title: '问题' },
+    { dataIndex: 'message', title: t('epsAudit.column.message') },
     {
       dataIndex: 'refs',
-      title: '来源',
+      title: t('epsAudit.column.refs'),
       render: (value: string[]) => value.join(', '),
     },
   ];
   const assetColumns: AxiTableColumn<EpsAsset>[] = [
-    { dataIndex: 'platform', title: '平台', width: 140 },
-    { dataIndex: 'method', title: '方法', width: 90 },
-    { dataIndex: 'path', title: '路径' },
+    { dataIndex: 'platform', title: t('epsAudit.column.platform'), width: 140 },
+    { dataIndex: 'method', title: t('epsAudit.column.method'), width: 90 },
+    { dataIndex: 'path', title: t('epsAudit.column.path') },
     {
       dataIndex: 'service',
-      title: '服务',
+      title: t('epsAudit.column.service'),
       width: 140,
       render: (value: string | null) => value || '—',
     },
-    { dataIndex: 'source', title: '来源', width: 160 },
+    { dataIndex: 'source', title: t('epsAudit.column.source'), width: 160 },
   ];
 
   return (
     <div className="eps-audit">
-      <AxiCardBanner
-        className="eps-audit__header"
-        description="只读核对三端调用、后端路由、OpenAPI 与容器端口。"
-        title="API 资产审计"
-        extra={
-          <Button
-            loading={runAudit.isPending}
-            type="primary"
-            onClick={() => runAudit.mutate()}
-          >
-            运行审计
-          </Button>
-        }
-      />
       {runAudit.isError && (
         <AxiBanner
           tone="danger"
           role="alert"
           aria-live="assertive"
-          message="审计启动失败，请检查控制面与 API Gateway 连接。"
+          message={t('epsAudit.error.startFailed')}
         />
       )}
-      <AxiRow className="eps-audit__stats">
-        <AxiCardBanner className="eps-audit__stat" title="API 资产">
-          <AxiTag type="primary" effect="dark">{latest?.summary.assets ?? assets.data?.total ?? 0}</AxiTag>
-        </AxiCardBanner>
-        <AxiCardBanner className="eps-audit__stat" title="前端调用">
-          <AxiTag type="info" effect="dark">{latest?.summary.clientCalls ?? 0}</AxiTag>
-        </AxiCardBanner>
-        <AxiCardBanner className="eps-audit__stat" title="端口声明">
-          <AxiTag type="info" effect="dark">{latest?.summary.ports ?? 0}</AxiTag>
-        </AxiCardBanner>
-        <AxiCardBanner className="eps-audit__stat" title="发现问题">
-          <AxiTag type={findings.data?.total ? 'warning' : 'success'} effect="dark">
-            {latest?.summary.findings ?? findings.data?.total ?? 0}
-          </AxiTag>
-        </AxiCardBanner>
-      </AxiRow>
       <AxiCardBanner
         className="eps-audit__findings"
-        title="差异发现"
+        extra={(
+          <Button
+            loading={runAudit.isPending}
+            type="primary"
+            onClick={() => runAudit.mutate()}
+          >
+            {t('epsAudit.runAudit')}
+          </Button>
+        )}
+        title={t('epsAudit.findings.title')}
       >
-        <AxiTableGroup title={findings.isLoading ? '差异发现 (加载中)' : '差异发现'}>
+        <AxiTableGroup
+          description={findingsCountLabel}
+          title={findingsTitle}
+        >
           <AxiTable
             columns={findingColumns}
             data={findingRows}
@@ -125,9 +118,9 @@ const EpsAudit: React.FC = () => {
       </AxiCardBanner>
       <AxiCardBanner
         className="eps-audit__assets"
-        title="API 资产"
+        title={t('epsAudit.assets.title')}
       >
-        <AxiTableGroup title={assets.isLoading ? 'API 资产 (加载中)' : 'API 资产'}>
+        <AxiTableGroup title={assetsTitle}>
           {assetRows.length ? (
             <AxiTable
               columns={assetColumns}
@@ -137,7 +130,9 @@ const EpsAudit: React.FC = () => {
               size="small"
             />
           ) : (
-            <div className="eps-audit__empty" data-axi="eps-empty">暂无 API 资产</div>
+            <div className="eps-audit__empty" data-axi="eps-empty">
+              {t('epsAudit.assets.empty')}
+            </div>
           )}
         </AxiTableGroup>
       </AxiCardBanner>
