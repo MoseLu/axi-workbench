@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node src/server.mjs",
     "start": "node src/server.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@axi/observability-logging": "workspace:*"

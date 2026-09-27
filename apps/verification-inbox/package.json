@@ -1,5 +1,5 @@
 {
-  "name": "axi-verification-inbox",
+  "name": "@axi/verification-inbox",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --lib"
   },
   "dependencies": {
     "@axi/observability-web": "workspace:*",

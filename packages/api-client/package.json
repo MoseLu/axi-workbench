@@ -12,7 +12,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@axi/workstation-contracts": "workspace:*",

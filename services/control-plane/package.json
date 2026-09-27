@@ -10,7 +10,8 @@
     "dev": "node src/server.mjs",
     "start": "node src/server.mjs",
     "test": "node --test test/*.test.mjs src/**/*.test.ts",
-    "smoke": "node src/smoke.mjs"
+    "smoke": "node src/smoke.mjs",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@langchain/core": "^1.1.47",
