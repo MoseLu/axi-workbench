@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 
 const json = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const required = (value, label) => {
@@ -31,4 +32,25 @@ required(hasInstall, 'workflow command pnpm install');
 required(hasTypeCheck, 'workflow command pnpm type-check');
 required(hasTest, 'workflow command pnpm test');
 required(hasBuild, 'workflow command pnpm build');
+
+// PR-4 C1: 加真实硬门 — 真正跑 @axi/workstation-contracts test，
+// 确保 contracts job 不只是验证脚本存在性，而真的能执行构建验证。
+// 这是从"软门"（仅 assert 字符串）升级为"硬门"（真实执行）。
+const isCi = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const skipHardGate = process.env.AXI_VERIFY_CI_SOFT === '1';
+if (!skipHardGate) {
+  console.log('[verify-ci-contracts] running real hard gate: pnpm --filter @axi/workstation-contracts test');
+  const testRun = spawnSync(
+    'pnpm',
+    ['--filter', '@axi/workstation-contracts', 'test'],
+    { stdio: 'inherit', env: process.env },
+  );
+  if (testRun.status !== 0) {
+    throw new Error(
+      `@axi/workstation-contracts test failed (exit ${testRun.status}). ` +
+      `Set AXI_VERIFY_CI_SOFT=1 to skip the hard gate for local debugging.`,
+    );
+  }
+}
+
 console.log('[verify-ci-contracts] package, turbo, workspace and CI command contracts are valid');
