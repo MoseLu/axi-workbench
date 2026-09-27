@@ -12,16 +12,128 @@ const DEFAULT_WORKSPACE_ROOT = "/Volumes/code/workspace";
 const WORKSTATION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const DEFAULT_MEMORY_DATABASE_URL = "postgres://cc_connect@127.0.0.1:5432/cc_connect_memory?sslmode=disable";
 const DEFAULT_AXI_AGENT_PLATFORM_URL = "http://127.0.0.1:8000";
+const DEFAULT_AXI_MEMORY_SERVICE_URL = "http://127.0.0.1:8095";
+const AXI_GOVERNANCE_REGISTRY_TTL_MS = 60_000;
 const TEXT_LIMIT = 12_000;
 const COMMAND_TIMEOUT_MS = 120_000;
 const AGENT_TIMEOUT_MS = 600_000;
 const JOB_HEARTBEAT_MS = 30_000;
 
-const BASE_SERVICE_IDS = new Set(["ai-capability", "ollama-local", "workspace-governance", "codex-app-projects", "axi-notify", "axi-accounts", "axi-model-gateway", "axi-docs"]);
-const EXTERNAL_CAPABILITY_IDS = new Set(["minimax-tokenplan"]);
-const COMMUNICATION_IDS = new Set(["codex-remote-bridge"]);
-const IM_IDS = new Set(["axi-mobile"]);
-const PHYSICAL_SERVICE_IDS = new Set(["fleet-console"]);
+// Six-layer classification sets live in the workspace-governance registry file
+// (AXI_GOVERNANCE_REGISTRY_PATH, default
+// <AXI_WORKSPACE_ROOT>/infra/axi-workspace-governance/workspace.json) so
+// that adding a new IM channel, base service, or external capability never
+// requires a control-plane release. We cache the registry for 60s and expose
+// the cached Sets via getter functions. The render-host boundary (PRD §10.2)
+// forbids the control-plane from owning these facts.
+const GOVERNANCE_REGISTRY_CACHE = {
+  loadedAt: 0,
+  registryPath: null,
+  baseServiceIds: new Set(),
+  externalCapabilityIds: new Set(),
+  communicationIds: new Set(),
+  imIds: new Set(),
+  physicalServiceIds: new Set(),
+};
+
+/**
+ * Resolve the registry path. Throws if no path is available — production
+ * deployments must set AXI_GOVERNANCE_REGISTRY_PATH or AXI_WORKSPACE_ROOT
+ * explicitly; the dev default (`<root>/infra/axi-workspace-governance/workspace.json`)
+ * is only honoured when AXI_WORKSPACE_DEV=1.
+ */
+function resolveGovernanceRegistryPath(options = {}) {
+  const explicit = String(process.env.AXI_GOVERNANCE_REGISTRY_PATH || options.registryPath || "").trim();
+  if (explicit) return resolve(explicit);
+  const workspaceRoot = workspaceRootOf(options);
+  if (!workspaceRoot || workspaceRoot === DEFAULT_WORKSPACE_ROOT) {
+    if (process.env.AXI_WORKSPACE_DEV !== "1") {
+      throw new Error(
+        "AXI_GOVERNANCE_REGISTRY_PATH is required (or set AXI_WORKSPACE_DEV=1 with a real AXI_WORKSPACE_ROOT pointing at the workspace that owns infra/axi-workspace-governance).",
+      );
+    }
+  }
+  return resolve(workspaceRoot, "infra", "axi-workspace-governance", "workspace.json");
+}
+
+function loadGovernanceRegistry({ force = false } = {}) {
+  const now = Date.now();
+  if (!force && now - GOVERNANCE_REGISTRY_CACHE.loadedAt < AXI_GOVERNANCE_REGISTRY_TTL_MS && GOVERNANCE_REGISTRY_CACHE.registryPath) {
+    return GOVERNANCE_REGISTRY_CACHE;
+  }
+  const registryPath = resolveGovernanceRegistryPath();
+  let registry = null;
+  try {
+    registry = readJson(registryPath, null);
+  } catch (error) {
+    throw new Error(`failed to read governance registry at ${registryPath}: ${String(error)}`);
+  }
+  if (!registry) {
+    throw new Error(`governance registry missing at ${registryPath} — workspace-governance is the fact owner; refusing to start without it.`);
+  }
+  const baseServiceIds = new Set(Array.isArray(registry.baseServiceIds) ? registry.baseServiceIds : registry.base_service_ids || []);
+  const externalCapabilityIds = new Set(Array.isArray(registry.externalCapabilityIds) ? registry.externalCapabilityIds : registry.external_capability_ids || []);
+  const communicationIds = new Set(Array.isArray(registry.communicationIds) ? registry.communicationIds : registry.communication_ids || []);
+  const imIds = new Set(Array.isArray(registry.imIds) ? registry.imIds : registry.im_ids || []);
+  const physicalServiceIds = new Set(Array.isArray(registry.physicalServiceIds) ? registry.physicalServiceIds : registry.physical_service_ids || []);
+  GOVERNANCE_REGISTRY_CACHE.loadedAt = now;
+  GOVERNANCE_REGISTRY_CACHE.registryPath = registryPath;
+  GOVERNANCE_REGISTRY_CACHE.baseServiceIds = baseServiceIds;
+  GOVERNANCE_REGISTRY_CACHE.externalCapabilityIds = externalCapabilityIds;
+  GOVERNANCE_REGISTRY_CACHE.communicationIds = communicationIds;
+  GOVERNANCE_REGISTRY_CACHE.imIds = imIds;
+  GOVERNANCE_REGISTRY_CACHE.physicalServiceIds = physicalServiceIds;
+  return GOVERNANCE_REGISTRY_CACHE;
+}
+
+export function getBaseServiceIds() { return new Set(loadGovernanceRegistry().baseServiceIds); }
+export function getExternalCapabilityIds() { return new Set(loadGovernanceRegistry().externalCapabilityIds); }
+export function getCommunicationIds() { return new Set(loadGovernanceRegistry().communicationIds); }
+export function getImIds() { return new Set(loadGovernanceRegistry().imIds); }
+export function getPhysicalServiceIds() { return new Set(loadGovernanceRegistry().physicalServiceIds); }
+export function getGovernanceRegistryPath() { return loadGovernanceRegistry().registryPath; }
+export function refreshGovernanceRegistryCache() { return loadGovernanceRegistry({ force: true }); }
+
+/**
+ * PR-6.5C: Required ENV at startup. The control-plane is a render host,
+ * not the fact owner, so every external dependency must be declared by
+ * configuration. Tests and ad-hoc CLIs can opt out by passing
+ * { skipEnvValidation: true } (e.g. createControlPlane({ skipEnvValidation: true })).
+ *
+ * Required:
+ *   - AXI_WORKSPACE_ROOT  (or AXI_WORKSPACE_DEV=1 fallback)
+ *   - AXI_AGENT_PLATFORM_URL  (or AXI_WORKSPACE_DEV=1 fallback)
+ *   - AXI_GOVERNANCE_REGISTRY_PATH  (or AXI_WORKSPACE_DEV=1 fallback)
+ *   - AXI_MEMORY_SERVICE_URL  (or AXI_WORKSPACE_DEV=1 fallback)
+ */
+export function validateControlPlaneEnv({ nodeEnv = process.env.NODE_ENV || "development", skipEnvValidation = false } = {}) {
+  if (skipEnvValidation) return { ok: true, mode: "skipped" };
+  const isDev = process.env.AXI_WORKSPACE_DEV === "1" || nodeEnv !== "production";
+  const required = [];
+  if (!isDev && !process.env.AXI_WORKSPACE_ROOT) {
+    required.push("AXI_WORKSPACE_ROOT");
+  }
+  if (!process.env.AXI_AGENT_PLATFORM_URL && !isDev) {
+    required.push("AXI_AGENT_PLATFORM_URL");
+  }
+  if (!process.env.AXI_GOVERNANCE_REGISTRY_PATH && !isDev) {
+    required.push("AXI_GOVERNANCE_REGISTRY_PATH");
+  }
+  if (!process.env.AXI_MEMORY_SERVICE_URL && !isDev) {
+    required.push("AXI_MEMORY_SERVICE_URL");
+  }
+  if (required.length === 0) {
+    return { ok: true, mode: isDev ? "dev" : "production", required: [] };
+  }
+  return {
+    ok: false,
+    mode: isDev ? "dev" : "production",
+    required,
+    message:
+      `control-plane refused to start: missing required ENV [${required.join(", ")}]. ` +
+      `Set AXI_WORKSPACE_DEV=1 for macOS development defaults or provide explicit values in production.`,
+  };
+}
 const GOVERNANCE_RELATIONSHIP_TYPES = new Set(["OWNS", "CONTAINS", "PROVIDES_CAPABILITY", "CONSUMES_CAPABILITY", "DEPENDS_ON", "IMPLEMENTS_CONTRACT", "USES_RESOURCE", "DEPLOYED_TO", "GOVERNED_BY", "INHERITS_FROM", "OVERRIDES", "VERIFIED_BY", "ACTED_BY", "AFFECTS", "EVIDENCED_BY", "SUPERSEDES", "ARCHIVES"]);
 const GOVERNANCE_CONTRACT_VERSION = 1;
 const GOVERNANCE_OBSERVER = "axi-workstation-control-plane";
@@ -257,7 +369,20 @@ export function createControlPlane(options = {}) {
     memoryDatabaseUrl: Object.hasOwn(options, "memoryDatabaseUrl")
       ? options.memoryDatabaseUrl
       : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL),
-    memoryProjectReader: options.memoryProjectReader || (() => readMemoryProjects(memoryDatabaseUrlOf(options))),
+    memoryProjectReader: options.memoryProjectReader || (async () => {
+      try {
+        return await readMemoryProjects();
+      } catch (error) {
+        // memory-service is not yet implemented; surface a clear empty result
+        // rather than crashing the control-plane (handleMemoryProjectListQuery
+        // already produces a friendly "no memory entries" branch when the
+        // returned list is empty).
+        console.warn(
+          `memory-service unavailable (${String(error?.message || error)}); control-plane no longer owns cc_project_states — set AXI_MEMORY_SERVICE_URL or wait for memory-service to ship.`,
+        );
+        return [];
+      }
+    }),
     agentTaskExecutor: options.agentTaskExecutor || executeAgentTask,
     roleAgentExecutor: options.roleAgentExecutor || executeRoleAgentRun,
     axiAgentTaskExecutor: options.axiAgentTaskExecutor || executeAxiAgentTask,
@@ -512,7 +637,9 @@ function buildControlPlaneSurface({
     normalizeIMEnvelope,
     recordMobileAudit: (event) => recordMobileAudit({ cacheDir, event }),
     // TASK6: External fact refresh interface - reads declared external sources from workspace.graph.json
-    refreshExternalFacts: (options = {}) => refreshExternalFacts({ workspaceRoot, graphPath, cacheDir, ...options }),
+    // PR-6.5C: external-fact refresh surface moved to workspace-governance repo;
+    // surface.refresh throws on call to enforce the boundary.
+    refresh: () => governanceFactRefreshMoved(),
   };
   // Wire the mobile approval bridge now that the surface exists.
   surface.decideApproval = (input) => {
@@ -1930,7 +2057,7 @@ export function buildGovernanceSnapshot({
     violations,
     waivers,
     automations,
-    governanceDocuments: buildWorkspaceGovernanceDocuments({ graph, now: observedDate }),
+    governanceDocuments: governanceDocumentBuildMoved(),
     policyDecisions: policyDecisions.filter(isRecord).map((decision) => {
       const eventRefs = events.filter((event) => event.policyDecisionRef === decision.id).map((event) => event.eventId);
       return eventRefs.length ? { ...decision, eventRefs } : decision;
@@ -1942,49 +2069,43 @@ export function buildGovernanceSnapshot({
 }
 
 /**
- * TASK6: Build GovernanceDocument read model from workspace.graph.json declarations.
- * Each GovernanceDocument has owner, evidenceRefs, requirement, and requirementSource.
+ * GovernanceDocument read model is owned by workspace-governance
+ * (PRD §10.2 render-host boundary). The control-plane must NOT
+ * compute or persist governance fact status. This helper enforces the
+ * boundary by throwing whenever any caller asks the control-plane to
+ * build the read model.
  */
-function buildWorkspaceGovernanceDocuments({ graph, now }) {
-  const declarations = Array.isArray(graph?.governanceDocuments) ? graph.governanceDocuments : [];
-  return declarations.map((doc) => {
-    // Validate evidence files exist
-    const evidenceRefs = Array.isArray(doc.evidenceRefs) ? doc.evidenceRefs : [];
-    const availableEvidence = evidenceRefs.filter((ref) => {
-      if (!ref || typeof ref !== "string") return false;
-      // Check if it's a path reference (starts with / or contains file extensions)
-      if (ref.startsWith("/")) {
-        return existsSync(ref);
-      }
-      return true;
-    });
+function governanceDocumentBuildMoved() {
+  if (!governanceDocumentBuildMoved.__warned) {
+    console.warn(
+      "governance refresh moved to workspace-governance repo, will be a no-op here. " +
+      "control-plane no longer computes GovernanceDocument fact status; consumers must read the registry served by /infra/axi-workspace-governance.",
+    );
+    governanceDocumentBuildMoved.__warned = true;
+  }
+  throw new Error(
+    "governance-doc read model has moved to workspace-governance repo; " +
+    "control-plane is a render host and no longer owns the GovernanceDocument read model.",
+  );
+}
 
-    // Determine status based on evidence availability
-    let status = "present";
-    if (evidenceRefs.length === 0) {
-      status = "unknown";
-    } else if (availableEvidence.length === 0) {
-      status = "missing";
-    } else if (availableEvidence.length < evidenceRefs.length) {
-      status = "partial";
-    }
-
-    return {
-      id: doc.id || `doc:unknown:${now.getTime()}`,
-      name: doc.name || "Unnamed Document",
-      description: doc.description || "",
-      requirement: doc.requirement || "optional",
-      requirementSource: doc.requirementSource || "unknown",
-      ownerRef: doc.owner || "unknown",
-      evidenceRefs,
-      availableEvidenceRefs: availableEvidence,
-      policyRef: doc.policyRef || null,
-      tags: Array.isArray(doc.tags) ? doc.tags : [],
-      effectiveAt: doc.effectiveAt || null,
-      status,
-      source: "workspace.graph.governanceDocuments",
-    };
-  });
+/**
+ * Governance fact refresh moved to workspace-governance repo (PRD §10.2
+ * render-host boundary). The control-plane must NOT refresh external
+ * facts; calling this helper enforces the boundary by throwing.
+ */
+function governanceFactRefreshMoved() {
+  if (!governanceFactRefreshMoved.__warned) {
+    console.warn(
+      "governance refresh moved to workspace-governance repo, will be a no-op here. " +
+      "Callers must invoke the workspace-governance refresh API instead of control-plane.",
+    );
+    governanceFactRefreshMoved.__warned = true;
+  }
+  throw new Error(
+    "external-fact refresh has moved to workspace-governance repo; " +
+    "control-plane is a render host and no longer owns fact refresh.",
+  );
 }
 
 function isExternalGovernanceUnit(graphProject, registryEntry) {
@@ -3386,11 +3507,12 @@ function resourceMatches(resource, terms) {
 }
 
 function classifyLayer(id, project) {
-  if (BASE_SERVICE_IDS.has(id)) return "base_service";
-  if (EXTERNAL_CAPABILITY_IDS.has(id)) return "external_capability";
-  if (COMMUNICATION_IDS.has(id)) return "communication";
-  if (IM_IDS.has(id)) return "im";
-  if (PHYSICAL_SERVICE_IDS.has(id)) return "physical_service";
+  const registry = loadGovernanceRegistry();
+  if (registry.baseServiceIds.has(id)) return "base_service";
+  if (registry.externalCapabilityIds.has(id)) return "external_capability";
+  if (registry.communicationIds.has(id)) return "communication";
+  if (registry.imIds.has(id)) return "im";
+  if (registry.physicalServiceIds.has(id)) return "physical_service";
   if ((project.kind || "").includes("capability")) return "base_service";
   if ((project.kind || "").includes("provider")) return "base_service";
   return "software";
@@ -3651,30 +3773,30 @@ async function handleCommunicationMessage({ input, options, workspaceRoot, graph
   };
 }
 
-function handleMemoryProjectListQuery({ input, envelope, cacheDir, runs, envelopeRuns, memoryProjectReader }) {
+async function handleMemoryProjectListQuery({ input, envelope, cacheDir, runs, envelopeRuns, memoryProjectReader }) {
   if (envelopeRuns.has(envelope.id)) {
     return runs.get(envelopeRuns.get(envelope.id));
   }
 
-  const projects = memoryProjectReader();
+  const projects = await Promise.resolve(memoryProjectReader());
   const run = {
     id: randomUUID(),
     envelope,
     intent: "list_resources",
     accepted: true,
-    summary: summarizeMemoryProjects(projects),
-    actions: [{
-      status: "succeeded",
-      summary: `已从记忆面读取 ${projects.length} 个项目。`,
-      stdout: JSON.stringify(projects),
-    }],
-    metadata: {
-      source: "cc_project_states",
-      language: "zh-CN",
-      mode: "memory_only",
-      userInputMode: "natural_language",
-      forbiddenDiscovery: ["ls", "find", "rg", "tree", "filesystem"],
-    },
+summary: summarizeMemoryProjects(projects),
+      actions: [{
+        status: "succeeded",
+        summary: `已从记忆面读取 ${projects.length} 个项目。`,
+        stdout: JSON.stringify(projects),
+      }],
+      metadata: {
+        source: "memory-service:v1:projects",
+        language: "zh-CN",
+        mode: "memory_only",
+        userInputMode: "natural_language",
+        forbiddenDiscovery: ["ls", "find", "rg", "tree", "filesystem"],
+      },
     createdAt: new Date().toISOString(),
     completedAt: new Date().toISOString(),
   };
@@ -3766,7 +3888,7 @@ function summarizeMemoryProjects(projects) {
       "",
       "记忆面暂时没有可用的项目状态记录。",
       "",
-      "数据源：`cc_project_states`",
+      "数据源：memory-service `/v1/memory/projects`（待 memory-service 实施后启用）",
     ].join("\n");
   }
 
@@ -3780,7 +3902,7 @@ function summarizeMemoryProjects(projects) {
     "",
     ...rows,
     "",
-    "说明：本结果只读取记忆面 `cc_project_states`，没有扫描目录或工作区索引。",
+    "说明：本结果通过 memory-service HTTP 适配器读取记忆面，没有扫描目录或工作区索引。",
   ].join("\n");
 }
 
@@ -5300,34 +5422,54 @@ function isMemoryProjectListQuery(text) {
   );
 }
 
-function readMemoryProjects(databaseUrl) {
-  const sql = [
-    "SELECT project, count(*) AS feature_count, max(last_activity) AS last_activity",
-    "FROM cc_project_states",
-    "GROUP BY project",
-    "ORDER BY max(last_activity) DESC, project ASC;",
-  ].join(" ");
-  const result = spawnSync("psql", [databaseUrl, "-tA", "-F", "\t", "-c", sql], {
-    encoding: "utf8",
-    timeout: 10_000,
-    maxBuffer: 512 * 1024,
-  });
-  if (result.status !== 0) {
-    return [];
+function resolveMemoryServiceUrl(options = {}) {
+  const explicit = String(process.env.AXI_MEMORY_SERVICE_URL || options.memoryServiceUrl || "").trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+  if (process.env.AXI_WORKSPACE_DEV !== "1") {
+    throw new Error(
+      "AXI_MEMORY_SERVICE_URL is required (or set AXI_WORKSPACE_DEV=1 to fall back to http://127.0.0.1:8095).",
+    );
   }
-  return result.stdout
-    .trim()
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => {
-      const [project, featureCount, lastActivity] = line.split("\t");
-      return {
-        project,
-        featureCount: Number(featureCount || 0),
-        lastActivity,
-      };
-    })
-    .filter((item) => item.project);
+  return DEFAULT_AXI_MEMORY_SERVICE_URL;
+}
+
+/**
+ * Fetch the memory project list from memory-service. The control-plane no
+ * longer owns the `cc_project_states` table (it belongs to L4 base-service
+ * memory); this thin client is a render-host adapter (PRD §10.2).
+ *
+ * Endpoint contract (pending memory-service implementation):
+ *   GET {AXI_MEMORY_SERVICE_URL}/v1/memory/projects?workspaceId={id}
+ *   → [{ projectId, state, updatedAt }]
+ *
+ * Until memory-service ships, this throws so deployments cannot silently
+ * fall back to local psql. The handler at handleMemoryProjectListQuery
+ * catches the throw and surfaces a friendly message; the snapshot/render
+ * paths never call this code.
+ */
+export async function readMemoryProjects({ memoryServiceUrl, workspaceId = "" } = {}) {
+  const baseUrl = memoryServiceUrl || resolveMemoryServiceUrl();
+  const url = new URL(`${baseUrl}/v1/memory/projects`);
+  if (workspaceId) url.searchParams.set("workspaceId", workspaceId);
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`memory-service responded ${response.status} ${response.statusText} for ${url}`);
+  }
+  const payload = await response.json();
+  if (!Array.isArray(payload)) {
+    throw new Error(`memory-service returned non-array payload: ${typeof payload}`);
+  }
+  return payload
+    .filter((item) => item && typeof item === "object" && firstString(item.projectId))
+    .map((item) => ({
+      project: firstString(item.projectId),
+      state: firstString(item.state),
+      featureCount: Number(item.featureCount || 0),
+      lastActivity: firstString(item.updatedAt),
+    }));
 }
 
 function inspectAgentRuntimes({ codexBin, appServerBin }) {
@@ -5637,72 +5779,9 @@ export function transitionGovernanceRisk({ input = {}, cacheDir }) {
   return { ok: true, risk, incident };
 }
 
-/**
- * TASK6: External fact refresh interface.
- * Reads declared external sources from workspace.graph.json and refreshes cached facts.
- * Returns the refreshed facts and audit event IDs for traceability.
- */
-export function refreshExternalFacts({ workspaceRoot = DEFAULT_WORKSPACE_ROOT, graphPath = join(workspaceRoot, "workspace.graph.json"), cacheDir = "", targetIds = [] } = {}) {
-  const graph = readJson(graphPath, null);
-  if (!graph) return { ok: false, error: "workspace.graph.json not found", refreshedFacts: [], eventIds: [] };
-
-  const externalSources = Array.isArray(graph.externalFacts) ? graph.externalFacts : [];
-  if (externalSources.length === 0) return { ok: true, refreshedFacts: [], eventIds: [], count: 0, message: "No external facts declared" };
-
-  const refreshedFacts = [];
-  const eventIds = [];
-  const now = new Date().toISOString();
-
-  for (const source of externalSources) {
-    if (!source || typeof source !== "object") continue;
-    // Filter by targetIds if specified
-    if (targetIds.length > 0 && !targetIds.includes(source.id)) continue;
-
-    const fact = {
-      id: source.id || `external:${randomUUID()}`,
-      name: source.name || source.id || "Unknown",
-      type: source.type || "external",
-      source: source.source || "workspace.graph.externalFacts",
-      targetRef: source.targetRef || source.subjectRef || null,
-      status: "available",
-      refreshedAt: now,
-      data: source.data || null,
-      url: source.url || null,
-      lastFetchedAt: source.lastFetchedAt || null,
-    };
-
-    refreshedFacts.push(fact);
-
-    // Write audit event for the refresh
-    if (cacheDir) {
-      const eventId = `external-fact:${fact.id}:${Date.now()}`;
-      appendAuditRecord(cacheDir, {
-        auditKind: "external_fact.refreshed",
-        eventId,
-        actorRef: "control-plane:external-fact-refresh",
-        objectRef: fact.targetRef || fact.id,
-        action: "refresh",
-        correlationId: `external-fact:${fact.id}`,
-        result: "refreshed",
-        status: "refreshed",
-        sourceRef: fact.source,
-        targetRef: fact.targetRef,
-        factId: fact.id,
-        factName: fact.name,
-        factType: fact.type,
-      });
-      eventIds.push(eventId);
-    }
-  }
-
-  return {
-    ok: true,
-    refreshedFacts,
-    eventIds,
-    count: refreshedFacts.length,
-    refreshedAt: now,
-  };
-}
+// external-fact refresh was removed in PR-6.5C. The fact refresh surface
+// now lives in the workspace-governance repo. Callers in this module go
+// through governanceFactRefreshMoved() to surface the boundary.
 
 function failJob(cacheDir, job, message) {
   const issue = job.metadata?.riskRef
@@ -5840,58 +5919,21 @@ function mirrorJobSummaryBestEffort({ cacheDir, job, memoryDatabaseUrl }) {
     // Best-effort mirror must never affect the control-plane authority files.
   }
   try {
-    mirrorJobSummaryToPostgres({ databaseUrl: memoryDatabaseUrl, job });
+    mirrorJobSummaryToMemoryService({ databaseUrl: memoryDatabaseUrl, job });
   } catch {
-    // PostgreSQL is a best-effort memory mirror; local job artifacts remain authoritative.
+    // memory-service is a best-effort memory mirror; local job artifacts remain authoritative.
   }
 }
 
-function mirrorJobSummaryToPostgres({ databaseUrl, job }) {
-  if (!databaseUrl) return;
-  const summary = {
-    id: job.id,
-    status: job.status,
-    kind: job.assessment?.kind,
-    complexity: job.assessment?.complexity,
-    risk: job.assessment?.risk,
-    summary: job.summary,
-    archive: job.archive?.summary,
-    updatedAt: job.updatedAt,
-  };
-  const sql = [
-    "CREATE TABLE IF NOT EXISTS epap_control_job_summaries (",
-    "id text PRIMARY KEY,",
-    "status text NOT NULL,",
-    "kind text,",
-    "complexity text,",
-    "risk text,",
-    "summary text,",
-    "archive_summary text,",
-    "updated_at timestamptz,",
-    "payload jsonb NOT NULL",
-    ");",
-    "INSERT INTO epap_control_job_summaries (id, status, kind, complexity, risk, summary, archive_summary, updated_at, payload)",
-    `VALUES (${sqlQuote(summary.id)}, ${sqlQuote(summary.status)}, ${sqlQuote(summary.kind)}, ${sqlQuote(summary.complexity)}, ${sqlQuote(summary.risk)}, ${sqlQuote(summary.summary)}, ${sqlQuote(summary.archive)}, ${sqlQuote(summary.updatedAt)}, ${sqlQuote(JSON.stringify(summary))}::jsonb)`,
-    "ON CONFLICT (id) DO UPDATE SET",
-    "status = EXCLUDED.status,",
-    "kind = EXCLUDED.kind,",
-    "complexity = EXCLUDED.complexity,",
-    "risk = EXCLUDED.risk,",
-    "summary = EXCLUDED.summary,",
-    "archive_summary = EXCLUDED.archive_summary,",
-    "updated_at = EXCLUDED.updated_at,",
-    "payload = EXCLUDED.payload;",
-  ].join(" ");
-  spawnSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-c", sql], {
-    encoding: "utf8",
-    timeout: 5_000,
-    maxBuffer: 256 * 1024,
-  });
-}
-
-function sqlQuote(value) {
-  if (value === undefined || value === null || value === "") return "NULL";
-  return `'${String(value).replace(/'/g, "''")}'`;
+async function mirrorJobSummaryToMemoryService({ databaseUrl: _databaseUrl, job }) {
+  // PR-6.5C: the control-plane no longer touches Postgres directly. Job
+  // summary mirroring now flows through memory-service
+  // POST {AXI_MEMORY_SERVICE_URL}/v1/memory/jobs (idempotent upsert).
+  // Until memory-service ships, the call is a fire-and-forget no-op so
+  // the legacy mirror file under cacheDir/memory-mirror/job-summaries.jsonl
+  // remains the authoritative journal for job summaries.
+  void _databaseUrl; void job;
+  return;
 }
 
 function safeFileName(value) {
