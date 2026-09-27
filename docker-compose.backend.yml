@@ -216,6 +216,11 @@ services:
       ENVIRONMENT: development
       CONTROL_PLANE_PORT: "8092"
       CONTROL_PLANE_BIND: "0.0.0.0"
+      # PR-6.5B D3: control-plane no longer spawns codex directly; it
+      # forwards every invocation to @axi/agent-runtime over HTTP. The URL
+      # below must resolve to the agent-runtime container below; changing
+      # the host:port is the supported way to swap deployments.
+      AXI_AGENT_RUNTIME_URL: "http://agent-runtime:8094"
       GATEWAY_INTERNAL_TOKEN: axi-development-internal-token
       AXI_MOBILE_PAIRING_ENABLED: "false"
     healthcheck:
@@ -229,6 +234,9 @@ services:
       timeout: 3s
       retries: 5
       start_period: 15s
+    depends_on:
+      agent-runtime:
+        condition: service_healthy
     restart: unless-stopped
     # The Control Plane holds in-memory pairing / execution-policy state.
     # The Compose-managed `axi_control_plane_state` volume below gives it a
@@ -244,6 +252,41 @@ services:
         reservations:
           cpus: "0.10"
           memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+
+  # PR-6.5B D2: agent-runtime is the ONLY service allowed to spawn codex.
+  # It binds 127.0.0.1 in dev (compose overrides to 0.0.0.0 for container
+  # reachability) and exposes /healthz + /readyz + /v1/agent/execute.
+  agent-runtime:
+    profiles: [backend]
+    build:
+      context: .
+      dockerfile: services/agent-runtime/Dockerfile
+    environment:
+      AXI_AGENT_RUNTIME_PORT: "8094"
+      AXI_AGENT_RUNTIME_HOST: "0.0.0.0"
+      AXI_AGENT_RUNTIME_BIND_HOST: "0.0.0.0"
+      # Default to "codex" so the binary on PATH is used. Override per-env.
+      CODEX_BIN: "codex"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8094/healthz',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
     logging:
       driver: json-file
       options:
