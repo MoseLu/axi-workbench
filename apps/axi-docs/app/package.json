@@ -16,7 +16,7 @@
     "blinko:sync": "node ./scripts/blinko-sync-cycle.mjs",
     "branch:check": "node ./scripts/check-git-branch.mjs",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/prerender-guides.mjs",
     "commit": "pnpm exec cz",
     "commit:check:last": "pnpm exec commitlint --last --verbose",
     "commit:lint:range": "node ./scripts/check-commit-range.mjs",

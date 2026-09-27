@@ -5,15 +5,24 @@ import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { normalizeRouterBasename } from './lib/routes'
 import './styles/index.css'
+import type { InitialPageData } from './lib/initialPageData'
 
 const routerBasename = normalizeRouterBasename(import.meta.env.BASE_URL)
+const initialData: InitialPageData | undefined = window.__AXI_DOCS_INITIAL_DATA__
+const root = document.getElementById('root')!
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const app = (
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter basename={routerBasename}>
-        <App />
+        <App initialData={initialData} />
       </BrowserRouter>
     </ErrorBoundary>
-  </React.StrictMode>,
+  </React.StrictMode>
 )
+
+if (root.hasChildNodes() && initialData) {
+  ReactDOM.hydrateRoot(root, app)
+} else {
+  ReactDOM.createRoot(root).render(app)
+}

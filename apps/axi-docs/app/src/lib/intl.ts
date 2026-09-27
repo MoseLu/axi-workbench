@@ -10,11 +10,6 @@ export function resolveLocale(preferred?: string | string[]): string {
     if (first) return first
   }
 
-  if (typeof navigator !== 'undefined') {
-    const browserLocale = navigator.languages?.find(Boolean) || navigator.language
-    if (browserLocale) return browserLocale
-  }
-
   return DEFAULT_LOCALE
 }
 
@@ -28,5 +23,8 @@ export function formatDisplayDate(
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return ''
 
-  return new Intl.DateTimeFormat(resolveLocale(preferredLocale), options).format(date)
+  return new Intl.DateTimeFormat(resolveLocale(preferredLocale), {
+    ...options,
+    timeZone: options.timeZone || 'Asia/Shanghai',
+  }).format(date)
 }

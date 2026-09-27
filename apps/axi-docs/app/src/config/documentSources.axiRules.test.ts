@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import path from 'node:path'
 import { getDocumentSourceRegistry, validateDocumentSourceRegistry } from './documentSources'
 
 describe('documentSourceRegistry axi-rules', () => {
@@ -23,7 +24,7 @@ describe('documentSourceRegistry axi-rules', () => {
       // The default path is computed by detectWorkspaceRoot();
       // verify the suffix rather than the absolute path so the
       // test stays portable across machines.
-      expect(axiRules?.path?.endsWith(`${require('path').sep}projects${require('path').sep}axi-rules`)).toBe(true)
+      expect(axiRules?.path?.endsWith(`${path.sep}foundation${path.sep}axi-rules`)).toBe(true)
 
       process.env.AXI_RULES_PATH = '/custom/axi-rules'
       const sources2 = getDocumentSourceRegistry()

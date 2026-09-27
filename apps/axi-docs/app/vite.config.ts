@@ -3,6 +3,7 @@ import type { OutputBundle, OutputChunk } from 'rollup'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { localDocsPlugin } from './vite.config.plugin'
+import { documentHtmlPlugin } from './vite.config.render'
 
 const DEFAULT_CHUNK_WARNING_LIMIT_KB = 1000
 const WEBGL_CHUNK_WARNING_LIMIT_KB = 2000
@@ -54,7 +55,7 @@ function chunkSizePolicyPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), localDocsPlugin(), chunkSizePolicyPlugin()],
+  plugins: [react(), localDocsPlugin(), documentHtmlPlugin(), chunkSizePolicyPlugin()],
   base: hostedBase,
   resolve: {
     alias: {

@@ -29,6 +29,7 @@ import {
   decodeDocumentId,
 } from './lib/routes'
 import { DocSource, KnowledgeCatalog, KnowledgeCatalogItem, SearchResult, SearchSuggestion, SelectedFile } from './types'
+import type { InitialPageData } from './lib/initialPageData'
 
 type PageMode = 'home' | 'document'
 type ParamUpdates = Record<string, string | null | undefined>
@@ -47,7 +48,7 @@ function flattenCatalogItems(catalog: KnowledgeCatalog | null): KnowledgeCatalog
   return catalog.sections.flatMap((section) => section.items)
 }
 
-function HubPage({ pageMode }: { pageMode: PageMode }) {
+function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: InitialPageData | null }) {
   const params = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -68,21 +69,23 @@ function HubPage({ pageMode }: { pageMode: PageMode }) {
     ? params.collection
     : null
   const docSet = routeDocSet || 'guide'
-  const [sources, setSources] = useState<DocSource[]>([])
+  const [sources, setSources] = useState<DocSource[]>(() => initialData?.sources || [])
   const routeDocSetSourceId = pageMode === 'home' ? getDocSetSourceId(docSet, guideLocale, sources) : null
   const [activeSource, setActiveSource] = useState(routeDocSetSourceId || searchParams.get('source') || routeDocument?.sourceId || 'workspace')
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
-  const [fileContent, setFileContent] = useState<string | null>(null)
-  const [fileName, setFileName] = useState('')
+  const [fileContent, setFileContent] = useState<string | null>(() => initialData?.content || null)
+  const [fileName, setFileName] = useState(() => initialData?.path.split('/').pop()?.replace(/\.md$/u, '') || '')
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery)
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null)
   const [activeTag, setActiveTag] = useState<string | null>(searchParams.get('tag'))
   const [searching, setSearching] = useState(false)
-  const [catalog, setCatalog] = useState<KnowledgeCatalog | null>(null)
+  const [catalog, setCatalog] = useState<KnowledgeCatalog | null>(() => initialData?.catalog || null)
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const loadedFileKeyRef = useRef(initialData ? `${initialData.sourceId}:${initialData.path}` : null)
+  const loadedCatalogSourceRef = useRef(initialData?.sourceId || null)
   const searchAbortRef = useRef<AbortController | null>(null)
   const localeConfig = useMemo(() => getSiteLocaleConfig(guideLocale), [guideLocale])
   const appCopy = localeConfig.ui
@@ -282,11 +285,15 @@ function HubPage({ pageMode }: { pageMode: PageMode }) {
   useEffect(() => {
     if (!effectiveSelectedFile) {
       abortRef.current?.abort()
+      loadedFileKeyRef.current = null
       setFileContent(null)
       setFileName('')
       setLoading(false)
       return
     }
+    const fileKey = `${effectiveSelectedFile.sourceId}:${effectiveSelectedFile.path}`
+    if (loadedFileKeyRef.current === fileKey) return
+    loadedFileKeyRef.current = fileKey
     void loadFile(effectiveSelectedFile.sourceId, effectiveSelectedFile.path)
   }, [effectiveSelectedFile, loadFile])
 
@@ -295,11 +302,14 @@ function HubPage({ pageMode }: { pageMode: PageMode }) {
       ? routeDocument?.sourceId || activeSource
       : workspaceSource?.id
     if (!catalogSourceId || catalogSourceId === 'blinko') {
+      loadedCatalogSourceRef.current = null
       setCatalog(null)
       setCatalogError(null)
       setCatalogLoading(false)
       return
     }
+    if (catalogSourceId === loadedCatalogSourceRef.current) return
+    loadedCatalogSourceRef.current = catalogSourceId
     void loadCatalog(catalogSourceId)
   }, [activeSource, loadCatalog, pageMode, routeDocument?.sourceId, workspaceSource?.id])
 
@@ -593,12 +603,12 @@ function LegacyCategoryRedirect() {
   return <Navigate replace to={docSetRouteForSource(sourceId)} />
 }
 
-function App() {
+function App({ initialData }: { initialData?: InitialPageData | null }) {
   return (
     <Routes>
       <Route path="/" element={<Navigate replace to={DEFAULT_GUIDE_ROUTE} />} />
-      <Route path="/:locale/guide/:guideId" element={<HubPage pageMode="home" />} />
-      <Route path="/:locale/:collection" element={<HubPage pageMode="home" />} />
+      <Route path="/:locale/guide/:guideId" element={<HubPage pageMode="home" initialData={initialData} />} />
+      <Route path="/:locale/:collection" element={<HubPage pageMode="home" initialData={initialData} />} />
       <Route path="/workspace/architecture" element={<WorkspaceArchitecturePage />} />
       <Route path="/nodes/:categoryId" element={<LegacyCategoryRedirect />} />
       <Route path="/nodes/:categoryId/sub/:subId" element={<LegacyCategoryRedirect />} />

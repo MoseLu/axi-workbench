@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { ProjectHandoffCard as HandoffCard } from '../lib/knowledgeBase'
-import { getProjectHandoffCard } from '../lib/knowledgeBase'
+
+async function getProjectHandoffCard(projectId: string): Promise<HandoffCard> {
+  const response = await fetch(`/api/project-handoff?project=${encodeURIComponent(projectId)}`)
+  if (!response.ok) throw new Error(`Handoff HTTP ${response.status}`)
+  return response.json() as Promise<HandoffCard>
+}
 
 const STATE_LABELS: Record<HandoffCard['state'], { label: string; tone: 'ok' | 'warn' | 'danger' }> = {
   ok: { label: 'handoff 正常', tone: 'ok' },
