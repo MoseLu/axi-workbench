@@ -1923,16 +1923,18 @@ html[data-axi-docs-theme='light'] .app-main--home {
 }
 
 .axi-docs-home__guide-reader.document-detail-page__reader .doc-header {
+  margin-bottom: 0;
   padding-bottom: 12px;
 }
 
 .axi-docs-home__guide-reader.document-detail-page__reader .doc-title {
+  margin: 0;
   font-size: 32px;
   line-height: 40px;
 }
 
 .axi-docs-home__guide-reader.document-detail-page__reader .doc-description {
-  margin: 8px 0 0;
+  margin: 16px 0 0;
 }
 
 .axi-docs-home__top-link {
