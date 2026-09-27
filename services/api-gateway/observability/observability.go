@@ -14,14 +14,28 @@ import (
 
 	"github.com/axiomaticworld/observability/go/axilog"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // Setup configures the global OTel TracerProvider for the given
 // service. When `endpoint` is empty the service runs in no-op mode
 // (no provider, no exporter); otherwise AXI_OTLP_TRACES_ENDPOINT is
 // set so `axilog.SetupTracing` honors the explicit URL.
+//
+// The W3C TraceContext + Baggage composite propagator is installed
+// regardless of whether the OTLP exporter is configured, so
+// downstream `axilog.TraceIDFromContext` reads return the upstream
+// trace_id even on local development setups without a collector.
 func Setup(ctx context.Context, serviceName, endpoint string) (func(context.Context) error, error) {
 	if strings.TrimSpace(endpoint) == "" {
+		// Even without an exporter, install the W3C TraceContext +
+		// Baggage propagator so downstream axilog.TraceIDFromContext
+		// reads return the upstream trace_id during local dev.
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		))
 		return func(context.Context) error { return nil }, nil
 	}
 	_ = os.Setenv("AXI_OTLP_TRACES_ENDPOINT", endpoint)
