@@ -38,7 +38,8 @@ export function SideNav({ filter, onFilterChange }: SideNavProps) {
               type="button"
               className={`nav-item ${active ? "active" : ""}`}
               onClick={() => onFilterChange(item.id)}
-              title={item.label}
+            title={item.label}
+            aria-label={item.label}
             >
               <span className="nav-glyph">{item.glyph}</span>
               <span className="tooltip">{item.label}</span>

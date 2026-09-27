@@ -87,7 +87,7 @@ function StatusBadge({ phase, autoResolved, source }: {
     : phase === 'probing'
       ? 'rgba(59,130,246,0.15)'
       : 'rgba(248,113,113,0.15)';
-  const color = autoResolved ? '#4ade80' : phase === 'probing' ? '#93c5fd' : '#fca5a5';
+  const color = autoResolved ? 'var(--axi-success, #4ade80)' : phase === 'probing' ? 'var(--axi-primary, #93c5fd)' : 'var(--axi-danger, #fca5a5)';
   const text = autoResolved
     ? `已连接 · ${getSourceLabel(source)}`
     : phase === 'probing'
@@ -208,15 +208,15 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
         : feedbackTone === 'error' ? '1px solid rgba(239,68,68,0.35)'
           : '1px solid rgba(255,255,255,0.08)',
     color:
-      feedbackTone === 'success' ? '#bbf7d0'
-        : feedbackTone === 'error' ? '#fecaca'
-          : '#e2e8f0',
+      feedbackTone === 'success' ? 'var(--axi-success-bg, #bbf7d0)'
+        : feedbackTone === 'error' ? 'var(--axi-danger-bg, #fecaca)'
+          : 'var(--axi-text, #e2e8f0)',
   } : null;
 
   return (
     <div style={{
       height: '100vh',
-      background: '#0d1117',
+      background: 'var(--axi-bg-page, #0d1117)',
       color: 'white',
       fontFamily: 'system-ui, sans-serif',
       display: 'flex',
@@ -268,14 +268,14 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
           gap: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 13, color: '#94a3b8' }}>当前后端</span>
+            <span style={{ fontSize: 13, color: 'var(--axi-text-muted, #94a3b8)' }}>当前后端</span>
             <StatusBadge
               phase={backendDiscovery.phase}
               autoResolved={backendDiscovery.autoResolved}
               source={backendDiscovery.source}
             />
           </div>
-          <div style={{ fontFamily: 'monospace', fontSize: 14, color: '#f8fafc' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 14, color: 'var(--axi-text, #f8fafc)' }}>
             {backendAddress || '—'}
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
             flexDirection: 'column',
             gap: 10,
           }}>
-            <span style={{ fontSize: 13, color: '#f59e0b' }}>自动回退均未命中，请手动输入后端地址</span>
+            <span style={{ fontSize: 13, color: 'var(--axi-warning, #f59e0b)' }}>自动回退均未命中，请手动输入后端地址</span>
             <input
               type="text"
               value={inputValue}
@@ -350,7 +350,7 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
                   borderRadius: 8,
                   border: '1px solid rgba(248,113,113,0.45)',
                   background: 'rgba(248,113,113,0.14)',
-                  color: '#fecaca',
+                  color: 'var(--axi-danger-bg, #fecaca)',
                   cursor: saving ? 'not-allowed' : 'pointer',
                   fontSize: 13,
                 }}
@@ -372,13 +372,13 @@ export default function ConnectionSettingsPage({ onBack }: ConnectionSettingsPag
             display: 'grid',
             gap: 6,
             fontSize: 12,
-            color: '#64748b',
+            color: 'var(--axi-text-muted, #64748b)',
           }}>
             {savedManualUrl && (
-              <div>手动地址: <span style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{savedManualUrl}</span></div>
+              <div>手动地址: <span style={{ fontFamily: 'monospace', color: 'var(--axi-text-muted, #94a3b8)' }}>{savedManualUrl}</span></div>
             )}
             {lastSuccessfulUrl && (
-              <div>最近成功: <span style={{ fontFamily: 'monospace', color: '#94a3b8' }}>{lastSuccessfulUrl}</span></div>
+              <div>最近成功: <span style={{ fontFamily: 'monospace', color: 'var(--axi-text-muted, #94a3b8)' }}>{lastSuccessfulUrl}</span></div>
             )}
           </div>
         )}

@@ -1,0 +1,295 @@
+{
+  "version": 2,
+  "project": "axi-docs",
+  "name": "Axi Docs",
+  "status": "verified",
+  "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs",
+  "kind": "documentation-hub",
+  "lifecycle": "active",
+  "owner": "AxiomaticWorld workspace owner",
+  "summary": "Workspace documentation hub combining a React reader, knowledge-source adapters, knowledge graph, MCP document bus, and generated project dossier mirrors.",
+  "readOrder": [
+    "AGENTS.md",
+    "README.md",
+    "app/AGENTS.md",
+    "docs/state/TODO.md",
+    "docs/state/MILESTONE.md"
+  ],
+  "entrypoints": [
+    {
+      "id": "web-app",
+      "path": "app/src/main.tsx",
+      "purpose": "Mount the React documentation reader and knowledge hub."
+    },
+    {
+      "id": "mcp-server",
+      "path": "app/src/mcp/server.ts",
+      "purpose": "Expose the Axi Docs MCP and HTTP document-access surfaces."
+    },
+    {
+      "id": "project-dossier-builder",
+      "path": "app/scripts/build-projects-index.mjs",
+      "purpose": "Generate workspace project dossier mirrors and their index."
+    },
+    {
+      "id": "source-lock-checker",
+      "path": "app/scripts/check-source-locks.mjs",
+      "purpose": "Validate external documentation source locks."
+    }
+  ],
+  "commands": {
+    "setup": [
+      "pnpm --dir app install --frozen-lockfile"
+    ],
+    "start": [
+      "pnpm --dir app dev",
+      "pnpm --dir app mcp:http"
+    ],
+    "health": [
+      "pnpm --dir app docs:check",
+      "pnpm --dir app source:check"
+    ],
+    "verify": [
+      "pnpm --dir app verify",
+      "pnpm --dir app test:run",
+      "pnpm --dir app rule:check"
+    ],
+    "smoke": [
+      "pnpm --dir app docs:check",
+      "pnpm --dir app verify"
+    ]
+  },
+  "environment": {
+    "runtimes": [
+      "Node.js",
+      "pnpm"
+    ],
+    "services": [
+      "Blinko when the Blinko source is enabled",
+      "Anthropic-compatible API when AI document analysis is enabled",
+      "Aliyun OSS when attachment upload hooks are enabled"
+    ],
+    "variables": [
+      {
+        "name": "VITE_API_BASE",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "OBSIDIAN_PATH",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "AXI_DOCS_EXTRA_SOURCES_JSON",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "AXI_SKILLS_PATH",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "DBSKILL_PATH",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "BLINKO_URL",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "BLINKO_TOKEN",
+        "required": false,
+        "secret": true,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "required": false,
+        "secret": true,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "ANTHROPIC_BASE_URL",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "AI_MODEL",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "MCP_AUTH_TOKEN",
+        "required": false,
+        "secret": true,
+        "source": "app/.env or process environment; generated locally when omitted"
+      },
+      {
+        "name": "AXI_DOCS_BOUNDED_AGENT_TOKEN",
+        "required": false,
+        "secret": true,
+        "source": "app/.env or process environment; required when a bounded Agent MCP identity is enabled"
+      },
+      {
+        "name": "AXI_DOCS_CALLER",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment; defaults to human"
+      },
+      {
+        "name": "ALLOWED_ORIGINS",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "BIND_ADDRESS",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      },
+      {
+        "name": "VITE_PORT",
+        "required": false,
+        "secret": false,
+        "source": "app/.env or process environment"
+      }
+    ]
+  },
+  "contracts": {
+    "provides": [
+      "Axi Docs web reader",
+      "axi_docs_* MCP document tools",
+      "Versioned read-only context and approval-only effect proposals for bounded Agents",
+      "Knowledge graph and document-source adapters",
+      "Generated workspace project dossier mirrors"
+    ],
+    "consumes": [
+      "Workspace project metadata",
+      "Locked Axi Skills documentation source",
+      "Configured Obsidian, Blinko, dbskill, and extra documentation sources",
+      "task-execution-routing/v1 governance contract"
+    ],
+    "files": [
+      "docs/project-docs.manifest.json",
+      "docs/sources.lock.json",
+      "docs/projects.index.json",
+      "app/src/config/documentSources.ts",
+      "app/src/lib/knowledgeBase.ts",
+      "app/src/mcp/server.ts",
+      "app/src/mcp/handoffTools.test.ts"
+    ]
+  },
+  "currentWork": {
+    "todo": "docs/state/TODO.md",
+    "milestone": "docs/state/MILESTONE.md",
+    "active": [
+      "Keep the project documentation contract and generated dossier coverage complete.",
+      "Maintain workspace registry coverage and locked documentation sources.",
+      "Continue the VitePress-aligned reader experience and source governance milestone."
+    ],
+    "knownFailures": [
+      "TODO.md records remaining security, asynchronous I/O, CORS, architecture, UX, and test-coverage work.",
+      "Live Blinko, AI analysis, and OSS integrations require their corresponding external services and credentials."
+    ]
+  },
+  "troubleshooting": [
+    {
+      "symptom": "Governance or documentation checks report missing files.",
+      "diagnosis": "A required root or app governance document was removed, renamed, or not generated.",
+      "resolution": "Run pnpm --dir app docs:check, restore the named file from its authoritative source, and rerun the check."
+    },
+    {
+      "symptom": "Source checks report a lock mismatch or unavailable documentation source.",
+      "diagnosis": "A configured external source moved or its locked revision no longer matches the local checkout.",
+      "resolution": "Inspect docs/sources.lock.json and the configured source path, then update the lock only after verifying the intended revision."
+    },
+    {
+      "symptom": "The build fails while optional live integrations are unavailable.",
+      "diagnosis": "A source adapter or environment-dependent path is being treated as required during build.",
+      "resolution": "Check app/.env.example and app/AGENTS.md, disable the optional source or provide its documented local configuration, then rerun pnpm --dir app verify."
+    }
+  ],
+  "decisions": {
+    "adr": "docs/axi-workspace-governance/adr/README.md",
+    "changelog": "docs/state/CHANGELOG.md",
+    "submitLog": "app/docs/logs/submit/"
+  },
+  "documents": {
+    "agents": "AGENTS.md",
+    "readme": "README.md",
+    "readmeZh": "README.zh-CN.md",
+    "index": "INDEX.md",
+    "todo": "docs/state/TODO.md",
+    "todoZh": "docs/state/TODO.zh-CN.md",
+    "milestone": "docs/state/MILESTONE.md",
+    "prd": "docs/state/PRD.md",
+    "tdd": "docs/state/TDD.md",
+    "changelog": "docs/state/CHANGELOG.md",
+    "changelogZh": "docs/state/CHANGELOG.zh-CN.md",
+    "security": "docs/governance/SECURITY.md",
+    "securityZh": "docs/governance/SECURITY.zh-CN.md",
+    "error": "docs/state/ERROR.md",
+    "errorZh": "docs/state/ERROR.zh-CN.md",
+    "rules": "docs/rules/INDEX.md",
+    "manifest": "docs/project-docs.manifest.json",
+    "verification": "docs/state/VERIFICATION.md",
+    "planningIndex": "plans/README.md",
+    "plans": "docs/content/en/plans/README.md",
+    "plansZh": "docs/content/zh/plans/README.md",
+    "plansContract": "docs/content/en/plans/idea-to-landing.md",
+    "plansContractZh": "docs/content/zh/plans/idea-to-landing.md"
+  },
+  "owners": {
+    "primary": "AxiomaticWorld workspace owner",
+    "application": "axi-docs app maintainers",
+    "content": "axi-docs documentation maintainers",
+    "sourceGovernance": "workspace documentation maintainers"
+  },
+  "verification": {
+    "status": "verified",
+    "lastVerifiedAt": "2026-08-22",
+    "commands": [
+      "pnpm --dir app docs:check",
+      "pnpm --dir app verify"
+    ],
+    "evidence": [
+      "The governance documentation gate exited successfully on 2026-06-11.",
+      "The production build exited successfully on 2026-06-11.",
+      "Manifest JSON and all declared relative paths were checked on 2026-06-11."
+    ]
+  },
+  "startup_profile": {
+    "startup": "pnpm --dir app docs:check",
+    "build": null,
+    "test": "pnpm --dir app verify",
+    "lint": null,
+    "typecheck": null,
+    "clean": null
+  },
+  "consumers": [],
+  "shared_packages_exposed": [],
+  "docs_entrypoints": [
+    "AGENTS.md",
+    "README.md",
+    "INDEX.md",
+    "docs/HANDOFF.md",
+    "CHANGE.md"
+  ],
+  "created": "2026-06-07",
+  "updated": "2026-08-22",
+  "writer": "zero-context-handoff",
+  "source": "Repository-local AGENTS.md, README.md, TODO.md, app/AGENTS.md, app/package.json, app/.env.example, and executable documentation/build entrypoints."
+}

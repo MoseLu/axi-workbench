@@ -17,16 +17,31 @@ This AGENTS.md scopes guidance to `packages`. Parent AGENTS guidance still appli
 ### Subdirectories
 - `api-client/`
 - `axi-rag/`
-- `desktop/`
 - `epap-schemas-compat/`
 - `schemas/`
 - `types/`
 - `ui/`
 - `utils/`
-- `web/`
+- `workbench-foundation/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
-- Add subtree-specific constraints, ownership notes, and test commands here.
-- Keep notes scoped to this directory and its children.
+
+### Active packages
+
+| Package | Role |
+|---------|------|
+| `schemas` (`@axi/workstation-contracts`) | Canonical contracts |
+| `api-client` / `types` / `utils` | Portal/service clients |
+| `workbench-foundation` (`@axi/workbench-foundation`) | 独立 Web / 移动端的认证会话与语言偏好基础包；不包含任何页面或布局 |
+| `epap-schemas-compat` | Compatibility re-exports |
+| `axi-rag` | RAG helpers |
+| `ui` (`@epap/ui`) | **Legacy** layout for `apps/workbench` only — see `ui/LEGACY.md` |
+
+### Archived (not workspace members)
+
+- `../archive/legacy-packages-web` — former portal clone (`name: web-portal`)
+- `../archive/legacy-packages-desktop` — former desktop agent shell
+
+New shared UI belongs in `/Volumes/code/workspace/shared/axi-ui` (`@axi/*`), not a third layout package here.
 <!-- OMX:AGENTS-INIT:MANUAL:END -->

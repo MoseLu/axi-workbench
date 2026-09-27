@@ -1,0 +1,79 @@
+{
+  "executionIntent": "execute",
+  "deliveryMode": "implementation",
+  "expectedTaskIds": ["CL-001", "CL-002", "CL-003", "CL-004", "CL-005", "CL-006", "CL-007", "CL-008", "CL-009", "CL-010", "CL-011", "CL-012", "CL-013", "CL-014", "CL-015", "CL-016", "CL-017", "CL-018", "CL-019", "CL-020"],
+  "tasks": [
+    {
+      "id": "CL-001",
+      "title": "工作区注册与canonical项目边界盘点",
+      "cwd": "/Volumes/code/workspace",
+      "prompt": "执行工作区注册盘点任务：\n\n1. 读取 WORKSPACE_INDEX.md 和 workspace.graph.json\n2. 读取 /Volumes/code/workspace/AGENTS.md\n3. 运行 workspace-project 命令获取所有注册项目\n4. 对每个 canonical 项目，记录：\n   - projectId, canonicalPath, gitRoot\n   - owner, projectKind\n   - provider/consumer 关系\n   - 验证入口点\n5. 输出报告到 /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-001-report.json\n\n验证命令: cat /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-001-report.json | head -100",
+      "agent": "Explore",
+      "dependsOn": [],
+      "resourceKeys": ["workspace-registry"],
+      "readOnly": true,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-001-report.json && wc -l /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-001-report.json",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-002",
+      "title": "projects分区Git仓库清单",
+      "cwd": "/Volumes/code/workspace/projects",
+      "prompt": "执行 projects 分区 Git 仓库盘点：\n\n1. 遍历 /Volumes/code/workspace/projects 下所有 canonical Git 项目\n2. 对每个仓库执行只读检查：\n   - git branch --show-current\n   - git rev-parse HEAD\n   - git remote -v\n   - git status --porcelain\n   - git log --oneline -1 --format=%ci\n   - git rev-list --count HEAD\n3. 识别是否存在 CHANGELOG.md、submit log、未验证提交\n4. 输出报告到 /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-002-report.json\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-002-report.json",
+      "agent": "Explore",
+      "dependsOn": ["CL-001"],
+      "resourceKeys": ["projects-git"],
+      "readOnly": true,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-002-report.json && jq '.repositories | length' /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-002-report.json",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-003",
+      "title": "products分区Git仓库清单",
+      "cwd": "/Volumes/code/workspace/products",
+      "prompt": "执行 products 分区 Git 仓库盘点：\n\n1. 遍历 /Volumes/code/workspace/products 下所有 canonical Git 项目\n2. 对每个仓库执行只读检查：\n   - git branch --show-current\n   - git rev-parse HEAD\n   - git remote -v\n   - git status --porcelain\n   - git log --oneline -1 --format=%ci\n   - git rev-list --count HEAD\n3. 识别 CHANGELOG、submit log、未验证提交\n4. 输出报告到 /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-003-report.json\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-003-report.json",
+      "agent": "Explore",
+      "dependsOn": ["CL-001"],
+      "resourceKeys": ["products-git"],
+      "readOnly": true,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-003-report.json",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-004",
+      "title": "shared/infra/tools分区仓库清单",
+      "cwd": "/Volumes/code/workspace",
+      "prompt": "执行 shared/infra/tools 分区盘点：\n\n1. 遍历 /Volumes/code/workspace/shared、/Volumes/code/workspace/infra、/Volumes/code/workspace/tools\n2. 对每个 Git 项目执行只读检查：\n   - git branch --show-current\n   - git rev-parse HEAD\n   - git remote -v\n   - git status --porcelain\n3. 区分 shared provider、基础设施仓库、工具仓库\n4. 记录与 Axi Workbench 的依赖关系\n5. 输出报告到 /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-004-report.json\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-004-report.json",
+      "agent": "Explore",
+      "dependsOn": ["CL-001"],
+      "resourceKeys": ["shared-infra-git"],
+      "readOnly": true,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-004-report.json",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-005",
+      "title": "CHANGELOG和审计资源盘点",
+      "cwd": "/Volumes/code/workspace",
+      "prompt": "搜索并分类所有日志和审计资源：\n\n1. 搜索 CHANGELOG.md、docs/state/CHANGELOG.md\n2. 搜索 docs/logs/submit/** 目录\n3. 搜索 git notes\n4. 搜索 CI 构建记录、测试报告\n5. 搜索 verification artifact、handoff artifact、audit ledger\n6. 搜索 project-completion.json、workspace completion snapshot\n\n对每种来源记录：\n- 路径、格式、owner\n- 是否追加写入\n- 是否可唯一关联到 commit SHA\n- 是否可重复解析\n- 是否存在历史缺口\n\n输出到 /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-005-report.json\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-005-report.json",
+      "agent": "Explore",
+      "dependsOn": ["CL-001"],
+      "resourceKeys": ["audit-resources"],
+      "readOnly": true,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-005-report.json",
+      "maxAttempts": 2
+    },
+    {
+      "id": "CL-006",
+      "title": "Axi Workbench Control Plane和UI盘点",
+      "cwd": "/Volumes/code/workspace/projects/axi-workbench",
+      "prompt": "盘点 Axi Workbench 运维 UI 和 Control Plane：\n\n1. 检查 /Volumes/code/workspace/projects/axi-workbench/apps/workbench\n   - 现有 Operations 页面\n   - Governance Summary\n   - snapshot/audit projection\n   - project completion projection\n2. 检查 /Volumes/code/workspace/projects/axi-workbench/services/control-plane\n   - Gateway API 路由\n   - 数据查询模式\n3. 检查 /Volumes/code/workspace/projects/axi-workbench/packages\n   - 现有分页、筛选组件\n   - 状态卡片和时间线组件\n4. 确定最适合承载 Commit Ledger 的 canonical owner\n\n输出到 /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-006-report.json\n\n验证命令: test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-006-report.json",
+      "agent": "Explore",
+      "dependsOn": ["CL-001"],
+      "resourceKeys": ["workbench-ui"],
+      "readOnly": true,
+      "verifyCommand": "test -f /Volumes/code/workspace/projects/axi-workbench/.claude/clog-run/CL-006-report.json",
+      "maxAttempts": 2
+    }
+  ]
+}

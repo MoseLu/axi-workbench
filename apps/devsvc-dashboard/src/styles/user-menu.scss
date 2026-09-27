@@ -7,10 +7,10 @@
 }
 
 .recharts-tooltip-wrapper .recharts-default-tooltip {
-  border-color: var(--panel-border) !important;
+  border-color: var(--panel-border);
 
-  background: var(--panel-strong) !important;
-  color: var(--text) !important;
+  background: var(--panel-strong);
+  color: var(--text);
 }
 
 .service-name {
@@ -22,6 +22,14 @@
 .checks {
   font-size: 12px;
   line-height: 1.5;
+}
+
+.app-view-container-services {
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .services-table .ant-table {
@@ -56,11 +64,11 @@
 }
 
 .services-table .ant-table-body {
-  overflow: auto !important;
+  overflow: auto;
 }
 
 .services-table .ant-table-sticky-scroll {
-  display: none !important;
+  display: none;
 }
 
 .services-panel .services-table,
@@ -72,7 +80,7 @@
 }
 
 .services-panel .services-table .ant-table-content {
-  overflow-y: visible !important;
+  overflow-y: visible;
 }
 
 .services-pagination {
@@ -86,26 +94,147 @@
   white-space: nowrap;
 }
 
+.services-pagination .axi-pagination {
+  --ant-pagination-item-active-bg: var(--primary);
+  --ant-pagination-item-active-color: var(--text-inverse);
+  --ant-pagination-item-bg: var(--panel);
+  --ant-pagination-item-input-bg: var(--panel);
+  --ant-pagination-item-link-bg: var(--panel);
+  --ant-pagination-item-size-sm: 24px;
+  --ant-pagination-item-size: 24px;
+  color: var(--text);
+}
+
+.services-pagination .ant-pagination-total-text {
+  color: var(--muted);
+}
+
+.services-pagination .ant-pagination-item,
+.services-pagination .ant-pagination-prev,
+.services-pagination .ant-pagination-next,
+.services-pagination .ant-pagination-jump-prev,
+.services-pagination .ant-pagination-jump-next {
+  min-width: 24px;
+  height: 24px;
+  margin-inline-end: 6px;
+  border-color: var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--muted);
+  line-height: 22px;
+}
+
+.services-pagination .ant-pagination-item a,
+.services-pagination .ant-pagination-prev button,
+.services-pagination .ant-pagination-next button,
+.services-pagination .ant-pagination-item-link {
+  color: var(--muted);
+}
+
+.services-pagination .ant-pagination-item:hover,
+.services-pagination .ant-pagination-prev:hover,
+.services-pagination .ant-pagination-next:hover {
+  border-color: color-mix(in srgb, var(--primary), var(--line) 32%);
+  background: var(--surface-hover);
+}
+
+.services-pagination .ant-pagination-item-active {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary), transparent 70%);
+}
+
+.services-pagination .ant-pagination-item-active a {
+  color: var(--text-inverse);
+  font-weight: 700;
+}
+
+.services-pagination .ant-pagination-options {
+  margin-inline-start: 8px;
+}
+
+.services-pagination .ant-pagination-options .ant-select-selector {
+  height: 24px;
+  border-color: var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.services-pagination .ant-pagination-options .ant-select {
+  min-width: 92px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.services-pagination .ant-pagination-options .ant-select-content {
+  height: 22px;
+  padding-inline: 9px 24px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.services-pagination .ant-pagination-options .ant-select-selection-item {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.services-pagination .ant-pagination-options .ant-select-suffix,
+.services-pagination .ant-pagination-options .ant-select-arrow {
+  color: var(--muted);
+}
+
+.services-pagination .ant-pagination-options .ant-select:hover .ant-select-selector,
+.services-pagination .ant-pagination-options .ant-select-focused .ant-select-selector {
+  border-color: color-mix(in srgb, var(--primary), var(--line) 32%);
+  background: var(--surface-hover);
+}
+
+.services-pagination .ant-pagination-options .ant-select:hover,
+.services-pagination .ant-pagination-options .ant-select-focused {
+  border-color: color-mix(in srgb, var(--primary), var(--line) 32%);
+  background: var(--surface-hover);
+}
+
+.ant-select-dropdown .ant-select-item {
+  color: var(--text);
+}
+
+.ant-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-disabled),
+.ant-select-dropdown .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
 .services-table .ant-table-container {
-  border-color: var(--panel-border) !important;
+  border-color: var(--panel-border);
 }
 
 .services-table .ant-table-thead > tr > th {
-  color: var(--table-header-text) !important;
-  background: var(--panel-strong) !important;
+  color: var(--table-header-text);
+  background: var(--panel-strong);
   font-size: 12px;
   font-weight: 700;
   border-color: var(--line);
-  padding: 8px 12px !important;
-  text-align: center !important;
+  padding: 8px 12px;
+  text-align: center;
   white-space: nowrap;
   word-break: keep-all;
 }
 
 .services-table .ant-table-tbody > tr > td {
-  background: var(--panel) !important;
-  padding: 8px 12px !important;
-  text-align: center !important;
+  background: var(--panel);
+  padding: 8px 12px;
+  text-align: center;
   vertical-align: middle;
   border-color: var(--line);
   white-space: nowrap;
@@ -114,30 +243,30 @@
 
 .services-table .ant-table-tbody > tr.ant-table-measure-row,
 .services-table .ant-table-tbody > tr.ant-table-measure-row > td {
-  height: 0 !important;
-  min-height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  overflow: hidden !important;
-  font-size: 0 !important;
-  line-height: 0 !important;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  font-size: 0;
+  line-height: 0;
   visibility: hidden;
 }
 
 .services-table .ant-table-tbody > tr:hover > td {
-  background: var(--surface-hover) !important;
+  background: var(--surface-hover);
 }
 
 .services-table .ant-table-cell-fix,
 .services-table .ant-table-cell-fix-left {
-  background: var(--panel) !important;
-  box-shadow: none !important;
+  background: var(--panel);
+  box-shadow: none;
 }
 
 .services-table .ant-table-cell-fix-right,
 .services-table .ant-table-cell-fix-end {
-  background: var(--panel) !important;
-  box-shadow: none !important;
+  background: var(--panel);
+  box-shadow: none;
   z-index: 5;
 }
 
@@ -147,7 +276,7 @@
 .services-table .ant-table-thead .ant-table-cell-fix-start,
 .services-table .ant-table-thead .ant-table-cell-fix-end,
 .services-table .ant-table-thead .ant-table-cell-scrollbar {
-  background: var(--panel-strong) !important;
+  background: var(--panel-strong);
   z-index: 6;
 }
 
@@ -156,7 +285,7 @@
 .services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-right,
 .services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-start,
 .services-table .ant-table-tbody > tr:hover > .ant-table-cell-fix-end {
-  background: var(--surface-hover) !important;
+  background: var(--surface-hover);
 }
 
 .services-table .ant-table-cell-fix-left-first::after,
@@ -165,23 +294,23 @@
 .services-table .ant-table-cell-fix-right-last::after,
 .services-table .ant-table-cell-fix-start-shadow::after,
 .services-table .ant-table-cell-fix-end-shadow::after {
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .services-table .ant-table-cell-fix-end-shadow,
 .services-table .ant-table-cell-fix-end-shadow-show {
-  border-inline-start: 1px solid var(--table-grid-line) !important;
+  border-inline-start: 1px solid var(--table-grid-line);
 }
 
 .services-table .service-row-fail > td {
-  background: color-mix(in srgb, var(--red-bg), var(--panel) 72%) !important;
+  background: color-mix(in srgb, var(--red-bg), var(--panel) 72%);
 }
 
 .services-table .service-row-fail > .ant-table-cell-fix-left,
 .services-table .service-row-fail > .ant-table-cell-fix-right,
 .services-table .service-row-fail > .ant-table-cell-fix-start,
 .services-table .service-row-fail > .ant-table-cell-fix-end {
-  background: color-mix(in srgb, var(--red-bg), var(--panel) 72%) !important;
+  background: color-mix(in srgb, var(--red-bg), var(--panel) 72%);
 }
 
 .service-cell {
@@ -207,7 +336,20 @@
   min-width: 70px;
   max-width: 100%;
   gap: 3px;
-  border-left-width: 4px;
+  border-left-width: 1px;
+}
+
+.services-table .axi-tag {
+  justify-content: center;
+  text-align: center;
+}
+
+.services-table .axi-tag__content {
+  width: 100%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .status-chip .axi-tag__content {
@@ -221,12 +363,7 @@
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--axi-tag-color);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--axi-tag-color), transparent 82%);
+  display: none;
 }
 
 .status-chip-value {
@@ -330,13 +467,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px !important;
-  height: 24px !important;
-  padding: 0 !important;
+  width: 24px;
+  height: 24px;
+  padding: 0;
 }
 
 .services-table .table-actions .ant-btn > span:not(.ant-btn-icon) {
-  display: none !important;
+  display: none;
 }
 
 .button {
@@ -405,18 +542,18 @@
 
 .deploy-table.services-table .ant-table-body,
 .server-ant-table.services-table .ant-table-body {
-  overflow: auto !important;
+  overflow: auto;
 }
 
 .deploy-table .deploy-row-active > td {
-  background: color-mix(in srgb, var(--green-bg), var(--panel) 70%) !important;
+  background: color-mix(in srgb, var(--green-bg), var(--panel) 70%);
 }
 
 .deploy-table .deploy-row-active > .ant-table-cell-fix-left,
 .deploy-table .deploy-row-active > .ant-table-cell-fix-right,
 .deploy-table .deploy-row-active > .ant-table-cell-fix-start,
 .deploy-table .deploy-row-active > .ant-table-cell-fix-end {
-  background: color-mix(in srgb, var(--green-bg), var(--panel) 70%) !important;
+  background: color-mix(in srgb, var(--green-bg), var(--panel) 70%);
 }
 
 .result-box {

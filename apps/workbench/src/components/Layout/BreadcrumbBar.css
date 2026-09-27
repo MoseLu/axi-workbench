@@ -1,0 +1,94 @@
+/* ========== Breadcrumb Bar（浅色，去卡片化） ========== */
+.app-breadcrumb {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 var(--axi-space-4, 16px);
+  background: var(--axi-layout-chrome-bg, #ffffff);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.app-breadcrumb__nav {
+  display: flex;
+  align-items: center;
+  font-size: var(--axi-font-size-sm, 13px);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Separator */
+.app-breadcrumb__sep {
+  color: var(--axi-text-muted, rgba(0, 0, 0, 0.32));
+  margin: 0 var(--axi-space-2, 8px);
+  font-size: var(--axi-font-size-xs, 12px);
+}
+
+/* Each breadcrumb item — 纯文字，无卡片 */
+.app-breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--axi-space-2, 5px);
+  height: 22px;
+  padding: 0 var(--axi-space-1, 4px);
+  border: none;
+  border-radius: var(--axi-radius-sm, 4px);
+  background: transparent;
+  color: var(--axi-text-secondary, #52525b);
+  font-size: var(--axi-font-size-sm, 13px);
+  transition: color 0.15s, background-color 0.15s;
+  cursor: default;
+}
+
+button.app-breadcrumb__item {
+  font: inherit;
+  font-size: var(--axi-font-size-sm, 13px);
+  outline: none;
+}
+
+.app-breadcrumb__icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--axi-font-size-sm, 13px);
+  color: var(--axi-text-secondary, #52525b);
+  transition: color 0.15s;
+}
+
+.app-breadcrumb__label {
+  font-size: var(--axi-font-size-sm, 13px);
+}
+
+/* Active (last) item — 品牌色 */
+.app-breadcrumb__item.is-active {
+  background: transparent;
+  color: var(--axi-text, #191919);
+  font-weight: var(--axi-font-weight-medium, 500);
+}
+
+.app-breadcrumb__item.is-active .app-breadcrumb__icon {
+  color: var(--axi-primary, #4165d7);
+}
+
+/* Clickable intermediate items */
+.app-breadcrumb__item.is-clickable {
+  cursor: pointer;
+  background: transparent;
+  color: var(--axi-text-secondary, #52525b);
+}
+
+.app-breadcrumb__item.is-clickable:hover {
+  color: var(--axi-primary, #4165d7);
+  background: var(--axi-layout-hover, rgba(0, 0, 0, 0.04));
+}
+
+.app-breadcrumb__item.is-clickable:focus-visible {
+  outline: 2px solid var(--axi-primary, #4165d7);
+  outline-offset: 2px;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .app-breadcrumb {
+    padding: 0 var(--axi-space-3, 12px);
+  }
+}

@@ -1,0 +1,34 @@
+// base/_paper-grid.scss — engineering-paper micro grid + vignette.
+// Layer: base (output CSS).
+//
+// Painted behind every page via body::before (grid) and body::after
+// (vignette). Fixed attachment so it does not move with scroll.
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(58, 77, 106, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(58, 77, 106, 0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgba(58, 77, 106, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(58, 77, 106, 0.025) 1px, transparent 1px);
+  background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
+  background-position: 0 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    transparent 0%,
+    transparent 55%,
+    rgba(10, 14, 20, 0.55) 100%
+  );
+}

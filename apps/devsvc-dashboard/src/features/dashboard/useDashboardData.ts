@@ -14,7 +14,7 @@ export function useDashboardData() {
       setOverview(await api("/api/overview"));
       setMessage("");
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }

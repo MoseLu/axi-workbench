@@ -1,0 +1,34 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.75"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <title>资源调度中心</title>
+  <desc>五个资源节点连接到带确定性校验的调度核心</desc>
+  <defs>
+    <linearGradient id="resource-shell" x1="3" y1="2" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#29251A" />
+      <stop offset="1" stop-color="#101513" />
+    </linearGradient>
+    <linearGradient id="resource-gold" x1="8" y1="6" x2="17" y2="19" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7D986" />
+      <stop offset="1" stop-color="#E5B94A" />
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="21" height="21" rx="6.5" fill="url(#resource-shell)" stroke="#E5B94A" stroke-width=".55" stroke-opacity=".72" />
+  <circle cx="12" cy="12" r="5.45" stroke="#E5B94A" stroke-width=".45" stroke-opacity=".3" />
+  <path d="M12 8.3V6.35M8.65 10.15 6.3 8.85M15.35 10.15l2.35-1.3M9.65 15.35l-1.7 1.75M14.35 15.35l1.7 1.75" stroke="#F0CB6E" stroke-width="1.15" stroke-opacity=".94" />
+  <g fill="url(#resource-gold)" stroke="#F7D986" stroke-width=".4">
+    <circle cx="12" cy="5" r="1.3" />
+    <circle cx="5.15" cy="8.2" r="1.3" />
+    <circle cx="18.85" cy="8.2" r="1.3" />
+    <circle cx="7.05" cy="18.05" r="1.3" />
+    <circle cx="16.95" cy="18.05" r="1.3" />
+  </g>
+  <rect x="8.25" y="8.25" width="7.5" height="7.5" rx="2.35" fill="url(#resource-gold)" stroke="#F7D986" stroke-width=".5" />
+  <path d="m10.25 12.05 1.15 1.15 2.45-2.55" stroke="#1D1D1D" stroke-width="1.2" />
+</svg>

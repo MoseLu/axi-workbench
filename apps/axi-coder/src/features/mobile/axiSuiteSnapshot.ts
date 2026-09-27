@@ -21,6 +21,7 @@ export type AxiSuiteSnapshot = {
 
 export const expectedAxiDeepLinks = ["axi://chat", "axi://todo", "axi://workbench"] as const;
 export const expectedNotifyEndpoints = ["POST /v1/events", "GET /v1/events"] as const;
+const axiNotifyAndroidRef = "workspace://project/axi-notify/android-app";
 
 export function assertAxiSuiteSnapshot(snapshot: AxiSuiteSnapshot): void {
   if (snapshot.productName !== "Axi Coder") {
@@ -62,8 +63,8 @@ export function buildMockAxiSuiteSnapshot(): AxiSuiteSnapshot {
     mobile: {
       owner: "axi-mobile",
       packageName: "com.mosscoder.notify",
-      projectPath: "/Volumes/code/workspace/projects/axi-notify/android-app",
-      latestGoal70Artifact: "/Volumes/code/workspace/projects/axi-notify/android-app/docs/verification/goal70-20260525-093736",
+      projectPath: axiNotifyAndroidRef,
+      latestGoal70Artifact: `${axiNotifyAndroidRef}/docs/verification/goal70-20260525-093736`,
       deepLinks: [...expectedAxiDeepLinks],
     },
     notify: {

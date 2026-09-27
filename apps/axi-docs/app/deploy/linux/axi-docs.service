@@ -1,0 +1,15 @@
+[Unit]
+Description=Axi Docs HTTP and MCP service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/.hermes/apps/axi-docs/app
+EnvironmentFile=/root/.hermes/apps/axi-docs/app/.env.server
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash -lc 'pnpm mcp:http'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

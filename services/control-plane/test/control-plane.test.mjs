@@ -1,15 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { createControlPlane } from "../src/control-plane.mjs";
+import { createControlPlane } from "./test-control-plane.mjs";
+import { buildSnapshot } from "../src/control-plane.mjs";
 
 function makeWorkspace() {
   const root = mkdtempSync(join(tmpdir(), "axi-workstation-control-plane-"));
   mkdirSync(join(root, "ielts-vocab"), { recursive: true });
   mkdirSync(join(root, "cockpit-tools"), { recursive: true });
-  mkdirSync(join(root, "projects", "mosscoder", "android-app"), { recursive: true });
+  mkdirSync(join(root, "projects", "axi-notify", "android-app"), { recursive: true });
   mkdirSync(join(root, "infra", "fleet-console"), { recursive: true });
   for (const path of [
     join(root, "projects", "enterprise-workspace", "projects", "axi-workstation"),
@@ -81,6 +82,7 @@ function makeWorkspace() {
         consumes: ["ai-capability", "minimax-tokenplan"],
         health: ["node -e \"console.log('health ok')\""],
         verify: ["node -e \"console.log('verify ok')\""],
+        remediation: ["node -e \"console.log('remediated')\""],
         contracts: [],
       },
       "cockpit-tools": {
@@ -90,8 +92,22 @@ function makeWorkspace() {
         health: ["node -e \"console.log('cockpit ok')\""],
         contracts: [],
       },
+      "axi-notify": {
+        path: join(root, "projects", "axi-notify"),
+        kind: "axi-notify-mobile-monorepo",
+        provides: ["mobile-workbench", "relay-server"],
+        contracts: [],
+      },
     },
     profiles: {},
+    automations: [{
+      id: "automation:ielts-health",
+      targetRef: "ielts-vocab",
+      ownerRef: "ielts-vocab",
+      commandId: "ielts-vocab:run_health:0",
+      source: "workspace.graph",
+      enabled: true,
+    }],
   }));
   return root;
 }
@@ -122,6 +138,16 @@ test("builds a six-layer snapshot and Axi resource view from workspace graph plu
   assert.ok(snapshot.resources.some((resource) => resource.id === "axi-docs" && resource.layer === "base_service"));
   assert.ok(snapshot.resources.some((resource) => resource.id === "axi-ops" && resource.commands.some((command) => command.intent === "run_health")));
   assert.ok(snapshot.resources.some((resource) => resource.id === "axi-docs" && resource.commands.some((command) => command.intent === "run_health")));
+  const remediationCommand = snapshot.resources.find((resource) => resource.id === "ielts-vocab").commands.find((command) => command.intent === "run_remediation");
+  assert.equal(remediationCommand.autoExecutable, false);
+  assert.equal(remediationCommand.executorRef, "control-plane.registered-command");
+  assert.deepEqual(snapshot.governance.automations.map((automation) => ({ id: automation.id, status: automation.status, commandId: automation.commandId })), [{ id: "automation:ielts-health", status: "enabled", commandId: "ielts-vocab:run_health:0" }]);
+  assert.equal(snapshot.governance.automations[0].trigger, "manual");
+  const healthCommand = snapshot.resources.find((resource) => resource.id === "ielts-vocab").commands[0];
+  assert.deepEqual(
+    { ownerRef: healthCommand.ownerRef, source: healthCommand.source, executorRef: healthCommand.executorRef },
+    { ownerRef: "ielts-vocab", source: "workspace.graph", executorRef: "control-plane.registered-command" },
+  );
   assert.ok(snapshot.resources.some((resource) => resource.id === "fleet-console" && resource.layer === "physical_service" && resource.status === "available"));
   assert.ok(snapshot.resources.some((resource) => resource.id === "cc-connect" && resource.layer === "communication"));
   assert.ok(snapshot.resources.some((resource) => resource.id === "feishu" && resource.kind === "intelligence-station"));
@@ -137,6 +163,53 @@ test("builds a six-layer snapshot and Axi resource view from workspace graph plu
   assert.match(run.summary, /Axi 资源视图/);
 });
 
+test("builds a safe mobile projection and only exposes explicitly declared HTTPS previews", () => {
+  const root = makeWorkspace();
+  const graphPath = join(root, "workspace.graph.json");
+  const graph = JSON.parse(readFileSync(graphPath, "utf8"));
+  graph.projects["ielts-vocab"].mobile = {
+    summary: "移动学习产品",
+    preview: { mode: "embedded_web", url: "https://preview.example.test", allowEmbedded: true },
+  };
+  graph.projects["cockpit-tools"].mobile = { preview: { mode: "embedded_web", url: "http://unsafe.example.test", allowEmbedded: true } };
+  writeFileSync(graphPath, JSON.stringify(graph));
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache") });
+  const mobile = controlPlane.mobileSnapshot();
+  const previewProject = mobile.projects.find((project) => project.id === "ielts-vocab");
+  const blockedProject = mobile.projects.find((project) => project.id === "cockpit-tools");
+  assert.equal(previewProject.preview.mode, "embedded_web");
+  assert.equal(previewProject.preview.url, "https://preview.example.test");
+  assert.equal(blockedProject.preview.mode, "none");
+  assert.equal(blockedProject.preview.url, null);
+});
+
+test("resolves optional mobile resources from registry declarations and never guesses legacy paths", () => {
+  const root = mkdtempSync(join(tmpdir(), "axi-optional-resource-contract-"));
+  const graphPath = join(root, "workspace.graph.json");
+  const registryRoot = join(root, "infra", "axi-workspace-governance");
+  const registryPath = join(registryRoot, "workspace.json");
+  const registeredPath = join(root, "projects", "axi-notify");
+  mkdirSync(join(root, "projects", "mosscoder", "android-app"), { recursive: true });
+  mkdirSync(join(registeredPath, "android-app"), { recursive: true });
+  mkdirSync(registryRoot, { recursive: true });
+  writeFileSync(graphPath, JSON.stringify({ projects: {}, profiles: {} }));
+  writeFileSync(registryPath, JSON.stringify({ projects: [{ id: "axi-notify", path: "../../projects/axi-notify", status: "active" }] }));
+
+  const registeredSnapshot = buildSnapshot({ workspaceRoot: root, graphPath, registryPath });
+  const registeredNotify = registeredSnapshot.resources.find((resource) => resource.id === "axi-notify");
+  assert.equal(registeredNotify.path, registeredPath);
+  assert.equal(registeredNotify.status, "available");
+
+  writeFileSync(registryPath, JSON.stringify({ projects: [] }));
+  const unresolvedSnapshot = buildSnapshot({ workspaceRoot: root, graphPath, registryPath });
+  const unresolvedNotify = unresolvedSnapshot.resources.find((resource) => resource.id === "axi-notify");
+  const unresolvedMobile = unresolvedSnapshot.resources.find((resource) => resource.id === "axi-mobile");
+  assert.equal(unresolvedNotify.path, undefined);
+  assert.equal(unresolvedNotify.status, "unknown");
+  assert.equal(unresolvedMobile.path, undefined);
+  assert.equal(unresolvedMobile.status, "unknown");
+});
+
 test("blocks destructive natural language requests", async () => {
   const root = makeWorkspace();
   const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache") });
@@ -146,13 +219,317 @@ test("blocks destructive natural language requests", async () => {
   assert.match(run.summary, /拒绝/);
 });
 
+test("enforced control-plane surface refuses direct execution without a policy decision", async () => {
+  const root = makeWorkspace();
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache"), enforceExecutionPolicy: true });
+
+  const query = await controlPlane.query({ text: "跑一下 ielts-vocab 健康检查", senderId: "user:direct", conversationId: "direct" });
+  assert.equal(query.accepted, false);
+  assert.equal(query.actions[0].status, "blocked");
+  assert.match(query.blockedReason, /Workspace policy deny/);
+  assert.equal(controlPlane.getWorkspaceEvents({ eventType: "policy_decision.evaluated" }).events.length, 1);
+
+  const commandId = controlPlane.snapshot().resources.find((resource) => resource.id === "ielts-vocab").commands[0].id;
+  const forged = controlPlane.runCommand(commandId, { policyDecisionRef: "policy-decision:forged" });
+  assert.equal(forged.accepted, false);
+  assert.match(forged.error, /not found/);
+  const deniedDecision = controlPlane.evaluateConfiguredGovernancePolicy({ subjectRef: "user:direct", resourceRef: commandId, action: "execute" }).decision;
+  const denied = controlPlane.runCommand(commandId, { policyDecisionRef: deniedDecision.id, subjectRef: "user:direct" });
+  assert.equal(denied.accepted, false);
+  assert.match(denied.error, /cannot authorize/);
+  const mismatchedId = "policy-decision:mismatched-resource";
+  writeFileSync(join(root, ".cache", "policy-decisions", "policy-decision_mismatched-resource.json"), JSON.stringify({ id: mismatchedId, decision: "allow", resourceRef: "another-resource", action: "execute", expiresAt: "2099-01-01T00:00:00.000Z" }));
+  const mismatched = controlPlane.runCommand(commandId, { policyDecisionRef: mismatchedId, subjectRef: "user:direct" });
+  assert.equal(mismatched.accepted, false);
+  assert.match(mismatched.error, /resource does not match/);
+  const subjectMismatchId = "policy-decision:subject-mismatch";
+  writeFileSync(join(root, ".cache", "policy-decisions", "policy-decision_subject-mismatch.json"), JSON.stringify({ id: subjectMismatchId, subjectRef: "user:other", decision: "allow", resourceRef: commandId, action: "execute", expiresAt: "2099-01-01T00:00:00.000Z" }));
+  const subjectMismatch = controlPlane.runCommand(commandId, { policyDecisionRef: subjectMismatchId, subjectRef: "user:direct" });
+  assert.equal(subjectMismatch.accepted, false);
+  assert.match(subjectMismatch.error, /subject does not match/);
+  const expiredId = "policy-decision:expired";
+  mkdirSync(join(root, ".cache", "policy-decisions"), { recursive: true });
+  writeFileSync(join(root, ".cache", "policy-decisions", "policy-decision_expired.json"), JSON.stringify({ id: expiredId, subjectRef: "user:direct", decision: "allow", resourceRef: commandId, action: "execute", expiresAt: "2026-01-01T00:00:00.000Z" }));
+  const expired = controlPlane.runCommand(commandId, { policyDecisionRef: expiredId, subjectRef: "user:direct" });
+  assert.equal(expired.accepted, false);
+  assert.match(expired.error, /expired/);
+
+  const envelope = {
+    envelope: {
+      id: "direct-job-without-policy",
+      channel: "mosscoder",
+      conversationId: "direct",
+      senderId: "user:direct",
+      text: "执行一个受控任务",
+      receivedAt: "2026-09-13T00:00:00.000Z",
+    },
+  };
+  const job = controlPlane.createJob(envelope);
+  assert.equal(job.accepted, false);
+  assert.equal(job.httpStatus, 403);
+  assert.match(job.error, /policy decision required/);
+
+  const command = controlPlane.runCommand("missing-command");
+  assert.equal(command.accepted, false);
+  assert.equal(command.httpStatus, 403);
+  const cancelledJob = controlPlane.cancelJob("missing-job");
+  assert.equal(cancelledJob.accepted, false);
+  const cancelledTask = controlPlane.cancelAgentTask("missing-task");
+  assert.equal(cancelledTask.accepted, false);
+  const approval = controlPlane.decideApproval({ id: "missing-approval", decision: "approved" });
+  assert.equal(approval.accepted, false);
+  const mobileAction = controlPlane.createMobileProjectAction({
+    idempotencyKey: "direct-mobile-without-policy",
+    projectId: "ielts-vocab",
+    actionId: "verify",
+    actionType: "project_verification",
+  });
+  assert.equal(mobileAction.accepted, false);
+  const scan = controlPlane.decideApprovalScan({ scanId: "scan_missing", decision: "approved", policyDecisionRef: "" });
+  assert.equal(scan.ok, false);
+  assert.equal(scan.httpStatus, 403);
+});
+
+test("failed AgentTasks create explainable Risk and Incident projections", async () => {
+  const root = makeWorkspace();
+  const cacheDir = join(root, ".cache");
+  mkdirSync(join(root, "infra", "axi-workspace-governance"), { recursive: true });
+  writeFileSync(join(root, "infra", "axi-workspace-governance", "workspace.json"), JSON.stringify({
+    projects: [{ id: "ielts-vocab", owner: "owner:registry" }],
+  }));
+  const controlPlane = createControlPlane({
+    workspaceRoot: root,
+    cacheDir,
+    agentTaskExecutor: () => ({ status: "failed", summary: "agent runtime unavailable", stderr: "offline" }),
+  });
+  const run = await controlPlane.query({
+    text: "让 Codex 帮我检查 ielts-vocab",
+    senderId: "user:risk-test",
+    conversationId: "risk-test",
+  });
+
+  assert.equal(run.actions[0].status, "failed");
+  assert.match(run.metadata.riskRef, /^risk:/);
+  assert.match(run.metadata.incidentRef, /^incident:/);
+  const governance = controlPlane.snapshot().governance;
+  assert.equal(governance.risks.length, 1);
+  assert.equal(governance.risks[0].id, run.metadata.riskRef);
+  assert.equal(governance.risks[0].targetRef, "ielts-vocab");
+  assert.equal(governance.risks[0].ownerRef, "owner:registry");
+  assert.equal(governance.risks[0].ownerSource, "workspace.registry");
+  assert.equal(governance.risks[0].policyDecisionRef, undefined);
+  assert.equal(governance.risks[0].impactSnapshotRef, null);
+  assert.equal(governance.risks[0].evidenceRefs.length, 1);
+  assert.ok(governance.evidence.some((item) => item.id === governance.risks[0].evidenceRefs[0] && item.evidenceType === "behavioral" && item.status === "failed"));
+  assert.equal(governance.evidence.find((item) => item.id === governance.risks[0].evidenceRefs[0]).observationKey, "execution:ielts-vocab");
+  assert.equal(governance.incidents.length, 1);
+  assert.equal(governance.incidents[0].riskRef, governance.risks[0].id);
+  assert.deepEqual(governance.incidents[0].evidenceRefs, governance.risks[0].evidenceRefs);
+
+  const acknowledged = controlPlane.transitionGovernanceRisk({
+    id: run.metadata.riskRef,
+    status: "acknowledged",
+    actorRef: "user:risk-owner",
+    policyDecisionRef: "policy-decision:risk-manage",
+    correlationId: "corr-risk-ack",
+  });
+  assert.equal(acknowledged.ok, true);
+  assert.equal(acknowledged.risk.status, "acknowledged");
+  const missingReason = controlPlane.transitionGovernanceRisk({ id: run.metadata.riskRef, status: "resolved" });
+  assert.equal(missingReason.ok, false);
+  assert.equal(missingReason.httpStatus, 422);
+  const resolved = controlPlane.transitionGovernanceRisk({
+    id: run.metadata.riskRef,
+    status: "resolved",
+    reason: "Agent runtime restored",
+    actorRef: "user:risk-owner",
+    policyDecisionRef: "policy-decision:risk-manage",
+    correlationId: "corr-risk-resolve",
+  });
+  assert.equal(resolved.ok, true);
+  assert.equal(resolved.risk.status, "resolved");
+  assert.equal(resolved.incident.status, "resolved");
+  assert.equal(controlPlane.snapshot().governance.risks[0].status, "resolved");
+  assert.equal(controlPlane.snapshot().governance.incidents[0].status, "resolved");
+
+  const restarted = createControlPlane({ workspaceRoot: root, cacheDir });
+  assert.equal(restarted.snapshot().governance.risks[0].incidentRef, run.metadata.incidentRef);
+  assert.deepEqual(restarted.snapshot().governance.risks[0].evidenceRefs, governance.risks[0].evidenceRefs);
+  assert.ok(restarted.snapshot().governance.evidence.some((item) => item.id === governance.risks[0].evidenceRefs[0]));
+});
+
 test("executes a registered health command from natural language", async () => {
   const root = makeWorkspace();
   const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache") });
   const run = await controlPlane.query({ text: "跑一下 ielts-vocab 健康检查", senderId: "u", conversationId: "c" });
   assert.equal(run.intent, "run_health");
   assert.equal(run.actions[0].status, "succeeded");
+  assert.equal(run.actions[0].evidenceRefs.length, 1);
+  assert.ok(controlPlane.snapshot().governance.evidence.some((item) => item.id === run.actions[0].evidenceRefs[0] && item.status === "succeeded" && item.freshness === "fresh"));
   assert.match(run.actions[0].stdout, /health ok/);
+});
+
+test("policy-gated registered automation reuses command and evidence contracts", async () => {
+  const root = makeWorkspace();
+  const cacheDir = join(root, ".cache");
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir });
+  const run = controlPlane.runAutomation("automation:ielts-health", { policyDecisionRef: "policy-decision:automation-test" });
+  assert.equal(run.intent, "run_health");
+  assert.equal(run.accepted, true);
+  assert.equal(run.metadata.automationId, "automation:ielts-health");
+  assert.equal(run.actions[0].status, "succeeded");
+  assert.equal(run.actions[0].evidenceRefs.length, 1);
+  assert.ok(controlPlane.getWorkspaceEvents({ eventType: "automation.executed" }).events.some((event) => event.objectRef === "automation:ielts-health" && event.evidenceRefs.includes(run.actions[0].evidenceRefs[0])));
+});
+
+test("interval automation scheduler evaluates policy before a registered run", async () => {
+  const root = makeWorkspace();
+  const graphPath = join(root, "workspace.graph.json");
+  const graph = JSON.parse(readFileSync(graphPath, "utf8"));
+  graph.automations[0].trigger = "interval";
+  graph.automations[0].intervalSeconds = 1;
+  writeFileSync(graphPath, JSON.stringify(graph));
+  mkdirSync(join(root, "infra", "axi-workspace-governance", "rbac"), { recursive: true });
+  writeFileSync(join(root, "infra", "axi-workspace-governance", "workspace.json"), JSON.stringify({ settings: { rbac: { grants: "rbac/grants.json" } } }));
+  writeFileSync(join(root, "infra", "axi-workspace-governance", "rbac", "grants.json"), JSON.stringify({ grants: [{
+    id: "grant:automation-tick",
+    subjectRef: "automation:automation:ielts-health",
+    roleRef: "role:automation",
+    action: "execute",
+    scopeType: "workspace",
+    scopeRef: "workspace",
+    resourceRef: "automation:automation:ielts-health",
+    effect: "allow",
+    inheritance: "forbidden",
+  }] }));
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache"), enableAutomationScheduler: true, automationSchedulerIntervalMs: 10 });
+  const executed = await waitFor(() => controlPlane.getWorkspaceEvents({ eventType: "automation.executed" }).events[0], 500);
+  controlPlane.stopAutomationScheduler();
+  assert.ok(executed);
+  assert.equal(executed.objectRef, "automation:ielts-health");
+  assert.match(executed.policyDecisionRef, /^policy-decision:/);
+  const decisions = controlPlane.snapshot().governance.policyDecisions;
+  assert.ok(decisions.some((decision) => decision.id === executed.policyDecisionRef && decision.subjectRef === "automation:automation:ielts-health"));
+  assert.ok(controlPlane.snapshot().governance.automations[0].lastRunAt);
+});
+
+test("registered remediation commands require approval before execution", async () => {
+  const root = makeWorkspace();
+  const cacheDir = join(root, ".cache");
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir });
+  const remediationCommand = controlPlane.snapshot().resources.find((resource) => resource.id === "ielts-vocab").commands.find((command) => command.intent === "run_remediation");
+  const directApi = controlPlane.runCommand(remediationCommand.id, { policyDecisionRef: "policy-decision:direct-remediation" });
+  assert.equal(directApi.actions[0].status, "blocked");
+
+  const direct = await controlPlane.query({
+    text: "修复 ielts-vocab",
+    senderId: "user:remediation",
+    conversationId: "remediation-direct",
+  });
+  assert.equal(direct.intent, "run_remediation");
+  assert.equal(direct.actions[0].status, "blocked");
+  assert.match(direct.summary, /已拒绝/);
+
+  const pending = controlPlane.createJob({
+    __approvedByApproval: "forged-approval",
+    envelope: {
+      id: "remediation-job-1",
+      channel: "mosscoder",
+      conversationId: "remediation",
+      senderId: "user:remediation",
+      text: "修复 ielts-vocab",
+      receivedAt: "2026-09-13T00:00:00.000Z",
+    },
+  });
+  assert.equal(pending.status, "pending_approval");
+  assert.equal(pending.riskLevel, "high");
+  assert.ok(new Date(pending.expiresAt).getTime() > Date.now());
+
+  const approved = controlPlane.decideApproval({ id: pending.approvalId, decision: "approved", decisionText: "owner approved remediation" });
+  assert.equal(approved.status, "approved");
+  const completed = await waitFor(() => {
+    const job = controlPlane.getJob(approved.dispatchedJobId);
+    return job?.status === "completed" ? job : null;
+  });
+  assert.equal(completed.metadata.approvalId, pending.approvalId);
+  const task = controlPlane.getAgentTask(completed.metadata.agentTaskId);
+  assert.equal(task.runtime, "registered_command");
+  assert.equal(task.status, "succeeded");
+  assert.equal(task.evidenceRefs.length, 1);
+  assert.ok(controlPlane.snapshot().governance.evidence.some((item) => item.id === task.evidenceRefs[0] && item.status === "succeeded"));
+  assert.deepEqual(completed.auditReport.evidenceRefs, task.evidenceRefs);
+  assert.match(task.stdout, /remediated/);
+});
+
+test("expired approval requests are persisted as expired and never dispatch a job", async () => {
+  const root = makeWorkspace();
+  const cacheDir = join(root, ".cache");
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir });
+  const pending = controlPlane.createJob({
+    envelope: {
+      id: "remediation-expiry-1",
+      channel: "mosscoder",
+      conversationId: "remediation-expiry",
+      senderId: "user:remediation",
+      text: "修复 ielts-vocab",
+      receivedAt: "2026-09-13T00:00:00.000Z",
+    },
+  });
+  const approvalPath = join(cacheDir, "approvals", `${pending.approvalId}.json`);
+  const approval = JSON.parse(readFileSync(approvalPath, "utf8"));
+  approval.expiresAt = "2026-01-01T00:00:00.000Z";
+  writeFileSync(approvalPath, JSON.stringify(approval));
+  const restarted = createControlPlane({ workspaceRoot: root, cacheDir });
+  const expired = restarted.decideApproval({ id: pending.approvalId, decision: "approved", decisionText: "late approval" });
+  assert.equal(expired.status, "expired");
+  assert.equal(expired.dispatchedJobId, undefined);
+  assert.ok(restarted.getWorkspaceEvents({ eventType: "approval_expired" }).events.some((event) => event.objectRef === pending.approvalId));
+});
+
+test("a persisted require_approval policy creates a desktop pending approval", () => {
+  const root = makeWorkspace();
+  const cacheDir = join(root, ".cache");
+  mkdirSync(join(cacheDir, "policy-decisions"), { recursive: true });
+  const decisionId = "policy-decision:desktop-approval";
+  writeFileSync(join(cacheDir, "policy-decisions", "policy-decision_desktop-approval.json"), JSON.stringify({
+    id: decisionId,
+    subjectRef: "user:core",
+    decision: "require_approval",
+    resourceRef: "ielts-vocab",
+    action: "execute",
+    expiresAt: "2099-01-01T00:00:00.000Z",
+  }));
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir, enforceExecutionPolicy: true });
+  const pending = controlPlane.createJob({
+    projectId: "ielts-vocab",
+    envelope: {
+      id: "desktop-approval-job-1",
+      channel: "mosscoder",
+      conversationId: "desktop-approval",
+      senderId: "user:core",
+      text: "启动 ielts-vocab",
+      receivedAt: "2026-09-13T00:00:00.000Z",
+    },
+  }, { policyDecisionRef: decisionId, forceApproval: true, subjectRef: "user:core" });
+  assert.equal(pending.status, "pending_approval");
+  const approval = controlPlane.snapshot().approvals.find((item) => item.id === pending.approvalId);
+  assert.equal(approval.source, "desktop");
+  assert.equal(approval.policyDecisionRef, decisionId);
+  assert.ok(new Date(approval.expiresAt).getTime() > Date.now());
+});
+
+test("registered commands reject shell composition and only expose them as non-executable", async () => {
+  const root = makeWorkspace();
+  const graphPath = join(root, "workspace.graph.json");
+  const graph = JSON.parse(readFileSync(graphPath, "utf8"));
+  graph.projects["ielts-vocab"].health = ["node -e \"process.stdout.write('first')\" && node -e \"process.stdout.write('second')\""];
+  writeFileSync(graphPath, JSON.stringify(graph));
+  const controlPlane = createControlPlane({ workspaceRoot: root, cacheDir: join(root, ".cache") });
+  const command = controlPlane.snapshot().resources.find((resource) => resource.id === "ielts-vocab").commands[0];
+  assert.equal(command.autoExecutable, false);
+  const run = await controlPlane.query({ text: "跑一下 ielts-vocab 健康检查", senderId: "u", conversationId: "c" });
+  assert.equal(run.actions[0].status, "blocked");
+  assert.match(run.actions[0].summary, /单一注册程序/);
 });
 
 test("creates managed Codex CLI agent tasks from natural language", async () => {
@@ -395,13 +772,14 @@ test("creates asynchronous control jobs with workflow events and artifacts", asy
       receivedAt: "2026-05-20T00:00:00.000Z",
       raw: { routeKey: "mosscoder:desk:tester", runtimePreference: "codex_app" },
     },
-  });
+  }, { policyDecisionRef: "policy-decision:test-job" });
 
   assert.equal(accepted.accepted, true);
   assert.equal(accepted.response.format, "card");
   assert.match(accepted.response.text, /任务编号/);
   assert.equal(accepted.job.assessment.kind, "code");
   assert.equal(accepted.job.status, "queued");
+  assert.equal(accepted.job.metadata.policyDecisionRef, "policy-decision:test-job");
 
   const completed = await waitFor(() => {
     const job = controlPlane.getJob(accepted.job.id);

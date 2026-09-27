@@ -92,8 +92,6 @@ enum DesignTokens {
         static let previewSyntaxKeyword = ColorToken(hex: 0xC792EA).color
         static let previewSyntaxName = ColorToken(hex: 0xFFB86C).color
         static let previewSyntaxString = ColorToken(hex: 0x8BE28B).color
-        static let previewScrollbarTrack = Primitive.white.withAlpha(0.10).color
-        static let previewScrollbarThumb = Primitive.white.withAlpha(0.30).color
     }
 
     enum Overlay {

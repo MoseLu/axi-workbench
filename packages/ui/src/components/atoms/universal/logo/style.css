@@ -21,9 +21,15 @@
 .mpms-logo__text {
   font-size: 16px;
   font-weight: 600;
-  color: var(--mpms-text-primary, rgba(255, 255, 255, 0.85));
+  /* Logo 主要出现在侧栏；优先使用 sidebar 主色，避免深色侧栏下深色文字不可见 */
+  color: var(--mpms-sidebar-text-primary, var(--mpms-text-primary, rgba(255, 255, 255, 0.88)));
   white-space: nowrap;
   overflow: hidden;
+  letter-spacing: 0.2px;
+}
+
+.mpms-logo__icon {
+  color: var(--mpms-sidebar-text-primary, var(--mpms-text-primary, rgba(255, 255, 255, 0.88)));
 }
 
 .mpms-logo.is-collapsed .mpms-logo__text {

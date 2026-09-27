@@ -1,0 +1,68 @@
+.handoff-create-page {
+  max-width: 600px;
+  padding: var(--axi-space-4, 16px);
+}
+
+.handoff-create-page__error {
+  margin-bottom: var(--axi-space-4, 16px);
+}
+
+.handoff-create-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--axi-space-4, 16px);
+  background: var(--axi-layout-surface, var(--axi-bg-surface));
+  border-radius: var(--axi-radius-lg, 8px);
+  padding: var(--axi-space-4, 16px);
+}
+
+.handoff-create-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.handoff-create-page__field-label {
+  font-weight: 500;
+  color: var(--axi-text-primary, inherit);
+}
+
+.handoff-create-page__select,
+.handoff-create-page__input,
+.handoff-create-page__textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--axi-input-bg, var(--axi-bg-elevated, transparent));
+  border: 1px solid var(--axi-border-color, rgba(0, 0, 0, 0.15));
+  border-radius: var(--axi-radius-md, 6px);
+  color: inherit;
+  font: inherit;
+}
+
+.handoff-create-page__select:focus,
+.handoff-create-page__input:focus,
+.handoff-create-page__textarea:focus {
+  outline: 2px solid var(--axi-color-focus, #1677ff);
+  outline-offset: 1px;
+}
+
+.handoff-create-page__textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.handoff-create-page__field-count {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--axi-text-tertiary, rgba(0, 0, 0, 0.45));
+}
+
+.handoff-create-page__field-error {
+  font-size: 12px;
+  color: var(--axi-color-danger, #d4380d);
+}
+
+.handoff-create-page__actions {
+  display: flex;
+  gap: 8px;
+}

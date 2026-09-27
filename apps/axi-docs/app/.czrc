@@ -1,0 +1,44 @@
+{
+  "alias": {
+    "fd": "docs",
+    "ft": "feat",
+    "fx": "fix",
+    "rf": "refactor"
+  },
+  "maxHeaderLength": 72,
+  "messages": {
+    "body": "Provide more context (optional).",
+    "breaking": "List breaking changes (optional).",
+    "confirmCommit": "Confirm commit message?",
+    "customScope": "Input a custom scope:",
+    "footer": "List issue references or close keywords (optional).",
+    "scope": "Select the affected scope:",
+    "subject": "Write a short imperative summary:",
+    "type": "Select the commit type:"
+  },
+  "scopes": [
+    "repo",
+    "web",
+    "graph",
+    "search",
+    "docs",
+    "mcp",
+    "sync",
+    "styles",
+    "config",
+    "ci"
+  ],
+  "types": [
+    { "value": "feat", "name": "feat: add a new feature" },
+    { "value": "fix", "name": "fix: repair a bug" },
+    { "value": "docs", "name": "docs: update documentation only" },
+    { "value": "style", "name": "style: formatting only" },
+    { "value": "refactor", "name": "refactor: restructure without behavior change" },
+    { "value": "perf", "name": "perf: improve performance" },
+    { "value": "test", "name": "test: add or update tests" },
+    { "value": "build", "name": "build: change build tooling or dependencies" },
+    { "value": "ci", "name": "ci: change CI or automation" },
+    { "value": "chore", "name": "chore: repository maintenance" },
+    { "value": "revert", "name": "revert: revert a previous change" }
+  ]
+}

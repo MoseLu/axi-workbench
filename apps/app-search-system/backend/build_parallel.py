@@ -72,8 +72,8 @@ def get_job_name_by_vision(image_bytes: bytes) -> str:
                     if isinstance(item, dict) and 'text' in item:
                         return item['text'].strip()
             return content.strip() if content else "__NO_JOB__"
-    except:
-        pass
+    except Exception as ex:
+        print(f"[build_parallel] Vision job name识别失败: {ex}")
     return "__NO_JOB__"
 
 
@@ -83,8 +83,8 @@ def get_text_embedding(text: str) -> list:
         resp = TextEmbedding.call(model='text-embedding-v3', input=[text])
         if resp.status_code == 200:
             return resp.output['embeddings'][0]['embedding']
-    except:
-        pass
+    except Exception as ex:
+        print(f"[build_parallel] Text embedding失败: {ex}")
     return None
 
 
@@ -159,8 +159,8 @@ def build_index_parallel(pdf_files: list = None, max_workers: int = MAX_WORKERS)
             safe_name = "".join(c for c in os.path.basename(pdf_path) if c.isalnum() or c in ' -_')
             for page_num in range(page_count):
                 all_tasks.append((pdf_path, page_num, safe_name))
-        except:
-            pass
+        except Exception as ex:
+            print(f"[build_parallel] 无法打开PDF {pdf_path}: {ex}")
 
     total_tasks = len(all_tasks)
     print(f"总任务数: {total_tasks}, 使用 {max_workers} 并发\n")

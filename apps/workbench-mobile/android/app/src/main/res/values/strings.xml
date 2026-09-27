@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Axi 工作台</string>
+    <string name="startup_preparing_workspace">正在准备工作区…</string>
+</resources>

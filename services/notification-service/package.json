@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "go run cmd/notifyserver/main.go",
-    "build": "go build -o bin/notifyserver ./cmd/notifyserver",
+    "dev": "go run .",
+    "build": "go build -o bin/notification-service .",
     "test": "go test ./..."
   }
 }

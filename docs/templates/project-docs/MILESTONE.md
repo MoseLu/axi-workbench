@@ -1,4 +1,4 @@
-# Milestones
+# Milestone
 
 ## 当前里程碑
 

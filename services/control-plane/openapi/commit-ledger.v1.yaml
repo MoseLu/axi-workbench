@@ -1,0 +1,771 @@
+openapi: 3.0.3
+info:
+  title: Axi Workbench Commit Ledger API
+  version: 1.0.0
+  description: >
+    Commit Ledger provides governance over git commit history across workspace
+    projects. It tracks commit provenance, verification status, workspace state,
+    and supports sync operations from workspace observability collectors.
+
+    Base path: /api/v1/commit-ledger
+servers:
+  - url: /
+paths:
+  /api/v1/commit-ledger/summary:
+    get:
+      summary: Get commit ledger summary
+      operationId: getCommitLedgerSummary
+      security:
+        - gatewaySession: []
+      responses:
+        '200':
+          description: Summary statistics for the commit ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitLedgerSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/commit-ledger/commits:
+    get:
+      summary: List commits with pagination and filtering
+      operationId: listCommits
+      security:
+        - gatewaySession: []
+      parameters:
+        - name: projectId
+          in: query
+          description: Filter by project ID
+          schema:
+            type: string
+        - name: partition
+          in: query
+          description: Filter by partition (projects, products, shared, infra, tools)
+          schema:
+            type: string
+            enum: [projects, products, shared, infra, tools]
+        - name: type
+          in: query
+          description: Filter by conventional commit type
+          schema:
+            type: string
+            enum: [feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert, merge, hotfix]
+        - name: verificationStatus
+          in: query
+          description: Filter by verification status
+          schema:
+            type: string
+            enum: [verified, partial, unverified, failed, unknown, conflict]
+        - name: isDirty
+          in: query
+          description: Filter by dirty workspace state
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Records per page (max 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: sort
+          in: query
+          description: Sort field
+          schema:
+            type: string
+            default: committedAt
+        - name: order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Paginated commit records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitLedgerPaginatedResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/commit-ledger/commits/{recordId}:
+    get:
+      summary: Get a single commit record by record ID
+      operationId: getCommitById
+      security:
+        - gatewaySession: []
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          description: The unique record identifier (SHA-256 hash)
+          schema:
+            type: string
+            pattern: '^[a-f0-9]{64}$'
+      responses:
+        '200':
+          description: Commit record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitLedgerRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/commit-ledger/projects/{projectId}:
+    get:
+      summary: Get all commits for a specific project
+      operationId: getProjectCommits
+      security:
+        - gatewaySession: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          description: The project identifier
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Project commit summary with verification stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectCommitSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/commit-ledger/verification:
+    get:
+      summary: Get verification statistics across all commits
+      operationId: getVerificationStats
+      security:
+        - gatewaySession: []
+      responses:
+        '200':
+          description: Verification statistics by status and project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationStatsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/commit-ledger/sources:
+    get:
+      summary: List tracked git sources and their sync status
+      operationId: listSources
+      security:
+        - gatewaySession: []
+      responses:
+        '200':
+          description: List of tracked sources with commit counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourcesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/commit-ledger/sync:
+    post:
+      summary: Trigger a full sync of commits from workspace observability
+      operationId: syncCommitLedger
+      security:
+        - gatewaySession: []
+      responses:
+        '200':
+          description: Sync result with counts of new, updated, unchanged, conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    gatewaySession:
+      type: apiKey
+      in: cookie
+      name: axi_session
+      description: HttpOnly session cookie established by the API Gateway.
+
+  parameters:
+    recordId:
+      name: recordId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{64}$'
+      description: 64-character hex record identifier (SHA-256 of commit data)
+
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: Project identifier
+
+  responses:
+    BadRequest:
+      description: Invalid query parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Gateway session is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        recordId:
+          type: string
+          description: Associated record ID if applicable (only in 404 responses)
+        projectId:
+          type: string
+          description: Associated project ID if applicable (only in 404 responses)
+
+    # Core Record Schema (aligned with commit-ledger.v1.schema.json)
+    CommitLedgerRecord:
+      type: object
+      required: [schemaVersion, recordId, repo, commit, actor, provenance, ingestion]
+      properties:
+        schemaVersion:
+          type: string
+          const: "commit-ledger.v1"
+          description: Schema version identifier
+        recordId:
+          type: string
+          pattern: '^[a-f0-9]{64}$'
+          description: Unique record identifier (SHA-256 hash)
+        repo:
+          $ref: '#/components/schemas/RepoInfo'
+        commit:
+          $ref: '#/components/schemas/CommitInfo'
+        actor:
+          $ref: '#/components/schemas/Actor'
+          description: Commit author (email is potentially sensitive - handle per privacy policy)
+        refs:
+          $ref: '#/components/schemas/Refs'
+          description: Branch and tag references
+        diff:
+          $ref: '#/components/schemas/DiffStats'
+        trailers:
+          $ref: '#/components/schemas/CommitTrailers'
+        workspaceState:
+          $ref: '#/components/schemas/WorkspaceState'
+        verification:
+          $ref: '#/components/schemas/Verification'
+        provenance:
+          $ref: '#/components/schemas/Provenance'
+        ingestion:
+          $ref: '#/components/schemas/IngestionMetadata'
+
+    RepoInfo:
+      type: object
+      required: [projectId, canonicalPath, gitRoot, defaultBranch]
+      properties:
+        projectId:
+          type: string
+        canonicalPath:
+          type: string
+          format: uri
+        gitRoot:
+          type: string
+          format: uri
+        remote:
+          type: string
+          format: uri
+          nullable: true
+        defaultBranch:
+          type: string
+        partition:
+          type: string
+          enum: [projects, products, shared, infra, tools]
+          description: Workspace partition for filtering
+
+    CommitInfo:
+      type: object
+      required: [sha, shortSha, parentShas, subject, type, authoredAt, committedAt]
+      properties:
+        sha:
+          type: string
+          pattern: '^[a-f0-9]{40}$'
+          description: Full commit SHA
+        shortSha:
+          type: string
+          pattern: '^[a-f0-9]{7,8}$'
+          description: Abbreviated commit SHA
+        parentShas:
+          type: array
+          items:
+            type: string
+            pattern: '^[a-f0-9]{40}$'
+          description: Parent commit SHAs
+        subject:
+          type: string
+          maxLength: 256
+          description: Commit subject (first line of message)
+        body:
+          type: string
+          maxLength: 10240
+          nullable: true
+          description: Commit body (full message)
+        type:
+          type: string
+          enum: [feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert, merge, hotfix]
+          description: Conventional commit type
+        scope:
+          type: string
+          nullable: true
+          description: Conventional commit scope
+        breaking:
+          type: boolean
+          default: false
+          description: Breaking change indicator
+        authoredAt:
+          type: string
+          format: date-time
+          description: Author timestamp
+        committedAt:
+          type: string
+          format: date-time
+          description: Commit timestamp
+
+    Actor:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Author display name
+        email:
+          type: string
+          format: email
+          description: Author email address (SENSITIVE - redact in responses unless authorized)
+
+    Refs:
+      type: object
+      properties:
+        branches:
+          type: array
+          items:
+            type: string
+          description: Branches containing this commit
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags pointing to this commit
+
+    DiffStats:
+      type: object
+      properties:
+        filesChanged:
+          type: integer
+          minimum: 0
+        insertions:
+          type: integer
+          minimum: 0
+        deletions:
+          type: integer
+          minimum: 0
+
+    CommitTrailers:
+      type: object
+      properties:
+        tested:
+          type: array
+          items:
+            type: string
+          description: Test-related trailers
+        notTested:
+          type: array
+          items:
+            type: string
+          description: Items marked as not tested
+        confidence:
+          type: string
+          nullable: true
+        scopeRisk:
+          type: string
+          nullable: true
+        directive:
+          type: string
+          nullable: true
+        refs:
+          type: array
+          items:
+            type: string
+          description: Referenced tickets, issues, etc.
+
+    WorkspaceState:
+      type: object
+      properties:
+        observedBranch:
+          type: string
+          nullable: true
+        isDirty:
+          type: boolean
+        ahead:
+          type: integer
+        behind:
+          type: integer
+        observedAt:
+          type: string
+          format: date-time
+
+    Verification:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [verified, partial, unverified, failed, unknown, conflict]
+        commands:
+          type: array
+          items:
+            type: string
+          description: Verification commands run
+        evidenceRefs:
+          type: array
+          items:
+            type: string
+          description: References to verification evidence
+        observedAt:
+          type: string
+          format: date-time
+
+    Provenance:
+      type: object
+      required: [source, sourcePath, observedAt]
+      properties:
+        source:
+          type: string
+          enum: [git, submit-log, changelog, test-report, workspace-snapshot]
+        sourcePath:
+          type: string
+          description: Path to the source
+        sourceCommand:
+          type: string
+          nullable: true
+          description: Command used to obtain this record
+        sourceHash:
+          type: string
+          nullable: true
+          description: Hash of source data for integrity
+        observedAt:
+          type: string
+          format: date-time
+
+    IngestionMetadata:
+      type: object
+      required: [idempotencyKey, firstSeenAt, lastSeenAt, status]
+      properties:
+        idempotencyKey:
+          type: string
+          description: Unique key for deduplication
+        firstSeenAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [new, updated, unchanged, conflict]
+
+    # Response Schemas
+    CommitLedgerSummary:
+      type: object
+      required: [workspace, generatedAt]
+      properties:
+        workspace:
+          type: object
+          required: [totalProjects, totalCommits, verifiedCommits, partialCommits, unverifiedCommits, failedCommits, dirtyWorkspaces, conflictRecords, failedSources]
+          properties:
+            totalProjects:
+              type: integer
+              minimum: 0
+            totalCommits:
+              type: integer
+              minimum: 0
+            lastCommitAt:
+              type: string
+              format: date-time
+              nullable: true
+            verifiedCommits:
+              type: integer
+            partialCommits:
+              type: integer
+            unverifiedCommits:
+              type: integer
+            failedCommits:
+              type: integer
+            dirtyWorkspaces:
+              type: integer
+            conflictRecords:
+              type: integer
+            failedSources:
+              type: integer
+        byPartition:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              repos:
+                type: integer
+              commits:
+                type: integer
+        generatedAt:
+          type: string
+          format: date-time
+
+    CommitLedgerPaginatedResponse:
+      type: object
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitLedgerRecord'
+          description: Array of commit records (sensitive fields may be redacted)
+        pagination:
+          type: object
+          required: [page, limit, total, hasMore]
+          properties:
+            page:
+              type: integer
+              minimum: 1
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+            total:
+              type: integer
+              minimum: 0
+            hasMore:
+              type: boolean
+
+    ProjectCommitSummary:
+      type: object
+      required: [project, verification, evidenceCoverage]
+      properties:
+        project:
+          type: object
+          required: [id, commitCount]
+          properties:
+            id:
+              type: string
+            canonicalPath:
+              type: string
+              format: uri
+              nullable: true
+            branch:
+              type: string
+              nullable: true
+            head:
+              type: string
+              nullable: true
+            isDirty:
+              type: boolean
+            commitCount:
+              type: integer
+              minimum: 0
+            lastCommitAt:
+              type: string
+              format: date-time
+              nullable: true
+            partition:
+              type: string
+              nullable: true
+        verification:
+          type: object
+          properties:
+            verified:
+              type: integer
+            partial:
+              type: integer
+            unverified:
+              type: integer
+            failed:
+              type: integer
+            unknown:
+              type: integer
+            total:
+              type: integer
+        evidenceCoverage:
+          type: number
+          description: Ratio of verified + partial to total (0-1)
+
+    VerificationStatsResponse:
+      type: object
+      required: [status, byProject]
+      properties:
+        status:
+          type: object
+          properties:
+            verified:
+              type: integer
+            partial:
+              type: integer
+            unverified:
+              type: integer
+            failed:
+              type: integer
+            unknown:
+              type: integer
+            total:
+              type: integer
+        byProject:
+          type: array
+          items:
+            type: object
+            required: [projectId, verified, partial, unverified, failed, total, coverage]
+            properties:
+              projectId:
+                type: string
+              verified:
+                type: integer
+              partial:
+                type: integer
+              unverified:
+                type: integer
+              failed:
+                type: integer
+              total:
+                type: integer
+              coverage:
+                type: string
+                description: Ratio as string (e.g., "0.85")
+        staleRecords:
+          type: array
+          items:
+            type: string
+          description: Record IDs of stale verification records
+
+    SourcesResponse:
+      type: object
+      required: [sources, failedSources]
+      properties:
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              repoId:
+                type: string
+                nullable: true
+              path:
+                type: string
+                description: Source path or canonical URI
+              lastSeenAt:
+                type: string
+                format: date-time
+                nullable: true
+              commitCount:
+                type: integer
+                minimum: 0
+              status:
+                type: string
+                enum: [active, failed]
+              errors:
+                type: array
+                items:
+                  type: string
+        failedSources:
+          type: integer
+          description: Count of sources in failed status
+
+    SyncResult:
+      type: object
+      required: [ok, synced, syncedAt]
+      properties:
+        ok:
+          type: boolean
+        synced:
+          type: object
+          required: [new, updated, unchanged, conflict, failed]
+          properties:
+            new:
+              type: integer
+              description: Number of new records created
+            updated:
+              type: integer
+              description: Number of records updated
+            unchanged:
+              type: integer
+              description: Number of records unchanged
+            conflict:
+              type: integer
+              description: Number of records with conflicts
+            failed:
+              type: integer
+              description: Number of commits that failed to process
+        summary:
+          type: object
+          description: Collector summary with counts and errors
+        syncedAt:
+          type: string
+          format: date-time
+          description: Timestamp of sync completion

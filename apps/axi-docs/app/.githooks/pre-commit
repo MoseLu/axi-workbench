@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -e
+
+pnpm branch:check
+pnpm docs:check

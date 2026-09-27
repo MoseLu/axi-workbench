@@ -1,5 +1,5 @@
 {
-  "name": "@epap/utils",
+  "name": "@axi/utils",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -23,6 +23,7 @@
     "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.7"
   }
 }

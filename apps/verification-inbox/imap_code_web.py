@@ -6,13 +6,14 @@ Run with:
     python3 imap_code_web.py
 
 Then open:
-    http://127.0.0.1:8765
+    the URL printed by the launcher (the PORT lease is injected at runtime)
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import urllib.parse
 from http import HTTPStatus
@@ -550,7 +551,13 @@ def parse_float(value: str) -> float:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Local web UI for Outlook IMAP codes.")
     parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ["PORT"]) if os.environ.get("PORT") else None,
+        required=False,
+        help="Injected by the workspace dynamic port lease (PORT).",
+    )
     parser.add_argument(
         "--credentials",
         type=Path,
@@ -563,6 +570,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    if args.port is None:
+        raise SystemExit("PORT must be provided by the workspace dynamic port lease")
     credentials = tuple(args.credentials)
     for path in credentials:
         if not path.exists():

@@ -54,6 +54,75 @@ func appModelSeparatesPinnedVisibleAndArchivedConversations() async throws {
 
 @Test
 @MainActor
+func appModelFiltersAndSortsArchivedConversations() async throws {
+    let model = makeConversationTestAppModel()
+    let docsProject = ConversationProject(name: "Axi Docs", path: "/tmp/axi-docs")
+    let coderProject = ConversationProject(name: "Axi Coder", path: "/tmp/axi-coder")
+    let docsChat = StoredConversation(
+        projectID: docsProject.id,
+        title: "Workspace adapter",
+        model: "main:latest",
+        createdAt: Date(timeIntervalSince1970: 1_000),
+        updatedAt: Date(timeIntervalSince1970: 4_000),
+        isArchived: true,
+        messages: [ChatMessage(role: .user, content: "fix the adapter search")]
+    )
+    let coderChat = StoredConversation(
+        projectID: coderProject.id,
+        title: "Skill progression map",
+        model: "main:latest",
+        createdAt: Date(timeIntervalSince1970: 3_000),
+        updatedAt: Date(timeIntervalSince1970: 2_000),
+        isArchived: true,
+        messages: [ChatMessage(role: .assistant, content: "handoff summary")]
+    )
+    let noProjectChat = StoredConversation(
+        title: "Loose note",
+        model: "main:latest",
+        createdAt: Date(timeIntervalSince1970: 2_000),
+        updatedAt: Date(timeIntervalSince1970: 3_000),
+        isArchived: true,
+        messages: [ChatMessage(role: .user, content: "browser startup")]
+    )
+    let visibleChat = StoredConversation(
+        projectID: docsProject.id,
+        title: "Visible adapter",
+        model: "main:latest",
+        updatedAt: Date(timeIntervalSince1970: 5_000)
+    )
+
+    model.projects = [docsProject, coderProject]
+    model.conversations = [docsChat, coderChat, noProjectChat, visibleChat]
+
+    #expect(model.archivedConversations().map(\.id) == [docsChat.id, noProjectChat.id, coderChat.id])
+    #expect(
+        model.archivedConversations(matching: "adapter", projectFilter: .all, sortOption: .updatedAt)
+            .map(\.id) == [docsChat.id]
+    )
+    #expect(
+        model.archivedConversations(matching: "axi coder", projectFilter: .all, sortOption: .updatedAt)
+            .map(\.id) == [coderChat.id]
+    )
+    #expect(
+        model.archivedConversations(matching: "", projectFilter: .project(docsProject.id), sortOption: .updatedAt)
+            .map(\.id) == [docsChat.id]
+    )
+    #expect(
+        model.archivedConversations(matching: "", projectFilter: .noProject, sortOption: .updatedAt)
+            .map(\.id) == [noProjectChat.id]
+    )
+    #expect(
+        model.archivedConversations(matching: "", projectFilter: .all, sortOption: .createdAt)
+            .map(\.id) == [coderChat.id, noProjectChat.id, docsChat.id]
+    )
+    #expect(
+        model.archivedConversations(matching: "", projectFilter: .all, sortOption: .titleAscending)
+            .map(\.id) == [noProjectChat.id, coderChat.id, docsChat.id]
+    )
+}
+
+@Test
+@MainActor
 func appModelTracksGeneratingConversationByID() async throws {
     let model = makeConversationTestAppModel()
     let running = StoredConversation(title: "Running", model: "main:latest")

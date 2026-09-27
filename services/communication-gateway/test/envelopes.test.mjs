@@ -1,11 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fromCcConnectMessage, fromFeishuMessage, fromMossCoderMessage, fromWeChatMessage, renderCommunicationResponse } from "../src/envelopes.mjs";
 import { createCommunicationGateway } from "../src/gateway.mjs";
-import { createControlPlane } from "../../control-plane/src/control-plane.mjs";
+import { createControlPlane } from "../../control-plane/test/test-control-plane.mjs";
 
 async function waitFor(predicate, timeoutMs = 1000) {
   const started = Date.now();
@@ -149,6 +150,83 @@ test("paired routes forward standard envelopes only once and keep attachment ref
   assert.equal(forwarded[0].envelope.channel, "wechat");
   assert.equal(forwarded[0].envelope.raw.attachments[0].id, "att-1");
   assert.equal(duplicate.response.text, sent.response.text);
+});
+
+test("default control-plane client uses the authenticated communication boundary", async () => {
+  let received;
+  let polled;
+  const downstream = createServer(async (request, response) => {
+    const chunks = [];
+    for await (const chunk of request) chunks.push(chunk);
+    if (request.method === "GET") {
+      polled = { path: request.url, headers: request.headers };
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ events: [] }));
+      return;
+    }
+    received = {
+      method: request.method,
+      path: request.url,
+      headers: request.headers,
+      body: JSON.parse(Buffer.concat(chunks).toString("utf8")),
+    };
+    response.writeHead(202, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({
+      ignored: false,
+      accepted: true,
+      job: { id: "job-default-client" },
+      latestEvent: { id: "event-default-client", type: "received" },
+      response: {
+        id: "response-default-client",
+        channel: "wechat",
+        conversationId: "wx-user",
+        text: "已收到",
+        format: "markdown",
+        language: "zh-CN",
+        auditId: "job-default-client",
+      },
+    }));
+  });
+  await new Promise((resolve) => downstream.listen(0, "127.0.0.1", resolve));
+  try {
+    const gateway = createCommunicationGateway({
+      cacheDir: mkdtempSync(join(tmpdir(), "epap-gateway-default-client-")),
+      controlPlaneUrl: `http://127.0.0.1:${downstream.address().port}`,
+      controlPlaneInternalToken: "communication-test-token",
+    });
+    const challenge = await gateway.handleTransportMessage("mosscoder", {
+      id: "m-default-pair-1",
+      sessionId: "moss-default-session",
+      userId: "moss-default-user",
+      prompt: "hello",
+    });
+    await gateway.handleTransportMessage("mosscoder", {
+      id: "m-default-pair-2",
+      sessionId: "moss-default-session",
+      userId: "moss-default-user",
+      prompt: `/pair ${challenge.challenge.code}`,
+    });
+    const result = await gateway.handleTransportMessage("mosscoder", {
+      id: "m-default-message-1",
+      sessionId: "moss-default-session",
+      userId: "moss-default-user",
+      prompt: "当前项目有哪些？",
+    });
+    assert.equal(result.accepted, true);
+    assert.equal(received.method, "POST");
+    assert.equal(received.path, "/internal/communication/v1/jobs");
+    assert.equal(received.headers["x-axi-internal-token"], "communication-test-token");
+    assert.equal(received.headers["x-axi-subject"], "moss-default-user");
+    assert.equal(received.body.envelope.senderId, "moss-default-user");
+    await gateway.pollMossCoderEvents({ sessionId: "moss-default-session" });
+    const polledUrl = new URL(`http://127.0.0.1${polled.path}`);
+    assert.equal(polledUrl.pathname, "/internal/communication/v1/jobs/job-default-client/events");
+    assert.equal(polledUrl.searchParams.get("afterEventId"), "event-default-client");
+    assert.equal(polled.headers["x-axi-internal-token"], "communication-test-token");
+    assert.equal(polled.headers["x-axi-subject"], "service:communication-gateway");
+  } finally {
+    await new Promise((resolve, reject) => downstream.close((error) => error ? reject(error) : resolve()));
+  }
 });
 
 test("approval commands create decisions without forwarding business messages", async () => {

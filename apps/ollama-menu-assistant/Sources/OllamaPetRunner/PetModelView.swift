@@ -176,7 +176,7 @@ final class PetModelView: SCNView, PetDisplayView {
         let size = SCNVector3(maxPoint.x - min.x, maxPoint.y - min.y, maxPoint.z - min.z)
         let largest = max(size.x, max(size.y, size.z))
         if largest > 0 {
-            let scale = Float(2.35) / largest
+            let scale = CGFloat(2.35) / largest
             node.scale = SCNVector3(scale, scale, scale)
         }
 
@@ -229,40 +229,40 @@ final class PetModelView: SCNView, PetDisplayView {
         let wave = sin(progress * .pi * 2)
         let runWave = sin(progress * .pi * 4)
 
-        var scale = SCNVector3(Float(movementFacingScaleX), 1, 1)
+        var scale = SCNVector3(movementFacingScaleX, 1, 1)
         var position = SCNVector3(0, -0.05, 1.35)
         var eulerAngles = SCNVector3Zero
 
         switch displayState {
         case .idle, .idleBlink, .idleLookAround, .idleHairSway, .idleStretch:
-            position.y += Float(max(0, wave) * 0.025)
-            scale.y = 1 + Float(wave * 0.018)
+            position.y += max(0, wave) * 0.025
+            scale.y = 1 + wave * 0.018
         case .runningRight, .runningUpRight, .runningDownRight:
-            eulerAngles.z = Float(wave * 0.055)
-            position.y += Float(max(0, runWave) * 0.08)
+            eulerAngles.z = wave * 0.055
+            position.y += max(0, runWave) * 0.08
             scale.x = abs(scale.x)
         case .runningLeft, .runningUpLeft, .runningDownLeft:
-            eulerAngles.z = Float(wave * -0.055)
-            position.y += Float(max(0, runWave) * 0.08)
+            eulerAngles.z = wave * -0.055
+            position.y += max(0, runWave) * 0.08
             scale.x = -abs(scale.x)
         case .runningVertical, .runningUp, .runningDown:
-            position.y += Float(max(0, runWave) * 0.08)
-            scale.x *= 1 + Float(wave * 0.018)
+            position.y += max(0, runWave) * 0.08
+            scale.x *= 1 + wave * 0.018
         case .catchingBreath:
-            scale.x *= 1 + Float(wave * 0.025)
-            scale.y = 1 - Float(wave * 0.025)
+            scale.x *= 1 + wave * 0.025
+            scale.y = 1 - wave * 0.025
         case .arriveHandsOnHips, .arrivePeace, .waving:
-            eulerAngles.z = Float(wave * 0.06)
-            position.y += Float(max(0, wave) * 0.04)
+            eulerAngles.z = wave * 0.06
+            position.y += max(0, wave) * 0.04
         case .dragging:
-            eulerAngles.z = Float(wave * 0.12)
-            position.x += Float(wave * 0.05)
+            eulerAngles.z = wave * 0.12
+            position.x += wave * 0.05
         case .jumping, .feetTap:
-            position.y += Float(max(0, sin(progress * .pi)) * 0.22)
-            scale.y = 1 - Float(max(0, sin(progress * .pi)) * 0.035)
+            position.y += max(0, sin(progress * .pi)) * 0.22
+            scale.y = 1 - max(0, sin(progress * .pi)) * 0.035
         case .headPat, .bodyTap, .leftTailTap, .rightTailTap,
              .idleBlinkTap, .idleLookAroundTap, .idleHairSwayTap, .idleStretchTap:
-            eulerAngles.z = Float(sin(progress * .pi * 6) * 0.06)
+            eulerAngles.z = sin(progress * .pi * 6) * 0.06
         }
 
         SCNTransaction.begin()

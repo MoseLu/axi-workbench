@@ -1,0 +1,5 @@
+.eps-audit { display: flex; flex-direction: column; gap: var(--axi-space-4, 16px); }
+.eps-audit__header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--axi-space-4, 16px); }
+.eps-audit__header h2 { margin: 0 0 var(--axi-space-1, 4px); }
+.eps-audit__stats { width: 100%; }
+.eps-audit__stats .ant-card { min-width: 160px; flex: 1; }

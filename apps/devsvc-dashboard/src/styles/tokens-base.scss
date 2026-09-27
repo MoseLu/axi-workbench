@@ -197,12 +197,12 @@ input {
 }
 
 .sidebar {
-  flex: 0 0 var(--sidebar-width) !important;
-  width: var(--sidebar-width) !important;
-  min-width: var(--sidebar-width) !important;
-  max-width: var(--sidebar-width) !important;
+  flex: 0 0 var(--sidebar-width);
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
   height: 100vh;
-  background: var(--slider-bg) !important;
+  background: var(--slider-bg);
   color: var(--slider-text);
   padding: 0;
   border-right: 1px solid var(--panel-border);
@@ -220,10 +220,10 @@ input {
 }
 
 .sidebar.is-collapsed {
-  flex-basis: var(--sidebar-collapsed-width) !important;
-  width: var(--sidebar-collapsed-width) !important;
-  min-width: var(--sidebar-collapsed-width) !important;
-  max-width: var(--sidebar-collapsed-width) !important;
+  flex-basis: var(--sidebar-collapsed-width);
+  width: var(--sidebar-collapsed-width);
+  min-width: var(--sidebar-collapsed-width);
+  max-width: var(--sidebar-collapsed-width);
 }
 
 .sidebar.is-collapsed .brand,
@@ -365,15 +365,15 @@ input {
 
 .side-menu .ant-menu-item,
 .side-menu .ant-menu-submenu-title {
-  height: 50px !important;
-  line-height: 50px !important;
-  margin: 0 !important;
+  height: 50px;
+  line-height: 50px;
+  margin: 0;
   width: 100%;
   display: flex;
   align-items: center;
   border-radius: 0;
-  padding-inline: 24px !important;
-  transition: none !important;
+  padding-inline: 24px;
+  transition: none;
 }
 
 .side-menu.ant-menu-dark .ant-menu-item,
@@ -383,18 +383,18 @@ input {
 
 .side-menu.ant-menu-dark .ant-menu-item:hover,
 .side-menu.ant-menu-dark .ant-menu-submenu-title:hover {
-  background: var(--panel-strong) !important;
-  color: var(--text) !important;
+  background: var(--panel-strong);
+  color: var(--text);
 }
 
 .side-menu.ant-menu-dark .ant-menu-submenu-open > .ant-menu-submenu-title,
 .side-menu.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title {
-  background: transparent !important;
-  color: var(--slider-text) !important;
+  background: transparent;
+  color: var(--slider-text);
 }
 
 .side-menu .ant-menu-item-selected {
   width: 100%;
-  margin: 0 !important;
+  margin: 0;
   border-radius: 0;
 }

@@ -1,0 +1,3 @@
+export type EpsAsset = { id: string; project: string; application: string; platform: 'web' | 'mobile' | 'desktop' | 'backend' | 'contract'; method: string; path: string; owner: string; service: string | null; contractRef: string | null; environment: string; status: string; source: string };
+export type EpsFinding = { id: string; severity: 'blocker' | 'high' | 'warning' | 'info'; message: string; refs: string[] };
+export type EpsAudit = { id: string; status: 'pending' | 'running' | 'completed' | 'failed'; createdAt: string; workspaceRoot: string; summary: { assets: number; backendRoutes: number; clientCalls: number; ports: number; findings: number }; assets: EpsAsset[]; ports: Array<{ hostPort: number; containerPort: number; source: string }>; findings: EpsFinding[] };

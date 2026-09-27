@@ -1,0 +1,62 @@
+{
+  "admin-overview": {
+    "url": "http://127.0.0.1:17889/overview",
+    "role": "admin",
+    "navItems": []
+  },
+  "admin-resources": {
+    "url": "http://127.0.0.1:17889/axi-resources",
+    "role": "admin",
+    "navItems": []
+  },
+  "admin-hidden-registry": {
+    "url": "http://127.0.0.1:17889/axi-resources/axi-registry",
+    "role": "admin",
+    "navItems": []
+  },
+  "admin-services": {
+    "url": "http://127.0.0.1:17889/services",
+    "role": "admin",
+    "navItems": []
+  },
+  "developer-overview": {
+    "url": "http://127.0.0.1:17889/services",
+    "role": "developer",
+    "navItems": []
+  },
+  "developer-resources": {
+    "url": "http://127.0.0.1:17889/axi-resources",
+    "role": "developer",
+    "navItems": []
+  },
+  "developer-hidden-registry": {
+    "url": "http://127.0.0.1:17889/axi-resources/axi-registry",
+    "role": "developer",
+    "navItems": []
+  },
+  "developer-services": {
+    "url": "http://127.0.0.1:17889/services",
+    "role": "developer",
+    "navItems": []
+  },
+  "user-overview": {
+    "url": "http://127.0.0.1:17889/services",
+    "role": "user",
+    "navItems": []
+  },
+  "user-resources": {
+    "url": "http://127.0.0.1:17889/axi-resources",
+    "role": "user",
+    "navItems": []
+  },
+  "user-hidden-registry": {
+    "url": "http://127.0.0.1:17889/axi-resources/axi-registry",
+    "role": "user",
+    "navItems": []
+  },
+  "user-services": {
+    "url": "http://127.0.0.1:17889/services",
+    "role": "user",
+    "navItems": []
+  }
+}

@@ -1,0 +1,6 @@
+// layout/_viewport.scss — top-level viewport stacking.
+// Layer: layout (output CSS).
+//
+// Keeps #root above the body::before paper grid background, and
+// makes sure the overlay's fixed-positioned elements always win the
+// stacking order.

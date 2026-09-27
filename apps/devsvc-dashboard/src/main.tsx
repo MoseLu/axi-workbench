@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "antd/dist/reset.css";
 import "@axi/tokens/css";
@@ -17,15 +18,27 @@ import { normalizeLocalhostOrigin } from "./lib/browser";
 import { themePresets } from "./theme/tokens";
 import "./styles.scss";
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 if (!normalizeLocalhostOrigin()) {
   const initialTheme = themePresets.find((item) => item.name === readStoredThemeName()) || themePresets[0];
   applyTheme(initialTheme, resolveThemeMode(readStoredThemeMode()));
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <I18nextProvider i18n={i18n}>
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AppRouter />
+          </BrowserRouter>
+        </QueryClientProvider>
       </I18nextProvider>
     </React.StrictMode>
   );

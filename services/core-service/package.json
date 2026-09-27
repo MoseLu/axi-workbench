@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "gradle bootRun",
-    "build": "gradle build",
-    "test": "gradle test"
+    "dev": "mvn spring-boot:run",
+    "build": "mvn package",
+    "test": "mvn test"
   }
 }

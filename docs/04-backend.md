@@ -1,5 +1,63 @@
 # 第四章 后端服务层详细设计
 
+## 4.0 当前生产实现（2026-08）
+
+以 [`ADR-0001`](./adr/0001-zitadel-gin-platform-core.md) 为准，当前后端不是重写成另一套 Gin，而是将已有 Go 网关演进为身份、平台核心和专职能力三类明确边界：
+
+| 边界 | 当前实现 | 生产职责 |
+|---|---|---|
+| API Gateway | `services/api-gateway`（Go + Gin） | 唯一 `/api/v1` 入口、ZITADEL JWKS 校验、授权码 + PKCE、HttpOnly 会话、Redis 限流、请求/追踪/审计关联、安全转发 |
+| Axi Identity | `services/identity-adapter`（Go + Gin） + ZITADEL | 邮箱验证、短期 Redis 扫码事务、ZITADEL custom-login 续接、EPS 外部主体映射；不手写 JWT Issuer |
+| Platform Core | `services/platform-core`（Go + Gin） | 租户、成员/RBAC、偏好、字典、项目、任务、Outbox；PostgreSQL schema、`tenant_id` 与强制 RLS |
+| Workflow Engine | `services/workflow-engine`（Python + FastAPI） | 仅接受 gateway 可信请求；工作流定义、执行认领、Outbox event inbox、租约派发与执行结果进入 PostgreSQL；worker 支持并发领取、退避重试和重启恢复 |
+| Notification Service | `services/notification-service`（Go + Gin） | 仅接受 gateway 可信请求；通知收件箱、delivery jobs 与 event inbox 进入 PostgreSQL；SMTP 适配器、重启可恢复 worker 和 Outbox 幂等消费已接入 |
+| File Service | `services/file-service`（Python + FastAPI） | 仅接受 gateway 可信请求；生产使用 S3/MinIO 对象 + PostgreSQL 元数据并按 subject 隔离，上传流计算 SHA-256，写对象前可经 ClamAV INSTREAM 扫描，图片生成受尺寸约束的 WebP 缩略图；开发保留本地存储降级 |
+
+关键约束：
+
+- Web 和移动端是独立应用，当前浏览器交付共享 gateway BFF 的 Authorization Code + PKCE 身份合同，而不共享 UI 壳。生产构建必须显式指向同一 HTTPS VITE_API_BASE_URL；EPS 使用独立 PKCE client。
+- Bearer token 必须通过 ZITADEL JWKS、配置的 API audience 与全部所需 scope 校验；浏览器 ID Token 不能替代业务 API access token。
+- QR 轮询只返回状态，审批后由一次性 resume 事务进入 ZITADEL；任何 QR 接口不返回 JWT 或 OIDC code。
+- ZITADEL 的 QR completion 仅经 gateway 的 /api/v1/internal/zitadel/... 反向代理进入 ClusterIP identity-adapter，并额外校验 webhook secret。
+- Outbox 采用至少一次投递；五分钟租约、指数退避、第十次失败死信标记和 X-Axi-Event-ID 共同构成消费者幂等契约。
+- Platform Core 的 Outbox 只配置一个 Gateway 内部投递 URL；Gateway 用独立的 `GATEWAY_PLATFORM_OUTBOX_TOKEN` 校验平台 worker，再用各专职服务凭据扇出到 notification/workflow。两个消费者都把事件 ID 写入自己的 `event_inbox` 后才返回成功。
+- 运行时 `axi_platform_app` 是 `NOBYPASSRLS`；只有 pre-install/pre-upgrade migration Job 的专用账号拥有 `BYPASSRLS`，从而让 `SECURITY DEFINER` 的 RLS helper 可工作而不泄露运行时权限。
+- `auth-service` 和 Spring/H2 `core-service` 是迁移兼容来源；网关只会在显式配置时向它们开放只读旧路径，生产 Chart 不部署它们。
+- 三个专职服务已经进入 gateway/Helm 拓扑：workflow 与 notification 已具备 PostgreSQL schema、独立 migration Job、运行时账号、重启恢复和 Outbox event inbox 幂等边界；workflow 已具备匹配事件持久化、租约领取、指数退避、执行结果原子收敛、重启恢复、安全结构化条件表达式、步骤超时、有限并行编排、受 HTTPS/主机白名单/DNS 公网地址/响应体上限保护的 HTTP 外部任务，以及带 PostgreSQL approval 记录、主体授权、幂等决策和事件派发挂起/恢复的人工审批步骤；notification 已具备核心、工作流、文件与安全事件的代码模板 registry、收件箱、已读状态、delivery worker 和可选 Kafka Fetch/Commit 消费适配（broker 未配置时不启动，持久化失败不提交 offset）。file 已具备 S3/MinIO 对象适配、PostgreSQL 元数据、SHA-256 完整性校验、迁移 Job、subject 隔离、短时预签名下载 URL、写入前 ClamAV INSTREAM 扫描适配和图片 WebP 缩略图派生对象；生产仍需在集群中接入 ClamAV、验证 Pillow 处理资源边界并完成故障演练后才可称为最终生产完成。
+
+Go 单测、可选 PostgreSQL RLS 集成测试和 Helm Chart 位于各服务与 [`infra/helm`](../infra/helm/README.md)。以下内容为早期 EPAP 设计记录，不覆盖本节的当前边界。
+
+### 4.0.1 本地生产形态 profile
+
+本地完整后端使用 `make dev-backend` 启动。它先启动 Compose 的 PostgreSQL、Redis、Mailpit，确保本地数据库角色/数据库存在，依次执行 Identity、Platform、Workflow、Notification、File 五类迁移，再按依赖顺序启动 Control Plane、Identity Adapter、Platform Core、Workflow Engine、Notification Service、File Service 和 API Gateway，并逐项检查 readiness。
+
+本地仍允许 Go/Python/Node 进程直接运行，以保留快速反馈；但端口、DSN、内部 token、迁移职责、服务边界和 Gateway 下游地址与 Helm 生产合同保持一致。生产集群、Ingress、Secret manager、ZITADEL、S3/ClamAV 等仍由 `infra/helm/axi-workbench-platform` 管理，不由本地 profile 模拟。
+
+### 4.0.2 容器化生产形态 API 平面
+
+为验证容器边界与 Helm 服务拓扑，`docker-compose.backend.yml` 提供独立的 `backend` profile。当前实际运行目标是 Windows `DESKTOP-519U63K` 上的 Docker Desktop。它复用各业务服务自己的 Dockerfile，以 Compose DNS 连接 PostgreSQL、Redis 和 Mailpit；五类迁移作为一次性任务先执行成功，再启动 Identity、Platform、Workflow、Notification、File、Control Plane 和 API Gateway。
+
+当前 Windows Docker 端口边界如下：
+
+| Windows 主机端口 | 容器端口 | 用途 |
+|---|---:|---|
+| `127.0.0.1:18088` | `api-gateway:8080` | 唯一业务 API 入口 |
+| `127.0.0.1:15432` | `postgres:5432` | 后端 PostgreSQL 开发数据库 |
+| `127.0.0.1:16379` | `redis:6379` | 后端 Redis |
+
+Identity Adapter `8081`、Platform Core `8082`、Workflow Engine `8083`、Notification Service `8084`、File Service `8085` 和 Control Plane `8092` 只在 Docker 网络内通信，不作为 Windows 主机端口开放。`18088` 当前绑定 Windows loopback，因此 Mac 或其他局域网客户端不能直接使用 Windows IP 访问，必须经过端口转发或反向代理。
+
+业务 API 按 `/api/v1/...` 的 REST 风格设计，并由 `packages/gateway-contracts` 与 `packages/resource-api-docs` 维护 OpenAPI 3.1 契约。当前运行中的 Windows API Gateway 已验证 `/health` 返回 200，但 `/openapi.json` 和 `/docs` 返回 404；因此 OpenAPI 契约已经存在，Swagger/Redoc 文档入口尚未接入当前 API Gateway 暴露面，不能把它描述成已上线的网关路由。
+
+```bash
+make docker-backend
+make verify-docker-backend
+docker compose -f docker-compose.yml -f docker-compose.backend.yml --profile backend ps -a
+make docker-backend-down
+```
+
+该 profile 刻意不把 Control Plane 打进业务 API 镜像：Control Plane 仍以软件层受管的宿主机进程运行在 `8092`，容器 Gateway 通过 `host.docker.internal:8092` 访问它。这与生产 Helm 中“业务 API 服务进入 ClusterIP，Control Plane 按其独立部署边界管理”的职责划分一致。Compose 只提供本地容器拓扑、迁移顺序和健康验证，不等同于 Kubernetes 集群、Ingress、Secret manager、真实 ZITADEL、S3/ClamAV、Kafka 或故障演练验收。
+
 ## 4.1 api-gateway — Go + Gin
 
 > **职责**：统一入口、流量路由、JWT 验证（调用 auth-service gRPC）、请求限流、链路追踪注入、响应日志。

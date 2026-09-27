@@ -1,0 +1,14 @@
+// components/_overlay-card.scss — overlay chrome shared rules.
+// Layer: components (output CSS).
+//
+// Currently a no-op. The OverlayCanvas component is fully Tailwind
+// utility-first (see PR-D in docs/planning/product-requirements-document.md).
+// This file exists so future overlay-specific SCSS rules have a home.
+//
+// Example seam for future use:
+//
+//   @use '../abstracts/variables' as v;
+//
+//   .overlay-chrome[data-variant="warning"] {
+//     border-color: v.$coral;
+//   }

@@ -1,0 +1,11 @@
+// abstracts/_functions.scss — Sass functions used across the project.
+// Layer: abstracts (no CSS output).
+//
+// Manifest-stage has no custom functions; this file exists so future
+// calc-style helpers (e.g. rem-px conversion, color manipulation)
+// have a dedicated home rather than getting inlined into mixins.
+
+// Placeholder so the file is a valid partial and can be @use'd.
+@function _noop($_x) {
+  @return $_x;
+}

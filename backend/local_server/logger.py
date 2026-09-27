@@ -9,7 +9,7 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 # Log directory
-LOG_DIR = Path.home() / ".mini-agent" / "logs"
+LOG_DIR = Path.home() / ".axi" / "logs" / "local-server"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Log file path

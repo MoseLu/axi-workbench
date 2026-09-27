@@ -65,7 +65,11 @@ final class AssistantPanelController: NSObject, NSWindowDelegate {
         )
         super.init()
 
-        let rootView = AssistantPanelView()
+        let rootView = AssistantPanelView(
+            onToggleWindowZoom: { [weak self] in
+                self?.toggleWindowZoomFromTitlebar()
+            }
+        )
             .environmentObject(appModel)
         let hostingController = NSHostingController(rootView: rootView)
         hostingController.view.setAccessibilityElement(true)
@@ -110,13 +114,17 @@ final class AssistantPanelController: NSObject, NSWindowDelegate {
     }
 
     func open(relativeTo button: NSStatusBarButton?) {
+        NSRunningApplication.current.activate(options: [.activateAllWindows])
         NSApp.activate(ignoringOtherApps: true)
         installSidebarToggleButtonIfNeeded()
         updateSidebarToggleButton()
         updateHistoryNavigationButtons()
         updateCollapsedNewConversationButton()
         positionWindowIfNeeded(relativeTo: button)
+        window.deminiaturize(nil)
+        window.orderFrontRegardless()
         window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
         DispatchQueue.main.async { [weak self] in
             self?.layoutWindowChromeControls()
         }
@@ -276,6 +284,15 @@ final class AssistantPanelController: NSObject, NSWindowDelegate {
         updateSidebarToggleButton()
         updateWindowMinimumSize()
         layoutWindowChromeControls()
+    }
+
+    private func toggleWindowZoomFromTitlebar() {
+        guard let zoomButton = window.standardWindowButton(.zoomButton),
+              zoomButton.isEnabled else {
+            return
+        }
+
+        window.performZoom(nil)
     }
 
     @objc private func navigateBackFromTitlebar() {

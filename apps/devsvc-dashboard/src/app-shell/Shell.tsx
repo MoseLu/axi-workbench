@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import { useTranslation } from "react-i18next";
 import { ConfigProvider, theme as AntTheme } from "antd";
 import { createAxiAntdTheme } from "@axi/core";
-import { AxiDashboardShell, type AxiDashboardNavGroup } from "@axi/shell";
+import { AxiDashboardShell, type AxiDashboardNavGroup, AxiScrollArea } from "@axi/shell";
 
 import devsvcLogoUrl from "../assets/devsvc-logo.svg";
 import {
@@ -32,13 +32,13 @@ import { listAxiResources, type AxiResource } from "../features/axi-resources/ax
 import { useDashboardData } from "../features/dashboard/useDashboardData";
 import { DeployPage } from "../features/deploy/DeployPage";
 import { AlertsPage } from "../features/alerts/AlertsPage";
+import { ObservabilityPage } from "../features/observability/ObservabilityPage";
 import { HostedAppPage } from "../features/hosted/HostedAppPage";
 import { hostedAppRoute, listHostedApps, type HostedApp } from "../features/hosted/hostedApps";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { ServicesPage } from "../features/services/ServicesPage";
 import { ServersPage } from "../features/servers/ServersPage";
 import { useThemeState } from "../features/theme/useThemeState";
-import { AppScrollbar } from "./AppScrollbar";
 import { ToolbarSlotContext } from "./toolbarSlot";
 import { GlobalSearchBox } from "../features/search/GlobalSearchBox";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
@@ -71,7 +71,6 @@ export function Shell({
   const isHostedPage = selectedKey.startsWith("/apps/");
   const isTablePage = selectedKey === "/services" || selectedKey === "/alerts" || selectedKey.startsWith("/axi-resources");
   const hasTableToolbarSlot = selectedKey === "/services" || selectedKey === "/alerts" || selectedKey === "/servers" || selectedKey === "/deploy" || selectedKey.startsWith("/axi-resources");
-  const [toolbarContent, setToolbarContent] = useState<ReactNode>(null);
   const [tableToolbarContainer, setTableToolbarContainer] = useState<HTMLDivElement | null>(null);
   const [contentFullscreen, setContentFullscreen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -80,7 +79,6 @@ export function Shell({
   const [axiResources, setAxiResources] = useState<AxiResource[]>([]);
   const [navigationMode, setNavigationMode] = useState<NavigationMode>("host");
   const previousHostedAppIdRef = useRef<string | null>(null);
-  const toolbarSlot = useMemo(() => ({ setToolbarContent, tableToolbarContainer }), [tableToolbarContainer]);
   const { recentAccess, addRecentAccess, clearRecentAccess } = useRecentAccessTracker(selectedKey);
   const [pinnedTabKeys, setPinnedTabKeys] = useState<NavRouteKey[]>(() => readPinnedTabKeys());
   const [visitedTabKeys, setVisitedTabKeys] = useState<NavRouteKey[]>(() => normalizeTabKeys([...readPinnedTabKeys(), selectedKey]));
@@ -89,7 +87,7 @@ export function Shell({
   const currentHostedApp = useMemo(() => findHostedApp(selectedKey, hostedApps), [hostedApps, selectedKey]);
   const canUseSubappMode = Boolean(isHostedPage && currentHostedApp?.menuGroups.length);
   const visibleNavigationMode: NavigationMode = canUseSubappMode && navigationMode === "subapp" ? "subapp" : "host";
-  const hostNavGroups = useMemo(() => translateNavGroups(t, hostedApps, axiResources), [axiResources, hostedApps, language, t]);
+  const hostNavGroups = useMemo(() => translateNavGroups(t, hostedApps, axiResources, user.role), [axiResources, hostedApps, language, t, user.role]);
   const subappNavGroups = useMemo(() => makeHostedNavGroups(currentHostedApp, t), [currentHostedApp, language, t]);
   const activeNavGroups = visibleNavigationMode === "subapp" ? subappNavGroups : hostNavGroups;
   const activeNavKey = visibleNavigationMode === "host" && currentHostedApp ? hostedAppRoute(currentHostedApp) as NavRouteKey : selectedKey;
@@ -168,60 +166,39 @@ export function Shell({
     setVisitedTabKeys((keys) => normalizeTabKeys(keys.includes(selectedKey) ? keys : [...keys, selectedKey]));
   }, [selectedKey]);
   const visitedTabs = useMemo(() => visitedTabKeys.map((key) => ({ ...makeRouteTab(key, t, hostedApps, axiResources), pinned: pinnedTabKeySet.has(key) })), [axiResources, hostedApps, language, pinnedTabKeySet, t, visitedTabKeys]);
-  const breadcrumbActions = toolbarContent || hasTableToolbarSlot ? (
-    <div className="app-breadcrumb-actions-group">
-      {toolbarContent}
-      <div className="app-breadcrumb-table-toolbar" ref={setTableToolbarContainer} />
-    </div>
+  const breadcrumbActions = hasTableToolbarSlot ? (
+    <div className="app-breadcrumb-table-toolbar" ref={setTableToolbarContainer} />
   ) : null;
   const hostedSidebarControls = isHostedPage ? (
-    <div className="hosted-sidebar-controls">
-      <div className={`hosted-navigation-switch ${visibleNavigationMode === "subapp" ? "is-subapp-mode" : ""}`} role="tablist" aria-label={t("菜单模式")}>
-        <button
-          aria-selected={visibleNavigationMode === "host"}
-          className={visibleNavigationMode === "host" ? "is-active" : ""}
-          title={t("宿主菜单")}
-          role="tab"
-          type="button"
-          onClick={() => {
-            setNavigationMode("host");
-            setSidebarKeyword("");
-          }}
-        >
-          <AxiSvgIcon name="home" size={14} />
-          {visibleNavigationMode === "subapp" ? null : <span>{t("宿主菜单")}</span>}
+    <label className="hosted-sidebar-search">
+      <AxiSvgIcon name="search" size={15} />
+      <input
+        aria-label={t("搜索关键字")}
+        placeholder={visibleNavigationMode === "subapp" ? t("搜索子应用菜单") : t("搜索关键字")}
+        value={sidebarKeyword}
+        onChange={(event) => setSidebarKeyword(event.target.value)}
+      />
+      {sidebarKeyword ? (
+        <button type="button" aria-label={t("清空搜索")} onClick={() => setSidebarKeyword("")}>
+          <AxiSvgIcon name="close" size={13} />
         </button>
-        <button
-          aria-selected={visibleNavigationMode === "subapp"}
-          className={visibleNavigationMode === "subapp" ? "is-active" : ""}
-          disabled={!canUseSubappMode}
-          role="tab"
-          type="button"
-          onClick={() => {
-            setNavigationMode("subapp");
-            setSidebarKeyword("");
-          }}
-        >
-          {hostedAppIcon(currentHostedApp, 14)}
-          <span>{currentHostedApp ? hostedAppTitle(currentHostedApp, t) : currentHostedAppId || t("子应用")}</span>
-        </button>
-      </div>
-      <label className="hosted-sidebar-search">
-        <AxiSvgIcon name="search" size={15} />
-        <input
-          aria-label={t("搜索关键字")}
-          placeholder={visibleNavigationMode === "subapp" ? t("搜索子应用菜单") : t("搜索关键字")}
-          value={sidebarKeyword}
-          onChange={(event) => setSidebarKeyword(event.target.value)}
-        />
-        {sidebarKeyword ? (
-          <button type="button" aria-label={t("清空搜索")} onClick={() => setSidebarKeyword("")}>
-            <AxiSvgIcon name="close" size={13} />
-          </button>
-        ) : null}
-      </label>
-    </div>
+      ) : null}
+    </label>
   ) : null;
+  const hostedModeSwitchConfig = isHostedPage && currentHostedApp ? {
+    ariaLabel: t("菜单模式"),
+    className: "hosted-navigation-switch",
+    currentHostedApp: {
+      icon: hostedAppIcon(currentHostedApp, 14),
+      title: hostedAppTitle(currentHostedApp, t)
+    },
+    hostLabel: t("宿主菜单"),
+    mode: visibleNavigationMode,
+    onChange: (mode: "host" | "subapp") => {
+      setNavigationMode(mode);
+      setSidebarKeyword("");
+    }
+  } : undefined;
 
   function closeLeftTabs() {
     const activeIndex = visitedTabKeys.indexOf(selectedKey);
@@ -295,9 +272,10 @@ export function Shell({
       <Route path="/services" element={<ServicesPage data={data} />} />
       <Route path="/deploy" element={<DeployPage />} />
       <Route path="/alerts" element={<AlertsPage />} />
+      <Route path="/observability" element={<ObservabilityPage />} />
       <Route path="/servers" element={<ServersPage />} />
-      <Route path="/axi-resources" element={<AxiResourcesPage />} />
-      <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage />} />
+      <Route path="/axi-resources" element={<AxiResourcesPage userRole={user.role} />} />
+      <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage userRole={user.role} />} />
       <Route path="/apps/:appId/*" element={<HostedAppPage mode={themeState.mode} preference={themeState.preference} theme={themeState.theme} />} />
       <Route path="/logs" element={<Navigate to="/services" replace />} />
     </Routes>
@@ -316,7 +294,7 @@ export function Shell({
 
   return (
     <ConfigProvider locale={antdLocaleByAppLocale[locale]} theme={antdThemeConfig}>
-      <ToolbarSlotContext.Provider value={toolbarSlot}>
+      <ToolbarSlotContext.Provider value={{ tableToolbarContainer }}>
         <AxiDashboardShell
           activeNavKey={activeNavKey}
           activeTabKey={selectedKey}
@@ -361,7 +339,7 @@ export function Shell({
           ].filter(Boolean).join(" ")}
           contentClassName={`${isTablePage ? "app-page app-page-table services-content" : "app-page"} ${isHostedPage ? "app-page-hosted" : ""}`}
           contentFullscreen={contentFullscreen}
-          globalSearch={<GlobalSearchBox axiResources={axiResources} hostedApps={hostedApps} projects={projects} recentAccessKeys={recentAccess.map((item) => item.key)} onClearRecentAccess={clearRecentAccess} onSelectSearchItem={addRecentAccess} />}
+          globalSearch={<GlobalSearchBox axiResources={axiResources} hostedApps={hostedApps} projects={projects} recentAccessKeys={recentAccess.map((item) => item.key)} onClearRecentAccess={clearRecentAccess} onSelectSearchItem={addRecentAccess} userRole={user.role} />}
           navGroups={dashboardNavGroups}
           onBack={() => navigate(-1)}
           onFullscreenToggle={toggleContentFullscreen}
@@ -392,6 +370,7 @@ export function Shell({
           sidebarSearch={hostedSidebarControls}
           sidebarSearchPlaceholder={t("搜索关键字")}
           sidebarSearchValue={sidebarKeyword}
+          hostedModeSwitch={hostedModeSwitchConfig}
           tabs={settings.multiTab ? visitedTabs.map((tab) => ({
             closable: !tab.pinned,
             key: tab.key,
@@ -440,11 +419,11 @@ export function Shell({
             <section className={`app-view-container ${isTablePage ? "app-view-container-services" : ""}`}>
               {settings.progressBar && data.loading ? <div className="top-progress" role="progressbar" aria-label={t("正在加载")} /> : null}
               {settings.watermark ? <div className="global-watermark" data-watermark={t("Axi DevSvc Dashboard")} aria-hidden="true">{t("Axi DevSvc Dashboard")}</div> : null}
-              <AppScrollbar className={isTablePage ? "services-scrollbar" : ""}>
+              <AxiScrollArea className={isTablePage ? "services-scrollbar" : ""}>
                 <div className={`page-transition page-transition-${settings.pageTransition}`} key={location.pathname}>
                   {routedPages}
                 </div>
-              </AppScrollbar>
+              </AxiScrollArea>
             </section>
           )}
         </AxiDashboardShell>

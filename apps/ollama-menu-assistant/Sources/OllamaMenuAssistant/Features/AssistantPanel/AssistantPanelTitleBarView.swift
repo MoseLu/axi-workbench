@@ -30,6 +30,7 @@ struct AssistantPanelTitleBarView: View {
     let onCopyConversationID: (StoredConversation) -> Void
     let onCopyDeepLink: (StoredConversation) -> Void
     let onCopyMarkdown: (StoredConversation, String) -> Void
+    let onToggleWindowZoom: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -67,6 +68,8 @@ struct AssistantPanelTitleBarView: View {
         .padding(.trailing, 20)
         .frame(height: headerHeight)
         .background(AppTheme.canvas)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2, perform: onToggleWindowZoom)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("header")
     }

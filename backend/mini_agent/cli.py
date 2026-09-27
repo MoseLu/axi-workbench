@@ -77,7 +77,7 @@ class Colors:
 
 def get_log_directory() -> Path:
     """Get the log directory path."""
-    return Path.home() / ".mini-agent" / "log"
+    return Path.home() / ".axi" / "logs" / "mini-agent"
 
 
 def show_log_directory(open_file_manager: bool = True) -> None:

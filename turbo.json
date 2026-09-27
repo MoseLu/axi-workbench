@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "build/**"]
+      "outputs": ["dist/**", ".next/**", "build/**", "src-tauri/target/**", "workbench-dist/**"]
     },
     "dev": {
       "cache": false,
@@ -25,6 +25,14 @@
     },
     "clean:cache": {
       "cache": false
+    },
+    "desktop:build": {
+      "dependsOn": ["^build"],
+      "outputs": ["src-tauri/target/release/bundle/**", "workbench-dist/**"]
+    },
+    "desktop:dev": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

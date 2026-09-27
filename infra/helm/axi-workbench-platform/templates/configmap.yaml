@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "axi-workbench-platform.fullname" . }}-config
+  labels:
+    {{- include "axi-workbench-platform.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: production
+  GATEWAY_PORT: "8080"
+  API_GATEWAY_LOG_LEVEL: {{ .Values.observability.logLevel | quote }}
+  GATEWAY_RATE_LIMIT_PER_MINUTE: {{ .Values.gateway.rateLimitPerMinute | quote }}
+  IDENTITY_ADAPTER_URL: {{ printf "http://%s-identity:%v" (include "axi-workbench-platform.fullname" .) .Values.identityAdapter.service.port | quote }}
+  PLATFORM_CORE_URL: {{ printf "http://%s-platform:%v" (include "axi-workbench-platform.fullname" .) .Values.platformCore.service.port | quote }}
+  FILE_SERVICE_URL: {{ printf "http://%s-file:%v" (include "axi-workbench-platform.fullname" .) .Values.fileService.service.port | quote }}
+  WORKFLOW_SERVICE_URL: {{ printf "http://%s-workflow:%v" (include "axi-workbench-platform.fullname" .) .Values.workflowEngine.service.port | quote }}
+  NOTIFICATION_SERVICE_URL: {{ printf "http://%s-notification:%v" (include "axi-workbench-platform.fullname" .) .Values.notificationService.service.port | quote }}
+  OIDC_ISSUER_URL: {{ .Values.gateway.oidc.issuerURL | quote }}
+  OIDC_CLIENT_ID: {{ .Values.gateway.oidc.clientID | quote }}
+  OIDC_API_AUDIENCE: {{ .Values.gateway.oidc.apiAudience | quote }}
+  OIDC_REQUIRED_ACCESS_TOKEN_SCOPES: {{ join "," .Values.gateway.oidc.requiredAccessTokenScopes | quote }}
+  OIDC_CALLBACK_URL: {{ .Values.gateway.oidc.callbackURL | quote }}
+  OIDC_ALLOWED_RETURN_URLS: {{ join "," .Values.gateway.oidc.allowedReturnURLs | quote }}
+  CORS_ALLOWED_ORIGINS: {{ join "," .Values.gateway.cors.allowedOrigins | quote }}
+  SESSION_COOKIE_NAME: {{ .Values.gateway.session.cookieName | quote }}
+  SESSION_COOKIE_DOMAIN: {{ .Values.gateway.session.cookieDomain | quote }}
+  SESSION_COOKIE_SECURE: "true"
+  SESSION_TTL: {{ .Values.gateway.session.ttl | quote }}
+  EMAIL_LOGIN_OWNER_EMAIL: {{ .Values.gateway.emailLogin.ownerEmail | quote }}
+  EMAIL_LOGIN_SUBJECT: {{ .Values.gateway.emailLogin.subject | quote }}
+  IDENTITY_ADAPTER_PORT: "8081"
+  IDENTITY_PUBLIC_BASE_URL: {{ .Values.gateway.publicBaseURL | quote }}
+  IDENTITY_QR_TRANSACTION_TTL: {{ .Values.identityAdapter.qrTransactionTTL | quote }}
+  IDENTITY_EMAIL_VERIFICATION_TTL: {{ .Values.identityAdapter.emailVerificationTTL | quote }}
+  IDENTITY_EMAIL_VERIFICATION_MAX_ATTEMPTS: {{ .Values.identityAdapter.emailVerificationMaxAttempts | quote }}
+  IDENTITY_OWNER_EMAIL: {{ .Values.identityAdapter.ownerEmail | quote }}
+  IDENTITY_EMAIL_DELIVERY: smtp
+  ZITADEL_CUSTOM_LOGIN_URL: {{ .Values.identityAdapter.zitadelCustomLoginURL | quote }}
+  PLATFORM_CORE_PORT: "8082"
+  PLATFORM_OUTBOX_WORKER: {{ .Values.platformCore.outbox.workerEnabled | quote }}
+  PLATFORM_OUTBOX_POLL_INTERVAL: {{ .Values.platformCore.outbox.pollInterval | quote }}
+  {{- if .Values.platformCore.outbox.workerEnabled }}
+  PLATFORM_OUTBOX_DELIVERY_URL: {{ required "platformCore.outbox.deliveryURL is required when the outbox worker is enabled" .Values.platformCore.outbox.deliveryURL | quote }}
+  {{- else }}
+  PLATFORM_OUTBOX_DELIVERY_URL: {{ .Values.platformCore.outbox.deliveryURL | quote }}
+  {{- end }}
+  WORKFLOW_SERVICE_PORT: {{ .Values.workflowEngine.service.port | quote }}
+  WORKFLOW_MAX_CONCURRENT_WORKFLOWS: {{ .Values.workflowEngine.maxConcurrentWorkflows | quote }}
+  WORKFLOW_STEP_TIMEOUT_SECONDS: {{ .Values.workflowEngine.stepTimeoutSeconds | quote }}
+  WORKFLOW_DISPATCH_LEASE_SECONDS: {{ .Values.workflowEngine.dispatchLeaseSeconds | quote }}
+  WORKFLOW_DISPATCH_POLL_INTERVAL_SECONDS: {{ .Values.workflowEngine.dispatchPollIntervalSeconds | quote }}
+  WORKFLOW_MAX_DISPATCH_ATTEMPTS: {{ .Values.workflowEngine.maxDispatchAttempts | quote }}
+  WORKFLOW_DISPATCH_RETRY_BASE_SECONDS: {{ .Values.workflowEngine.dispatchRetryBaseSeconds | quote }}
+  WORKFLOW_DISPATCH_RETRY_MAX_SECONDS: {{ .Values.workflowEngine.dispatchRetryMaxSeconds | quote }}
+  WORKFLOW_HTTP_ALLOWED_HOSTS: {{ .Values.workflowEngine.httpAllowedHosts | quote }}
+  WORKFLOW_HTTP_MAX_RESPONSE_BYTES: {{ .Values.workflowEngine.httpMaxResponseBytes | quote }}
+  FILE_SERVICE_PORT: {{ .Values.fileService.service.port | quote }}
+  FILE_STORAGE_PATH: {{ .Values.fileService.storagePath | quote }}
+  FILE_STORAGE_BACKEND: {{ .Values.fileService.storageBackend | quote }}
+  FILE_S3_ENDPOINT_URL: {{ .Values.fileService.s3EndpointURL | quote }}
+  FILE_S3_BUCKET: {{ .Values.fileService.s3Bucket | quote }}
+  FILE_S3_REGION: {{ .Values.fileService.s3Region | quote }}
+  FILE_PRESIGNED_URL_TTL_SECONDS: {{ .Values.fileService.presignedURLTTLSeconds | quote }}
+  FILE_MAX_FILE_SIZE: {{ .Values.fileService.maxFileSize | quote }}
+  FILE_THUMBNAIL_ENABLED: {{ .Values.fileService.thumbnailEnabled | quote }}
+  FILE_THUMBNAIL_MAX_WIDTH: {{ .Values.fileService.thumbnailMaxWidth | quote }}
+  FILE_THUMBNAIL_MAX_HEIGHT: {{ .Values.fileService.thumbnailMaxHeight | quote }}
+  FILE_THUMBNAIL_QUALITY: {{ .Values.fileService.thumbnailQuality | quote }}
+  FILE_VIRUS_SCAN_BACKEND: {{ .Values.fileService.virusScanBackend | quote }}
+  FILE_CLAMAV_HOST: {{ .Values.fileService.clamavHost | quote }}
+  FILE_CLAMAV_PORT: {{ .Values.fileService.clamavPort | quote }}
+  FILE_VIRUS_SCAN_TIMEOUT_SECONDS: {{ .Values.fileService.virusScanTimeoutSeconds | quote }}
+  NOTIFICATION_PORT: {{ .Values.notificationService.service.port | quote }}
+  NOTIFICATION_KAFKA_BROKERS: {{ .Values.notificationService.kafkaBrokers | quote }}
+  NOTIFICATION_KAFKA_TOPIC: {{ .Values.notificationService.kafkaTopic | quote }}
+  NOTIFICATION_KAFKA_GROUP_ID: {{ .Values.notificationService.kafkaGroupID | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.observability.otlpEndpoint | quote }}

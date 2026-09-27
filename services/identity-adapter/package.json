@@ -1,0 +1,11 @@
+{
+  "name": "@axi/identity-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Axi Identity adapter for ZITADEL, email verification, QR approval, and EPS federation",
+  "scripts": {
+    "dev": "go run ./cmd/identity-adapter",
+    "build": "go build -o bin/identity-adapter ./cmd/identity-adapter",
+    "test": "go test -race ./..."
+  }
+}

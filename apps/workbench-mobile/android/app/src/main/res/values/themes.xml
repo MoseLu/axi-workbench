@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      启动主题。窗口必须不透明：
+      真机对照发现 translucent=true 时整页叠在壁纸/下层上，
+      #181818 会被提亮到 ~#48，和微信（translucent=false）对不上。
+    -->
+    <style name="Theme.WorkBench.Base" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/wechat_chrome_bg</item>
+        <item name="android:navigationBarColor">@color/wechat_chrome_bg</item>
+        <item name="android:windowBackground">@color/wechat_chrome_bg</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowShowWallpaper">false</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+
+    <style name="Theme.WorkBench" parent="Theme.WorkBench.Base" />
+
+    <!-- Android 12+ 的系统启动主题；退出后直接交给 Compose 品牌加载层。 -->
+    <style name="Theme.WorkBench.Starting" parent="Theme.WorkBench" />
+</resources>

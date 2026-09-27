@@ -10,10 +10,18 @@ const PAIR_TTL_MS = 10 * 60 * 1000;
 export function createCommunicationGateway(options = {}) {
   const cacheDir = resolve(options.cacheDir || process.env.AXI_WORKSTATION_COMMUNICATION_CACHE_DIR || process.env.EPAP_COMMUNICATION_CACHE_DIR || join(process.cwd(), DEFAULT_CACHE_DIR));
   const controlPlaneUrl = options.controlPlaneUrl || process.env.AXI_WORKSTATION_CONTROL_PLANE_URL || process.env.EPAP_CONTROL_PLANE_URL || DEFAULT_CONTROL_PLANE_URL;
-  const controlPlaneClient = options.controlPlaneClient || ((message) => postJson(`${controlPlaneUrl}/jobs`, message));
+  const controlPlaneInternalToken = options.controlPlaneInternalToken || process.env.AXI_GATEWAY_CONTROL_PLANE_TOKEN || "axi-development-internal-token";
+  const communicationSubject = (message) => String(message?.envelope?.senderId || "service:communication-gateway").trim();
+  const controlPlaneClient = options.controlPlaneClient || ((message) => postJson(`${controlPlaneUrl}/internal/communication/v1/jobs`, message, {
+    "X-Axi-Internal-Token": controlPlaneInternalToken,
+    "X-Axi-Subject": communicationSubject(message),
+  }));
   const controlPlaneEventsClient = options.controlPlaneEventsClient || ((jobId, afterEventId = "") => {
     const query = afterEventId ? `?afterEventId=${encodeURIComponent(afterEventId)}` : "";
-    return getJson(`${controlPlaneUrl}/jobs/${encodeURIComponent(jobId)}/events${query}`);
+    return getJson(`${controlPlaneUrl}/internal/communication/v1/jobs/${encodeURIComponent(jobId)}/events${query}`, {
+      "X-Axi-Internal-Token": controlPlaneInternalToken,
+      "X-Axi-Subject": "service:communication-gateway",
+    });
   });
   const state = loadState(cacheDir);
   const seenMessages = new Map();
@@ -641,10 +649,10 @@ function parseJson(value, fallback) {
   }
 }
 
-async function postJson(url, payload) {
+async function postJson(url, payload, headers = {}) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -653,8 +661,8 @@ async function postJson(url, payload) {
   return response.json();
 }
 
-async function getJson(url) {
-  const response = await fetch(url);
+async function getJson(url, headers = {}) {
+  const response = await fetch(url, { headers });
   if (!response.ok) {
     throw new Error(`control-plane request failed: ${response.status}`);
   }

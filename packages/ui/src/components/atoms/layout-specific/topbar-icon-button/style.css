@@ -2,31 +2,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  border: 1px solid var(--mpms-topbar-border-color, #4c4d4f);
+  border: 1px solid var(--mpms-topbar-border-color, #dcdfe6);
   border-radius: 6px;
-  background: var(--mpms-topbar-bg, #0a0a0a);
-  color: var(--mpms-topbar-text-secondary, rgba(255, 255, 255, 0.45));
+  background: var(--mpms-topbar-bg, #ffffff);
+  color: var(--mpms-text-primary, #303133);
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  transition: all 0.2s ease-in-out;
+  outline: none;
   flex-shrink: 0;
+  position: relative;
 }
 
 .mpms-topbar-icon-btn:hover {
-  color: var(--mpms-topbar-text-primary, rgba(255, 255, 255, 0.85));
-  border-color: var(--mpms-topbar-primary-color, #4165d7);
+  background-color: var(--mpms-hover-bg, #ecf5ff);
+  border-color: var(--mpms-topbar-primary-color, #409eff);
 }
 
 .mpms-topbar-icon-btn.is-active {
-  color: var(--mpms-topbar-primary-color, #4165d7);
-  border-color: var(--mpms-topbar-primary-color, #4165d7);
+  background-color: var(--mpms-hover-bg, #ecf5ff);
+  border-color: var(--mpms-topbar-primary-color, #409eff);
+  color: var(--mpms-topbar-primary-color, #409eff);
 }
 
 .mpms-topbar-icon-btn__badge {
   position: absolute;
-  top: 1px;
-  right: 1px;
+  top: -4px;
+  right: -4px;
   min-width: 14px;
   height: 14px;
   padding: 0 4px;
@@ -34,7 +39,6 @@
   line-height: 14px;
   text-align: center;
   color: #fff;
-  background: var(--mpms-danger-color, #f5222d);
+  background: var(--mpms-danger-color, #f56c6c);
   border-radius: 7px;
-  transform: translate(30%, -30%);
 }

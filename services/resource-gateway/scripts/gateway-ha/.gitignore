@@ -1,0 +1,3 @@
+# vitest runtime caches; safe to ignore
+node_modules/
+.vite/

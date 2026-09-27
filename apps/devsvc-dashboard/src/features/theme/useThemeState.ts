@@ -16,9 +16,9 @@ type ViewTransitionDocument = Document & {
 };
 
 export function readStoredThemeName(): ThemeName {
-  if (typeof window === "undefined") return "default";
+  if (typeof window === "undefined") return themePresets[0].name;
   const stored = window.localStorage.getItem(themeStorageKey);
-  return themePresets.some((theme) => theme.name === stored) ? (stored as ThemeName) : "default";
+  return themePresets.some((theme) => theme.name === stored) ? (stored as ThemeName) : themePresets[0].name;
 }
 
 export function themeCssVariables(theme: ThemePreset) {

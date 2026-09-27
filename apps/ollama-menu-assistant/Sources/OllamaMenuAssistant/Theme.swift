@@ -134,8 +134,6 @@ enum AppTheme {
     static let themePreviewSyntaxKeyword = DesignTokens.Diff.previewSyntaxKeyword
     static let themePreviewSyntaxName = DesignTokens.Diff.previewSyntaxName
     static let themePreviewSyntaxString = DesignTokens.Diff.previewSyntaxString
-    static let themePreviewScrollbarTrack = DesignTokens.Diff.previewScrollbarTrack
-    static let themePreviewScrollbarThumb = DesignTokens.Diff.previewScrollbarThumb
     static let dropOverlayAccentStart = accent.opacity(DesignTokens.Alpha.dropOverlayAccentStart)
     static let dropOverlayAccentEnd = accent.opacity(DesignTokens.Alpha.dropOverlayAccentEnd)
     static let dropCalloutAccentStart = accent.opacity(DesignTokens.Alpha.dropCalloutAccentStart)

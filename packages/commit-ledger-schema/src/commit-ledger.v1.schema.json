@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CommitLedgerV1",
+  "type": "object",
+  "required": ["schemaVersion", "recordId", "repo", "commit", "actor", "provenance", "ingestion"],
+  "properties": {
+    "schemaVersion": { "const": "commit-ledger.v1" },
+    "recordId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "repo": {
+      "type": "object",
+      "required": ["projectId", "canonicalPath", "gitRoot", "defaultBranch"],
+      "properties": {
+        "projectId": { "type": "string" },
+        "canonicalPath": { "type": "string", "format": "uri" },
+        "gitRoot": { "type": "string", "format": "uri" },
+        "remote": { "type": "string", "format": "uri", "default": null },
+        "defaultBranch": { "type": "string" }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "required": ["sha", "shortSha", "parentShas", "subject", "type", "authoredAt", "committedAt"],
+      "properties": {
+        "sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "shortSha": { "type": "string", "pattern": "^[a-f0-9]{7,8}$" },
+        "parentShas": { "type": "array", "items": { "type": "string" } },
+        "subject": { "type": "string", "maxLength": 256 },
+        "body": { "type": "string", "maxLength": 10240 },
+        "type": { "type": "string", "enum": ["feat", "fix", "docs", "style", "refactor", "perf", "test", "chore", "ci", "build", "revert", "merge", "hotfix"] },
+        "scope": { "type": "string", "default": null },
+        "breaking": { "type": "boolean", "default": false },
+        "authoredAt": { "type": "string", "format": "date-time" },
+        "committedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    },
+    "refs": {
+      "type": "object",
+      "properties": {
+        "branches": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "diff": {
+      "type": "object",
+      "properties": {
+        "filesChanged": { "type": "integer", "minimum": 0 },
+        "insertions": { "type": "integer", "minimum": 0 },
+        "deletions": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "trailers": {
+      "type": "object",
+      "properties": {
+        "tested": { "type": "array", "items": { "type": "string" } },
+        "notTested": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "string", "default": null },
+        "scopeRisk": { "type": "string", "default": null },
+        "directive": { "type": "string", "default": null },
+        "refs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "workspaceState": {
+      "type": "object",
+      "properties": {
+        "observedBranch": { "type": "string" },
+        "isDirty": { "type": "boolean" },
+        "ahead": { "type": "integer" },
+        "behind": { "type": "integer" },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["verified", "partial", "unverified", "failed", "unknown", "conflict"] },
+        "commands": { "type": "array", "items": { "type": "string" } },
+        "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "sourcePath", "observedAt"],
+      "properties": {
+        "source": { "type": "string", "enum": ["git", "submit-log", "changelog", "test-report", "workspace-snapshot"] },
+        "sourcePath": { "type": "string" },
+        "sourceCommand": { "type": "string", "default": null },
+        "sourceHash": { "type": "string", "default": null },
+        "observedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ingestion": {
+      "type": "object",
+      "required": ["idempotencyKey", "firstSeenAt", "lastSeenAt", "status"],
+      "properties": {
+        "idempotencyKey": { "type": "string" },
+        "firstSeenAt": { "type": "string", "format": "date-time" },
+        "lastSeenAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["new", "updated", "unchanged", "conflict"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+# API Gateway Service Discovery Configuration
+#
+# This file demonstrates how to configure upstream services using the discovery module.
+# Copy this to config.yaml and adjust values for your environment.
+
+# Example: Spring Cloud Gateway style configuration
+upstreams:
+  # Static discovery - fallback when no dynamic discovery is available
+  - name: identity
+    discovery: static
+    url: http://identity-service:8080
+
+  - name: platform
+    discovery: static
+    url: http://platform-core:8082
+
+  # Kubernetes discovery - uses K8s Endpoints API
+  - name: control-plane
+    discovery: kubernetes
+    k8sNamespace: default
+    k8sService: axiom-workbench-platform-controlplane
+    k8sPort: 8092
+
+  # Kubernetes discovery - using namespace/service format
+  - name: my-service
+    discovery: kubernetes
+    k8sNamespace: production
+    k8sService: my-api-service
+    k8sPort: 8080
+
+  # Consul discovery - uses Consul Catalog API
+  - name: user-service
+    discovery: consul
+    consulScheme: http
+    consulHost: consul.service.consul
+    consulPort: 8500
+    consulDatacenter: dc1
+
+# Environment variables override:
+# - KUBERNETES_NAMESPACE: overrides default namespace for K8s discovery
+# - CONSUL_ADDRESS: overrides default Consul address
+# - CONSUL_DC: overrides default datacenter

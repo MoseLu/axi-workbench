@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -e
+
+pnpm governance:check
+pnpm lint
+pnpm test:coverage
+pnpm verify

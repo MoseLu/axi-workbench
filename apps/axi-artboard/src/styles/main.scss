@@ -1,0 +1,48 @@
+// main.scss — 7-1 architecture main entry point.
+// Layer: composite.
+//
+// Load order (per Hugo Giraudel's 7-1 spec):
+//
+//   abstracts  — variables / functions / mixins / placeholders (no CSS output)
+//   vendors    — third-party overrides (Tailwind is NOT here; see tailwind.css)
+//   base       — reset / typography / root-vars / focus / scrollbar / paper-grid
+//   layout     — app-shell / viewport
+//   components — overlay-card / overlay-fab (currently no-op placeholders)
+//   pages      — home (placeholder)
+//   themes     — dark (placeholder for future light theme)
+//
+// Why @use not @import: @use is the Dart Sass recommendation; it
+// gives each partial its own namespace and protects against the
+// cascade surprises of the legacy @import model. See
+// https://sass-lang.com/documentation/at-rules/use/
+
+// ─── abstracts (no CSS output) ──────────────────────────────────
+@use 'abstracts/variables';
+@use 'abstracts/functions';
+@use 'abstracts/mixins';
+@use 'abstracts/placeholders';
+
+// ─── vendors ───────────────────────────────────────────────────
+@use 'vendors/index';
+
+// ─── base ───────────────────────────────────────────────────────
+@use 'base/reset';
+@use 'base/typography';
+@use 'base/root-vars';
+@use 'base/focus';
+@use 'base/scrollbar';
+@use 'base/paper-grid';
+
+// ─── layout ────────────────────────────────────────────────────
+@use 'layout/app-shell';
+@use 'layout/viewport';
+
+// ─── components ─────────────────────────────────────────────────
+@use 'components/overlay-card';
+@use 'components/overlay-fab';
+
+// ─── pages ──────────────────────────────────────────────────────
+@use 'pages/home';
+
+// ─── themes ─────────────────────────────────────────────────────
+@use 'themes/dark';

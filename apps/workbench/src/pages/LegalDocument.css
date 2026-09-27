@@ -1,0 +1,219 @@
+/*
+ * VitePress-style legal document chrome:
+ * left sidebar, top navbar, and right outline are fixed.
+ * Only the document column participates in page scroll.
+ */
+.axi-legal-page {
+  --axi-legal-nav-height: 4rem;
+  --axi-legal-sidebar-width: 17rem;
+  --axi-legal-toc-width: 14rem;
+  min-height: 100svh;
+  box-sizing: border-box;
+  color: var(--palette-gray-900);
+  background: var(--palette-white);
+}
+
+.axi-legal-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  width: var(--axi-legal-sidebar-width);
+  flex-direction: column;
+  gap: .25rem;
+  box-sizing: border-box;
+  padding: 1.5rem 1.25rem 3rem 1.75rem;
+  overflow-y: auto;
+  border-right: var(--space-px) solid var(--palette-gray-200);
+  background: var(--palette-gray-50);
+  font-size: var(--text-sm);
+}
+
+.axi-legal-nav {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: var(--axi-legal-sidebar-width);
+  z-index: 30;
+  height: var(--axi-legal-nav-height);
+  box-sizing: border-box;
+  border-bottom: var(--space-px) solid var(--palette-gray-200);
+  background: color-mix(in srgb, var(--palette-white) 88%, transparent);
+  backdrop-filter: saturate(1.2) blur(8px);
+}
+
+.axi-legal-content {
+  display: grid;
+  grid-template-columns: minmax(0, 46rem) var(--axi-legal-toc-width);
+  gap: 3rem;
+  box-sizing: border-box;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: var(--axi-legal-nav-height) 2.5rem 0 calc(var(--axi-legal-sidebar-width) + 3rem);
+}
+
+.axi-legal-brand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .625rem;
+  margin-bottom: 2.5rem;
+  color: var(--palette-gray-900);
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.axi-legal-brand img { width: 1.75rem; height: 1.75rem; }
+
+.axi-legal-sidebar a,
+.axi-legal-toc a {
+  color: var(--palette-gray-500);
+  text-decoration: none;
+}
+
+.axi-legal-sidebar a:hover,
+.axi-legal-toc a:hover { color: var(--color-brand); }
+
+.axi-legal-sidebar__title,
+.axi-legal-toc__title {
+  margin-bottom: .75rem;
+  color: var(--palette-gray-800);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.axi-legal-sidebar a,
+.axi-legal-toc a {
+  padding: .45rem .75rem;
+  border-left: 2px solid transparent;
+  line-height: 1.45;
+}
+
+.axi-legal-sidebar a.is-active,
+.axi-legal-page:not(:has(.axi-legal-document h2:target)) .axi-legal-toc a:first-of-type,
+.axi-legal-page:has(#service:target) .axi-legal-toc a[href="#service"],
+.axi-legal-page:has(#security:target) .axi-legal-toc a[href="#security"],
+.axi-legal-page:has(#acceptable-use:target) .axi-legal-toc a[href="#acceptable-use"],
+.axi-legal-page:has(#changes:target) .axi-legal-toc a[href="#changes"],
+.axi-legal-page:has(#collection:target) .axi-legal-toc a[href="#collection"],
+.axi-legal-page:has(#usage:target) .axi-legal-toc a[href="#usage"],
+.axi-legal-page:has(#rights:target) .axi-legal-toc a[href="#rights"] {
+  color: var(--color-brand);
+  border-left-color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+}
+
+.axi-legal-document {
+  min-width: 0;
+  max-width: 46rem;
+  padding: 2rem 0 50vh;
+}
+
+.axi-legal-toc {
+  position: relative;
+  width: var(--axi-legal-toc-width);
+}
+
+.axi-legal-toc__viewport {
+  position: fixed;
+  top: calc(var(--axi-legal-nav-height) + 1.5rem);
+  display: flex;
+  width: var(--axi-legal-toc-width);
+  max-height: calc(100svh - var(--axi-legal-nav-height) - 3rem);
+  flex-direction: column;
+  gap: .25rem;
+  overflow-y: auto;
+  font-size: var(--text-sm);
+}
+
+.axi-legal-document h1 {
+  margin: 0 0 .75rem;
+  color: var(--palette-gray-900);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.2;
+}
+
+.axi-legal-document h2 {
+  scroll-margin-top: calc(var(--axi-legal-nav-height) + 1.25rem);
+  margin: 3rem 0 .75rem;
+  color: var(--palette-gray-900);
+  font-size: 1.35rem;
+  line-height: 1.4;
+}
+
+.axi-legal-document p {
+  margin: 0 0 1.25rem;
+  color: var(--palette-gray-600);
+  font-size: 1rem;
+  line-height: 1.95;
+}
+
+.axi-legal-document .axi-legal-meta {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: var(--space-px) solid var(--palette-gray-200);
+  color: var(--palette-gray-400);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+@media (max-width: 64rem) {
+  .axi-legal-content {
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: 2rem;
+  }
+  .axi-legal-toc { display: none; }
+}
+
+@media (max-width: 42rem) {
+  .axi-legal-sidebar {
+    position: static;
+    width: auto;
+    padding: calc(var(--axi-legal-nav-height) + 1rem) 1.25rem 0;
+    border-right: 0;
+  }
+  .axi-legal-nav {
+    left: 0;
+  }
+  .axi-legal-content {
+    display: block;
+    padding: 1rem 1.25rem 4rem;
+  }
+  .axi-legal-brand { margin-bottom: 1.5rem; }
+  .axi-legal-document { padding: 0 0 4rem; }
+  .axi-legal-document h1 { font-size: 2rem; }
+}
+
+/* If reached directly inside the Tauri shell, retain its rounded canvas. */
+body.axi-tauri-shell .axi-legal-page {
+  min-height: 100vh;
+  overflow: auto;
+  border-radius: 16px;
+  background: var(--palette-white);
+  clip-path: inset(0 round 16px);
+}
+
+/* Legal documents scroll the page; chrome stays fixed to the viewport. */
+body.axi-legal-route {
+  height: auto;
+  overflow: visible;
+  background: var(--palette-white);
+}
+
+html.axi-legal-route {
+  height: auto;
+  overflow: auto;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--axi-legal-nav-height, 4rem) + 1.25rem);
+}
+
+body.axi-legal-route #root {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}

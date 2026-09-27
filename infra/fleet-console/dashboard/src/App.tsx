@@ -4,6 +4,7 @@ import { AxiThemeProvider, axiThemePresets, createAxiAntdTheme, useAxiTheme, typ
 import { useMemo, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { FleetShell } from "./components/fleet-shell";
+import { t } from "./i18n";
 import { useFleetData } from "./lib/fleet-data";
 import { buildFleetModel } from "./lib/fleet-model";
 import type { FleetModel } from "./lib/fleet-types";
@@ -16,7 +17,7 @@ import { ServicesPage } from "./routes/services-page";
 const hostedBase = (import.meta.env.VITE_AXI_APP_BASE || "/").replace(/\/$/u, "");
 const routerBasename = hostedBase === "" ? undefined : hostedBase;
 const isHostedApp = import.meta.env.VITE_AXI_HOSTED_APP === "1";
-const fleetThemePreset = { color: "#22d3ee", label: "Axi Fleet", name: "fleet" } satisfies AxiThemePreset;
+const fleetThemePreset = { color: "#22d3ee", label: t("fleet.theme.label"), name: "fleet" } satisfies AxiThemePreset;
 const fleetThemePresets = [fleetThemePreset, ...axiThemePresets];
 
 function HostedContentShell({ model }: { model: FleetModel }) {

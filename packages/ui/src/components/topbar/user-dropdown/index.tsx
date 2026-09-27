@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { DownOutlined } from '@ant-design/icons';
 import type { UserInfo, UserMenuItem } from '../../../types';
 import './style.css';
 
@@ -36,6 +37,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
             avatarIcon || <span>{user.name[0]}</span>
           )}
         </div>
+        <DownOutlined className="mpms-user-dropdown__arrow" />
       </div>
       {open && menuItems.length > 0 && (
         <div className="mpms-user-dropdown__menu">

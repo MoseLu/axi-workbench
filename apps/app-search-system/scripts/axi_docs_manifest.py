@@ -14,7 +14,7 @@ DOC_KINDS = {
     "CLAUDE.md": "agent_rules_legacy",
     "README.md": "readme",
     "TODO.md": "todo",
-    "MILESTONES.md": "milestone",
+    "MILESTONE.md": "milestone",
     "docs/PRD.md": "prd",
     "docs/TDD.md": "tdd",
 }

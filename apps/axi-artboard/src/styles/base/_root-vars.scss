@@ -1,0 +1,55 @@
+// base/_root-vars.scss — :root CSS variables.
+// Layer: base (output CSS).
+//
+// This is the single SOURCE that publishes tokens as CSS custom
+// properties. It mirrors src/styles/abstracts/_variables.scss but
+// emits them as --ink-0 / --pin / etc. so old-style var(…) consumers
+// keep working.
+//
+// When any token changes, update:
+//   1. src/styles/abstracts/_variables.scss  (Sass constants)
+//   2. src/styles/tailwind.css                 (@theme block)
+//   3. this file                                (:root)
+
+@use '../abstracts/variables' as v;
+
+:root {
+  color-scheme: dark;
+
+  // Palette
+  --ink-0: #{v.$ink-0};
+  --ink-1: #{v.$ink-1};
+  --ink-2: #{v.$ink-2};
+  --ink-3: #{v.$ink-3};
+  --rule-1: #{v.$rule-1};
+  --rule-2: #{v.$rule-2};
+  --rule-3: #{v.$rule-3};
+
+  --bone: #{v.$bone};
+  --bone-soft: #{v.$bone-soft};
+  --ink-text: #{v.$ink-text};
+  --ink-mute: #{v.$ink-mute};
+  --ink-dim: #{v.$ink-dim};
+
+  --pin: #{v.$pin};
+  --pin-soft: #{v.$pin-soft};
+  --pin-ghost: #{v.$pin-ghost};
+  --coral: #{v.$coral};
+  --amber: #{v.$amber};
+  --steel: #{v.$steel};
+  --steel-soft: #{v.$steel-soft};
+
+  // Type
+  --font-display: #{v.$font-display};
+  --font-mono: #{v.$font-mono};
+
+  // Geometry
+  --r-sm: #{v.$r-sm};
+  --r-md: #{v.$r-md};
+  --r-lg: #{v.$r-lg};
+
+  --ruler-top: #{v.$ruler-top};
+  --ruler-left: #{v.$ruler-left};
+}
+
+#root { position: relative; z-index: 1; }

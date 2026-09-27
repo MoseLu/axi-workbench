@@ -1,0 +1,102 @@
+# governance-registry cleanup — WFB-BASE-MERGE
+
+This patch drops the three superseded project entries from
+`infra/axi-workspace-governance/workspace.json` and the
+related path references in
+`infra/axi-workspace-governance/docs/{ownership-matrix,
+project-catalog,integration-map,project-handoff}.md`. It
+belongs to the **governance** repo
+(`/Volumes/code/workspace/infra/axi-workspace-governance/`),
+not the workbench repo.
+
+It is staged here in the workbench tree only as a portable
+artefact for the owner to copy across when ready — the
+governance repo is independent and the workbench merge into
+dev (commit 6bf7d674) does not touch the governance files.
+
+## When to apply
+
+After the workbench merge commit `6bf7d674 Merge branch
+'chore/merge-baseline-projects-2026-09-20' into dev` is
+pushed to origin and the owner confirms the new
+architecture is stable. Earliest reasonable moment: when
+the workbench `apps/axi-artboard` / `apps/resource-orchestration`
+/ `apps/axi-docs` deployments are confirmed working.
+
+## How to apply
+
+```bash
+cd /Volumes/code/workspace/infra/axi-workspace-governance
+git checkout -b chore/wfb-base-merge-cleanup-2026-09-20
+git apply /Volumes/code/workspace/projects/axi-workbench/infra/\
+  axi-workspace-governance/patches/2026-09-20-wfb-base-merge-cleanup.patch
+
+# Or: copy the patch body into a real patch file and
+# git apply /path/to/copied.patch
+
+# 1. Drop the three project entries from
+#    workspace.json's "projects" array (lines 366-408 and
+#    462-487) and the "allowedProjectMonorepos" entry
+#    "../../projects/axi-docs" (line 701).
+# 2. Update docs/ownership-matrix.md, docs/project-catalog.md,
+#    docs/integration-map.md, docs/project-handoff.md to
+#    reflect the merge.
+
+pnpm workspace:registry:sync   # regenerate the generated catalog
+pnpm workspace:audit          # verify the patch was clean
+
+git add -A
+git commit -m "chore(governance): drop merged projects after WFB-BASE-MERGE"
+git push -u origin chore/wfb-base-merge-cleanup-2026-09-20
+```
+
+## What the patch changes
+
+| File | Change |
+|---|---|
+| `workspace.json` | Drop the `axi-artboard` entry (lines 366-408). Drop the `ai-resource-orchestration` entry (lines 462-487). Drop the `axi-docs` entry (lines 159-182). Drop the `../../projects/axi-docs` line from `allowedProjectMonorepos` (line 701). |
+| `docs/ownership-matrix.md` | Remove the `../../products/axi-artboard` row (line 34). Remove the `../../products/ai-resource-orchestration` row (line 33). Remove the `../../projects/axi-docs` row (if present). |
+| `docs/project-catalog.md` | Remove the `products \| ai-resource-orchestration` row (line 27). Remove the `products \| axi-artboard` row (line 28). Remove the `projects \| axi-docs` row (if present). |
+| `docs/integration-map.md` | Remove the `../../products/ai-resource-orchestration` line (line 33). Remove the `../../products/axi-artboard` line (line 34). Remove the `../../projects/axi-docs` line (if present). |
+| `docs/project-handoff.md` | Remove the `ai-resource-orchestration` row (line 13). Update any other rows that reference `ai-resource-orchestration` or `axi-artboard` as a project pointer. |
+
+## Verification after patch
+
+```bash
+cd /Volumes/code/workspace/infra/axi-workspace-governance
+node /Volumes/code/workspace/scripts/workspace-project validate
+node /Volumes/code/workspace/scripts/workspace-project handoff-check axi-workbench
+pnpm workspace:audit
+```
+
+Expected:
+- `workspace-project validate`: `ok: true`, no missing-admission errors
+  for the three merged projects.
+- `workspace-project handoff-check axi-workbench`: `score 10 / errors 0 /
+  warnings 0`.
+- `workspace:audit`: 0 errors.
+
+## Why three commits, not one
+
+The workbench merge (commit 6bf7d674) is a workbench-only
+event. The governance-registry cleanup is a governance-only
+event that follows it. Mixing the two would cross-cut
+governance review and workbench review — the governance
+repo has its own ADRs, its own workweek cadence, and its
+own admission-decision protocol. Keeping the cleanup as a
+separate chore (this patch) preserves that boundary.
+
+## Out of scope for this patch
+
+- Removing the source repos from `/Volumes/code/workspace/products/`
+  and `/Volumes/code/workspace/projects/`. Those directories are
+  already moved to `/Volumes/code/workspace/references/archives/
+  2026-09-20/repo/` (with local archive tags on the source repos);
+  the governance patch does not need to touch the filesystem.
+- Renaming or removing the AGENTS.md / PRD.md / ARCHIVE.md in the
+  source repos. Those are part of the source repos' local history
+  (already committed under tag `archive/<name>/2026-09-20`).
+- Updating `docs/content/{en,zh}/projects/<merged-project>/` in
+  `axi-workbench/apps/axi-docs/app/docs/`. The doc content
+  reorganisation is a separate `axi-docs` chore that can land
+  on a separate branch.

@@ -358,8 +358,8 @@ def run_index(state: StateManager, rebuild: bool = False) -> dict:
                 result = collection.get(include=[])
                 existing_ids = set(result.get('ids', []) or [])
                 logger.info(f"已有索引: {len(existing_ids)} 条")
-            except:
-                pass
+            except Exception as ex:
+                logger.warning(f"获取已有索引失败: {ex}")
 
         # 获取需要索引的页面
         conn = sqlite3.connect(str(DB.SCAN_DB))

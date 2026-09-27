@@ -1,0 +1,14 @@
+/* tailwind.css — Tailwind 3 entry point.
+ *
+ * Tailwind 3 (the version we ship under Vite 5.4) reads its theme
+ * configuration from tailwind.config.js (JS), not from CSS @theme
+ * blocks. The values below MUST stay in sync with src/styles/tokens.scss
+ * (which is what the SCSS partials consume) and with the :root block in
+ * src/index.scss (which is what the legacy CSS-var consumers read).
+ *
+ * The 3-way alignment is enforced by scripts/check-tokens.mjs.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

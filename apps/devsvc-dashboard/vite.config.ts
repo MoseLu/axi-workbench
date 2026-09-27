@@ -1,5 +1,7 @@
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
 import type { IncomingMessage } from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
@@ -11,14 +13,20 @@ function chunkVendor(id: string) {
   if (normalized.includes("/shared/axi-ui/packages/settings/") || normalized.includes("/node_modules/@axi/settings/")) return "axi-settings";
   if (normalized.includes("/shared/axi-ui/packages/shell/") || normalized.includes("/node_modules/@axi/shell/")) return "axi-shell";
   if (normalized.includes("/shared/axi-ui/packages/widgets/") || normalized.includes("/node_modules/@axi/widgets/")) return "axi-widgets";
+  // Split the 1.4 MB icon payload into five per-chunk bundles so each one
+  // stays under the 1 MB budget. The icons themselves are only fetched on
+  // first `getAxiIconData()` call. Each chunk file gets its own chunk group
+  // so the data is code-split rather than merged into a single big file.
+  const iconDataChunkMatch = normalized.match(/\/(?:shared\/axi-ui\/packages\/core|node_modules\/@axi\/core)\/(?:src|dist)\/icon-data-chunks\/chunk-(\d+)\.(?:ts|js)$/);
+  if (iconDataChunkMatch) return `axi-core-icons-${iconDataChunkMatch[1]}`;
+  // Split tokens into separate chunk (41M raw, can be lazy-loaded)
   if (
-    normalized.includes("/shared/axi-ui/packages/core/") ||
-    normalized.includes("/shared/axi-ui/packages/presets/") ||
     normalized.includes("/shared/axi-ui/packages/tokens/") ||
-    normalized.includes("/node_modules/@axi/core/") ||
-    normalized.includes("/node_modules/@axi/presets/") ||
     normalized.includes("/node_modules/@axi/tokens/")
-  ) return "axi-core";
+  ) return "axi-tokens";
+  // Core and presets split to stay under 1MB limit
+  if (normalized.includes("/shared/axi-ui/packages/core/") || normalized.includes("/node_modules/@axi/core/")) return "axi-core";
+  if (normalized.includes("/shared/axi-ui/packages/presets/") || normalized.includes("/node_modules/@axi/presets/")) return "axi-presets";
 
   if (!normalized.includes("/node_modules/")) return undefined;
   if (/[\\/]node_modules[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/.test(id)) return "react";
@@ -103,6 +111,14 @@ export default defineConfig({
   },
   plugins: [react(), compressedAssets(), enforceMaxChunkSize()],
   server: {
+    fs: {
+      // Allow Vite to serve assets from the shared axi-ui monorepo (notably
+      // @axi/core's branding SVG/PNG that lives outside this workspace).
+      allow: [
+        path.dirname(path.dirname(fileURLToPath(import.meta.url))),
+        path.resolve(path.dirname(path.dirname(fileURLToPath(import.meta.url))), "..", "..", "..", "shared", "axi-ui")
+      ]
+    },
     proxy: {
       "/api": "http://127.0.0.1:17888",
       "/apps": {

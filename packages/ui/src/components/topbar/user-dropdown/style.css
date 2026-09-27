@@ -6,16 +6,18 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px 4px 6px;
-  border-radius: 6px;
+  padding: 0 8px 0 4px;
+  border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
   margin-left: 4px;
   user-select: none;
+  height: 28px;
+  color: var(--mpms-text-primary, #303133);
 }
 
 .mpms-user-dropdown__trigger:hover {
-  background: var(--mpms-hover-bg);
+  background: var(--mpms-hover-bg, #ecf5ff);
 }
 
 .mpms-user-dropdown__avatar {
@@ -25,7 +27,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--mpms-primary-color);
+  background: var(--mpms-primary-color, #409eff);
   color: #fff;
   font-size: 13px;
   flex-shrink: 0;
@@ -40,11 +42,12 @@
 
 .mpms-user-dropdown__name {
   font-size: 13px;
-  color: var(--mpms-text-primary);
+  color: var(--mpms-text-primary, #303133);
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .mpms-user-dropdown__arrow {
@@ -58,10 +61,10 @@
   right: 0;
   z-index: 1000;
   min-width: 160px;
-  background: var(--mpms-header-bg, #1d1d1d);
-  border: 1px solid var(--mpms-border-color);
+  background: var(--mpms-header-bg, #ffffff);
+  border: 1px solid var(--mpms-border-color, #e4e7ed);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   padding: 4px 0;
 }
@@ -72,22 +75,22 @@
   gap: 8px;
   padding: 8px 12px;
   font-size: 13px;
-  color: var(--mpms-text-secondary);
+  color: var(--mpms-text-secondary, #606266);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .mpms-user-dropdown__menu-item:hover {
-  color: var(--mpms-text-primary);
-  background: var(--mpms-hover-bg);
+  color: var(--mpms-text-primary, #303133);
+  background: var(--mpms-hover-bg, #ecf5ff);
 }
 
 .mpms-user-dropdown__menu-item.is-danger {
-  color: var(--mpms-danger-color);
+  color: var(--mpms-danger-color, #f56c6c);
 }
 
 .mpms-user-dropdown__menu-item.is-danger:hover {
-  background: rgba(245, 34, 45, 0.1);
+  background: rgba(245, 108, 108, 0.1);
 }
 
 .mpms-user-dropdown__menu-icon {
@@ -98,5 +101,5 @@
 .mpms-user-dropdown__divider {
   height: 1px;
   margin: 4px 0;
-  background: var(--mpms-border-color);
+  background: var(--mpms-border-color, #e4e7ed);
 }

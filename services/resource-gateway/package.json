@@ -1,0 +1,31 @@
+{
+  "name": "@axi/resource-gateway",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx --enable-source-maps src/server.ts",
+    "dev": "tsx watch --enable-source-maps src/server.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1",
+    "zod": "^3.23.8",
+    "@axi/gateway-contracts": "workspace:*",
+    "@axi/resource-adapters": "workspace:*",
+    "@axi/resource-orchestrator": "workspace:*",
+    "@axi/resource-memory": "workspace:*",
+    "@axi/resource-session": "workspace:*",
+    "@axi/resource-config": "workspace:*",
+    "@axi/resource-api-docs": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ioredis-mock": "^8.9.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
+  }
+}

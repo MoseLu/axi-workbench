@@ -1,24 +1,83 @@
-/* ========== MPMS UI Design Tokens ========== */
+/* ========== Axi UI Design Tokens ==========
+ *
+ * @deprecated Legacy compatibility aliases. New styles must use --axi-* tokens
+ * from @axi/tokens. This file is retained only while the legacy package is
+ * migrated; do not add new --mpms-* definitions here.
+ *
+ * 默认主题 = 深色（对齐 COOL-ADMIN 工作台基线）：
+ *   layout-bg / sidebar-bg / header-bg / tabbar-bg / content-bg 全部走深色
+ *   sidebar 文本使用浅色，确保对比度
+ *
+ * 浅色主题：手动设置 `<html data-theme="light">` 后启用；
+ *   仅当用户/产品需要时切换，本仓库默认不开放。
+ *
+ * Token 约定：
+ *   --mpms-layout-* / --mpms-sidebar-* / --mpms-header-*
+ *   --mpms-tabbar-*  / --mpms-content-*  / --mpms-border-*
+ *   --mpms-text-*    / --mpms-hover-bg   / --mpms-primary-*
+ */
+
 :root {
-  /* Layout dimensions */
+  /* Layout dimensions — Cool Admin 风格 */
   --mpms-sidebar-width: 220px;
   --mpms-sidebar-collapsed-width: 64px;
-  --mpms-header-height: 46px;
-  --mpms-tabbar-height: 40px;
+  --mpms-sidebar-logo-height: 56px;
+  --mpms-header-height: 48px;
+  --mpms-tabbar-height: 38px;
   --mpms-right-sidebar-width: 46px;
 
-  /* Colors — dual-tone dark theme
-     layout-bg (#0a0a0a): root layout, sidebar, topbar, tabbar, breadcrumb, right-sidebar, content area
-     content-bg (#141414): elevated surfaces — cards, tab items, breadcrumb items, form controls */
-  --mpms-layout-bg: #0a0a0a;
-  --mpms-sidebar-bg: #0a0a0a;
-  --mpms-header-bg: #0a0a0a;
-  --mpms-tabbar-bg: #0a0a0a;
-  --mpms-content-bg: #141414;
-  --mpms-border-color: #2b2b2c;
-  --mpms-text-primary: rgba(255, 255, 255, 0.85);
-  --mpms-text-secondary: rgba(255, 255, 255, 0.45);
-  --mpms-primary-color: #4165d7;
-  --mpms-hover-bg: rgba(255, 255, 255, 0.06);
-  --mpms-danger-color: #f5222d;
+  /* ───────── Primary / Accent ───────── */
+  --mpms-primary-color: var(--axi-primary, #E5B94A);
+  --mpms-primary-color-hover: var(--axi-primary-hover, #F0CB6E);
+  --mpms-primary-color-active: var(--axi-primary-hover, #F0CB6E);
+  --mpms-danger-color: var(--axi-danger, #EF4444);
+
+  /* ───────── Layout surfaces (DARK default) ───────── */
+  --mpms-layout-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-sidebar-bg: var(--axi-bg-surface, #141414);
+  --mpms-header-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-tabbar-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-content-bg: var(--axi-bg-surface, #141414);
+  --mpms-content-elevated: var(--axi-bg-elevated, #262626);
+  --mpms-right-sidebar-bg: var(--axi-bg-page, #1D1D1D);
+  --mpms-border-color: var(--axi-border, #303030);
+
+  /* ───────── Sidebar text (高对比度) ───────── */
+  --mpms-sidebar-text-primary: var(--axi-text, #F1F5F9);
+  --mpms-sidebar-text-secondary: var(--axi-text-muted, #94A3B8);
+  --mpms-sidebar-hover-bg: var(--axi-bg-elevated, rgba(255, 255, 255, 0.06));
+
+  /* ───────── General text (主区域) ───────── */
+  --mpms-text-primary: var(--axi-text, #F1F5F9);
+  --mpms-text-secondary: var(--axi-text-secondary, #CBD5E1);
+  --mpms-text-tertiary: rgba(255, 255, 255, 0.32);
+  --mpms-text-disabled: rgba(255, 255, 255, 0.18);
+  --mpms-hover-bg: var(--axi-bg-elevated, rgba(255, 255, 255, 0.06));
+
+  /* ───────── Topbar aliases ───────── */
+  --mpms-topbar-bg: var(--mpms-header-bg);
+  --mpms-topbar-border-color: #2b2b2c;
+  --mpms-topbar-text-primary: var(--mpms-text-primary);
+  --mpms-topbar-text-secondary: var(--mpms-text-secondary);
+  --mpms-topbar-primary-color: var(--mpms-primary-color);
+}
+
+/* 浅色主题 —— 仅在 <html data-theme="light"> 时启用；当前仓库默认走深色 */
+[data-theme="light"] {
+  --mpms-layout-bg: #ffffff;
+  --mpms-sidebar-bg: #2c3147;
+  --mpms-header-bg: #ffffff;
+  --mpms-tabbar-bg: #ffffff;
+  --mpms-content-bg: #f5f7fa;
+  --mpms-content-elevated: #ffffff;
+  --mpms-right-sidebar-bg: #ffffff;
+  --mpms-border-color: #e4e7ed;
+  --mpms-text-primary: #303133;
+  --mpms-text-secondary: #606266;
+  --mpms-text-tertiary: rgba(0, 0, 0, 0.25);
+  --mpms-text-disabled: rgba(0, 0, 0, 0.18);
+  --mpms-hover-bg: #ecf5ff;
+  --mpms-sidebar-text-primary: #e5eaf3;
+  --mpms-sidebar-text-secondary: #8a8e99;
+  --mpms-topbar-border-color: #dcdfe6;
 }

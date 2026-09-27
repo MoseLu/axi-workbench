@@ -1,0 +1,259 @@
+services:
+  # Remote backend does not need Mailpit's host ports. Keep SMTP available to
+  # notification-service over the Compose network and avoid colliding with a
+  # developer Mailpit already bound on the Windows host.
+  mailpit:
+    ports: !override []
+
+  identity-migrate:
+    profiles: [backend]
+    build:
+      context: ./services/identity-adapter
+      dockerfile: Dockerfile
+    entrypoint: ["/identity-migrate"]
+    environment:
+      ENVIRONMENT: development
+      IDENTITY_DATABASE_URL: postgresql://axi_identity_app:axi_identity_dev@postgres:5432/axi_identity?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  platform-migrate:
+    profiles: [backend]
+    build:
+      context: ./services/platform-core
+      dockerfile: Dockerfile
+    entrypoint: ["/platform-migrate"]
+    environment:
+      ENVIRONMENT: development
+      PLATFORM_MIGRATION_DATABASE_URL: postgresql://axi_platform_migrator:axi_platform_migrator_dev@postgres:5432/axi_platform?sslmode=disable
+      PLATFORM_DATABASE_URL: postgresql://axi_platform_app:axi_platform_dev@postgres:5432/axi_platform?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  workflow-migrate:
+    profiles: [backend]
+    build:
+      context: ./services/workflow-engine
+      dockerfile: Dockerfile
+    command: ["python", "migrate.py"]
+    environment:
+      WORKFLOW_DATABASE_URL: postgresql://axi_workflow_app:axi_workflow_dev@postgres:5432/axi_workflow?sslmode=disable
+      WORKFLOW_MIGRATION_DATABASE_URL: postgresql://axi_workflow_migrator:axi_workflow_migrator_dev@postgres:5432/axi_workflow?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notification-migrate:
+    profiles: [backend]
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    entrypoint: ["/notification-migrate"]
+    environment:
+      NOTIFICATION_DATABASE_URL: postgresql://axi_notification_app:axi_notification_dev@postgres:5432/axi_notifications?sslmode=disable
+      NOTIFICATION_MIGRATION_DATABASE_URL: postgresql://axi_notification_migrator:axi_notification_migrator_dev@postgres:5432/axi_notifications?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  file-migrate:
+    profiles: [backend]
+    build:
+      context: ./services/file-service
+      dockerfile: Dockerfile
+    command: ["python", "migrate.py"]
+    environment:
+      FILE_DATABASE_URL: postgresql://axi_file_app:axi_file_dev@postgres:5432/axi_files?sslmode=disable
+      FILE_MIGRATION_DATABASE_URL: postgresql://axi_file_migrator:axi_file_migrator_dev@postgres:5432/axi_files?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  identity-adapter:
+    profiles: [backend]
+    build:
+      context: ./services/identity-adapter
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      IDENTITY_ADAPTER_PORT: "8081"
+      IDENTITY_DATABASE_URL: postgresql://axi_identity_app:axi_identity_dev@postgres:5432/axi_identity?sslmode=disable
+      IDENTITY_REDIS_URL: redis://redis:6379/1
+      IDENTITY_INTERNAL_SERVICE_TOKEN: axi-development-internal-token
+      IDENTITY_OWNER_EMAIL: "${EMAIL_LOGIN_OWNER_EMAIL:-}"
+      IDENTITY_EMAIL_DELIVERY: "${IDENTITY_EMAIL_DELIVERY:-log}"
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM: "${SMTP_FROM:-}"
+      SMTP_ALLOW_INSECURE: "${SMTP_ALLOW_INSECURE:-false}"
+    depends_on:
+      identity-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  platform-core:
+    profiles: [backend]
+    build:
+      context: ./services/platform-core
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      PLATFORM_CORE_PORT: "8082"
+      PLATFORM_DATABASE_URL: postgresql://axi_platform_app:axi_platform_dev@postgres:5432/axi_platform?sslmode=disable
+      PLATFORM_INTERNAL_SERVICE_TOKEN: axi-development-internal-token
+      PLATFORM_OUTBOX_WORKER: "false"
+    depends_on:
+      platform-migrate:
+        condition: service_completed_successfully
+
+  workflow-engine:
+    profiles: [backend]
+    build:
+      context: ./services/workflow-engine
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      WORKFLOW_SERVICE_PORT: "8083"
+      WORKFLOW_DATABASE_URL: postgresql://axi_workflow_app:axi_workflow_dev@postgres:5432/axi_workflow?sslmode=disable
+      WORKFLOW_INTERNAL_SERVICE_TOKEN: axi-development-internal-token
+    depends_on:
+      workflow-migrate:
+        condition: service_completed_successfully
+
+  notification-service:
+    profiles: [backend]
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      NOTIFICATION_PORT: "8084"
+      NOTIFICATION_DATABASE_URL: postgresql://axi_notification_app:axi_notification_dev@postgres:5432/axi_notifications?sslmode=disable
+      NOTIFICATION_INTERNAL_SERVICE_TOKEN: axi-development-internal-token
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      FROM_EMAIL: workbench@localhost
+      NOTIFICATION_KAFKA_BROKERS: ""
+    depends_on:
+      notification-migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_started
+
+  file-service:
+    profiles: [backend]
+    build:
+      context: ./services/file-service
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      FILE_SERVICE_PORT: "8085"
+      FILE_DATABASE_URL: postgresql://axi_file_app:axi_file_dev@postgres:5432/axi_files?sslmode=disable
+      FILE_INTERNAL_SERVICE_TOKEN: axi-development-internal-token
+      FILE_STORAGE_BACKEND: local
+      FILE_STORAGE_PATH: /var/lib/axi/files
+      FILE_VIRUS_SCAN_BACKEND: disabled
+    volumes:
+      - backend_file_data:/var/lib/axi/files
+    depends_on:
+      file-migrate:
+        condition: service_completed_successfully
+
+  api-gateway:
+    profiles: [backend]
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:18088:8080"
+    environment:
+      ENVIRONMENT: development
+      GATEWAY_PORT: "8080"
+      GATEWAY_REDIS_URL: redis://redis:6379/0
+      GATEWAY_REQUIRE_DURABLE_SESSION_STORE: "true"
+      IDENTITY_ADAPTER_URL: http://identity-adapter:8081
+      PLATFORM_CORE_URL: http://platform-core:8082
+      WORKFLOW_SERVICE_URL: http://workflow-engine:8083
+      WORKFLOW_URL: http://workflow-engine:8083
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      NOTIFICATION_URL: http://notification-service:8084
+      FILE_SERVICE_URL: http://file-service:8085
+      CONTROL_PLANE_URL: http://control-plane:8092
+      EMAIL_LOGIN_OWNER_EMAIL: "${EMAIL_LOGIN_OWNER_EMAIL:-}"
+      EMAIL_LOGIN_SUBJECT: "${EMAIL_LOGIN_SUBJECT:-}"
+      GATEWAY_IDENTITY_INTERNAL_TOKEN: axi-development-internal-token
+      GATEWAY_PLATFORM_INTERNAL_TOKEN: axi-development-internal-token
+      GATEWAY_FILE_INTERNAL_TOKEN: axi-development-internal-token
+      GATEWAY_WORKFLOW_INTERNAL_TOKEN: axi-development-internal-token
+      GATEWAY_NOTIFICATION_INTERNAL_TOKEN: axi-development-internal-token
+      GATEWAY_CONTROL_PLANE_INTERNAL_TOKEN: axi-development-internal-token
+      CORS_ALLOWED_ORIGINS: http://127.0.0.1:5183,http://localhost:5183
+    depends_on:
+      identity-adapter:
+        condition: service_started
+      platform-core:
+        condition: service_started
+      workflow-engine:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      file-service:
+        condition: service_started
+      control-plane:
+        condition: service_healthy
+
+  control-plane:
+    profiles: [backend]
+    build:
+      context: .
+      dockerfile: services/control-plane/Dockerfile
+    environment:
+      ENVIRONMENT: development
+      CONTROL_PLANE_PORT: "8092"
+      CONTROL_PLANE_BIND: "0.0.0.0"
+      GATEWAY_INTERNAL_TOKEN: axi-development-internal-token
+      AXI_MOBILE_PAIRING_ENABLED: "false"
+    healthcheck:
+      # Probe the existing /health route exposed by
+      # services/control-plane/src/server.mjs:144. The image has Node but
+      # no curl/wget, so use a tiny Node one-liner that exits 0 on 200 and
+      # non-zero otherwise. This is what the API Gateway
+      # `depends_on: condition: service_healthy` above will wait for.
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8092/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    # The Control Plane holds in-memory pairing / execution-policy state.
+    # The Compose-managed `axi_control_plane_state` volume below gives it a
+    # durable home so restarts do not wipe the pairing table. Logs and
+    # secrets stay out of the volume by design.
+    volumes:
+      - axi_control_plane_state:/var/lib/axi/control-plane
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+
+networks:
+  default:
+    name: epap-network
+
+volumes:
+  backend_file_data:
+  axi_control_plane_state:

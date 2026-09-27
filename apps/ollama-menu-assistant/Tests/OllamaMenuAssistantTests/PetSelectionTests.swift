@@ -123,6 +123,19 @@ func petLaunchRequestProcessSignatureIncludesDirectionalMode() {
 }
 
 @Test
+func petLaunchRequestCarriesTheSelectedRunnerLanguage() {
+    let request = PetLaunchRequest(
+        id: "miku",
+        petDirectoryURL: URL(fileURLWithPath: "/tmp/miku"),
+        slotIndex: 0,
+        slotCount: 3,
+        language: .english
+    )
+
+    #expect(request.language == .english)
+}
+
+@Test
 func petSelectionPreservesDynamicPetIDs() {
     #expect(PetSelection(storedValue: "teto") == PetSelection(id: "teto"))
     #expect(PetSelection(storedValue: "KasaneTeto") == PetSelection(id: "KasaneTeto"))

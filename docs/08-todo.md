@@ -914,6 +914,39 @@
 
 ---
 
+## 8.15 已核验交付缺口（追加）
+
+| # | 任务 | 优先级 |
+|---|---|---|
+| 1021 | **打通桌面端与 Android 移动端的首次登录/设备配对闭环。** 当前问题：桌面端已登录后，手机必须先取得独立设备会话；桌面登录页二维码又只能由已配对手机授权，入口和扫码方向必须明确区分。实现要求：① 桌面端在已登录状态提供“系统设置 → 设备与会话 → 手机配对”入口并生成短期一次性配对 QR，整个过程不退出桌面会话；② Android 首次启动和“我的 → 设备管理”都提供“扫描电脑端配对二维码”入口；③ 配对完成后持久化设备凭据并可独立恢复移动端会话；④ 桌面登录页明确标识其 QR 仅用于已配对手机授权新的 Web/桌面会话；⑤ 以真实桌面 App + 真机 Android 完成“桌面不退出登录 → 手机配对 → 手机独立恢复 → 手机授权新 Web 会话”的端到端验收。邮箱/密码历史页面未注册进原生导航，不计为当前登录路径。 | 🔴 P0 |
+
+> 核验日期：2026-09-13。该项以实际可见的桌面 App 与 Android 原生导航为准；仅存在未接入路由或未注册页面的源码不视为完成。
+>
+> 当前进度：桌面安装包已提供“系统设置 → 设备与会话 → 手机配对”并可生成二维码；Android 已提供首次配对说明与“扫描电脑端配对二维码”入口，二维码现在同时携带受约束的可达 Gateway 地址，手机扫码后自动保存并使用，不再要求正常登录流程手填网关；手填入口仅保留在 Debug 的“高级网关诊断”。2026-09-13 使用真实小米 M2012K10C + ADB 完成“桌面不退出 → 截图二维码推入手机 Download → Android 从图片选择二维码 → Gateway `/mobile/pair/qr/scan` 返回 200 → Web 设备管理确认 → Android `/mobile/pair/status` 后恢复概览并同步 37 个项目”；控制面重启并强制重启 App 后仍可同步 37 个项目，证明设备凭据可持久化恢复。2026-09-14 首次换网前的同一真机已验证二维码解码和自动写入网关；换网后再次安装新 Debug APK，在手机 `192.168.101.14/24` 与开发机 `192.168.101.13/24` 同网段互通条件下，真实配对 QR 经“从图片选择二维码”成功登记，Gateway 返回 `scanned`，Web owner 确认后返回 `approved`，Android 获得 `device_id/access_token`，工作区恢复并显示“已整理 40 项待办”；强制停止并重启 App 后仍保留网关地址和设备会话。随后在默认 DevSvc 配置下再次完成二维码扫描和 Web 确认，已补 development-only 私有缓存（0600）owner approval 引导，生产仍强制外部 Secret。公网/蜂窝网络整改已拆分为 PRD §14 的 PUB-00…PUB-09，当前线上域名探针仍显示其他静态站点与 Workbench `/api` 404，尚未计入公网完成。尚待真实摄像头取景（非相册）、公网 API Gateway/Ingress/身份部署及“手机授权新 Web 会话”的独立验收。
+
+### 8.16 公网移动访问整改（对应 PRD §14）
+
+| ID | 子任务 | 优先级 | 依赖 | 状态 |
+|---|---|---:|---|---|
+| PUB-00 | 核验 DNS、证书、域名 owner、当前静态站点与 `/api` 实际归属 | 🔴 P0 | 无 | 部分完成：线上 HTTP 探针已完成；域名 owner/切流归属仍待确认 |
+| PUB-01 | 配置公网 Ingress：`/api` → Workbench API Gateway、`/` → Workbench Web | 🔴 P0 | PUB-00 | 待执行 |
+| PUB-02 | 完成 Gateway 生产路由、OIDC、CORS、Redis session、rate limit 与移动合同 | 🔴 P0 | PUB-00 | 部分完成：容器化本地 Gateway 与移动路由已运行；生产公网未验证 |
+| PUB-03 | 配置 Control Plane 生产 `GATEWAY_PUBLIC_URL` / `AXI_MOBILE_GATEWAY_BASE_URL`，让 QR 下发公网 HTTPS | 🔴 P0 | PUB-01、PUB-02 | 部分完成：代码支持并有测试；生产环境变量尚未落地 |
+| PUB-04 | 验证 Web owner 公网生成/轮询/确认手机配对 QR | 🔴 P0 | PUB-02、PUB-03 | 部分完成：局域网真机闭环通过；公网 owner 闭环未验证 |
+| PUB-05 | 验证 Android Release 公网 endpoint、安全校验、设备会话和个人页状态 | 🔴 P0 | PUB-03 | 部分完成：Release 默认地址与真机设备会话已验证；蜂窝公网未验证 |
+| PUB-06 | 联调生产 OIDC、session/cookie、Identity Adapter、生产 Secret 与审计 | 🔴 P0 | PUB-01、PUB-02 | 待执行 |
+| PUB-07 | 完成 TLS、HSTS、CORS、敏感字段脱敏、rate limit 与公网观测门禁 | 🟠 P1 | PUB-01、PUB-02、PUB-06 | 部分完成：本地 Gateway 合同/限流/脱敏已有证据；生产门禁未验证 |
+| PUB-08 | 关闭 Wi‑Fi、无 `adb reverse`，用 4G/5G 真机完成扫码→审批→工作区→重启恢复 | 🔴 P0 | PUB-01…PUB-07 | 部分完成：同网段真机闭环通过；4G/5G 公网闭环未执行 |
+| PUB-09 | 发布、回滚、runbook、CHANGELOG/HANDOFF/TODO 收口 | 🟠 P1 | PUB-01…PUB-08 | 待执行 |
+
+> 2026-09-14 进度复核：PUB-00 已完成线上探针基线，结果仍是域名静态页面属于其他产品、Workbench `/api/v1/health` 与 `/api/v1/auth/session` 返回 404；PUB-02 另有本地容器化 API 平面证据（Gateway `127.0.0.1:18088/health` 200，未认证 session 401，mobile workspace 路由进入 Gateway 并拒绝无效签名），但这不是公网部署证据。PUB-03/04/05/07/08 仅计入代码、局域网真机或本地容器的部分完成，PUB-01、PUB-06、PUB-09 仍未执行；当前不能宣称支持蜂窝网络。
+
+> 2026-09-14 第二轮复核（18:50）：域名真实且有 TLS 证书，`/` 200 Web 运行，`/health` `{"ok":true}` Gateway 运行，但 `/api/v1/*` 全部 404（headers 正确显示 Gateway 在）。PUB-01~PUB-09 规划分析均已完成（Ingress 缺少 `/api` 路由指向 Gateway、Control Plane 生产缺 `GATEWAY_PUBLIC_URL`、Android Release endpoint 可配置、HSTS/CSP 缺失、4G 验证规划已输出）。**核心阻塞：Ingress `/api` 路由未配置**。
+
+> 2026-09-14 推送复核：`90fc786d` 已推送到 `origin/dev`，提交范围是 DevSvc 工作区资源绑定、菜单分组和 drift 检查。公网 Gateway 现已确认工作，PUB-01~PUB-09 分析规划已完成。
+
+---
+
 ## 统计汇总
 
 | 模块 | P0 | P1 | P2/P3 | 合计 |

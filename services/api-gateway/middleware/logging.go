@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -46,5 +48,9 @@ func RequestID() gin.HandlerFunc {
 }
 
 func generateRequestID() string {
-	return time.Now().Format("20060102150405.000000")
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err == nil {
+		return hex.EncodeToString(bytes)
+	}
+	return time.Now().UTC().Format("20060102150405.000000")
 }

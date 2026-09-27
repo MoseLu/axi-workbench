@@ -1,7 +1,6 @@
 .mpms-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
   height: var(--mpms-header-height, 46px);
   padding: 0 16px;
@@ -9,6 +8,8 @@
   overflow: hidden;
   white-space: nowrap;
   user-select: none;
+  flex-shrink: 0;
+  color: inherit;
 }
 
 .mpms-logo.is-collapsed {
@@ -22,12 +23,13 @@
   justify-content: center;
   flex-shrink: 0;
   font-size: 24px;
+  color: inherit;
 }
 
 .mpms-logo__title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--mpms-text-primary, rgba(255, 255, 255, 0.85));
+  color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
 }

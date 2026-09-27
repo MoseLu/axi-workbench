@@ -17,8 +17,10 @@ final class OllamaPetRunnerApp: NSObject, NSApplicationDelegate {
         let controller = PetWindowController(
             petDirectoryURL: PetAssetLoader.selectedPetDirectory,
             instanceID: PetAssetLoader.selectedPetInstanceID,
+            groupID: PetAssetLoader.selectedPetGroupID,
             slotIndex: PetAssetLoader.selectedPetSlotIndex,
             slotCount: PetAssetLoader.selectedPetSlotCount,
+            language: PetAssetLoader.selectedPetLanguage,
             allowsDirectionalRunning: PetAssetLoader.selectedPetAllowsDirectionalRunning
         )
         petWindowController = controller

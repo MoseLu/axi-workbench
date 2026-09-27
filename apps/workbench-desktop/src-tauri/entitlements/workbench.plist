@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        Workbench Mac App sandbox entitlements.
+
+        Tauri 2 wry 在 macOS App Sandbox 下需要这一组 entitlements 才能初始化
+        NSWindow + WKWebView。少了 cs.allow-jit / allow-unsigned-executable-memory
+        会导致 tao::did_finish_launching panic_cannot_unwind。
+    -->
+
+    <!-- 沙盒 + Hardened Runtime -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+
+    <!-- WKWebView JIT + 动态代码执行（tao/wry 必需） -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+
+    <!-- 网络：web 端 fetch /api/v1/* + SSE + websocket -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+
+    <!-- 用户选择的文件读 -->
+    <key>com.apple.security.files.user-selected.read-only</key>
+    <true/>
+</dict>
+</plist>

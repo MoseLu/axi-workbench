@@ -77,7 +77,7 @@
 }
 
 .mpms-layout.is-fullscreen .mpms-layout__right {
-  margin-left: 0 !important;
+  margin-left: 0;
 }
 
 .mpms-layout.is-fullscreen .mpms-layout__topbar {
@@ -101,7 +101,7 @@
   }
 
   .mpms-layout__right {
-    margin-left: 0 !important;
+    margin-left: 0;
   }
 
   .mpms-layout__content {

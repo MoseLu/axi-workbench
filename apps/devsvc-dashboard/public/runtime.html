@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Axi Runtime Ledger</title>
+    <style>
+      :root { color-scheme: light dark; --bg:#0f1115; --fg:#e6e6e6; --muted:#9aa0a6; --line:#262a31; --ok:#3ddc97; --fail:#ff6b6b; --recover:#4ec9ff; --deferred:#b6b6b6; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; background: var(--bg); color: var(--fg); }
+      header { padding: 18px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+      header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+      header .meta { color: var(--muted); font-size: 12px; }
+      .filters { padding: 12px 24px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; flex-wrap: wrap; }
+      .filters input, .filters select { background: #1a1d23; color: var(--fg); border: 1px solid var(--line); padding: 6px 8px; border-radius: 4px; font: inherit; }
+      .filters button { background: #2a2f37; color: var(--fg); border: 1px solid var(--line); padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+      .filters button:hover { background: #353a44; }
+      main { padding: 16px 24px; }
+      table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+      th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+      th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+      td.run { font-family: ui-monospace, SF Mono, Menlo, monospace; font-size: 12px; color: var(--muted); }
+      td.summary { max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .status-ok { color: var(--ok); }
+      .status-fail { color: var(--fail); }
+      .status-recovered { color: var(--recover); }
+      .status-deferred { color: var(--deferred); }
+      .surface { font-size: 11px; padding: 1px 6px; border-radius: 3px; background: #1a1d23; color: var(--muted); }
+      .empty { padding: 48px; text-align: center; color: var(--muted); }
+      .run-detail { margin-top: 24px; padding: 16px; background: #14171c; border: 1px solid var(--line); border-radius: 6px; }
+      .run-detail h2 { margin: 0 0 8px; font-size: 14px; }
+      pre { margin: 0; font: 12px/1.5 ui-monospace, SF Mono, Menlo, monospace; color: var(--muted); white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Axi Runtime Ledger</h1>
+      <span class="meta" id="meta">loading…</span>
+    </header>
+    <section class="filters">
+      <input id="service" placeholder="serviceId (e.g. devsvc-dashboard)" />
+      <select id="surface">
+        <option value="">all surfaces</option>
+        <option value="devsvc">devsvc</option>
+        <option value="health">health</option>
+        <option value="notify">notify</option>
+        <option value="pm2">pm2</option>
+      </select>
+      <input id="limit" type="number" min="1" max="500" value="50" style="width:80px" />
+      <button id="refresh">Refresh</button>
+    </section>
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th>ts</th>
+            <th>service</th>
+            <th>surface</th>
+            <th>action</th>
+            <th>status</th>
+            <th>duration</th>
+            <th>summary</th>
+            <th>runId</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty" hidden>no events match the current filter</div>
+      <div id="run-detail" class="run-detail" hidden></div>
+    </main>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const rows = $("rows");
+      const empty = $("empty");
+      const meta = $("meta");
+      const runDetail = $("run-detail");
+
+      function fmtDuration(ms) {
+        if (ms == null) return "";
+        if (ms < 1000) return ms + "ms";
+        return (ms / 1000).toFixed(2) + "s";
+      }
+
+      function statusClass(s) {
+        return "status-" + (s || "deferred");
+      }
+
+      async function load() {
+        const service = $("service").value.trim();
+        const surface = $("surface").value;
+        const limit = Number($("limit").value) || 50;
+        const qs = new URLSearchParams();
+        if (service) qs.set("service", service);
+        if (surface) qs.set("surface", surface);
+        qs.set("limit", String(limit));
+        const r = await fetch("/api/events?" + qs.toString());
+        const data = await r.json();
+        meta.textContent = `${data.events.length} events · ${Object.keys(data.stateIndex.services || {}).length} tracked services · lastEventAt ${data.stateIndex.lastEventAt || "-"}`;
+        rows.innerHTML = "";
+        if (!data.events.length) {
+          empty.hidden = false;
+          return;
+        }
+        empty.hidden = true;
+        for (const ev of data.events) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${ev.ts}</td>
+            <td>${ev.serviceId}</td>
+            <td><span class="surface">${ev.surface}</span></td>
+            <td>${ev.action}</td>
+            <td class="${statusClass(ev.status)}">${ev.status}</td>
+            <td>${fmtDuration(ev.durationMs)}</td>
+            <td class="summary" title="${(ev.summary || "").replace(/"/g, "&quot;")}">${ev.summary || ""}</td>
+            <td class="run"><a href="#" data-run="${ev.runId}">${ev.runId.slice(-8)}</a></td>
+          `;
+          rows.appendChild(tr);
+        }
+        rows.querySelectorAll("a[data-run]").forEach((a) => {
+          a.onclick = (e) => {
+            e.preventDefault();
+            showRun(a.dataset.run);
+          };
+        });
+      }
+
+      async function showRun(runId) {
+        const r = await fetch("/api/runs/" + encodeURIComponent(runId));
+        const data = await r.json();
+        if (!data.ok) {
+          runDetail.hidden = true;
+          return;
+        }
+        runDetail.hidden = false;
+        runDetail.innerHTML = `<h2>run ${runId}</h2><pre>${JSON.stringify(data.events, null, 2)}</pre>`;
+      }
+
+      $("refresh").onclick = load;
+      $("service").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+      load();
+      setInterval(load, 15000);
+    </script>
+  </body>
+</html>
