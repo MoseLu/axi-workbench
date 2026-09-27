@@ -10,7 +10,7 @@
 
 ## Scope
 
-- **适用对象**：所有 agent（包括 Codex、Cursor、自动化扫描器、文档巡检子代理、OMX 编排器）首次接触 `/Volumes/code/workspace/projects/axi-workbench` 时。
+- **适用对象**：所有 agent（包括 Codex、Cursor、自动化扫描器、文档巡检子代理、OMX 编排器）首次接触 `/Volumes/code/workspace/workbench/axi-workbench` 时。
 - **不适用对象**：
   - `tools/axi-app-cli/packages/*/README.md` 等子包内的安装 / 路径示例（**只引顶层** `tools/axi-app-cli/AGENTS.md` / `README.md`，避免误把子包的 Windows / macOS 路径示例与本地构建路径混淆）。
   - `references/*`、`infra/axi-workspace-governance/references/*`、`infra/axi-workspace-governance/temp/*`（其治理在 `infra/axi-workspace-governance/`，见「Cross-Project Boundary」）。
@@ -82,9 +82,8 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 - 根工作区索引：[`/Volumes/code/workspace/AGENTS.md`](/Volumes/code/workspace/AGENTS.md)、[`/Volumes/code/workspace/WORKSPACE_INDEX.md`](/Volumes/code/workspace/WORKSPACE_INDEX.md)（Axi Workbench 行）
 - 命名与品牌：[`/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md`](/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md)
 - DevSvc / PM2 服务编排：[`/Volumes/code/workspace/docs/DEV_SERVICES.md`](/Volumes/code/workspace/docs/DEV_SERVICES.md)、[`/Volumes/code/workspace/dev-services.config.json`](/Volumes/code/workspace/dev-services.config.json)
-- 治理仓库：[`/Volumes/code/workspace/infra/axi-workspace-governance/`](infra/axi-workspace-governance/)（本仓库引用，不写入）+ [`infra/axi-workspace-governance/docs/project-catalog.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md)
+- 治理仓库：[`/Volumes/code/workspace/infra/axi-workspace-governance/`](/Volumes/code/workspace/infra/axi-workspace-governance/)（本仓库引用，不写入）+ [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md)
 - 治理 PR 模板与发布流程：[`/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md`](/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md)、[`/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md)
-- 工作区级 i18n 总览与缺口审计：[`/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md)、[`/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md)
 - 工作区图谱 CLI：[`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project)（`deps axi-workbench` / `consumers axi-workbench` / `validate`）
 - 邻居项目（被本工作台控制面消费）：`/Volumes/code/workspace/projects/axi-notify/`、`/Volumes/code/workspace/projects/axi-pet/`、`/Volumes/code/workspace/projects/axi-agent/`、`/Volumes/code/workspace/projects/axi-docs/`、`/Volumes/code/workspace/projects/axi-image-preview/`、`/Volumes/code/workspace/shared/axi-ui/`、`/Volumes/code/workspace/shared/axi-registry/`、`/Volumes/code/workspace/tools/axi-app-cli/`
 
@@ -98,8 +97,8 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 |---|---|---|---|
 | 事实源 | `axi-workspace-governance` | `infra/axi-workspace-governance/` | `workspace.json`、`workspace.graph.json`、catalog、handoff、completion、audit |
 | 数据平面 | `axi-kernel` (PRD-01) | `projects/axi-kernel/` | 对象注册、关系、变更、漂移检测（`Registry` v6 schema） |
-| 数据平面 | `axi-workbench-cli` (PRD-02) | `projects/axi-workbench-cli/` | 工作区扫描、8 项 health check、DOT/JSON 关系图、§7 度量原语；CLI + DOT/JSON，**无 Web UI** |
-| 渲染宿主 | `axi-workbench` (本仓库) | `projects/axi-workbench/` | `apps/workbench` Web / Desktop (Tauri 2) / Mobile (Capacitor)；只读消费数据平面，不持久化任何事实 |
+| 数据平面 | `axi-workbench-cli` (PRD-02) | `workbench/axi-workbench-cli/` | 工作区扫描、8 项 health check、DOT/JSON 关系图、§7 度量原语；CLI + DOT/JSON，**无 Web UI** |
+| 渲染宿主 | `axi-workbench` (本仓库) | `workbench/axi-workbench/` | `apps/workbench` Web / Desktop (Tauri 2) / Mobile (Capacitor)；只读消费数据平面，不持久化任何事实 |
 
 **对本仓库的硬约束**：
 
@@ -109,7 +108,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 4. **引入新事实必须回到事实源**：节点、关系、布局坐标、镜头状态、详情面板任何字段若要成为工作区事实，必须先在 `workspace.json` / `workspace.graph.json` 增加权威字段，再由数据平面适配器暴露。
 5. **与 `axi-workbench-cli` 关系**：`axi-workbench-cli` 是本仓库的数据平面消费者对应物（CLI/DOT/JSON），不是第二个 Workbench UI；本仓库的 Web/Desktop/Mobile 形态是同一 Workbench 产品的三种交付形态。
 
-详细分层与 M1/M2/M3 触发条件见 [`docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`](../../infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md) §2.1 / §10.2 / §19 #9 / §21。
+详细分层与 M1/M2/M3 触发条件见 [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md) §2.1 / §10.2 / §19 #9 / §21。
 
 ---
 
@@ -162,7 +161,7 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 
 ## 工作区入口（保留 2026-05-30 段）
 
-- 当前项目根：`/Volumes/code/workspace/projects/axi-workbench`。
+- 当前项目根：`/Volumes/code/workspace/workbench/axi-workbench`。
 - 上级工作区规则：`/Volumes/code/workspace/AGENTS.md`。
 - 工作区索引：`/Volumes/code/workspace/WORKSPACE_INDEX.md`。
 - 工作区关系图：`/Volumes/code/workspace/workspace.graph.json`。
@@ -228,7 +227,7 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 
 ### manifest 状态说明
 
-`docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**（参见 `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 清单）。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的状态文档。
+`docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的状态文档。
 
 ## Recent Changes
 

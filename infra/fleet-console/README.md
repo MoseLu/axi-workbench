@@ -10,7 +10,7 @@
 ## 快速开始
 
 ```bash
-cd /Volumes/code/workspace/projects/axi-workbench/infra/fleet-console
+cd /Volumes/code/workspace/workbench/axi-workbench/infra/fleet-console
 python3 scripts/fleetctl.py validate
 python3 scripts/fleetctl.py render --network bootstrap
 python3 scripts/fleetctl.py doctor --network bootstrap
@@ -62,7 +62,7 @@ fleet_cockpit_tencent_2c2g 9090
 `dashboard/` 是本地资产管理台，基于 React Router + Ant Design 展示服务器注册表、服务入口、项目分组和凭证元数据。`/credentials` 会展示本地知识库导出的 `bw://` 引用和服务器绑定，不展示真实 secret 值。
 
 ```bash
-cd /Volumes/code/workspace/projects/axi-workbench/infra/fleet-console
+cd /Volumes/code/workspace/workbench/axi-workbench/infra/fleet-console
 python3 scripts/fleetctl.py render --network bootstrap
 cd dashboard
 npm install
@@ -81,7 +81,7 @@ npm run dev -- --port 4173
 如果只需要本地查看已构建看板，可以用静态服务：
 
 ```bash
-cd /Volumes/code/workspace/projects/axi-workbench/infra/fleet-console/dashboard
+cd /Volumes/code/workspace/workbench/axi-workbench/infra/fleet-console/dashboard
 npm run build
 python3 -m http.server 4173 --bind 127.0.0.1 -d dist
 ```

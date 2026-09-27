@@ -47,7 +47,7 @@ function resolveWorkspaceRoot() {
 
 const workspaceRoot = resolveWorkspaceRoot();
 // ADR-008 path migration: the Axi Workbench monorepo lives under
-// `workbench/axi-workbench`, not the legacy `projects/axi-workbench`. Older
+// `workbench/axi-workbench`, not the legacy `workbench/axi-workbench`. Older
 // git checkouts may still have the legacy layout; try both so the drift
 // check keeps working during the cut-over window.
 const legacyWorkbenchRoot = path.resolve(workspaceRoot, "projects", "axi-workbench");

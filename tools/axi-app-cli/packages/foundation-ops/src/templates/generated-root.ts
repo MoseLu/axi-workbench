@@ -289,7 +289,7 @@ ${context.projectName} is the default Axi scaffold. It starts as a feature-based
 New Axi tools should enter the workspace through DevSvc Dashboard by default. The generated web app already supports subpath hosting through \`AXI_APP_BASE\` and \`VITE_AXI_APP_BASE\`, and \`config/axi-dashboard-app.json\` is shaped for the Dashboard registry at:
 
 \`\`\`text
-/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/config/axi-apps.json
+/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/config/axi-apps.json
 \`\`\`
 
 The generated registry entry assumes the project lives at \`\${workspaceRoot}/projects/${context.packageSlug}\`. If this project is generated outside that workspace location, update only the \`cwd\` value before registering it.

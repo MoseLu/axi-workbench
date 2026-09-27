@@ -6,7 +6,7 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 ## P0
 
 - [x] REQ-DOC-001: Keep the root documentation suite complete and current.
-  - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/projects/axi-workbench`.
+  - Test: verify `README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md` exist in `/Volumes/code/workspace/workbench/axi-workbench`.
   - Test: `rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md` returns hits for every linked REQ.
 
 - [x] REQ-POSITION-001 / REQ-ARCH-001 / REQ-ACTION-001 / REQ-SURFACE-001: Create a capability, route and action-policy ownership inventory before the next user-facing implementation batch.
@@ -93,84 +93,84 @@ Tasks are grouped by inferred requirements. P0/P1 items include test cases and r
 ### P3-01: Batch Handoff Creation
 - **Status**: Completed (Unit) / In Progress (HTTP integration)
 - **Test Count**: 10 unit tests pass; 12 HTTP integration tests fail (route not implemented)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/batch-handoff.test.mjs`, `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/batch-handoff-http.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/batch-handoff.test.mjs`, `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/batch-handoff-http.test.mjs`
 - **External Gate**: HTTP route `/internal/web/v1/batch-handoffs` needs implementation in control-plane.mjs
 - **Details**: Creates multiple handoffs with a common `batchId` (format: `BATCH-{timestamp}-{8-char-hash}`) in a single operation; handles partial success/failure; action level defaults (B) and risk mapping (A=low, B=medium, C=high, D=destructive)
 
 ### P3-02: Scenario-Based SLA Configuration
 - **Status**: Completed
 - **Test Count**: 12 tests
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/sla-config.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/sla-config.test.mjs`
 - **External Gate**: None
 - **Details**: Configurable SLA durations per scenario type: approval (1h urgent), alert (15min urgent), task (24h standard), project (72h lowPriority); environment variable override via `AXI_HANDOFF_EXPIRY_MS`
 
 ### P3-03: Web-to-Mobile Handoff Lifecycle
 - **Status**: Completed (Unit) / In Progress (HTTP integration)
 - **Test Count**: 9 unit tests pass; 5 HTTP integration tests fail (route not implemented)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/web-to-mobile-handoff.test.mjs`, `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/web-to-mobile-http.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/web-to-mobile-handoff.test.mjs`, `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/web-to-mobile-http.test.mjs`
 - **External Gate**: HTTP routes for `POST /handoffs/:id` with `reject`/`complete` action need implementation in server.mjs
 - **Details**: Full state machine: created → delivered → accepted/rejected → completed/failed; includes `HandoffStatus` enum and `HandoffTransitions` maps
 
 ### P3-04: Approval Scan Handoff Integration
 - **Status**: Completed
 - **Test Count**: 19 tests
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
 - **External Gate**: None
 - **Details**: C/D level scan decisions route to Web; owner binding (403 for wrong owner); approval revalidation before lifecycle changes (409 if approval no longer pending); expiry cascade; rejection requires reason
 
 ### P3-05: Web UI - Creation Form
 - **Status**: Completed (Pending External Verification)
 - **Test Count**: 0 (UI component)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench/src/pages/admin/HandoffCreate.tsx`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/apps/workbench/src/pages/admin/HandoffCreate.tsx`
 - **External Gate**: Gateway URL, TLS, ZITADEL auth
 - **Details**: Ant Design form with direction, targetSurface, actionLevel, objectType, objectId, reason fields
 
 ### P3-06: Mobile UI - Detail View
 - **Status**: Completed (Pending External Verification)
 - **Test Count**: 0 (UI component)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench-mobile/src/pages/HandoffDetail.tsx`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/apps/workbench-mobile/src/pages/HandoffDetail.tsx`
 - **External Gate**: Real mobile device, control plane endpoint
 - **Details**: Displays handoff details; accept/reject actions with reason input for rejection
 
 ### P3-07: Mobile UI - Incoming List
 - **Status**: Completed (Pending External Verification)
 - **Test Count**: 0 (UI component)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench-mobile/src/pages/IncomingHandoffs.tsx`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/apps/workbench-mobile/src/pages/IncomingHandoffs.tsx`
 - **External Gate**: Real mobile device, control plane endpoint
 - **Details**: Lists incoming handoffs filtered by status=opened; navigates to detail on tap
 
 ### P3-08: Mobile UI - All Handoffs List
 - **Status**: Completed (Pending External Verification)
 - **Test Count**: 0 (UI component)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/apps/workbench-mobile/src/pages/HandoffPage.tsx`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/apps/workbench-mobile/src/pages/HandoffPage.tsx`
 - **External Gate**: Real mobile device, control plane endpoint
 - **Details**: Lists all handoffs for device session; shows rejection reason if present
 
 ### P3-09: API Client Hooks
 - **Status**: Completed
 - **Test Count**: 0 (hooks library)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/packages/api-client/src/hooks/handoff.ts`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/packages/api-client/src/hooks/handoff.ts`
 - **External Gate**: None
 - **Details**: Exports `useCreateHandoff`, `useHandoffs`, `useHandoff`, `useAcceptHandoff`, `useRejectHandoff` with React Query integration
 
 ### P3-10: Handoff Expiry Scheduler
 - **Status**: Completed
 - **Test Count**: 1+ (bundled in approval-scan.test.mjs)
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
 - **External Gate**: None
 - **Details**: Background scheduler auto-expires overdue handoffs; notification callback after durable audit; failure isolation
 
 ### P3-11: Handoff Audit Surface Fields
 - **Status**: Completed
 - **Test Count**: Bundled
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/approval-scan.test.mjs`
 - **External Gate**: None
 - **Details**: All audit events include `sourceSurface` and `targetSurface` fields
 
 ### P3-12: Action Level Risk Mapping
 - **Status**: Completed
 - **Test Count**: Bundled
-- **Evidence Path**: `/Volumes/code/workspace/projects/axi-workbench/services/control-plane/test/batch-handoff.test.mjs`
+- **Evidence Path**: `/Volumes/code/workspace/workbench/axi-workbench/services/control-plane/test/batch-handoff.test.mjs`
 - **External Gate**: None
 - **Details**: Action levels A/B/C/D map to risk levels: low/medium/high/destructive
 

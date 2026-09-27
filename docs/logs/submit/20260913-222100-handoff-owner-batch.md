@@ -2,7 +2,7 @@
 
 - Generated at: 2026-09-13T22:21:00+08:00
 - Generated-by: PRD-driven continuation handoff security batch
-- Repository: /Volumes/code/workspace/projects/axi-workbench
+- Repository: /Volumes/code/workspace/workbench/axi-workbench
 - Branch: dev
 - Push state: ahead of origin/dev; local batch only
 

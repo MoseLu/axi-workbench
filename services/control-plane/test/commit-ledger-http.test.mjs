@@ -84,8 +84,8 @@ function fixture() {
       recordId: "a".repeat(64),
       repo: {
         projectId: "axi-workbench",
-        canonicalPath: "/Volumes/code/workspace/projects/axi-workbench",
-        gitRoot: "/Volumes/code/workspace/projects/axi-workbench",
+        canonicalPath: "/Volumes/code/workspace/workbench/axi-workbench",
+        gitRoot: "/Volumes/code/workspace/workbench/axi-workbench",
         defaultBranch: "dev",
         partition: "projects",
       },
@@ -101,7 +101,7 @@ function fixture() {
       actor: { name: "tester", email: "tester@example.com" },
       provenance: {
         source: "git",
-        sourcePath: "/Volumes/code/workspace/projects/axi-workbench",
+        sourcePath: "/Volumes/code/workspace/workbench/axi-workbench",
         observedAt: "2026-01-01T00:00:00.000Z",
       },
       ingestion: {
@@ -228,11 +228,11 @@ test("GET /internal/web/v1/commit-ledger/sources returns 200", async () => {
   assert.ok(Array.isArray(body.sources));
 });
 
-test("GET /internal/web/v1/commit-ledger/projects/axi-workbench returns 200", async () => {
+test("GET /internal/web/v1/commit-ledger/workbench/axi-workbench returns 200", async () => {
   const { server } = fixture();
   const response = await invokeServer(server, {
     method: "GET",
-    url: "/internal/web/v1/commit-ledger/projects/axi-workbench",
+    url: "/internal/web/v1/commit-ledger/workbench/axi-workbench",
     headers: authHeaders(),
   });
   assert.equal(response.status, 200);

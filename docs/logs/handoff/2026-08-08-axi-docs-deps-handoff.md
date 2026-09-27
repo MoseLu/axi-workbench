@@ -1,13 +1,13 @@
 # Handoff — `apps/app-search-system/` dependency advisories to axi-docs owner
 
 - Date: 2026-08-08
-- From: `projects/axi-workbench` workbench maintainer
+- From: `workbench/axi-workbench` workbench maintainer
 - To: `projects/axi-docs` owner (and to whoever owns the SOP / Docs product surface)
 - Status: actionable — see "How to verify" below
 
 ## Why
 
-While running dependabot triage on `projects/axi-workbench`, 39 open
+While running dependabot triage on `workbench/axi-workbench`, 39 open
 alerts surfaced under `apps/app-search-system/frontend/{control,display}/`.
 Reading `apps/app-search-system/AGENTS.md` and
 `apps/app-search-system/CLAUDE.md` it became clear that this subtree is a

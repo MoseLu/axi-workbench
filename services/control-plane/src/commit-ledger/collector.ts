@@ -160,8 +160,8 @@ function buildPathMap(): Record<string, string> {
   if (!root) return {};
   const r = (suffix: string) => `${root.replace(/\/$/, '')}/${suffix}`;
   return {
-    'axi-workbench': r('projects/axi-workbench'),
-    'axi-docs': r('projects/axi-workbench/apps/axi-docs'),
+    'axi-workbench': r('workbench/axi-workbench'),
+    'axi-docs': r('workbench/axi-workbench/apps/axi-docs'),
     'axi-image-preview': r('projects/axi-image-preview'),
     'axi-pet': r('projects/axi-pet'),
     'axi-rules': r('projects/axi-rules'),

@@ -20,7 +20,7 @@
 
 ## 1. axi-workbench
 
-**路径**: `/Volumes/code/workspace/projects/axi-workbench`
+**路径**: `/Volumes/code/workspace/workbench/axi-workbench`
 **分支**: `dev`
 **远程**: `origin/dev`
 **状态**: `[ahead 2]`

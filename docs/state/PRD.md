@@ -46,7 +46,7 @@ Axi Workbench 由以下独立根项目整合而成：
 
 ```
 /Volumes/code/workspace/
-├── projects/axi-workbench/     ★ 本项目：工作台控制面与 Dashboard 入口
+├── workbench/axi-workbench/     ★ 本项目：工作台控制面与 Dashboard 入口
 ├── projects/axi-notify/        被本项目消费：通知服务
 ├── projects/axi-pet/           被本项目消费：宠物/设备管理
 ├── projects/axi-agent/ 被本项目消费：Agent 执行引擎

@@ -110,7 +110,7 @@ This scaffold is generated as a Dashboard-hosted Axi tool first.
 Register this app by adding the generated \`config/axi-dashboard-app.json\` object to the Dashboard app registry:
 
 \`\`\`text
-/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/config/axi-apps.json
+/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/config/axi-apps.json
 \`\`\`
 
 The generated \`cwd\` assumes the project lives at:

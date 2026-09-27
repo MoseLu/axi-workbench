@@ -1,6 +1,6 @@
 # Axi Verification Inbox
 
-本地 Outlook/IMAP/OTP 验证码读取工具，工作目录为 `/Volumes/code/workspace/projects/axi-workbench/apps/verification-inbox`。
+本地 Outlook/IMAP/OTP 验证码读取工具，工作目录为 `/Volumes/code/workspace/workbench/axi-workbench/apps/verification-inbox`。
 
 ## 当前架构
 

@@ -3,7 +3,7 @@
 ## Scope
 
 This guide governs the nested Axi Coder application at
-`/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder`. The parent
+`/Volumes/code/workspace/workbench/axi-workbench/apps/axi-coder`. The parent
 rules in `../../AGENTS.md` and `../AGENTS.md` still apply.
 
 Axi Coder is the full development-workbench surface: Tauri 2 desktop shell,
