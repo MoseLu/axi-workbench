@@ -5,7 +5,7 @@
 > 一处可追溯的出口。每条记录应可独立阅读，并链接到对应的代码、测试、PR
 > 或 commit。
 >
-> **本文件是 `ERROR.md` 的中文镜像；权威源为英文 `ERROR.md`**。
+> **本文件是根级错误记录的中文镜像；权威源为英文版。**
 
 ---
 
@@ -24,9 +24,9 @@
 
 | 等级 | 含义 | 典型表现 | 处置 |
 |------|------|----------|------|
-| `P0 — 必修` | 已造成生产功能缺失、数据丢失、安全风险，或阻塞关键工作流 | 工具读不到日志、build 失败、安全漏洞、配置漂移 | 当个工作会话内修复，必须新增守卫测试 |
-| `P1 — 强烈建议` | 已造成能力退化、可观测性下降、跨项目体验不一致 | 日志不可读、文档过时、命名混乱但不阻塞 | 排进下一轮 sprint；可不带守卫但需写明处理计划 |
-| `P2 — 经验性观察` | 暂未触发实际故障，但识别出的潜在风险 | 复杂度上升、约定未文档化、缺乏回归覆盖 | 登记作为"将来何时会咬人"的提醒 |
+| `P0 — Must-fix` | 已造成生产功能缺失、数据丢失、安全风险，或阻塞关键工作流 | 工具读不到日志、build 失败、安全漏洞、配置漂移 | 当个工作会话内修复，必须新增守卫测试 |
+| `P1 — Strongly recommended` | 已造成能力退化、可观测性下降、跨项目体验不一致 | 日志不可读、文档过时、命名混乱但不阻塞 | 排进下一轮 sprint；可不带守卫但需写明处理计划 |
+| `P2 — Empirical observation` | 暂未触发实际故障，但识别出的潜在风险 | 复杂度上升、约定未文档化、缺乏回归覆盖 | 登记作为"将来何时会咬人"的提醒 |
 
 ### 每条记录格式
 
@@ -45,7 +45,7 @@
 
 ### 编号
 
-`<YYYY-MM-DD>-<两位序号>`（同一天内多条目递增）。同一条目升级等级（如
+`<YYYY-MM-DD>-<two-digit sequence>`（同一天内多条目递增）。同一条目升级等级（如
 P2 升级到 P1）保留原编号，在末尾加 `[upgraded from P2 on YYYY-MM-DD]`
 标记，**不**新开一条。
 
@@ -74,7 +74,7 @@ P2 升级到 P1）保留原编号，在末尾加 `[upgraded from P2 on YYYY-MM-D
 
 - 跑 `bash scripts/run-mac-local-app.sh preview`（或 `dev`）时，Mac 桌面
   应用的 stdout / stderr 确实写到了 `logs/runtime/mac-app/preview.*.log`；
-- 但通过 `packages/mac-bridge-mcp/server.py` 提供的 MCP `get_logs` 工具
+- 但通过 `packages/mac-bridge-mcp/server.py` 提供的 `get_logs` 工具
   读取时，永远返回空内容；
 - 进一步在 `/Volumes/code/projects/ielts-vocab/logs/runtime/mac-app/` 下
   发现了**项目外部**的幽灵副本（带 5 月底和 6 月初的 preview 日志）。
@@ -103,13 +103,13 @@ P2 升级到 P1）保留原编号，在末尾加 `[upgraded from P2 on YYYY-MM-D
    同步把 `scripts/run-mac-local-app.sh:89` 的 `.app` bundle 默认输出目
    录也改成单数 `mac-app`，让脚本内目录名彻底自洽；
 2. **磁盘**：把 `logs/runtime/microservices-mac/`（生产路径，42 个
-   `*.err.log` / `*.out.log` / `*.pid`）按对齐方案 `git mv` 到
+   `*.err.log` / `*.out.log` / `*.pid`）按对齐方案迁到
    `logs/runtime/app-services-mac/`，并相应修改
    `start-microservices.sh:39, 85` 与 `server.py:32`；
 3. **清理**：删除孤儿 `logs/runtime/mac-apps/雅思词汇{开发,预览}版.app/`
-   （旧的复数 `.app` bundle，1.8M × 2，ps 已确认无相关进程在跑）；
+   （旧的复数 `.app` bundle，1.8M × 2，`ps` 已确认无相关进程在跑）；
 4. **守卫**：在 `backend/tests/test_mac_local_app_launcher.py` 新增两条
-   测试，锁住 read/write 一致性以及 "app-services-mac" 是唯一被引用的
+   测试，锁住 read/write 一致性以及 "`app-services-mac`" 是唯一被引用的
    应用服务目录名：
    - `test_mac_local_app_launcher_keeps_vite_inside_generated_app_bundle`
      解析 `MAC_APP_LOG_DIR = REPO_ROOT / …` 表达式，断言拼接后路径以
@@ -168,7 +168,7 @@ P2 升级到 P1）保留原编号，在末尾加 `[upgraded from P2 on YYYY-MM-D
 >
 > 候选方向：
 > - 启动脚本（`start-*.sh`）的 cwd 依赖性未做整体审计，部分脚本仍在
->   用 `${root}/...` 这种依赖调用方 cd 到项目根的相对路径写法；
+>   用 `${root}/...` 这种依赖调用方 `cd` 到项目根的相对路径写法；
 > - 全 workspace 缺乏统一的"目录命名约定"文档（mac-app vs mac-apps、
 >   services-mac vs app-services-mac 这类命名差异是临时协调出来的，
 >   没有权威源）。

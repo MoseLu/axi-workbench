@@ -15,7 +15,7 @@ Provider 路由与代理是 Axi Coder 的一部分，因为开发工作台需要
 ## 范围
 
 - Tauri 2 桌面壳，使用 React、TypeScript、Rust、SQLite 与系统 Keychain 密钥存储。
-- Provider 接入，提供一次性 base URL / API key 输入、自动 provider 类型推断、OpenAI 兼容 API 的模型发现，以及 DeepSeek 优先的默认值。
+- Provider 接入，提供一次性 base URL / API key 输入、自动 provider 类型推断、OpenAI 兼容接口的模型发现，以及 DeepSeek 优先的默认值。
 - `127.0.0.1:15721` 上的本地代理基础实现，支持 Claude Messages、OpenAI Chat/Responses 以及 Gemini 原生请求结构。
 - 对 Claude、Codex 与 Gemini 配置文件做受管的 CLI 接管与恢复。
 - 供 Mac 桌面与移动伴侣复用的开发工作台契约。

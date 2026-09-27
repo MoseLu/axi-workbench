@@ -1,69 +1,70 @@
-# Axi Workspace Governance（中文）
+---
+id: reference-axi-workspace-governance-index
+title: Axi 工作区治理索引
+type: reference
+status: evergreen
+tags: [workspace, governance, polyrepo]
+created: 2026-09-27
+modified: 2026-09-27
+agent-readable: true
+---
 
-`axi-workspace-governance` 是 `/Volumes/code/workspace` 工作区的根治理仓库。
-它只承担"元数据 + 索引 + 审计"职责，不直接运行业务代码，也不暴露 API。
+# Axi Workspace Governance 索引（中文镜像）
 
-## 定位
+> 本文件为治理索引的中文镜像，结构、路径与 token 与源文件保持一致。
 
-- 工作区模式：`Polyrepo + 注册表 + 治理仓库`，**不**建立工作区级 mega monorepo。
-- 权威清单：`workspace.json`（顶层 `version` / `schemaVersion` 共同表达快照与 schema 版本）。
-- 文档枢纽：`docs/` 目录；单向镜像到 `projects/axi-docs/docs/axi-workspace-governance`。
-- 私有 Verdaccio 注册表：`http://localhost:4873`，发布与消费 `@axi/*` 共享包。
+最后生成：2026-09-27
 
-## 目录结构
+## 摘要
 
-```text
-axi-workspace-governance/
-├── .workspace/                 # 本地元配置与生成的 registry（不入库）
-├── agent/                      # Agent 支撑工具
-├── infra/                      # 基础设施仓库引用
-├── projects/                   # 活跃业务项目引用
-├── references/                 # 参考与归档副本
-├── shared/                     # 跨项目共享包引用
-├── tools/                      # 独立工具项目引用
-├── scripts/                    # 工作区治理脚本
-├── docs/                       # 权威治理文档（含 ADR / 审计 / 索引）
-├── contracts/                  # 跨项目契约定义
-├── workspace.json              # 工作区权威声明
-├── CHANGELOG.md                # 治理变更记录
-└── README.md
-```
+- 工作区容器：`/Volumes/code/workspace`（非 Git 仓库 / 非代码提交单元）
+- 治理仓库根目录：`/Volumes/code/workspace/foundation/workspace-governance`
+- 治理仓库远端：`https://github.com/axiomaticworld/axi-workspace-governance.git`
+- 已登记条目：28
+- canonical 条目：25
+- active / active-* 条目：24
+- 非项目孵化区：`/Volumes/code/workspace/incubator`（不计入登记条目）
 
-## 常用命令
+## Section 统计
+
+- `infra`: 2
+- `projects`: 11
+- `products`: 3
+- `shared`: 4
+- `tools`: 2
+- `agent`: 1
+- `references`: 0
+
+## 索引文档
+
+- [项目清单](project-catalog.md)
+- [项目完成情况](project-completion.md)
+- [项目接手状态](project-handoff.md)
+- [仓库拓扑](repo-topology.md)
+- [负责人矩阵](ownership-matrix.md)
+- [集成地图](integration-map.md)
+- [治理 ADR](adr/README.md)
+- [ADR-003: Workspace root is a non-git container](adr/ADR-003-workspace-root-is-non-git-container.md)
+
+## 工作区根目录契约
+
+- `/Volumes/code/workspace` 只承载项目目录、参考目录、生成快照和 launcher shim。
+- 不在 `/Volumes/code/workspace` 执行 `git init`，也不从根目录 commit / push / clean / reset。
+- 代码修改进入拥有该代码的项目仓库；治理修改进入 `foundation/workspace-governance`。
+- 根层 `WORKSPACE_INDEX.md`、`AGENTS.md`、`workspace.graph.json` 和 `.workspace/*.json` 是 agent 接手与路由表面，不是业务代码。
+- `/Volumes/code/workspace/incubator` 承载未完成 idea / PRD / prototype；它不是项目、仓库、provider 或发布单元。
+
+## 分发链路
+
+- 权威文档目录：`/Volumes/code/workspace/docs`
+- `axi-workspace-governance-docs`: `workbench/axi-workbench/apps/axi-docs/docs/axi-workspace-governance`
+- Axi Docs Source：`axi-workspace-governance` -> `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/axi-workspace-governance`
+
+## 使用命令
 
 ```bash
-pnpm workspace:docs:sync      # 生成多仓索引文档并镜像到 Axi Docs
-pnpm workspace:registry:sync  # 根据 workspace.json 生成 .workspace/registry.json
-pnpm workspace:audit          # 检查登记漂移、路径缺失、Git 基线、共享策略
-pnpm workflow:audit           # 工作流基线审计
-pnpm resource:verify          # 验证资源与真实 provider 的可达性
-pnpm completion:test          # 跑治理自测（Node test runner）
+pnpm workspace:docs:sync
+pnpm workspace:incubator:check
+pnpm workspace:registry:sync
+pnpm workspace:audit
 ```
-
-## 当前治理原则
-
-- `axi-workspace-governance` 是轻量治理仓库；业务代码不在此仓库内运行。
-- 远端使用独立仓库 `axiomaticworld/axi-workspace-governance`，不复用 legacy `enterprise-workspace` 名称。
-- 仓库命名遵循 `ADR-002`：现有业务产品保留语义名，新增治理/基础设施/共享/Agent/工具类仓库使用 `axi-*` 前缀。
-- `.workspace/registry.json` 由脚本生成，**禁止**手工编辑。
-- 共享包统一通过 Verdaccio 发布，**不**推荐 Git Submodule 作为正式集成方式。
-
-## 已登记目录
-
-详见 `docs/project-catalog.md`。登记包括 `infra/axi-registry`、`projects/axi-workbench`、`projects/axi-agent-platform`、`projects/axi-notify`、`projects/axi-docs`、`products/ielts-vocab`、`shared/axi-ui`、`tools/axi-proxy-companion` 等。
-
-## 文档入口
-
-- 完整产品需求：`PRD.md`
-- 技术设计：`TDD.md`
-- 任务与里程碑：`TODO.md` / `MILESTONE.md`
-- 文档索引：`INDEX.md`
-- 变更记录：`CHANGELOG.md`
-- Agent 协作规则：`AGENTS.md`
-- 命名策略 ADR：`docs/adr/ADR-002-progressive-repository-naming-policy.md`
-
-## 安全与发布
-
-- 安全策略：`SECURITY.md` / `SECURITY.zh-CN.md`
-- 发布流程：`docs/RELEASING.md`
-- 仓库所有者分配：`CODEOWNERS`

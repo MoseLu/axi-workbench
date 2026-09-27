@@ -20,18 +20,34 @@ AxiomaticWorld（公理世界）是父品牌，域名为 `axiomaticworld.com`。
 - **Axi Dashboard Apps**：可以在 DevSvc Dashboard 中打开的应用。
 - **Axi Resources**：服务、合同、工具、shared runtime 和本地基础设施的完整能力索引。
 
+## EPAP 迁移状态（Legacy）
+
+本仓库曾使用 EPAP（Enterprise Project Automation Platform）命名体系，已完成主要迁移：
+
+| 遗留入口 | 状态 | 迁移目标 |
+|---------|------|---------|
+| `packages/epap-schemas-compat/` | **Legacy** | `@axi/workstation-contracts` |
+| `package.json --filter=@epap/*` | **Legacy** | `@axi/workstation-*` |
+| `tsconfig @epap/*` 路径别名 | **Legacy** | `@axi/*` |
+| 远端仓库 EPAP 名称 | **Transitional** | Axi 命名空间 |
+
+> **注意**: 迁移验证完成前保留兼容入口是为了确保下游消费者（如其他 Axi Dashboard Apps）平滑过渡。新的公共服务/合同包应直接使用 `@axi/workstation-control-plane`、`@axi/workstation-communication-gateway` 与 `@axi/workstation-contracts`。
+
 ## 生产后端演进（2026-08）
 
-Web 管理端和移动端是两个独立部署的应用，各自拥有 UI、路由与交互；共享的只有 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。
+用户应用是两个独立部署的客户端：**Web 是完整的后台管理控制中心，移动端是面向待办、告警和受控单对象执行的角色化辅助管理端**。再高专业度或物理操作保留在 DevSvc/Fleet 等专用工具中。两端拥有各自的 UI、路由和交互；共享的仅是 Axi Identity OIDC、API 合同、语言偏好和设计令牌。开发环境使用相对 `/api`，生产构建各自注入同一 HTTPS 网关地址。详细的产品架构、动作分级和公开案例参照见 [`docs/state/PRD.md`](docs/state/PRD.md)。
 
-- `api-gateway`（Go + Gin）是唯一业务 API 入口，负责 ZITADEL JWKS、HttpOnly 会话、Redis 限流、追踪关联和无请求体审计日志。
-- `identity-adapter`（Go + Gin）负责邮箱验证、扫码登录事务和 EPS 身份映射；二维码事务存 Redis，长期验证/映射数据存 PostgreSQL。
-- `platform-core`（Go + Gin）按模块实现租户、成员/RBAC、偏好、字典、项目、任务、Outbox 与 PostgreSQL RLS。
-- `auth-service` 与 Spring/H2 `core-service` 仅是迁移兼容来源，不再是生产身份或业务数据 owner。
+- `api-gateway`（Go + Gin）是唯一业务 API 入口，使用 ZITADEL JWKS、HttpOnly 会话、Redis 限流、追踪关联和无请求体审计日志。
+- `identity-adapter`（Go + Gin）承接邮件验证、扫码登录事务和 EPS 身份映射；短期二维码事务在 Redis，长期验证/映射数据在 PostgreSQL。
+- `platform-core`（Go + Gin）是模块化租户核心，包含成员/RBAC、偏好、字典、项目、任务、Outbox 与 PostgreSQL RLS。
+- `workflow-engine`、`notification-service`、`file-service` 已接入同一 Gateway/Helm 内部拓扑；workflow 与 notification 已落 PostgreSQL 持久化和 migration Job，notification 还具备可恢复 delivery worker 与 SMTP，file 已支持生产 S3/MinIO + PostgreSQL 元数据及短时预签名 URL，分别保留 Python/Go/Python 专职边界，workflow 异步编排、Kafka 事件消费与文件处理链仍在迁移。
+- `auth-service` 和 Spring/H2 `core-service` 只保留为迁移兼容来源，不是生产身份或业务数据 owner。
 
-部署见 [`infra/helm/README.md`](infra/helm/README.md)，架构决策见 [`docs/adr/0001-zitadel-gin-platform-core.md`](docs/adr/0001-zitadel-gin-platform-core.md)。
+部署说明位于 [`infra/helm/README.md`](infra/helm/README.md)，架构决策位于 [`docs/adr/0001-zitadel-gin-platform-core.md`](docs/adr/0001-zitadel-gin-platform-core.md)。
 
 ## 目录结构
+
+源码目录同时包含用户端、Host、Hosted 子应用、垂直工具和多种运行时；不要把 `apps/` 下的目录数量当成门户数量。当前角色、根 pnpm membership、主入口和后续整理边界以 [`docs/architecture/source-catalog.md`](docs/architecture/source-catalog.md) 为准。
 
 ```text
 axi-workbench/
@@ -71,7 +87,7 @@ axi-workbench/
 ├── infra/
 │   └── fleet-console/
 ├── tools/
-│   └── axi-app-cli/
+│   └── axi-app-cli/             # 独立嵌套 monorepo 的脚手架 CLI
 ├── docker-compose.yml
 ├── pnpm-workspace.yaml
 └── turbo.json
@@ -88,11 +104,12 @@ axi-workbench/
 
 ```bash
 pnpm install
-pnpm run dev
-# Web 管理端（5173）
+# ★ Web 管理端
 pnpm run dev:workbench
-# 移动端应用（5174）
+# ★ 移动端应用
 pnpm run dev:mobile
+# 本地运维 Host（可选）
+pnpm run dev:dashboard
 pnpm run build
 pnpm run test
 pnpm run lint
@@ -100,7 +117,15 @@ pnpm run lint
 make docker-up
 make migrate-identity
 make migrate-platform
+# 完整本地后端（基础设施、五类迁移、Control Plane、Identity、Platform、Workflow、Notification、File、Gateway）
+make dev-backend
+# 容器化生产形态 API 平面（宿主机网关 18088；Control Plane 仍由宿主机进程提供）
+make docker-backend
+make verify-docker-backend
+make docker-backend-down
 ```
+
+打开：Web `http://127.0.0.1:5173` · 移动端 `http://127.0.0.1:5174`。
 
 ## 治理说明
 
