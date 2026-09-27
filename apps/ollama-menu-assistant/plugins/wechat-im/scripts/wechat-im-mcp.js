@@ -32,6 +32,17 @@ const DEFAULT_SQLITE_BIN = "sqlite3";
 const DEFAULT_CODEX_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_SESSION_LIST = 12;
 
+// Governance gate constants (PR-6.5A D1 — wechat-im MCP 越界修复).
+// IM adapter (L1) MUST NOT silently drive an external L6 capability (Codex CLI).
+// Owners must opt in via env var; dev 默认放行（保留原行为），prod 必须显式设置。
+const AGENT_GATE_ENV = "AXI_WECHAT_IM_AGENT_GATE";
+const AGENT_GATE_VALUE = "1";
+const AGENT_AUDIT_LOG_ENV = "AXI_WECHAT_IM_AUDIT_LOG";
+const AGENT_AUDIT_LOG_DEFAULT = path.join(".cache", "wechat-im-audit.log");
+// approval_policy 默认值：保持原行为（不注入 --approval_policy），由调用方决定。
+// 若未来需要默认值，新增 buildCodexResumeArgs 顶部常量即可。
+const DEFAULT_APPROVAL_POLICY = null;
+
 const credentialPath = process.env.WECHAT_IM_CREDENTIALS || DEFAULT_CREDENTIAL_PATH;
 const statePath = process.env.WECHAT_IM_STATE || DEFAULT_STATE_PATH;
 const codexDbPath = process.env.WECHAT_IM_CODEX_DB || DEFAULT_CODEX_DB_PATH;
@@ -1030,6 +1041,18 @@ async function getCodexVersion() {
 }
 
 async function runCodexResume(thread, prompt, timeoutMilliseconds) {
+  // PR-6.5A D1 — 治理门禁：spawn codex 必须经过 owner 显式授权。
+  assertAgentGate(thread);
+  const auditStartedAt = new Date().toISOString();
+  appendAgentAudit({
+    action: "start",
+    threadID: thread.id,
+    promptLength: prompt.length,
+    timeoutMs: timeoutMilliseconds,
+    pid: process.pid,
+    startedAt: auditStartedAt,
+  });
+
   const outputPath = path.join(
     os.tmpdir(),
     `wechat-im-codex-${Date.now()}-${Math.random().toString(16).slice(2)}.txt`
@@ -1057,17 +1080,93 @@ async function runCodexResume(thread, prompt, timeoutMilliseconds) {
 
     const refreshedThread = (await loadCodexSession(thread.id, thread.codexHome)) || thread;
     const snapshot = readRolloutSnapshot(refreshedThread.rolloutPath);
+    appendAgentAudit({
+      action: "success",
+      threadID: thread.id,
+      finalAnswerCount: snapshot.finalAnswers.length,
+      startedAt: auditStartedAt,
+      finishedAt: new Date().toISOString(),
+    });
     return {
       threadID: thread.id,
       reply,
       finalAnswerCount: snapshot.finalAnswers.length,
     };
+  } catch (error) {
+    appendAgentAudit({
+      action: "error",
+      threadID: thread.id,
+      errorName: error && error.name,
+      errorMessage: error && error.message,
+      startedAt: auditStartedAt,
+      finishedAt: new Date().toISOString(),
+    });
+    throw error;
   } finally {
     try {
       fs.unlinkSync(outputPath);
     } catch {
       // Ignore cleanup failure.
     }
+  }
+}
+
+// PR-6.5A D1 — 治理门禁（governance gate）。
+// 行为契约：
+//   - dev（NODE_ENV !== 'production'）且未设置 AGENT_GATE_ENV → 默认放行，写审计；
+//   - prod（NODE_ENV === 'production'）且未设置 AGENT_GATE_ENV=1 → 抛错，阻断调用；
+//   - 显式 AGENT_GATE_ENV=1（任意环境）→ 放行，写审计；
+//   - 显式 AGENT_GATE_ENV=其他值 → 抛错阻断。
+// 该函数保留原 spawn codex 行为，但受治理约束；不破坏既有 IM 插件功能。
+function assertAgentGate(thread) {
+  const raw = process.env[AGENT_GATE_ENV];
+  const isProd = process.env.NODE_ENV === "production";
+  let decision = "blocked";
+
+  if (raw === AGENT_GATE_VALUE) {
+    decision = "allow-explicit";
+  } else if (raw === undefined || raw === "") {
+    if (!isProd) {
+      decision = "allow-dev-default";
+    }
+  }
+
+  if (decision.startsWith("allow")) {
+    return;
+  }
+
+  const message =
+    `[wechat-im MCP] Codex resume blocked by governance gate (${AGENT_GATE_ENV}). ` +
+    `threadID=${thread && thread.id ? thread.id : "unknown"} ` +
+    `nodeEnv=${isProd ? "production" : "non-production"} ` +
+    `gateValue=${raw === undefined ? "<unset>" : raw}. ` +
+    `Set ${AGENT_GATE_ENV}=1 in your environment (docker-compose / PM2 env file) to opt in.`;
+  const error = new Error(message);
+  error.code = "AXI_WECHAT_IM_AGENT_GATE_BLOCKED";
+  throw error;
+}
+
+// PR-6.5A D1 — 审计日志。每条记录为一行 JSON；路径由 AGENT_AUDIT_LOG_ENV 决定，
+// 默认写到 .cache/wechat-im-audit.log（相对 cwd）。失败不阻塞主流程，但记录到 stderr。
+function appendAgentAudit(entry) {
+  try {
+    const targetPath = process.env[AGENT_AUDIT_LOG_ENV] || AGENT_AUDIT_LOG_DEFAULT;
+    const targetDir = path.dirname(targetPath);
+    fs.mkdirSync(targetDir, { recursive: true });
+    const payload = Object.assign(
+      {
+        ts: new Date().toISOString(),
+        host: os.hostname(),
+        nodeEnv: process.env.NODE_ENV || "<unset>",
+        gateEnv: process.env[AGENT_GATE_ENV] || "<unset>",
+      },
+      entry
+    );
+    fs.appendFileSync(targetPath, JSON.stringify(payload) + "\n", "utf8");
+  } catch (error) {
+    process.stderr.write(
+      `[wechat-im MCP] failed to write audit log entry: ${error && error.message}\n`
+    );
   }
 }
 
@@ -1079,6 +1178,12 @@ function buildCodexResumeArgs(thread, outputPath, prompt) {
     "-o",
     outputPath,
   ];
+  // PR-6.5A D1 — approval_policy 默认值显式保留为 null（不注入 --approval_policy=never），
+  // 改由调用方在 docker-compose / PM2 env 文件中显式设置 AGENT_APPROVAL_POLICY。
+  // 若未来需要恢复默认值，可在此处读 `process.env.WECHAT_IM_CODEX_APPROVAL_POLICY ?? DEFAULT_APPROVAL_POLICY` 并 push。
+  if (DEFAULT_APPROVAL_POLICY) {
+    args.push(`--approval_policy=${DEFAULT_APPROVAL_POLICY}`);
+  }
   const cwd = stringValue(thread.cwd);
   if (cwd) {
     args.push("-C", cwd);
