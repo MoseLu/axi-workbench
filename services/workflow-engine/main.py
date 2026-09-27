@@ -2,16 +2,20 @@
 
 import asyncio
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-# Adopt the workspace observability SDK as the root logger so all
-# downstream `logging.getLogger(__name__)` calls inherit the JSON shape,
-# trace_id / request_id injection, and sensitive-field redaction policy.
-_OBSERVABILITY_PYTHON = Path("/Volumes/code/workspace/foundation/axi-observability/python")
-if _OBSERVABILITY_PYTHON.is_dir() and str(_OBSERVABILITY_PYTHON) not in sys.path:
-    sys.path.insert(0, str(_OBSERVABILITY_PYTHON))
+# PR-6 D4: observability 包路径由环境变量配置，缺省回退到 stdlib logging。
+# 默认路径仅在本地开发（foundation/ sibling 存在）时启用。
+_OBSERVABILITY_PYTHON = os.environ.get(
+    "AXI_OBSERVABILITY_PYTHON",
+    "/Volumes/code/workspace/foundation/axi-observability/python",
+)
+_observability_path = Path(_OBSERVABILITY_PYTHON)
+if _observability_path.is_dir() and str(_observability_path) not in sys.path:
+    sys.path.insert(0, str(_observability_path))
 
 from fastapi import FastAPI, HTTPException, status
 
@@ -26,12 +30,13 @@ from routers.events import router as events_router
 from services.dispatch_worker import WorkflowDispatchWorker
 from services.repository import MemoryWorkflowRepository, PostgresWorkflowRepository
 
-# Configure logging via the workspace SDK — basicConfig is replaced so
-# trace_id / request_id get attached automatically to every record.
+# Configure logging via the workspace SDK when available — basicConfig is
+# replaced so trace_id / request_id get attached automatically to every record.
+# Falls back to stdlib logging when observability SDK is not present.
 logger = logging.getLogger(__name__)
 _axilog_setup = None
 try:
-    from axi_observability.logging import setup as _axilog_setup
+    from axi_observability.logging import setup as _axilog_setup  # type: ignore
     _axilog_setup(service="axi-workflow-engine")
 except Exception:
     # Keep the conventional stdlib root logger so installs without the

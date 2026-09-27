@@ -8,7 +8,24 @@ import { createPairingService } from "./pairing.mjs";
 import { createIdempotencyService } from "./idempotency.mjs";
 import { createPersonalOsService } from "./personal-os.mjs";
 
-const DEFAULT_WORKSPACE_ROOT = "/Volumes/code/workspace";
+// PR-6 Q1: 移除硬编码 /Volumes/code/workspace 默认值。
+// 默认从 AXI_WORKSPACE_ROOT 环境变量读取，缺省时拒绝启动（避免在 CI
+// 或跨机部署时误用 macOS 开发机的绝对路径）。
+const DEFAULT_WORKSPACE_ROOT = (() => {
+  const fromEnv = process.env.AXI_WORKSPACE_ROOT;
+  if (fromEnv) return fromEnv;
+  // 仅在显式声明 AXI_WORKSPACE_DEV=1 时回退到原开发默认值，
+  // 用于本地 macOS 工作台开发环境。
+  if (process.env.AXI_WORKSPACE_DEV === "1") {
+    return "/Volumes/code/workspace";
+  }
+  throw new Error(
+    "AXI_WORKSPACE_ROOT is required for control-plane to start. " +
+    "Set it to the workspace root (e.g. /Volumes/code/workspace for local dev " +
+    "or the deployment path for CI). For backward compat with local macOS " +
+    "workstation dev only, set AXI_WORKSPACE_DEV=1.",
+  );
+})();
 const WORKSTATION_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const DEFAULT_MEMORY_DATABASE_URL = "postgres://cc_connect@127.0.0.1:5432/cc_connect_memory?sslmode=disable";
 const DEFAULT_AXI_AGENT_PLATFORM_URL = "http://127.0.0.1:8000";

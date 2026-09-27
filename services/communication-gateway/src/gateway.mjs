@@ -10,7 +10,16 @@ const PAIR_TTL_MS = 10 * 60 * 1000;
 export function createCommunicationGateway(options = {}) {
   const cacheDir = resolve(options.cacheDir || process.env.AXI_WORKSTATION_COMMUNICATION_CACHE_DIR || process.env.EPAP_COMMUNICATION_CACHE_DIR || join(process.cwd(), DEFAULT_CACHE_DIR));
   const controlPlaneUrl = options.controlPlaneUrl || process.env.AXI_WORKSTATION_CONTROL_PLANE_URL || process.env.EPAP_CONTROL_PLANE_URL || DEFAULT_CONTROL_PLANE_URL;
-  const controlPlaneInternalToken = options.controlPlaneInternalToken || process.env.AXI_GATEWAY_CONTROL_PLANE_TOKEN || "axi-development-internal-token";
+  const controlPlaneInternalToken = options.controlPlaneInternalToken || process.env.AXI_GATEWAY_CONTROL_PLANE_TOKEN;
+  // PR-6 Q4: 启动时强制要求 AXI_GATEWAY_CONTROL_PLANE_TOKEN 已设置；
+  // 缺省即拒绝（删除之前的硬编码 "axi-development-internal-token" fallback）。
+  if (!controlPlaneInternalToken) {
+    throw new Error(
+      "AXI_GATEWAY_CONTROL_PLANE_TOKEN is required for communication-gateway to " +
+      "authenticate with control-plane. Set it in the environment or pass " +
+      "options.controlPlaneInternalToken explicitly.",
+    );
+  }
   const communicationSubject = (message) => String(message?.envelope?.senderId || "service:communication-gateway").trim();
   const controlPlaneClient = options.controlPlaneClient || ((message) => postJson(`${controlPlaneUrl}/internal/communication/v1/jobs`, message, {
     "X-Axi-Internal-Token": controlPlaneInternalToken,
