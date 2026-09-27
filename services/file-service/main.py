@@ -1,12 +1,30 @@
 """File Service API - Entry Point."""
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-import uvicorn
-from fastapi import FastAPI
+# Add the foundation observability package to sys.path so this
+# service can consume `axi_observability.logging` without making it
+# a hard PyPI dependency — the package lives in workspace-level
+# `foundation/axi-observability/python/`.
+_OBSERVABILITY_PYTHON = Path("/Volumes/code/workspace/foundation/axi-observability/python")
+if _OBSERVABILITY_PYTHON.is_dir() and str(_OBSERVABILITY_PYTHON) not in sys.path:
+    sys.path.insert(0, str(_OBSERVABILITY_PYTHON))
 
-from config import ensure_storage_directory, settings, validate_settings
-from routers.files import router as files_router, set_file_service
-from service import build_file_service
+from axi_observability.logging import setup as _setup_logger  # noqa: E402
+
+import uvicorn  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+
+from config import ensure_storage_directory, settings, validate_settings  # noqa: E402
+from routers.files import router as files_router, set_file_service  # noqa: E402
+from service import build_file_service  # noqa: E402
+
+# Adopt the workspace observability SDK as the root logger so all
+# downstream `logging.getLogger(__name__)` calls inherit the JSON shape,
+# trace_id / request_id injection, and sensitive-field redaction policy.
+logger = _setup_logger(service="axi-file-service", env=settings.environment)
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):

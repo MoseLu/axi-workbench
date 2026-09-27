@@ -2,7 +2,16 @@
 
 import asyncio
 import logging
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+# Adopt the workspace observability SDK as the root logger so all
+# downstream `logging.getLogger(__name__)` calls inherit the JSON shape,
+# trace_id / request_id injection, and sensitive-field redaction policy.
+_OBSERVABILITY_PYTHON = Path("/Volumes/code/workspace/foundation/axi-observability/python")
+if _OBSERVABILITY_PYTHON.is_dir() and str(_OBSERVABILITY_PYTHON) not in sys.path:
+    sys.path.insert(0, str(_OBSERVABILITY_PYTHON))
 
 from fastapi import FastAPI, HTTPException, status
 
@@ -17,12 +26,20 @@ from routers.events import router as events_router
 from services.dispatch_worker import WorkflowDispatchWorker
 from services.repository import MemoryWorkflowRepository, PostgresWorkflowRepository
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+# Configure logging via the workspace SDK — basicConfig is replaced so
+# trace_id / request_id get attached automatically to every record.
 logger = logging.getLogger(__name__)
+_axilog_setup = None
+try:
+    from axi_observability.logging import setup as _axilog_setup
+    _axilog_setup(service="axi-workflow-engine")
+except Exception:
+    # Keep the conventional stdlib root logger so installs without the
+    # foundation workspace still produce records.
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
 settings = get_settings()
 
