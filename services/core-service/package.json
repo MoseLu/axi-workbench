@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "mvn spring-boot:run",
     "build": "mvn package",
-    "test": "mvn test"
+    "test": "mvn test",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   }
 }
