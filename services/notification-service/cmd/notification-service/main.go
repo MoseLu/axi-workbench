@@ -13,10 +13,10 @@ import (
 	"github.com/axiomaticworld/observability/go/axilog"
 	"github.com/gin-gonic/gin"
 
-	"notification-service/config"
-	"notification-service/handlers"
-	"notification-service/middleware"
-	"notification-service/services"
+	"github.com/axi-workbench/notification-service/config"
+	"github.com/axi-workbench/notification-service/handlers"
+	"github.com/axi-workbench/notification-service/middleware"
+	"github.com/axi-workbench/notification-service/services"
 )
 
 // Adopt the workspace observability SDK (PRD-07 phase 2). All

@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { networkInterfaces } from "node:os";
+import { createConnection } from "node:net";
 import { fileURLToPath } from "node:url";
 import { createLogger } from "@axi/observability-logging";
 import { createControlPlane } from "./control-plane.mjs";
@@ -168,6 +169,31 @@ export function createControlPlaneHttpServer({
     }
     if (req.method === "GET" && url.pathname === "/health") {
       return sendJson(res, 200, { status: "healthy", service: "control-plane" }, url);
+    }
+    if (req.method === "GET" && (url.pathname === "/readyz" || url.pathname === "/ready")) {
+      // Liveness (/health) and readiness (/readyz) are intentionally separate:
+      // - /health   — process is up and can answer HTTP.  Cheap, always 200 OK
+      //   while the Node loop is alive.  Used by Kubernetes livenessProbe.
+      // - /readyz   — process can actually serve traffic.  Touches the
+      //   dependencies it needs to do its job: state cache directory
+      //   writability (state.json persistence), optional Redis ping
+      //   (AXI_CONTROL_PLANE_REDIS_URL when configured), and an optional
+      //   Postgres cc-connect memory probe (CC_CONNECT_MEMORY_DATABASE_URL
+      //   when set).  Returns 503 if any required dependency is unreachable
+      //   so the pod is removed from rotation until it recovers.
+      const checks = await collectReadinessChecks({
+        cacheDir: controlPlane.cacheDir || process.env.AXI_WORKSTATION_CONTROL_CACHE_DIR || ".cache/epap-control-plane",
+        redisUrl: process.env.AXI_CONTROL_PLANE_REDIS_URL || "",
+        postgresUrl: process.env.CC_CONNECT_MEMORY_DATABASE_URL || "",
+      });
+      const failed = checks.filter((entry) => entry.required && entry.status !== "up");
+      const overall = failed.length === 0 ? "ready" : "not_ready";
+      const httpStatus = failed.length === 0 ? 200 : 503;
+      return sendJson(res, httpStatus, {
+        status: overall,
+        service: "control-plane",
+        checks,
+      }, url);
     }
     if (req.method === "GET" && url.pathname === "/snapshot") {
       const coreAuth = authenticateCoreRequest(req, coreApiToken);
@@ -1221,6 +1247,100 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   server.listen(port, bindHost, () => {
     console.log(`control-plane listening on http://${bindHost}:${port}`);
   });
+}
+
+// collectReadinessChecks pings the dependencies the control plane relies on
+// to serve traffic. Returns a list of check entries; the caller flips the
+// response status to 503 when any entry with `required: true` reports
+// `status !== "up"`. The function never throws — every dependency probe is
+// wrapped in its own try/catch so a stuck Redis cannot prevent the operator
+// from seeing the Postgres result.
+export async function collectReadinessChecks({ cacheDir = "", redisUrl = "", postgresUrl = "" } = {}) {
+  const checks = [];
+
+  // 1) Cache directory writability. The control plane persists state.json
+  //    here on every control-plane mutation; if we cannot write, we cannot
+  //    serve. This check is required.
+  try {
+    if (!cacheDir) {
+      checks.push({ name: "cacheDir", required: true, status: "down", error: "cacheDir not configured" });
+    } else {
+      const { mkdirSync, writeFileSync, unlinkSync } = await import("node:fs");
+      const probe = `${cacheDir}/.readyz-probe-${process.pid}-${Date.now()}`;
+      mkdirSync(cacheDir, { recursive: true });
+      writeFileSync(probe, "ok");
+      unlinkSync(probe);
+      checks.push({ name: "cacheDir", required: true, status: "up", path: cacheDir });
+    }
+  } catch (error) {
+    checks.push({ name: "cacheDir", required: true, status: "down", error: error.message });
+  }
+
+  // 2) Redis ping. Only probed when the operator has configured a URL — if
+  //    Redis is optional in this deployment we must not block readiness on
+  //    its absence. When configured it is treated as required because the
+  //    control plane uses Redis for ephemeral session/idempotency state.
+  if (redisUrl) {
+    try {
+      const url = new URL(redisUrl);
+      const ping = (command) => new Promise((resolve, reject) => {
+        const socket = createConnection({ host: url.hostname, port: Number(url.port) || 6379 }, () => {
+          socket.write(command);
+        });
+        const timer = setTimeout(() => {
+          socket.destroy();
+          reject(new Error("redis ping timed out"));
+        }, 1500);
+        socket.once("data", () => {
+          clearTimeout(timer);
+          socket.end();
+          resolve();
+        });
+        socket.once("error", (err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+      });
+      await ping("*1\r\n$4\r\nPING\r\n");
+      checks.push({ name: "redis", required: true, status: "up", host: url.hostname });
+    } catch (error) {
+      checks.push({ name: "redis", required: true, status: "down", error: error.message });
+    }
+  } else {
+    checks.push({ name: "redis", required: false, status: "not_configured" });
+  }
+
+  // 3) Postgres ping (cc-connect memory database). Like Redis we only treat
+  //    it as required when a URL is configured. We open a short-lived TCP
+  //    connection to verify reachability; we do NOT attempt an actual
+  //    authentication round-trip here so the probe stays cheap and works
+  //    without a Postgres client driver installed in the Node runtime.
+  if (postgresUrl) {
+    try {
+      const url = new URL(postgresUrl);
+      await new Promise((resolve, reject) => {
+        const socket = createConnection({ host: url.hostname, port: Number(url.port) || 5432 }, () => {
+          socket.end();
+          resolve();
+        });
+        const timer = setTimeout(() => {
+          socket.destroy();
+          reject(new Error("postgres tcp probe timed out"));
+        }, 1500);
+        socket.once("error", (err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+      });
+      checks.push({ name: "postgres", required: true, status: "up", host: url.hostname });
+    } catch (error) {
+      checks.push({ name: "postgres", required: true, status: "down", error: error.message });
+    }
+  } else {
+    checks.push({ name: "postgres", required: false, status: "not_configured" });
+  }
+
+  return checks;
 }
 
 function isPairedOwner(req, { pairingRequired, mobileOwnerToken }) {

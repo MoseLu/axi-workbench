@@ -1,4 +1,4 @@
-module notification-service
+module github.com/axi-workbench/notification-service
 
 go 1.26.0
 

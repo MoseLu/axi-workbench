@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"notification-service/config"
+	"github.com/axi-workbench/notification-service/config"
 )
 
 func TestRequireGatewayIdentity(t *testing.T) {

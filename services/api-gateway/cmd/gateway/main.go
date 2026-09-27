@@ -110,6 +110,7 @@ func main() {
 		mobileControl,
 		cfg.Services.ControlPlaneInternalToken,
 		logger,
+		cfg,
 	)
 
 	// Start configuration file watcher
@@ -223,6 +224,7 @@ func setupRouter(
 		FileInternalToken:        cfg.Services.FileInternalToken,
 		WorkflowInternalToken:    cfg.Services.WorkflowInternalToken,
 		NotificationInternalToken: cfg.Services.NotificationInternalToken,
+		Config:                   cfg,
 	})
 
 	if err := registry.RegisterRoutes(router); err != nil {

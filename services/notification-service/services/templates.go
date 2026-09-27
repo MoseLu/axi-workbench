@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"notification-service/models"
+	"github.com/axi-workbench/notification-service/models"
 )
 
 type notificationTemplate struct {

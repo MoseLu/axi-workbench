@@ -482,7 +482,7 @@ function normalizeAttachments({ input, envelope, routeKey, state, cacheDir }) {
   });
 }
 
-function registerMossCoderDevice({ input, state, cacheDir }) {
+export function registerMossCoderDevice({ input, state, cacheDir }) {
   const token = String(input.fcmToken || input.token || "").trim();
   if (token.length < 10) {
     return { ok: false, statusCode: 422, error: "fcmToken too short" };
@@ -500,7 +500,7 @@ function registerMossCoderDevice({ input, state, cacheDir }) {
   return { ok: true, statusCode: 200, deviceDbId: device.id };
 }
 
-async function handleMossCoderRelayEvent({ input, state, cacheDir, seenMessages, controlPlaneClient }) {
+export async function handleMossCoderRelayEvent({ input, state, cacheDir, seenMessages, controlPlaneClient }) {
   const event = normalizeMossCoderRelayEvent(input);
   if (event.error) {
     return { ok: false, statusCode: 422, error: event.error };

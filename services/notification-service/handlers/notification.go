@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"notification-service/middleware"
-	"notification-service/models"
-	"notification-service/services"
+	"github.com/axi-workbench/notification-service/middleware"
+	"github.com/axi-workbench/notification-service/models"
+	"github.com/axi-workbench/notification-service/services"
 )
 
 type NotificationHandler struct {
