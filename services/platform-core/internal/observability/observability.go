@@ -1,57 +1,43 @@
-// Package observability wires service-level OpenTelemetry tracing without
-// making a local development server depend on a collector.
+// Package observability wires service-level OpenTelemetry tracing.
+//
+// As of PRD-07 phase 2 this is a thin wrapper over
+// `github.com/axiomaticworld/observability/go/axilog`. The legacy
+// signature is preserved so existing callers in `main.go` and
+// `httpapi/api.go` keep working — the underlying transport switched
+// from OTLP/HTTP to OTLP/gRPC, which the foundation's OTel collector
+// accepts on :4317 by default.
 package observability
 
 import (
 	"context"
+	"os"
 	"strings"
 
+	"github.com/axiomaticworld/observability/go/axilog"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
 )
 
+// Setup configures the global OTel TracerProvider for the given
+// service. When `endpoint` is empty the service runs in no-op mode
+// (no provider, no exporter); otherwise AXI_OTLP_TRACES_ENDPOINT is
+// set so `axilog.SetupTracing` honors the explicit URL.
 func Setup(ctx context.Context, serviceName, endpoint string) (func(context.Context) error, error) {
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	if strings.TrimSpace(endpoint) == "" {
 		return func(context.Context) error { return nil }, nil
 	}
-
-	exporter, err := otlptracehttp.New(ctx)
+	_ = os.Setenv("AXI_OTLP_TRACES_ENDPOINT", endpoint)
+	provider, err := axilog.SetupTracing(serviceName)
 	if err != nil {
 		return nil, err
 	}
-	provider := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes("", attribute.String("service.name", serviceName))),
-	)
-	otel.SetTracerProvider(provider)
 	return provider.Shutdown, nil
 }
 
+// Gin returns the Gin middleware that starts an OTel span per
+// request, extracts W3C traceparent, and threads trace_id onto the
+// request context so downstream slog records carry it automatically.
+// The `serviceName` parameter is kept for backwards compatibility
+// with older call sites but the SDK uses OTel tracer naming.
 func Gin(serviceName string) gin.HandlerFunc {
-	tracer := otel.Tracer(serviceName)
-	return func(c *gin.Context) {
-		requestContext := propagation.TraceContext{}.Extract(c.Request.Context(), propagation.HeaderCarrier(c.Request.Header))
-		route := c.FullPath()
-		if route == "" {
-			route = c.Request.URL.Path
-		}
-		requestContext, span := tracer.Start(requestContext, c.Request.Method+" "+route, trace.WithSpanKind(trace.SpanKindServer))
-		c.Request = c.Request.WithContext(requestContext)
-		c.Next()
-
-		span.SetAttributes(
-			attribute.String("http.request.method", c.Request.Method),
-			attribute.String("url.path", c.Request.URL.Path),
-			attribute.Int("http.response.status_code", c.Writer.Status()),
-		)
-		propagation.TraceContext{}.Inject(requestContext, propagation.HeaderCarrier(c.Writer.Header()))
-		span.End()
-	}
+	return axilog.OtelGinMiddleware()
 }

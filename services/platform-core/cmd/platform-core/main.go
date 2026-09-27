@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/axiomaticworld/observability/go/axilog"
 
 	"github.com/axi-workbench/platform-core/internal/config"
 	"github.com/axi-workbench/platform-core/internal/httpapi"
@@ -18,15 +18,23 @@ import (
 	"github.com/axi-workbench/platform-core/internal/store"
 )
 
+// Adopt the workspace observability SDK (PRD-07 phase 2). All log
+// records automatically gain `service`, `env`, `trace_id`,
+// `request_id`, and redacted sensitive fields.
+var logger = axilog.New(axilog.Options{
+	Service: axilog.WithService("axi-platform-core"),
+})
+
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("platform core configuration: %v", err)
+		logger.Error("platform core configuration", "error", err)
+		os.Exit(1)
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	shutdownTelemetry, err := observability.Setup(context.Background(), "axi-platform-core", cfg.OTLPTracesEndpoint)
 	if err != nil {
-		log.Fatalf("platform core OpenTelemetry: %v", err)
+		logger.Error("platform core OpenTelemetry", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -42,7 +50,8 @@ func main() {
 	} else {
 		postgresStore, err := store.NewPostgres(context.Background(), cfg.DatabaseURL)
 		if err != nil {
-			log.Fatalf("platform core persistence: %v", err)
+			logger.Error("platform core persistence", "error", err)
+			os.Exit(1)
 		}
 		persistence = postgresStore
 	}
