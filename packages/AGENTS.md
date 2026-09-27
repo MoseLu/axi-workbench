@@ -16,8 +16,15 @@ This AGENTS.md scopes guidance to `packages`. Parent AGENTS guidance still appli
 
 ### Subdirectories
 - `api-client/`
-- `axi-rag/`
-- `epap-schemas-compat/`
+- `artboard-vite-plugin/`
+- `commit-ledger-schema/`
+- `gateway-contracts/`
+- `resource-adapters/`
+- `resource-api-docs/`
+- `resource-config/`
+- `resource-memory/`
+- `resource-orchestrator/`
+- `resource-session/`
 - `schemas/`
 - `types/`
 - `ui/`

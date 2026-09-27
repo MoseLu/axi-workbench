@@ -16,12 +16,17 @@ This AGENTS.md scopes guidance to `apps`. Parent AGENTS guidance still applies u
 
 ### Subdirectories
 - `app-search-system/`
+- `axi-artboard/`
 - `axi-coder/`
+- `axi-docs/`
 - `devsvc-dashboard/`
 - `ollama-menu-assistant/`
+- `resource-orchestration/`
 - `verification-inbox/`
 - `workbench/`
+- `workbench-desktop/`
 - `workbench-mobile/`
+- `workbench-shared/`
 
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
