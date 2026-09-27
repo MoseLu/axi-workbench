@@ -106,6 +106,21 @@ make dev-gateway
 make dev-identity dev-platform dev-workflow dev-file dev-notification
 ```
 
+## Scope Exemptions (Observability / Logging Conformance)
+
+依据 [ADR-010 §Operating Rules](https://workspace.local/adr/ADR-010-axi-observability-architecture) "No project in the workspace is required to migrate."，本节按 ADR-010 的硬约束登记显式豁免接受 `axi_observability.logging` / `axilog-go` / `@axi/observability-*` 接入的服务与子模块（legacy 与 SDK-Not-Ready 两类）。保留状态写明；复审节点必须是具体日期或事件触发点，以便 owner 定期核对。
+
+| 服务 / 子模块 | 豁免理由 | 保留状态 | 复审节点 |
+|---|---|---|---|
+| `services/auth-service` (Go) | 已被 `identity-adapter` 替代；只保留 `Makefile dev-auth / migrate-auth` 兼容旧脚本读取 | `STATUS: legacy`（既有，本节显式登记） | 当目录被删除时自动失效；半年 review（2027-Q1） |
+| `services/core-service` (Java Spring) | 已被 Go 业务平面替代；`STATUS: legacy` | `STATUS: legacy` | `core-service` 真正删除时 |
+| `services/resource-gateway` (TypeScript) | `STATUS: legacy` 孤立目录，不在任何工作区引用、`Makefile`、`docker-compose` 里 | `STATUS: legacy` | 删除目录时 |
+| `infra/fleet-console/registry / dashboard`（Python + ansible + TS dashboard dist/） | dev-services 编排外；`workspace.graph.json` 第 4 条 verify 仅对 `python3 infra/fleet-console/scripts/fleetctl.py validate` 单独检查 | Out-of-Scope | 当 fleet-console 改走 OTel collector 时 |
+| `apps/workbench-mobile/android/**`（Kotlin） | `axilog-android` SDK 尚未发布；`foundation/axi-observability/TODO.md` `TODO-T-002` 明列 | SDK-Not-Ready | TODO-T-002 关闭后立即 |
+| `apps/workbench-desktop/src-tauri/src/**`（Rust） | 无 Rust SDK；需等 `foundation/axi-observability/rust/` 出现 | SDK-Not-Ready | SDK 出现后立即 |
+
+> 格式约束：复审节点必须写**日期**或**事件触发点**；同一服务不可同时出现在"豁免"和"整改"清单；每次 owner 复审后在 `docs/state/CHANGELOG.md` 的 `[Unreleased] Changed` 区留一条记录，例 `services/AGENTS.md §Scope Exemptions: <service> now required`。
+
 <!-- OMX:AGENTS-INIT:MANUAL:START -->
 ## Local Notes
 
