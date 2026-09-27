@@ -75,13 +75,13 @@ describe('CommandCenter', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the command-center heading and the input prompt', () => {
+  it('renders the shared loading state before the control snapshot is available', () => {
     mockUseControlSnapshot.mockReturnValue({
       data: undefined,
       error: null,
       isError: false,
       isFetching: false,
-      isLoading: false,
+      isLoading: true,
       refetch: vi.fn(),
     });
     mockUseControlQuery.mockReturnValue({
@@ -96,9 +96,7 @@ describe('CommandCenter', () => {
     });
 
     renderCommandCenter();
-    // CommandCenter.tsx renders its own h1 "Command Center" — assert the input
-    // prompt is wired so we know the page mounted.
-    expect(screen.getByDisplayValue('查看所有项目状态')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('正在加载工作命令中心');
   });
 
   it('renders the error state without fabricated tables when the snapshot fails', () => {

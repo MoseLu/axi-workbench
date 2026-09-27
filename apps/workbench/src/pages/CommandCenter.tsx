@@ -1,15 +1,14 @@
 import React, { useMemo, useState } from 'react';
 // axi-ui-escape-hatch: antd Input + Button drive the command-bar search row
-// because @axi/widgets.AxiSearchInput is not shipped yet. The wrapping
-// AxiRow + AxiTag/AxiCardBanner cluster stays consistent with the rest of
-// the desktop admin shell; swap the antd primitives once AxiSearchInput
-// lands.
+// because @axi/widgets does not currently expose a search-input primitive.
 import { Button, Input } from 'antd';
 import { useCancelAgentTask, useControlQuery, useControlSnapshot, useDecideApproval, useRunControlCommand } from '@axi/api-client';
-import { AxiBasicBanner, AxiCardBanner, AxiPage, AxiTag } from '@axi/core';
-import { AxiBanner, AxiRow } from '@axi/widgets';
+import { AxiBasicBanner, AxiCardBanner, AxiTag } from '@axi/core';
+import { AxiRow } from '@axi/widgets';
 import type { AgentTask, ApprovalRequest, ControlRun, LayerKind, ManagedResource, RouteBinding } from '@axi/workstation-contracts';
 import { useI18n } from '../i18n';
+import { DesktopCrudFrame } from './admin/DesktopCrudFrame';
+import { ControlPlaneState } from './admin/ControlPlaneState';
 
 const layerOrder: LayerKind[] = [
   'im',
@@ -31,7 +30,7 @@ const layerCopyKey: Record<LayerKind, string> = {
 
 const CommandCenter: React.FC = () => {
   const { t } = useI18n();
-  const { data: snapshot, isLoading, error } = useControlSnapshot();
+  const { data: snapshot, isLoading, error, refetch } = useControlSnapshot();
   const controlQuery = useControlQuery();
   const runCommand = useRunControlCommand();
   const cancelAgentTask = useCancelAgentTask();
@@ -65,8 +64,30 @@ const CommandCenter: React.FC = () => {
     ? t('commandCenter.snapshotUpdated').replace('{value}', new Date(snapshot.generatedAt).toLocaleString())
     : t('commandCenter.snapshotUnavailable');
 
+  if (isLoading && !snapshot) {
+    return (
+      <DesktopCrudFrame ariaLabel={t('commandCenter.title')} className="command-center-crud">
+        <ControlPlaneState description={t('commandCenter.loading')} loading title={t('commandCenter.loading.title')} />
+      </DesktopCrudFrame>
+    );
+  }
+
+  if (error && !snapshot) {
+    return (
+      <DesktopCrudFrame ariaLabel={t('commandCenter.title')} className="command-center-crud">
+        <ControlPlaneState
+          actionLabel={t('common.retry')}
+          actionLoading={isLoading}
+          description={t('commandCenter.error.description')}
+          title={t('commandCenter.error.title')}
+          onAction={() => void refetch()}
+        />
+      </DesktopCrudFrame>
+    );
+  }
+
   return (
-    <AxiPage responsive>
+    <DesktopCrudFrame ariaLabel={t('commandCenter.title')} className="command-center-crud">
       <AxiBasicBanner
         actions={<span>{snapshotMeta}</span>}
         description={t('commandCenter.description')}
@@ -107,13 +128,6 @@ const CommandCenter: React.FC = () => {
         </AxiCardBanner>
       )}
 
-      {isLoading && (
-        <AxiBanner tone="info" message={t('commandCenter.loading')} />
-      )}
-      {error && (
-        <AxiBanner tone="danger" role="alert" aria-live="assertive" message={t('commandCenter.error.description')} />
-      )}
-
       {snapshot && (
         <AxiRow style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
           <RuntimePanel runtimes={snapshot.runtimes || []} />
@@ -151,7 +165,7 @@ const CommandCenter: React.FC = () => {
           );
         })}
       </AxiRow>
-    </AxiPage>
+    </DesktopCrudFrame>
   );
 };
 
