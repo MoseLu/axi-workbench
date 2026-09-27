@@ -6,10 +6,13 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { normalizeRouterBasename } from './lib/routes'
 import './styles/index.css'
 import type { InitialPageData } from './lib/initialPageData'
+import { installFaviconNavigationState, setReadyFavicon } from './lib/favicon'
 
 const routerBasename = normalizeRouterBasename(import.meta.env.BASE_URL)
 const initialData: InitialPageData | undefined = window.__AXI_DOCS_INITIAL_DATA__
 const root = document.getElementById('root')!
+setReadyFavicon()
+installFaviconNavigationState()
 
 const app = (
   <React.StrictMode>
