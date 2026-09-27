@@ -4,14 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/axiomaticworld/observability/go/axilog"
 	"github.com/segmentio/kafka-go"
 	"notification-service/config"
 	"notification-service/models"
 )
+
+// Adopt the workspace observability SDK (PRD-07 phase 2). Mirrors
+// main.go's logger so trace_id from the request context gets
+// attached to every Kafka-side record.
+var logger = axilog.New(axilog.Options{
+	Service: axilog.WithService("axi-notification-service"),
+})
 
 const (
 	kafkaMaxMessageBytes = 4 * 1024 * 1024
@@ -75,14 +83,20 @@ func (c *KafkaEventConsumer) Run(ctx context.Context) error {
 
 		event, err := decodeKafkaEvent(message)
 		if err != nil {
-			log.Printf("discarding malformed Kafka notification event at offset %d: %v", message.Offset, err)
+			logger.Warn("discarding malformed Kafka notification event",
+				slog.Int64("offset", message.Offset),
+				slog.Any("error", err),
+			)
 			if err := c.reader.CommitMessages(ctx, message); err != nil {
 				return err
 			}
 			continue
 		}
 		if _, err := c.service.ConsumeEventContext(ctx, event); err != nil {
-			log.Printf("Kafka notification event %s was not persisted: %v", event.ID, err)
+			logger.Error("Kafka notification event was not persisted",
+				slog.String("event_id", event.ID),
+				slog.Any("error", err),
+			)
 			if !waitKafkaBackoff(ctx, backoff) {
 				return nil
 			}
