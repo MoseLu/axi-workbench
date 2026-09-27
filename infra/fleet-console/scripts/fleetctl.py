@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import logging
 import os
 import re
 import shlex
@@ -19,6 +20,27 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
+
+# Adopt the workspace observability SDK when the foundation python
+# package is on PYTHONPATH (vendored under
+# /Volumes/code/workspace/foundation/axi-observability/python). When
+# it is absent the script keeps the conventional stdout/stderr print
+# semantics so it can be piped into SQLite / jq without changing the
+# CLI surface.
+_FLEETCTL_OBS_PY = Path("/Volumes/code/workspace/foundation/axi-observability/python")
+if _FLEETCTL_OBS_PY.is_dir() and str(_FLEETCTL_OBS_PY) not in sys.path:
+    sys.path.insert(0, str(_FLEETCTL_OBS_PY))
+
+try:
+    from axi_observability.logging import setup as _axi_setup_logging  # type: ignore
+
+    _axi_setup_logging(service="axi-fleet-console", env=os.environ.get("AXI_ENV", "dev"))
+except Exception:
+    # Fall back to stdlib root logger so the script still works
+    # without the foundation workspace checked out.
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+logger = logging.getLogger("axi-fleet-console")
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -634,7 +656,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.func(args)
     except FleetError as exc:
-        print(f"fleetctl: {exc}", file=sys.stderr)
+        logger.error("fleetctl failed: %s", exc)
         return 2
 
 
