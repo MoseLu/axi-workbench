@@ -10,7 +10,7 @@ import (
 
 	"github.com/epap/api-gateway/ratelimit"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
+	"log/slog"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -229,7 +229,7 @@ func TestAuditFilter(t *testing.T) {
 		c.Set("request_id", "req-123")
 		c.Request.Header.Set("traceparent", "00-abc-def-01")
 
-		filter := NewAuditFilter(zerolog.New(io.Discard))
+		filter := NewAuditFilter(slog.New(slog.NewTextHandler(io.Discard, nil)))
 		// The filter should not panic
 		filter.Filter(c, FilterChain{})
 	})

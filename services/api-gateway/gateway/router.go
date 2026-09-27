@@ -2,12 +2,12 @@ package gateway
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/epap/api-gateway/config"
-	"github.com/rs/zerolog"
 )
 
 // DynamicRouter provides thread-safe dynamic route management with hot-reload capability.
@@ -17,7 +17,7 @@ type DynamicRouter struct {
 	routes     map[string]*config.Route
 	matcher    *config.RouteMatcher
 	configPath string
-	logger     zerolog.Logger
+	logger     *slog.Logger
 	watcher    *config.ConfigWatcher
 	version    int64 // incremented on each route change
 }
@@ -39,7 +39,7 @@ type Route struct {
 func NewDynamicRouter(
 	matcher *config.RouteMatcher,
 	configPath string,
-	logger zerolog.Logger,
+	logger *slog.Logger,
 ) *DynamicRouter {
 	dr := &DynamicRouter{
 		routes:     make(map[string]*config.Route),
@@ -112,11 +112,11 @@ func (dr *DynamicRouter) AddRoute(route *config.Route) error {
 	dr.routes[route.ID] = route
 	dr.version++
 
-	dr.logger.Info().
-		Str("route_id", route.ID).
-		Str("path", route.Path).
-		Int64("version", dr.version).
-		Msg("route added")
+	dr.logger.Info("route added",
+		slog.String("route_id", route.ID),
+		slog.String("path", route.Path),
+		slog.Int64("version", dr.version),
+	)
 
 	return nil
 }
@@ -136,11 +136,11 @@ func (dr *DynamicRouter) UpdateRoute(id string, route *config.Route) error {
 	dr.routes[id] = route
 	dr.version++
 
-	dr.logger.Info().
-		Str("route_id", id).
-		Str("path", route.Path).
-		Int64("version", dr.version).
-		Msg("route updated")
+	dr.logger.Info("route updated",
+		slog.String("route_id", id),
+		slog.String("path", route.Path),
+		slog.Int64("version", dr.version),
+	)
 
 	return nil
 }
@@ -158,10 +158,10 @@ func (dr *DynamicRouter) DeleteRoute(id string) error {
 	delete(dr.routes, id)
 	dr.version++
 
-	dr.logger.Info().
-		Str("route_id", id).
-		Int64("version", dr.version).
-		Msg("route deleted")
+	dr.logger.Info("route deleted",
+		slog.String("route_id", id),
+		slog.Int64("version", dr.version),
+	)
 
 	return nil
 }
@@ -171,7 +171,7 @@ func (dr *DynamicRouter) ReloadConfig() error {
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
 
-	dr.logger.Info().Str("path", dr.configPath).Msg("reloading route configuration")
+	dr.logger.Info("reloading route configuration", slog.String("path", dr.configPath))
 
 	if err := dr.matcher.Reload(dr.configPath); err != nil {
 		return err
@@ -185,10 +185,10 @@ func (dr *DynamicRouter) ReloadConfig() error {
 	}
 	dr.version++
 
-	dr.logger.Info().
-		Int("route_count", len(routes)).
-		Int64("version", dr.version).
-		Msg("route configuration reloaded")
+	dr.logger.Info("route configuration reloaded",
+		slog.Int("route_count", len(routes)),
+		slog.Int64("version", dr.version),
+	)
 
 	return nil
 }
@@ -213,7 +213,7 @@ func (dr *DynamicRouter) StartWatcher(ctx context.Context) error {
 		dr.mu.Lock()
 		defer dr.mu.Unlock()
 
-		dr.logger.Info().Msg("configuration change detected, updating routes")
+		dr.logger.Info("configuration change detected, updating routes")
 
 		// Update matcher
 		dr.matcher.UpdateConfig(cfg)
@@ -225,10 +225,10 @@ func (dr *DynamicRouter) StartWatcher(ctx context.Context) error {
 		}
 		dr.version++
 
-		dr.logger.Info().
-			Int("route_count", len(cfg.Routes)).
-			Int64("version", dr.version).
-			Msg("routes updated from file watcher")
+		dr.logger.Info("routes updated from file watcher",
+			slog.Int("route_count", len(cfg.Routes)),
+			slog.Int64("version", dr.version),
+		)
 	})
 	if err != nil {
 		return err
@@ -237,7 +237,7 @@ func (dr *DynamicRouter) StartWatcher(ctx context.Context) error {
 	dr.watcher = watcher
 	watcher.Start(ctx)
 
-	dr.logger.Info().Msg("configuration watcher started")
+	dr.logger.Info("configuration watcher started")
 
 	return nil
 }

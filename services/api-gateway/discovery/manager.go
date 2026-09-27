@@ -2,19 +2,18 @@ package discovery
 
 import (
 	"context"
-
-	"github.com/rs/zerolog"
+	"log/slog"
 )
 
 // Manager coordinates service discovery across the gateway.
 // It wraps the Resolver and provides a simpler interface.
 type Manager struct {
 	resolver *Resolver
-	logger   zerolog.Logger
+	logger   *slog.Logger
 }
 
 // NewManager creates a new discovery manager.
-func NewManager(logger zerolog.Logger) *Manager {
+func NewManager(logger *slog.Logger) *Manager {
 	return &Manager{
 		resolver: NewResolver(),
 		logger:   logger,
@@ -34,11 +33,11 @@ func (m *Manager) GetAddresses(ctx context.Context, service string) ([]string, e
 // RegisterUpstream registers an upstream service for discovery.
 func (m *Manager) RegisterUpstream(cfg UpstreamConfig) {
 	m.resolver.RegisterUpstream(cfg)
-	m.logger.Info().
-		Str("upstream", cfg.Name).
-		Str("discovery", cfg.Discovery).
-		Str("url", cfg.URL).
-		Msg("registered upstream for service discovery")
+	m.logger.Info("registered upstream for service discovery",
+		slog.String("upstream", cfg.Name),
+		slog.String("discovery", cfg.Discovery),
+		slog.String("url", cfg.URL),
+	)
 }
 
 // Resolver returns the underlying resolver.

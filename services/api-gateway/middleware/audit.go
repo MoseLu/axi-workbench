@@ -1,33 +1,35 @@
 package middleware
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
-// Audit emits immutable, body-free audit facts. Persisting these records is
-// delegated to the platform audit contract; the gateway does not log secrets,
-// OAuth codes, QR tickets, or request payloads.
-func Audit(logger zerolog.Logger) gin.HandlerFunc {
+// Audit emits immutable, body-free audit facts. Persisting these
+// records is delegated to the platform audit contract; the gateway
+// does not log secrets, OAuth codes, QR tickets, or request payloads.
+func Audit(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		started := time.Now()
 		c.Next()
-		event := logger.Info().
-			Str("event", "gateway.audit").
-			Str("request_id", c.GetString("request_id")).
-			Str("traceparent", c.GetHeader("traceparent")).
-			Str("method", c.Request.Method).
-			Str("path", c.Request.URL.Path).
-			Int("status", c.Writer.Status()).
-			Dur("latency", time.Since(started))
+
+		attrs := []any{
+			slog.String("event", "gateway.audit"),
+			slog.String("request_id", c.GetString("request_id")),
+			slog.String("traceparent", c.GetHeader("traceparent")),
+			slog.String("method", c.Request.Method),
+			slog.String("path", c.Request.URL.Path),
+			slog.Int("status", c.Writer.Status()),
+			slog.Duration("latency", time.Since(started)),
+		}
 		if principal, ok := PrincipalFromContext(c); ok {
-			event = event.Str("subject", principal.Subject)
+			attrs = append(attrs, slog.String("subject", principal.Subject))
 		}
 		if tenantID := c.Param("tenantID"); tenantID != "" {
-			event = event.Str("tenant_id", tenantID)
+			attrs = append(attrs, slog.String("tenant_id", tenantID))
 		}
-		event.Msg("request completed")
+		logger.Info("request completed", attrs...)
 	}
 }

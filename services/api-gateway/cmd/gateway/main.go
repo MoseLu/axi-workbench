@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/axiomaticworld/observability/go/axilog"
+	"github.com/gin-gonic/gin"
 
 	"github.com/epap/api-gateway/config"
 	"github.com/epap/api-gateway/discovery"
@@ -18,37 +22,46 @@ import (
 	"github.com/epap/api-gateway/middleware"
 	"github.com/epap/api-gateway/observability"
 	"github.com/epap/api-gateway/ratelimit"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
+
+// logger is initialized once at process start and reused by every
+// component. Switching from zerolog to axilog-go keeps the JSON
+// shape compatible with Loki ingest, adds trace_id / request_id
+// context propagation, and adds automatic sensitive-field redaction.
+var logger = axilog.New(axilog.Options{
+	Service: axilog.WithService("axi-api-gateway"),
+})
 
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		panic("gateway configuration: " + err.Error())
+		logger.Error("gateway configuration", "error", err)
+		os.Exit(1)
 	}
-	logger := setupLogger(cfg.Log.Level)
 	shutdownTelemetry, err := observability.Setup(context.Background(), "axi-api-gateway", cfg.Observability.OTLPTracesEndpoint)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("initialize OpenTelemetry trace exporter")
+		logger.Error("initialize OpenTelemetry trace exporter", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := shutdownTelemetry(shutdownContext); err != nil {
-			logger.Error().Err(err).Msg("flush OpenTelemetry trace exporter")
+			logger.Error("flush OpenTelemetry trace exporter", "error", err)
 		}
 	}()
 
 	identityService, err := identity.New(context.Background(), cfg.Identity)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("initialize OIDC/JWKS verifier")
+		logger.Error("initialize OIDC/JWKS verifier", "error", err)
+		os.Exit(1)
 	}
 	defer identityService.Close()
 
 	limiter, err := newLimiter(cfg)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("initialize gateway rate limiter")
+		logger.Error("initialize gateway rate limiter", "error", err)
+		os.Exit(1)
 	}
 	defer limiter.Close()
 
@@ -75,13 +88,14 @@ func main() {
 		for _, upstream := range cfg.Services.Upstreams {
 			discoveryManager.RegisterUpstream(upstream)
 		}
-		logger.Info().Int("count", len(cfg.Services.Upstreams)).Msg("service discovery initialized")
+		logger.Info("service discovery initialized", "count", len(cfg.Services.Upstreams))
 	}
 
 	// Load route configuration
 	routeMatcher, err := loadRouteConfig()
 	if err != nil {
-		logger.Fatal().Err(err).Msg("load route configuration")
+		logger.Error("load route configuration", "error", err)
+		os.Exit(1)
 	}
 
 	// Initialize dynamic router for hot-reload support
@@ -102,7 +116,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if err := dynamicRouter.StartWatcher(ctx); err != nil {
-		logger.Warn().Err(err).Msg("failed to start config watcher, using polling fallback")
+		logger.Warn("failed to start config watcher, using polling fallback", "error", err)
 	}
 
 	router := setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, dynamicRouteHandler, logger)
@@ -120,22 +134,22 @@ func main() {
 	serverErrors := make(chan error, 1)
 	go func() { serverErrors <- server.ListenAndServe() }()
 
-	logger.Info().Str("port", cfg.Server.Port).Msg("starting Axi API Gateway")
+	logger.Info("starting Axi API Gateway", "port", cfg.Server.Port)
 	select {
 	case serverErr := <-serverErrors:
 		if serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-			logger.Error().Err(serverErr).Msg("API Gateway stopped unexpectedly")
+			logger.Error("API Gateway stopped unexpectedly", "error", serverErr)
 		}
 	case <-shutdownSignal.Done():
-		logger.Info().Msg("shutting down Axi API Gateway")
+		logger.Info("shutting down Axi API Gateway")
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownContext); err != nil {
-			logger.Error().Err(err).Msg("gracefully shut down API Gateway")
+			logger.Error("gracefully shut down API Gateway", "error", err)
 			_ = server.Close()
 		}
 		if serverErr := <-serverErrors; serverErr != nil && !errors.Is(serverErr, http.ErrServerClosed) {
-			logger.Error().Err(err).Msg("API Gateway stopped with an error")
+			logger.Error("API Gateway stopped with an error", "error", serverErr)
 		}
 	}
 }
@@ -156,16 +170,6 @@ func loadRouteConfig() (*config.RouteMatcher, error) {
 	return matcher, nil
 }
 
-func setupLogger(level string) zerolog.Logger {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	parsed, err := zerolog.ParseLevel(level)
-	if err != nil {
-		parsed = zerolog.InfoLevel
-	}
-	zerolog.SetGlobalLevel(parsed)
-	return zerolog.New(os.Stdout).With().Timestamp().Logger()
-}
-
 func newLimiter(cfg *config.Config) (ratelimit.Limiter, error) {
 	if cfg.RateLimit.RedisURL == "" {
 		return ratelimit.NewMemory(cfg.RateLimit.RequestsPerMinute, nil), nil
@@ -182,7 +186,7 @@ func setupRouter(
 	routeMatcher *config.RouteMatcher,
 	dynamicRouter *gateway.DynamicRouter,
 	dynamicRouteHandler *handlers.DynamicRouteHandler,
-	logger zerolog.Logger,
+	logger *slog.Logger,
 ) *gin.Engine {
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -192,7 +196,8 @@ func setupRouter(
 	// fail-closed for a private deployment; only explicitly configured ingress
 	// networks may influence ClientIP-based rate limiting.
 	if err := router.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
-		panic("gateway trusted proxies: " + err.Error())
+		logger.Error("gateway trusted proxies", "error", err)
+		os.Exit(1)
 	}
 	router.Use(gin.Recovery())
 	router.Use(middleware.RequestID())
@@ -221,7 +226,8 @@ func setupRouter(
 	})
 
 	if err := registry.RegisterRoutes(router); err != nil {
-		logger.Fatal().Err(err).Msg("register configured routes")
+		logger.Error("register configured routes", "error", err)
+		os.Exit(1)
 	}
 
 	// Register admin routes for dynamic route management
@@ -233,7 +239,7 @@ func setupRouter(
 }
 
 // registerAdminRoutes registers the admin routes for dynamic route management
-func registerAdminRoutes(router *gin.Engine, dynamicRouter *gateway.DynamicRouter, internalToken string, logger zerolog.Logger) {
+func registerAdminRoutes(router *gin.Engine, dynamicRouter *gateway.DynamicRouter, internalToken string, logger *slog.Logger) {
 	adminHandler := gateway.NewAdminHandler(dynamicRouter, internalToken, logger)
 	adminHandler.RegisterRoutes(router.Group("/api/v1"))
 }

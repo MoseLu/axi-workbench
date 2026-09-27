@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"sync"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/epap/api-gateway/middleware"
 	"github.com/epap/api-gateway/ratelimit"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
 // RouteRegistry manages route registration from configuration
@@ -24,7 +24,7 @@ type RouteRegistry struct {
 	mobileControl     *MobileControlProxy
 	internalToken     string
 	identityAdapterURL string
-	logger            zerolog.Logger
+	logger            *slog.Logger
 	registeredRoutes  map[string]bool
 	mu                sync.RWMutex
 	discoveryManager  *discovery.Manager
@@ -45,7 +45,7 @@ type RouteRegistryConfig struct {
 	MobileControl               *MobileControlProxy
 	InternalToken              string
 	IdentityAdapterURL         string
-	Logger                     zerolog.Logger
+	Logger                     *slog.Logger
 	PlatformInternalToken      string
 	IdentityInternalToken      string
 	FileInternalToken          string
@@ -94,7 +94,7 @@ func (rr *RouteRegistry) RegisterRoutes(router *gin.Engine) error {
 		rr.mu.Unlock()
 	}
 
-	rr.logger.Info().Int("count", len(routes)).Msg("routes registered from configuration")
+	rr.logger.Info("routes registered from configuration", slog.Int("count", len(routes)))
 	return nil
 }
 
@@ -213,7 +213,7 @@ func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
 	case "EmailLoginConfirm":
 		return EmailLoginConfirm(rr.identityService, rr.identityAdapterURL)
 	default:
-		rr.logger.Warn().Str("handler", route.Handler).Msg("unknown handler, using not found")
+		rr.logger.Warn("unknown handler, using not found", slog.String("handler", route.Handler))
 		return NotFoundHandler()
 	}
 }

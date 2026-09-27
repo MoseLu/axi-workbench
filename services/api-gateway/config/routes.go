@@ -2,13 +2,14 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"github.com/axiomaticworld/observability/go/axilog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -40,7 +41,7 @@ type RouteMatcher struct {
 	config     *RoutesConfig
 	envPattern *regexp.Regexp
 	mu         sync.RWMutex
-	logger     zerolog.Logger
+	logger     *slog.Logger
 }
 
 // NewRouteMatcher creates a new route matcher from YAML content
@@ -61,7 +62,10 @@ func NewRouteMatcher(yamlContent []byte) (*RouteMatcher, error) {
 	return &RouteMatcher{
 		config:     &cfg,
 		envPattern: regexp.MustCompile(`\$\{(\w+)\}`),
-		logger:     zerolog.New(os.Stdout).With().Str("component", "route_matcher").Logger(),
+		logger: axilog.New(axilog.Options{
+			Service: axilog.WithService("axi-api-gateway"),
+			Writer:  os.Stdout,
+		}).With(slog.String("component", "route_matcher")),
 	}, nil
 }
 
@@ -155,7 +159,7 @@ func (rm *RouteMatcher) UpdateConfig(cfg *RoutesConfig) {
 
 	// Validate new configuration
 	if err := validateRoutes(cfg); err != nil {
-		rm.logger.Error().Err(err).Msg("invalid routes configuration update")
+		rm.logger.Error("invalid routes configuration update", slog.Any("error", err))
 		return
 	}
 
@@ -163,7 +167,7 @@ func (rm *RouteMatcher) UpdateConfig(cfg *RoutesConfig) {
 	*cfg = expandEnvVariables(*cfg)
 
 	rm.config = cfg
-	rm.logger.Info().Int("route_count", len(cfg.Routes)).Msg("routes configuration updated")
+	rm.logger.Info("routes configuration updated", slog.Int("route_count", len(cfg.Routes)))
 }
 
 // GetRoutes returns all configured routes (thread-safe)
@@ -176,7 +180,7 @@ func (rm *RouteMatcher) GetRoutes() []Route {
 	return routes
 }
 
-// GetRouteGroups returns all route groups (thread-safe)
+// GetRouteGroups returns all configured route groups (thread-safe)
 func (rm *RouteMatcher) GetRouteGroups() map[string]RouteGroup {
 	rm.mu.RLock()
 	defer rm.mu.RUnlock()

@@ -2,23 +2,23 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/epap/api-gateway/config"
 	"github.com/epap/api-gateway/gateway"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
 // AdminHandler provides administrative endpoints for route management.
 type AdminHandler struct {
 	dynamicRouter *gateway.DynamicRouter
 	internalToken string
-	logger        zerolog.Logger
+	logger        *slog.Logger
 }
 
 // NewAdminHandler creates a new admin handler.
-func NewAdminHandler(dynamicRouter *gateway.DynamicRouter, internalToken string, logger zerolog.Logger) *AdminHandler {
+func NewAdminHandler(dynamicRouter *gateway.DynamicRouter, internalToken string, logger *slog.Logger) *AdminHandler {
 	return &AdminHandler{
 		dynamicRouter: dynamicRouter,
 		internalToken: internalToken,
@@ -57,7 +57,7 @@ func requireInternalToken(expected string) gin.HandlerFunc {
 // Reloads routes from the configuration file.
 func (ah *AdminHandler) ReloadRoutes(c *gin.Context) {
 	if err := ah.dynamicRouter.ReloadConfig(); err != nil {
-		ah.logger.Error().Err(err).Msg("failed to reload routes")
+		ah.logger.Error("failed to reload routes", slog.Any("error", err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "reload_failed",
 			"message": err.Error(),
@@ -141,7 +141,7 @@ func (ah *AdminHandler) AddRoute(c *gin.Context) {
 	}
 
 	if err := ah.dynamicRouter.AddRoute(route); err != nil {
-		ah.logger.Error().Err(err).Str("route_id", routeID).Msg("failed to add route")
+		ah.logger.Error("failed to add route", slog.Any("error", err), slog.String("route_id", routeID))
 		c.JSON(http.StatusConflict, gin.H{
 			"error":   "route_exists",
 			"message": err.Error(),
@@ -149,7 +149,7 @@ func (ah *AdminHandler) AddRoute(c *gin.Context) {
 		return
 	}
 
-	ah.logger.Info().Str("route_id", routeID).Msg("route added via admin API")
+	ah.logger.Info("route added via admin API", slog.String("route_id", routeID))
 	c.JSON(http.StatusCreated, ah.dynamicRouter.GetRoute(routeID))
 }
 
@@ -178,7 +178,7 @@ func (ah *AdminHandler) UpdateRoute(c *gin.Context) {
 	}
 
 	if err := ah.dynamicRouter.UpdateRoute(id, route); err != nil {
-		ah.logger.Error().Err(err).Str("route_id", id).Msg("failed to update route")
+		ah.logger.Error("failed to update route", slog.Any("error", err), slog.String("route_id", id))
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   "route_not_found",
 			"message": err.Error(),
@@ -186,7 +186,7 @@ func (ah *AdminHandler) UpdateRoute(c *gin.Context) {
 		return
 	}
 
-	ah.logger.Info().Str("route_id", id).Msg("route updated via admin API")
+	ah.logger.Info("route updated via admin API", slog.String("route_id", id))
 	c.JSON(http.StatusOK, ah.dynamicRouter.GetRoute(id))
 }
 
@@ -196,7 +196,7 @@ func (ah *AdminHandler) DeleteRoute(c *gin.Context) {
 	id := c.Param("id")
 
 	if err := ah.dynamicRouter.DeleteRoute(id); err != nil {
-		ah.logger.Error().Err(err).Str("route_id", id).Msg("failed to delete route")
+		ah.logger.Error("failed to delete route", slog.Any("error", err), slog.String("route_id", id))
 		c.JSON(http.StatusNotFound, gin.H{
 			"error":   "route_not_found",
 			"message": err.Error(),
@@ -204,7 +204,7 @@ func (ah *AdminHandler) DeleteRoute(c *gin.Context) {
 		return
 	}
 
-	ah.logger.Info().Str("route_id", id).Msg("route deleted via admin API")
+	ah.logger.Info("route deleted via admin API", slog.String("route_id", id))
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "deleted",
 		"route_id": id,

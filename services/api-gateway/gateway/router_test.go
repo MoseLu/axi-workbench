@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/epap/api-gateway/config"
-	"github.com/rs/zerolog"
+	"log/slog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDynamicRouter_GetRoutes(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	// Create a simple route matcher
 	yamlContent := []byte(`
@@ -37,7 +37,7 @@ routes:
 }
 
 func TestDynamicRouter_AddRoute(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:
@@ -69,7 +69,7 @@ routes:
 }
 
 func TestDynamicRouter_AddRoute_Duplicate(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:
@@ -94,7 +94,7 @@ routes:
 }
 
 func TestDynamicRouter_UpdateRoute(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:
@@ -124,7 +124,7 @@ routes:
 }
 
 func TestDynamicRouter_UpdateRoute_NotFound(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:
@@ -149,7 +149,7 @@ routes:
 }
 
 func TestDynamicRouter_DeleteRoute(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:
@@ -172,7 +172,7 @@ routes:
 }
 
 func TestDynamicRouter_DeleteRoute_NotFound(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:
@@ -192,7 +192,7 @@ routes:
 }
 
 func TestDynamicRouter_ThreadSafety(t *testing.T) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	yamlContent := []byte(`
 routes:

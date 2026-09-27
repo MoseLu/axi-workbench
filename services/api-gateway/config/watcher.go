@@ -2,14 +2,14 @@ package config
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/axiomaticworld/observability/go/axilog"
 	"github.com/fsnotify/fsnotify"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 // ConfigWatcher monitors configuration files for changes and triggers callbacks.
@@ -20,7 +20,7 @@ type ConfigWatcher struct {
 	onChange   func(*RoutesConfig)
 	pollTicker *time.Ticker
 	done       chan struct{}
-	logger     zerolog.Logger
+	logger     *slog.Logger
 	mu         sync.RWMutex
 	lastHash   uint64
 	fsWatcher  *fsnotify.Watcher
@@ -30,7 +30,12 @@ type ConfigWatcher struct {
 // The onChange callback is called when the configuration file changes.
 // Uses fsnotify when available, falls back to polling otherwise.
 func NewConfigWatcher(path string, interval time.Duration, onChange func(*RoutesConfig)) (*ConfigWatcher, error) {
-	logger := log.With().Str("component", "config_watcher").Str("path", path).Logger()
+	logger := axilog.New(axilog.Options{
+		Service: axilog.WithService("axi-api-gateway"),
+	}).With(
+		slog.String("component", "config_watcher"),
+		slog.String("path", path),
+	)
 
 	cw := &ConfigWatcher{
 		path:     path,
@@ -42,7 +47,7 @@ func NewConfigWatcher(path string, interval time.Duration, onChange func(*Routes
 
 	// Try to use fsnotify
 	if err := cw.setupFsnotify(); err != nil {
-		logger.Warn().Err(err).Msg("fsnotify not available, using polling fallback")
+		logger.Warn("fsnotify not available, using polling fallback", slog.Any("error", err))
 		if interval < 5*time.Second {
 			cw.interval = 5 * time.Second
 		}
@@ -69,7 +74,7 @@ func (cw *ConfigWatcher) setupFsnotify() error {
 	}
 
 	cw.fsWatcher = watcher
-	cw.logger.Info().Str("dir", dir).Msg("using fsnotify for file watching")
+	cw.logger.Info("using fsnotify for file watching", slog.String("dir", dir))
 	return nil
 }
 
@@ -118,7 +123,7 @@ func (cw *ConfigWatcher) fsWatchLoop(ctx context.Context) {
 			}
 			if filepath.Base(event.Name) == filepath.Base(cw.path) {
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
-					cw.logger.Info().Str("event", event.String()).Msg("fsnotify detected config change")
+					cw.logger.Info("fsnotify detected config change", slog.String("event", event.String()))
 					cw.triggerReload()
 				}
 			}
@@ -126,7 +131,7 @@ func (cw *ConfigWatcher) fsWatchLoop(ctx context.Context) {
 			if !ok {
 				return
 			}
-			cw.logger.Warn().Err(err).Msg("fsnotify error")
+			cw.logger.Warn("fsnotify error", slog.Any("error", err))
 		}
 	}
 }
@@ -180,12 +185,12 @@ func (cw *ConfigWatcher) checkForChanges() {
 
 // triggerReload triggers the configuration reload callback.
 func (cw *ConfigWatcher) triggerReload() {
-	cw.logger.Info().Msg("configuration file changed, reloading")
+	cw.logger.Info("configuration file changed, reloading")
 
 	// Reload configuration
 	cfg, err := LoadRoutes(cw.path)
 	if err != nil {
-		cw.logger.Error().Err(err).Msg("failed to reload configuration")
+		cw.logger.Error("failed to reload configuration", slog.Any("error", err))
 		return
 	}
 

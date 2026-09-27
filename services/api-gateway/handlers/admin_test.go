@@ -12,13 +12,13 @@ import (
 	"github.com/epap/api-gateway/config"
 	"github.com/epap/api-gateway/gateway"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
+	"log/slog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupTestRouter(t *testing.T, matcher *config.RouteMatcher, configPath string) (*gin.Engine, *gateway.DynamicRouter) {
-	logger := zerolog.New(zerolog.NewTestWriter(t))
+	logger := slog.New(slog.NewTextHandler(t.Output(), &slog.HandlerOptions{Level: slog.LevelDebug}))
 	router := gateway.NewDynamicRouter(matcher, configPath, logger)
 	adminHandler := NewAdminHandler(router, "test-token", logger)
 

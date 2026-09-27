@@ -2,11 +2,14 @@ package main
 
 import (
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/axiomaticworld/observability/go/axilog"
 
 	"github.com/epap/api-gateway/config"
 	"github.com/epap/api-gateway/gateway"
@@ -15,6 +18,11 @@ import (
 	"github.com/epap/api-gateway/ratelimit"
 	"github.com/gin-gonic/gin"
 )
+
+// testLogger returns a discard-logger suitable for unit tests.
+func testLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
+}
 
 // testSetupRouter is a helper that creates a router with all required dependencies for testing.
 func testSetupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, mobileControl *handlers.MobileControlProxy, identityService *identity.Service, limiter ratelimit.Limiter) *gin.Engine {
@@ -25,7 +33,7 @@ func testSetupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, mo
 	}
 
 	// Create dynamic router for admin routes
-	dynamicRouter := gateway.NewDynamicRouter(routeMatcher, "", setupLogger("disabled"))
+	dynamicRouter := gateway.NewDynamicRouter(routeMatcher, "", testLogger())
 
 	// Create dynamic route handler for NoRoute handling
 	dynamicRouteHandler := handlers.NewDynamicRouteHandler(
@@ -35,11 +43,15 @@ func testSetupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, mo
 		limiter,
 		mobileControl,
 		cfg.Services.ControlPlaneInternalToken,
-		setupLogger("disabled"),
+		testLogger(),
 	)
 
-	return setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, dynamicRouteHandler, setupLogger("disabled"))
+	return setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, dynamicRouteHandler, testLogger())
 }
+
+// keep axilog referenced in tests so the import is exercised even when
+// unit tests don't otherwise need it.
+var _ = axilog.WithService
 
 // testRoutesYAML generates a minimal routes configuration for testing.
 // Note: /health and /ready are registered by registerAdditionalRoutes, not here.

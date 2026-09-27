@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/epap/api-gateway/middleware"
 	"github.com/epap/api-gateway/ratelimit"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
 // DynamicRouteHandler handles dynamic route matching at runtime.
@@ -20,7 +20,7 @@ type DynamicRouteHandler struct {
 	limiter         ratelimit.Limiter
 	mobileControl   *MobileControlProxy
 	internalToken   string
-	logger          zerolog.Logger
+	logger          *slog.Logger
 }
 
 // NewDynamicRouteHandler creates a new dynamic route handler.
@@ -31,7 +31,7 @@ func NewDynamicRouteHandler(
 	limiter ratelimit.Limiter,
 	mobileControl *MobileControlProxy,
 	internalToken string,
-	logger zerolog.Logger,
+	logger *slog.Logger,
 ) *DynamicRouteHandler {
 	return &DynamicRouteHandler{
 		dynamicRouter:   dynamicRouter,
@@ -168,7 +168,7 @@ func (drh *DynamicRouteHandler) resolveHandler(route *gateway.Route) gin.Handler
 	case "ProxyToEventConsumers":
 		return drh.proxyHandler.ProxyToEventConsumers()
 	default:
-		drh.logger.Warn().Str("handler", route.Handler).Msg("unknown dynamic handler, using not found")
+		drh.logger.Warn("unknown dynamic handler, using not found", slog.String("handler", route.Handler))
 		return NotFoundHandler()
 	}
 }
@@ -191,7 +191,7 @@ func (drh *DynamicRouteHandler) resolveFilter(filter string) gin.HandlerFunc {
 		// Path stripping is handled by the proxy handler configuration
 		return func(c *gin.Context) { c.Next() }
 	default:
-		drh.logger.Warn().Str("filter", filterName).Msg("unknown dynamic filter, skipping")
+		drh.logger.Warn("unknown dynamic filter, skipping", slog.String("filter", filterName))
 		return nil
 	}
 }

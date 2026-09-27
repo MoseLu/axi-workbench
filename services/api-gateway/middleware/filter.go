@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/epap/api-gateway/identity"
 	"github.com/epap/api-gateway/ratelimit"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
 // Filter is the processing interface for request/response handling.
@@ -132,10 +132,10 @@ func (f *RateLimitFilter) Filter(c *gin.Context, chain FilterChain) {
 
 // AuditFilter wraps the audit middleware as a Filter.
 type AuditFilter struct {
-	logger zerolog.Logger
+	logger *slog.Logger
 }
 
-func NewAuditFilter(logger zerolog.Logger) *AuditFilter {
+func NewAuditFilter(logger *slog.Logger) *AuditFilter {
 	return &AuditFilter{logger: logger}
 }
 
@@ -144,29 +144,31 @@ func (f *AuditFilter) Name() string { return "audit" }
 func (f *AuditFilter) Filter(c *gin.Context, chain FilterChain) {
 	started := time.Now()
 	chain.Next(c)
-	event := f.logger.Info().
-		Str("event", "gateway.audit").
-		Str("request_id", c.GetString("request_id")).
-		Str("traceparent", c.GetHeader("traceparent")).
-		Str("method", c.Request.Method).
-		Str("path", c.Request.URL.Path).
-		Int("status", c.Writer.Status()).
-		Dur("latency", time.Since(started))
+
+	attrs := []any{
+		slog.String("event", "gateway.audit"),
+		slog.String("request_id", c.GetString("request_id")),
+		slog.String("traceparent", c.GetHeader("traceparent")),
+		slog.String("method", c.Request.Method),
+		slog.String("path", c.Request.URL.Path),
+		slog.Int("status", c.Writer.Status()),
+		slog.Duration("latency", time.Since(started)),
+	}
 	if principal, ok := PrincipalFromContext(c); ok {
-		event = event.Str("subject", principal.Subject)
+		attrs = append(attrs, slog.String("subject", principal.Subject))
 	}
 	if tenantID := c.Param("tenantID"); tenantID != "" {
-		event = event.Str("tenant_id", tenantID)
+		attrs = append(attrs, slog.String("tenant_id", tenantID))
 	}
-	event.Msg("request completed")
+	f.logger.Info("request completed", attrs...)
 }
 
 // LoggingFilter wraps the logging middleware as a Filter.
 type LoggingFilter struct {
-	logger zerolog.Logger
+	logger *slog.Logger
 }
 
-func NewLoggingFilter(logger zerolog.Logger) *LoggingFilter {
+func NewLoggingFilter(logger *slog.Logger) *LoggingFilter {
 	return &LoggingFilter{logger: logger}
 }
 
@@ -175,13 +177,13 @@ func (f *LoggingFilter) Name() string { return "logging" }
 func (f *LoggingFilter) Filter(c *gin.Context, chain FilterChain) {
 	start := time.Now()
 	chain.Next(c)
-	f.logger.Info().
-		Str("method", c.Request.Method).
-		Str("path", c.Request.URL.Path).
-		Int("status", c.Writer.Status()).
-		Dur("latency", time.Since(start)).
-		Str("client_ip", c.ClientIP()).
-		Msg("request")
+	f.logger.Info("request",
+		slog.String("method", c.Request.Method),
+		slog.String("path", c.Request.URL.Path),
+		slog.Int("status", c.Writer.Status()),
+		slog.Duration("latency", time.Since(start)),
+		slog.String("client_ip", c.ClientIP()),
+	)
 }
 
 // CORSFilter wraps the CORS middleware as a Filter.

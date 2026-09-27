@@ -3,14 +3,14 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log/slog"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 )
 
-// Logger creates a logging middleware using zerolog
-func Logger(logger zerolog.Logger) gin.HandlerFunc {
+// Logger creates a logging middleware using slog.
+func Logger(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -24,13 +24,13 @@ func Logger(logger zerolog.Logger) gin.HandlerFunc {
 		latency := time.Since(start)
 
 		// Log the request
-		logger.Info().
-			Str("method", method).
-			Str("path", path).
-			Int("status", status).
-			Dur("latency", latency).
-			Str("client_ip", c.ClientIP()).
-			Msg("request")
+		logger.Info("request",
+			slog.String("method", method),
+			slog.String("path", path),
+			slog.Int("status", status),
+			slog.Duration("latency", latency),
+			slog.String("client_ip", c.ClientIP()),
+		)
 	}
 }
 
