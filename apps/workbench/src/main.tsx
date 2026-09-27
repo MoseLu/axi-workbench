@@ -13,6 +13,33 @@ import './index.css';
 
 installTauriGatewayFetch();
 
+// Adopt the workspace observability SDK for the webview side. The
+// SDK intercepts `console.*` plus global errors / unhandled rejections
+// and posts JSON batches to the control-plane ingest endpoint exposed
+// by api-gateway under `/api/observability/ingest`. The env variable
+// defaults to the production-style URL but falls back to a no-op when
+// not configured so dev installs without the gateway still run.
+const observabilityIngestUrl =
+  (import.meta.env.VITE_AXI_OBSERVABILITY_INGEST_URL as string | undefined) ??
+  '/api/observability/ingest';
+if (observabilityIngestUrl) {
+  void import('@axi/observability-web').then(({ installWeb }) => {
+    installWeb({
+      service: 'axi-workbench-web',
+      env: (import.meta.env.MODE as string) || 'dev',
+      ingestUrl: observabilityIngestUrl,
+    });
+  });
+}
+
+// Dev-only: cross-check every `@axi/*` import in src/ against
+// `foundation/axi-ui/docs/axi-ui/public-api.snapshot.json`. Vite tree-shakes
+// the dynamic import out of production bundles because the module is reached
+// exclusively through this `import.meta.env.DEV` branch.
+if (import.meta.env.DEV) {
+  void import('./lib/axi-ui-capability-check').then((m) => m.runAxiUiCapabilityCheck());
+}
+
 const root = document.getElementById('root');
 if (!root) throw new Error('Workbench root element is missing');
 

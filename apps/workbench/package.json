@@ -17,6 +17,7 @@
     "@axi/api-client": "workspace:*",
     "@axi/core": "link:../../../../shared/axi-ui/packages/core",
     "@axi/crud": "link:../../../../shared/axi-ui/packages/crud",
+    "@axi/observability-web": "workspace:*",
     "@axi/presets": "link:../../../../shared/axi-ui/packages/presets",
     "@axi/settings": "link:../../../../shared/axi-ui/packages/settings",
     "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
