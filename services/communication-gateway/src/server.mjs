@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
+import { createLogger } from "@axi/observability-logging";
 import { createCommunicationGateway } from "./gateway.mjs";
 
+const log = createLogger({ service: "axi-workbench-communication-gateway" });
 const port = Number.parseInt(process.env.COMMUNICATION_GATEWAY_PORT || "8093", 10);
 const gateway = createCommunicationGateway();
 
@@ -57,7 +59,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`communication-gateway listening on http://127.0.0.1:${port}`);
+  log.info({ port }, "communication-gateway listening");
 });
 
 function sendJson(res, statusCode, payload) {
