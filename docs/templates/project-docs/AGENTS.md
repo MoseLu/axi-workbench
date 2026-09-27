@@ -7,12 +7,14 @@
 ## 权威事实源
 
 - 项目入口：`README.md`
-- 当前待办：`TODO.md`
-- 里程碑：`MILESTONE.md`
-- 变更记录：`CHANGELOG.md`
-- 产品需求：`docs/PRD.md`
-- 技术/测试设计：`docs/TDD.md`
-- 项目记忆：`docs/MEMORY.md`（如存在）
+- 当前待办：`docs/state/TODO.md`
+- 里程碑：`docs/state/MILESTONE.md`
+- 变更记录：`docs/state/CHANGELOG.md`
+- 产品需求：`docs/state/PRD.md`
+- 技术/测试设计：`docs/state/TDD.md`
+- 项目记忆：`docs/state/MEMORY.md`（如存在）
+
+> **Axi Workbench 子项目**：所有状态/合同类文档已统一到 `docs/state/` 子树，根级 `TODO.md` / `MILESTONE.md` / `CHANGELOG.md` 已删除（PR-11）。复制此模板的项目请直接以 `docs/state/` 为权威入口。
 
 ## 验证命令
 
