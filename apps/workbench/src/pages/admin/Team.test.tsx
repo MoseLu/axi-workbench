@@ -193,6 +193,7 @@ describe('Team', () => {
     renderTeam();
     expect(screen.getByLabelText('团队')).toBeInTheDocument();
     expect(screen.getByText('Axi Workbench')).toBeInTheDocument();
+    expect(document.querySelector('[data-axi="team-group"]')?.getAttribute('data-title')).toBe('');
     expect(document.querySelector('[data-axi="team-table"] [data-row]')).not.toBeNull();
   });
 });

@@ -75,7 +75,6 @@ const Team: React.FC = () => {
           description={rows.length > 0
             ? t('team.count', `${rows.length}`)
             : t('team.empty')}
-          title={t('team.collaboration.title')}
         >
           <AxiTable
             columns={columns}

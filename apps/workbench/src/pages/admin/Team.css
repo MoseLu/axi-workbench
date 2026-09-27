@@ -1,3 +1,4 @@
 .team-crud .axi-table-group {
-  min-height: min(560px, calc(100vh - 180px));
+  align-content: start;
+  min-height: 0;
 }
