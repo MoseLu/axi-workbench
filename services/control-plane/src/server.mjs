@@ -2,34 +2,29 @@ import { createServer } from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
+import { createLogger } from "@axi/observability-logging";
 import { createControlPlane } from "./control-plane.mjs";
 import { createEpsAudit } from "./eps/scanner.mjs";
 import { createEpsStore } from "./eps/persistence.mjs";
 import { probeWindowsDockerRuntime } from "./eps/runtime-probe.mjs";
 import { emitObservabilityEvent } from "./observability-events.mjs";
 
-// PRD-07 phase 2: adopt the Axi observability Node SDK as an
-// optional dependency. When installed, diagnostic chatter goes
-// through structured JSON logs; when absent the service falls back
-// to bare console.* so installs without the SDK keep working.
-let log = null;
-try {
-  const mod = await import("@axi/observability-logging");
-  log = mod.createLogger({ service: "axi-workbench-control-plane" });
-} catch {
-  // SDK not installed; fall back to console.* below.
-}
+// PRD-07 phase 2: adopt the Axi observability Node SDK as a
+// required workspace dependency (declared in this package's
+// package.json). Diagnostic chatter now flows through structured
+// JSON logs; installWeb/upstream controls stay unchanged.
+const log = createLogger({ service: "axi-workbench-control-plane" });
 
 function _logInfo(message, extra) {
-  if (log) log.info(extra ?? {}, message);
+  log.info(extra ?? {}, message);
 }
 
 function _logError(message, extra) {
-  if (log) log.error(extra ?? {}, message);
+  log.error(extra ?? {}, message);
 }
 
 function _logWarn(message, extra) {
-  if (log) log.warn(extra ?? {}, message);
+  log.warn(extra ?? {}, message);
 }
 
 const port = Number.parseInt(process.env.CONTROL_PLANE_PORT || "8092", 10);

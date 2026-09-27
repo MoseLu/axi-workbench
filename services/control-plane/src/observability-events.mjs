@@ -5,7 +5,7 @@
 // transport (HTTP POST + JSONL outbox fallback). This module keeps
 // the original workbench API surface (`emitObservabilityEvent`,
 // `commitEvent`) so existing call sites in `server.mjs` and
-// `commit-ledger/api-routes.mjs` continue to work without changes.
+// commit-ledger/api-routes.mjs continue to work without changes.
 // New code should import from `@axi/observability-events` directly.
 
 import {
@@ -16,7 +16,7 @@ import {
   verificationCompletedEvent,
   warningEvent,
   workspaceSyncEvent,
-} from '../../../../../foundation/axi-observability/node/packages/observability-events/src/index.mjs';
+} from '@axi/observability-events';
 
 export async function emitObservabilityEvent(event) {
   return _emitEvent(event);
