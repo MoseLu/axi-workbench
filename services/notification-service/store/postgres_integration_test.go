@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"notification-service/models"
+	"github.com/axi-workbench/notification-service/models"
 )
 
 func TestPostgresNotificationDeliveryLifecycle(t *testing.T) {

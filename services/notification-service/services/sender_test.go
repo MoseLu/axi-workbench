@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
-	"notification-service/config"
-	"notification-service/models"
-	"notification-service/store"
+	"github.com/axi-workbench/notification-service/config"
+	"github.com/axi-workbench/notification-service/models"
+	"github.com/axi-workbench/notification-service/store"
 )
 
 type fakeNotificationRepository struct {

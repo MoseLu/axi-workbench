@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"notification-service/models"
+	"github.com/axi-workbench/notification-service/models"
 )
 
 //go:embed migrations/001_notifications.sql

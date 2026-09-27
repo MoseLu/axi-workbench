@@ -75,6 +75,19 @@ This AGENTS.md scopes guidance to `services`. Parent AGENTS guidance still appli
 | [`core-service/`](core-service/) | Java (Spring Boot / Maven, `pom.xml`) | `STATUS: legacy` | 旧 Java Spring 业务核心；`Makefile` 保留 `dev-core`（`./gradlew bootRun`）+ `migrate-core`（flyway）入口以便老数据查询，**不参与生产路径**。 |
 | [`resource-gateway/`](resource-gateway/) | TypeScript | `STATUS: legacy` | 旧 `@axi/resource-*` 资源网关组件，依赖 `@axi/gateway-contracts` / `@axi/resource-orchestrator` 等；不在 `package.json` / `Makefile` / `docker-compose` 任何工作区引用里，纯粹孤立目录。 |
 
+#### DEPRECATION TIMELINE
+
+下表记录三个 legacy 服务的**正式移除时间表**。每个时间点之前必须完成：依赖扫描、迁移脚本、owner 评审。**移除路径需 owner 显式 ack**，本表只承诺"目标季度"，不做硬删除。
+
+| 服务 | 目标移除季度 | 前置条件 | 当前 Makefile 行为 |
+|---|---|---|---|
+| `auth-service` | **2027-Q1** (2027-03-31) | 所有调用方已迁至 `identity-adapter`；H2 内存数据库已下线；`migrate-auth` 已停跑 | `make dev-auth` 现在 echo deprecated 信息并 `exit 1` |
+| `core-service` | **2027-Q1** (2027-03-31) | 旧 Spring 业务表已迁移到 `platform-core` Postgres；`./gradlew bootRun` 路径无人使用 | `make dev-core` 现在 echo deprecated 信息并 `exit 1` |
+| `resource-gateway` | **2027-Q2** (2027-06-30) | `@axi/resource-*` 包从 `package.json` 与任何 workspace 引用中移除 | 未注册 `dev-resource-gateway` 目标 |
+
+> **复审节奏**：每个 quarter 第一个月由 owner 主导一次"legacy 服务去留评审"，在 `docs/state/CHANGELOG.md` 的 `[Unreleased] Changed` 区登记结论（保留 / 加速移除 / 推迟）。
+> **Owner Notification Contract**：任何加速 / 推迟必须先在根 `AGENTS.md` 提一条 ADR，并在 PR 描述里同时 `@` 到 `axi-workbench` 工作区 owner。
+
 > 这三个目录保留只为兼容老数据和老脚本；它们**不是**当前 Workbench 业务后端的组成部分。
 > **"Java Spring 网关中心"的疑虑来源**：`core-service` 目录名 + `pom.xml` + `target/` 让人以为它是网关 — 它其实是 Java Spring **业务服务**；当下的网关是 `api-gateway`（Go + Gin + 类 Spring Cloud Gateway 风格的 YAML 路由）。
 

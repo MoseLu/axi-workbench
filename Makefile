@@ -87,10 +87,10 @@ dev-control-plane:
 	./services/control-plane/scripts/dev-run.sh
 
 dev-auth:
-	cd services/auth-service && go run cmd/authserver/main.go
+	@echo "deprecated: services/auth-service is STATUS: legacy (DEPRECATION TIMELINE Q1-2027). Use 'make dev-identity' against services/identity-adapter instead." && exit 1
 
 dev-core:
-	cd services/core-service && ./gradlew bootRun
+	@echo "deprecated: services/core-service is STATUS: legacy (DEPRECATION TIMELINE Q1-2027). No replacement dev target; query legacy data via services/api-gateway/identity-adapter." && exit 1
 
 dev-workflow:
 	cd services/workflow-engine && uv run --with-requirements requirements.txt uvicorn main:app --reload --host 0.0.0.0 --port 8083
@@ -99,7 +99,7 @@ dev-file:
 	cd services/file-service && uv run --with-requirements requirements.txt uvicorn main:app --reload --host 0.0.0.0 --port 8085
 
 dev-notification:
-	cd services/notification-service && go run .
+	cd services/notification-service && go run ./cmd/notification-service
 
 dev-kb:
 	cd ai/knowledge-base && uv run fastapi dev src/api/main.py

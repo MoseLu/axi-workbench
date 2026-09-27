@@ -44,6 +44,7 @@ func testSetupRouter(cfg *config.Config, proxyHandler *handlers.ProxyHandler, mo
 		mobileControl,
 		cfg.Services.ControlPlaneInternalToken,
 		testLogger(),
+		cfg,
 	)
 
 	return setupRouter(cfg, proxyHandler, mobileControl, identityService, limiter, routeMatcher, dynamicRouter, dynamicRouteHandler, testLogger())

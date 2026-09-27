@@ -15,8 +15,7 @@
 # Control Plane is a Node service on 8092, while the API Gateway is a
 # Go service on 8080. Combining them would couple the Node runtime to
 # the Gateway and break the per-service health / restart / resource-limit
-# policy required by docs/deployment/REMOTE-WINDOWS-WORKBENCH-DEPLOYMENT-
-# TODO.md §6 (方案 2：Control Plane 容器化).
+# policy described in services/control-plane/README.md (Containerization).
 
 # ----------------------------------------------------------------------------
 # Stage 1 — dependency build
@@ -24,10 +23,8 @@
 FROM node:22.13-bookworm-slim AS build
 WORKDIR /src
 
-# Node 22's bundled Corepack currently fails to validate the pnpm signing key
-# in this Windows build environment. Install the exact package-manager version
-# declared by package.json through npm instead of disabling verification or
-# silently selecting a different pnpm release.
+# Install the exact package-manager version declared by package.json through
+# npm so the lockfile-pinned pnpm release is the one used for the install.
 RUN npm install --global pnpm@9.6.0
 
 # Copy only manifests and the workspace declaration first so the install
@@ -52,8 +49,8 @@ FROM node:22.13-bookworm-slim AS runtime
 WORKDIR /app
 
 # /out/app contains the deployed package (its own package.json plus a
-# pruned node_modules tree). The Node slim image is used here because the
-# Windows network can reach the configured Docker Hub mirror but not gcr.io.
+# pruned node_modules tree). The Node slim image is used here because it
+# keeps the runtime footprint small and avoids carrying the build toolchain.
 COPY --from=build /out/app /app
 
 # The idempotency service creates this cache on first boot. Prepare it while

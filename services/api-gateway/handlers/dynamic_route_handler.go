@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/epap/api-gateway/config"
 	"github.com/epap/api-gateway/gateway"
 	"github.com/epap/api-gateway/identity"
 	"github.com/epap/api-gateway/middleware"
@@ -21,6 +22,7 @@ type DynamicRouteHandler struct {
 	mobileControl   *MobileControlProxy
 	internalToken   string
 	logger          *slog.Logger
+	cfg             *config.Config
 }
 
 // NewDynamicRouteHandler creates a new dynamic route handler.
@@ -32,6 +34,7 @@ func NewDynamicRouteHandler(
 	mobileControl *MobileControlProxy,
 	internalToken string,
 	logger *slog.Logger,
+	cfg *config.Config,
 ) *DynamicRouteHandler {
 	return &DynamicRouteHandler{
 		dynamicRouter:   dynamicRouter,
@@ -41,6 +44,7 @@ func NewDynamicRouteHandler(
 		mobileControl:   mobileControl,
 		internalToken:   internalToken,
 		logger:          logger,
+		cfg:             cfg,
 	}
 }
 
@@ -126,7 +130,7 @@ func (drh *DynamicRouteHandler) resolveHandler(route *gateway.Route) gin.Handler
 	case "HealthCheck":
 		return HealthCheck()
 	case "Ready":
-		return ReadyCheck()
+		return ReadyCheck(drh.cfg)
 	case "Session":
 		return Session(drh.identityService)
 	case "Logout":

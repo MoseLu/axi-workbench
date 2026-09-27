@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"notification-service/config"
-	"notification-service/store"
+	"github.com/axi-workbench/notification-service/config"
+	"github.com/axi-workbench/notification-service/store"
 )
 
 func main() {

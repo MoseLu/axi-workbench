@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"notification-service/config"
+	"github.com/axi-workbench/notification-service/config"
 )
 
 const subjectKey = "axi.subject"

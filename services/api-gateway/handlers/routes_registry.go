@@ -34,6 +34,7 @@ type RouteRegistry struct {
 	fileInternalToken         string
 	workflowInternalToken     string
 	notificationInternalToken string
+	cfg              *config.Config
 }
 
 // RouteRegistryConfig holds dependencies for the route registry
@@ -51,6 +52,7 @@ type RouteRegistryConfig struct {
 	FileInternalToken          string
 	WorkflowInternalToken      string
 	NotificationInternalToken string
+	Config                     *config.Config
 }
 
 // NewRouteRegistry creates a new route registry
@@ -71,6 +73,7 @@ func NewRouteRegistry(cfg RouteRegistryConfig) *RouteRegistry {
 		fileInternalToken:         cfg.FileInternalToken,
 		workflowInternalToken:     cfg.WorkflowInternalToken,
 		notificationInternalToken: cfg.NotificationInternalToken,
+		cfg:              cfg.Config,
 	}
 }
 
@@ -169,7 +172,7 @@ func (rr *RouteRegistry) resolveHandler(route *config.Route) gin.HandlerFunc {
 	case "HealthCheck":
 		return HealthCheck()
 	case "Ready":
-		return ReadyCheck()
+		return ReadyCheck(rr.cfg)
 	case "Session":
 		return Session(rr.identityService)
 	case "Logout":
