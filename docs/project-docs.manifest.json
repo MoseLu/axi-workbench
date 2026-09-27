@@ -3,7 +3,7 @@
   "project": "axi-workbench",
   "name": "Axi Workbench",
   "status": "verified",
-  "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench",
+  "canonicalPath": "/Volumes/code/workspace/workbench/axi-workbench",
   "kind": "pnpm multi-runtime monorepo",
   "lifecycle": "active",
   "owner": "Axi Core Projects",
