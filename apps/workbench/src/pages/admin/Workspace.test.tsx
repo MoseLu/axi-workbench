@@ -52,6 +52,8 @@ const i18nDict: Record<string, string> = {
   'workspace.error.description': '无法从控制面读取工作队列；不会显示伪造数据。',
   'workspace.loading.title': '正在同步工作队列',
   'workspace.loading.description': '正在读取任务、审批和已登记运行环境。',
+  'workspace.effects.title': '受控 Agent 工作流',
+  'workspace.effects.loading': '正在读取受控 Agent 工作流…',
   'workspace.empty.tasks': '当前主体没有受管任务。',
   'workspace.empty.approvals': '当前主体没有待处理审批。',
   'workspace.empty.runtime': '当前没有已登记的运行环境。',
@@ -164,6 +166,31 @@ describe('Workspace (component)', () => {
     // without fabricating rows.
     expect(document.body.textContent).toContain('工作台工作队列暂不可用');
     expect(document.querySelectorAll('[data-axi="workspace-table"] [data-row]').length).toBe(0);
+    expect(document.body.textContent).not.toContain('受控 Agent 工作流');
+  });
+
+  it('does not render a second workflow loading surface while the snapshot is loading', () => {
+    mockUseControlSnapshot.mockReturnValue({
+      data: undefined,
+      error: null,
+      isError: false,
+      isFetching: true,
+      isLoading: true,
+      refetch: vi.fn(),
+    });
+    mockUseWorkflowEngineWorkflows.mockReturnValue({
+      data: undefined,
+      error: null,
+      isError: false,
+      isFetching: true,
+      isLoading: true,
+      refetch: vi.fn(),
+    });
+
+    renderWorkspace();
+    expect(document.body.textContent).toContain('正在同步工作队列');
+    expect(document.body.textContent).not.toContain('受控 Agent 工作流');
+    expect(document.querySelectorAll('.workflow-effects__state')).toHaveLength(0);
   });
 
   it('renders the empty placeholder when the snapshot is healthy but has zero tasks', () => {

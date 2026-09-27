@@ -134,8 +134,10 @@ const Workspace: React.FC = () => {
   const isRefreshing = isFetching || workflowQuery.isFetching;
   const workflowData = workflowQuery.data;
   const hasWorkflowData = Array.isArray(workflowData) && workflowData.length > 0;
-  const showWorkflowPanel = !workflowQuery.isError && hasWorkflowData;
-  const showWorkflowLoading = !workflowQuery.isError && !hasWorkflowData && workflowQuery.isLoading;
+  // The workflow audit query is secondary to the control-plane snapshot. Do not
+  // render a second loading surface while the page-level state is unresolved.
+  const showWorkflowPanel = Boolean(snapshot) && !error && !isLoading && !workflowQuery.isError && hasWorkflowData;
+  const showWorkflowLoading = Boolean(snapshot) && !error && !isLoading && !workflowQuery.isError && !hasWorkflowData && workflowQuery.isLoading;
 
   return (
     <DesktopCrudFrame
