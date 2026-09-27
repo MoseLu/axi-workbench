@@ -257,11 +257,24 @@ When other projects declare a dependency on this project in `workspace.graph.jso
 
 | Capability | Dependency Phase | Notes |
 |---|---|---|
-| dashboard-apps | runtime | Dashboard applications render in browser |
-| control-plane | runtime | Control plane orchestrates agent tasks |
-| communication-gateway | runtime | Gateway routes IM/communication at runtime |
-| prompt-layer | build | Prompts are loaded at agent startup |
-| im-envelope | runtime | IM envelope protocol processes messages |
-| agent-task | runtime | AgentTask protocol manages task execution |
-| verification-inbox | runtime | Verification inbox runs during quality checks |
-| fleet-console | runtime | Fleet console serves resource management UI |
+| workstation-control-plane | runtime | `services/control-plane/` orchestrates agent tasks + IM events |
+| axi-dashboard-host | runtime | `apps/devsvc-dashboard/` hosts + launches sub-apps |
+| project-development-workbench | runtime | `apps/workbench/` web admin shell |
+| ops-dashboard | runtime | `apps/devsvc-dashboard/` operations dashboard UI |
+| docs-search-surface | runtime | `apps/workbench/src/pages/docs/` and `apps/axi-docs` |
+| verification-inbox | runtime | `apps/verification-inbox/` OTP/IMAP inbox tooling |
+| local-ai-menu-assistant | runtime | `apps/ollama-menu-assistant/` macOS menu bar |
+| axi-app-scaffolder | build | `tools/axi-app-cli/` scaffolding CLI |
+| workflow-agent-orchestration-v1 | runtime | `services/workflow-engine/` durable workflow executor |
+| resource-orchestration-workbench | runtime | `apps/resource-orchestration/` resource gateway UI |
+| resource-orchestration-gateway | runtime | `services/resource-gateway/` resource orchestration backend |
+| docs-hub | runtime | `apps/axi-docs/` documentation hub + MCP |
+| node-picker-overlay | runtime | `apps/axi-artboard/` agent node-picker |
+| artboard-vite-plugin | build | `packages/artboard-vite-plugin/` AST source-stamp Vite plugin |
+| dashboard-apps (legacy alias) | runtime | Alias for `project-development-workbench` + `axi-dashboard-host` |
+| control-plane (legacy alias) | runtime | Alias for `workstation-control-plane` |
+| communication-gateway | runtime | `services/communication-gateway/` IM/communication routing |
+| prompt-layer | build | `prompts/` loaded at agent startup |
+| im-envelope | runtime | `IMEnvelope` protocol processes messages |
+| agent-task | runtime | `AgentTask` protocol manages task execution |
+| fleet-console | runtime | `infra/fleet-console/` physical service console |
