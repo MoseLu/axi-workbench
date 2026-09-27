@@ -15,10 +15,10 @@
     "verify:favicon-sync": "node scripts/check-favicon-sync.mjs"
   },
   "dependencies": {
-    "@axi/core": "link:../../../../shared/axi-ui/packages/core",
+    "@axi/core": "workspace:*",
     "@axi/observability-web": "workspace:*",
-    "@axi/shell": "link:../../../../shared/axi-ui/packages/shell",
-    "@axi/tokens": "link:../../../../shared/axi-ui/packages/tokens",
+    "@axi/shell": "workspace:*",
+    "@axi/tokens": "workspace:*",
     "@axi/workbench-foundation": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "react": "^18.2.0",
