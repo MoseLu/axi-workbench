@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TocHeading } from '../types'
 
 interface TableOfContentsProps {
@@ -71,11 +71,10 @@ export function TableOfContents({
   label = '目录',
   onItemSelect,
 }: TableOfContentsProps) {
-  const [headings, setHeadings] = useState<TocHeading[]>([])
+  const headings = useMemo(() => extractHeadings(content), [content])
   const [activeId, setActiveId] = useState<string>('')
 
   useEffect(() => {
-    setHeadings(extractHeadings(content))
     setActiveId('')
   }, [content])
 

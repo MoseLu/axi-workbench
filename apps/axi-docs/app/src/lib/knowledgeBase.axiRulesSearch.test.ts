@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe('knowledge base axi-rules search', () => {
   it('finds AR-ROUTING-001 in the axi-rules source (T4)', async () => {
-    process.env.AXI_RULES_PATH = '/Volumes/code/workspace/projects/axi-rules'
+    process.env.AXI_RULES_PATH = '/Volumes/code/workspace/foundation/axi-rules'
     process.env.AXI_RULES_ENABLED = 'true'
     // Force an empty obsidian + extra sources to isolate axi-rules.
     process.env.OBSIDIAN_PATH = '/tmp/__axi_rules_obsidian_unused__'
@@ -44,7 +44,7 @@ describe('knowledge base axi-rules search', () => {
   }, 30000)
 
   it('finds TD-HDOC-001 in the axi-rules source via a scoped source query (T5)', async () => {
-    process.env.AXI_RULES_PATH = '/Volumes/code/workspace/projects/axi-rules'
+    process.env.AXI_RULES_PATH = '/Volumes/code/workspace/foundation/axi-rules'
     process.env.AXI_RULES_ENABLED = 'true'
     process.env.OBSIDIAN_PATH = '/tmp/__axi_rules_obsidian_unused__'
     process.env.AXI_DOCS_EXTRA_SOURCES_JSON = '[]'

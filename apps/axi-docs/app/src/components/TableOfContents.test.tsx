@@ -1,8 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { TableOfContents } from './TableOfContents'
 
 describe('TableOfContents', () => {
+  it('renders the page navigation in server HTML before hydration', () => {
+    const html = renderToString(<TableOfContents content={'# 入门指南\n\n## 启动本地站点\n\n## 浏览文档'} label="页面导航" />)
+
+    expect(html).toContain('页面导航')
+    expect(html).toContain('启动本地站点')
+    expect(html).toContain('浏览文档')
+  })
+
   it('scrolls the configured document container when a heading is selected', async () => {
     const { container } = render(
       <div className="reader">

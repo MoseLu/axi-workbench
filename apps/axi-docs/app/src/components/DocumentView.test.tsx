@@ -43,6 +43,33 @@ const workspaceSource: DocSource = {
 }
 
 describe('DocumentView', () => {
+  it('omits the guide subtitle from the clean header', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <DocumentView
+          content={`---
+title: 什么是 Axi Docs？
+type: guide
+description: 这段摘要不应显示在指南标题下
+---
+## 第一节
+
+正文内容`}
+          fileName="what-is-axi-docs.md"
+          loading={false}
+          onWikiLink={vi.fn()}
+          selectedFile={{ sourceId: 'axi-docs-zh', path: 'guide/what-is-axi-docs.md' }}
+          showKnowledgePanel={false}
+          source={{ ...workspaceSource, id: 'axi-docs-zh', name: 'Axi Docs · 中文文档' }}
+          variant="guide"
+        />
+      </MemoryRouter>,
+    )
+
+    expect(container.querySelector('.doc-description')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '第一节' })).toBeInTheDocument()
+  })
+
   it('keeps skill document headers focused on the title and description', () => {
     const { container } = render(
       <MemoryRouter>

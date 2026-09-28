@@ -1,15 +1,20 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import * as knowledgeBase from '../lib/knowledgeBase'
+import type { ProjectHandoffCard as HandoffCard } from '../lib/knowledgeBase'
 import { ProjectHandoffCard } from './ProjectHandoffCard'
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
+
+function mockHandoffCard(card: HandoffCard) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => card }))
+}
 
 describe('ProjectHandoffCard', () => {
   it('renders the ok state with readiness and score (C1)', async () => {
-    vi.spyOn(knowledgeBase, 'getProjectHandoffCard').mockResolvedValue({
+    mockHandoffCard({
       state: 'ok',
       readiness: 'verified',
       score: 10,
@@ -36,7 +41,7 @@ describe('ProjectHandoffCard', () => {
   })
 
   it('renders the missing state with a notice (C2)', async () => {
-    vi.spyOn(knowledgeBase, 'getProjectHandoffCard').mockResolvedValue({
+    mockHandoffCard({
       state: 'missing',
       readiness: 'unknown',
       score: 0,
@@ -61,7 +66,7 @@ describe('ProjectHandoffCard', () => {
   })
 
   it('renders the stale state with a refresh notice (C3)', async () => {
-    vi.spyOn(knowledgeBase, 'getProjectHandoffCard').mockResolvedValue({
+    mockHandoffCard({
       state: 'stale',
       readiness: 'verified',
       score: 8,

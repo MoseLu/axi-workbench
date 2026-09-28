@@ -1,4 +1,5 @@
 import path from 'path'
+import fs from 'node:fs'
 import type { DocSource, DocumentSourceConfig } from '../types'
 
 const DEFAULT_OBSIDIAN_PATH = 'F:/docs/obsidian/'
@@ -26,26 +27,25 @@ function detectWorkspaceRoot(): string {
     if (parent === dir) break
     dir = parent
   }
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const fs = require('node:fs') as typeof import('node:fs')
   for (const c of candidates) {
     if (c === '/' || c === '.') continue
     try {
-      if (fs.existsSync(path.join(c, 'projects', 'axi-workbench'))) {
+      if (fs.existsSync(path.join(c, 'workbench', 'axi-workbench')) || fs.existsSync(path.join(c, 'projects', 'axi-workbench'))) {
         return c
       }
     } catch {
       /* swallow */
     }
   }
-  // Fallback: best-effort relative resolution from cwd.
+  const configuredRoot = process.env.AXI_WORKSPACE_ROOT || '/Volumes/code/workspace'
+  if (fs.existsSync(path.join(configuredRoot, 'workbench', 'axi-workbench'))) return configuredRoot
   return path.resolve(process.cwd(), '..', '..', '..', '..')
 }
 
-const WORKSPACE_ROOT = detectWorkspaceRoot()
+const WORKSPACE_ROOT = typeof process === 'undefined' ? '' : detectWorkspaceRoot()
 
 function resolveProjectPath(...segments: string[]): string {
-  return path.resolve(WORKSPACE_ROOT, 'projects', ...segments)
+  return path.resolve(WORKSPACE_ROOT, 'workbench', 'axi-workbench', 'apps', 'axi-docs', ...segments)
 }
 
 function resolveWorkspacePath(...segments: string[]): string {
@@ -59,19 +59,19 @@ function existingOrFallback(primary: string, fallback: string): string {
 export function getDocumentSourceRegistry(): DocumentSourceConfig[] {
   const axiSkillsPath = existingOrFallback(
     process.env.AXI_SKILLS_PATH || '',
-    resolveWorkspacePath('shared', 'axi-skills'),
+    resolveWorkspacePath('foundation', 'axi-skills'),
   )
   const workspaceGovernancePath = existingOrFallback(
     process.env.AXI_WORKSPACE_GOVERNANCE_PATH || '',
-    resolveWorkspacePath('infra', 'axi-workspace-governance'),
+    resolveWorkspacePath('foundation', 'workspace-governance'),
   )
   const dbskillPath = existingOrFallback(
     process.env.DBSKILL_PATH || '',
-    resolveWorkspacePath('shared', 'dbskill'),
+    resolveWorkspacePath('references', 'dbskill'),
   )
   const axiRulesPath = existingOrFallback(
     process.env.AXI_RULES_PATH || '',
-    resolveWorkspacePath('projects', 'axi-rules'),
+    resolveWorkspacePath('foundation', 'axi-rules'),
   )
   const axiDocsContentPath = existingOrFallback(
     process.env.AXI_DOCS_CONTENT_PATH || '',

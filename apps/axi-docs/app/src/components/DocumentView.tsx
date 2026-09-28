@@ -384,7 +384,7 @@ export function DocumentView({
             {!hasCleanHeader && docType && !isDaily && <span className="doc-type-badge">{docType}</span>}
           </div>
 
-          {description && <p className="doc-description">{description}</p>}
+          {!isGuideDocument && description && <p className="doc-description">{description}</p>}
 
           {!hasCleanHeader && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>

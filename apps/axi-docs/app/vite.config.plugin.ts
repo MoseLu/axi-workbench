@@ -8,6 +8,7 @@ import {
   getGlobalKnowledgeGraph,
   getKnowledgeCatalog,
   getKnowledgeGraph,
+  getProjectHandoffCard,
   getKnowledgeTags,
   listKnowledgeSources,
   readKnowledgeFile,
@@ -83,7 +84,7 @@ function registerJsonAsset(
   })
 }
 
-async function buildStaticKnowledgeAssets() {
+export async function buildStaticKnowledgeAssets(sourceIds?: string[]) {
   const assets = new Map<string, GeneratedKnowledgeAsset>()
   const generatedAt = new Date().toISOString()
   const localSources = listKnowledgeSources()
@@ -99,13 +100,13 @@ async function buildStaticKnowledgeAssets() {
 
   registerJsonAsset(assets, `${STATIC_KNOWLEDGE_ROOT}/manifest.json`, manifest)
 
-  for (const source of localSources) {
+  for (const source of localSources.filter((item) => !sourceIds || sourceIds.includes(item.id))) {
     const [catalog, tags, documents, directoryIndex, globalGraph] = await Promise.all([
       getKnowledgeCatalog(source.id),
-      getKnowledgeTags(source.id),
+      sourceIds ? Promise.resolve([]) : getKnowledgeTags(source.id),
       getKnowledgeDocuments(source.id),
-      getKnowledgeDirectoryIndex(source.id),
-      getGlobalKnowledgeGraph(source.id),
+      sourceIds ? Promise.resolve({}) : getKnowledgeDirectoryIndex(source.id),
+      sourceIds ? Promise.resolve({ nodes: [], edges: [] }) : getGlobalKnowledgeGraph(source.id),
     ])
 
     const bundle: StaticKnowledgeSourceBundle = {
@@ -121,7 +122,7 @@ async function buildStaticKnowledgeAssets() {
 
     registerJsonAsset(assets, `${STATIC_KNOWLEDGE_ROOT}/sources/${source.id}/bundle.json`, bundle)
 
-    for (const document of documents) {
+    for (const document of sourceIds ? [] : documents) {
       const graph = await getKnowledgeGraph(source.id, document.path)
       registerJsonAsset(
         assets,
@@ -335,6 +336,12 @@ function createDocsApiMiddleware() {
         return
       }
 
+      if (matchesApiPath(pathname, '/project-handoff')) {
+        const projectId = url.searchParams.get('project') || ''
+        sendJson(res, await getProjectHandoffCard(projectId))
+        return
+      }
+
       if (matchesApiPath(pathname, '/ai/analyze')) {
         res.setHeader('Content-Type', 'application/json')
         res.setHeader('Access-Control-Allow-Origin', '*')
@@ -396,10 +403,6 @@ export function localDocsPlugin(): Plugin {
 
   return {
     name: 'vite-plugin-local-docs',
-    async buildStart() {
-      resetStaticAssets()
-      await ensureStaticAssets()
-    },
     configureServer(server) {
       resetStaticAssets()
       server.middlewares.use(staticKnowledgeMiddleware)

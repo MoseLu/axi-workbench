@@ -56,9 +56,8 @@ export function Header({
   searching,
 }: HeaderProps) {
   const location = useLocation()
-  const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => (
-    window.localStorage.getItem('axi-docs-theme') === 'light' ? 'light' : 'dark'
-  ))
+  const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark')
+  const [themeReady, setThemeReady] = useState(false)
   const [inputValue, setInputValue] = useState(searchQuery)
   const [docNavOpen, setDocNavOpen] = useState(false)
   const [siteNavOpen, setSiteNavOpen] = useState(false)
@@ -86,9 +85,15 @@ export function Header({
   const tagSuggestions = suggestions.filter((suggestion) => suggestion.kind === 'tag')
 
   useEffect(() => {
+    setThemeMode(window.localStorage.getItem('axi-docs-theme') === 'light' ? 'light' : 'dark')
+    setThemeReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!themeReady) return
     document.documentElement.dataset.axiDocsTheme = themeMode
     window.localStorage.setItem('axi-docs-theme', themeMode)
-  }, [themeMode])
+  }, [themeMode, themeReady])
 
   useEffect(() => () => {
     if (themeSwitchTimerRef.current) clearTimeout(themeSwitchTimerRef.current)
