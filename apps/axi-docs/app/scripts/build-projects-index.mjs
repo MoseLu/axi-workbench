@@ -7,14 +7,20 @@
  * (README / AGENTS / INDEX / TODO / MILESTONE / PRD / TDD / CHANGELOG-light)
  * for every project under `docs/content/{en,zh}/projects/<id>/`.
  *
- * Source precedence (zero-context handoff governance):
- *   1. `/Volumes/code/workspace/.workspace/project-handoff.json` (preferred;
- *      produced by `infra/axi-workspace-governance/scripts/project-handoff.mjs`).
+ * Source precedence (zero-context handoff governance, post-ADR-008):
+ *   1. `/Volumes/code/workspace/workspace.graph.json` (preferred primary;
+ *      canonical machine-readable registry produced by
+ *      `foundation/workspace-governance`). Includes every project partition
+ *      under the workspace plus supplements / references.
+ *   2. `/Volumes/code/workspace/.workspace/project-handoff.json` (fallback;
+ *      produced by `foundation/workspace-governance/scripts/project-handoff.mjs`).
  *      Active project readiness, commands, current work, and known failures
- *      are sourced from here.
- *   2. `/Volumes/code/workspace/WORKSPACE_INDEX.md` (fallback). Used only when
- *      the handoff snapshot is missing or unparseable. `WORKSPACE_INDEX.md`
- *      remains the human-authored registry and is not modified by this script.
+ *      are sourced from here when the graph is unavailable.
+ *   3. `/Volumes/code/workspace/WORKSPACE_INDEX.md` (last-resort fallback).
+ *      Used only when neither the graph nor the handoff snapshot is
+ *      available, and as the union source for supplementary entries
+ *      (virtual projects, markdown-only references) when a primary source
+ *      is loaded.
  *
  * Usage:
  *   node app/scripts/build-projects-index.mjs            # build English (source) and Chinese scaffolds
@@ -33,11 +39,19 @@ import path from 'node:path';
 import process from 'node:process';
 import {
   extractProjectsFromHandoff,
+  extractProjectsFromGraph,
   readHandoffSnapshot,
+  readProjectIndex,
   HANDOFF_PATH,
   HANDOFF_MAX_AGE_DAYS,
+  WORKSPACE_GRAPH_PATH,
   WORKSPACE_FALLBACK_PATH,
 } from '../src/lib/buildProjectsIndex.mjs';
+
+// NOTE: EXCLUDED_DOSSIER_PATHS lives in the lib and is intentionally NOT
+// re-exported here. The markdown extractor below imports it directly so
+// there is one source of truth across graph / handoff / markdown paths.
+import { EXCLUDED_DOSSIER_PATHS } from '../src/lib/buildProjectsIndex.mjs';
 
 const REPO_ROOT = path.resolve(new URL('../..', import.meta.url).pathname);
 const CONTENT_ROOT = path.join(REPO_ROOT, 'docs', 'content');
@@ -224,20 +238,21 @@ function extractProjects(markdown) {
       const cleanPath = pathMd.replace(/`/g, '').trim();
       if (!cleanPath.startsWith('/Volumes/code/workspace/')) continue;
       // Skip the workspace-level governance and registry — they are infra
-      // and have their own face-level docs.
-      if (cleanPath === '/Volumes/code/workspace/infra/axi-workspace-governance') continue;
-      if (cleanPath === '/Volumes/code/workspace/infra/axi-registry') continue;
+      // surfaces with their own face-level docs. The set is shared with the
+      // graph / handoff extractors via EXCLUDED_DOSSIER_PATHS in the lib so
+      // a path added there is excluded consistently across all sources.
+      if (EXCLUDED_DOSSIER_PATHS.has(cleanPath)) continue;
       projects.push({
         id: makeSlug(name),
         name: name.trim(),
         // `cleanPath` is a directory path under `/Volumes/code/workspace/`,
         // except for a few special entries (`workspace.graph.json`,
         // `dev-services.config.json`) that point at top-level files. For
-        // those, fall back to the `infra/` partition so the index page
-        // groups them under shared infrastructure rather than rendering a
-        // misleading directory name.
+        // those, fall back to the `foundation` partition so the index page
+        // groups them under shared foundation rather than rendering a
+        // misleading directory name. (`infra` was retired by ADR-008.)
         partition: cleanPath.replace('/Volumes/code/workspace/', '').split('/')[0].endsWith('.json')
-          ? 'infra'
+          ? 'foundation'
           : cleanPath.replace('/Volumes/code/workspace/', '').split('/')[0],
         path: cleanPath,
         purpose: purpose.replace(/`/g, '').trim(),
@@ -565,34 +580,48 @@ async function main() {
   const locales = localeArg === 'all' ? ['en', 'zh'] : [localeArg];
   const strict = flags.has('--strict');
 
-  // Handoff-first: prefer the governance snapshot. Even when the snapshot
-  // succeeds, we still consult the legacy WORKSPACE_INDEX.md table to pick
-  // up supplementary projects (workspace-level virtual projects and
-  // `references/*` entries) that the snapshot deliberately does not
-  // include. The handoff's id set is authoritative for active Axi projects;
-  // markdown-only entries are unioned in with `supplementary: true` so
-  // downstream consumers can tell the two groups apart.
+  // Source precedence (post-ADR-008): workspace.graph.json → handoff
+  // snapshot → WORKSPACE_INDEX.md fallback. The graph is the canonical
+  // machine-readable registry and includes every project partition plus
+  // references / distributions. The handoff snapshot is a downstream
+  // consumer of the graph (it captures readiness / commands / current
+  // work). When a primary source is loaded we still consult
+  // WORKSPACE_INDEX.md to pick up supplementary projects (workspace-level
+  // virtual projects and any markdown-only references) and union them in
+  // with `supplementary: true`.
   let projects = [];
   let sourceLabel = '';
-  let handoffSource = false;
+  let primarySource = null; // 'graph' | 'handoff' | 'fallback'
+  let handoffSource = false; // backward-compat JSON field
   let handoffGeneratedAt = null;
-  let handoffIds = new Set();
+  let primaryGeneratedAt = null;
+  let primarySourcePath = null;
 
-  const handoff = await readHandoffSnapshot();
-  if (handoff.snapshot) {
-    if (handoff.stale) {
+  const index = await readProjectIndex();
+  if (index.source === 'graph') {
+    projects = index.projects;
+    sourceLabel = 'workspace.graph.json';
+    primarySource = 'graph';
+    primarySourcePath = index.sourcePath;
+    primaryGeneratedAt = typeof index.snapshot?.schemaVersion === 'string'
+      ? index.snapshot.schemaVersion
+      : null;
+  } else if (index.source === 'handoff') {
+    if (index.stale) {
       console.warn(
-        `[projects:build] handoff snapshot is ${handoff.ageDays.toFixed(1)} days old ` +
+        `[projects:build] handoff snapshot is ${index.ageDays.toFixed(1)} days old ` +
           `(> ${HANDOFF_MAX_AGE_DAYS} day threshold); continuing with stale data. ` +
           `Re-run \`workspace-project handoff --json\` to refresh.`,
       );
     }
     try {
-      projects = extractProjectsFromHandoff(handoff.snapshot, new Date());
-      handoffIds = new Set(projects.map((p) => p.id));
+      projects = index.projects;
       sourceLabel = 'handoff';
+      primarySource = 'handoff';
+      primarySourcePath = index.sourcePath;
+      primaryGeneratedAt = index.snapshot?.generatedAt || null;
       handoffSource = true;
-      handoffGeneratedAt = handoff.snapshot.generatedAt || null;
+      handoffGeneratedAt = primaryGeneratedAt;
     } catch (snapshotError) {
       console.warn(
         `[projects:build] handoff snapshot could not be parsed (${snapshotError.message}); ` +
@@ -601,51 +630,46 @@ async function main() {
     }
   } else if (strict) {
     console.error(
-      `[projects:build] --strict set but handoff snapshot is unavailable at ${HANDOFF_PATH} ` +
-        `(${handoff.error.message}). Refusing to fall back to ${WORKSPACE_FALLBACK_PATH}.`,
+      `[projects:build] --strict set but neither ${WORKSPACE_GRAPH_PATH} nor ${HANDOFF_PATH} ` +
+        `is available (${index.error?.message ?? 'unknown error'}). ` +
+        `Refusing to fall back to ${WORKSPACE_FALLBACK_PATH}.`,
     );
     process.exit(1);
   } else {
     console.warn(
-      `[projects:build] handoff snapshot unavailable at ${HANDOFF_PATH} ` +
-        `(${handoff.error.message}); falling back to ${WORKSPACE_FALLBACK_PATH}.`,
+      `[projects:build] neither ${WORKSPACE_GRAPH_PATH} nor ${HANDOFF_PATH} ` +
+        `is available (${index.error?.message ?? 'unknown error'}); ` +
+        `falling back to ${WORKSPACE_FALLBACK_PATH}.`,
     );
   }
 
   if (projects.length === 0) {
-    if (handoffSource) {
-      // Handoff loaded but yielded zero projects — refuse to silently fall
-      // through to a stale table; this is a real upstream contract change.
-      throw new Error('handoff snapshot parsed successfully but produced zero projects. Aborting.');
+    if (primarySource === 'graph' || primarySource === 'handoff') {
+      // Primary source loaded but yielded zero projects — refuse to
+      // silently fall through to a stale table; this is a real upstream
+      // contract change.
+      throw new Error(`${primarySource} parsed successfully but produced zero projects. Aborting.`);
     }
     const indexMarkdown = await readFile(WORKSPACE_FALLBACK_PATH, 'utf8');
     projects = extractProjects(indexMarkdown);
     sourceLabel = WORKSPACE_FALLBACK_PATH;
-    handoffSource = false;
-    handoffGeneratedAt = null;
-  } else if (handoffSource && !flags.has('--no-supplementary')) {
+    primarySource = 'fallback';
+    primarySourcePath = WORKSPACE_FALLBACK_PATH;
+    primaryGeneratedAt = null;
+  } else if ((primarySource === 'graph' || primarySource === 'handoff') && !flags.has('--no-supplementary')) {
     // Union in markdown-only entries (references, workspace virtual
-    // projects, etc.) that the handoff does not list. A markdown id that
-    // differs from any handoff id only by trailing characters (e.g. an
-    // extra "y") still represents the same project — drop the markdown
-    // duplicate by comparing the handoff ids normalised to the same slug
-    // rule (lowercase, hyphenate). The build script's markdown parser
-    // already produces that slug via `makeSlug`, so a simple
-    // Set comparison is enough.
+    // projects, etc.) that the primary source did not list. We compare by
+    // canonical path (the only stable identifier both sides share) so id
+    // slug differences (e.g. `ielts-vocab` vs `ielts-vocabulary`) cannot
+    // produce false negatives.
     let supplementary = [];
     try {
       const indexMarkdown = await readFile(WORKSPACE_FALLBACK_PATH, 'utf8');
-      // Compare by canonical path (the only stable identifier both sides
-      // share), not by `id` — handoff ids are owner-curated and may
-      // shorten the slug in ways that `makeSlug` would not produce
-      // (e.g. `ielts-vocab` vs `ielts-vocabulary`). Path collisions get
-      // deduped; id differences survive on the handoff side and are
-      // discarded here.
-      const handoffPaths = new Set(projects.map((p) => p.path));
-      supplementary = extractProjects(indexMarkdown).filter((entry) => !handoffPaths.has(entry.path));
+      const primaryPaths = new Set(projects.map((p) => p.path));
+      supplementary = extractProjects(indexMarkdown).filter((entry) => !primaryPaths.has(entry.path));
     } catch {
       // WORKSPACE_INDEX.md missing or unreadable — the union simply
-      // becomes the handoff list. Operators see a single warning above.
+      // becomes the primary list. Operators see a single warning above.
     }
     if (supplementary.length > 0) {
       projects = [
@@ -688,10 +712,17 @@ async function main() {
         {
           generated_at: new Date().toISOString(),
           source: sourceLabel,
+          primarySource,
+          primarySourcePath,
+          primaryGeneratedAt,
+          // Backward-compat: keep the historical handoff-* keys so older
+          // consumers can still tell which snapshot was used when the
+          // primary source is the handoff snapshot.
           handoffSource,
           handoffGeneratedAt,
           handoffPath: HANDOFF_PATH,
           handoffMaxAgeDays: HANDOFF_MAX_AGE_DAYS,
+          graphPath: WORKSPACE_GRAPH_PATH,
           count: merged.length,
           preservedAddenda: preserved.map((p) => p.id),
           projects: merged,
