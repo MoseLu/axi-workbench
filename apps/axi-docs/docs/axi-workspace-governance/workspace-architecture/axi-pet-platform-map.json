@@ -1,0 +1,286 @@
+{
+  "schema_version": "1.0.0",
+  "generated": "2026-09-19",
+  "platforms": {
+    "axi-pet": {
+      "type": "monorepo",
+      "workspace": "pnpm + turbo",
+      "namespace": "@proj-airi/*",
+      "source": "/Volumes/code/workspace/projects/axi-pet",
+      "apps": {
+        "stage-web": {
+          "name": "@proj-airi/stage-web",
+          "description": "LLM powered virtual character - Web main端",
+          "framework": "Vue 3",
+          "build": "Vite",
+          "platform": "Web (PWA)",
+          "entry": "apps/stage-web/src/main.ts",
+          "commands": {
+            "dev": "vite --host",
+            "build": "vite build",
+            "typecheck": "vue-tsc --noEmit",
+            "lint": "eslint .",
+            "test": "vitest run"
+          },
+          "dependencies": {
+            "vue": "catalog:",
+            "vue-router": "catalog:",
+            "pinia": "catalog:",
+            "reka-ui": "catalog:reka-ui-2-9-6",
+            "uno-css": "via uno.config.ts",
+            "three": "catalog:",
+            "@tresjs/core": "catalog:",
+            "@xsai/generate-text": "catalog:",
+            "@xsai/generate-speech": "catalog:",
+            "hono": "catalog: (client)"
+          },
+          "key_files": [
+            "apps/stage-web/vite.config.ts",
+            "apps/stage-web/src/main.ts",
+            "apps/stage-web/src/App.vue"
+          ]
+        },
+        "stage-pocket": {
+          "name": "@proj-airi/stage-pocket",
+          "description": "LLM powered virtual character - Mobile (Capacitor)",
+          "framework": "Vue 3",
+          "build": "Vite + Capacitor",
+          "platform": "iOS / Android",
+          "entry": "apps/stage-pocket/src/main.ts",
+          "commands": {
+            "dev:web": "vite",
+            "dev:ios": "cap-vite -- ios",
+            "dev:android": "cap-vite -- android",
+            "build": "vite build",
+            "typecheck": "vue-tsc --noEmit",
+            "lint": "eslint ."
+          },
+          "dependencies": {
+            "@capacitor/core": "catalog:",
+            "@capacitor/ios": "catalog:",
+            "@capacitor/android": "catalog:",
+            "vue": "catalog:",
+            "vue-router": "catalog:",
+            "pinia": "catalog:",
+            "reka-ui": "catalog:reka-ui-2-9-6",
+            "uno-css": "via uno.config.ts",
+            "three": "catalog:",
+            "@xsai/generate-text": "catalog:",
+            "@xsai/generate-speech": "catalog:"
+          },
+          "key_files": [
+            "apps/stage-pocket/vite.config.ts",
+            "apps/stage-pocket/capacitor.config.ts",
+            "apps/stage-pocket/src/main.ts"
+          ]
+        },
+        "server": {
+          "name": "@proj-airi/server",
+          "description": "Hono-based backend API",
+          "framework": "Hono (Node.js)",
+          "build": "tsc",
+          "platform": "Linux (Railway)",
+          "entry": "apps/server/src/bin/run.ts",
+          "commands": {
+            "dev": "tsx --watch src/bin/run.ts api",
+            "start": "tsx src/bin/run.ts api",
+            "build": "tsc -b",
+            "typecheck": "tsc --noEmit",
+            "db:generate": "drizzle-kit generate",
+            "db:push": "drizzle-kit push"
+          },
+          "dependencies": {
+            "hono": "catalog:",
+            "@hono/node-server": "catalog:",
+            "@hono/node-ws": "catalog:",
+            "better-auth": "catalog:",
+            "drizzle-orm": "catalog:",
+            "pg": "catalog:",
+            "ioredis": "catalog:",
+            "stripe": "catalog:",
+            "@opentelemetry/sdk-node": "catalog:",
+            "valibot": "catalog:valibot-1-3-1"
+          },
+          "key_files": [
+            "apps/server/src/bin/run.ts",
+            "apps/server/src/app.ts",
+            "apps/server/src/routes/"
+          ]
+        }
+      },
+      "shared_packages": {
+        "stage-ui": "Live2D/VRM/Spine/Three.js renders",
+        "stage-ui-live2d": "Live2D scene + Zustand stores",
+        "stage-ui-three": "R3F 3D scene components",
+        "stage-shared": "Cross-platform stage contracts",
+        "core-agent": "Agent orchestration",
+        "core-character": "Character definition",
+        "server-runtime": "Backend runtime utilities",
+        "server-sdk": "Backend API client SDK",
+        "plugin-protocol": "Plugin contract definitions",
+        "plugin-sdk": "Plugin development kit",
+        "audio": "Audio pipelines",
+        "i18n": "Translations (vue-i18n)",
+        "ui": "Base UI components (reka-ui)"
+      }
+    },
+    "axi-pet-desktop": {
+      "type": "monorepo",
+      "workspace": "pnpm + electron-vite",
+      "namespace": "@axi-pet-desktop/*",
+      "source": "/Volumes/code/workspace/workbench/axi-pet-desktop",
+      "apps": {
+        "desktop-pet": {
+          "name": "@axi-pet-desktop/desktop-pet",
+          "description": "Lightweight MiniMax-powered VRM desktop pet for macOS",
+          "framework": "React 19",
+          "build": "electron-vite + electron-builder",
+          "platform": "macOS",
+          "entry": "apps/desktop-pet/src/main/index.ts",
+          "commands": {
+            "dev": "pnpm run build:speech && electron-vite dev",
+            "start": "pnpm run build:speech && electron-vite preview",
+            "build": "pnpm run build:speech && electron-vite build",
+            "build:mac": "electron-builder --mac",
+            "typecheck": "tsc --noEmit",
+            "lint": "eslint .",
+            "test": "vitest"
+          },
+          "dependencies": {
+            "react": "catalog:",
+            "react-dom": "catalog:",
+            "three": "catalog:",
+            "zustand": "catalog:",
+            "framer-motion": "catalog:",
+            "@radix-ui/react-form": "catalog:",
+            "@unocss/reset": "catalog:"
+          },
+          "key_files": [
+            "apps/desktop-pet/src/main/index.ts",
+            "apps/desktop-pet/src/renderer/index.tsx",
+            "apps/desktop-pet/electron-builder.config.js"
+          ]
+        }
+      },
+      "shared_packages": {
+        "desktop-pet-renderer": "R3F / VRM rendering",
+        "stage-ui-live2d": "Live2D scene (shared with axiom-pet)",
+        "ui": "Base UI (shared with axiom-pet)",
+        "core-agent": "Agent orchestration (shared with axiom-pet)",
+        "electron-screen-capture": "Screen capture for desktop",
+        "audio": "Audio pipelines (shared with axiom-pet)",
+        "plugin-protocol": "Plugin contracts (shared with axiom-pet)",
+        "server-sdk": "Backend API client (shared with axiom-pet)"
+      }
+    }
+  },
+  "communication_flows": [
+    {
+      "from": "stage-web / stage-pocket",
+      "to": "server",
+      "protocol": "HTTP/REST + WebSocket",
+      "library": "ws",
+      "description": "Real-time chat via WebSocket, REST for other API calls"
+    },
+    {
+      "from": "desktop-pet",
+      "to": "server",
+      "protocol": "HTTP/REST",
+      "via": "server-sdk",
+      "description": "Optional cloud sync (desktop is fully offline-capable)"
+    },
+    {
+      "from": "desktop-pet main process",
+      "to": "MiniMax API",
+      "protocol": "HTTPS",
+      "description": "Cloud TTS and STT via MiniMax API"
+    },
+    {
+      "from": "desktop-pet main process",
+      "to": "Local STT",
+      "protocol": "Python subprocess",
+      "description": "Local whisper MLX for speech-to-text (offline)"
+    }
+  ],
+  "tech_stack_comparison": {
+    "frontend_framework": {
+      "axi-pet": "Vue 3",
+      "axi-pet-desktop": "React 19"
+    },
+    "ui_components": {
+      "axi-pet": "reka-ui",
+      "axi-pet-desktop": "Radix UI"
+    },
+    "styling": {
+      "axi-pet": "UnoCSS",
+      "axi-pet-desktop": "UnoCSS"
+    },
+    "3d_rendering": {
+      "axi-pet": "Three.js + R3F",
+      "axi-pet-desktop": "React Three Fiber"
+    },
+    "state_management": {
+      "axi-pet": "Pinia",
+      "axi-pet-desktop": "Zustand"
+    },
+    "build_tool": {
+      "axi-pet": "Vite",
+      "axi-pet-desktop": "electron-vite"
+    },
+    "backend_framework": {
+      "axi-pet": "Hono (Node.js)",
+      "axi-pet-desktop": "N/A (local only)"
+    },
+    "database": {
+      "axi-pet": "PostgreSQL (Railway)",
+      "axi-pet-desktop": "N/A"
+    },
+    "cache_pubsub": {
+      "axi-pet": "Redis",
+      "axi-pet-desktop": "N/A"
+    },
+    "authentication": {
+      "axi-pet": "Better Auth + OIDC",
+      "axi-pet-desktop": "N/A (local STT only)"
+    },
+    "voice_provider": {
+      "axi-pet": "xsAI (cloud)",
+      "axi-pet-desktop": "MiniMax API (cloud)"
+    },
+    "packaging": {
+      "axi-pet": "PWA",
+      "axi-pet-desktop": "electron-builder"
+    }
+  },
+  "platform_split_summary": {
+    "axi-pet": {
+      "role": "Web + Mobile + Cloud Backend",
+      "key_characteristics": [
+        "Multi-platform Vue 3 SPA",
+        "Capacitor for iOS/Android",
+        "Hono backend on Railway",
+        "PostgreSQL + Redis stack",
+        "Better Auth for authentication",
+        "xsAI for LLM/TTS"
+      ]
+    },
+    "axi-pet-desktop": {
+      "role": "Desktop-only Electron app",
+      "key_characteristics": [
+        "React 19 + R3F",
+        "Fully offline-capable",
+        "Local whisper MLX for STT",
+        "Custom wake word detection",
+        "MiniMax API for voice",
+        "Independent release cycle"
+      ]
+    }
+  },
+  "key_architecture_notes": [
+    "Desktop was completely migrated out of axiom-pet (2026-07-15 single-runtime migration)",
+    "Desktop uses React vs Vue - different tech stack justified by independent evolution",
+    "Web/Mobile share the same backend - consistent user experience across platforms",
+    "Desktop is fully offline-capable with local STT - no backend required for core features",
+    "Shared packages (stage-ui-live2d, ui, core-agent, etc.) exist in both repos with different namespaces"
+  ]
+}

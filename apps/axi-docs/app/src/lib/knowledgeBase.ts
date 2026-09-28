@@ -2259,8 +2259,60 @@ async function collectWorkspaceDocuments(source: DocSource): Promise<ParsedDocum
   // --- Root workspace-level documents (WRK-DOCS-001) ---
   // Ingest root AGENTS.md, docs/DEV_SERVICES.md, and selected docs/axi/* files
   // so they appear in the workspace bundle alongside project index pages.
-  await addRootWorkspaceDoc(workspaceRoot, 'AGENTS.md', 'docs/AGENTS.md', documents)
+  // A. bundlePath 冲突修复：根 /AGENTS.md 与 /docs/AGENTS.md 分离，避免 MCP 端 bundlePath 冲突
+  await addRootWorkspaceDoc(workspaceRoot, 'AGENTS.md', 'docs/AGENTS-ROOT.md', documents)
   await addRootWorkspaceDoc(workspaceRoot, 'docs/DEV_SERVICES.md', 'docs/DEV_SERVICES.md', documents)
+
+  // B. zh-CN 镜像与根级长期文档摄入（addRootWorkspaceDoc 在文件缺失时静默跳过）
+  await addRootWorkspaceDoc(workspaceRoot, 'AGENTS.zh-CN.md', 'docs/AGENTS.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'WORKSPACE_INDEX.zh-CN.md', 'docs/WORKSPACE_INDEX.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'ONBOARDING.zh-CN.md', 'docs/ONBOARDING.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'ONBOARDING-REFERENCE.zh-CN.md', 'docs/ONBOARDING-REFERENCE.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'CHANGE.md', 'docs/CHANGE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'CHANGELOG.md', 'docs/CHANGELOG.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'README.md', 'docs/README.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'README.zh-CN.md', 'docs/README.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'INDEX.md', 'docs/INDEX.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/DEV_SERVICES.zh-CN.md', 'docs/DEV_SERVICES.zh-CN.md', documents)
+
+  // C. docs/state/ 长期工作状态文档（README/PRD/TDD/TODO/MILESTONE/VERIFICATION/CLI-REFERENCE）
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/README.md', 'docs/state/README.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/PRD.md', 'docs/state/PRD.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/TDD.md', 'docs/state/TDD.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/TODO.md', 'docs/state/TODO.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/MILESTONE.md', 'docs/state/MILESTONE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/VERIFICATION.md', 'docs/state/VERIFICATION.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/state/CLI-REFERENCE.md', 'docs/state/CLI-REFERENCE.md', documents)
+
+  // D. docs/audit/ + docs/architecture/ 摄入
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/audit/audit-results-2026-09-25.md', 'docs/audit/audit-results-2026-09-25.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/architecture/workspace-backend-architecture.md', 'docs/architecture/workspace-backend-architecture.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/architecture/axi-notify-architecture.md', 'docs/architecture/axi-notify-architecture.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/architecture/ai-resource-orchestration-architecture.md', 'docs/architecture/ai-resource-orchestration-architecture.md', documents)
+
+  // E. docs/axi/ + docs/prd/ + docs/registry/ 摄入（含 P0 contracts、命名合约、PRD 与模板）
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/axi/AXIOMATICWORLD_NAMING.md', 'docs/axi/AXIOMATICWORLD_NAMING.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/axi/AXIOMATICWORLD_NAMING.zh-CN.md', 'docs/axi/AXIOMATICWORLD_NAMING.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md', 'docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/axi/contracts/AI_CAPABILITY_CONTRACT.md', 'docs/axi/contracts/AI_CAPABILITY_CONTRACT.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/axi/contracts/MINIMAX_TOKENPLAN_CONTRACT.md', 'docs/axi/contracts/MINIMAX_TOKENPLAN_CONTRACT.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/axi/contracts/OLLAMA_LOCAL_CONTRACT.md', 'docs/axi/contracts/OLLAMA_LOCAL_CONTRACT.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/prd/README.md', 'docs/prd/README.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/prd/00-PRD-SYSTEM-GUIDE.md', 'docs/prd/00-PRD-SYSTEM-GUIDE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/prd/01-AxiomaticWorld-Personal-OS-PRD.md', 'docs/prd/01-AxiomaticWorld-Personal-OS-PRD.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/prd/02-CONTRACT-AND-CONSTRAINT-GOVERNANCE.md', 'docs/prd/02-CONTRACT-AND-CONSTRAINT-GOVERNANCE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/prd/templates/PROJECT-PRD-TEMPLATE.md', 'docs/prd/templates/PROJECT-PRD-TEMPLATE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/prd/templates/SPRINT-PRD-TEMPLATE.md', 'docs/prd/templates/SPRINT-PRD-TEMPLATE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'docs/registry/project-cross-references.md', 'docs/registry/project-cross-references.md', documents)
+
+  // F. .claude/ + scripts/ + incubator/ 摄入（根级文件统一归并到 docs/ bundlePath 命名空间）
+  await addRootWorkspaceDoc(workspaceRoot, '.claude/PARADIGM.md', 'docs/.claude/PARADIGM.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, '.claude/ARCHITECTURE.md', 'docs/.claude/ARCHITECTURE.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'scripts/AGENTS.md', 'docs/scripts/AGENTS.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'scripts/AGENTS.zh-CN.md', 'docs/scripts/AGENTS.zh-CN.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'scripts/README.md', 'docs/scripts/README.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'incubator/AGENTS.md', 'docs/incubator/AGENTS.md', documents)
+  await addRootWorkspaceDoc(workspaceRoot, 'incubator/README.md', 'docs/incubator/README.md', documents)
 
   // Selected docs/axi/ files: AGENTS.md, naming contract, ADR index, and contracts
   const axiDocsRoot = path.join(workspaceRoot, 'docs', 'axi')
@@ -2284,6 +2336,14 @@ async function addRootWorkspaceDoc(
   bundlePath: string,
   documents: ParsedDocument[],
 ): Promise<void> {
+  // Deduplicate by bundlePath: if the same bundlePath is already present, skip.
+  // Root workspace docs may be declared by multiple call sites (e.g. both the
+  // explicit `addRootWorkspaceDoc(...)` lines above and the `axiRootFiles` /
+  // `contractFiles` loops below, or by future overrides). Skipping duplicates
+  // here prevents `documents.length` from being inflated by repeated pushes.
+  if (documents.some((d) => d.path === bundlePath)) {
+    return
+  }
   const fullPath = path.join(rootDir, fileName)
   if (!fs.existsSync(fullPath)) return
   const stat = await fs.promises.stat(fullPath)

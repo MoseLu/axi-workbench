@@ -1,0 +1,3703 @@
+{
+  "schemaVersion": "workspace-commit-audit/v1",
+  "auditedAt": "2026-09-24T06:02:07.841Z",
+  "workspaceRoot": "/Volumes/code/workspace",
+  "policy": {
+    "requiredTrailers": [
+      "Tested",
+      "Not-tested",
+      "Confidence",
+      "Scope-risk",
+      "Directive"
+    ],
+    "allowedBranches": "^(main|dev|feature\\/|feat\\/|fix\\/|bugfix\\/|refactor\\/|chore\\/|docs\\/|test\\/|debug\\/|hotfix\\/|release\\/|dependabot\\/)",
+    "legacyBranches": "^(master|develop|claude\\/|codex\\/)",
+    "historyWindow": 20
+  },
+  "repositories": [
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-registry",
+      "id": "axi-registry",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-registry",
+      "relativePath": "foundation/axi-registry",
+      "branch": "dev",
+      "head": "1ff76a25501f",
+      "dirtyCount": 33,
+      "recent": [
+        {
+          "sha": "1ff76a25501f",
+          "subject": "chore(registry): remove retired storage backup",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n369e042b9c7",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n191d5bbf24b",
+          "subject": "chore(workspace): checkpoint axi-registry changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n619920ae3d9",
+          "subject": "docs(logs): append submit log for e080254",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ne080254401e",
+          "subject": "chore(axi-registry-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n635fd2d8bd4",
+          "subject": "feat(governance): add relationship metadata declaration for provenance tracking",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n67d25cd8377",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5741b47dfce",
+          "subject": "docs: sync project handoff and catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n6bd3fa89fd0",
+          "subject": "chore(batch): absorb leftover submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n55c297649ba",
+          "subject": "chore(batch): submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n3f33cc69560",
+          "subject": "chore(batch): git-settings",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n85e1102c3f3",
+          "subject": "chore(batch): docs-and-guidance",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb7dd5714e64",
+          "subject": "chore(batch): change",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd5521813d38",
+          "subject": "chore(batch): storage-bak",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nfb029bd2c85",
+          "subject": "chore(batch): pnpm-lock-yaml",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nbceb03ab59f",
+          "subject": "chore(batch): htpasswd-bak",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne1f96518d8b",
+          "subject": "chore(submit): archive 2026-07-20 hook-repair auto-submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n9894c2f578f",
+          "subject": "chore(hooks): rewrite commit-msg + post-commit to use vendored scripts",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n12e79d017d9",
+          "subject": "chore(hooks): vendor Lore trailer + submit log scripts under .githooks/_lib",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n2beb7f0848d",
+          "subject": "chore(hooks): record AR-GIT-005 v4 workflow submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 33 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 2 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 6 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-notify",
+      "id": "axi-notify",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-notify",
+      "relativePath": "foundation/axi-notify",
+      "branch": "dev",
+      "head": "05ea2806c519",
+      "dirtyCount": 24,
+      "recent": [
+        {
+          "sha": "05ea2806c519",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n49418e21cfb",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n14d3cbaab5f",
+          "subject": "docs(logs): append submit log for b4a2bbf",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nb4a2bbf975e",
+          "subject": "chore(axi-notify-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n027adea2690",
+          "subject": "docs(logs): append submit log for 3c89e7d",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n3c89e7db02e",
+          "subject": "chore: apply pending changes",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nec784fc0953",
+          "subject": "feat(governance): add relationship metadata declaration for provenance tracking",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n850ad6b61c5",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0bca474cd81",
+          "subject": "docs: sync project handoff and catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n226670c7e2c",
+          "subject": "docs: auto-submit logs batch",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n0c5013c3e2e",
+          "subject": "docs(axi-notify): add documentation and unit tests",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc40c445455d",
+          "subject": "chore(docs): add CLAUDE.md redirect",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc6a23db3a2d",
+          "subject": "docs(log): record WeChat-style shell refinement",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n56e3ed4f242",
+          "subject": "fix(android): adopt restrained WeChat-style information shell",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5740ccca54c",
+          "subject": "docs(log): record project intelligence visual refinement",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nbf0fbab6c1e",
+          "subject": "fix(android): refine project intelligence visual hierarchy",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb37c0a6f4a6",
+          "subject": "docs(log): record project intelligence dashboard delivery",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne17f38ff3a7",
+          "subject": "feat(android): build Axi Mobile project intelligence dashboard",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n24ca69105c0",
+          "subject": "chore(hooks): record AR-GIT-005 v2 workflow submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ncca754ba564",
+          "subject": "ci(hooks): switch axi-rules-hooks to git clone for cross-org private repo",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 24 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 4 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/workbench/axi-workbench",
+      "id": "axi-workbench",
+      "registeredPath": "/Volumes/code/workspace/workbench/axi-workbench",
+      "relativePath": "workbench/axi-workbench",
+      "branch": "dev",
+      "head": "bc6c37a3f1f1",
+      "dirtyCount": 1011,
+      "recent": [
+        {
+          "sha": "bc6c37a3f1f1",
+          "subject": "chore(workbench): remove retired archive and fix docs path",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n423cb1ce75b",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n395cf522f71",
+          "subject": "chore(workspace): checkpoint axi-workbench changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n75bb2466093",
+          "subject": "docs(logs): append submit log for af6950e",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\naf6950edac3",
+          "subject": "docs(workbench): remove mis-scoped spatial graph PRD",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nab85127f32f",
+          "subject": "docs(logs): append submit log for ef2227e",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nef2227e6543",
+          "subject": "docs(workbench): add spatial graph PRD",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2223b0c29be",
+          "subject": "docs(logs): append submit log for d57a2f4",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nd57a2f4d7a9",
+          "subject": "refactor(styles): remove forced overrides across frontends",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc16806982e9",
+          "subject": "docs(logs): append submit log for 3679b42",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n3679b42ffe2",
+          "subject": "chore(styles): establish three-surface architecture guardrails",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\naf6cbfd8b07",
+          "subject": "docs(logs): append submit log for dc3a69d",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ndc3a69dbf2e",
+          "subject": "chore(axi-workbench-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n98eec2e6c94",
+          "subject": "docs(logs): append submit log for 9b477e3",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n9b477e3bf7f",
+          "subject": "fix(axi-docs): drop absolute-path literals from workspace-root detector",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na2d4907a0ca",
+          "subject": "docs(logs): append submit log for 20136b1",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n20136b132ec",
+          "subject": "fix(axi-docs): make workspace-root path resolver cwd-invariant",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0a8982786b8",
+          "subject": "Merge branch 'wip/split-thematic-chores' into dev",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1c5decd2137",
+          "subject": "docs(logs): append submit log for 9a84412",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n9a84412169e",
+          "subject": "fix(packages): api-client/client.ts import @epap/types -> @axi/types",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 1011 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 2 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 8 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-workbench-cli",
+      "id": "axi-workbench-cli",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-workbench-cli",
+      "relativePath": "foundation/axi-workbench-cli",
+      "branch": "dev",
+      "head": "2330ff9de6be",
+      "dirtyCount": 71,
+      "recent": [
+        {
+          "sha": "2330ff9de6be",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2dad6537299",
+          "subject": "chore(workspace): checkpoint axi-workbench-cli changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5505d3a6456",
+          "subject": "docs(workbench-cli): point verification to canonical kernel",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nef5832d3ba6",
+          "subject": "fix(workbench-cli): use promoted kernel path",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n6eb03377d6c",
+          "subject": "docs(workbench-cli): clarify governance tool identity",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8de88c4b0d6",
+          "subject": "fix(workbench): validate handoff manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nfcd0de61dde",
+          "subject": "chore(workbench): formalize project handoff metadata",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nfd492fec21f",
+          "subject": "chore(workbench): initialize project repository",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 71 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/workbench/axi-image-preview",
+      "id": "axi-image-preview",
+      "registeredPath": "/Volumes/code/workspace/workbench/axi-image-preview",
+      "relativePath": "workbench/axi-image-preview",
+      "branch": "dev",
+      "head": "eea94fcbd3ca",
+      "dirtyCount": 15,
+      "recent": [
+        {
+          "sha": "eea94fcbd3ca",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n36aad9b2ada",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1b967dfe30c",
+          "subject": "docs(logs): append submit log for ab21fe6",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nab21fe6125c",
+          "subject": "chore(axi-image-preview-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2ff69d9277a",
+          "subject": "docs(logs): append submit log for aab83bb",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\naab83bb1739",
+          "subject": "chore: apply pending changes",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n93b5f1bb932",
+          "subject": "feat(governance): add relationship metadata declaration for provenance tracking",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n45daec0b412",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nab7103b3b5b",
+          "subject": "docs: add handoff, verification, and catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n95340b5e9fb",
+          "subject": "chore(submit): record milestone terminology remediation",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4e4f05b927f",
+          "subject": "fix(docs): normalize milestone terminology",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9f72d0f8103",
+          "subject": "chore(hooks): install canonical .githooks/ to align with workspace convention",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n680eabb12e6",
+          "subject": "chore(milestone): preserve milestone changes",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4b2a63e1eba",
+          "subject": "refactor(release): unify releases around a manifest contract",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8b0b475cea0",
+          "subject": "chore(data): refresh source wallpaper catalog data",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne995cf0484d",
+          "subject": "refactor(ui): unify upload and gallery glass surfaces",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc720a4ccb7f",
+          "subject": "feat(background): make wallpaper uploads background-managed",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8d758f29710",
+          "subject": "docs(changelog): document ownership boundaries",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0d3ddd393a9",
+          "subject": "feat(ui): reserve changelog space for menu close control",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4cd05c4c5be",
+          "subject": "fix(ui): fix changelog menu alignment and timestamp",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 15 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 2 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/archive/axi-sports-management-app",
+      "id": "sports-management",
+      "registeredPath": "/Volumes/code/workspace/archive/axi-sports-management-app",
+      "relativePath": "archive/axi-sports-management-app",
+      "branch": "dev",
+      "head": "43c790a5c013",
+      "dirtyCount": 11,
+      "recent": [
+        {
+          "sha": "43c790a5c013",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5664e7d6ffe",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5bd6d3bbb5f",
+          "subject": "docs(logs): append submit log for dd2d011",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ndd2d0115f6c",
+          "subject": "chore(axi-sports-management-app-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1a6194e13ac",
+          "subject": "docs(logs): append submit log for 6d1de22",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n6d1de224ef0",
+          "subject": "docs(axi-sports-management-app): archive project with ARCHIVE.md",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5f5685763d8",
+          "subject": "docs(logs): append submit log for 4b30dc1",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n4b30dc1be9f",
+          "subject": "chore(deps): upgrade all dependencies and fix type conflicts",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd42ab0755e9",
+          "subject": "docs(logs): append submit log for 4a659de",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n4a659ded812",
+          "subject": "chore: apply pending changes",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n48ac7cbed76",
+          "subject": "fix(axi-sports-management-app): add zh-CN locale",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1b7a74323ac",
+          "subject": "docs(submit): record sports security fix",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ndd819351281",
+          "subject": "fix(security): upgrade sports axios chain",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0bdaa60d924",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n3e40849e4cb",
+          "subject": "docs: sync project handoff and catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9d1452f0c54",
+          "subject": "chore(batch): absorb leftover submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nbf1c70114c0",
+          "subject": "chore(batch): submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n11d74e640a4",
+          "subject": "chore(batch): backend",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n78cd288ae02",
+          "subject": "chore(batch): verification",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na9b6c745d7b",
+          "subject": "chore(batch): docs-and-guidance",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 11 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 6 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/workbench/axi-pet-desktop",
+      "id": "axi-pet-desktop",
+      "registeredPath": "/Volumes/code/workspace/workbench/axi-pet-desktop",
+      "relativePath": "workbench/axi-pet-desktop",
+      "branch": "dev",
+      "head": "b44f72f254e3",
+      "dirtyCount": 124,
+      "recent": [
+        {
+          "sha": "b44f72f254e3",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n3952388c752",
+          "subject": "chore(workspace): checkpoint axi-pet-desktop changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\na8308d40471",
+          "subject": "docs(logs): append submit log for cb2e2be",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ncb2e2be3758",
+          "subject": "chore(axi-pet-desktop-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n75c710d5fba",
+          "subject": "chore(submit): record Miku illustration review",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne89ca9c3cd4",
+          "subject": "fix(desktop-pet): redraw Miku base illustration",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n3ae40db4b9b",
+          "subject": "chore(submit): record Miku v1 delivery log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na3d270f9fc9",
+          "subject": "feat(desktop-pet): add Hatsune Miku v1 character",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9d755ae6e88",
+          "subject": "chore(submit): archive package metadata record",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5f42f43a176",
+          "subject": "chore(repo): normalize package metadata",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n975bbc5be41",
+          "subject": "chore(submit): archive regression merge record",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne523a7241a2",
+          "subject": "test(desktop-pet): merge historical regression labels",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n13432f6d2c0",
+          "subject": "docs(submit): record desktop handoff fix",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n6616ef1ad40",
+          "subject": "docs(governance): correct desktop handoff commands",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n80635f92f59",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8b174bf93b9",
+          "subject": "docs: regenerate handoff from catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf098defac72",
+          "subject": "docs: auto-submit log 20260822-153348",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n2f1696d4333",
+          "subject": "chore: sync githooks and auto-submit log",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nc0b1835c830",
+          "subject": "docs(axi-pet-desktop): add documentation infrastructure",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1219ad0663b",
+          "subject": "fix(audit): resolve workspace audit findings",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 124 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 2 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 3 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-kernel",
+      "id": "axi-kernel",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-kernel",
+      "relativePath": "foundation/axi-kernel",
+      "branch": "dev",
+      "head": "f93135796189",
+      "dirtyCount": 13,
+      "recent": [
+        {
+          "sha": "f93135796189",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n90491776d4c",
+          "subject": "chore(workspace): checkpoint axi-kernel changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb166e7b7f33",
+          "subject": "feat(kernel): add sync coverage matrix + roll forward rebuild_registry",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2c7a3f4f339",
+          "subject": "feat(kernel): add Task + Artifact atoms (schema v7)",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0e7ab638619",
+          "subject": "feat(kernel): add structured change metadata",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc15d57d7a29",
+          "subject": "feat(kernel): freeze semantic change contract",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n79d16f6a3e9",
+          "subject": "chore(axi-kernel-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n56c62861137",
+          "subject": "chore(kernel): complete project governance handoff",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd20c78004b4",
+          "subject": "fix(kernel): preserve event ordering for runtime cursors",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n230c65560a0",
+          "subject": "feat(kernel): promote canonical object registry",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 13 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 2 个 checkpoint"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-sync",
+      "id": "axi-sync",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-sync",
+      "relativePath": "foundation/axi-sync",
+      "branch": "dev",
+      "head": "7c592257c0e3",
+      "dirtyCount": 8,
+      "recent": [
+        {
+          "sha": "7c592257c0e3",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n56557a7a4d4",
+          "subject": "chore(workspace): checkpoint axi-sync changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4e2d5887d72",
+          "subject": "chore(axi-sync): add .gitattributes + git config",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na7678f71c8a",
+          "subject": "feat(sync): link L3 queue items to ADR files",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n582e7e035f0",
+          "subject": "chore(axi-sync): initialise dev with promoted code + fs-watcher tests",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 8 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-runtime",
+      "id": "axi-runtime",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-runtime",
+      "relativePath": "foundation/axi-runtime",
+      "branch": "dev",
+      "head": "b5a36fa76903",
+      "dirtyCount": 9,
+      "recent": [
+        {
+          "sha": "b5a36fa76903",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8ae0106d69f",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n24717e5e76a",
+          "subject": "chore(runtime): complete audit and command contracts",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0f911fcfa4b",
+          "subject": "fix(runtime): resolve cron python at install time",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5b3ad88e755",
+          "subject": "feat(runtime): verify real minimax agent calls",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ndc08a4a3e8b",
+          "subject": "feat(runtime): route agent gateway through workspace minimax",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n90f2648e3ee",
+          "subject": "Initial commit",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 9 个未提交路径"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/products/ielts-vocab",
+      "id": "ielts-vocab",
+      "registeredPath": "/Volumes/code/workspace/products/ielts-vocab",
+      "relativePath": "products/ielts-vocab",
+      "branch": "dev",
+      "head": "1851cfacdafe",
+      "dirtyCount": 3,
+      "recent": [
+        {
+          "sha": "1851cfacdafe",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf72cbf6c18e",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne61427bb262",
+          "subject": "docs(logs): append submit log for 0b7e13e",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n0b7e13edd4e",
+          "subject": "chore(ielts-vocab-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2bcae65e801",
+          "subject": "chore(submit): record natapp cleanup evidence",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf47717efbee",
+          "subject": "chore(submit): record natapp retirement",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n904e0cdbaa9",
+          "subject": "chore(ops): retire natapp local proxy path",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8ac40eebe69",
+          "subject": "chore(submit): record host decoupling batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n81be3382127",
+          "subject": "feat(deploy): decouple IELTS host from parent domain",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na9f0d95c9af",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb8429646261",
+          "subject": "docs: sync project handoff and catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n158e8437bf0",
+          "subject": "chore(batch): absorb auto-submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n5889d55de92",
+          "subject": "chore: add CLAUDE.md redirect",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2806433823b",
+          "subject": "chore(batch): absorb leftover submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n270f28bec40",
+          "subject": "chore(batch): submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nddf63137b39",
+          "subject": "chore(batch): docs-and-guidance",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n78188395422",
+          "subject": "fix: cap study session idle gaps",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc320ef00dec",
+          "subject": "Record quick-memory completion submit evidence",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd674e1ad411",
+          "subject": "Clarify quick-memory round completion evidence",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n60b4bd8dafd",
+          "subject": "Record current-mode chapter progress submit evidence",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 3 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 4 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/products/story-graph",
+      "id": "story-graph",
+      "registeredPath": "/Volumes/code/workspace/products/story-graph",
+      "relativePath": "products/story-graph",
+      "branch": "dev",
+      "head": "0bf05e7afef2",
+      "dirtyCount": 8,
+      "recent": [
+        {
+          "sha": "0bf05e7afef2",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne497391a35f",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n93915c0921e",
+          "subject": "docs(logs): append submit log for 62ca79a",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n62ca79a4ccb",
+          "subject": "chore(story-graph-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\neb4e6fedd9a",
+          "subject": "docs(logs): append submit log for befd22c",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nbefd22c108e",
+          "subject": "fix(handoff): correct documents.todo path from TODO.md to TASK.md",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nfcd23fc171f",
+          "subject": "docs(story-graph): refresh verification status (2026-09-14)",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1fa33ecd8ef",
+          "subject": "chore(batch): absorb auto-submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nc584e52f935",
+          "subject": "docs(story-graph): add LICENSE and submit logs",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n5699fe1351b",
+          "subject": "docs: add research docs and update handoff",
+          "missingTrailers": [
+            "Confidence"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0229bc2e4a7",
+          "subject": "feat(data): enrich evidence store with events and decisions",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n53214a856d9",
+          "subject": "feat(scripts): add classify, registry and promotion tools",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nab13076c2f8",
+          "subject": "feat(app): add theme toggle, provider and test setup",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf6301ea89e6",
+          "subject": "feat(evidence): enrich 586 protagonist events across 4 novels",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n7e4bc8d9aa8",
+          "subject": "chore(hooks): install workspace gook installer-generated post-commit/commit-msg",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb600615264c",
+          "subject": "refactor(theme): keep icon button + add circular arc-reveal wipe",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nac634b402ac",
+          "subject": "feat(shared): register AxiThemeArc pill theme switcher + apply linter cleanup",
+          "missingTrailers": [
+            "Not-tested"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc856392e4f3",
+          "subject": "fix(longform): collapse narrative nav under 1200px + responsive card grid",
+          "missingTrailers": [
+            "Not-tested"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n7a9b85aa268",
+          "subject": "refactor(longform): replace cramped 5-column table with story-ledger cards",
+          "missingTrailers": [
+            "Not-tested"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne74e4e07d0b",
+          "subject": "refactor(theme): switch to cool-admin dark style (blue primary, slate)",
+          "missingTrailers": [
+            "Not-tested"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 8 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 4 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/products/axi-soul-world",
+      "id": "axi-soul-world",
+      "registeredPath": "/Volumes/code/workspace/products/axi-soul-world",
+      "relativePath": "products/axi-soul-world",
+      "branch": "lane-c/web-admin-resource-search",
+      "head": "93e3567efd62",
+      "dirtyCount": 30,
+      "recent": [
+        {
+          "sha": "93e3567efd62",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n70dbbabf00a",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n3bbedfcfe6a",
+          "subject": "docs(logs): append submit log for 5e4c177",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n5e4c1776915",
+          "subject": "chore(axi-soul-world-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n77bdfb61f96",
+          "subject": "docs(integration): R03 synthesis v3 after RP-* completion (REQUEST_CHANGES)",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n65593961a9b",
+          "subject": "fix(e2e): rewrite live-resource-search against narrow /resource/search contract",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1213689bb37",
+          "subject": "docs(proposal): F02 owner-decision prompt for projects/axi-workspace drift",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nbd2abfada35",
+          "subject": "docs(integration): R-arch v2 review after RC-* fixes (CLEAR)",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4d7b04e763d",
+          "subject": "docs(integration): R03 synthesis v2 after RC-* fixes (REQUEST_CHANGES)",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n95242746261",
+          "subject": "docs(integration): R-code v2 — re-review 7 mandatory findings (APPROVE)",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2e3b076fdec",
+          "subject": "fix(web-admin): delete legacy POST /gateway/run client surface",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nbe21e534b17",
+          "subject": "fix(web-admin): honour upstream clarifying state in BFF envelope",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc0b94461500",
+          "subject": "docs(integration): R03 synthesis + Lane-E/F evidence + E01 proposal",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4ef5c157935",
+          "subject": "fix(web-admin): route resource search through Soul BFF by default and remove innerHTML rendering",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2d590672516",
+          "subject": "docs(integration): add Claude multi-agent execution TODO",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8cba566e86f",
+          "subject": "feat: wire resource-search handler into axi-soul-api composition root + e2e smoke",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na5da2fc7995",
+          "subject": "feat(axi-soul-api): expose GET /v1/resource-search handler",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n173a63a4b2b",
+          "subject": "docs(handoff): register ai-resource-orchestration:resource-search consumer edge",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n19514a47a7a",
+          "subject": "feat(axi-soul-api): add resource-search live gateway client",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n86c215d00a0",
+          "subject": "feat(axi-soul-api): add resource-search fixture transport adapter",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "error",
+          "code": "branch-policy",
+          "message": "分支不符合工作区策略: lane-c/web-admin-resource-search"
+        },
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 30 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 1 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-skills",
+      "id": "axi-skills",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-skills",
+      "relativePath": "foundation/axi-skills",
+      "branch": "dev",
+      "head": "57330ab806e8",
+      "dirtyCount": 178,
+      "recent": [
+        {
+          "sha": "57330ab806e8",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2523a86525a",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n4738c76b345",
+          "subject": "docs(logs): append submit log for fc62a79",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nfc62a79b8dc",
+          "subject": "chore(axi-skills-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n327bb823e6b",
+          "subject": "docs(logs): append submit log for 81e1248",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n81e12481a1d",
+          "subject": "chore(i18n): regenerate batch manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5eed13ed9de",
+          "subject": "docs(logs): append submit log for dab15c8",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ndab15c85dcd",
+          "subject": "fix(skills): resolve gstack-open-gstack-browser name collision and remove credential placeholder",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n372454e8cb0",
+          "subject": "docs(logs): append submit log for 5ed93f6",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n5ed93f6225d",
+          "subject": "security(blog-post-writer): replace hardcoded GPTNB key with env var",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n29afc3f8b49",
+          "subject": "docs(logs): append submit log for 1e29c62",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n1e29c6238de",
+          "subject": "chore(skills): flatten hermes category wrappers into top-level skills",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n802dc0df272",
+          "subject": "docs(logs): append submit log for 60ffcc3",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n60ffcc38976",
+          "subject": "chore(skills): consolidate ecosystem skill pools into axi-skills",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9d413e3effe",
+          "subject": "docs(logs): append submit log for 0b9ce3b",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n0b9ce3b1948",
+          "subject": "Merge fix-b35ac75: absorb submit log batch",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nae0684b9d19",
+          "subject": "docs(logs): append submit logs batch",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n950c35e8357",
+          "subject": "docs(logs): append submit log for 26ab4ee",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n26ab4eec2c8",
+          "subject": "docs(skills): add inlined-skills sync SOP",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n06e89c07480",
+          "subject": "docs(logs): append submit log for 000d7c6",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 178 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 11 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-ui",
+      "id": "axi-ui",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-ui",
+      "relativePath": "foundation/axi-ui",
+      "branch": "dev",
+      "head": "ee4dd2f8d668",
+      "dirtyCount": 577,
+      "recent": [
+        {
+          "sha": "ee4dd2f8d668",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n66fc5e306db",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf9da7c0f3d0",
+          "subject": "docs(logs): append submit log for c818080",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nc818080a74b",
+          "subject": "chore(axi-ui-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne783169a76e",
+          "subject": "docs(logs): append submit log for 407fb44",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n407fb44fc92",
+          "subject": "fix(axi-ui): improve accessibility and fix runtime errors",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne9d58b11abd",
+          "subject": "docs(logs): append submit log for 0cf1ea3",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n0cf1ea35975",
+          "subject": "Merge branch 'agent/i18n-runtime-coverage' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd17d85d6b70",
+          "subject": "docs(logs): append submit log for e51defe",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ne51defeaf7f",
+          "subject": "Merge branch 'hook-e2e-test' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2fb909895ad",
+          "subject": "docs(logs): append submit log for 6315c25",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n6315c25335c",
+          "subject": "feat(axi-ui): defer icon SVG payload to first access, reducing initial bundle cost",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2d5aa3d6c1f",
+          "subject": "chore(axi-ui): sync pending changes to dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne3b14e51adf",
+          "subject": "fix(axi-ui): resolve Gallery typecheck errors in component visualizer adapters",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2b1dac82b26",
+          "subject": "feat(governance): add relationship metadata declaration for provenance tracking",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\neaaad9617da",
+          "subject": "feat(gallery): add Remotion Component Visualizer — 100% adapter coverage",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne7aeb1c48da",
+          "subject": "docs(axi-ui): add Remotion component visualizer PRD",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n81dadbc0ea9",
+          "subject": "fix(tokens): unify light surfaces and shared geometry",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n02b0149adb0",
+          "subject": "fix(shell): keep avatar preview close hover translucent",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n826bb2a94c4",
+          "subject": "fix(core): separate flower hub from petals",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 577 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 5 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/foundation/axi-rules",
+      "id": "axi-rules",
+      "registeredPath": "/Volumes/code/workspace/foundation/axi-rules",
+      "relativePath": "foundation/axi-rules",
+      "branch": "dev",
+      "head": "3290c4e9c7ee",
+      "dirtyCount": 101,
+      "recent": [
+        {
+          "sha": "3290c4e9c7ee",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na04d439aadf",
+          "subject": "chore(workspace): checkpoint axi-rules changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5c750377e95",
+          "subject": "docs(logs): append submit log for ed05756",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ned05756bec3",
+          "subject": "chore(axi-rules-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\ncfa19636831",
+          "subject": "docs(logs): append submit log for 89abe70",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n89abe707e8c",
+          "subject": "chore(todo): mark TC-HDOC-004 acceptance criteria complete",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n6e815c84480",
+          "subject": "docs(logs): append submit log for 4950733",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n495073371b2",
+          "subject": "chore(scripts): track skill-registry build script in axiom-rules",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n29de50446af",
+          "subject": "docs(logs): append submit log for 7b532f0",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n7b532f0ae6e",
+          "subject": "feat(rules): add 92 new rules across 9 modules",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n541de4e586a",
+          "subject": "feat(governance): add relationship metadata declaration for provenance tracking",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9a75680699d",
+          "subject": "chore(batch): absorb auto-submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n92cb9ed52dd",
+          "subject": "docs(state): 标记 REQ-AR-001 到 REQ-AR-005 为 DONE",
+          "missingTrailers": [
+            "Not-tested"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf22870c42d0",
+          "subject": "docs: auto-submit log 20260822-115302",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n627e1cc3326",
+          "subject": "docs(axi-rules): add security policy and contributing guide",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb922efd0e07",
+          "subject": "chore: add CLAUDE.md redirect",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc0ae04fdfe0",
+          "subject": "chore(batch): absorb leftover submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nbbeea64c2af",
+          "subject": "chore(batch): submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n7aa82046957",
+          "subject": "chore(batch): tests-for-audit-frontend-testing",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n99b50b23597",
+          "subject": "chore(batch): git-settings",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 101 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 2 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 8 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/agent-cluster/axi-agent/tools/axi-feishu-codex-bridge",
+      "id": "axi-feishu-codex-bridge",
+      "registeredPath": "/Volumes/code/workspace/agent-cluster/axi-agent/tools/axi-feishu-codex-bridge",
+      "relativePath": "agent-cluster/axi-agent/tools/axi-feishu-codex-bridge",
+      "branch": "dev",
+      "head": "a772cc2d0506",
+      "dirtyCount": 10,
+      "recent": [
+        {
+          "sha": "a772cc2d0506",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd85bce084d7",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n62b77795a2c",
+          "subject": "docs(logs): append submit log for 7bea0ef",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n7bea0ef74ff",
+          "subject": "chore(axi-feishu-codex-bridge-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n5b4aa067e82",
+          "subject": "fix: update HANDOFF.md",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nfbcf360eef0",
+          "subject": "fix(manifest): point decisions.changelog at the actual CHANGELOG path",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1c28f0b4423",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0125bda3ee6",
+          "subject": "docs: sync project-docs catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2a20a6d0d15",
+          "subject": "chore(batch): absorb auto-submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\na88ecd57195",
+          "subject": "chore: add CLAUDE.md redirect",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2b06c84b0e3",
+          "subject": "chore(batch): absorb leftover submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\na2a4f3a8c7b",
+          "subject": "chore(batch): submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nf03cb6af983",
+          "subject": "chore(batch): docs-and-guidance",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n553e37eabd3",
+          "subject": "chore(batch): change",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1e95ca6ac3a",
+          "subject": "chore(hooks): record AR-GIT-005 v2 workflow submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nb9c96b2fe62",
+          "subject": "ci(hooks): switch axi-rules-hooks to git clone for cross-org private repo",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n19c318b1750",
+          "subject": "chore(hooks): record AR-GIT-005 server-side CI rollout submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n0918e854067",
+          "subject": "ci(hooks): add axi-rules-hooks workflow for AR-GIT-005 server-side gate",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9d8a0856ff9",
+          "subject": "chore(hooks): record AR-GIT-005 commit-msg tracking submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n4ed46232936",
+          "subject": "chore(hooks): track generated commit-msg hook for AR-GIT-005",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 10 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 7 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/tools/axi-video-downloader",
+      "id": "axi-video-downloader",
+      "registeredPath": "/Volumes/code/workspace/tools/axi-video-downloader",
+      "relativePath": "tools/axi-video-downloader",
+      "branch": "dev",
+      "head": "5b7512651300",
+      "dirtyCount": 12,
+      "recent": [
+        {
+          "sha": "5b7512651300",
+          "subject": "docs(submit): record catalog-restore batch",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n05a6350cb83",
+          "subject": "docs: sync project handoff and catalog manifest",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd8efb5a4e77",
+          "subject": "chore(batch): absorb auto-submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\ndf39737393f",
+          "subject": "chore: add CLAUDE.md redirect",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9f4e2e988f2",
+          "subject": "chore(batch): absorb leftover submit logs",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n8170b9d70b4",
+          "subject": "chore(batch): submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nf84d45c05af",
+          "subject": "chore(batch): git-settings",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n7cd5c25cb1a",
+          "subject": "chore(batch): docs-and-guidance",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2c3a927c234",
+          "subject": "chore(batch): change",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd48477ad129",
+          "subject": "chore(submit): archive 2026-07-20 hook-repair auto-submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nbb501d300a4",
+          "subject": "chore(hooks): rewrite commit-msg + post-commit to use vendored scripts",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0bbd9b12c05",
+          "subject": "chore(hooks): vendor Lore trailer + submit log scripts under .githooks/_lib",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n55c93121254",
+          "subject": "Record cleanup baseline submission evidence",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9d7639d2236",
+          "subject": "Stabilize cleanup audit baseline",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nc74caa973ba",
+          "subject": "chore(hooks): record AR-GIT-005 v2 workflow submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n8dc71a74812",
+          "subject": "ci(hooks): switch axi-rules-hooks to git clone for cross-org private repo",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nd133a784031",
+          "subject": "chore(hooks): record AR-GIT-005 server-side CI rollout submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nb50e815bf84",
+          "subject": "ci(hooks): add axi-rules-hooks workflow for AR-GIT-005 server-side gate",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1ed85aa599e",
+          "subject": "chore(hooks): record AR-GIT-005 commit-msg tracking submit log",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n561dfee06b4",
+          "subject": "chore(hooks): track generated commit-msg hook for AR-GIT-005",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 12 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 8 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/agent-cluster/axi-agent",
+      "id": "axi-agent",
+      "registeredPath": "/Volumes/code/workspace/agent-cluster/axi-agent",
+      "relativePath": "agent-cluster/axi-agent",
+      "branch": "dev",
+      "head": "da5fa604e1cb",
+      "dirtyCount": 25,
+      "recent": [
+        {
+          "sha": "da5fa604e1cb",
+          "subject": "chore(agent): remove archived bff source",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n7771994bd54",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne691f9c3d9e",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n0def97911a5",
+          "subject": "docs(logs): append submit log for 50a8e7f",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n50a8e7f7b72",
+          "subject": "chore(agent): update archived bff repository pointer",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n99d21889663",
+          "subject": "docs(logs): append submit log for d40ad21",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\nd40ad210ed1",
+          "subject": "chore(axi-agent-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n87fc43b5361",
+          "subject": "docs(logs): append submit log for 409b78a",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n409b78aa22a",
+          "subject": "fix(handoff): correct canonicalPath from axi-agent-platform to axi-agent",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8e2d1fbc39c",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/tools/axi-todo/vite-8.0.16' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n33d63ceaf19",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/tools/axi-todo/dayjs-1.11.21' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n3d6aa5b37af",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/infra/axi-agent-transport/commander-15.0.0' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9e8b807a965",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/infra/axi-agent-mcp/typescript-6.0.3' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n1a95ef8182c",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/infra/axi-agent-mcp/types/node-25.9.1' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb0835134ebf",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/infra/axi-agent-mcp/redis-6.0.0' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf0ed94881c6",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/infra/axi-agent-mcp/dotenv-17.4.2' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n032594291ca",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/frontend/zustand-5.0.14' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nbb30b2eca0b",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/frontend/typescript-eslint/eslint-plugin-7.0.0' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n03c0cf30049",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/frontend/react-icons-5.6.0' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n321c390abf8",
+          "subject": "Merge remote-tracking branch 'origin/dependabot/npm_and_yarn/frontend/lucide-react-1.17.0' into dev",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 25 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 3 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/distributions/axi-workbench-web",
+      "id": "axi-workbench-web-dist",
+      "registeredPath": "/Volumes/code/workspace/distributions/axi-workbench-web",
+      "relativePath": "distributions/axi-workbench-web",
+      "branch": "main",
+      "head": "b5ad8e5c6d52",
+      "dirtyCount": 12,
+      "recent": [
+        {
+          "sha": "b5ad8e5c6d52",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2f038bdc53e",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n08746988b9f",
+          "subject": "docs(logs): append submit log for 7d1d408",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n7d1d40847c9",
+          "subject": "chore(axi-workbench-web-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8659e0f9e1d",
+          "subject": "fix(ci): make turbo test depend on package own build so dist is materialized",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nb69afe0c65e",
+          "subject": "fix(ci): ensure test job runs after build job completes",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\na5085d8efe3",
+          "subject": "fix(ci): ensure @axi/vite-plugin dist exists before test",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf8ba1e0bb79",
+          "subject": "feat: add CI workflows and verify:ci contracts",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n7311a2d3cd9",
+          "subject": "Initial commit: Axi Workbench Web distribution",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 12 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 1 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/distributions/axi-workbench-mobile",
+      "id": "axi-workbench-mobile-dist",
+      "registeredPath": "/Volumes/code/workspace/distributions/axi-workbench-mobile",
+      "relativePath": "distributions/axi-workbench-mobile",
+      "branch": "main",
+      "head": "276a64599a68",
+      "dirtyCount": 5,
+      "recent": [
+        {
+          "sha": "276a64599a68",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\neb586ddc568",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n86c0949fff3",
+          "subject": "docs(logs): append submit log for 4bf9058",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n4bf90585b1b",
+          "subject": "chore(axi-workbench-mobile-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\ncdbb22396bf",
+          "subject": "feat: add CI workflows and verify:ci contracts",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n9be0e20d2d1",
+          "subject": "Initial commit: Axi Workbench Mobile distribution",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 5 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 1 个日志/执行记录提交"
+        }
+      ]
+    },
+    {
+      "root": "/Volumes/code/workspace/distributions/axi-workbench-desktop",
+      "id": "axi-workbench-desktop-dist",
+      "registeredPath": "/Volumes/code/workspace/distributions/axi-workbench-desktop",
+      "relativePath": "distributions/axi-workbench-desktop",
+      "branch": "main",
+      "head": "923092fed4b6",
+      "dirtyCount": 10,
+      "recent": [
+        {
+          "sha": "923092fed4b6",
+          "subject": "chore(git-hooks): make workspace preflight read-only",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8daa8cb5fab",
+          "subject": "chore(workspace): synchronize repository hooks",
+          "missingTrailers": [],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\nf27f2f756ca",
+          "subject": "docs(logs): append submit log for 393a03a",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": true
+        },
+        {
+          "sha": "\n393a03ac4d1",
+          "subject": "chore(axi-workbench-desktop-): checkpoint workspace changes",
+          "missingTrailers": [],
+          "checkpoint": true,
+          "submitLog": false
+        },
+        {
+          "sha": "\n2178888e51f",
+          "subject": "fix(ci): turbo test builds package dist + gate Tauri native to macOS/Windows",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n8422127c29b",
+          "subject": "fix(CI): add glib and additional Tauri 2 system dependencies",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ncc28ca2d2a5",
+          "subject": "fix(ci): ensure @axi/vite-plugin dist exists before test",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n612be03b656",
+          "subject": "fix(ci): add Linux system dependencies for Tauri build",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n7210e6bff08",
+          "subject": "fix(ci): skip Apple signing in CI when no certificate available",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\n824c015c639",
+          "subject": "feat: add CI workflows and verify:ci contracts",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        },
+        {
+          "sha": "\ne4ca4e92b0f",
+          "subject": "Initial commit: Axi Workbench Desktop distribution (Tauri shell)",
+          "missingTrailers": [
+            "Tested",
+            "Not-tested",
+            "Confidence",
+            "Scope-risk",
+            "Directive"
+          ],
+          "checkpoint": false,
+          "submitLog": false
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "dirty-worktree",
+          "message": "存在 10 个未提交路径"
+        },
+        {
+          "severity": "warning",
+          "code": "checkpoint-history",
+          "message": "最近 20 个提交包含 1 个 checkpoint"
+        },
+        {
+          "severity": "warning",
+          "code": "submit-log-history",
+          "message": "最近 20 个提交包含 1 个日志/执行记录提交"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "repositories": 22,
+    "errors": 1,
+    "warnings": 60,
+    "dirtyRepositories": 22,
+    "checkpointRepositories": 20
+  }
+}

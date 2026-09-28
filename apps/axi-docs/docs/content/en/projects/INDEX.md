@@ -4,8 +4,8 @@ title: Workspace Project Dossiers
 type: index
 status: draft
 tags: [Axi Docs, Projects, Index, English]
-created: 2026-08-23
-modified: 2026-08-23
+created: 2026-09-28
+modified: 2026-09-28
 graph-title: Workspace Project Dossiers
 graph-tags: [Projects, Index]
 description: Axi Docs keeps a per-project dossier for every active entry in `WORKSPACE_INDEX.md`. The dossier is generated from the workspace index; re-run `pnpm --dir app projects:build` to refresh it.
@@ -23,50 +23,59 @@ description: Axi Docs keeps a per-project dossier for every active entry in `WOR
 - Locale source: `docs/content/en/projects/<id>/`.
 - Other locale: `docs/content/zh/projects/<id>/`.
 
-## Core Active Projects (8)
+## Core Active Projects (12)
 
 | Project | Partition | Status | Stack | Notes |
 | --- | --- | --- | --- | --- |
-| [Axi Agent Platform](./axi-agent/README.md) | `projects/` | verified |  |  |
-| [Axi Docs](./axi-docs/README.md) | `projects/` | verified |  |  |
-| [Axi Image Preview](./axi-image-preview/README.md) | `projects/` | verified |  |  |
-| [Axi Notify](./axi-notify/README.md) | `projects/` | verified |  |  |
-| [Axi Pet](./axi-pet/README.md) | `projects/` | verified |  |  |
-| [Axi Pet Desktop](./axi-pet-desktop/README.md) | `projects/` | verified |  |  |
-| [Axi Workbench](./axi-workbench/README.md) | `projects/` | verified |  |  |
-| [体育管理应用](./sports-management/README.md) | `projects/` | verified |  |  |
-
-## Shared and Infrastructure (6)
-
-| Project | Partition | Status | Stack | Notes |
-| --- | --- | --- | --- | --- |
-| [Axi Rules](./axi-rules/README.md) | `projects/` | verified |  |  |
-| [Axi Skills](./axi-skills/README.md) | `shared/` | verified |  |  |
-| [Axi Tauri Starter](./axi-tauri-starter/README.md) | `shared/` | verified |  |  |
-| [Axi UI](./axi-ui/README.md) | `shared/` | verified |  |  |
-| [Workspace Relationship Graph](./workspace-relationship-graph/README.md) | `infra/` | external-canonical | JSON, Node CLI, MCP stdio | Use before cross-project edits; not a code project or git repo. |
-| [Workspace Dev Services](./workspace-dev-services/README.md) | `infra/` | active | JSON, Node.js, PM2, LaunchAgent | Runtime state lives under `.devsvc`; use the config and wrapper as editable entrypoints. |
-
-## Reference Repos (15)
-
-| Project | Partition | Status | Stack | Notes |
-| --- | --- | --- | --- | --- |
-| [Axi Artboard](./axi-artboard/README.md) | `products/` | verified |  |  |
-| [Axi Feishu Codex Bridge](./axi-feishu-codex-bridge/README.md) | `tools/` | verified |  |  |
-| [Axi Proxy Companion](./axi-proxy-companion/README.md) | `tools/` | verified |  |  |
+| [Axi Workbench](./axi-workbench/README.md) | `workbench/` | building |  |  |
+| [Axi Coder](./axi-coder/README.md) | `workbench/` | usable |  |  |
+| [Axi Model Gateway](./axi-model-gateway/README.md) | `workbench/` | usable |  |  |
+| [Axi Agent Platform](./axi-agent/README.md) | `agent-cluster/` | active-development |  |  |
+| [Axi Image Preview](./axi-image-preview/README.md) | `workbench/` | complete |  |  |
+| [Axi Pet Desktop](./axi-pet-desktop/README.md) | `workbench/` | usable |  |  |
+| [IELTS Vocabulary](./ielts-vocab/README.md) | `products/` | active |  |  |
+| [Pelagic Open Water](./pelagic/README.md) | `candidates/` | active |  |  |
+| [Story Graph](./story-graph/README.md) | `products/` | usable |  |  |
+| [Axi Feishu Codex Bridge](./axi-feishu-codex-bridge/README.md) | `agent-cluster/` | active |  |  |
 | [Axi Soul World](./axi-soul-world/README.md) | `products/` | verified |  |  |
-| [Axi Video Downloader](./axi-video-downloader/README.md) | `tools/` | verified |  |  |
-| [IELTS Vocabulary](./ielts-vocab/README.md) | `products/` | verified |  |  |
-| [Story Graph](./story-graph/README.md) | `products/` | verified |  |  |
-| [Cockpit Tools Reference](./cockpit-tools-reference/README.md) | `references/` | reference | Tauri, Vite, TypeScript, Rust | Keep the product name as Cockpit Tools and do not rename it into Axi. |
-| [DBSkill Reference](./dbskill-reference/README.md) | `references/` | reference | Shell, Markdown, Python | Keep as a reference only; do not promote to a workspace-owned product. |
-| [Sub2API Reference](./sub2api-reference/README.md) | `references/` | reference | Go, Vue, PostgreSQL, Redis, Docker | Upstream third-party service repo; not an Axi owner or Axi application. |
-| [CLIProxyAPI Reference](./cliproxyapi-reference/README.md) | `references/` | reference | Go, Docker | Imported without `.git`, local binaries, live config, auth material, or runtime output. Use as a reference only. |
-| [Image2Prompt Reference](./image2prompt-reference/README.md) | `references/` | reference | JavaScript, browser extension | Optional prompting UX reference; not an Axi owner or active application. |
-| [OpenCodex Reference](./opencodex-reference/README.md) | `references/` | reference | Node.js, TypeScript, Swift/AppKit, WebKit | Upstream AITabby reference repo with local wrapper edits; not an Axi owner or active application. |
-| [Blinko Reference](./blinko-reference/README.md) | `references/` | reference | Bun, TypeScript, Docker | Use this canonical reference path directly. |
-| [ComfyUI Reference](./comfyui-reference/README.md) | `references/` | reference | Python, PyTorch | Former path `/Volumes/code/models/comfyui/ComfyUI` is a compatibility symlink. |
+| [VoiceAssistant — on-device voice loop prototype](./voice-assistant-on-device-speech-recognition/README.md) | `candidates/` | prototype |  |  |
+
+## Shared and Infrastructure (14)
+
+| Project | Partition | Status | Stack | Notes |
+| --- | --- | --- | --- | --- |
+| [Axi Notify / Mobile](./axi-notify/README.md) | `foundation/` | usable |  |  |
+| [Axi Accounts Contract](./axi-accounts/README.md) | `docs/` | active |  | workspace-resource |
+| [Axi UI](./axi-ui/README.md) | `foundation/` | usable |  |  |
+| [Axi Skills](./axi-skills/README.md) | `foundation/` | usable |  |  |
+| [Axi Rules](./axi-rules/README.md) | `foundation/` | active |  |  |
+| [AXI Personal OS Workbench CLI](./axi-workbench-cli/README.md) | `foundation/` | usable |  | personal-os-runtime |
+| [Axi Kernel](./axi-kernel/README.md) | `foundation/` | usable |  | personal-os-core |
+| [Axi Inbox](./axi-inbox/README.md) | `foundation/` | usable |  | AXI Personal OS Inbox CLI (PRD-03, Phase 2). Collects URLs, images, files, ideas, project-refs into a single inbox; auto-detects kind via URI heuristics; transitions through collected/unread/reviewed/linked/transformed/a |
+| [Axi Change Sync](./axi-sync/README.md) | `foundation/` | usable |  | AXI Personal OS Change Sync CLI (PRD-04, Phase 2/3). Reads the live Kernel `Change` stream plus `git log` of registered repositories; rates each change L0-L3 by keyword heuristics; maintains a side-store queue with state |
+| [Axi Governance Runtime](./axi-runtime/README.md) | `foundation/` | usable |  | AXI Personal OS Governance Runtime CLI (PRD-05, Phase 3). Stand-up Rule Engine + Skill Registry + Agent Gateway + Scheduler on top of the Kernel Change stream. Rule / Skill / Agent live in a side-store data/governance.js |
+| [Axi Applications](./axi-apps/README.md) | `foundation/` | usable |  | AXI Personal OS Applications CLI (PRD-06, Phase 4). Three pure-reader sub-CLIs on the same live Kernel + downstream CLIs: Share (records shareable inbox items as Kernel Change rows + lists ResourceObject kind=shareable), |
+| [Axi Observability](./observability/README.md) | `foundation/` | active |  |  |
+| [Workspace Relationship Graph](./workspace-relationship-graph/README.md) | `foundation/` | external-canonical | JSON, Node CLI, MCP stdio | Use before cross-project edits; not a code project or git repo. |
+| [Workspace Dev Services](./workspace-dev-services/README.md) | `foundation/` | active | JSON, Node.js, PM2, LaunchAgent | Runtime state lives under `.devsvc`; use the config and wrapper as editable entrypoints. |
+
+## Reference Repos (12)
+
+| Project | Partition | Status | Stack | Notes |
+| --- | --- | --- | --- | --- |
+| [Sports Management](./sports-management/README.md) | `archive/` | active |  |  |
+| [Sub2API Reference](./sub2api/README.md) | `references/` | active |  |  |
+| [Image2Prompt Reference](./image2prompt/README.md) | `references/` | active |  |  |
+| [OpenCodex Reference](./opencodex/README.md) | `references/` | active |  |  |
+| [Cockpit Tools Reference](./cockpit-tools/README.md) | `references/` | active |  |  |
+| [Blinko Reference](./blinko/README.md) | `references/` | active |  |  |
+| [ComfyUI Reference](./comfyui/README.md) | `references/` | active |  |  |
+| [dbskill Reference](./dbskill/README.md) | `references/` | active |  |  |
+| [axi-video-downloader](./axi-video-downloader/README.md) | `tools/` | active |  |  |
+| [Axi Workbench Web Distribution](./axi-workbench-web-dist/README.md) | `distributions/` | usable |  |  |
+| [Axi Workbench Mobile Distribution](./axi-workbench-mobile-dist/README.md) | `distributions/` | usable |  |  |
+| [Axi Workbench Desktop Distribution](./axi-workbench-desktop-dist/README.md) | `distributions/` | usable |  |  |
 
 ## Total
 
-**29** dossiers under this locale tree。
+**38** dossiers under this locale tree。
