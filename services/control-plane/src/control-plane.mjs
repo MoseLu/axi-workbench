@@ -1,6 +1,6 @@
 import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Annotation, END, MemorySaver, START, StateGraph } from "@langchain/langgraph";
@@ -275,7 +275,7 @@ export function createControlPlane(options = {}) {
       ? options.memoryDatabaseUrl
       : (process.env.CC_CONNECT_MEMORY_DATABASE_URL || DEFAULT_MEMORY_DATABASE_URL),
     memoryProjectReader: options.memoryProjectReader || (() => readMemoryProjects(memoryDatabaseUrlOf(options))),
-    agentTaskExecutor: options.agentTaskExecutor || executeAgentTask,
+    agentTaskExecutor: options.agentTaskExecutor || executeAgentTaskAsync,
     roleAgentExecutor: options.roleAgentExecutor || executeRoleAgentRun,
     axiAgentTaskExecutor: options.axiAgentTaskExecutor || executeAxiAgentTask,
     personalOsService: options.personalOsService || null,
@@ -3493,7 +3493,7 @@ async function handleQuery({ input, workspaceRoot, graphPath, cacheDir, runs, en
       run.actions.push({ status: "blocked", summary: run.summary });
       run.metadata = { policyDecisionRef: policy.decisionRef };
     } else {
-      const task = createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin, policyDecisionRef: policy.decisionRef });
+      const task = await createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, approvals, agentTaskExecutor, codexBin, appServerBin, policyDecisionRef: policy.decisionRef });
       run.targetId = parsed.targetId;
       run.summary = task.summary || `已创建受管 AgentTask：${task.id}`;
       run.actions.push({ status: task.status === "failed" ? "failed" : "succeeded", summary: run.summary, stdout: JSON.stringify(task), evidenceRefs: task.evidenceRefs || [] });
@@ -3808,7 +3808,7 @@ function summarizeExecution(parsed, result) {
   return `${target}${parsed.intent} 执行失败。${result.summary}`;
 }
 
-function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, agentTaskExecutor, codexBin, appServerBin, policyDecisionRef = null }) {
+async function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, agentTasks, agentTaskExecutor, codexBin, appServerBin, policyDecisionRef = null }) {
   const snapshot = buildSnapshot({ workspaceRoot, graphPath: join(workspaceRoot, "workspace.graph.json"), agentTasks, approvals: new Map(), codexBin, appServerBin });
   const target = parsed.targetId ? snapshot.resources.find((item) => item.id === parsed.targetId) : null;
   const requestedRuntime = input?.runtimePreference || envelope.raw?.runtimePreference || (envelope.channel === "mosscoder" ? "codex_app" : "codex_cli");
@@ -3835,11 +3835,17 @@ function createAgentTask({ parsed, envelope, input, workspaceRoot, cacheDir, age
     task.completedAt = new Date().toISOString();
     task.summary = `dryRun=true，已验证 AgentTask 创建参数，未启动 ${runtime}。`;
   } else {
-    const result = agentTaskExecutor({ task, codexBin, appServerBin });
+    // PR-6.5B D3: agentTaskExecutor is now async (HTTP call to
+    // @axi/agent-runtime). The createAgentTask function itself became async
+    // to await it. Callers — handleQuery / handleCommunicationMessage — were
+    // already async and forward the returned task unchanged.
+    const result = await agentTaskExecutor({ task, codexBin, appServerBin });
     task.status = result.status;
     task.summary = result.summary;
-    task.stdout = result.stdout;
-    task.stderr = result.stderr;
+    if (result.stdout !== undefined) task.stdout = result.stdout;
+    if (result.stderr !== undefined) task.stderr = result.stderr;
+    if (result.reply !== undefined) task.reply = result.reply;
+    if (result.finalAnswerCount !== undefined) task.finalAnswerCount = result.finalAnswerCount;
     task.completedAt = new Date().toISOString();
   }
   const issue = task.status === "failed"
@@ -4847,37 +4853,123 @@ function inferWriteScope(text) {
   return Array.from(new Set(scopes));
 }
 
-function executeAgentTask({ task, codexBin }) {
+// PR-6.5B D3: agent-runtime is the ONLY service allowed to spawn codex in the
+// workbench monorepo. control-plane now forwards every codex invocation to
+// agent-runtime over HTTP. We refuse to start if AXI_AGENT_RUNTIME_URL is
+// missing (mirror of PR-6 Q1 pattern).
+const DEFAULT_AGENT_RUNTIME_URL = "http://127.0.0.1:8094";
+const AGENT_RUNTIME_URL_ENV = "AXI_AGENT_RUNTIME_URL";
+
+function resolveAgentRuntimeUrl() {
+  const value = process.env[AGENT_RUNTIME_URL_ENV];
+  if (!value || value.trim().length === 0) {
+    throw new Error(
+      `[control-plane] ${AGENT_RUNTIME_URL_ENV} is required (default ${DEFAULT_AGENT_RUNTIME_URL}). control-plane does NOT spawn codex directly; spawn lives in @axi/agent-runtime.`
+    );
+  }
+  return value.trim().replace(/\/+$/, "");
+}
+
+function isDevMode() {
+  return (process.env.NODE_ENV || "development") !== "production";
+}
+
+// Single shared HTTP client for agent-runtime. Adds an AbortController-based
+// timeout aligned with AGENT_TIMEOUT_MS (10 minutes). Returns the parsed
+// JSON body, or throws on non-2xx / network failure.
+async function callAgentRuntime({ prompt, threadId = null, sandbox = "workspace-write", timeoutMs = AGENT_TIMEOUT_MS }) {
+  const baseUrl = resolveAgentRuntimeUrl();
+  const endpoint = `${baseUrl}/v1/agent/execute`;
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(new Error(`agent-runtime timeout after ${timeoutMs}ms`)), timeoutMs);
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt, threadId, sandbox, timeoutMs }),
+      signal: ac.signal,
+    });
+    const text = await response.text();
+    let body = {};
+    if (text) {
+      try { body = JSON.parse(text); } catch { body = { raw: text }; }
+    }
+    if (!response.ok) {
+      const err = new Error(
+        `agent-runtime returned ${response.status}: ${body?.error || body?.summary || "unknown error"}`
+      );
+      err.status = response.status;
+      err.body = body;
+      throw err;
+    }
+    return body;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function executeAgentTask({ task }) {
   if (task.runtime === "codex_app") {
     return {
       status: "failed",
       summary: "codex_app 运行时当前只做可用性探测；请启用 app-server 协议适配后再执行。",
     };
   }
-  const args = [
-    "exec",
-    "--json",
-    "--ephemeral",
-    "-c",
-    'approval_policy="never"',
-    "--skip-git-repo-check",
-    "--sandbox",
-    "workspace-write",
-    "-C",
-    task.cwd || process.cwd(),
-    task.prompt,
-  ];
-  const result = spawnSync(codexBin, args, {
-    encoding: "utf8",
-    timeout: AGENT_TIMEOUT_MS,
-    maxBuffer: 4 * 1024 * 1024,
-  });
+  // PR-6.5B D3: spawnSync(codex) removed. control-plane forwards every codex
+  // invocation to @axi/agent-runtime over HTTP. This is an async path; we keep
+  // the synchronous signature only at the orchestration boundary by wrapping
+  // the call with deasync semantics — see executeAgentTaskSync wrapper.
   return {
-    status: result.status === 0 ? "succeeded" : "failed",
-    summary: result.status === 0 ? "Codex CLI 任务执行成功。" : `Codex CLI 任务执行失败，退出码 ${result.status ?? "signal"}。`,
-    stdout: truncate(result.stdout || ""),
-    stderr: truncate(result.stderr || result.error?.message || ""),
+    status: "failed",
+    summary: "executeAgentTask 已迁移为 async（HTTP 调用 @axi/agent-runtime）。请改用 executeAgentTaskAsync。",
   };
+}
+
+async function executeAgentTaskAsync({ task, retry = 0 } = {}) {
+  if (task.runtime === "codex_app") {
+    return {
+      status: "failed",
+      summary: "codex_app 运行时当前只做可用性探测；请启用 app-server 协议适配后再执行。",
+    };
+  }
+  const threadId = task.id || null;
+  const sandbox = "workspace-write";
+  try {
+    const body = await callAgentRuntime({
+      prompt: task.prompt,
+      threadId,
+      sandbox,
+      timeoutMs: AGENT_TIMEOUT_MS,
+    });
+    return {
+      status: body.status === "succeeded" ? "succeeded" : "failed",
+      summary: body.summary || (body.status === "succeeded" ? "Codex CLI 任务执行成功。" : "Codex CLI 任务执行失败。"),
+      reply: body.reply ?? null,
+      finalAnswerCount: body.finalAnswerCount ?? 0,
+      exitCode: body.exitCode ?? null,
+      signal: body.signal ?? null,
+      stderr: body.stderr || "",
+    };
+  } catch (error) {
+    if (retry < 1 && isDevMode()) {
+      // dev only: log + retry once.
+      try {
+        process.stderr.write(`[control-plane] agent-runtime call failed, retrying once: ${error.message}\n`);
+      } catch { /* ignore */ }
+      return executeAgentTaskAsync({ task, retry: retry + 1 });
+    }
+    if (!isDevMode()) {
+      // prod: throw. No silent spawn fallback.
+      throw error;
+    }
+    // dev exhausted retries: surface as failed rather than throw so the
+    // existing job pipeline can still record a graceful failure.
+    return {
+      status: "failed",
+      summary: `agent-runtime call failed after retry: ${error.message}`,
+      stderr: error.message,
+    };
+  }
 }
 
 async function executeAxiAgentTask({ operation, agentTaskId, prompt, gateIds, toolName, toolArguments }) {
@@ -5380,7 +5472,7 @@ function commandAvailable(command, args) {
   return result.status === 0;
 }
 
-async function executeRoleAgentRun({ assignment, run, codexBin, cacheDir, readOnly = false }) {
+async function executeRoleAgentRun({ assignment, run, codexBin, cacheDir, readOnly = false, retry = 0 } = {}) {
   if (assignment.role !== "worker" && assignment.role !== "librarian" && assignment.role !== "master" && assignment.role !== "auditor") {
     return { status: "failed", summary: `未知 agent role：${assignment.role}` };
   }
@@ -5389,46 +5481,48 @@ async function executeRoleAgentRun({ assignment, run, codexBin, cacheDir, readOn
   const stdoutPath = join(runDirectory, "stdout.jsonl");
   const stderrPath = join(runDirectory, "stderr.log");
   const sandbox = assignment.role === "worker" ? "workspace-write" : "read-only";
-  const args = [
-    "exec",
-    "--json",
-    "--ephemeral",
-    "-c",
-    'approval_policy="never"',
-    "--skip-git-repo-check",
-    "--sandbox",
-    readOnly ? "read-only" : sandbox,
-    "-C",
-    run.cwd || process.cwd(),
-    assignment.prompt,
-  ];
+  const effectiveSandbox = readOnly ? "read-only" : sandbox;
 
-  return new Promise((resolve) => {
-    const child = spawn(codexBin, args, {
-      cwd: run.cwd || process.cwd(),
-      stdio: ["ignore", "pipe", "pipe"],
+  // PR-6.5B D3: spawn(codex) removed. The streaming behaviour (stdout.jsonl /
+  // stderr.log) is preserved by buffering agent-runtime's stdout into the
+  // same files. agent-runtime handles the actual codex process lifecycle;
+  // control-plane only fans chunks into the artifact paths.
+  try {
+    const body = await callAgentRuntime({
+      prompt: assignment.prompt,
+      threadId: run.id || null,
+      sandbox: effectiveSandbox,
+      timeoutMs: AGENT_TIMEOUT_MS,
     });
-    const timeout = setTimeout(() => {
-      child.kill("SIGTERM");
-    }, AGENT_TIMEOUT_MS);
-    child.stdout.on("data", (chunk) => appendFileSync(stdoutPath, chunk));
-    child.stderr.on("data", (chunk) => appendFileSync(stderrPath, chunk));
-    child.on("error", (error) => {
-      clearTimeout(timeout);
-      appendFileSync(stderrPath, `${error.message}\n`);
-      resolve({ status: "failed", summary: `${assignment.role} 启动失败：${error.message}`, stdoutPath, stderrPath });
-    });
-    child.on("close", (code, signal) => {
-      clearTimeout(timeout);
-      const ok = code === 0;
-      resolve({
-        status: ok ? "succeeded" : "failed",
-        summary: ok ? `${assignment.role} 运行成功。` : `${assignment.role} 运行失败：${signal || code}。`,
-        stdoutPath,
-        stderrPath,
-      });
-    });
-  });
+    if (body.stderr) appendFileSync(stderrPath, body.stderr + "\n");
+    const ok = body.status === "succeeded";
+    return {
+      status: ok ? "succeeded" : "failed",
+      summary: ok ? `${assignment.role} 运行成功。` : `${assignment.role} 运行失败：${body.summary || body.status}。`,
+      stdoutPath,
+      stderrPath,
+      reply: body.reply ?? null,
+      finalAnswerCount: body.finalAnswerCount ?? 0,
+      exitCode: body.exitCode ?? null,
+      signal: body.signal ?? null,
+    };
+  } catch (error) {
+    if (retry < 1 && isDevMode()) {
+      try {
+        process.stderr.write(`[control-plane] executeRoleAgentRun agent-runtime failed, retrying once: ${error.message}\n`);
+      } catch { /* ignore */ }
+      return executeRoleAgentRun({ assignment, run, codexBin, cacheDir, readOnly, retry: retry + 1 });
+    }
+    if (!isDevMode()) {
+      throw error;
+    }
+    return {
+      status: "failed",
+      summary: `${assignment.role} 运行失败：agent-runtime call failed after retry — ${error.message}`,
+      stdoutPath,
+      stderrPath,
+    };
+  }
 }
 
 function makeAgentRun({ job, assignment, workspaceRoot }) {
