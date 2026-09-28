@@ -1,5 +1,5 @@
 {
-  "name": "axi-verification-inbox",
+  "name": "@axi/verification-inbox",
   "private": true,
   "version": "0.1.0",
   "type": "module",

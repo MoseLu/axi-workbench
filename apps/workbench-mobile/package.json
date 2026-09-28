@@ -13,7 +13,8 @@
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx",
     "e2e": "playwright test -c playwright.config.ts",
     "verify:contracts": "node scripts/verify-mobile-contracts.mjs",
-    "verify:favicon-sync": "node scripts/check-favicon-sync.mjs"
+    "verify:favicon-sync": "node scripts/check-favicon-sync.mjs",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@axi/core": "workspace:*",

@@ -1,5 +1,5 @@
 {
-  "name": "axi-devsvc-dashboard",
+  "name": "@axi/devsvc-dashboard",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -16,7 +16,9 @@
     "tauri": "tauri",
     "test": "node --import ./scripts/test-loader.mjs --test scripts/*.test.mjs",
     "test:legacy": "node --test scripts/*.test.mjs",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@axi/addons": "link:../../../../foundation/axi-ui/packages/addons",
