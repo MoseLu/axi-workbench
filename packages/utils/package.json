@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsc",
     "type-check": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "clsx": "^2.1.0",

@@ -16,7 +16,8 @@
     "build": "tsc",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "@axi/workstation-contracts": "workspace:*",
@@ -25,15 +26,15 @@
     "@axi/utils": "workspace:*"
   },
   "peerDependencies": {
-    "react": "^18.2.0"
+    "react": "^19.1.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10",
     "@testing-library/react": "^16",
-    "@types/react": "^18.2.43",
+    "@types/react": "^19.1.8",
     "jsdom": "^29.1.1",
-    "react": "18.2.0",
-    "react-dom": "18.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "typescript": "^5.3.3",
     "vitest": "^3.2.6"
   },

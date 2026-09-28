@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "go run .",
     "build": "go build -o bin/notification-service .",
-    "test": "go test ./..."
+    "test": "go test ./...",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
   }
 }

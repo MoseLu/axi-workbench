@@ -178,13 +178,160 @@ pub fn run() {
         .expect("error while running IMAP code tool");
 }
 
+/// Extract the most likely OTP code from a free-form message body.
+///
+/// The heuristic looks for short numeric tokens (4-8 digits) that are
+/// surrounded by word boundaries and not glued to other digits, mirroring the
+/// behaviour of the Python `extract_otp_from_body` helper.
+pub fn extract_otp_code(body: &str) -> Option<String> {
+    let bytes = body.as_bytes();
+    let mut best: Option<(usize, String)> = None;
+
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i].is_ascii_digit() {
+            let start = i;
+            while i < bytes.len() && bytes[i].is_ascii_digit() {
+                i += 1;
+            }
+            let end = i;
+            let len = end - start;
+
+            let left_ok = start == 0 || !bytes[start - 1].is_ascii_alphanumeric();
+            let right_ok = end == bytes.len() || !bytes[end].is_ascii_alphanumeric();
+
+            if (4..=8).contains(&len) && left_ok && right_ok {
+                let candidate = body[start..end].to_string();
+                match best {
+                    Some((existing, _)) if existing >= len => {}
+                    _ => best = Some((len, candidate)),
+                }
+            }
+        } else {
+            i += 1;
+        }
+    }
+
+    best.map(|(_, code)| code)
+}
+
+/// Parse a minimal IMAP server response line.
+///
+/// Returns `Ok(tag)` for tagged completions like `A001 OK ...`,
+/// `Ok(action)` for untagged status like `* OK ...`, or `Err(message)`
+/// for protocol-level errors like `A001 BAD ...`.
+pub fn parse_imap_response(line: &str) -> Result<ImapResponseKind, String> {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return Err("empty IMAP response".to_string());
+    }
+
+    let mut parts = trimmed.splitn(3, ' ');
+    let tag = parts.next().unwrap_or("").to_string();
+    let status = parts.next().unwrap_or("").to_string();
+    let message = parts.next().unwrap_or("").to_string();
+
+    if tag.is_empty() || status.is_empty() {
+        return Err(format!("malformed IMAP response: {line:?}"));
+    }
+
+    if tag == "*" {
+        Ok(ImapResponseKind::Untagged { status, message })
+    } else {
+        Ok(ImapResponseKind::Tagged { tag, status, message })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ImapResponseKind {
+    Tagged { tag: String, status: String, message: String },
+    Untagged { status: String, message: String },
+}
+
 #[cfg(test)]
 mod tests {
-    use super::project_root;
+    use super::{extract_otp_code, parse_imap_response, project_root, ImapResponseKind};
 
     #[test]
     fn resolves_project_root_from_tauri_manifest_dir() {
         let root = project_root().expect("project root");
         assert!(root.join("backend").join("imap_service.py").exists());
+    }
+
+    // ---- extract_otp_code ---------------------------------------------------
+
+    #[test]
+    fn extract_otp_finds_six_digit_token() {
+        let body = "Your verification code is 482913. It expires in 5 minutes.";
+        assert_eq!(extract_otp_code(body).as_deref(), Some("482913"));
+    }
+
+    #[test]
+    fn extract_otp_prefers_longer_candidate() {
+        let body = "Older 1234 then newer 987654 inside.";
+        assert_eq!(extract_otp_code(body).as_deref(), Some("987654"));
+    }
+
+    #[test]
+    fn extract_otp_ignores_phone_numbers() {
+        let body = "Call 18005551234 if you need help with code 246810.";
+        assert_eq!(extract_otp_code(body).as_deref(), Some("246810"));
+    }
+
+    #[test]
+    fn extract_otp_returns_none_when_no_match() {
+        let body = "Plain text without any numeric code.";
+        assert_eq!(extract_otp_code(body), None);
+    }
+
+    #[test]
+    fn extract_otp_rejects_long_digit_runs() {
+        let body = "Tracking 12345678901234 shipped yesterday.";
+        assert_eq!(extract_otp_code(body), None);
+    }
+
+    // ---- parse_imap_response ------------------------------------------------
+
+    #[test]
+    fn parses_tagged_ok_response() {
+        let parsed = parse_imap_response("A001 OK LOGIN completed").expect("parse ok");
+        assert_eq!(
+            parsed,
+            ImapResponseKind::Tagged {
+                tag: "A001".to_string(),
+                status: "OK".to_string(),
+                message: "LOGIN completed".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn parses_tagged_no_response() {
+        let parsed = parse_imap_response("A002 NO Authentication failed").expect("parse no");
+        assert_eq!(parsed, ImapResponseKind::Tagged {
+            tag: "A002".to_string(),
+            status: "NO".to_string(),
+            message: "Authentication failed".to_string(),
+        });
+    }
+
+    #[test]
+    fn parses_untagged_capability() {
+        let parsed = parse_imap_response("* OK [CAPABILITY IMAP4rev1] ready").expect("parse untagged");
+        assert_eq!(parsed, ImapResponseKind::Untagged {
+            status: "OK".to_string(),
+            message: "[CAPABILITY IMAP4rev1] ready".to_string(),
+        });
+    }
+
+    #[test]
+    fn parse_rejects_empty_input() {
+        assert!(parse_imap_response("").is_err());
+        assert!(parse_imap_response("   ").is_err());
+    }
+
+    #[test]
+    fn parse_rejects_malformed_input() {
+        assert!(parse_imap_response("OK").is_err());
     }
 }
