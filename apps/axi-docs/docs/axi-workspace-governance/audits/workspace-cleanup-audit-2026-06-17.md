@@ -39,7 +39,7 @@ roots, nested package markers, and large/suspicious artifact directories.
 - `/Volumes/code/workspace/tools/axi-video-downloader` local Git config now has
   `core.longpaths=true` and `core.autocrlf=false`.
 - `axi-video-downloader` documentation was normalized from plural
-  `Milestones` wording to the singular `Milestone` convention required by the
+  `Milestone` entries to the singular `Milestone` convention required by the
   governance audit.
 
 ## Index Gaps

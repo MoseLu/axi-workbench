@@ -40,7 +40,7 @@ The Axi workspace maintains a five-piece set of long-term state documents under 
 | `PRD.md` | Workspace root PRD (REQ-DOC-001 / REQ-VERIFY-001 / REQ-BOUNDARY-001 / REQ-MILESTONE-001) |
 | `TDD.md` | Workspace root TDD (architecture hypotheses, verification commands) |
 | `TODO.md` | Workspace root P0/P1/P2 task queue |
-| `MILESTONE.md` | Workspace root milestones (WRK.1 / WRK.2 / WRK.3) with exit criteria |
+| `MILESTONE.md` | Workspace root milestone records (WRK.1 / WRK.2 / WRK.3) with exit criteria |
 | `VERIFICATION.md` | Workspace verification status (auto-generated) |
 | `CLI-REFERENCE.md` | workspace-project / devsvc / foundation CLI reference |
 
