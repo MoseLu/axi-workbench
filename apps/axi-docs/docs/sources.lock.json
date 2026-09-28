@@ -1,24 +1,25 @@
 {
-  "$schema": "https://axi.local/schemas/axi-docs-sources-lock.v1.json",
-  "version": 1,
+  "$schema": "https://axi.local/schemas/axi-docs-sources-lock.v2.json",
+  "version": 2,
   "sources": {
     "axi-skills": {
       "repo": "https://github.com/MoseLu/axi-skills.git",
       "ref": "dev",
-      "commit": "c3fd7cea2ad1f90f03f7f86bbe52a1eb5c565923",
+      "commit": "60abd25af4922d407a4803f17757ecbc5c632c29",
       "localPathEnv": "AXI_SKILLS_PATH",
-      "defaultLocalPath": "/Volumes/code/workspace/shared/axi-skills",
+      "defaultLocalPath": "/Volumes/code/workspace/foundation/axi-skills",
       "ciPath": "../sources/axi-skills",
       "requiredForBuild": true
     },
     "axi-rules": {
-      "repo": "file:///Volumes/code/workspace/projects/axi-rules",
+      "repo": "file:///Volumes/code/workspace/foundation/axi-rules",
       "ref": "dev",
-      "commit": "debd5e342512c90353bde4c20afa9865c95cfa78",
+      "commit": "d65345a905898818ac00c92e482f4f5aef7d783b",
       "localPathEnv": "AXI_RULES_PATH",
-      "defaultLocalPath": "/Volumes/code/workspace/projects/axi-rules",
-      "ciPath": "../projects/axi-rules",
+      "defaultLocalPath": "/Volumes/code/workspace/foundation/axi-rules",
+      "ciPath": "../foundation/axi-rules",
       "requiredForBuild": true
     }
-  }
+  },
+  "localSources": []
 }
