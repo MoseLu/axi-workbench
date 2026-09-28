@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "layers": [
     {
       "kind": "system",
@@ -26,6 +26,30 @@
       "description": "特定项目的领域、边界和验证提示"
     }
   ],
+  "references": {
+    "scope": "公开来源索引",
+    "basePath": "prompts/global/references",
+    "extension": ".md",
+    "files": [
+      {
+        "name": "public-ai-coding-prompts.md",
+        "lines": 69,
+        "purpose": "公开 AI coding prompt / rules 参考（Anthropic Claude.ai / Claude Code 边界）"
+      }
+    ],
+    "policy": {
+      "allowed": [
+        "官方公开文档中的行为原则",
+        "GitHub 上公开项目的 prompt layering / rules 机制总结",
+        "对公开材料的短摘录、摘要或改写模板"
+      ],
+      "forbidden": [
+        "疑似泄露的完整 proprietary system prompt",
+        "Claude Code、Cursor 等产品未由官方明确公开的内部完整 system prompt",
+        "违反来源许可或无法确认来源的长篇原文"
+      ]
+    }
+  },
   "conflictPolicy": {
     "highestPriority": "system",
     "projectMaySpecializeGlobal": true,

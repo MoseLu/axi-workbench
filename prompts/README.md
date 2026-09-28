@@ -58,3 +58,11 @@ MDC 借鉴 Cursor Project Rules 的格式：frontmatter 负责元数据和加载
 - 违反来源许可或无法确认来源的长篇原文。
 
 公开来源索引见 `prompts/global/references/public-ai-coding-prompts.md`。
+
+### 实际文件清单（2026-09-27）
+
+| 文件 | 行数 | 用途 |
+|------|----:|------|
+| `prompts/global/references/public-ai-coding-prompts.md` | 69 | 公开 AI coding prompt / rules 参考（Anthropic Claude.ai / Claude Code 边界） |
+
+完整策略与机器可读索引见 [`prompts/prompt-layer.manifest.json`](./prompt-layer.manifest.json) `references` 段（`version: 2` 起）。
