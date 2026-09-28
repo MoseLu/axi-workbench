@@ -4,7 +4,7 @@ import { networkInterfaces } from "node:os";
 import { createConnection } from "node:net";
 import { fileURLToPath } from "node:url";
 import { createLogger } from "@axi/observability-logging";
-import { createControlPlane } from "./control-plane.mjs";
+import { createControlPlane, validateControlPlaneEnv } from "./control-plane.mjs";
 import { createEpsAudit } from "./eps/scanner.mjs";
 import { createEpsStore } from "./eps/persistence.mjs";
 import { probeWindowsDockerRuntime } from "./eps/runtime-probe.mjs";
@@ -1155,6 +1155,13 @@ export function createControlPlaneHttpServer({
     return sendJson(res, 500, { error: "control-plane error", message: error?.message || String(error) }, url);
   }
   });
+}
+
+const envValidation = validateControlPlaneEnv();
+if (!envValidation.ok) {
+  // eslint-disable-next-line no-console
+  console.error(`[control-plane] ${envValidation.message}`);
+  process.exit(1);
 }
 
 const controlPlane = createControlPlane();
