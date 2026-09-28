@@ -35,7 +35,7 @@ Keep `/Volumes/code/workspace` as a non-git workspace container.
 - Do not run `git init` at `/Volumes/code/workspace`.
 - Do not commit, clean, reset, or push from the workspace root.
 - Commit implementation changes inside the owning project repository.
-- Commit governance source changes inside `infra/axi-workspace-governance`.
+- Commit governance source changes inside `foundation/workspace-governance`.
 - Treat root-level files as navigation, generated snapshots, workspace
   contracts, or launcher shims.
 - Classify the root graph entry as `workspace-anchor` / `workspace-resource`,

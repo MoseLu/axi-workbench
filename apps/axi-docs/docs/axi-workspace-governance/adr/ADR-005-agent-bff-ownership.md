@@ -7,7 +7,7 @@
 
 ## Context
 
-The Axi Agent Platform frontend (`projects/axi-agent-platform/frontend`)
+The Axi Agent Platform frontend (`agent-cluster/axi-agent-platform/frontend`)
 aggregates dashboard data through a Go service at
 `services/agent-bff/cmd/bff/main.go`. As of 2026-08-23:
 
@@ -32,7 +32,7 @@ service.
 ### Rationale
 
 1. **Same bounded context.** The BFF, the Agent backend, the frontend, and
-   the data owner are all in `projects/axi-agent-platform`. There is no
+   the data owner are all in `agent-cluster/axi-agent-platform`. There is no
    independent data store, no independent auth boundary, no independent
    release cadence that justifies a separate process.
 2. **No cross-client reuse.** The BFF currently has exactly one consumer
@@ -89,7 +89,7 @@ package — i.e., the full wire-up that was missing before this ADR.
 - [x] `dashboard_router` registered in `backend/app/main.py`
 - [x] `dashboard_router` exported from `backend/app/api/__init__.py`
 - [x] `pytest backend/tests/test_dashboard.py` passes (4/4 tests)
-- [ ] `pnpm --dir projects/axi-agent build` (frontend) passes.
+- [ ] `pnpm --dir agent-cluster/axi-agent build` (frontend) passes.
 - [ ] Browser smoke test loads the dashboard through the canonical FastAPI
   endpoint with no manual port edits.
 - [ ] The Go BFF directory is archived; no production deployment references it.

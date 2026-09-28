@@ -21,7 +21,7 @@ Accepted
 
 ## Decision
 
-选择 `/Volumes/code/workspace/infra/axi-workspace-governance` 根治理仓库作为唯一多仓索引平面。
+选择 `/Volumes/code/workspace/foundation/workspace-governance` 根治理仓库作为唯一多仓索引平面。
 
 它承担以下职责：
 

@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-09-26
-modified: 2026-09-26
+created: 2026-09-28
+modified: 2026-09-28
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-09-26
+最后生成：2026-09-28
 
 ## 控制面
 

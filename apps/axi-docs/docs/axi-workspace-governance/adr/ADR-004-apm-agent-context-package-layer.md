@@ -1,3 +1,14 @@
+---
+id: adr-workspace-004
+title: ADR-004: Use APM As The Agent Context Package Layer
+type: reference
+status: Accepted
+tags: [workspace, adr, apm, agent-context]
+created: 2026-06-11
+modified: 2026-09-25
+agent-readable: true
+---
+
 # ADR-004: Use APM As The Agent Context Package Layer
 
 ## Status
@@ -30,7 +41,7 @@ not the source of project identity. The workspace remains a polyrepo governed by
 `workspace.json`, `workspace.graph.json`, `WORKSPACE_INDEX.md`,
 `docs/HANDOFF.md`, and `workspace-project`.
 
-The first APM source package is `shared/axi-skills/apm.yml`. It exposes the
+The first APM source package is `foundation/axi-skills/apm.yml`. It exposes the
 shared skill tree plus a zero-context bootstrap entry and keeps `skills/` as
 the canonical runtime source tree.
 
@@ -70,9 +81,9 @@ Tradeoffs:
 
 ## Verification
 
-- `shared/axi-skills/apm.yml` exists and publishes the shared skill tree plus
+- `foundation/axi-skills/apm.yml` exists and publishes the shared skill tree plus
   the zero-context bootstrap contract.
-- `shared/axi-skills/docs/APM.md` documents consumer usage, scratch-root
+- `foundation/axi-skills/docs/APM.md` documents consumer usage, scratch-root
   preview, and generated-output guardrails.
-- `python3 scripts/verify.py` passes in `shared/axi-skills`.
+- `python3 scripts/verify.py` passes in `foundation/axi-skills`.
 - `workspace-project validate` passes after registry/graph updates.

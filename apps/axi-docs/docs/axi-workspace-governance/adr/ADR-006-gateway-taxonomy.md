@@ -12,11 +12,11 @@ must not be conflated. As of 2026-08-23 the boundaries are:
 
 | Service | Path | Role | Owner |
 |---|---|---|---|
-| Workbench API Gateway | `projects/axi-workbench/services/api-gateway` | Tenant, identity, ingress, downstream service boundary. Business API. | `axi-workbench` |
-| Axi Coder Model Gateway | `projects/axi-workbench/apps/axi-coder` (`axi-model-gateway` contract) | Provider / profile / local proxy contract; AI capability routing. | `axi-workbench` (Axi Coder sub-app) |
-| Workbench Communication Gateway | `projects/axi-workbench/services/communication-gateway` | Message envelope and control-plane transport boundary. | `axi-workbench` |
-| Agent Platform BFF | `projects/axi-agent/services/agent-bff` | Dashboard aggregation boundary. **Deprecated: merged into Agent Platform FastAPI per ADR-005.** The Go BFF directory is retained for Git history recovery until browser verification completes. | `axi-agent` |
-| DevSvc Domain Gateway | `dev-services.config.json` `service_profiles[*].gateway` | Local domain / NATAPP gateway for development. **Not a business API.** | governance (`infra/axi-workspace-governance`) |
+| Workbench API Gateway | `workbench/axi-workbench/services/api-gateway` | Tenant, identity, ingress, downstream service boundary. Business API. | `axi-workbench` |
+| Axi Coder Model Gateway | `workbench/axi-workbench/apps/axi-coder` (`axi-model-gateway` contract) | Provider / profile / local proxy contract; AI capability routing. | `axi-workbench` (Axi Coder sub-app) |
+| Workbench Communication Gateway | `workbench/axi-workbench/services/communication-gateway` | Message envelope and control-plane transport boundary. | `axi-workbench` |
+| Agent Platform BFF | `agent-cluster/axi-agent/services/agent-bff` | Dashboard aggregation boundary. **Deprecated: merged into Agent Platform FastAPI per ADR-005.** The Go BFF directory is retained for Git history recovery until browser verification completes. | `axi-agent` |
+| DevSvc Domain Gateway | `dev-services.config.json` `service_profiles[*].gateway` | Local domain / NATAPP gateway for development. **Not a business API.** | governance (`foundation/workspace-governance`) |
 
 ## Decision
 

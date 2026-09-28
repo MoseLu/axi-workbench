@@ -19,7 +19,7 @@
 
 ```text
 registry bucket: workspace.json.distributions[]
-path:             ../../projects/axi-workbench-cli
+path:             ../../workbench/axi-workbench-cli
 category:         project
 role:             governance-tool
 manages:          ["axi-workbench"]
@@ -31,12 +31,12 @@ tier:             axi-core-product
 
 ## Decision
 
-1. **唯一工作区入口产品**：`/Volumes/code/workspace/projects/axi-workbench`。它是 Web 门户、本地工作台入口、DevSvc Dashboard、Axi Coder、Verification Inbox 等能力的宿主。Spatial Graph 的正式实现必须落在 `axi-workbench/apps/workbench/`。
-2. **治理数据平面**：`/Volumes/code/workspace/projects/axi-workbench-cli`。CLI + DOT/JSON 输出，无 web UI（per PRD-02 §5）；通过 `cli/axi_workbench/kernel_bridge.py` 在运行时挂载 PRD-01 Kernel。
-3. **对象数据平面**：`/Volumes/code/workspace/projects/axi-kernel`。AXI Personal OS 的稳定内核，提供 Project / Document / Change / Resource 等对象注册。
+1. **唯一工作区入口产品**：`/Volumes/code/workspace/workbench/axi-workbench`。它是 Web 门户、本地工作台入口、DevSvc Dashboard、Axi Coder、Verification Inbox 等能力的宿主。Spatial Graph 的正式实现必须落在 `axi-workbench/apps/workbench/`。
+2. **治理数据平面**：`/Volumes/code/workspace/workbench/axi-workbench-cli`。CLI + DOT/JSON 输出，无 web UI（per PRD-02 §5）；通过 `cli/axi_workbench/kernel_bridge.py` 在运行时挂载 PRD-01 Kernel。
+3. **对象数据平面**：`/Volumes/code/workspace/foundation/axi-kernel`。AXI Personal OS 的稳定内核，提供 Project / Document / Change / Resource 等对象注册。
 4. **PRD Phase 不自动决定仓库合并**：Phase 2 (Resource Inbox) / Phase 3 (AI Governance) / Phase 4 (Applications) 是交付节奏，不是 Git 仓库数量。`axi-inbox` / `axi-sync` / `axi-runtime` / `axi-apps` 保留为独立 canonical 项目，是否合并必须由消费者与能力重叠审计决定（REMEDIATION-PLAN §5 WP-03）。
 5. **范围外项目保留真实注册身份**：`axi-notify`（含 Android 客户端）属于 AxiomaticWorld 自营产品，不属于 Personal OS V0.1 入口实现；`axi-image-preview`、`axi-pet`、`axi-pet-desktop`、`axi-soul-world`、`ielts-vocab`、`story-graph` 等按当前分类保留，不因工作区存在被计入 V0.1 验收。
-6. **Workspace Entrance Spatial Graph 不注册为独立项目**：原型归档在 `infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/prototype/`；正式实现归属 `axi-workbench/apps/workbench/`，节点与边必须来自 `workspace.json` + `workspace.graph.json` + Kernel adapter，HTML/JSX 不允许硬编码项目坐标或状态。
+6. **Workspace Entrance Spatial Graph 不注册为独立项目**：原型归档在 `foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/prototype/`；正式实现归属 `axi-workbench/apps/workbench/`，节点与边必须来自 `workspace.json` + `workspace.graph.json` + Kernel adapter，HTML/JSX 不允许硬编码项目坐标或状态。
 7. **`workspace.json.distributions[]` 数组中只允许包含 3 个 distribution 项目**：`axi-workbench-web-dist`、`axi-workbench-mobile-dist`、`axi-workbench-desktop-dist`。`axi-workbench-cli` 移入 `projects[]` 数组，保留所有现有字段（`canonical=true`、`category=project`、`role=governance-tool`、`manages=["axi-workbench"]`、`tier=axi-core-product` 等）。
 
 ## Consequences
@@ -51,13 +51,13 @@ tier:             axi-core-product
 
 完整整改工作包、迁移决策矩阵、提交策略、验收清单：
 
-- `/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md`
+- `/Volumes/code/workspace/foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md`
 
 ## Cross-references
 
 - `WORKSPACE_INDEX.md` § Core Active
 - `workspace.json` § distributions / projects
 - `workspace.graph.json` § projects.axi-workbench / projects.axi-workbench-cli / projects.axi-kernel
-- `projects/axi-workbench/AGENTS.md` § Project Boundary
-- `projects/axi-workbench-cli/AGENTS.md` § Scope / Boundaries
-- `projects/axi-kernel/AGENTS.md` § What this is / What this is not
+- `workbench/axi-workbench/AGENTS.md` § Project Boundary
+- `workbench/axi-workbench-cli/AGENTS.md` § Scope / Boundaries
+- `foundation/axi-kernel/AGENTS.md` § What this is / What this is not

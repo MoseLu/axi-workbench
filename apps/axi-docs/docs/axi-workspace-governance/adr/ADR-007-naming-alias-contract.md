@@ -13,10 +13,10 @@ the package name diverge:
 
 | Project ID (graph) | Physical path | Package name | Divergence |
 |---|---|---|---|
-| `sports-management` | `projects/axi-sports-management-app/` | n/a | Graph ID is truncated; physical path uses full prefix. |
+| `sports-management` | `archive/axi-sports-management-app/` | n/a | Graph ID is truncated; physical path uses full prefix. |
 | `axi-pet` | `projects/axi-pet/` | `@proj-airi/root` | Package name is legacy from `moeru-ai/airi` upstream; ID is the canonical Axi name. |
-| `axi-workspace-governance` | `infra/axi-workspace-governance/` | n/a | Control-plane project; no `workspace-project onboard` path resolves for it. |
-| `axi-model-gateway` | `projects/axi-workbench/apps/axi-coder/...` | n/a | Contract alias inside Axi Coder, not a standalone project. |
+| `axi-workspace-governance` | `foundation/workspace-governance/` | n/a | Control-plane project; no `workspace-project onboard` path resolves for it. |
+| `axi-model-gateway` | `workbench/axi-workbench/apps/axi-coder/...` | n/a | Contract alias inside Axi Coder, not a standalone project. |
 
 ## Decision
 
@@ -72,7 +72,7 @@ agents do not infer one identifier from another.
 - **Action:** None. This is a registry / control-plane project, not an
   "owner" project. `workspace-project onboard` does not resolve it; that
   is by design. Governance writes go through direct file editing under
-  `infra/axi-workspace-governance/` with explicit owner approval.
+  `foundation/workspace-governance/` with explicit owner approval.
 
 #### `axi-model-gateway` (contract alias)
 
