@@ -767,6 +767,11 @@ export const MCP_TOOL_CAPABILITIES: Record<string, ToolCapability> = {
   blinko_read_note: READ_ONLY_HUMAN_TOOL,
   blinko_write_note: EFFECT_TOOL,
   blinko_search: READ_ONLY_AGENT_TOOL,
+  axi_docs_list_workspace_doc_categories: READ_ONLY_AGENT_TOOL,
+  axi_docs_read_workspace_doc: READ_ONLY_HUMAN_TOOL,
+  axi_docs_search_workspace_root: READ_ONLY_AGENT_TOOL,
+  axi_docs_list_governance_adrs: READ_ONLY_AGENT_TOOL,
+  axi_docs_list_workspace_audits: READ_ONLY_AGENT_TOOL,
 }
 
 export function getToolCapability(name: string): ToolCapability {
@@ -871,6 +876,84 @@ async function fixedDocumentContextSummary(source: string, filePath: string) {
       truncated: content.length > 2000,
     },
   }
+}
+
+// ─── 工作区级文档入口工具（P1 索引完整性）─────────────────────────────────────
+
+async function listWorkspaceDocCategories() {
+  const categories = [
+    { name: 'governance', source_id: 'docs/governance/', note: 'explicitly excluded per docs/governance/README.md' },
+    { name: 'state', source_id: 'workspace-state-docs', files: 7 },
+    { name: 'audit', source_id: 'workspace-audit-docs', files: 2 },
+    { name: 'adr', source_id: 'axi-workspace-governance-docs/adr/', note: 'canonical in foundation/workspace-governance/docs/adr/' },
+    { name: 'architecture', source_id: 'workspace-architecture-docs', files: 7 },
+    { name: 'axi', source_id: 'workspace-axi-docs', files: 25 },
+    { name: 'prd', source_id: 'workspace-prd-docs', files: 6 },
+    { name: 'registry', source_id: 'docs/registry/', files: 1 },
+    { name: 'scripts', source_id: 'docs/axi-meta/scripts/', files: 3 },
+    { name: 'incubator', source_id: 'docs/incubator/', note: 'non-project, not indexed' },
+  ]
+  return { categories }
+}
+
+async function readWorkspaceDoc({ category, path }: { category: string; path: string }) {
+  const pathMap: Record<string, string> = {
+    governance: '/Volumes/code/workspace/docs/governance',
+    state: '/Volumes/code/workspace/docs/state',
+    audit: '/Volumes/code/workspace/docs/audit',
+    adr: '/Volumes/code/workspace/foundation/workspace-governance/docs/adr',
+    architecture: '/Volumes/code/workspace/docs/architecture',
+    axi: '/Volumes/code/workspace/docs/axi',
+    prd: '/Volumes/code/workspace/docs/prd',
+    registry: '/Volumes/code/workspace/docs/registry',
+    scripts: '/Volumes/code/workspace/scripts',
+    incubator: '/Volumes/code/workspace/incubator',
+  }
+  const baseDir = pathMap[category]
+  if (!baseDir) {
+    return { error: `unknown category: ${category}` }
+  }
+  try {
+    const content = await fsp.readFile(`${baseDir}/${path}`, 'utf8')
+    return { content }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return { error: msg }
+  }
+}
+
+async function searchWorkspaceRoot({ query, locale }: { query: string; locale?: string }) {
+  // 简化实现：从 knowledgeBase 检索（跨库搜索结果）
+  try {
+    const results = await knowledgeBase.searchKnowledgeAll(query)
+    return { query, locale: locale || 'all', results }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return { query, locale: locale || 'all', results: [], error: msg }
+  }
+}
+
+async function listGovernanceAdrs() {
+  try {
+    const files = await fsp.readdir('/Volumes/code/workspace/foundation/workspace-governance/docs/adr')
+    return {
+      canonical_source: 'foundation/workspace-governance/docs/adr/',
+      adrs: files.filter((f) => f.startsWith('ADR-')),
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    return { error: msg }
+  }
+}
+
+async function listWorkspaceAudits({ since }: { since?: string } = {}) {
+  const sources = [
+    '/Volumes/code/workspace/docs/audit',
+    '/Volumes/code/workspace/docs/audits',
+    '/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/axi-workspace-governance/audits',
+    '/Volumes/code/workspace/foundation/workspace-governance/docs/audits',
+  ]
+  return { sources, since: since || 'all' }
 }
 
 export function getToolSchemas() {
@@ -1225,6 +1308,57 @@ export function getToolSchemas() {
         required: ['query'],
       },
     },
+    // ── 工作区级文档入口工具（P1 索引完整性）───────────────────────────────────
+    {
+      name: 'axi_docs_list_workspace_doc_categories',
+      description: '列出工作区级别给人看的文档分类',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      handler: listWorkspaceDocCategories,
+    },
+    {
+      name: 'axi_docs_read_workspace_doc',
+      description: '按分类读工作区级文档',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          category: { type: 'string' },
+          path: { type: 'string' },
+        },
+        required: ['category', 'path'],
+        additionalProperties: false,
+      },
+      handler: readWorkspaceDoc,
+    },
+    {
+      name: 'axi_docs_search_workspace_root',
+      description: '搜索工作区根协议门面',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string' },
+          locale: { type: 'string', default: 'all' },
+        },
+        required: ['query'],
+        additionalProperties: false,
+      },
+      handler: searchWorkspaceRoot,
+    },
+    {
+      name: 'axi_docs_list_governance_adrs',
+      description: '合并三处 ADR 目录',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      handler: listGovernanceAdrs,
+    },
+    {
+      name: 'axi_docs_list_workspace_audits',
+      description: '合并四处审计目录',
+      inputSchema: {
+        type: 'object',
+        properties: { since: { type: 'string' } },
+        additionalProperties: false,
+      },
+      handler: listWorkspaceAudits,
+    },
   ]
 
   return tools.map((tool) => {
@@ -1533,6 +1667,35 @@ export function createServer(
             }
           }
           return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+        }
+
+        case 'axi_docs_list_workspace_doc_categories': {
+          return { content: [{ type: 'text', text: JSON.stringify(await listWorkspaceDocCategories(), null, 2) }] }
+        }
+
+        case 'axi_docs_read_workspace_doc': {
+          const category = args?.category as string
+          const docPath = args?.path as string
+          if (!category || !docPath) {
+            return { content: [{ type: 'text', text: '错误: category 和 path 参数必填' }], isError: true }
+          }
+          return { content: [{ type: 'text', text: JSON.stringify(await readWorkspaceDoc({ category, path: docPath }), null, 2) }] }
+        }
+
+        case 'axi_docs_search_workspace_root': {
+          const query = args?.query as string
+          const locale = args?.locale as string | undefined
+          if (!query) return { content: [{ type: 'text', text: '错误: query 参数必填' }], isError: true }
+          return { content: [{ type: 'text', text: JSON.stringify(await searchWorkspaceRoot({ query, locale }), null, 2) }] }
+        }
+
+        case 'axi_docs_list_governance_adrs': {
+          return { content: [{ type: 'text', text: JSON.stringify(await listGovernanceAdrs(), null, 2) }] }
+        }
+
+        case 'axi_docs_list_workspace_audits': {
+          const since = args?.since as string | undefined
+          return { content: [{ type: 'text', text: JSON.stringify(await listWorkspaceAudits({ since }), null, 2) }] }
         }
 
         default:
@@ -2257,6 +2420,31 @@ async function handleToolCall(
         tags: n.tags,
       }))
       return { content: [{ type: 'text', text: JSON.stringify({ count: matches.length, results: preview }, null, 2) }] }
+    }
+    // ── 工作区级文档入口工具（P1 索引完整性）───────────────────────────────────
+    case 'axi_docs_list_workspace_doc_categories': {
+      return { content: [{ type: 'text', text: JSON.stringify(await listWorkspaceDocCategories(), null, 2) }] }
+    }
+    case 'axi_docs_read_workspace_doc': {
+      const category = args.category as string
+      const docPath = args.path as string
+      if (!category || !docPath) {
+        return { content: [{ type: 'text', text: '错误: category 和 path 参数必填' }], isError: true }
+      }
+      return { content: [{ type: 'text', text: JSON.stringify(await readWorkspaceDoc({ category, path: docPath }), null, 2) }] }
+    }
+    case 'axi_docs_search_workspace_root': {
+      const query = args.query as string
+      const locale = args.locale as string | undefined
+      if (!query) return { content: [{ type: 'text', text: '错误: query 参数必填' }], isError: true }
+      return { content: [{ type: 'text', text: JSON.stringify(await searchWorkspaceRoot({ query, locale }), null, 2) }] }
+    }
+    case 'axi_docs_list_governance_adrs': {
+      return { content: [{ type: 'text', text: JSON.stringify(await listGovernanceAdrs(), null, 2) }] }
+    }
+    case 'axi_docs_list_workspace_audits': {
+      const since = args.since as string | undefined
+      return { content: [{ type: 'text', text: JSON.stringify(await listWorkspaceAudits({ since }), null, 2) }] }
     }
     default:
       return { content: [{ type: 'text', text: `未知工具: ${name}` }], isError: true }

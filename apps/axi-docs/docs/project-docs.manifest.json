@@ -1,9 +1,9 @@
 {
-  "version": 2,
+  "version": "3",
   "project": "axi-docs",
   "name": "Axi Docs",
   "status": "verified",
-  "canonicalPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs",
+  "canonicalPath": "/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs",
   "kind": "documentation-hub",
   "lifecycle": "active",
   "owner": "AxiomaticWorld workspace owner",
@@ -227,6 +227,85 @@
     "changelog": "docs/state/CHANGELOG.md",
     "submitLog": "app/docs/logs/submit/"
   },
+  "workspace_level_documents": {
+    "workspace_root_docs": [
+      { "path": "/Volumes/code/workspace/AGENTS.md", "type": "agent-guide", "primary_language": "en", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/AGENTS.zh-CN.md", "type": "agent-guide", "primary_language": "zh-CN", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/README.md", "type": "readme", "primary_language": "en", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/README.zh-CN.md", "type": "readme", "primary_language": "zh-CN", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/WORKSPACE_INDEX.md", "type": "workspace-index", "primary_language": "en", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/WORKSPACE_INDEX.zh-CN.md", "type": "workspace-index", "primary_language": "zh-CN", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/CHANGE.md", "type": "change-log", "primary_language": "en", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/CHANGELOG.md", "type": "change-log", "primary_language": "en", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/INDEX.md", "type": "index", "primary_language": "en", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/ONBOARDING.zh-CN.md", "type": "onboarding", "primary_language": "zh-CN", "mirror_target": "knowledge_base" },
+      { "path": "/Volumes/code/workspace/ONBOARDING-REFERENCE.zh-CN.md", "type": "onboarding-reference", "primary_language": "zh-CN", "mirror_target": "knowledge_base" }
+    ],
+    "docs_category_docs": {
+      "docs_root_facade": [
+        { "path": "/Volumes/code/workspace/docs/AGENTS.md", "type": "docs-agent-guide" },
+        { "path": "/Volumes/code/workspace/docs/README.md", "type": "docs-readme" }
+      ],
+      "docs_governance": [
+        { "path": "/Volumes/code/workspace/docs/governance/README.md", "exclusion_reason": "explicitly excluded per docs/governance/README.md" },
+        { "path": "/Volumes/code/workspace/docs/governance/CONTRIBUTING.md", "exclusion_reason": "explicitly excluded" },
+        { "path": "/Volumes/code/workspace/docs/governance/SECURITY.md", "exclusion_reason": "explicitly excluded" },
+        { "path": "/Volumes/code/workspace/docs/governance/SECRETS.md", "exclusion_reason": "explicitly excluded" }
+      ],
+      "docs_state": [
+        { "path": "/Volumes/code/workspace/docs/state/README.md", "type": "state-readme" },
+        { "path": "/Volumes/code/workspace/docs/state/PRD.md", "type": "workspace-prd" },
+        { "path": "/Volumes/code/workspace/docs/state/TDD.md", "type": "workspace-tdd" },
+        { "path": "/Volumes/code/workspace/docs/state/TODO.md", "type": "workspace-todo" },
+        { "path": "/Volumes/code/workspace/docs/state/MILESTONE.md", "type": "workspace-milestone" },
+        { "path": "/Volumes/code/workspace/docs/state/VERIFICATION.md", "type": "workspace-verification" },
+        { "path": "/Volumes/code/workspace/docs/state/CLI-REFERENCE.md", "type": "cli-reference" }
+      ],
+      "docs_audit": [
+        { "path": "/Volumes/code/workspace/docs/audit/audit-results-2026-09-25.md", "type": "audit-results" },
+        { "path": "/Volumes/code/workspace/docs/audit/workspace-audit-2026-09-19.md", "type": "audit-results", "lifecycle": "archived" }
+      ],
+      "docs_adr": [
+        { "path": "/Volumes/code/workspace/docs/adr/README.md", "type": "adr-stub", "authoritative_source": "/Volumes/code/workspace/foundation/workspace-governance/docs/adr/" }
+      ],
+      "docs_architecture": [
+        { "path": "/Volumes/code/workspace/docs/architecture/workspace-backend-architecture.md", "type": "workspace-architecture" },
+        { "path": "/Volumes/code/workspace/docs/architecture/axi-notify-architecture.md", "type": "product-architecture" },
+        { "path": "/Volumes/code/workspace/docs/architecture/ai-resource-orchestration-architecture.md", "type": "product-architecture" }
+      ],
+      "docs_axi": [
+        { "path": "/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md", "type": "brand-naming", "primary_language": "en", "promote_to_guide": true },
+        { "path": "/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.zh-CN.md", "type": "brand-naming", "primary_language": "zh-CN", "promote_to_guide": true },
+        { "path": "/Volumes/code/workspace/docs/axi/contracts/AXI_ACCOUNTS_SHARED_SCHEMA.md", "type": "shared-schema", "authoritative_source": true },
+        { "path": "/Volumes/code/workspace/docs/axi/contracts/AI_CAPABILITY_CONTRACT.md", "type": "external-cli-contract" },
+        { "path": "/Volumes/code/workspace/docs/axi/contracts/MINIMAX_TOKENPLAN_CONTRACT.md", "type": "external-cli-contract" },
+        { "path": "/Volumes/code/workspace/docs/axi/contracts/OLLAMA_LOCAL_CONTRACT.md", "type": "external-cli-contract" }
+      ],
+      "docs_prd": [
+        { "path": "/Volumes/code/workspace/docs/prd/README.md", "type": "prd-center" },
+        { "path": "/Volumes/code/workspace/docs/prd/00-PRD-SYSTEM-GUIDE.md", "type": "prd-system-guide" },
+        { "path": "/Volumes/code/workspace/docs/prd/01-AxiomaticWorld-Personal-OS-PRD.md", "type": "prd-platform" },
+        { "path": "/Volumes/code/workspace/docs/prd/02-CONTRACT-AND-CONSTRAINT-GOVERNANCE.md", "type": "prd-contract" },
+        { "path": "/Volumes/code/workspace/docs/prd/templates/PROJECT-PRD-TEMPLATE.md", "type": "prd-template" },
+        { "path": "/Volumes/code/workspace/docs/prd/templates/SPRINT-PRD-TEMPLATE.md", "type": "prd-template" }
+      ]
+    },
+    "scripts_docs": [
+      { "path": "/Volumes/code/workspace/scripts/AGENTS.md", "type": "scripts-agent-guide" },
+      { "path": "/Volumes/code/workspace/scripts/README.md", "type": "scripts-readme" }
+    ],
+    "incubator_docs": [
+      { "path": "/Volumes/code/workspace/incubator/AGENTS.md", "type": "incubator-agent-guide", "exclusion_reason": "incubator is non-project validation area, not a project" }
+    ],
+    "foundation_axi_rules_docs": {
+      "authoritative_source": "/Volumes/code/workspace/foundation/axi-rules/",
+      "primary_documents": [ "AGENTS.md", "INDEX.md", "README.md", "rules/*/AR-*.md" ]
+    },
+    "foundation_workspace_governance_docs": {
+      "authoritative_source": "/Volumes/code/workspace/foundation/workspace-governance/",
+      "mirror_target": "/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/axi-workspace-governance/"
+    }
+  },
   "documents": {
     "agents": "AGENTS.md",
     "readme": "README.md",
@@ -289,7 +368,7 @@
     "CHANGE.md"
   ],
   "created": "2026-06-07",
-  "updated": "2026-08-22",
+  "updated": "2026-09-28",
   "writer": "zero-context-handoff",
   "source": "Repository-local AGENTS.md, README.md, TODO.md, app/AGENTS.md, app/package.json, app/.env.example, and executable documentation/build entrypoints."
 }
