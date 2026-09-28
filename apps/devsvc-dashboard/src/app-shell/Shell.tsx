@@ -1,9 +1,12 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ConfigProvider, theme as AntTheme } from "antd";
 import { createAxiAntdTheme } from "@axi/core";
 import { AxiDashboardShell, type AxiDashboardNavGroup, AxiScrollArea } from "@axi/shell";
+import "@axi/shell/styles.css";
+import "@axi/settings/styles.css";
+import "@axi/widgets/styles.css";
 
 import devsvcLogoUrl from "../assets/devsvc-logo.svg";
 import {
@@ -19,30 +22,53 @@ import {
   navGroupKeys,
   translateNavGroups,
   type NavRouteKey
-} from "../app-registry";
-import { AxiSvgIcon } from "@axi/core";
+} from "../app-registry";import { AxiSvgIcon } from "@axi/icons";
+
 import { antdLocaleByAppLocale, appLocaleOptions } from "../i18n";
 import { useRecentAccessTracker } from "../recent-access";
 import { useAppSettings } from "../settings/useAppSettings";
 import { normalizeTabKeys, readPinnedTabKeys, writePinnedTabKeys } from "../tab-state";
 import { antdModeTokens } from "../theme/tokens";
 import { adminUsername, readAvatarFile, type AuthUser } from "../features/auth/auth";
-import { AxiResourcesPage } from "../features/axi-resources/AxiResourcesPage";
 import { listAxiResources, type AxiResource } from "../features/axi-resources/axiResources";
 import { useDashboardData } from "../features/dashboard/useDashboardData";
-import { DeployPage } from "../features/deploy/DeployPage";
-import { AlertsPage } from "../features/alerts/AlertsPage";
-import { ObservabilityPage } from "../features/observability/ObservabilityPage";
-import { HostedAppPage } from "../features/hosted/HostedAppPage";
 import { hostedAppRoute, listHostedApps, type HostedApp } from "../features/hosted/hostedApps";
 import { OverviewPage } from "../features/overview/OverviewPage";
-import { ServicesPage } from "../features/services/ServicesPage";
-import { ServersPage } from "../features/servers/ServersPage";
 import { useThemeState } from "../features/theme/useThemeState";
 import { ToolbarSlotContext } from "./toolbarSlot";
 import { GlobalSearchBox } from "../features/search/GlobalSearchBox";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
 import { makeTopbarMessageItems, makeTopbarNoticeItems, TopbarFeedPanel } from "../features/topbar/TopbarFeed";
+
+const AxiResourcesPage = lazy(() =>
+  import("../features/axi-resources/AxiResourcesPage").then((m) => ({ default: m.AxiResourcesPage }))
+);
+const DeployPage = lazy(() =>
+  import("../features/deploy/DeployPage").then((m) => ({ default: m.DeployPage }))
+);
+const AlertsPage = lazy(() =>
+  import("../features/alerts/AlertsPage").then((m) => ({ default: m.AlertsPage }))
+);
+const ObservabilityPage = lazy(() =>
+  import("../features/observability/ObservabilityPage").then((m) => ({ default: m.ObservabilityPage }))
+);
+const HostedAppPage = lazy(() =>
+  import("../features/hosted/HostedAppPage").then((m) => ({ default: m.HostedAppPage }))
+);
+const ServicesPage = lazy(() =>
+  import("../features/services/ServicesPage").then((m) => ({ default: m.ServicesPage }))
+);
+const ServersPage = lazy(() =>
+  import("../features/servers/ServersPage").then((m) => ({ default: m.ServersPage }))
+);
+
+function RouteFallback() {
+  return (
+    <div style={{ padding: 24, color: "var(--axi-color-text-secondary, #888)" }}>
+      Loading…
+    </div>
+  );
+}
 
 type NavigationMode = "host" | "subapp";
 
@@ -266,19 +292,21 @@ export function Shell({
   const messageItems = useMemo(() => makeTopbarMessageItems(projects, data.overview?.generatedAt, data.message, t), [data.message, data.overview?.generatedAt, language, projects, t]);
   const displayName = user.displayName === adminUsername ? t("管理员") : user.displayName;
   const routedPages = (
-    <Routes>
-      <Route path="/" element={<Navigate to="/overview" replace />} />
-      <Route path="/overview" element={<OverviewPage data={data} metrics={metrics} />} />
-      <Route path="/services" element={<ServicesPage data={data} />} />
-      <Route path="/deploy" element={<DeployPage />} />
-      <Route path="/alerts" element={<AlertsPage />} />
-      <Route path="/observability" element={<ObservabilityPage />} />
-      <Route path="/servers" element={<ServersPage />} />
-      <Route path="/axi-resources" element={<AxiResourcesPage userRole={user.role} />} />
-      <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage userRole={user.role} />} />
-      <Route path="/apps/:appId/*" element={<HostedAppPage mode={themeState.mode} preference={themeState.preference} theme={themeState.theme} />} />
-      <Route path="/logs" element={<Navigate to="/services" replace />} />
-    </Routes>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/overview" replace />} />
+        <Route path="/overview" element={<OverviewPage data={data} metrics={metrics} />} />
+        <Route path="/services" element={<ServicesPage data={data} />} />
+        <Route path="/deploy" element={<DeployPage />} />
+        <Route path="/alerts" element={<AlertsPage />} />
+        <Route path="/observability" element={<ObservabilityPage />} />
+        <Route path="/servers" element={<ServersPage />} />
+        <Route path="/axi-resources" element={<AxiResourcesPage userRole={user.role} />} />
+        <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage userRole={user.role} />} />
+        <Route path="/apps/:appId/*" element={<HostedAppPage mode={themeState.mode} preference={themeState.preference} theme={themeState.theme} />} />
+        <Route path="/logs" element={<Navigate to="/services" replace />} />
+      </Routes>
+    </Suspense>
   );
   const antdThemeConfig = useMemo(() => {
     const modeTokens = antdModeTokens[themeState.mode];

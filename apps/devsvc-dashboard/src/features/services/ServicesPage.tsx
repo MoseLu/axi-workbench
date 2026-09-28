@@ -1,3 +1,5 @@
+import "@axi/crud/styles.css";
+
 import { useEffect, useMemo, useState } from "react";
 import { Button as AntButton } from "antd";
 import { RefreshCw } from "lucide-react";

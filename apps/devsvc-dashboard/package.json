@@ -24,6 +24,7 @@
     "@axi/addons": "link:../../../../foundation/axi-ui/packages/addons",
     "@axi/core": "link:../../../../foundation/axi-ui/packages/core",
     "@axi/crud": "link:../../../../foundation/axi-ui/packages/crud",
+    "@axi/icons": "link:../../../../foundation/axi-ui/packages/icons",
     "@axi/observability-react-hooks": "link:../../../../foundation/axi-observability/react-hooks",
     "@axi/observability-web": "workspace:*",
     "@axi/presets": "link:../../../../foundation/axi-ui/packages/presets",
