@@ -1,4 +1,4 @@
-.PHONY: help install dev build test clean lint type-check docker-up docker-down docker-backend docker-backend-down verify-docker-backend dev-backend dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth migrate-core migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
+.PHONY: help install dev build test clean lint type-check docker-up docker-down docker-backend docker-backend-down verify-docker-backend dev-backend dev-web dev-admin dev-ui lint-fix dev-gateway dev-identity dev-platform dev-control-plane dev-auth dev-core dev-workflow dev-file dev-notification dev-kb dev-agent migrate-auth  migrate-identity migrate-platform migrate-workflow migrate-notification verify-go verify-specialists verify-helm verify-identity-mailpit
 
 help:
 	@echo "EPAP - Enterprise Project Automation Platform"
@@ -110,9 +110,6 @@ dev-agent:
 # Database migrations
 migrate-auth:
 	cd services/auth-service && goose up
-
-migrate-core:
-	cd services/core-service && ./gradlew flywayMigrate
 
 migrate-identity:
 	set -a; [ ! -f .env ] || . ./.env; export IDENTITY_DATABASE_URL="$${IDENTITY_DATABASE_URL:-postgresql://axi_identity_app:axi_identity_dev@127.0.0.1:15432/axi_identity?sslmode=disable}"; set +a; cd services/identity-adapter && go run ./cmd/migrate
