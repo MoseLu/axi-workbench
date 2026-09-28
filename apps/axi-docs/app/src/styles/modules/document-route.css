@@ -1937,6 +1937,12 @@ html[data-axi-docs-theme='light'] .app-main--home {
   margin: 16px 0 0;
 }
 
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .axi-docs-home__top-link {
   display: none;
 }
