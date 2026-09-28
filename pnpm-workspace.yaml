@@ -1,12 +1,11 @@
 packages:
   - 'apps/*'
-  - 'apps/axi-docs/app'
   - 'packages/*'
   - 'services/*'
   - 'ai/*'
   - 'infra/*'
   - 'tools/*'
-  - '../../shared/axi-ui/packages/*'
+  - '../../foundation/axi-ui/packages/*'
   - '../../foundation/axi-observability/node/packages/*'
 
 onlyBuiltDependencies:
