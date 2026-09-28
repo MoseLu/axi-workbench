@@ -7,7 +7,7 @@
     "start": "tsx --enable-source-maps src/server.ts",
     "dev": "tsx watch --enable-source-maps src/server.ts",
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc -b --noEmit",
+    "type-check": "tsc -b --noEmit",
     "check:tokens": "node scripts/check-tokens.mjs",
     "check": "pnpm lint && pnpm check:tokens && pnpm typecheck"
   },
