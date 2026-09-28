@@ -44,11 +44,11 @@ error while running Workbench Mac App:
 
 ```json
 "build": {
-  "frontendDist": "/Volumes/code/workspace/projects/axi-workbench/apps/workbench-desktop/workbench-dist"
+  "frontendDist": "/Volumes/code/workspace/workbench/axi-workbench/apps/workbench-desktop/workbench-dist"
 },
 "bundle": {
   "resources": {
-    "/Volumes/code/workspace/projects/axi-workbench/apps/workbench-desktop/workbench-dist": "."
+    "/Volumes/code/workspace/workbench/axi-workbench/apps/workbench-desktop/workbench-dist": "."
   }
 }
 ```

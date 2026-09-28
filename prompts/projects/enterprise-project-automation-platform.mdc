@@ -1,14 +1,14 @@
 ---
-description: "axi-workstation 项目的领域、边界和验证入口；文件名为迁移兼容路径"
+description: "axi-workbench 项目的领域、边界和验证入口；文件名为迁移兼容路径"
 globs: ["**/*"]
 alwaysApply: false
 epapLayer: "project"
-project: "axi-workstation"
+project: "axi-workbench"
 locked: false
 source: "epap"
 ---
 
-# axi-workstation Project Prompt
+# axi-workbench Project Prompt
 
 ## 定位
 

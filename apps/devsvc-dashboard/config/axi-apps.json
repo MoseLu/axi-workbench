@@ -9,7 +9,7 @@
       "fallback": "服务不可用时仅显示状态，不在 Host 复刻执行按钮"
     },
     "icon": "database",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/infra/fleet-console/dashboard",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/infra/fleet-console/dashboard",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm run dev -- --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "npm",
     "defaultRoute": "/dashboard",
@@ -86,7 +86,7 @@
       "fallback": "不可用时保留受控入口与错误状态，不由 Host 执行任务"
     },
     "icon": "workbench",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/apps/axi-coder",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "pnpm",
     "defaultRoute": "/overview",
@@ -176,7 +176,7 @@
       "fallback": "原生桥接不可用时仅报告不可用，不把邮件动作复制到 Host"
     },
     "icon": "auth",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/verification-inbox",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/apps/verification-inbox",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm run dev -- --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "npm",
     "defaultRoute": "/",
@@ -218,7 +218,7 @@
       "fallback": "不可用时显示离线文档索引，不复制搜索功能到 Host"
     },
     "icon": "search",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/axi-docs/app",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/apps/axi-docs/app",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "pnpm",
     "defaultRoute": "/",
@@ -356,7 +356,7 @@
       "fallback": "不可用时仅显示空白画布，不在 Host 复刻节点选择器"
     },
     "icon": "canvas",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/axi-artboard",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/apps/axi-artboard",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "pnpm",
     "defaultRoute": "/",
@@ -401,7 +401,7 @@
       "fallback": "Gateway 不可用时显示离线规划面板，不在 Host 复刻 Provider 路由"
     },
     "icon": "orchestration",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/apps/resource-orchestration",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/apps/resource-orchestration",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm exec vite --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "pnpm",
     "defaultRoute": "/",
@@ -454,7 +454,7 @@
       "fallback": "Gateway 不可用时显示健康检查失败页，不暴露 Provider secrets"
     },
     "icon": "gateway",
-    "cwd": "${workspaceRoot}/projects/axi-workbench/services/resource-gateway",
+    "cwd": "${workspaceRoot}/workbench/axi-workbench/services/resource-gateway",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh pnpm --filter @axi/resource-gateway start",
     "packageManager": "pnpm",
     "defaultRoute": "/health/live",

@@ -2,7 +2,7 @@
 
 ## 作用范围
 
-本文档适用于 `/Volumes/code/workspace/projects/axi-workbench/infra/fleet-console` 及其所有子目录，并补充 `/Volumes/code/workspace/AGENTS.md` 里的工作区级规则。
+本文档适用于 `/Volumes/code/workspace/workbench/axi-workbench/infra/fleet-console` 及其所有子目录，并补充 `/Volumes/code/workspace/AGENTS.md` 里的工作区级规则。
 
 ## 修改前
 

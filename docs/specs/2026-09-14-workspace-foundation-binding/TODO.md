@@ -116,7 +116,7 @@
 - [x] 验收只接受：Shell 实际调用链携带真实角色，且三类角色测试均通过。
   - `pnpm --dir apps/devsvc-dashboard typecheck` 退出码 0。
   - `node --test scripts/navigation-roles.test.mjs` 10/10 通过。
-- **证据**：[Shell.tsx](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-shell/Shell.tsx)、[auth.ts](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/features/auth/auth.ts)、[useAuthState.ts](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/features/auth/useAuthState.ts)、[navigation-roles.test.mjs](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/navigation-roles.test.mjs)。
+- **证据**：[Shell.tsx](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/app-shell/Shell.tsx)、[auth.ts](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/features/auth/auth.ts)、[useAuthState.ts](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/features/auth/useAuthState.ts)、[navigation-roles.test.mjs](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/navigation-roles.test.mjs)。
 
 #### `WFB-QA-001`：完成浏览器角色矩阵验收
 
@@ -143,32 +143,32 @@
 - [x] 验收只接受：typecheck 通过，未知状态有确定的 fallback 和测试覆盖。
   - `apps/devsvc-dashboard/src/features/axi-resources/axiResources.ts` 已将 `status` 收窄为 `ResourceLifecycleStatus` 联合类型，未知状态落入 `normalizeLifecycleStatus` 的 `failed` 分支并写入 `verificationSummary`。
   - `pnpm --dir apps/devsvc-dashboard typecheck` 退出码 0；`pnpm --dir apps/devsvc-dashboard test` 已包含 lifecycle 状态测试。
-- **证据**：[axiResources.ts](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/features/axi-resources/axiResources.ts)、类型测试日志。
+- **证据**：[axiResources.ts](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/features/axi-resources/axiResources.ts)、类型测试日志。
 
 #### `WFB-REG-002`：贯通 Resource Index 专属 metadata
 
 - [x] 为 `axi-rules`、`axi-skills`、`axi-registry`、`axi-workspace-governance` 各提供一份来自 graph、受控配置或 Owner API 的真实 metadata 输入。
 - [x] 详情页分别展示规则族/索引、技能分类/i18n、Registry 健康/使用方、治理审计/completion 摘要。
 - [x] 验收只接受：四类资源在真实 registry 输出中有非空 metadata，详情页渲染测试通过；禁止只实现空渲染器。
-- **证据**：[`axi-resources.json`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json)、[`resource-metadata.test.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/resource-metadata.test.mjs)（18 个 metadata 断言全部通过；Dashboard typecheck 0 errors；Dashboard tests 102/102）。
+- **证据**：[`axi-resources.json`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json)、[`resource-metadata.test.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/resource-metadata.test.mjs)（18 个 metadata 断言全部通过；Dashboard typecheck 0 errors；Dashboard tests 102/102）。
 
 #### `WFB-REG-003`：建立验证结果的可追溯来源
 
-- [x] 明确验证结果写入的权威位置：`.cache/verification/{resource-id}.json`（`apps/devsvc-dashboard/.cache/verification/`），由新模块 [`verification-persistence.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs) 统一管理；记录 `lastVerifiedAt`（ISO-8601）、`verificationSource`、`verificationSummary`、`status`、`verificationResults`。
+- [x] 明确验证结果写入的权威位置：`.cache/verification/{resource-id}.json`（`apps/devsvc-dashboard/.cache/verification/`），由新模块 [`verification-persistence.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs) 统一管理；记录 `lastVerifiedAt`（ISO-8601）、`verificationSource`、`verificationSummary`、`status`、`verificationResults`。
 - [x] 保留 24 小时 freshness 规则：loadAllPersistentVerifications 跳过 TTL 之外的记录；新进程启动时从持久化层重新水合。
 - [x] 区分进程内缓存命中和持久化证据命中：每个资源新增 `cacheSource` 字段（`persistent` / `in-memory` / `none`），与现有 `fromCache` 字段并列。
 - [x] 验收只接受：服务重启后仍能读取最近验证证据，过期后显示 `stale`，失败显示 `failed`，不得长期全部为 `path-found`。
 - [x] 持久化写入采用 tmp+rename 原子化，路径安全过滤（防止 path traversal），写入失败不会破坏进程内缓存。
 - [x] `clearVerificationCache` 同时清理持久化文件，使 cleared 状态可跨重启保持。
 - [x] 持久化测试使用 `os.tmpdir()` 隔离，覆盖：roundtrip、过期、缺失、损坏、路径过滤、批量加载、子进程模拟重启。
-- **证据**：[verification-persistence.mjs](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)、[verification-persistence.test.mjs](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.test.mjs)、重启后 cacheSource=`persistent` 的子进程断言、`.cache/verification/axi-docs.json` 样例。
+- **证据**：[verification-persistence.mjs](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)、[verification-persistence.test.mjs](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.test.mjs)、重启后 cacheSource=`persistent` 的子进程断言、`.cache/verification/axi-docs.json` 样例。
 
 #### `WFB-SEC-001`：完成私有资源暴露测试
 
 - [x] 为普通用户增加断言：不显示私有仓库绝对路径、源码正文、凭据或未授权 GitHub 链接。`AxiResourcesPage.redactResourceForRole` 在 `user` 渲染时脱敏 `ownerPath` / `evidenceLink` / `docsRoute`，在 `developer` 渲染时脱敏 `ownerPath`；序列化视图断言确保字符串不再包含 `/Volumes/code/workspace/...` 或 `https://github.com/...`。
 - [x] 验证菜单渲染、全局搜索和详情加载不会触发普通用户未授权的远程仓库请求。`app-registry.tsx` 中 `makeGlobalSearchItems` 接收 `userRole` 并透传到 `translateNavGroups`，与侧边栏的可见性矩阵保持一致；`getNavItemsByRole` 作为角色导航的 canonical 入口导出。
 - [x] 验收只接受：普通用户直接访问隐藏路由得到授权错误或安全重定向，管理员访问仍可获得受控信息。`canRoleAccessResource` 在 hidden 路由直接访问时返回 false，UI 渲染 `axi-resources-access-denied` 标识的拒绝状态；admin 是 hidden 资源的唯一逃生口，deferred 对所有角色（含 admin）拒绝。
-- **证据**：[security-private-resources.test.mjs](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/security-private-resources.test.mjs)（15/15）、[AxiResourcesPage.tsx](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/features/axi-resources/AxiResourcesPage.tsx)、[app-registry.tsx](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx)、[GlobalSearchBox.tsx](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/features/search/GlobalSearchBox.tsx)、[Shell.tsx](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-shell/Shell.tsx)、[resource-metadata.test.mjs](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/resource-metadata.test.mjs)（18/18 由 `WFB-REG-002` 完成）。`pnpm --dir apps/devsvc-dashboard typecheck` 退出码 0；`pnpm --dir apps/devsvc-dashboard test` 102/102 通过。
+- **证据**：[security-private-resources.test.mjs](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/security-private-resources.test.mjs)（15/15）、[AxiResourcesPage.tsx](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/features/axi-resources/AxiResourcesPage.tsx)、[app-registry.tsx](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx)、[GlobalSearchBox.tsx](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/features/search/GlobalSearchBox.tsx)、[Shell.tsx](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/app-shell/Shell.tsx)、[resource-metadata.test.mjs](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/resource-metadata.test.mjs)（18/18 由 `WFB-REG-002` 完成）。`pnpm --dir apps/devsvc-dashboard typecheck` 退出码 0；`pnpm --dir apps/devsvc-dashboard test` 102/102 通过。
 
 #### `WFB-HOST-001`：统一 Hosted App 健康与失败处置
 
@@ -285,7 +285,7 @@
 
 | 项目 | Canonical path | GitHub 可见性 | 分支 | 未提交项 | 本专项角色 |
 | --- | --- | --- | --- | ---: | --- |
-| `axi-workbench` | `/Volumes/code/workspace/projects/axi-workbench` | public | `dev` | 0 | 统一入口和控制面 |
+| `axi-workbench` | `/Volumes/code/workspace/workbench/axi-workbench` | public | `dev` | 0 | 统一入口和控制面 |
 | `axi-agent` | `/Volumes/code/workspace/projects/axi-agent` | public | `feature/unified-personal-todo` | 27 | Agent runtime / Hosted App |
 | `axi-docs` | `/Volumes/code/workspace/projects/axi-docs` | public | `codex/sync-axi-soul-world-dossier-20260824` | 12 | Docs Hosted App |
 | `axi-ui` | `/Volumes/code/workspace/shared/axi-ui` | private | `dev` | 129 | UI Provider / Gallery |
@@ -313,7 +313,7 @@
 - [x] 给 `axi-skills`、`axi-registry`、`axi-workspace-governance` 补充正式的展示覆盖、菜单分组、用户角色和文档入口 → `WFB-REG-002`（2026-09-15 完成，详见第 0 节和 `resource-metadata.test.mjs`）。
 - [x] 从默认资源菜单中隐藏 Workbench 自身、低层基础设施、模板和发行版，保留全局搜索和管理员视图 → `WFB-NAV-001` + `WFB-SEC-001`（2026-09-15 完成；浏览器级闭环仍由 `WFB-QA-001` 收口）。
 
-现有实现入口：[`axi-resources.json`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json:143)、[`workspace-resource-registry.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs:52)、[`app-registry.tsx`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx:185)。
+现有实现入口：[`axi-resources.json`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json:143)、[`workspace-resource-registry.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs:52)、[`app-registry.tsx`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx:185)。
 
 ### 2.4 当前验证阻塞与证据边界
 
@@ -420,7 +420,7 @@
 
 验收：本地联调和私有 registry 消费均可完成；WorkBench 构建产物不含 `/Volumes/code/workspace/...` runtime wiring；Provider 升级有消费者验证证据。
 
-相关约束：[`axi-workbench-boundary-sop.md`](/Volumes/code/workspace/projects/axi-workbench/docs/rules/axi-workbench-boundary-sop.md:17)、[`axi-ui/INTEGRATION.md`](/Volumes/code/workspace/shared/axi-ui/docs/INTEGRATION.md)。
+相关约束：[`axi-workbench-boundary-sop.md`](/Volumes/code/workspace/workbench/axi-workbench/docs/rules/axi-workbench-boundary-sop.md:17)、[`axi-ui/INTEGRATION.md`](/Volumes/code/workspace/shared/axi-ui/docs/INTEGRATION.md)。
 
 ### 3.4 Hosted App 层：`axi-docs` / `axi-agent`
 
@@ -511,9 +511,9 @@
 - [x] `pnpm check:boundaries` → ✅ PASS
 - [x] `pnpm --dir apps/devsvc-dashboard typecheck` → ✅ PASS
 - [x] `pnpm --dir apps/devsvc-dashboard test` → ✅ PASS (25/25) + `verification-persistence.test.mjs` 15/15 PASS
-- [x] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource、路由行为以及持久化来源与重启水合 → `WFB-REG-003`（2026-09-15 完成，详见 [`verification-persistence.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)）；`WFB-REG-002` 已于 2026-09-15 完成（详见第 0 节和 `resource-metadata.test.mjs`）。
-- [x] 验证 Hosted App 和 Resource Index 的路由互不混淆 → `WFB-HOST-001`（2026-09-15 完成，详见 [`axi-app-host.test.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/axi-app-host.test.mjs) 17/17）；浏览器级闭环仍由 `WFB-QA-001` 收口。
-- [x] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现 → `WFB-SEC-001`（2026-09-15 完成，详见 [`security-private-resources.test.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/security-private-resources.test.mjs) 15/15）；浏览器级闭环仍由 `WFB-QA-001` 收口。
+- [x] 验证资源注册器的 graph merge、静态覆盖、缺失路径、self-resource、路由行为以及持久化来源与重启水合 → `WFB-REG-003`（2026-09-15 完成，详见 [`verification-persistence.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)）；`WFB-REG-002` 已于 2026-09-15 完成（详见第 0 节和 `resource-metadata.test.mjs`）。
+- [x] 验证 Hosted App 和 Resource Index 的路由互不混淆 → `WFB-HOST-001`（2026-09-15 完成，详见 [`axi-app-host.test.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/axi-app-host.test.mjs) 17/17）；浏览器级闭环仍由 `WFB-QA-001` 收口。
+- [x] 验证全局搜索覆盖所有注册资源，且隐藏资源只在允许角色中出现 → `WFB-SEC-001`（2026-09-15 完成，详见 [`security-private-resources.test.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/security-private-resources.test.mjs) 15/15）；浏览器级闭环仍由 `WFB-QA-001` 收口。
 - [ ] 验证 1440px Web 导航、资源列表、详情页、搜索、面包屑和错误态 → `WFB-QA-001`（浏览器层唯一剩余任务）。
 
 ### 5.2 Provider / Governance 项目验证
@@ -564,7 +564,7 @@
 
 **当前仍需执行：**
 - ~~`WFB-REG-002`：证明四类 Resource Index metadata 真实进入 registry 输出。~~（2026-09-15 已完成，详见 `resource-metadata.test.mjs` 18/18）
-- ~~`WFB-REG-003`：证明验证结果可持久化、可过期和可追溯。~~（2026-09-15 已完成，详见 [`verification-persistence.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)）
+- ~~`WFB-REG-003`：证明验证结果可持久化、可过期和可追溯。~~（2026-09-15 已完成，详见 [`verification-persistence.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)）
 - ~~`WFB-NAV-001`：将真实用户角色接入 Shell 调用链。~~（2026-09-15 已完成，详见 `navigation-roles.test.mjs`）
 
 ### Hosted App 代理报告摘要
@@ -676,10 +676,10 @@
 | ~~`WFB-REL-001`~~ | ~~Dashboard production build 被 1 MB chunk-size 门禁阻塞~~ | ~~拆分入口或依赖后重新构建~~ | ~~Workbench~~ |
 | ~~`WFB-NAV-001`~~ | ~~Shell 未接入真实用户角色，权限展示可能退化为默认 developer~~ | ~~从认证上下文传入 role 并补三角色测试~~ | ~~Workbench~~ |
 | ~~`WFB-REG-002`~~ | ~~四类 Resource Index metadata 没有充分的实际数据源证据~~ | ~~接通 graph、受控配置或 Owner API，并测试非空输出~~ | ~~Workbench + Provider Owners~~ |
-| ~~`WFB-REG-003`~~ | ~~验证缓存为进程内存，重启后缺少可追溯证据~~ | ~~建立受控持久化来源并验证 stale/failed~~（2026-09-15 已完成，详见 [`verification-persistence.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)） | Governance + Workbench |
+| ~~`WFB-REG-003`~~ | ~~验证缓存为进程内存，重启后缺少可追溯证据~~ | ~~建立受控持久化来源并验证 stale/failed~~（2026-09-15 已完成，详见 [`verification-persistence.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/verification-persistence.mjs)） | Governance + Workbench |
 | `WFB-QA-001` | 真实角色 UI、搜索、详情和隐藏路由尚无浏览器证据 | 完成 1440px 三角色验收 | Workbench |
-| ~~`WFB-HOST-001`~~ | ~~Hosted App 健康检查和失败处置仍不统一~~ | ~~增加 readiness contract、重试、降级和 Owner 提示~~（2026-09-15 已完成，详见 [`axi-app-host.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/axi-app-host.mjs) 与 [`axi-app-host.test.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/axi-app-host.test.mjs) 17/17） | Workbench + Hosted Owners |
-| ~~`WFB-PACK-001`~~ | ~~版本化 Registry 消费尚无完整消费者回归~~ | ~~发布包并验证所有列出的消费者~~（2026-09-15 已完成，详见 [`apps/devsvc-dashboard/docs/PACKAGE-CONSUMPTION.md`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/docs/PACKAGE-CONSUMPTION.md) 与 [`scan-runtime-paths.test.mjs`](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/scan-runtime-paths.test.mjs) 6/6） | axi-ui + axi-registry + Workbench |
+| ~~`WFB-HOST-001`~~ | ~~Hosted App 健康检查和失败处置仍不统一~~ | ~~增加 readiness contract、重试、降级和 Owner 提示~~（2026-09-15 已完成，详见 [`axi-app-host.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/axi-app-host.mjs) 与 [`axi-app-host.test.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/axi-app-host.test.mjs) 17/17） | Workbench + Hosted Owners |
+| ~~`WFB-PACK-001`~~ | ~~版本化 Registry 消费尚无完整消费者回归~~ | ~~发布包并验证所有列出的消费者~~（2026-09-15 已完成，详见 [`apps/devsvc-dashboard/docs/PACKAGE-CONSUMPTION.md`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/docs/PACKAGE-CONSUMPTION.md) 与 [`scan-runtime-paths.test.mjs`](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/scan-runtime-paths.test.mjs) 6/6） | axi-ui + axi-registry + Workbench |
 | ~~`WFB-DRIFT-001`~~ | ~~drift-check 无参数入口不能稳定运行~~ | ~~增加 wrapper/package script 和默认入口测试~~（2026-09-15 已完成，详见 `drift-check.test.mjs` 7/7） | Workbench |
 | ~~`WFB-GOV-001`~~ | ~~remote、graph、registry 覆盖和消费者对账证据未刷新~~ | ~~重新采集并记录差异解释~~（2026-09-15 已完成，详见 [`WORKSPACE-RELATION-AUDIT_2026-09-15.md`](./WORKSPACE-RELATION-AUDIT_2026-09-15.md)） | Governance + Workbench |
 | ~~`WFB-DOC-002`~~ | ~~TODO、CHANGELOG、MILESTONE、completion 尚未完成本批次一致性回写~~ | ~~以本批原子任务状态更新四处文档~~（2026-09-15 已完成） | Workbench |
@@ -706,12 +706,12 @@
 
 > **状态：✅ 入口已整理（2026-09-14）**
 
-- [Axi Workbench 根 AGENTS](/Volumes/code/workspace/projects/axi-workbench/AGENTS.md)
-- [Workbench 聚合边界 SOP](/Volumes/code/workspace/projects/axi-workbench/docs/rules/axi-workbench-boundary-sop.md)
-- [Workbench 源码角色清单](/Volumes/code/workspace/projects/axi-workbench/docs/architecture/source-catalog.md)
-- [Workbench 资源配置](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json)
-- [Workbench 资源注册器](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs)
-- [Workbench 导航和搜索注册](/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx)
+- [Axi Workbench 根 AGENTS](/Volumes/code/workspace/workbench/axi-workbench/AGENTS.md)
+- [Workbench 聚合边界 SOP](/Volumes/code/workspace/workbench/axi-workbench/docs/rules/axi-workbench-boundary-sop.md)
+- [Workbench 源码角色清单](/Volumes/code/workspace/workbench/axi-workbench/docs/architecture/source-catalog.md)
+- [Workbench 资源配置](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/config/axi-resources.json)
+- [Workbench 资源注册器](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs)
+- [Workbench 导航和搜索注册](/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard/src/app-registry.tsx)
 - [Axi UI 集成指南](/Volumes/code/workspace/shared/axi-ui/docs/INTEGRATION.md)
 - [Axi Rules README](/Volumes/code/workspace/projects/axi-rules/README.md)
 - [Axi Skills README](/Volumes/code/workspace/shared/axi-skills/README.md)

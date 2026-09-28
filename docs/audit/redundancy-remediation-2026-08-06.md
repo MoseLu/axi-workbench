@@ -39,7 +39,7 @@ and clear empty workspace stubs that were never registered projects.
 ## Verification commands
 
 ```bash
-cd /Volumes/code/workspace/projects/axi-workbench
+cd /Volumes/code/workspace/workbench/axi-workbench
 pnpm install
 pnpm check:boundaries
 pnpm --filter @epap/web-portal type-check

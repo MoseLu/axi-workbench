@@ -5,7 +5,7 @@
     "kind": "hosted-app",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench/apps/axi-coder",
     "dashboardRoute": "/apps/axi-coder/overview",
     "capabilities": [
       "coder",
@@ -21,7 +21,7 @@
     "kind": "workbench-monorepo",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workbench",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "control-plane",
@@ -56,7 +56,7 @@
     "kind": "knowledge-service",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-docs/app",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench/apps/axi-docs/app",
     "dashboardRoute": "/apps/axi-docs/",
     "capabilities": [
       "web",
@@ -215,7 +215,7 @@
     "kind": "contract",
     "surface": "hosted-subroute",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-coder",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench/apps/axi-coder",
     "dashboardRoute": "/apps/axi-coder/providers",
     "capabilities": [
       "provider-profile",
@@ -441,7 +441,7 @@
     "kind": "canvas-app",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workbench/apps/axi-artboard",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench/apps/axi-artboard",
     "dashboardRoute": "/apps/axi-artboard/",
     "capabilities": [
       "canvas",
@@ -492,7 +492,7 @@
     "kind": "resource-orchestration",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-workbench/services/resource-gateway",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench/services/resource-gateway",
     "dashboardRoute": "/apps/resource-orchestration/",
     "capabilities": [
       "orchestration",

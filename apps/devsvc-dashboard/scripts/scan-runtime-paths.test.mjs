@@ -43,7 +43,7 @@ function makeFixture(files) {
 test("detects /Volumes/code/workspace strings in scanned files", () => {
   const fixture = makeFixture({
     "asset.js": "const base = '/Volumes/code/workspace/shared/axi-ui/packages/core';\n",
-    "deep/nested/loader.ts": "import '/Volumes/code/workspace/projects/axi-workbench/apps/devsvc-dashboard';\n"
+    "deep/nested/loader.ts": "import '/Volumes/code/workspace/workbench/axi-workbench/apps/devsvc-dashboard';\n"
   });
   try {
     const matches = scan(fixture.root);

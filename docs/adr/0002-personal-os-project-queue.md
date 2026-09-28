@@ -12,7 +12,7 @@ PRD-01 将 Personal OS 定义为个人工作系统的产品壳、对象模型和
 
 ## 决策
 
-1. Personal OS v0.1 归属现有 `/Volumes/code/workspace/projects/axi-workbench`，不新建业务仓库，也不把旧 Dashboard 改名。
+1. Personal OS v0.1 归属现有 `/Volumes/code/workspace/workbench/axi-workbench`，不新建业务仓库，也不把旧 Dashboard 改名。
 2. 第一条真实闭环是 Project Queue：展示注册项目、运行时、活动、AgentRun 摘要和人工 overlay，并支持焦点项目与 `finishLine` 编辑。
 3. Personal OS 保持独立路由和视觉命名空间，第一批真实路由为 `/admin/personal-os/today` 和 `/admin/personal-os/workbench`。
 4. control-plane 负责服务端组合投影；浏览器只消费 `ProjectQueueItem`，不得直接读取 workspace graph、扫描端口、调用资源 provider 或拼装跨项目数据。

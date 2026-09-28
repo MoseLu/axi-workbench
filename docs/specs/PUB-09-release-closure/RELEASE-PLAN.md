@@ -338,12 +338,12 @@ pnpm check:boundaries
 
 | 文件 | 路径 |
 |------|------|
-| CHANGELOG | `/Volumes/code/workspace/projects/axi-workbench/docs/state/CHANGELOG.md` |
-| HANDOFF | `/Volumes/code/workspace/projects/axi-workbench/docs/HANDOFF.md` |
-| TODO | `/Volumes/code/workspace/projects/axi-workbench/docs/state/TODO.md` |
-| MILESTONE | `/Volumes/code/workspace/projects/axi-workbench/docs/state/MILESTONE.md` |
-| Runbook | `/Volumes/code/workspace/projects/axi-workbench/infra/fleet-console/docs/runbook.md` |
-| Release Workflow | `/Volumes/code/workspace/projects/axi-workbench/.github/workflows/axi-release.yml` |
+| CHANGELOG | `/Volumes/code/workspace/workbench/axi-workbench/docs/state/CHANGELOG.md` |
+| HANDOFF | `/Volumes/code/workspace/workbench/axi-workbench/docs/HANDOFF.md` |
+| TODO | `/Volumes/code/workspace/workbench/axi-workbench/docs/state/TODO.md` |
+| MILESTONE | `/Volumes/code/workspace/workbench/axi-workbench/docs/state/MILESTONE.md` |
+| Runbook | `/Volumes/code/workspace/workbench/axi-workbench/infra/fleet-console/docs/runbook.md` |
+| Release Workflow | `/Volumes/code/workspace/workbench/axi-workbench/.github/workflows/axi-release.yml` |
 
 ### 8.2 验证命令速查
 

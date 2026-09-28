@@ -117,7 +117,7 @@ const mockResources = [
   // Public / developer-visible
   { id: "axi-docs", title: "Axi Docs", kind: "knowledge-service", surface: "hosted-app", status: "active", ownerPath: "/Volumes/code/workspace/projects/axi-docs/app", dashboardRoute: "/apps/axi-docs/", visibility: "always" },
   { id: "axi-image-preview", title: "Axi Image Preview", kind: "image-preview-app", surface: "hosted-app", status: "active", ownerPath: "/Volumes/code/workspace/projects/axi-image-preview", dashboardRoute: "/apps/axi-image-preview/", visibility: "always" },
-  { id: "axi-coder", title: "Axi Coder", kind: "workbench-monorepo", surface: "hosted-app", status: "active", ownerPath: "/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder", dashboardRoute: "/apps/axi-coder/overview" },
+  { id: "axi-coder", title: "Axi Coder", kind: "workbench-monorepo", surface: "hosted-app", status: "active", ownerPath: "/Volumes/code/workspace/workbench/axi-workbench/apps/axi-coder", dashboardRoute: "/apps/axi-coder/overview" },
   // Public resource-index item visible to all roles.
   { id: "axi-public", title: "Axi Public Index", kind: "public-resource", surface: "resource-index", status: "active", ownerPath: "/Volumes/code/workspace/public/axi-public", dashboardRoute: "/axi-resources", visibility: "always" },
 
@@ -128,7 +128,7 @@ const mockResources = [
   { id: "axi-workbench-web-dist", title: "Axi Workbench Web Distribution", kind: "distribution", surface: "resource-index", status: "active", ownerPath: "/Volumes/code/workspace/distributions/axi-workbench-web", dashboardRoute: "/axi-resources", visibility: "admin" },
 
   // Hidden from everyone but admin
-  { id: "axi-workbench", title: "Axi Workbench", kind: "workbench-monorepo", surface: "resource-index", status: "active", ownerPath: "/Volumes/code/workspace/projects/axi-workbench", dashboardRoute: "/axi-resources", visibility: "hidden" },
+  { id: "axi-workbench", title: "Axi Workbench", kind: "workbench-monorepo", surface: "resource-index", status: "active", ownerPath: "/Volumes/code/workspace/workbench/axi-workbench", dashboardRoute: "/axi-resources", visibility: "hidden" },
   { id: "axi-workspace-governance", title: "Axi Workspace Governance", kind: "governance-infrastructure", surface: "resource-index", status: "active", ownerPath: "/Volumes/code/workspace/infra/axi-workspace-governance", dashboardRoute: "/axi-resources", visibility: "hidden" },
   { id: "axi-registry", title: "Axi Local Registry", kind: "local-registry", surface: "resource-index", status: "active", ownerPath: "/Volumes/code/workspace/infra/axi-registry", dashboardRoute: "/axi-resources", visibility: "hidden" },
 

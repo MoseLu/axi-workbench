@@ -90,10 +90,10 @@ docs/
 ## Rollback
 
 ```bash
-rm -rf /Volumes/code/workspace/projects/axi-workbench/services/control-plane/src/commit-ledger/
-rm -rf /Volumes/code/workspace/projects/axi-workbench/apps/workbench/src/pages/commit-ledger/
-rm -rf /Volumes/code/workspace/projects/axi-workbench/packages/commit-ledger-schema/
-rm /Volumes/code/workspace/projects/axi-workbench/docs/commit-ledger-*.md
+rm -rf /Volumes/code/workspace/workbench/axi-workbench/services/control-plane/src/commit-ledger/
+rm -rf /Volumes/code/workspace/workbench/axi-workbench/apps/workbench/src/pages/commit-ledger/
+rm -rf /Volumes/code/workspace/workbench/axi-workbench/packages/commit-ledger-schema/
+rm /Volumes/code/workspace/workbench/axi-workbench/docs/commit-ledger-*.md
 ```
 
 ## Delivery Summary

@@ -14,7 +14,7 @@ Web 管理端应用。它拥有 Axi Dashboard Chrome、侧栏、顶栏、标签�
 ## 启动
 
 ```bash
-cd /Volumes/code/workspace/projects/axi-workbench
+cd /Volumes/code/workspace/workbench/axi-workbench
 pnpm install   # 首次
 pnpm dev:workbench
 ```

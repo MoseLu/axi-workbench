@@ -49,7 +49,7 @@ const unit: GovernanceUnit = {
     recommendedAction: 'refresh_verification_evidence',
   },
   sourceOfTruth: '/workspace/infra/axi-workspace-governance/workspace.json',
-  path: '/workspace/projects/axi-workbench',
+  path: '/workspace/workbench/axi-workbench',
   kind: 'axi-workbench-monorepo',
   declarations: {
     graph: '/workspace/workspace.graph.json',
@@ -125,7 +125,7 @@ const evidence: GovernanceEvidence[] = [
     freshness: 'stale',
     status: 'building',
     subjectRef: 'axi-workbench',
-    artifactRef: '/workspace/projects/axi-workbench/VERIFICATION.md',
+    artifactRef: '/workspace/workbench/axi-workbench/VERIFICATION.md',
   },
 ];
 

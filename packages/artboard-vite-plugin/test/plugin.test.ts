@@ -31,7 +31,7 @@ function runTransform(code: string, id: string): { code: string; map: null } | n
   return transform(code, id)
 }
 
-const SAMPLE_ID = '/Volumes/code/workspace/projects/axi-workbench/apps/axi-artboard/src/Foo.tsx'
+const SAMPLE_ID = '/Volumes/code/workspace/workbench/axi-workbench/apps/axi-artboard/src/Foo.tsx'
 const SAMPLE_REL = path.relative(process.cwd(), SAMPLE_ID).replaceAll('\\', '/')
 
 describe('sourceAttrsAstPlugin', () => {

@@ -31,8 +31,8 @@ AxiomaticWorld (Group Brand)
 
 In the `/Volumes/code/workspace` monorepo, Axi Artboard is:
 
-- **Canonical path**: `/Volumes/code/workspace/projects/axi-workbench/apps/axi-artboard`
-- **Vite plugin package**: `@axi/artboard-vite-plugin` at `/Volumes/code/workspace/projects/axi-workbench/packages/artboard-vite-plugin`
+- **Canonical path**: `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-artboard`
+- **Vite plugin package**: `@axi/artboard-vite-plugin` at `/Volumes/code/workspace/workbench/axi-workbench/packages/artboard-vite-plugin`
 - **Registration**: `workspace.graph.json` (under `axi-workbench.provides`), `apps/devsvc-dashboard/config/axi-apps.json`
 - **Owns**: Agent interaction tooling, visual feedback overlay, source location stamping
 - **Consumes**: `@axi/artboard-vite-plugin` (workspace); otherwise standalone

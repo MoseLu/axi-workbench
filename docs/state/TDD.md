@@ -2,7 +2,7 @@
 
 ## Architecture Assumptions
 
-- Root path: `/Volumes/code/workspace/projects/axi-workbench`.
+- Root path: `/Volumes/code/workspace/workbench/axi-workbench`.
 - Canonical user-app entrypoints: `apps/workbench/src/main.tsx` for the Web admin and `apps/workbench-mobile/src/main.tsx` for the mobile application. They are separate Vite applications, not two viewport branches of one SPA.
 - Stack signals: Node ≥ 18, pnpm ≥ 8, TypeScript, Vite, Turborepo, Go, Java Spring Boot, Python FastAPI, LangChain, Qdrant, RAG.
 - Six-layer control plane is enforced by `docs/rules/epap-six-layer-sop.md`. The TDD treats those boundaries as load-bearing and writes tests around them.
@@ -139,7 +139,7 @@ npm --prefix apps/verification-inbox run typecheck
 for f in README.md README.zh-CN.md AGENTS.md INDEX.md CHANGE.md \
          docs/state/CHANGELOG.md docs/state/TODO.md docs/state/MILESTONE.md \
          docs/state/PRD.md docs/state/TDD.md docs/state/VERIFICATION.md; do
-  test -f "/Volumes/code/workspace/projects/axi-workbench/$f" || { echo "MISSING $f"; exit 1; }
+  test -f "/Volumes/code/workspace/workbench/axi-workbench/$f" || { echo "MISSING $f"; exit 1; }
 done
 rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVERY|DOC|VERIFY|BOUNDARY|CONTROLPLANE|COMMUNICATION|WORKBENCH|MILESTONE|LOG|AXI-CODER)" \
   docs/state/PRD.md docs/state/TDD.md docs/state/TODO.md docs/state/MILESTONE.md docs/state/CHANGELOG.md
@@ -148,7 +148,7 @@ rg -n "REQ-(POSITION|ARCH|ACTION|REFERENCE|SURFACE|WEB|MOBILE|CROSS|SCAN|DELIVER
 ## Risk Cases
 
 - Documentation drifts from package manifests or the current source layout.
-- Agents edit outside `/Volumes/code/workspace/projects/axi-workbench` without explicit scope and accidentally mutate governance or neighbor projects.
+- Agents edit outside `/Volumes/code/workspace/workbench/axi-workbench` without explicit scope and accidentally mutate governance or neighbor projects.
 - Reference checkouts (`references/*`, `infra/axi-workspace-governance/references/*`) are mistaken for Axi Workbench-owned product surfaces.
 - Verification commands become stale after dependency or layout changes (e.g. a deprecated package.json script stays in TDD).
 - Workbench starts importing neighboring project implementations instead of consuming `@axi/workstation-*` package / API / config contracts.

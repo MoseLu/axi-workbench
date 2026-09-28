@@ -2,7 +2,7 @@
 
 `axi-app-cli` is now a `Git monorepo + pnpm workspace` for the Axi scaffolder itself. The repo contains:
 
-This is the canonical workspace tool location at `/Volumes/code/workspace/projects/axi-workbench/tools/axi-app-cli`.
+This is the canonical workspace tool location at `/Volumes/code/workspace/workbench/axi-workbench/tools/axi-app-cli`.
 Generated React applications consume the published Axi runtime packages
 `@axi/tokens`, `@axi/core`, and `@axi/shell` from the local `@axi` registry.
 Generated web apps also include an `apps/web/src/app/axi.app.ts` manifest and

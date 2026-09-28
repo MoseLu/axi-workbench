@@ -67,8 +67,8 @@
 |----------|------|------|------|
 | `codex-app-projects` | `/Volumes/code/workspace` | workspace-anchor | 故意不登记：工作区根 anchor，本身不是 git 仓库 |
 | `axi-accounts` | `/Volumes/code/workspace/docs/axi` | contract-placeholder | 故意不登记：`contract-placeholder` 占位，仅用作消费契约图节点 |
-| `axi-coder` | `/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder` | full-development-workbench | 故意不登记：属于 `axi-workbench` 子路径，共享同一个 git remote（graph 中 `repo` 字段为子路径模式继承，未单独提供） |
-| `axi-model-gateway` | `/Volumes/code/workspace/projects/axi-workbench/apps/axi-coder` | infrastructure-contract-consumed-by-axi-coder | 故意不登记：同 `axi-coder`，是 monorepo 内的合约占位 ID |
+| `axi-coder` | `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-coder` | full-development-workbench | 故意不登记：属于 `axi-workbench` 子路径，共享同一个 git remote（graph 中 `repo` 字段为子路径模式继承，未单独提供） |
+| `axi-model-gateway` | `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-coder` | infrastructure-contract-consumed-by-axi-coder | 故意不登记：同 `axi-coder`，是 monorepo 内的合约占位 ID |
 | `ai-capability` | `/Users/mose/.cc-connect` | local-capability-layer | 故意不登记：本地 cc-connect 能力层，无 git remote |
 | `ollama-local` | `/Users/mose/.cc-connect` | local-model-provider | 故意不登记：本地 ollama 提供方 |
 | `minimax-tokenplan` | `/Users/mose/.cc-connect` | cloud-capability-cli | 故意不登记：MiniMax token plan CLI，本地 cc-connect 集成 |
@@ -287,7 +287,7 @@ workspace graph and handoff registry ok
   - ADR-002 progressive-repository-naming-policy
   - ADR-003 workspace-root-is-non-git-container
   - ADR-004 apm-agent-context-package-layer
-- TODO 锚定：`/Volumes/code/workspace/projects/axi-workbench/docs/specs/2026-09-14-workspace-foundation-binding/TODO.md` §0 `WFB-GOV-001`
+- TODO 锚定：`/Volumes/code/workspace/workbench/axi-workbench/docs/specs/2026-09-14-workspace-foundation-binding/TODO.md` §0 `WFB-GOV-001`
 
 ---
 
@@ -302,4 +302,4 @@ workspace graph and handoff registry ok
 3. **本审计已更新的文档**：
    - 本报告：`docs/specs/2026-09-14-workspace-foundation-binding/WORKSPACE-RELATION-AUDIT_2026-09-15.md`
    - TODO 状态：见 `TODO.md` §0 `WFB-GOV-001` 行的状态更新
-   - CHANGELOG：`projects/axi-workbench/CHANGELOG.md` 增补一行引用本报告
+   - CHANGELOG：`workbench/axi-workbench/CHANGELOG.md` 增补一行引用本报告

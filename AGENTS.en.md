@@ -10,7 +10,7 @@
 
 ## Scope
 
-- **Applies to**: every agent (including Codex, Cursor, automated scanners, doc-audit subagents, and the OMX orchestrator) on first contact with `/Volumes/code/workspace/projects/axi-workbench`.
+- **Applies to**: every agent (including Codex, Cursor, automated scanners, doc-audit subagents, and the OMX orchestrator) on first contact with `/Volumes/code/workspace/workbench/axi-workbench`.
 - **Does not apply to**:
   - Sub-package install/path examples such as `tools/axi-app-cli/packages/*/README.md` (**only cite the top-level** `tools/axi-app-cli/AGENTS.md` / `README.md`, to avoid confusing sub-package Windows/macOS path examples with the local build paths).
   - `references/*`, `infra/axi-workspace-governance/references/*`, `infra/axi-workspace-governance/temp/*` (their governance lives in `infra/axi-workspace-governance/`; see "Cross-Project Boundary").
@@ -82,9 +82,8 @@ The executive overview requires that, when filling in the ROOT_AGENTS of an owne
 - Workspace root index: [`/Volumes/code/workspace/AGENTS.md`](/Volumes/code/workspace/AGENTS.md), [`/Volumes/code/workspace/WORKSPACE_INDEX.md`](/Volumes/code/workspace/WORKSPACE_INDEX.md) (Axi Workbench row)
 - Naming and branding: [`/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md`](/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md)
 - DevSvc / PM2 service orchestration: [`/Volumes/code/workspace/docs/DEV_SERVICES.md`](/Volumes/code/workspace/docs/DEV_SERVICES.md), [`/Volumes/code/workspace/dev-services.config.json`](/Volumes/code/workspace/dev-services.config.json)
-- Governance repo: [`/Volumes/code/workspace/infra/axi-workspace-governance/`](/Volumes/code/workspace/infra/axi-workspace-governance/) (referenced by this repo, not written into) + [`infra/axi-workspace-governance/docs/project-catalog.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md)
+- Governance repo: [`/Volumes/code/workspace/infra/axi-workspace-governance/`](/Volumes/code/workspace/infra/axi-workspace-governance/) (referenced by this repo, not written into) + [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md)
 - Governance PR template and release process: [`/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md`](/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md), [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md)
-- Workspace-level i18n overview and gap audit: [`/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-i18n-translation-2026-06-07.md), [`/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md`](/Volumes/code/workspace/docs/audit/workspace-docs-gap-audit-2026-06-07.md)
 - Workspace graph CLI: [`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project) (`deps axi-workbench` / `consumers axi-workbench` / `validate`)
 - Neighbour projects (consumed by this workbench control plane): `/Volumes/code/workspace/projects/axi-notify/`, `/Volumes/code/workspace/projects/axi-pet/`, `/Volumes/code/workspace/projects/axi-agent/`, `/Volumes/code/workspace/projects/axi-docs/`, `/Volumes/code/workspace/projects/axi-image-preview/`, `/Volumes/code/workspace/shared/axi-ui/`, `/Volumes/code/workspace/shared/axi-registry/`, `/Volumes/code/workspace/tools/axi-app-cli/`
 
@@ -134,7 +133,7 @@ Change-driven minimum verification selection:
 
 ## Workspace Entry (preserved 2026-05-30 section)
 
-- Current project root: `/Volumes/code/workspace/projects/axi-workbench`.
+- Current project root: `/Volumes/code/workspace/workbench/axi-workbench`.
 - Parent workspace rules: `/Volumes/code/workspace/AGENTS.md`.
 - Workspace index: `/Volumes/code/workspace/WORKSPACE_INDEX.md`.
 - Workspace relation graph: `/Volumes/code/workspace/workspace.graph.json`.
@@ -200,4 +199,4 @@ When testing user-visible behavior, use the layered verification ladder:
 
 ### manifest status note
 
-The `status: legacy` in `docs/project-docs.manifest.json` means that the state/contract documents under `docs/state/` (`CHANGELOG.md` / `TODO.md` / `MILESTONE.md`) **still await a complete entry-point rollout per the plan** (see `docs/audit/workspace-docs-gap-audit-2026-06-07.md` §2.1 P0 list). Until the owner decides the completion order, the auditable changes of this repo must **go directly through the commit log + `docs/08-todo.md`**, and must not rely on the state documents listed by the manifest.
+The `status: legacy` in `docs/project-docs.manifest.json` means that the state/contract documents under `docs/state/` (`CHANGELOG.md` / `TODO.md` / `MILESTONE.md`) **still await a complete entry-point rollout per the plan**. Until the owner decides the completion order, the auditable changes of this repo must **go directly through the commit log + `docs/08-todo.md`**, and must not rely on the state documents listed by the manifest.

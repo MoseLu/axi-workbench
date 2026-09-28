@@ -1,17 +1,17 @@
 # Axi Artboard — Local Agent Guide
 
 ## Scope
-This file governs work under `/Volumes/code/workspace/projects/axi-workbench/apps/axi-artboard`. It overrides the workspace-level `AGENTS.md` only inside this project directory. Read it before editing any file under this path.
+This file governs work under `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-artboard`. It overrides the workspace-level `AGENTS.md` only inside this project directory. Read it before editing any file under this path.
 
 ## Read order
 1. This `AGENTS.md`.
 2. `README.md` (one-page status snapshot).
-3. `/Volumes/code/workspace/projects/axi-workbench/AGENTS.md` for the workbench-wide contract.
+3. `/Volumes/code/workspace/workbench/axi-workbench/AGENTS.md` for the workbench-wide contract.
 4. `/Volumes/code/workspace/AGENTS.md` and `/Volumes/code/workspace/WORKSPACE_INDEX.md` for workspace-wide rules.
 5. The AxiomaticWorld naming contract at `/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md` — this product is **not** part of the `Axi` product line, so it must keep its own product brand and only inherit AxiomaticWorld as the group brand.
 
 ## Project boundary
-- Canonical path: `/Volumes/code/workspace/projects/axi-workbench/apps/axi-artboard` (do not move, do not symlink, do not create parallel roots).
+- Canonical path: `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-artboard` (do not move, do not symlink, do not create parallel roots).
 - Hosted sub-app under `apps/devsvc-dashboard`; the devsvc host injects `AXI_APP_BASE`, `AXI_APP_PORT`, `VITE_AXI_APP_BASE`, `VITE_AXI_HOSTED_APP`, `VITE_AXI_APP_ID`. Standalone `pnpm dev` still works (port 5173 fallback).
 - This project is its own git repository. Do not run `git init` at `/Volumes/code/workspace`.
 - Do not import or re-export any code from `projects/axi-*` / `shared/axi-*` / `tools/axi-*` / `references/*` unless the stack and the consumer/provider contract are explicitly chosen. A skeleton has no consumes yet.
