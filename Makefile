@@ -87,10 +87,10 @@ dev-control-plane:
 	./services/control-plane/scripts/dev-run.sh
 
 dev-auth:
-	@echo "deprecated: services/auth-service is STATUS: legacy (DEPRECATION TIMELINE Q1-2027). Use 'make dev-identity' against services/identity-adapter instead." && exit 1
+	@echo "DEPRECATED: auth-service is being removed in Q1-2027. See services/AGENTS.md DEPRECATION TIMELINE." && exit 1
 
 dev-core:
-	@echo "deprecated: services/core-service is STATUS: legacy (DEPRECATION TIMELINE Q1-2027). No replacement dev target; query legacy data via services/api-gateway/identity-adapter." && exit 1
+	@echo "DEPRECATED: core-service is being removed in Q1-2027. See services/AGENTS.md DEPRECATION TIMELINE." && exit 1
 
 dev-workflow:
 	cd services/workflow-engine && uv run --with-requirements requirements.txt uvicorn main:app --reload --host 0.0.0.0 --port 8083
