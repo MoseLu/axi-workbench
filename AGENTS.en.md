@@ -37,6 +37,10 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 | `prompts/` | yes | Prompt layered foundation (system / global / projects), detailed in `prompts/AGENTS.md` and `prompts/README.md` |
 | `docs/` | yes | Project docs (`01-overview.md` ~ `08-todo.md`, `rules/`, `templates/`, `project-docs.manifest.json`) |
 | `infra/fleet-console/` | yes | Fleet Console physical service management |
+| `infra/helm/` | yes | Helm chart (axi-workbench-platform deployment unit; authoritative entry `infra/helm/README.md`) |
+| `backend/` | yes | Embedded Python runtime (`mini_agent/` + `local_server/`; not a root pnpm member; see `backend/AGENTS.md`) |
+| `scripts/` | yes | Root-level verification/check/tooling scripts (`check-*.mjs` / `verify-*.mjs` / `axi-ui-cli.mjs` / `dev-*.sh`) |
+| `config/` | yes | Static configuration (`axi-ui-page-policy.json`, etc.; not runtime config) |
 | `AGENTS.md`, `README.md`, `docs/governance/SECURITY.md`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `docker-compose.yml` | yes | Root-level project facade and build orchestration |
 | `references/*` (workspace-level) | no | Governed by `infra/axi-workspace-governance/`; this project does not translate or edit it |
 | `infra/axi-workspace-governance/` | no | Workspace governance repo, not owned by this project |
@@ -85,7 +89,7 @@ The executive overview requires that, when filling in the ROOT_AGENTS of an owne
 - Governance repo: [`/Volumes/code/workspace/infra/axi-workspace-governance/`](/Volumes/code/workspace/infra/axi-workspace-governance/) (referenced by this repo, not written into) + [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md)
 - Governance PR template and release process: [`/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md`](/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md), [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md)
 - Workspace graph CLI: [`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project) (`deps axi-workbench` / `consumers axi-workbench` / `validate`)
-- Neighbour projects (consumed by this workbench control plane): `/Volumes/code/workspace/projects/axi-notify/`, `/Volumes/code/workspace/projects/axi-pet/`, `/Volumes/code/workspace/projects/axi-agent/`, `/Volumes/code/workspace/projects/axi-docs/`, `/Volumes/code/workspace/projects/axi-image-preview/`, `/Volumes/code/workspace/shared/axi-ui/`, `/Volumes/code/workspace/shared/axi-registry/`, `/Volumes/code/workspace/tools/axi-app-cli/`
+- Neighbour projects (consumed by this workbench control plane): `/Volumes/code/workspace/projects/axi-notify/`, `/Volumes/code/workspace/projects/axi-pet/`, `/Volumes/code/workspace/projects/axi-agent/`, `/Volumes/code/workspace/projects/axi-image-preview/`, `/Volumes/code/workspace/shared/axi-ui/`, `/Volumes/code/workspace/shared/axi-registry/`, `/Volumes/code/workspace/tools/axi-app-cli/`
 
 ---
 

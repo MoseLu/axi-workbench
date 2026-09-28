@@ -35,6 +35,10 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 | `prompts/` | 是 | Prompt 分层底座（system / global / projects），`prompts/AGENTS.md` 与 `prompts/README.md` 详述 |
 | `docs/` | 是 | 项目文档（`01-overview.md` ~ `08-todo.md`、`rules/`、`templates/`、`project-docs.manifest.json`） |
 | `infra/fleet-console/` | 是 | Fleet Console 物理服务管理 |
+| `infra/helm/` | 是 | Helm chart（axi-workbench-platform 部署单元，`infra/helm/README.md` 权威入口） |
+| `backend/` | 是 | 嵌入式 Python runtime（`mini_agent/` + `local_server/`，非根 pnpm member；见 `backend/AGENTS.md`） |
+| `scripts/` | 是 | 根级验证/检查/工具脚本（`check-*.mjs` / `verify-*.mjs` / `axi-ui-cli.mjs` / `dev-*.sh`） |
+| `config/` | 是 | 静态配置（`axi-ui-page-policy.json` 等；非运行时配置） |
 | `AGENTS.md`, `README.md`, `docs/governance/SECURITY.md`, `Makefile`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `docker-compose.yml` | 是 | 根级项目门面与构建编排 |
 | `references/*`（工作区级） | 否 | 由 `infra/axi-workspace-governance/` 治理，本项目不翻译、不编辑 |
 | `infra/axi-workspace-governance/` | 否 | 工作区治理仓库，不在本项目所有权内 |
@@ -85,7 +89,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 - 治理仓库：[`/Volumes/code/workspace/infra/axi-workspace-governance/`](/Volumes/code/workspace/infra/axi-workspace-governance/)（本仓库引用，不写入）+ [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md)
 - 治理 PR 模板与发布流程：[`/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md`](/Volumes/code/workspace/infra/axi-workspace-governance/.github/PULL_REQUEST_TEMPLATE.md)、[`/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/RELEASING.md)
 - 工作区图谱 CLI：[`/Volumes/code/workspace/scripts/workspace-project`](/Volumes/code/workspace/scripts/workspace-project)（`deps axi-workbench` / `consumers axi-workbench` / `validate`）
-- 邻居项目（被本工作台控制面消费）：`/Volumes/code/workspace/projects/axi-notify/`、`/Volumes/code/workspace/projects/axi-pet/`、`/Volumes/code/workspace/projects/axi-agent/`、`/Volumes/code/workspace/projects/axi-docs/`、`/Volumes/code/workspace/projects/axi-image-preview/`、`/Volumes/code/workspace/shared/axi-ui/`、`/Volumes/code/workspace/shared/axi-registry/`、`/Volumes/code/workspace/tools/axi-app-cli/`
+- 邻居项目（被本工作台控制面消费）：`/Volumes/code/workspace/projects/axi-notify/`、`/Volumes/code/workspace/projects/axi-pet/`、`/Volumes/code/workspace/projects/axi-agent/`、`/Volumes/code/workspace/projects/axi-image-preview/`、`/Volumes/code/workspace/shared/axi-ui/`、`/Volumes/code/workspace/shared/axi-registry/`、`/Volumes/code/workspace/tools/axi-app-cli/`
 
 ### Workspace Entry Render Host Boundary（PRD §10.2 硬约束）
 
