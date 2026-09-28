@@ -1943,6 +1943,212 @@ html[data-axi-docs-theme='light'] .app-main--home {
   border-top: 0;
 }
 
+/* VitePress text contract: keep document prose, navigation and states on the
+   same text/color/spacing scale instead of tuning each surface separately. */
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body {
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h1,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h2,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h3,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h4,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h5,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h6 {
+  font-weight: 600;
+  outline: none;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h1 {
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  font-size: 32px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h2 {
+  margin: 48px 0 16px;
+  border-top: 1px solid var(--axi-doc-vp-c-divider);
+  padding-top: 24px;
+  letter-spacing: -0.02em;
+  line-height: 1.3333333;
+  font-size: 24px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h3 {
+  margin: 32px 0 0;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  font-size: 20px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body h4 {
+  margin: 24px 0 0;
+  letter-spacing: -0.01em;
+  line-height: 1.3333333;
+  font-size: 18px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body p,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body img,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body summary {
+  margin: 16px 0;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body p {
+  line-height: 1.75;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body a,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body .md-link {
+  color: var(--axi-doc-vp-c-brand-1);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.25s ease, opacity 0.25s ease;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body a:hover,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body .md-link:hover {
+  color: var(--axi-doc-vp-c-brand-2);
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body strong {
+  color: var(--axi-doc-vp-c-text-1);
+  font-weight: 600;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body ul,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body ol {
+  margin: 16px 0;
+  padding-inline-start: 20px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body ul {
+  list-style: disc;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body ol {
+  list-style: decimal;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body li {
+  margin: 0;
+  line-height: 1.75;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body li + li {
+  margin-top: 8px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body li > ul,
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body li > ol {
+  margin: 8px 0 0;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body blockquote {
+  margin: 16px 0;
+  border-inline-start: 2px solid var(--axi-doc-vp-c-divider);
+  border-radius: 0;
+  padding-inline-start: 16px;
+  color: var(--axi-doc-vp-c-text-2);
+  background: transparent;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body blockquote > p {
+  margin: 0;
+  color: var(--axi-doc-vp-c-text-2);
+  font-size: 16px;
+}
+
+.axi-docs-home__guide-reader.document-detail-page__reader .markdown-body code.inline-code {
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: var(--axi-doc-vp-code-bg);
+  color: var(--axi-doc-vp-c-brand-1);
+  transition: color 0.25s ease, background-color 0.5s ease;
+}
+
+.axi-docs-home__callout {
+  display: block;
+  margin: 16px 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 16px;
+  background: var(--axi-doc-vp-c-brand-soft);
+  color: var(--axi-doc-vp-c-text-2);
+  font-size: 14px;
+  line-height: 1.7142857;
+}
+
+.axi-docs-home__callout strong {
+  font-weight: 600;
+  color: var(--axi-doc-vp-c-text-1);
+}
+
+.axi-docs-home__callout p {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.7142857;
+}
+
+.axi-docs-home__sidebar-link,
+.axi-docs-home__sidebar-subtoggle,
+.axi-docs-home__nav-link {
+  transition: color 0.25s ease;
+}
+
+.axi-docs-home__sidebar-link:hover,
+.axi-docs-home__sidebar-subtoggle:hover,
+.axi-docs-home__nav-link:hover {
+  color: var(--axi-doc-vp-c-brand-1);
+}
+
+.axi-docs-home__sidebar-link.active,
+.axi-docs-home__nav-link.active {
+  color: var(--axi-doc-vp-c-brand-1);
+  font-weight: 500;
+}
+
+.axi-docs-home__sidebar-link.active {
+  position: relative;
+}
+
+.axi-docs-home__sidebar-link.active::before {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: -16px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--axi-doc-vp-c-brand-1);
+  content: '';
+}
+
+.axi-docs-home__outline-card--toc .toc-header {
+  margin-bottom: 8px;
+  color: var(--axi-doc-vp-c-text-1);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.axi-docs-home__outline-card--toc .toc-item {
+  min-height: 0;
+  padding: 0;
+  color: var(--axi-doc-vp-c-text-2);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 32px;
+  transition: color 0.25s ease;
+}
+
+.axi-docs-home__outline-card--toc .toc-item:hover,
+.axi-docs-home__outline-card--toc .toc-item.active {
+  color: var(--axi-doc-vp-c-text-1);
+  background: transparent;
+}
+
 .axi-docs-home__top-link {
   display: none;
 }
