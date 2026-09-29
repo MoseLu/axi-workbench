@@ -11,7 +11,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use axum::extract::{Extension, State};
+use axum::extract::Extension;
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{any, get, post};
@@ -69,7 +69,7 @@ pub fn build_router(state: AppState) -> Router {
     let trace_context = middleware::tracing::layer();
     let logging = middleware::logging::layer();
     let cors = middleware::cors::layer();
-    let rate_limit = middleware::rate_limit::layer();
+    let rate_limit = middleware::rate_limit::default_layer();
 
     let api = Router::new()
         // Health (no auth)

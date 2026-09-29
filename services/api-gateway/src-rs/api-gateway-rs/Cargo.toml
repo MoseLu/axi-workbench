@@ -61,9 +61,23 @@ optional = true
 version = "0.13"
 optional = true
 
+[dependencies.jsonwebtoken]
+version = "9"
+optional = true
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["json", "rustls-tls"]
+optional = true
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+
 [features]
-default = ["rate-limit-memory", "tracing-otel"]
+default = ["rate-limit-memory", "tracing-otel", "metrics", "auth-jwt"]
 rate-limit-memory = ["governor"]
 tracing-otel = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk"]
 rate-limit-redis = ["dep:redis"]
 metrics = ["dep:prometheus"]
+auth-jwt = ["dep:jsonwebtoken", "dep:reqwest"]

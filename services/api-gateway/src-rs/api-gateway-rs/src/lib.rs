@@ -18,9 +18,11 @@
 #![forbid(unsafe_code)]
 #![warn(missing_debug_implementations)]
 
+pub mod metrics;
 pub mod middleware;
 pub mod router;
 pub mod upstream;
 
+pub use metrics::{metrics_handler, metrics_router, Metrics};
 pub use router::{build_router, AppState};
 pub use upstream::{UpstreamError, UpstreamService};
