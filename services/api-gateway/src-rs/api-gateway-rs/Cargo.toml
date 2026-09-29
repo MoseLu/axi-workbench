@@ -1,0 +1,69 @@
+[package]
+name = "api-gateway-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Axi Workbench API gateway (Rust migration target — replaces Go/Gin with axum 0.7)"
+license = "Proprietary"
+publish = false
+
+[lib]
+name = "api_gateway_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "api-gateway"
+path = "src/bin/api-gateway.rs"
+
+[dependencies]
+# HTTP / async runtime
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace", "cors", "limit"] }
+hyper = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Errors / logging
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Config / misc
+anyhow = "1"
+async-trait = "0.1"
+http = "1"
+http-body-util = "0.1"
+
+[dependencies.governor]
+version = "0.6"
+optional = true
+
+[dependencies.opentelemetry]
+version = "0.22"
+optional = true
+
+[dependencies.opentelemetry-otlp]
+version = "0.15"
+optional = true
+
+[dependencies.opentelemetry_sdk]
+version = "0.22"
+optional = true
+
+[dependencies.redis]
+version = "0.25"
+optional = true
+
+[dependencies.prometheus]
+version = "0.13"
+optional = true
+
+[features]
+default = ["rate-limit-memory", "tracing-otel"]
+rate-limit-memory = ["governor"]
+tracing-otel = ["dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk"]
+rate-limit-redis = ["dep:redis"]
+metrics = ["dep:prometheus"]
