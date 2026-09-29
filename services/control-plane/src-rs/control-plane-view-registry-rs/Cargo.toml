@@ -1,0 +1,21 @@
+[package]
+name = "control-plane-view-registry-rs"
+version = "0.1.0"
+edition = "2021"
+description = "View and snapshot registry for the Axi Workstation control plane. Replaces the snapshot section of src/control-plane.mjs, src/personal-os.mjs and src/pairing.mjs."
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+name = "control_plane_view_registry_rs"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+tracing = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
