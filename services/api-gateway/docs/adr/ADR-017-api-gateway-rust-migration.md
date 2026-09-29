@@ -1,6 +1,6 @@
 # ADR-017 — API Gateway Rust Migration
 
-- **Status**: Proposed
+- **Status**: Accepted (Stage 2)
 - **Date**: 2026-09-29
 - **Authors**: workbench/api-gateway maintainers
 - **Supersedes**: none

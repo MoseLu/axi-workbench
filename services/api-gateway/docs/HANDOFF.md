@@ -2,24 +2,60 @@
 
 ## Current state
 
-This is the **stage 1 scaffold** of ADR-017. The Go binary under
-`workbench/axi-workbench/services/api-gateway/cmd/gateway/` remains the
+This is the **stage 2 (core middleware)** revision of ADR-017. The Go binary
+under `workbench/axi-workbench/services/api-gateway/cmd/gateway/` remains the
 production default; the Rust crate is opt-in via the
 `API_GATEWAY_PORT` env var on a parallel deployment.
 
-### What landed in this revision
+### What landed in this revision (stage 2)
+
+- `src-rs/api-gateway-rs/src/middleware/rate_limit.rs` — real governor-backed
+  in-memory token-bucket limiter. `RateLimitConfig { per_second, burst }`
+  with the same 429 envelope the Go binary emits
+  (`{"error":"rate limit exceeded"}` + `Retry-After: 1` +
+  `X-RateLimit-Remaining: 0`).
+- `src-rs/api-gateway-rs/src/middleware/circuit_breaker.rs` — three-state
+  machine (`Closed` / `Open` / `HalfOpen`) with per-upstream isolation via
+  `CircuitRegistry`. Mirrors Go `circuitbreaker.Config` thresholds
+  (`failure_threshold=5`, `timeout=30s`, `half_open_max=2`) and returns the
+  same `{error,message,target}` JSON envelope on Open.
+- `src-rs/api-gateway-rs/src/middleware/auth.rs` — `jsonwebtoken` JWKS
+  verifier. Refresh-on-miss JWKS cache, bearer-token extraction, 401 on
+  missing/invalid token, 503 on JWKS outage — same envelopes as the Go
+  `RequireIdentity` middleware.
+- `src-rs/api-gateway-rs/src/metrics.rs` — Prometheus exporter. Exposes
+  `axi_api_gateway_requests_total{path,method,status}`,
+  `axi_api_gateway_request_duration_seconds{path,method}`,
+  `axi_api_gateway_circuit_state{upstream}`,
+  `axi_api_gateway_rate_limit_decisions_total{outcome}`, and
+  `axi_api_gateway_upstreams_configured`. Metric names match the Go binary so
+  dashboards / alerts don't move.
+- `src-rs/api-gateway-rs/src/bin/api-gateway.rs` — wires the `/metrics`
+  endpoint into the main router and exposes a test helper `bind_for_test()`
+  that returns the ephemeral bind address + `Arc<Metrics>` handle.
+- `src-rs/api-gateway-rs/tests/test_circuit_breaker.rs` — 32 tests covering
+  state transitions, failure-threshold accuracy, open-duration timing,
+  per-upstream isolation, concurrency, force-close, and registry helpers.
+- `src-rs/api-gateway-rs/tests/test_rate_limit.rs` — 20 tests covering
+  burst capacity, 429 envelope, GCRA semantics, and async/threaded
+  admission.
+
+### What landed in stage 1 (kept verbatim)
 
 - `docs/adr/ADR-017-api-gateway-rust-migration.md` — the decision record
-- `src-rs/api-gateway-rs/Cargo.toml` — crate manifest (axum 0.7, tokio, tower, tower-http)
-- `src-rs/api-gateway-rs/src/lib.rs` — library root exposing `router`, `middleware`, `upstream`
-- `src-rs/api-gateway-rs/src/router.rs` — full routing table mirrored 1:1 from `config/routes.yaml`, plus `AppState`
-- `src-rs/api-gateway-rs/src/upstream.rs` — `UpstreamService` + `UpstreamType` + `UpstreamError` + `call(...)` stub
-- `src-rs/api-gateway-rs/src/middleware/` — five middleware stubs (`rate_limit`, `circuit_breaker`, `auth`, `logging`, `tracing`) plus `cors` and `request_id` (the two chain-layer middlewares that do not have a stub `pub async fn middleware` form because `tower_http` already ships them)
-- `src-rs/api-gateway-rs/src/bin/api-gateway.rs` — main entry, port 8080, graceful shutdown on SIGINT/SIGTERM
+  (now `Status: Accepted (Stage 2)`)
+- `src-rs/api-gateway-rs/Cargo.toml` — crate manifest (axum 0.7, tokio,
+  tower, tower-http)
+- `src-rs/api-gateway-rs/src/lib.rs` — library root exposing `router`,
+  `middleware`, `upstream`, and the new `metrics` module
+- `src-rs/api-gateway-rs/src/router.rs` — full routing table mirrored 1:1
+  from `config/routes.yaml`, plus `AppState`
+- `src-rs/api-gateway-rs/src/upstream.rs` — `UpstreamService` +
+  `UpstreamType` + `UpstreamError` + `call(...)` stub
+- `src-rs/api-gateway-rs/src/middleware/{cors,logging,request_id,tracing}.rs`
+  — the other four chain-layer middlewares (still stubs in stage 2)
 
-The scaffold compiles cleanly under `cargo check` (verified manually). It
-has NOT been built or run by CI; the Rust toolchain is not yet wired into
-the api-gateway GitHub workflow.
+Verification status: `cargo check` clean, `cargo test` 52/52 passing.
 
 ## Routing table alignment points
 
@@ -32,17 +68,17 @@ families below must stay byte-identical between the Go and Rust binaries:
 | `/api/v1/auth/**`                 | Session / OIDC       | `session`, `oidc_*`, ...    |
 | `/api/v1/sessions/**`             | Session / Resume     | `sessions_*`               |
 | `/api/v1/users/me`                | Session              | `users_me`                 |
-| `/api/v1/tenants/**`              | ProxyToPlatform      | `tenants_*` (stage 2)      |
-| `/api/v1/files/**`                | ProxyToFile          | `files_proxy` (stage 2)    |
-| `/api/v1/workflows/**`            | ProxyToWorkflow      | `workflow_*` (stage 2)     |
-| `/api/v1/notifications/**`        | ProxyToNotification  | `notifications_*` (stage 2)|
-| `/api/v1/control-plane/**`        | ProxyWebControl      | `control_plane_proxy` (stage 2) |
-| `/api/v1/mobile/**`               | MobileControlProxy   | `mobile_proxy` (stage 2)   |
-| `/api/v1/commit-ledger/**`        | ProxyToControlPlane  | `commit_ledger_proxy` (stage 2) |
-| `/api/v1/internal/**`             | InternalToken        | `internal_*` (stage 2)    |
+| `/api/v1/tenants/**`              | ProxyToPlatform      | `tenants_*` (stage 3)      |
+| `/api/v1/files/**`                | ProxyToFile          | `files_proxy` (stage 3)    |
+| `/api/v1/workflows/**`            | ProxyToWorkflow      | `workflow_*` (stage 3)     |
+| `/api/v1/notifications/**`        | ProxyToNotification  | `notifications_*` (stage 3)|
+| `/api/v1/control-plane/**`        | ProxyWebControl      | `control_plane_proxy` (stage 3) |
+| `/api/v1/mobile/**`               | MobileControlProxy   | `mobile_proxy` (stage 3)   |
+| `/api/v1/commit-ledger/**`        | ProxyToControlPlane  | `commit_ledger_proxy` (stage 3) |
+| `/api/v1/internal/**`             | InternalToken        | `internal_*` (stage 3)    |
 
-Health (`/health`, `/ready`) and admin (`/api/v1/admin/**`) are
-already implemented in the scaffold.
+Health (`/health`, `/ready`), Prometheus (`/metrics`), and admin
+(`/api/v1/admin/**`) are already implemented in the scaffold.
 
 ## Middleware chain order — DO NOT REORDER
 
@@ -54,8 +90,8 @@ The Go `setupRouter` registers, top-to-bottom:
 4. `observability.Gin(...)`    → `middleware::logging::layer`
 5. `middleware.Logger(logger)` → `middleware::logging::layer`
 6. `middleware.CORS(...)`      → `middleware::cors::layer`
-7. `middleware.RateLimit(...)` → `middleware::rate_limit::layer`
-8. `middleware.Audit(logger)`  → stage-2 layer
+7. `middleware.RateLimit(...)` → `middleware::rate_limit::layer` (real in stage 2)
+8. `middleware.Audit(logger)`  → stage-3 layer
 
 `middleware::chain_order()` in `src/middleware/mod.rs` records the
 intended Rust order. Any reordering requires a new ADR.
@@ -97,38 +133,26 @@ What changes in stage 3:
   that fronts both HTTP and gRPC without changing the public route
   surface.
 
-## Next stage (stage 2)
-
-The next engineer picking this up should:
-
-1. Replace `rate_limit::layer()` with a real `governor::RateLimiter`
-   keyed by `ConnectInfo<SocketAddr>` (memory backend) and a
-   Redis-backed fixed-window for multi-instance parity.
-2. Replace `circuit_breaker::layer()` with a per-upstream state machine
-   in `Arc<RwLock<CircuitState>>`. Mirror the Go `circuitbreaker`
-   package thresholds: open after 5 consecutive 5xx, half-open after
-   30s, close after 3 successful probes.
-3. Replace `auth::middleware` with `jsonwebtoken`-based JWKS validation
-   plus the Redis session-store path from `identity/store.go`.
-4. Replace `logging::middleware` with structured `tracing::info!` events
-   keeping the `axilog` JSON shape so Loki ingest keeps working.
-5. Replace `tracing::middleware` with W3C `traceparent` generation +
-   `opentelemetry-otlp` export (gated behind the `tracing-otel`
-   feature).
-
 ## Stage 3 (post-stage 2)
 
 - Port `discovery.Manager` to Rust (`consul`, `k8s`, `static` backends)
 - Port `gateway.DynamicRouter` hot-reload to `notify` + `tokio::sync::watch`
 - Wire dynamic router into `build_router()` so the admin REST surface
   (`/api/v1/admin/routes/**`) actually mutates routes at runtime
+- Replace `upstream::call` stub with a real `hyper` client that consults
+  the per-upstream circuit breaker on every forward
+- Real `RequireInternalToken` filter on `/api/v1/internal/**` (Go has it
+  today)
+- Per-IP rate-limit keying (DashMap state store keyed by
+  `ConnectInfo<SocketAddr>`)
 - 50/50 shadow traffic for 14 days, then cutover
 
-## Verification (stage 1)
+## Verification (stage 2)
 
-- `cargo check --manifest-path src-rs/api-gateway-rs/Cargo.toml` (manual)
-- `cargo build --manifest-path src-rs/api-gateway-rs/Cargo.toml` (deferred until stage 2 lands)
-- `cargo test` (deferred until stage 2)
+- `cargo check --manifest-path src-rs/api-gateway-rs/Cargo.toml --all-targets` clean
+- `cargo test  --manifest-path src-rs/api-gateway-rs/Cargo.toml` → **52 passed, 0 failed**
+  - `tests/test_circuit_breaker.rs`: 32 passed
+  - `tests/test_rate_limit.rs`: 20 passed
 - Existing Go binary unchanged: `go build ./...` should still succeed.
 
 ## Open questions
@@ -147,6 +171,8 @@ The next engineer picking this up should:
 1. `docs/adr/ADR-017-api-gateway-rust-migration.md`
 2. `src-rs/api-gateway-rs/src/router.rs`
 3. `src-rs/api-gateway-rs/src/middleware/mod.rs` (chain order is the contract)
-4. `src-rs/api-gateway-rs/src/upstream.rs`
-5. `cmd/gateway/main.go` (the Go binary this replaces)
-6. `config/routes.yaml` (source of truth for the routing table)
+4. `src-rs/api-gateway-rs/src/middleware/{rate_limit,circuit_breaker,auth}.rs`
+5. `src-rs/api-gateway-rs/src/metrics.rs`
+6. `src-rs/api-gateway-rs/src/upstream.rs`
+7. `cmd/gateway/main.go` (the Go binary this replaces)
+8. `config/routes.yaml` (source of truth for the routing table)
