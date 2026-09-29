@@ -11,10 +11,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{Extension, State};
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::routing::{any, get, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
@@ -142,7 +142,7 @@ pub fn build_router(state: AppState) -> Router {
         // Control plane (web)
         .route("/api/v1/control-plane/{*path}", get(control_plane_proxy))
         // Mobile control plane
-        .route("/api/v1/mobile/pair/{*path}", mobile_proxy)
+        .route("/api/v1/mobile/pair/{*path}", any(mobile_proxy))
         .route("/api/v1/mobile/auth/{*path}", post(mobile_proxy))
         .route("/api/v1/mobile/workspace/{*path}", get(mobile_proxy))
         .route("/api/v1/mobile/handoffs/{*path}", get(mobile_proxy))
@@ -174,24 +174,21 @@ pub fn build_router(state: AppState) -> Router {
             post(internal_zitadel_qr),
         )
         // Admin routes (dynamic router REST surface)
-        .nest("/api/v1/admin", admin_routes())
-        // Stage-1 stub: protected layers are no-ops that simply forward.
-        // Stage 2 wires `RequireIdentity` + `Audit` onto the protected `Router`
-        // returned here.
-        .layer(axum::Extension(state.clone()));
+        .nest("/api/v1/admin", admin_routes());
 
     Router::new()
         .merge(api)
-        .layer(axum::Extension(state))
+        .layer(axum::Extension(state.clone()))
         // Outer middleware chain — order matters.
         .layer(request_id)
         .layer(trace_context)
         .layer(logging)
         .layer(cors)
         .layer(rate_limit)
+        .layer(axum::Extension(state))
 }
 
-fn admin_routes() -> Router<AppState> {
+fn admin_routes() -> Router {
     Router::new()
         .route("/routes", get(admin_list_routes).post(admin_add_route))
         .route(
@@ -211,7 +208,7 @@ async fn health() -> Response {
     (StatusCode::OK, Json(serde_json::json!({"status": "ok"}))).into_response()
 }
 
-async fn ready(State(state): State<AppState>) -> Response {
+async fn ready(Extension(state): Extension<AppState>) -> Response {
     let mut upstreams_ok = 0;
     for upstream in state.upstreams.values() {
         if !upstream.base_url.is_empty() {
@@ -222,7 +219,7 @@ async fn ready(State(state): State<AppState>) -> Response {
         StatusCode::OK,
         Json(serde_json::json!({
             "status": "ready",
-            "service": state.service_name,
+            "service": *state.service_name,
             "upstreams_configured": upstreams_ok,
         })),
     )
