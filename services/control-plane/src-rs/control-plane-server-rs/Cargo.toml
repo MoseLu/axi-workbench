@@ -1,0 +1,26 @@
+[package]
+name = "control-plane-server-rs"
+version = "0.1.0"
+edition = "2021"
+description = "HTTP/gRPC server aggregator for the Axi Workstation control plane Rust crates. Replaces src/server.mjs."
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lib]
+name = "control_plane_server_rs"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+tracing = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+control-plane-event-store-rs = { path = "../control-plane-event-store-rs" }
+control-plane-outbox-rs = { path = "../control-plane-outbox-rs" }
+control-plane-resource-policy-rs = { path = "../control-plane-resource-policy-rs" }
+control-plane-view-registry-rs = { path = "../control-plane-view-registry-rs" }
