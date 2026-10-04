@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-10-03T15:09:18.120Z",
+  "generatedAt": "2026-10-04T02:11:12.156Z",
   "source": "foundation/workspace-governance/workspace.json",
   "summary": {
     "total": 25,
@@ -290,7 +290,7 @@
       "graphId": "axi-notify",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 41 days old (max 30)"
+        "verification is stale: 42 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
@@ -540,7 +540,7 @@
       "graphId": "axi-skills",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 41 days old (max 30)"
+        "verification is stale: 42 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",

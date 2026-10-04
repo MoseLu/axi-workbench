@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-10-03T15:09:18.120Z",
+  "generatedAt": "2026-10-04T02:11:12.156Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 44,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -239,7 +239,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 41 days old (max 30)"
+          "verification is stale: 42 days old (max 30)"
         ]
       },
       "verify": [
@@ -269,7 +269,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -326,7 +326,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -584,7 +584,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 41 days old (max 30)"
+          "verification is stale: 42 days old (max 30)"
         ]
       },
       "verify": [
@@ -646,7 +646,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 41 days old (max 30)"
+          "verification is stale: 42 days old (max 30)"
         ]
       },
       "verify": [
@@ -813,7 +813,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -952,7 +952,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 41 days old (max 30)"
+          "verification is stale: 42 days old (max 30)"
         ]
       },
       "verify": [
@@ -1183,7 +1183,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1680,7 +1680,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:documented",
@@ -1753,7 +1753,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1810,7 +1810,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1869,7 +1869,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1980,7 +1980,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2038,7 +2038,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2104,7 +2104,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2161,7 +2161,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2222,7 +2222,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2279,7 +2279,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2336,7 +2336,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2400,7 +2400,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2462,7 +2462,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2589,7 +2589,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "updatedAt": "2026-10-04T02:11:12.156Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
