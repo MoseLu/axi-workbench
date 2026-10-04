@@ -1,12 +1,12 @@
 # Workspace Project Handoff Readiness
 
-Generated: 2026-09-26T07:52:04.440Z
+Generated: 2026-10-04T02:09:04.618Z
 
-- Total: 24
+- Total: 25
 - Verified: 15
-- Documented: 7
-- Stale: 1
-- Unready: 1
+- Documented: 6
+- Stale: 2
+- Unready: 2
 
 | Project | Readiness | Score | Last verified | Current work |
 |---|---|---:|---|---|
@@ -20,10 +20,10 @@ Generated: 2026-09-26T07:52:04.440Z
 | `axi-pet-desktop` | verified | 10/10 | 2026-09-25 | Maintain the Electron shell + React frontend sync. |
 | `axi-registry` | verified | 10/10 | 2026-09-25 | Keep the zero-context manifest aligned with actual commands and package contracts. |
 | `axi-rules` | verified | 10/10 | 2026-09-25 | Ship and harden scripts/handoff-workflow.py as the AR-HANDOFF-004 mechanical gate. |
-| `axi-runtime` | documented | 10/10 | 2026-09-25 | - |
-| `axi-skills` | verified | 10/10 | 2026-09-25 | Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state. |
+| `axi-runtime` | unready | 10/10 | 2026-09-29 | ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011 |
+| `axi-skills` | stale | 10/10 | 2026-08-23 | Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state. |
 | `axi-soul-world` | verified | 10/10 | 2026-09-25 | W1-W8 restricted delivery is integrated in dev and origin/dev at merge 795a804; the W5-W8 topic head b9dfef3 is its second parent. |
-| `axi-sync` | documented | 10/10 | 2026-09-25 | - |
+| `axi-sync` | documented | 10/10 | 2026-09-25 | ADR-014 Rust migration (Proposed) — Phase 1 scaffold landed at src-rs/axi-sync-rs/; Phase 3 gated on ADR-011 (axi-kernel-rs) |
 | `axi-ui` | verified | 10/10 | 2026-09-25 | Own the canonical Black Gold preset in @axi/tokens and @axi/core. |
 | `axi-video-downloader` | verified | 10/10 | 2026-09-25 | Keep the zero-context manifest aligned with the actual Python entrypoints and hardware prerequisites. |
 | `axi-workbench` | unready | 10/10 | 2026-09-13 | Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence |
@@ -31,6 +31,7 @@ Generated: 2026-09-26T07:52:04.440Z
 | `axi-workbench-desktop-dist` | documented | 10/10 | 2026-09-25 | Verify Tauri build pipeline |
 | `axi-workbench-mobile-dist` | documented | 10/10 | 2026-09-25 | Verify mobile-specific build targets |
 | `axi-workbench-web-dist` | documented | 10/10 | 2026-09-25 | Verify CI/CD pipeline integration |
-| `axi-workspace-governance` | verified | 10/10 | 2026-09-25 | Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync. |
+| `axi-workspace-governance` | verified | 10/10 | 2026-09-29 | Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync. |
+| `axi-workspace-rs` | verified | 10/10 | 2026-10-01 | M7 全链收口：wave parity-port + M7.1 rustfmt + M7.5 D4 registry 闭环 + M7.6 strict clippy/VERIFICATION + M7.7 corepack/incubator 双开关锁 + M7.8 registry 路径 bug 修复（incubator-sync / docs-sync）。 |
 | `ielts-vocab` | verified | 10/10 | 2026-09-25 | Keep the deployed split backend stable. |
 | `story-graph` | verified | 10/10 | 2026-09-25 | 多代叙事图谱 v2 已完成：默认长卷只读取证据闭环的叙事事件，使用主线地图、五段式账本与人物/组织/地点档案解释人物变化；待证实体与关系停留在审核队列。 |

@@ -4,14 +4,14 @@ title: Axi Workspace Integration Map
 type: reference
 status: evergreen
 tags: [workspace, integration, contracts]
-created: 2026-09-28
-modified: 2026-09-28
+created: 2026-10-04
+modified: 2026-10-04
 agent-readable: true
 ---
 
 # Axi Workspace Integration Map
 
-最后生成：2026-09-28
+最后生成：2026-10-04
 
 ## 跨仓协作契约
 
@@ -28,12 +28,14 @@ agent-readable: true
 
 ## 本地权威源（允许无远端）
 
+- `candidates/axi-file-preview` | Axi File Preview | compliance=`node-frontend-approved`
 - `candidates/pelagic` | Pelagic Open Water | compliance=`node-frontend-approved`
 - `foundation/axi-apps` | Axi Applications | compliance=`axi-apps`
 - `foundation/axi-inbox` | Axi Inbox | compliance=`axi-inbox`
 - `foundation/axi-runtime` | Axi Governance Runtime | compliance=`axi-runtime`
 - `foundation/axi-sync` | Axi Change Sync | compliance=`axi-sync`
 - `foundation/axi-observability` | Axi Observability | compliance=`node-monorepo-approved`
+- `foundation/axi-workspace-rs` | Axi Workspace Rust Monorepo | compliance=`rust-monorepo`
 - `agent-cluster/axi-agent/tools/axi-feishu-codex-bridge` | Axi Feishu Codex Bridge | compliance=`python-tool-local-runtime`
 
 ## 仓库命名策略

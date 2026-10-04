@@ -4,14 +4,27 @@ title: Axi Workspace Ownership Matrix
 type: reference
 status: evergreen
 tags: [workspace, ownership, governance]
-created: 2026-09-28
-modified: 2026-09-28
+created: 2026-10-04
+modified: 2026-10-04
 agent-readable: true
 ---
 
 # Axi Workspace Ownership Matrix
 
-最后生成：2026-09-28
+最后生成：2026-10-04
+
+## external
+
+| Repo | Section | Lifecycle | Canonical | Remote |
+|---|---|---|---|---|
+| `references/short-term/blinko` | references | short-term-reference | no | [link](https://github.com/blinkospace/blinko.git) |
+| `references/short-term/cockpit-tools` | references | short-term-reference | no | [link](https://github.com/jlcodes99/cockpit-tools.git) |
+| `references/short-term/comfyui` | references | short-term-reference | no | [link](https://github.com/comfyanonymous/ComfyUI.git) |
+| `references/short-term/dbskill` | references | short-term-reference | no | [link](https://github.com/dontbesilent2025/dbskill.git) |
+| `references/short-term/image2prompt` | references | short-term-reference | no | [link](https://github.com/pingan8787/image2prompt.git) |
+| `references/short-term/opencodex` | references | short-term-reference | no | [link](https://github.com/MoseLu/opencodex.git) |
+| `references/short-term/sub2api` | references | short-term-reference | no | [link](https://github.com/Wei-Shaw/sub2api.git) |
+| `references/short-term/tidewater-reference` | references | short-term-reference | no | [link](https://github.com/dgreenheck/tidewater.git) |
 
 ## hubu
 
@@ -24,6 +37,7 @@ agent-readable: true
 
 | Repo | Section | Lifecycle | Canonical | Remote |
 |---|---|---|---|---|
+| `candidates/axi-file-preview` | candidates | prototype | yes | - |
 | `candidates/voice-assistant-on-device-speech-recognition` | candidates | prototype | yes | [link](https://github.com/MoseLu/axi-assistant-voice.git) |
 | `foundation/axi-registry` | infra | active-infra | yes | [link](https://github.com/axiomaticworld/axi-registry.git) |
 | `foundation/axi-apps` | projects | active-promoted-incubation | yes | - |
@@ -40,6 +54,7 @@ agent-readable: true
 | `foundation/axi-rules` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-rules.git) |
 | `foundation/axi-skills` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-skills.git) |
 | `foundation/axi-ui` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-ui.git) |
+| `foundation/axi-workspace-rs` | shared | active-shared-provider | yes | - |
 | `agent-cluster/axi-agent/tools/axi-feishu-codex-bridge` | tools | active-tool-local-runtime | yes | [link](https://github.com/MoseLu/axi-feishu-codex-bridge.git) |
 | `tools/axi-video-downloader` | tools | active-tool-local-runtime | yes | [link](https://github.com/MoseLu/Axi-Video-Downloader.git) |
 | `agent-cluster/axi-agent` | agent | active-core-platform | yes | [link](https://github.com/MoseLu/axi-agent.git) |

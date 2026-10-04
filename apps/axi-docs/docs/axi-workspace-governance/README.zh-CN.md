@@ -19,7 +19,7 @@ agent-readable: true
 
 - 工作区容器：`/Volumes/code/workspace`（非 Git 仓库 / 非代码提交单元）
 - 治理仓库根目录：`/Volumes/code/workspace/foundation/workspace-governance`
-- 治理仓库远端：`https://github.com/axiomaticworld/axi-workspace-governance.git`
+- 治理仓库远端：`https://github.com/MoseLu/axi-workspace-governance.git`
 - 已登记条目：28
 - canonical 条目：25
 - active / active-* 条目：24

@@ -4,21 +4,21 @@ title: Axi Workspace Project Completion
 type: reference
 status: evergreen
 tags: [workspace, completion, status]
-created: 2026-09-28
-modified: 2026-09-28
+created: 2026-10-04
+modified: 2026-10-04
 agent-readable: true
 ---
 
 # Axi Workspace Project Completion
 
-最后生成：2026-09-28
+最后生成：2026-10-04
 
 ## 摘要
 
-- 已登记项目：42
-- Axi 项目：26
+- 已登记项目：44
+- Axi 项目：28
 - 完成：1
-- 可用及以上：20
+- 可用及以上：21
 - 阻塞：0
 
 ## 阶段口径
@@ -41,6 +41,7 @@ agent-readable: true
 | `axi-apps` | 可用 | 低 | partial | docs:partial<br>handoff:documented | 补齐 workspace.graph.json verify 命令。 |
 | `axi-coder` | 可用 | 高 | partial | Product surface and workspace E2E contract tests define the Axi Coder capability boundary.<br>Hosted dashboard registration exposes Axi Coder under /apps/axi-coder/overview.<br>... | Add native Tauri completion command only if the static snapshot stops being sufficient. |
 | `axi-feishu-codex-bridge` | 未评估 | 低 | partial | docs:partial<br>handoff:verified<br>... | - |
+| `axi-file-preview` | 未评估 | 低 | partial | docs:partial<br>handoff:verified<br>... | 补齐 TODO.md，让待办和里程碑可审计。<br>补齐 MILESTONE.md，让待办和里程碑可审计。<br>... |
 | `axi-image-preview` | 完成 | 高 | partial | README documents dev/build/preview and wallpaper MCP commands.<br>package.json exposes test, build, and mcp:wallpapers scripts.<br>... | polish/content expansion |
 | `axi-inbox` | 可用 | 低 | partial | docs:partial<br>handoff:documented | 补齐 workspace.graph.json verify 命令。 |
 | `axi-kernel` | 可用 | 低 | partial | docs:partial<br>handoff:verified | 补齐 workspace.graph.json verify 命令。 |
@@ -49,7 +50,7 @@ agent-readable: true
 | `axi-pet-desktop` | 可用 | 高 | partial | Root AGENTS.md, docs/HANDOFF.md, root CHANGE.md written on 2026-06-19.<br>foundation/workspace-governance/workspace.json has axi-pet-desktop entry.<br>... | Add GitHub remote + .github/workflows/* CI lane (P1, owner-approved).<br>Lock contract package version-sync workflow with axi-pet (P1).<br>... |
 | `axi-registry` | 可用 | 中 | partial | Workspace graph registers registry health verification.<br>Axi UI declares the registry as its package distribution boundary.<br>... | Keep registry health visible when shared packages are published or consumed. |
 | `axi-rules` | 未评估 | 低 | partial | docs:partial<br>handoff:verified<br>... | - |
-| `axi-runtime` | 可用 | 低 | partial | docs:partial<br>handoff:documented | 补齐 workspace.graph.json verify 命令。 |
+| `axi-runtime` | 可用 | 低 | partial | docs:partial<br>handoff:unready | 补齐 workspace.graph.json verify 命令。 |
 | `axi-skills` | 可用 | 中 | ready | Repository verifier covers skill entrypoints, logical names, forbidden runtime artifacts, and generated index output.<br>i18n verifier protects the English runtime source while tracking translation batch coverage.<br>... | Keep the generated skill index and i18n batch manifest synchronized after skill catalog changes. |
 | `axi-soul-world` | 未评估 | 中 | partial | products/axi-soul-world/AGENTS.md<br>products/axi-soul-world/docs/project-docs.manifest.json<br>... | Run the Android device behavior flow and record state-specific evidence.<br>Retire the preserved incubation rollback checkout only after owner acceptance.<br>... |
 | `axi-sync` | 可用 | 低 | partial | docs:partial<br>handoff:documented | 补齐 workspace.graph.json verify 命令。 |
@@ -61,7 +62,8 @@ agent-readable: true
 | `axi-workbench-mobile-dist` | 可用 | 高 | partial | distributions/axi-workbench-mobile/package.json<br>distributions/axi-workbench-mobile/pnpm-workspace.yaml<br>... | Verify mobile-specific build targets<br>Confirm platform-specific package publishing<br>... |
 | `axi-workbench-web-dist` | 可用 | 高 | partial | distributions/axi-workbench-web/package.json<br>distributions/axi-workbench-web/pnpm-workspace.yaml<br>... | Verify CI/CD pipeline integration<br>Confirm package publish workflow<br>... |
 | `axi-workspace-governance` | 可用 | 中 | partial | workspace:docs:sync generates catalog and completion docs.<br>workspace-project validate remains the root graph sanity check.<br>... | Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves. |
-| `observability` | 未评估 | 低 | partial | docs:partial<br>handoff:documented<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `axi-workspace-rs` | 可用 | 中 | partial | docs:partial<br>handoff:verified<br>... | B-class remote surfaces stay Node-side until owner opt-in (docs/OWNER_DECISION_BACKLOG.md).<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `observability` | 未评估 | 低 | partial | docs:partial<br>handoff:documented<br>... | 补齐 MILESTONE.md，让待办和里程碑可审计。<br>补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
 
 ## 其他纳管项目
 

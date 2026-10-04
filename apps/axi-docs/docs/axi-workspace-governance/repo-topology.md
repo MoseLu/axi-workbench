@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-09-28
-modified: 2026-09-28
+created: 2026-10-04
+modified: 2026-10-04
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-09-28
+最后生成：2026-10-04
 
 ## 控制面
 
@@ -42,7 +42,9 @@ agent-readable: true
 - `archive/axi-sports-management-app` | 体育管理应用 | branch=`dev` | canonical=yes | compliance=`polyrepo-mixed-stack`
   remote: https://github.com/MoseLu/axi-sports-management-app.git
 - `foundation/axi-apps` | Axi Applications | branch=`dev` | canonical=yes | compliance=`axi-apps`
+  remote: https://github.com/MoseLu/axi-apps.git
 - `foundation/axi-inbox` | Axi Inbox | branch=`dev` | canonical=yes | compliance=`axi-inbox`
+  remote: https://github.com/MoseLu/axi-inbox.git
 - `foundation/axi-kernel` | Axi Kernel | branch=`dev` | canonical=yes | compliance=`object-registry`
   remote: https://github.com/MoseLu/axi-kernel.git
 - `foundation/axi-notify` | Axi Notify | branch=`dev` | canonical=yes | compliance=`android-fullstack`
@@ -50,18 +52,19 @@ agent-readable: true
 - `foundation/axi-runtime` | Axi Governance Runtime | branch=`dev` | canonical=yes | compliance=`axi-runtime`
   remote: https://github.com/MoseLu/axi-runtime.git
 - `foundation/axi-sync` | Axi Change Sync | branch=`dev` | canonical=yes | compliance=`axi-sync`
+  remote: https://github.com/MoseLu/axi-sync.git
 - `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`dev` | canonical=yes | compliance=`personal-os-cli`
   remote: https://github.com/MoseLu/axi-workbench-cli.git
 - `workbench/axi-image-preview` | Axi Image Preview | branch=`dev` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/MoseLu/axi-image-preview.git
-- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`dev-clean-2026-09-28` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
 - `workbench/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
 
-- `products/axi-soul-world` | Axi Soul World | branch=`lane-c/web-admin-resource-search` | canonical=yes | compliance=`android-fullstack`
+- `products/axi-soul-world` | Axi Soul World | branch=`dev` | canonical=yes | compliance=`android-fullstack`
   remote: https://github.com/MoseLu/Axi-Soul-World.git
 - `products/ielts-vocab` | IELTS Vocabulary | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/ielts-vocab.git
@@ -71,12 +74,15 @@ agent-readable: true
 ## Shared
 
 - `foundation/axi-observability` | Axi Observability | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+  remote: https://github.com/MoseLu/axi-observability.git
 - `foundation/axi-rules` | Axi Rules | branch=`dev` | canonical=yes | compliance=`constraint-index`
   remote: https://github.com/MoseLu/axi-rules.git
 - `foundation/axi-skills` | Axi Skills | branch=`dev` | canonical=yes | compliance=`agent-skill-catalog`
   remote: https://github.com/MoseLu/axi-skills.git
 - `foundation/axi-ui` | Axi UI | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-ui.git
+- `foundation/axi-workspace-rs` | Axi Workspace Rust Monorepo | branch=`agent/install-git-hooks` | canonical=yes | compliance=`rust-monorepo`
+  remote: https://github.com/MoseLu/axi-workspace-rs.git
 
 ## Tools
 
@@ -89,6 +95,26 @@ agent-readable: true
 
 - `agent-cluster/axi-agent` | Axi Agent Platform | branch=`dev` | canonical=yes | compliance=`agent-platform`
   remote: https://github.com/MoseLu/axi-agent.git
+
+## References
+
+- `references/short-term/blinko` | Blinko Reference | branch=`main` | canonical=no | compliance=`-`
+  remote: https://github.com/blinkospace/blinko.git
+- `references/short-term/cockpit-tools` | Cockpit Tools Reference | branch=`main` | canonical=no | compliance=`-`
+  remote: https://github.com/jlcodes99/cockpit-tools.git
+- `references/short-term/comfyui` | ComfyUI Reference | branch=`master` | canonical=no | compliance=`-`
+  remote: https://github.com/comfyanonymous/ComfyUI.git
+- `references/short-term/dbskill` | DBSkill Reference | branch=`main` | canonical=no | compliance=`-`
+  remote: https://github.com/dontbesilent2025/dbskill.git
+- `references/short-term/image2prompt` | Image2Prompt Reference | branch=`main` | canonical=no | compliance=`-`
+  remote: https://github.com/pingan8787/image2prompt.git
+- `references/short-term/opencodex` | OpenCodex Reference | branch=`dev` | canonical=no | compliance=`-`
+  remote: https://github.com/MoseLu/opencodex.git
+  upstream: https://github.com/AITabby/opencodex.git
+- `references/short-term/sub2api` | Sub2API Reference | branch=`main` | canonical=no | compliance=`-`
+  remote: https://github.com/Wei-Shaw/sub2api.git
+- `references/short-term/tidewater-reference` | Tidewater Reference | branch=`main` | canonical=no | compliance=`-`
+  remote: https://github.com/dgreenheck/tidewater.git
 
 ## 已批准项目级 Monorepo
 
