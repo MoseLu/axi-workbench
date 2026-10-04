@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { ChevronLeft, Fullscreen, Home, Pin, RefreshCw, Shrink, X } from "lucide-react";
 
 import type { NavRouteKey, RouteTab } from "../app-registry";
-import { AxiPopoverMenu } from "@axi/crud";
-import { AxiSvgIcon } from "@axi/core";
+import { AxiPopoverMenu } from "@axi/crud";import { AxiSvgIcon } from "@axi/icons";
+
 import { AxiTabActionMenu, AxiTabMenu } from "@axi/shell";
 import type { AppSettings } from "../settings/useAppSettings";
 

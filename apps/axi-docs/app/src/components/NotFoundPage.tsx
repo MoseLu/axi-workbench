@@ -16,7 +16,13 @@ export function NotFoundPage({
   onSecondaryAction,
 }: NotFoundPageProps) {
   return (
-    <div className="workspace-empty-state workspace-empty-state--centered">
+    <div
+      className="workspace-empty-state workspace-empty-state--centered"
+      role="status"
+      aria-live="polite"
+      data-testid="not-found"
+      data-state="not-found"
+    >
       <div className="workspace-empty-state__eyebrow">404 / Route Recovery</div>
       <h2>{title}</h2>
       <p>{description}</p>
@@ -31,11 +37,21 @@ export function NotFoundPage({
         </div>
       </div>
       <div className="workspace-empty-state__actions">
-        <button className="workspace-empty-state__action" onClick={onPrimaryAction} type="button">
+        <button
+          className="workspace-empty-state__action"
+          onClick={onPrimaryAction}
+          type="button"
+          data-action="primary"
+        >
           {primaryLabel}
         </button>
         {onSecondaryAction && secondaryLabel && (
-          <button className="workspace-empty-state__action workspace-empty-state__action--ghost" onClick={onSecondaryAction} type="button">
+          <button
+            className="workspace-empty-state__action workspace-empty-state__action--ghost"
+            onClick={onSecondaryAction}
+            type="button"
+            data-action="secondary"
+          >
             {secondaryLabel}
           </button>
         )}

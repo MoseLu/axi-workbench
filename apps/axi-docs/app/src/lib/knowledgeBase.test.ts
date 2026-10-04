@@ -649,7 +649,7 @@ describe('knowledge base local index', () => {
     expect(summary?.title).toBe('Axi 文档站')
     expect(summary?.description).toContain('用途：Axi 文档中心')
     expect(summary?.description).toContain('技术栈：React, TypeScript')
-    expect(summary?.description).toContain('验证：pnpm dir app verify')
+    expect(summary?.description).toContain('验证：pnpm --dir app verify')
 
     const projectDocument = await readKnowledgeFile('workspace', 'project-docs/axi-docs/README.md')
     const projectBody = projectDocument?.replace(/^---[\s\S]*?---\s*/u, '') || ''

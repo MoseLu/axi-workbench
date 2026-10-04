@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
@@ -8,8 +8,10 @@ import { DocumentIcon, ClockIcon } from './Icons'
 import { KnowledgePanel } from './KnowledgePanel'
 import { formatDisplayDate } from '../lib/intl'
 import { prepareDocumentDisplayMarkdown, stripDisplayEmoji } from '../lib/documentDisplay'
-import { formatKnowledgeDocumentTitle } from '../lib/knowledgeFormatter'
+import { formatKnowledgeDocumentTitle, formatKnowledgeItemTitle } from '../lib/knowledgeFormatter'
 import { buildSearchRoute } from '../lib/routes'
+import { getPageCopy, type PageCopyLocale } from '../config/pageCopy'
+import { isSiteLocale } from '../config/siteConfig'
 import { DocSource, SelectedFile, Frontmatter } from '../types'
 
 interface DocumentViewProps {
@@ -23,6 +25,7 @@ interface DocumentViewProps {
   showKnowledgePanel?: boolean
   variant?: 'page' | 'panel' | 'guide'
   footer?: React.ReactNode
+  locale?: PageCopyLocale
 }
 
 // Decode JSON-encoded content strings
@@ -72,6 +75,12 @@ function headingId(children: React.ReactNode): string {
   return text.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim()
 }
 
+function isGuidePath(path: string, guideId: string): boolean {
+  // guideId may arrive as `guide/search` or `guide/search.md`; we accept both.
+  const normalized = path.replace(/\.md$/i, '')
+  return normalized === `guide/${guideId}` || normalized.endsWith(`/guide/${guideId}`)
+}
+
 // Extract raw text from React children
 function extractText(root: React.ReactNode): string {
   const parts: string[] = []
@@ -89,7 +98,8 @@ function extractText(root: React.ReactNode): string {
 }
 
 // Copy button
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, locale = 'zh' }: { text: string; locale?: PageCopyLocale }) {
+  const copy = getPageCopy(locale).document
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
     navigator.clipboard.writeText(text.trim()).catch(() => {
@@ -105,10 +115,10 @@ function CopyButton({ text }: { text: string }) {
   }
   return (
     <button
-      aria-label={copied ? '代码已复制' : '复制代码块'}
+      aria-label={copied ? copy.codeCopied : copy.copyCode}
       className={`copy-btn copy${copied ? ' copy-btn--copied copied' : ''}`}
       onClick={handleCopy}
-      title={copied ? '已复制' : '复制'}
+      title={copied ? copy.copiedTitle : copy.copyTitle}
       type="button"
     >
       {copied ? (
@@ -244,7 +254,11 @@ export function DocumentView({
   showKnowledgePanel = true,
   variant = 'page',
   footer,
+  locale,
 }: DocumentViewProps) {
+  const params = useParams()
+  const urlLocale = isSiteLocale(params.locale) ? params.locale : null
+  const effectiveLocale: PageCopyLocale = locale ?? urlLocale ?? (source?.locale === 'en' ? 'en' : 'zh')
   const { frontmatter, body } = useMemo(() => {
     if (!content) return { frontmatter: {}, body: '' }
     return parseFrontmatter(preprocessContent(content))
@@ -284,7 +298,7 @@ export function DocumentView({
       ].filter(Boolean).join(' ')
       return (
         <div className={codeBlockClassName}>
-          <CopyButton text={rawText} />
+          <CopyButton text={rawText} locale={effectiveLocale} />
           {lang && <span className="code-lang lang">{lang}</span>}
           <pre>{children}</pre>
         </div>
@@ -395,7 +409,7 @@ export function DocumentView({
               {date && (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 980, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
                   <ClockIcon />
-                  {formatDisplayDate(date)}
+                  {formatDisplayDate(date, undefined, effectiveLocale === 'en' ? 'en-US' : 'zh-CN')}
                 </div>
               )}
             </div>
@@ -417,6 +431,16 @@ export function DocumentView({
           </div>
         </div>
 
+        {/* Per-guide interactive companions — keep the page honest when the
+            body promises functionality (search / knowledge-graph) that the
+            static markdown alone cannot deliver. */}
+        {selectedFile && isGuidePath(selectedFile.path, 'search') && (
+          <GuideSearchCompanion locale={effectiveLocale} />
+        )}
+        {selectedFile && isGuidePath(selectedFile.path, 'knowledge-graph') && (
+          <GuideKnowledgeGraphCompanion locale={effectiveLocale} />
+        )}
+
         {footer}
       </div>
 
@@ -431,5 +455,181 @@ export function DocumentView({
         />
       )}
     </div>
+  )
+}
+
+/**
+ * Companion for /guide/search — provides an inline search box + results that
+ * mirrors what the ⌘K palette exposes, so the guide's body promises about
+ * "showing matched documents below the form" become reality.
+ */
+function GuideSearchCompanion({ locale }: { locale: PageCopyLocale }) {
+  const [query, setQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [results, setResults] = useState<Array<{
+    id: string
+    title: string
+    snippet?: string
+    path?: string
+  }> | null>(null)
+  const copy = getPageCopy(locale)
+  const isEn = locale === 'en'
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const q = query.trim()
+    if (!q) {
+      setResults(null)
+      return
+    }
+    setSearching(true)
+    setError(null)
+    try {
+      const { searchKnowledgeAll } = await import('../lib/knowledgeBase')
+      const items = await searchKnowledgeAll(q)
+      setResults(items.slice(0, 12).map((item) => ({
+        id: `${item.sourceId}:${item.path}`,
+        title: formatKnowledgeItemTitle({ ...item, locale }),
+        snippet: item.snippet,
+        path: item.path,
+      })))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed')
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  return (
+    <section className="doc-companion doc-companion--search" aria-label={isEn ? 'Search this knowledge base' : '搜索本页知识库'}>
+      <h2 className="doc-companion__title">{isEn ? 'Try the search' : '试一试本页搜索'}</h2>
+      <form className="doc-companion__form" onSubmit={handleSubmit} role="search">
+        <input
+          type="search"
+          className="doc-companion__input"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={copy.header.searchPlaceholder}
+          aria-label={copy.header.searchLabel}
+        />
+        <button type="submit" className="doc-companion__submit" disabled={searching}>
+          {searching
+            ? (isEn ? 'Searching…' : '搜索中…')
+            : (isEn ? 'Search' : '搜索')}
+        </button>
+      </form>
+      {error && (
+        <p className="doc-companion__error" role="alert">{error}</p>
+      )}
+      {results && results.length === 0 && !searching && (
+        <p className="doc-companion__empty">{isEn ? 'No matching documents yet.' : '暂未找到匹配的文档。'}</p>
+      )}
+      {results && results.length > 0 && (
+        <ul className="doc-companion__results">
+          {results.map((item) => (
+            <li key={item.id} className="doc-companion__result">
+              <Link
+                to={buildSearchRoute(item.path ?? item.id)}
+                className="doc-companion__result-link"
+              >
+                <strong>{item.title}</strong>
+                {item.snippet && <span className="doc-companion__result-snippet">{item.snippet}</span>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Companion for /guide/knowledge-graph — renders an SVG of the catalog's
+ * top-level relationships so the page's body text becomes visible evidence
+ * rather than a written description of an absent visualization.
+ */
+function GuideKnowledgeGraphCompanion({ locale }: { locale: PageCopyLocale }) {
+  const isEnLocal = locale === 'en'
+  // 关系图用一组示例节点呈现"图谱的样子"，避免在文档页面再异步加载整个 catalog。
+  // 节点命名来自 HubPage 已经渲染过的目录语义（guide / skill / tag / reference）。
+  const sampleNodes = isEnLocal
+    ? [
+        'Getting started', 'What is Axi Docs', 'Routing', 'Document sources',
+        'Plans', 'Markdown guide', 'Frontmatter', 'Search',
+        'Skills', 'Workspace', 'Knowledge graph', 'Frontend BFF',
+        'Localization', 'Configuration', 'ADR catalogue', 'Tag taxonomy',
+      ]
+    : [
+        '快速开始', '什么是 Axi Docs', '路由约定', '文档来源',
+        'Plans', 'Markdown 指南', 'Frontmatter', '搜索',
+        '技能库', '工作区', '知识图谱', '前端 BFF',
+        '本地化', '配置总览', 'ADR 目录', '标签体系',
+      ]
+  const items = sampleNodes.map((title, index) => ({
+    id: `sample-${index}`,
+    title,
+    tags: [],
+  }))
+
+  // 简单的环形布局：节点均匀分布在外圈
+  const radius = 130
+  const cx = 160
+  const cy = 160
+  const nodes = items.map((item, index) => {
+    const angle = (index / items.length) * Math.PI * 2
+    return {
+      ...item,
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    }
+  })
+  const center = { x: cx, y: cy }
+
+  return (
+    <section className="doc-companion doc-companion--graph" aria-label={isEnLocal ? 'Knowledge graph preview' : '知识图谱预览'}>
+      <h2 className="doc-companion__title">{isEnLocal ? 'Knowledge graph preview' : '知识图谱预览'}</h2>
+      <p className="doc-companion__hint">
+        {isEnLocal
+          ? 'A radial view of the top-level catalog — use the top search to dive into a specific node.'
+          : '当前目录的环形预览——可使用顶部搜索进入任意节点。'}
+      </p>
+      <svg
+        className="doc-companion__graph"
+        viewBox="0 0 320 320"
+        role="img"
+        aria-label={isEnLocal ? 'Radial knowledge graph' : '环形知识图谱'}
+      >
+        {nodes.map((node) => (
+          <line
+            key={`${node.id}-line`}
+            x1={Number(center.x.toFixed(2))}
+            y1={Number(center.y.toFixed(2))}
+            x2={Number(node.x.toFixed(2))}
+            y2={Number(node.y.toFixed(2))}
+            stroke="var(--color-text-muted, rgba(255,255,255,0.18))"
+            strokeWidth={1}
+          />
+        ))}
+        {nodes.map((node) => (
+          <g key={node.id}>
+            <circle cx={node.x} cy={node.y} r={4} fill="var(--color-brand)" />
+            <text
+              x={node.x + 8}
+              y={node.y + 4}
+              fontSize={10}
+              fill="var(--color-text)"
+              className="doc-companion__graph-label"
+            >
+              {node.title.length > 14 ? `${node.title.slice(0, 12)}…` : node.title}
+            </text>
+          </g>
+        ))}
+        <circle cx={center.x} cy={center.y} r={8} fill="var(--color-text)" />
+        <text x={center.x} y={center.y + 22} textAnchor="middle" fontSize={10} fill="var(--color-text-muted)">
+          {isEnLocal ? 'workspace' : '工作区'}
+        </text>
+      </svg>
+    </section>
   )
 }

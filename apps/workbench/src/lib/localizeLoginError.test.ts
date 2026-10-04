@@ -36,4 +36,11 @@ describe('localizeLoginError', () => {
     expect(localizeLoginError('Internal Server Error', t)).toBe(copy['auth.login.requestFailed']);
     expect(localizeLoginError('', t)).toBe(copy['auth.login.requestFailed']);
   });
+
+  it('maps gateway 5xx responses to the identity-unavailable banner', () => {
+    expect(localizeLoginError('密码登录失败 (HTTP 502)', t)).toBe(copy['auth.login.identityUnavailable']);
+    expect(localizeLoginError('Bad Gateway', t)).toBe(copy['auth.login.identityUnavailable']);
+    expect(localizeLoginError('Service Unavailable', t)).toBe(copy['auth.login.identityUnavailable']);
+    expect(localizeLoginError('504 Gateway Timeout', t)).toBe(copy['auth.login.identityUnavailable']);
+  });
 });

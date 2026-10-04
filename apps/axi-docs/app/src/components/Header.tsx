@@ -43,7 +43,40 @@ function buildLocaleHref(pathname: string, search: string, locale: SiteLocale): 
     return `${pathname.replace(/^\/(zh|en)\//u, `/${locale}/`)}${search}`
   }
 
+  if (/^\/docs\/[^/]+\/./u.test(pathname)) {
+    const mapped = mapDocumentRouteAcrossLocales(pathname, locale)
+    if (mapped) return `${mapped}${search}`
+  }
+
   return getDefaultGuideRoute(locale)
+}
+
+const DOC_SOURCE_LOCALE_SIBLING: Record<string, { zh: string; en: string }> = {
+  'axi-docs-zh': { zh: 'axi-docs-zh', en: 'axi-docs-en' },
+  'axi-docs-en': { zh: 'axi-docs-zh', en: 'axi-docs-en' },
+}
+
+function mapDocumentRouteAcrossLocales(pathname: string, locale: SiteLocale): string | null {
+  const segments = pathname.split('/').filter(Boolean)
+  const sourceId = segments[1]
+  const rest = segments.slice(2).join('/')
+  if (!sourceId || !rest) return null
+
+  const sibling = DOC_SOURCE_LOCALE_SIBLING[sourceId]
+  if (sibling) {
+    return `/docs/${sibling[locale]}/${rest}`
+  }
+
+  // axi-skills mirrors swap the root folder prefix (skills/ vs skills.zh/).
+  if (sourceId === 'axi-skills' && locale === 'zh') {
+    return `/docs/axi-skills-zh/${rest.replace(/^skills\//u, 'skills.zh/')}`
+  }
+  if (sourceId === 'axi-skills-zh' && locale === 'en') {
+    return `/docs/axi-skills/${rest.replace(/^skills\.zh\//u, 'skills/')}`
+  }
+
+  // Locale-neutral sources keep the same document open; only the UI copy changes.
+  return `/docs/${sourceId}/${rest}`
 }
 
 export function Header({
@@ -65,6 +98,7 @@ export function Header({
   const [screenLocaleOpen, setScreenLocaleOpen] = useState(true)
   const [searchOpen, setSearchOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
+  const [suggestionsPending, setSuggestionsPending] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const localeMenuRef = useRef<HTMLDivElement | null>(null)
@@ -205,16 +239,21 @@ export function Header({
     if (!searchOpen || !trimmedInput) {
       setSuggestions([])
       setActiveIndex(-1)
+      setSuggestionsPending(false)
       return undefined
     }
 
     const requestId = ++suggestionRequestRef.current
+    setSuggestionsPending(true)
     suggestionDebounceRef.current = setTimeout(async () => {
       const next = await getKnowledgeSearchSuggestions(trimmedInput)
       if (requestId !== suggestionRequestRef.current) return
 
       setSuggestions(next)
-      setActiveIndex(next.length > 0 ? 0 : -1)
+      // Start with -1 (no candidate selected) so Enter triggers a full search
+      // instead of silently opening the first suggestion.
+      setActiveIndex(-1)
+      setSuggestionsPending(false)
     }, 120)
 
     return () => {
@@ -226,6 +265,7 @@ export function Header({
     setSearchOpen(false)
     setSuggestions([])
     setActiveIndex(-1)
+    setSuggestionsPending(false)
   }
 
   const openSearch = () => {
@@ -386,6 +426,13 @@ export function Header({
                 <small>{uiCopy.searchAllMeta}</small>
               </span>
             </button>
+
+            {suggestionsPending && documentSuggestions.length === 0 && tagSuggestions.length === 0 && (
+              <div className="header-search__pending" role="status">
+                <span className="header-search__pending-spinner" aria-hidden="true" />
+                <span>{currentLocale === 'zh' ? '正在加载文档索引…' : 'Loading document index…'}</span>
+              </div>
+            )}
 
             {documentSuggestions.length > 0 && (
               <div className="header-search__group">

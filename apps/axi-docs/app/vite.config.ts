@@ -70,6 +70,9 @@ export default defineConfig({
   preview: {
     port: 3005,
     host: '127.0.0.1',
+    // 让 vite preview 承担 SPA fallback，所有未命中静态文件的 URL 都会回退到 index.html。
+    // 修复 /zh/skills /zh/workspace 等 history-api 路径在生产预览里返回 Vite 404 文本的问题。
+    appType: 'spa',
   },
   build: {
     // Let Vite tolerate the dedicated WebGL graph bundle, while a custom policy

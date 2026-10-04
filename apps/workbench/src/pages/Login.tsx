@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
 import { AxiBanner } from '@axi/widgets';
 import { resolveGatewayURL, resolveUsername } from '@axi/workbench-foundation';
@@ -61,6 +61,7 @@ const EMAIL_SUFFIX_OPTIONS = [
   '163.com',
   'gmail.com',
   'outlook.com',
+  'axiomaticworld.com',
 ] as const;
 type EmailSuffix = (typeof EMAIL_SUFFIX_OPTIONS)[number];
 const DEFAULT_EMAIL_SUFFIX: EmailSuffix = 'qq.com';
@@ -970,6 +971,29 @@ const Login: React.FC = () => {
             </button>
           )}
 
+          {loginSurface !== 'quick' && (
+            <div className="axi-login-mode-tabs" role="tablist" aria-label={t('auth.login.modeTabs')}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginSurface === 'account'}
+                className={`axi-login-mode-tab${loginSurface === 'account' ? ' is-active' : ''}`}
+                onClick={() => handleLoginSurfaceChange('account')}
+              >
+                {t('auth.login.modeAccount')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginSurface === 'qr'}
+                className={`axi-login-mode-tab${loginSurface === 'qr' ? ' is-active' : ''}`}
+                onClick={() => handleLoginSurfaceChange('qr')}
+              >
+                {t('auth.login.modeQr')}
+              </button>
+            </div>
+          )}
+
 
           <div className={`axi-login-entry-panel is-${loginSurface}`}>
             {loginSurface === 'quick' ? (
@@ -1023,25 +1047,11 @@ const Login: React.FC = () => {
                         </span>
                       ) : null}
                     </span>
-                    <span className="axi-login-consent-copy">{t('auth.login.agreePrefixQuick')}<a
-                      href={externalLegalUrl('terms')}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(event) => {
-                        if (!isTauriShell()) return;
-                        event.preventDefault();
-                        void openExternalLegalPage('terms');
-                      }}
-                    >{t('auth.login.terms')}</a><a
-                      href={externalLegalUrl('privacy')}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(event) => {
-                        if (!isTauriShell()) return;
-                        event.preventDefault();
-                        void openExternalLegalPage('privacy');
-                      }}
-                    >{t('auth.login.privacy')}</a></span>
+                    <span className="axi-login-consent-copy">{t('auth.login.agreePrefixQuick')}<Link
+                      to="/legal/terms"
+                    >{t('auth.login.terms')}</Link><Link
+                      to="/legal/privacy"
+                    >{t('auth.login.privacy')}</Link></span>
                   </label>
                 </div>
                 <div className="axi-login-quick-links">
@@ -1304,6 +1314,14 @@ const Login: React.FC = () => {
                       disabled={!canRequestCode}
                       data-email-code-state={emailCodeButtonState}
                       aria-live="polite"
+                      title={
+                        !emailIsValid
+                          ? t('auth.login.codeLoginDisabledHint')
+                          : isEmailCodeCoolingDown
+                            ? resendCountdownLabel
+                            : undefined
+                      }
+                      aria-disabled={!canRequestCode}
                     >
                       {emailCodeSubmitting ? t('auth.login.sending') : t('auth.login.codeLogin')}
                     </button>
@@ -1351,31 +1369,13 @@ const Login: React.FC = () => {
                     ) : null}
                   </span>
                   <span>{t('auth.login.agreePrefix')}</span>
-                  <a
-                    href={externalLegalUrl('terms')}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(event) => {
-                      if (!isTauriShell()) return;
-                      event.preventDefault();
-                      void openExternalLegalPage('terms');
-                    }}
-                  >
+                  <Link to="/legal/terms">
                     {t('auth.login.terms')}
-                  </a>
+                  </Link>
                   <span>{t('auth.login.and')}</span>
-                  <a
-                    href={externalLegalUrl('privacy')}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(event) => {
-                      if (!isTauriShell()) return;
-                      event.preventDefault();
-                      void openExternalLegalPage('privacy');
-                    }}
-                  >
+                  <Link to="/legal/privacy">
                     {t('auth.login.privacy')}
-                  </a>
+                  </Link>
                 </label>
               </div>
                 </div>

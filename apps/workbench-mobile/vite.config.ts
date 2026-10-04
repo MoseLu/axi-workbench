@@ -7,6 +7,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // The `@axi/observability-web` workspace package is declared in
+      // package.json but not yet published into `packages/`. `main.tsx`
+      // imports it dynamically and only calls a no-op `installWeb(...)`,
+      // so we alias it to a local stub module rather than failing the
+      // dev build. Replace once the package ships.
+      '@axi/observability-web': path.resolve(
+        __dirname,
+        '../../apps/workbench/src/lib/__observability-web-stub__.ts',
+      ),
     },
   },
   server: {

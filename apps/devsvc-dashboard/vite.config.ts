@@ -114,7 +114,16 @@ function isHostedAppDocumentRequest(req: IncomingMessage) {
 
 export default defineConfig({
   resolve: {
-    dedupe: ["react", "react-dom", "react/jsx-runtime"]
+    dedupe: ["react", "react-dom", "react/jsx-runtime"],
+    alias: {
+      // `@axi/observability-web` is not yet published into this workspace's
+      // `packages/`; the closest artifact transitively depends on the
+      // server-side `@axi/observability-logging` (pino + AsyncLocalStorage),
+      // which breaks browser bundles with `Module "node:async_hooks" has been
+      // externalized for browser compatibility`. We only call `installWeb`
+      // as a no-op telemetry hook, so alias to a local stub.
+      '@axi/observability-web': path.resolve(__dirname, 'src/lib/__observability-web-stub__.ts'),
+    },
   },
   plugins: [react(), compressedAssets(), enforceMaxChunkSize()],
   server: {

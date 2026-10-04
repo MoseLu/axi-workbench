@@ -1,5 +1,5 @@
-import type { HTMLAttributes } from 'react';
-import { AxiSvgIcon } from '@axi/core';
+import type { HTMLAttributes } from 'react';import { AxiSvgIcon } from "@axi/icons";
+
 import {
   resolveAxiWorkbenchIcon,
   type AxiWorkbenchIconName,

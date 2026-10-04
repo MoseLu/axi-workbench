@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 // axi-ui-escape-hatch: Segmented 没有 @axi/* 等价控件（filter 三态切换），沿用 antd。
 import { Segmented } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
-import { AxiIconButton } from '@axi/core';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';import { AxiIconButton } from "@axi/icons";
+
 import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../i18n';

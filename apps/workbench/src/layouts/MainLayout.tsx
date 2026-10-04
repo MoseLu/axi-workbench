@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { AxiLogoMark, AxiSvgIcon, useAxiTheme } from '@axi/core';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';import { AxiLogoMark, useAxiTheme } from "@axi/core";
+import { AxiSvgIcon } from "@axi/icons";
+
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { axiStylePresets } from '@axi/presets';
 import { AxiAdminSettingsPanel, useAxiAdminSettings } from '@axi/settings';

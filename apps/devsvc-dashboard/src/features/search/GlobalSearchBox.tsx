@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CornerDownLeft, Search, Star, X } from "lucide-react";
 
-import { makeGlobalSearchItems, type AppTFunction, type GlobalSearchItem, type NavRouteKey } from "../../app-registry";
-import { AxiSvgIcon } from "@axi/core";
+import { makeGlobalSearchItems, type AppTFunction, type GlobalSearchItem, type NavRouteKey } from "../../app-registry";import { AxiSvgIcon } from "@axi/icons";
+
 import type { UserRole } from "../auth/auth";
 import type { AxiResource } from "../axi-resources/axiResources";
 import type { HostedApp } from "../hosted/hostedApps";

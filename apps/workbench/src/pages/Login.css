@@ -474,7 +474,6 @@
   max-width: 100%;
   min-height: 2.25rem;
   height: auto;
-  max-height: 3.25rem;
   margin-top: auto;
   align-items: flex-start;
   overflow: visible;
@@ -489,6 +488,16 @@
   overflow: visible;
   border-radius: var(--radius-xs);
   box-shadow: none;
+  animation: axi-login-banner-enter 180ms ease both;
+}
+
+@keyframes axi-login-banner-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axi-login-banner { animation: none; }
 }
 
 .axi-login-banner.axi-banner--compact.ant-alert {
@@ -888,7 +897,16 @@
   border-radius: var(--radius-xs);
   background: var(--palette-white);
   box-shadow: 0 var(--space-2) var(--space-5) color-mix(in srgb, var(--palette-black) 12%, transparent);
+  transform-origin: top right;
+  transform: scale(.96) translateY(-2px);
+  opacity: 0;
+  transition: opacity 140ms ease, transform 140ms ease;
   list-style: none;
+}
+
+.axi-login-form .axi-login-email-suffix-wrap.is-open .axi-login-email-suffix-menu {
+  transform: scale(1) translateY(0);
+  opacity: 1;
 }
 
 .axi-login-form .axi-login-email-suffix-option {
@@ -992,12 +1010,12 @@
 /* The action matches the slot height but remains visually unframed, like a
  * secondary form action rather than a seventh OTP cell. */
 .axi-login-text-button--send {
-  flex: 0 0 5.75rem;
-  width: 5.75rem;
+  flex: 0 0 auto;
+  width: auto;
   height: 2.625rem;
   min-height: 2.625rem;
-  min-width: 0;
-  padding-inline: var(--space-1);
+  min-width: 4.5rem;
+  padding-inline: var(--space-2);
   border: 0;
   border-radius: var(--radius-xs);
   font-size: var(--text-xs);
@@ -1006,7 +1024,7 @@
 
 .axi-login-text-button--send:disabled {
   color: var(--palette-gray-350);
-  opacity: 1;
+  opacity: 0.55;
 }
 
 .axi-login-code-send {
@@ -1066,7 +1084,7 @@
 .axi-login-form .axi-login-email-code-row .axi-one-time-code {
   gap: 0;
   padding: 0 0 0 var(--space-2);
-  background: color-mix(in srgb, var(--palette-white) 42%, transparent);
+  background: color-mix(in srgb, var(--palette-white) 72%, transparent);
   border-radius: 999px;
 }
 
@@ -1080,7 +1098,7 @@
 }
 
 .axi-login-form .axi-login-email-code-row .axi-one-time-code__input + .axi-one-time-code__input {
-  border-left: var(--space-px) solid color-mix(in srgb, var(--palette-gray-400) 22%, transparent);
+  border-left: var(--space-px) solid color-mix(in srgb, var(--palette-gray-400) 45%, transparent);
 }
 
 .axi-login-form .axi-login-email-code-row .axi-one-time-code__input:focus {
@@ -1144,6 +1162,7 @@
   font-size: var(--text-md);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  transition: color 200ms ease;
 }
 
 .axi-login-email-code-resend::before {
@@ -1406,6 +1425,44 @@ body.axi-tauri-shell .axi-login-drag-region {
   gap: 0;
   position: relative;
   padding: var(--space-5) var(--space-6) var(--space-5);
+}
+
+/* segmented control above the login entry panel — makes QR vs Email choice obvious */
+.axi-login-mode-tabs {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  margin: 0 auto var(--space-3);
+  padding: calc(var(--space-px) * 2);
+  border: 1px solid var(--color-border-muted, rgba(255, 255, 255, 0.12));
+  border-radius: 999px;
+  background: var(--color-surface-2, rgba(255, 255, 255, 0.04));
+  gap: calc(var(--space-px) * 2);
+}
+.axi-login-mode-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  padding: calc(var(--space-px) * 6) calc(var(--space-px) * 12);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.axi-login-mode-tab:hover {
+  color: var(--color-text);
+}
+.axi-login-mode-tab.is-active {
+  background: var(--color-brand);
+  color: var(--color-on-brand, #fff);
+}
+.axi-login-mode-tab:focus-visible {
+  outline: calc(var(--space-px) * 2) solid var(--color-brand);
+  outline-offset: calc(var(--space-px) * 2);
 }
 
 .axi-login-entry-switch:focus-visible {
@@ -1704,7 +1761,6 @@ body.axi-tauri-shell .axi-login-drag-region {
 .axi-login-account .axi-login-right__body {
   width: 100%;
   display: flex;
-  height: 18rem;
   min-height: 18rem;
   flex-direction: column;
   align-items: center;

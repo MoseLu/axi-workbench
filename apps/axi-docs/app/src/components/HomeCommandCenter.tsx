@@ -292,6 +292,20 @@ export function HomeCommandCenter({
       </button>
     )
 
+    const singleItem = !hasSubsections && section.items.length === 1
+      ? section.items[0]
+      : null
+
+    if (singleItem) {
+      // A group with exactly one entry renders as a plain link — a collapsible
+      // header identical to its only child is pure duplication.
+      return (
+        <nav key={section.key} className="axi-docs-home__sidebar-section" aria-label={section.title}>
+          {renderCatalogItemButton(singleItem)}
+        </nav>
+      )
+    }
+
     return (
       <nav key={section.key} className="axi-docs-home__sidebar-section" aria-label={section.title}>
         <button aria-expanded={open} className="axi-docs-home__sidebar-toggle" onClick={() => toggleSection(sectionId)} type="button">
@@ -502,6 +516,7 @@ export function HomeCommandCenter({
                   selectedFile={guideSelectedFile}
                   sidebarSections={[]}
                   source={guideSource}
+                  locale={guideLocale}
                 />
               )}
               loading={fileLoading}
@@ -511,6 +526,7 @@ export function HomeCommandCenter({
               showKnowledgePanel={false}
               source={guideSource}
               variant="guide"
+              locale={guideLocale}
             />
 
             {guidePageId === 'search' && normalizedSearchQuery && (
@@ -544,6 +560,12 @@ export function HomeCommandCenter({
             <section className="axi-docs-home__section" id="doc-set-overview">
               <h2>{guideLocale === 'zh' ? '文档集概览' : 'Docs Overview'}</h2>
               <p>{source.description || (guideLocale === 'zh' ? '当前顶级导航对应的文档集。左侧显示该文档集内部目录。' : 'This top-level navigation item maps to the document set shown in the left sidebar.')}</p>
+              <div className="axi-docs-home__overview-actions">
+                <button className="axi-docs-home__graph-entry" onClick={onOpenExplorer} type="button">
+                  <span>{guideLocale === 'zh' ? '打开知识图谱' : 'Open knowledge graph'}</span>
+                  <small>{guideLocale === 'zh' ? '以树构 / 路径 / 孤岛三种视图探索文档关联' : 'Explore document relations in tree, path, and islands views'}</small>
+                </button>
+              </div>
               {isSkillsDocSet && catalog && (
                 <div className="axi-docs-home__stats-grid" aria-label="技能库统计">
                   <div>
@@ -571,7 +593,7 @@ export function HomeCommandCenter({
                 </div>
               )}
               {overviewSections.length > 0 && (
-                <div className="axi-docs-home__result-list">
+                <div className="axi-docs-home__result-list" key={activeWorkspaceDocumentTypeKey || 'all'} style={{ animation: 'axi-docs-list-in 0.24s ease' }}>
                   {overviewSections.map((section) => (
                     <button
                       key={section.key}

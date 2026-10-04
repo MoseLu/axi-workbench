@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AxiSvgIcon } from "@axi/core";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";import { AxiSvgIcon } from "@axi/icons";
+
 import type { Planner } from "@axi/resource-orchestrator/browser";
 import { Composer } from "./components/composer/Composer";
 import { EmptyConversation } from "./components/conversation/EmptyConversation";

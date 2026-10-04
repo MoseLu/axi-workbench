@@ -93,20 +93,23 @@ export function KnowledgeGraph({ data, width, height, onNavigate, onTagSelect }:
     // Direct DOM update
     for (const node of nodes) {
       const el = nodeElsRef.current.get(node.id)
-      if (el) el.setAttribute('transform', `translate(${node.x},${node.y})`)
+      if (el) el.setAttribute('transform', `translate(${node.x.toFixed(2)},${node.y.toFixed(2)})`)
     }
-    for (const edge of edges) {
-      const edgeId = `${edge.source}__${edge.target}`
-      const el = edgeElsRef.current.get(edgeId)
-      if (el) {
-        const s = nodeById.get(edge.source)
-        const t = nodeById.get(edge.target)
-        if (s && t) {
-          el.setAttribute('x1', String(s.x))
-          el.setAttribute('y1', String(s.y))
-          el.setAttribute('x2', String(t.x))
-          el.setAttribute('y2', String(t.y))
-        }
+for (const edge of edges) {
+        const edgeId = `${edge.source}__${edge.target}`
+        const el = edgeElsRef.current.get(edgeId)
+        if (el) {
+          const s = nodeById.get(edge.source)
+          const t = nodeById.get(edge.target)
+          if (s && t) {
+            // Round to 2 decimal places so SSR and CSR emit identical string
+            // representations and React doesn't flag a hydration mismatch on
+            // the `x2` / `y2` attributes (see audit findings 10-synthesis P0-4).
+            el.setAttribute('x1', s.x.toFixed(2))
+            el.setAttribute('y1', s.y.toFixed(2))
+            el.setAttribute('x2', t.x.toFixed(2))
+            el.setAttribute('y2', t.y.toFixed(2))
+          }
       }
     }
 

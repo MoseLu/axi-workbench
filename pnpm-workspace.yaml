@@ -7,6 +7,8 @@ packages:
   - 'tools/*'
   - '../../foundation/axi-ui/packages/*'
   - '../../foundation/axi-observability/node/packages/*'
+  - '../../foundation/axi-observability/web'
+  - '../../foundation/axi-observability/react-hooks'
 
 onlyBuiltDependencies:
   - turbo

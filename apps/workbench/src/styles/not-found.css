@@ -1,0 +1,143 @@
+/* 用户友好的 404 页样式
+ * 替代 AxiUiContractNotFound 的旧 antd Result 组件，提供 4 个返回操作。 */
+
+.workbench-not-found {
+  --not-found-min-height: 60vh;
+  --not-found-gap: 1rem;
+  --not-found-padding: clamp(2rem, 6vw, 4rem);
+  --not-found-code-size: clamp(5rem, 12vw, 8.5rem);
+
+  display: grid;
+  place-items: center;
+  min-height: var(--not-found-min-height);
+  padding: var(--not-found-padding);
+  background:
+    radial-gradient(70% 50% at 50% 0%, color-mix(in srgb, var(--color-brand, #e5b94a) 8%, transparent), transparent 70%),
+    var(--axi-bg-surface, var(--color-bg-page, #fff));
+  color: var(--axi-text, var(--color-ink-strong, #1f2937));
+  font-family: var(--axi-font-family, system-ui, -apple-system, "PingFang SC", sans-serif);
+  animation: workbench-not-found-fade-in 0.32s ease-out;
+}
+
+@keyframes workbench-not-found-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.workbench-not-found__inner {
+  max-width: 36rem;
+  text-align: center;
+  display: grid;
+  gap: var(--not-found-gap);
+}
+
+.workbench-not-found__code {
+  margin: 0;
+  font-size: var(--not-found-code-size);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-brand, #e5b94a) 80%, transparent),
+    color-mix(in srgb, var(--color-info, #3ecfff) 60%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.workbench-not-found__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.workbench-not-found__subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--axi-text-secondary, var(--palette-gray-600, #4b5563));
+}
+
+.workbench-not-found__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.workbench-not-found__btn {
+  appearance: none;
+  border: 1px solid var(--palette-gray-250, #e5e7eb);
+  background: var(--palette-white, #ffffff);
+  color: var(--palette-gray-900, #111827);
+  padding: 0.625rem 1.125rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.12s ease, box-shadow 0.16s ease;
+  min-height: 44px;
+  min-width: 88px;
+}
+
+.workbench-not-found__btn:hover {
+  border-color: var(--color-brand, #e5b94a);
+  color: var(--color-brand, #e5b94a);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--color-brand, #e5b94a) 16%, transparent);
+}
+
+.workbench-not-found__btn:active {
+  transform: translateY(0);
+}
+
+.workbench-not-found__btn:focus-visible {
+  outline: 2px solid var(--color-brand, #e5b94a);
+  outline-offset: 2px;
+}
+
+.workbench-not-found__btn--primary {
+  background: var(--color-brand, #e5b94a);
+  border-color: var(--color-brand, #e5b94a);
+  color: var(--palette-gray-900, #111827);
+}
+
+.workbench-not-found__btn--primary:hover {
+  background: color-mix(in srgb, var(--color-brand, #e5b94a) 88%, var(--palette-black, #000));
+  color: var(--palette-white, #fff);
+}
+
+.workbench-not-found__btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--palette-gray-600, #4b5563);
+}
+
+.workbench-not-found__btn--ghost:hover {
+  background: color-mix(in srgb, var(--palette-gray-100, #f3f4f6) 60%, transparent);
+  color: var(--palette-gray-900, #111827);
+  border-color: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workbench-not-found,
+  .workbench-not-found__btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .workbench-not-found__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .workbench-not-found__btn {
+    width: 100%;
+  }
+}

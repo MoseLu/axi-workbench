@@ -1,0 +1,13 @@
+{
+  "surface": "workbench-web",
+  "defaultPageHeader": "forbidden",
+  "allowedUiPackages": ["@axi/addons", "@axi/core", "@axi/crud", "@axi/settings", "@axi/shell", "@axi/widgets"],
+  "legacyRoutes": [
+    "/admin/dashboard", "/admin/operations", "/admin/operations/eps",
+    "/admin/operations/commit-ledger", "/admin/operations/observability", "/admin/project",
+    "/admin/project/:id", "/admin/personal-os/today", "/admin/personal-os/workbench", "/admin/team", "/admin/workspace", "/admin/command-center",
+    "/admin/handoff", "/admin/handoff/:id", "/admin/search", "/admin/me/devices",
+    "/admin/me/notifications", "/admin/me/theme", "/admin/settings/menu", "/admin/settings/role"
+  ],
+  "exemptRoutes": ["/login", "/register", "/auth/callback", "/legal/terms", "/legal/privacy", "/admin/task", "/admin/me"]
+}

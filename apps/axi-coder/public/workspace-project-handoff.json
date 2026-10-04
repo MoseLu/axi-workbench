@@ -1,13 +1,13 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-09-26T07:52:04.440Z",
+  "generatedAt": "2026-10-03T15:09:18.120Z",
   "source": "foundation/workspace-governance/workspace.json",
   "summary": {
-    "total": 24,
+    "total": 25,
     "verified": 15,
-    "documented": 7,
-    "stale": 1,
-    "unready": 1
+    "documented": 6,
+    "stale": 2,
+    "unready": 2
   },
   "projects": [
     {
@@ -290,7 +290,7 @@
       "graphId": "axi-notify",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 34 days old (max 30)"
+        "verification is stale: 41 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
@@ -492,13 +492,15 @@
       "kind": "project",
       "lifecycle": "active-promoted-incubation",
       "owner": "libu",
-      "readiness": "documented",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-runtime/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-runtime/docs/HANDOFF.md",
       "graphId": "axi-runtime",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "entrypoints[1].path path does not exist: src-rs/axi-runtime-rs/src/lib.rs"
+      ],
       "warnings": [],
       "summary": "AXI Personal OS Governance Runtime CLI (PRD-05, Phase 3). Rule Engine + Skill Registry + Agent Gateway + Scheduler on Kernel Change stream.",
       "commands": {
@@ -506,7 +508,8 @@
         "start": [],
         "health": [],
         "verify": [
-          "PYTHONPATH=../axi-kernel python3 -m pytest tests -q"
+          "PYTHONPATH=../axi-kernel python3 -m pytest tests -q",
+          "cd src-rs/axi-runtime-rs && cargo check"
         ],
         "smoke": [
           "PYTHONPATH=../axi-kernel python3 -m axi_runtime --help"
@@ -515,10 +518,13 @@
       "currentWork": {
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
-        "active": [],
+        "active": [
+          "ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011",
+          "src-rs/axi-runtime-rs scaffold: 4 submodules with trait + stub impl; not built"
+        ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-09-29"
     },
     {
       "id": "axi-skills",
@@ -527,13 +533,15 @@
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-skills/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-skills/docs/HANDOFF.md",
       "graphId": "axi-skills",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "verification is stale: 41 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
       "commands": {
@@ -561,14 +569,16 @@
         "active": [
           "Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state.",
           "Keep the generated skill index and i18n batch manifest aligned with skills/.",
-          "Preserve skills/ as the runtime source of truth and keep skills.zh/ out of runtime loading."
+          "Preserve skills/ as the runtime source of truth and keep skills.zh/ out of runtime loading.",
+          "ZCode /代理池 wraps minimax-resource-orchestrator: native target 12, observed pool ledger, actual pressure admission; twelve-way ZCode acceptance remains unverified."
         ],
         "knownFailures": [
           "Full translation validation across every batch is intentionally heavier than the safe onboarding smoke.",
-          "skills.zh/ is git-ignored and must not be treated as runtime source."
+          "skills.zh/ is git-ignored and must not be treated as runtime source.",
+          "Full catalog verification has unrelated pre-existing secret-pattern/cache errors and i18n batch drift; this change was verified with scoped tests and a three-worker Codex native completion/refill smoke, not ZCode twelve-way execution."
         ]
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-08-23"
     },
     {
       "id": "axi-soul-world",
@@ -653,7 +663,9 @@
       "currentWork": {
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
-        "active": [],
+        "active": [
+          "ADR-014 Rust migration (Proposed) — Phase 1 scaffold landed at src-rs/axi-sync-rs/; Phase 3 gated on ADR-011 (axi-kernel-rs)"
+        ],
         "knownFailures": []
       },
       "lastVerifiedAt": "2026-09-25"
@@ -773,7 +785,7 @@
       "graphId": "axi-workbench",
       "graphMatched": true,
       "errors": [
-        "canonicalPath does not match project path: /Volumes/code/workspace/projects/axi-workbench"
+        "documents.index path does not exist: INDEX.md"
       ],
       "warnings": [],
       "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
@@ -1025,11 +1037,68 @@
         "milestone": "docs/state/MILESTONE.md",
         "active": [
           "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
-          "Maintain the task-execution-routing/v1 workflow-first contract."
+          "Maintain the task-execution-routing/v1 workflow-first contract.",
+          "ADR-016 Phase 1: workspace-governance-rs Rust re-implementation of the six read-only subcommands (list, whereami, health, onboard, handoff-check, validate), the 1:1 parser for workspace.json / workspace.graph.json, and the six invariant validators. Status: Accepted (Phase 1) on 2026-09-29. Phases 2-4 (remaining 21 subcommands) follow."
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-09-29"
+    },
+    {
+      "id": "axi-workspace-rs",
+      "name": "Axi Workspace Rust Monorepo",
+      "path": "/Volumes/code/workspace/foundation/axi-workspace-rs",
+      "kind": "shared",
+      "lifecycle": "active-shared-provider",
+      "owner": "libu",
+      "readiness": "verified",
+      "score": 10,
+      "manifestPath": "/Volumes/code/workspace/foundation/axi-workspace-rs/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/foundation/axi-workspace-rs/docs/HANDOFF.md",
+      "graphId": "axi-workspace-rs",
+      "graphMatched": true,
+      "errors": [],
+      "warnings": [],
+      "summary": "AXI 工作区统一 Rust 治理后端 monorepo（ADR-014）。13 crates 覆盖 kernel / runtime / sync / inbox / governance / api-gateway / control-plane / observability / workbench-cli；workspace-governance-rs crate 已完成 M7 wave parity-port（35 production Node 脚本 A-class 子集；M7.1-M7.8 收口后全 workspace 1246 tests / 严格 clippy 0 error），B-class 远程表面留在 Node 端等待 owner opt-in。",
+      "commands": {
+        "setup": [
+          "rustup component add clippy rustfmt"
+        ],
+        "start": [
+          "cargo check --workspace"
+        ],
+        "health": [
+          "cargo check --workspace"
+        ],
+        "verify": [
+          "cargo test --workspace",
+          "cargo clippy --workspace --all-targets -- -D warnings",
+          "cargo fmt --all -- --check",
+          "cargo deny --all-features check"
+        ],
+        "smoke": [
+          "cargo test -p workspace-governance-rs"
+        ]
+      },
+      "currentWork": {
+        "todo": "docs/OWNER_DECISION_BACKLOG.md",
+        "milestone": "docs/M7-WAVE-CONSOLIDATION.md",
+        "active": [
+          "M7 全链收口：wave parity-port + M7.1 rustfmt + M7.5 D4 registry 闭环 + M7.6 strict clippy/VERIFICATION + M7.7 corepack/incubator 双开关锁 + M7.8 registry 路径 bug 修复（incubator-sync / docs-sync）。",
+          "Wave-U3 wasmtime 10.0.2 -> 24.0.13 done at 69880d7（关 12/19 advisory）；U3.5 wasmtime 36.0.16 prepared at 1a67f90 on `agent/wave-u1-integrated`（关剩余 7 条 + 1 unsound + 5 unmaintained；cascade `15c4205`/`e34eb9f`/`c973017` → HEAD `c7f5222`，本地未集成）；待 owner trigger。",
+          "P0 git-hooks install at d1325e3（.githooks/commit-msg + post-commit + docs/logs/submit/）；未 push。",
+          "P1 待 owner 决策：U3.5 cherry-pick rebuild on integration branch + AR-DEVELOP-COMMIT-003 lockfile exemption + ADR-010 close-out of Cargo.lock commit-policy drift。",
+          "2026-10-01 docs-only follow-up: commit 522c400 同步 HANDOFF.md（stale 2026-09-29 M6-A -> M7.8 + Wave-U3 + B-class + 24 vuln 真实状态）；commit bf8b07f 刷 VERIFICATION.md §Local Re-verification + manifest verification 区段到 2026-10-01 + local re-verify 记录（HEAD bf8b07f / branch agent/install-git-hooks，未 push）；M8.0.5 (commit cab7e55+) 把 24 vuln 进一步刷到 11 vuln + 3 denied warnings（cargo audit 2026-10-01 实际跑出），详见 docs/BRANCH-STATE-SYNC.md。",
+          "CI 状态（head 1a831a2，run 36659140377）：4/5 jobs 绿（fmt/clippy/test/deny success），audit job 自身失败被 continue-on-error 接住，run conclusion success。",
+          "B-class 远程表面（D1-D13）继续锁定，待 owner 逐项 opt-in（docs/OWNER_DECISION_BACKLOG.md，计数纠正见 docs/M7-CORRECTION.md）。"
+        ],
+        "knownFailures": [
+          "B-class remote surfaces (gh / Cloudflare / SSH / Aliyun) intentionally return pending sentinels until owner opt-in.",
+          "rustfmt.toml nightly-only options are silently ignored by stable rustfmt; do not add nightly-only syntax.",
+          "cargo audit --deny warnings 红（被 continue-on-error 接住）：11 vulnerabilities + 3 denied warnings（fxhash / paste / yoke-derive unmaintained+yanked），2026-10-01 cargo audit 复跑；详见 docs/SECURITY-AUDIT-2026-09-30.md + docs/BRANCH-STATE-SYNC.md；Wave-U3 已关 12/19 wasmtime advisory，U3.5 cascade 预备在 agent/wave-u1-integrated @ c7f5222 (commit 1a67f90) 等 owner 拍板。"
+        ]
+      },
+      "lastVerifiedAt": "2026-10-01"
     },
     {
       "id": "ielts-vocab",

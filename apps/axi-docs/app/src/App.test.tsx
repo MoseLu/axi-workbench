@@ -329,9 +329,8 @@ describe('App document route', () => {
     expect(screen.getByRole('link', { name: '技能库' })).toHaveAttribute('href', '/zh/skills')
     expect(screen.getByRole('link', { name: '技能库' })).toHaveClass('active')
     const sidebar = screen.getByLabelText('侧边栏导航')
-    expect(await within(sidebar).findByText('前端技能')).toBeInTheDocument()
-    fireEvent.click(within(sidebar).getByRole('button', { name: '前端技能' }))
-    expect(await within(sidebar).findByRole('button', { name: '前端开发' })).toBeInTheDocument()
+    const frontendSection = await within(sidebar).findByRole('navigation', { name: '前端技能' })
+    expect(within(frontendSection).getByRole('button', { name: '前端开发' })).toBeInTheDocument()
     expect(within(sidebar).queryByText('Frontend workflow skill')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '快速开始' })).not.toBeInTheDocument()
   })
@@ -354,14 +353,12 @@ describe('App document route', () => {
       </MemoryRouter>,
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: '前端技能' }))
     fireEvent.click(await screen.findByRole('button', { name: '前端开发' }))
 
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/docs/axi-skills-zh/skills.zh/frontend-dev/SKILL'))
     expect(screen.getByRole('link', { name: '指南' })).not.toHaveClass('active')
     expect(screen.getByRole('link', { name: '技能库' })).toHaveClass('active')
     expect(screen.getByLabelText('前端技能')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '前端技能' }))
     const activeLink = screen.getByRole('link', { name: '前端开发' })
     expect(activeLink).toHaveClass('active')
 

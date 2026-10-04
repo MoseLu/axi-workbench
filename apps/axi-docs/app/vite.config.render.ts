@@ -1,18 +1,14 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin, ViteDevServer } from 'vite'
-import { buildStaticKnowledgeAssets } from './vite.config.plugin'
+import { createLazyKnowledgeAssets } from './vite.config.plugin'
 import type { StaticKnowledgeManifest, StaticKnowledgeSourceBundle } from './src/types'
 import type { InitialPageData } from './src/lib/initialPageData'
 
 const guideRoute = /^\/(zh|en)\/guide\/([a-z0-9-]+)\/?$/u
 
 export function documentHtmlPlugin(): Plugin {
-  let assetsPromise: ReturnType<typeof buildStaticKnowledgeAssets> | null = null
-  const getAssets = () => {
-    assetsPromise ??= buildStaticKnowledgeAssets(['axi-docs-zh', 'axi-docs-en'])
-    return assetsPromise
-  }
+  const lazyAssets = createLazyKnowledgeAssets()
 
   return {
     name: 'axi-docs-document-html',
@@ -20,7 +16,7 @@ export function documentHtmlPlugin(): Plugin {
     configureServer(server: ViteDevServer) {
       server.watcher.on('change', (file) => {
         if (file.includes(`${path.sep}docs${path.sep}content${path.sep}`)) {
-          assetsPromise = null
+          lazyAssets.reset()
           server.ws.send({ type: 'full-reload' })
         }
       })
@@ -33,9 +29,8 @@ export function documentHtmlPlugin(): Plugin {
         if (!route) return next()
 
         try {
-          const assets = await getAssets()
-          const manifestAsset = assets.get('generated/knowledge/manifest.json')
-          const bundleAsset = assets.get(`generated/knowledge/sources/axi-docs-${route[1]}/bundle.json`)
+          const manifestAsset = await lazyAssets.getManifest()
+          const bundleAsset = await lazyAssets.getBundle(`axi-docs-${route[1]}`)
           if (!manifestAsset || !bundleAsset) return next()
 
           const manifest = JSON.parse(manifestAsset.content) as StaticKnowledgeManifest

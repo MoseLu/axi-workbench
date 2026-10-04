@@ -244,7 +244,7 @@ function formatSkillTitleCandidate(value: string): string {
   return (joinFormattedTitleTokens(tokens) || normalized).replace(/技能$/u, '指南')
 }
 
-function formatChineseTitleCandidate(value: string): string {
+function formatChineseTitleCandidate(value: string, locale: DocumentTitleLocale = 'zh'): string {
   const normalized = stripMarkdownExtension(value)
   if (!normalized) return ''
 
@@ -260,20 +260,23 @@ function formatChineseTitleCandidate(value: string): string {
   const formatted = tokens.map(formatToken)
   if (formatted.some((token) => hasChinese(token))) return formatted.join('')
 
-  return `${normalized} 文档`
+  return locale === 'en' ? normalized : `${normalized} 文档`
 }
+
+export type DocumentTitleLocale = 'zh' | 'en'
 
 export function formatKnowledgeDocumentTitle(
   titleOrName: string,
   path?: string | null,
   graphTitle?: string | null,
+  locale: DocumentTitleLocale = 'zh',
 ): string {
   const skillPathTitle = skillTitleCandidateFromPath(path)
   const formatCandidate = (candidate: string): string => {
     if (skillPathTitle && (!candidate || isGenericSkillTitle(candidate) || !hasChinese(candidate))) {
       return formatSkillTitleCandidate(skillPathTitle)
     }
-    return formatChineseTitleCandidate(candidate)
+    return formatChineseTitleCandidate(candidate, locale)
   }
 
   const explicitGraphTitle = normalizeText(graphTitle)
@@ -334,8 +337,9 @@ export function formatKnowledgeItemTitle(item: {
   name?: string | null
   path?: string | null
   graphTitle?: string | null
+  locale?: DocumentTitleLocale
 }): string {
-  return formatKnowledgeDocumentTitle(item.title || item.name || '', item.path, item.graphTitle)
+  return formatKnowledgeDocumentTitle(item.title || item.name || '', item.path, item.graphTitle, item.locale)
 }
 
 export function formatKnowledgeTagLabel(tag: string): string {

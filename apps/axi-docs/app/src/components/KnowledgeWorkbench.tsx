@@ -35,7 +35,7 @@ interface KnowledgeWorkbenchProps {
   onSearch: (query: string) => void
   onWikiLink: (noteName: string) => void
   onNavigateHome: () => void
-  onNavigateExplorer: () => void
+  onOpenExplorer: () => void
   onClearSelectedFile: () => void
 }
 
@@ -65,7 +65,7 @@ export function KnowledgeWorkbench({
   onTagSelect,
   onWikiLink,
   onNavigateHome,
-  onNavigateExplorer,
+  onOpenExplorer,
   onClearSelectedFile,
 }: KnowledgeWorkbenchProps) {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -131,7 +131,7 @@ export function KnowledgeWorkbench({
         guideLocale={guideLocale}
         guidePageId={guidePageId}
         onClearSelectedFile={onClearSelectedFile}
-        onOpenExplorer={onNavigateExplorer}
+        onOpenExplorer={onOpenExplorer}
         onOpenItem={onOpenItem}
         onTagSelect={onTagSelect}
         onWikiLink={onWikiLink}

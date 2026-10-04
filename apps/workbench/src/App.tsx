@@ -10,11 +10,12 @@ import {
   createAxiAntdTheme,
   useAxiTheme,
 } from '@axi/core';
-import { AxiExceptionPage, axiCrudLocaleContribution } from '@axi/crud';
+import { axiCrudLocaleContribution } from '@axi/crud';
 import { axiSettingsLocaleContribution } from '@axi/settings';
 import { axiShellLocaleContribution } from '@axi/shell';
 import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foundation';
 import MainLayout from './layouts/MainLayout';
+import './styles/not-found.css';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
@@ -54,15 +55,42 @@ const queryClient = new QueryClient({
   },
 });
 
-/** 非 AXI UI 页面不再进入第二套页面体系，统一按 404 处理。 */
-const AxiUiContractNotFound: React.FC = () => (
-  <AxiExceptionPage
-    className="workbench-axi-contract-not-found"
-    status="404"
-    subTitle="该页面尚未通过 AXI UI 页面契约审核。"
-    title="页面暂不可用"
-  />
-);
+/** 用户友好的 404：不再把内部工程术语暴露给最终用户，必须有至少 3 个返回操作。 */
+const AxiUiContractNotFound: React.FC = () => {
+  const navigate = useNavigate();
+  const handleHome = React.useCallback(() => navigate('/admin/dashboard', { replace: true }), [navigate]);
+  const handleBack = React.useCallback(() => {
+    if (window.history.length > 1) window.history.back();
+    else navigate('/login', { replace: true });
+  }, [navigate]);
+  const handleReload = React.useCallback(() => window.location.reload(), []);
+  const handleSearch = React.useCallback(() => navigate('/admin/search', { replace: true }), [navigate]);
+  return (
+    <div className="workbench-not-found" role="alert" aria-live="polite">
+      <div className="workbench-not-found__inner">
+        <p className="workbench-not-found__code" aria-hidden="true">404</p>
+        <h1 className="workbench-not-found__title">找不到您访问的页面</h1>
+        <p className="workbench-not-found__subtitle">
+          链接可能已过期或地址输入有误。请使用下方按钮继续，或在全局搜索中查找。
+        </p>
+        <div className="workbench-not-found__actions">
+          <button type="button" className="workbench-not-found__btn workbench-not-found__btn--primary" onClick={handleHome}>
+            返回工作台首页
+          </button>
+          <button type="button" className="workbench-not-found__btn" onClick={handleBack}>
+            返回上一页
+          </button>
+          <button type="button" className="workbench-not-found__btn" onClick={handleSearch}>
+            全局搜索
+          </button>
+          <button type="button" className="workbench-not-found__btn workbench-not-found__btn--ghost" onClick={handleReload}>
+            重新加载
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /** 主窗启动页：只在 1280×800 主窗显示，登录卡永远留在独立小窗。 */
 const DesktopStartupLoading: React.FC = () => {
@@ -157,8 +185,20 @@ const WorkbenchSurface: React.FC = () => {
                     {/* Retired settings table: preserve old bookmarks without rendering a duplicate settings page. */}
                     <Route path="admin/me/settings" element={<Navigate to="/admin/me/theme" replace />} />
                     <Route path="admin/settings/menu" element={<MenuList />} />
-                    <Route path="admin/settings/user" element={<Navigate to="/admin/me" replace />} />
+                    <Route path="admin/settings/user" element={<Navigate to="/admin/me/theme" replace />} />
                     <Route path="admin/settings/role" element={<RoleList />} />
+
+                    {/* 历史路径别名：保留外部文档/邮件/书签中的旧链接可访问 */}
+                    <Route path="projects" element={<Navigate to="/admin/project" replace />} />
+                    <Route path="projects/:id" element={<Navigate to="/admin/project/:id" replace />} />
+                    <Route path="command-center" element={<Navigate to="/admin/command-center" replace />} />
+                    <Route path="personal-os/today" element={<Navigate to="/admin/personal-os/today" replace />} />
+                    <Route path="personal-os/workbench" element={<Navigate to="/admin/personal-os/workbench" replace />} />
+                    <Route path="admin/eps-audit" element={<Navigate to="/admin/operations/eps" replace />} />
+                    <Route path="admin/observability" element={<Navigate to="/admin/operations/observability" replace />} />
+                    <Route path="admin/menu-list" element={<Navigate to="/admin/settings/menu" replace />} />
+                    <Route path="admin/role-list" element={<Navigate to="/admin/settings/role" replace />} />
+                    <Route path="admin/handoff/create" element={<Navigate to="/admin/handoff" replace />} />
                   </Route>
 
                   <Route path="*" element={<AxiUiContractNotFound />} />

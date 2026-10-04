@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AxiSvgIcon } from '@axi/core';
+import { useNavigate } from 'react-router-dom';import { AxiSvgIcon } from "@axi/icons";
+
 import { AxiBanner } from '@axi/widgets';
 import { AxiViewGroup } from '@axi/shell';
 import {

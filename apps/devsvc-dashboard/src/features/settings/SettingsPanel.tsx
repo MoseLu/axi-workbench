@@ -13,8 +13,8 @@ import menuLightUrl from "../../assets/settings/menu-light.png";
 import themeDarkUrl from "../../assets/settings/theme-dark.png";
 import themeLightUrl from "../../assets/settings/theme-light.png";
 import themeSystemUrl from "../../assets/settings/theme-system.png";
-import { AxiSettingsChoice, AxiSettingsFieldRow, AxiSettingsPanel, AxiSettingsSection, AxiSettingsSegmented, AxiSettingsSwitchRow } from "@axi/settings";
-import { AxiSvgIcon } from "@axi/core";
+import { AxiSettingsChoice, AxiSettingsFieldRow, AxiSettingsPanel, AxiSettingsSection, AxiSettingsSegmented, AxiSettingsSwitchRow } from "@axi/settings";import { AxiSvgIcon } from "@axi/icons";
+
 import { defaultSettings, menuLayoutOptions, type AppSettings, type BoxStyle, type ContainerWidth, type MenuLayout, type MenuStyle } from "../../settings/useAppSettings";
 import { themePresets, type ThemeMode, type ThemeName, type ThemePreference, type ThemePreset } from "../../theme/tokens";
 

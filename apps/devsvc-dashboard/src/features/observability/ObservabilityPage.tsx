@@ -118,7 +118,7 @@ export function ObservabilityPage() {
         <OverviewPanel overview={overview} traces={tracesQuery} metrics={metrics} />
       ) : null}
       {activeTab === "logs" ? (
-        <Spin spinning={logs.isLoading} tip={t("Loading")}>
+        <Spin spinning={logs.isLoading} description={t("Loading")}>
           {logRows.length === 0 ? <Empty description={t("No log records")} /> : (
             <Table<LogRow>
               size="small"
@@ -132,7 +132,7 @@ export function ObservabilityPage() {
         </Spin>
       ) : null}
       {activeTab === "metrics" ? (
-        <Spin spinning={metrics.isLoading} tip={t("Loading")}>
+        <Spin spinning={metrics.isLoading} description={t("Loading")}>
           <Typography.Paragraph>
             {t("Query")}: <code>{metrics.data?.data?.resultType ?? "vector"}</code>
           </Typography.Paragraph>
@@ -145,7 +145,7 @@ export function ObservabilityPage() {
         </Spin>
       ) : null}
       {activeTab === "traces" ? (
-        <Spin spinning={tracesQuery.isLoading} tip={t("Loading")}>
+        <Spin spinning={tracesQuery.isLoading} description={t("Loading")}>
           {traceRows.length === 0 ? <Empty description={t("No traces")} /> : (
             <Table<TraceRow>
               size="small"
@@ -169,7 +169,7 @@ interface OverviewPanelProps {
 
 function OverviewPanel({ overview, metrics, traces }: OverviewPanelProps) {
   const { t } = useTranslation();
-  if (overview.isLoading) return <Spin tip={t("Loading")} />;
+  if (overview.isLoading) return <Spin description={t("Loading")} />;
   if (overview.error) return <Empty description={String(overview.error)} />;
   const data = overview.data;
   return (

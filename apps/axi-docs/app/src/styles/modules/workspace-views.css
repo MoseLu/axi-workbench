@@ -1,6 +1,7 @@
 /* ─── Loading & Empty States ────────────────────────────────────────────────── */
-.loading { display: flex; align-items: center; justify-content: center; height: 100%; padding: 80px; }
+.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; height: 100%; padding: 80px; }
 .loading--fullscreen { position: fixed; inset: 0; }
+.loading__label { margin: 0; color: var(--color-text-muted, var(--color-text-secondary)); font-size: var(--font-size-sm, 14px); }
 .spinner {
   width: var(--icon-size-xl); height: var(--icon-size-xl);
   border: 2px solid var(--color-border);

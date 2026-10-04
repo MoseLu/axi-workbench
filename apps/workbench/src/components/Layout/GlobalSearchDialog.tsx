@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { AxiSvgIcon, type AxiIconName } from '@axi/core';
+import { createPortal } from 'react-dom';import { AxiSvgIcon, type AxiIconName } from "@axi/icons";
+
 import { axiWorkbenchIconMap } from '@axi/workbench-foundation/icons';
 import { useI18n } from '../../i18n';
 import './GlobalSearchDialog.css';

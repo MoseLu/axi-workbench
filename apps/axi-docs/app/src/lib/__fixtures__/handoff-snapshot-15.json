@@ -13,14 +13,14 @@
     {
       "id": "axi-docs",
       "name": "Axi Docs",
-      "path": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs",
+      "path": "/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs",
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "libu",
       "readiness": "verified",
       "score": 10,
-      "manifestPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/project-docs.manifest.json",
-      "handoffPath": "/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs/docs/HANDOFF.md",
+      "manifestPath": "/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/project-docs.manifest.json",
+      "handoffPath": "/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/HANDOFF.md",
       "graphId": "axi-docs",
       "graphMatched": true,
       "errors": [],
@@ -59,7 +59,7 @@
     {
       "id": "axi-rules",
       "name": "Axi Rules",
-      "path": "/Volumes/code/workspace/projects/axi-rules",
+      "path": "/Volumes/code/workspace/foundation/axi-rules",
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
@@ -84,9 +84,9 @@
     {
       "id": "axi-pet",
       "name": "Axi Pet",
-      "path": "/Volumes/code/workspace/projects/axi-pet",
+      "path": "/Volumes/code/workspace/agent-cluster/axi-pet",
       "kind": "project",
-      "lifecycle": "active-local",
+      "lifecycle": "active-canonical",
       "owner": "libu",
       "readiness": "documented",
       "score": 8,
@@ -118,7 +118,7 @@
     {
       "id": "axi-registry",
       "name": "Axi Registry",
-      "path": "/Volumes/code/workspace/infra/axi-registry",
+      "path": "/Volumes/code/workspace/foundation/axi-registry",
       "kind": "infra",
       "lifecycle": "active-infra",
       "owner": "libu",
@@ -126,7 +126,7 @@
       "score": 9,
       "summary": "Verdaccio local registry.",
       "commands": {
-        "verify": ["pnpm --dir infra/axi-registry test"],
+        "verify": ["pnpm --dir foundation/axi-registry test"],
         "smoke": []
       },
       "currentWork": { "active": [], "knownFailures": [] },

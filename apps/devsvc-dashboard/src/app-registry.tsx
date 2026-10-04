@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { TFunction } from "i18next";
+import { AxiAppIcon } from "@axi/core";
+import { AxiSvgIcon, axiIconNames, type AxiIconName } from "@axi/icons";
 
-import { AxiAppIcon, AxiSvgIcon, axiIconNames, type AxiIconName } from "@axi/core";
 import { axiResourceIdFromRoute, axiResourceRoute, findAxiResourceByRoute, type AxiResource } from "./features/axi-resources/axiResources";
 import { hostedAppRoute, type HostedApp, type HostedAppMenuGroup, type HostedAppMenuItem } from "./features/hosted/hostedApps";
 

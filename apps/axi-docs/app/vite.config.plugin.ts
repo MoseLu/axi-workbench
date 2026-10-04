@@ -73,61 +73,138 @@ function sanitizeSource(source: DocSource): DocSource {
   }
 }
 
-function registerJsonAsset(
-  assets: Map<string, GeneratedKnowledgeAsset>,
-  fileName: string,
-  payload: unknown,
-) {
-  assets.set(fileName, {
+function jsonAsset(payload: unknown): GeneratedKnowledgeAsset {
+  return {
     content: JSON.stringify(payload),
     contentType: 'application/json; charset=utf-8',
-  })
+  }
+}
+
+const MANIFEST_ASSET_KEY = `${STATIC_KNOWLEDGE_ROOT}/manifest.json`
+const BUNDLE_ASSET_PATTERN = new RegExp(
+  `^${STATIC_KNOWLEDGE_ROOT}/sources/([^/]+)/bundle\\.json$`,
+)
+const GRAPH_ASSET_PATTERN = new RegExp(
+  `^${STATIC_KNOWLEDGE_ROOT}/sources/([^/]+)/graphs/(.+)$`,
+)
+
+function listEnabledLocalSources(): DocSource[] {
+  return listKnowledgeSources()
+    .filter((source) => source.enabled && source.type === 'local')
+    .map(sanitizeSource)
+}
+
+export function buildManifestAsset(): GeneratedKnowledgeAsset {
+  const localSources = listEnabledLocalSources()
+  const manifest: StaticKnowledgeManifest = {
+    version: STATIC_BUNDLE_VERSION,
+    generatedAt: new Date().toISOString(),
+    defaultSourceId: localSources[0]?.id || null,
+    sources: localSources,
+  }
+  return jsonAsset(manifest)
+}
+
+export async function buildSourceBundleAsset(sourceId: string): Promise<GeneratedKnowledgeAsset | null> {
+  const source = listKnowledgeSources()
+    .find((item) => item.id === sourceId && item.enabled && item.type === 'local')
+  if (!source) return null
+
+  const [catalog, tags, documents, directoryIndex, globalGraph] = await Promise.all([
+    getKnowledgeCatalog(source.id),
+    getKnowledgeTags(source.id),
+    getKnowledgeDocuments(source.id),
+    getKnowledgeDirectoryIndex(source.id),
+    getGlobalKnowledgeGraph(source.id),
+  ])
+
+  const bundle: StaticKnowledgeSourceBundle = {
+    version: STATIC_BUNDLE_VERSION,
+    generatedAt: new Date().toISOString(),
+    source: sanitizeSource(source),
+    catalog,
+    tags,
+    documents,
+    directoryIndex,
+    globalGraph,
+  }
+  return jsonAsset(bundle)
+}
+
+export async function buildDocumentGraphAsset(
+  sourceId: string,
+  documentPath: string,
+): Promise<GeneratedKnowledgeAsset> {
+  return jsonAsset(await getKnowledgeGraph(sourceId, documentPath))
+}
+
+export interface SuggestIndexEntry {
+  sourceId: string
+  path: string
+  title: string
+  rawTitle?: string
+  description?: string
+  tags: string[]
+}
+
+export interface SuggestIndex {
+  generatedAt: string
+  entries: SuggestIndexEntry[]
+  tags: Array<{ name: string; count: number }>
+}
+
+/**
+ * Compact cross-source index for the search typeahead. Loading every source
+ * bundle for suggestions costs tens of megabytes; this trims each document to
+ * its identity fields so the whole index stays well under a megabyte.
+ */
+export async function buildSuggestIndexAsset(): Promise<GeneratedKnowledgeAsset> {
+  const entries: SuggestIndexEntry[] = []
+  const tagCounts = new Map<string, number>()
+
+  for (const source of listEnabledLocalSources()) {
+    const documents = await getKnowledgeDocuments(source.id)
+    for (const document of documents) {
+      entries.push({
+        sourceId: document.sourceId,
+        path: document.path,
+        title: document.title,
+        rawTitle: document.rawTitle,
+        description: document.description ? document.description.slice(0, 120) : undefined,
+        tags: document.tags,
+      })
+      for (const tag of document.tags) {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
+      }
+    }
+  }
+
+  const tags = [...tagCounts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count)
+
+  const payload: SuggestIndex = {
+    generatedAt: new Date().toISOString(),
+    entries,
+    tags,
+  }
+  return jsonAsset(payload)
 }
 
 export async function buildStaticKnowledgeAssets(sourceIds?: string[]) {
   const assets = new Map<string, GeneratedKnowledgeAsset>()
-  const generatedAt = new Date().toISOString()
-  const localSources = listKnowledgeSources()
-    .filter((source) => source.enabled && source.type === 'local')
-    .map(sanitizeSource)
+  assets.set(MANIFEST_ASSET_KEY, buildManifestAsset())
 
-  const manifest: StaticKnowledgeManifest = {
-    version: STATIC_BUNDLE_VERSION,
-    generatedAt,
-    defaultSourceId: localSources[0]?.id || null,
-    sources: localSources,
-  }
-
-  registerJsonAsset(assets, `${STATIC_KNOWLEDGE_ROOT}/manifest.json`, manifest)
-
-  for (const source of localSources.filter((item) => !sourceIds || sourceIds.includes(item.id))) {
-    const [catalog, tags, documents, directoryIndex, globalGraph] = await Promise.all([
-      getKnowledgeCatalog(source.id),
-      sourceIds ? Promise.resolve([]) : getKnowledgeTags(source.id),
-      getKnowledgeDocuments(source.id),
-      sourceIds ? Promise.resolve({}) : getKnowledgeDirectoryIndex(source.id),
-      sourceIds ? Promise.resolve({ nodes: [], edges: [] }) : getGlobalKnowledgeGraph(source.id),
-    ])
-
-    const bundle: StaticKnowledgeSourceBundle = {
-      version: STATIC_BUNDLE_VERSION,
-      generatedAt,
-      source,
-      catalog,
-      tags,
-      documents,
-      directoryIndex,
-      globalGraph,
+  for (const source of listEnabledLocalSources().filter((item) => !sourceIds || sourceIds.includes(item.id))) {
+    const bundle = await buildSourceBundleAsset(source.id)
+    if (bundle) {
+      assets.set(`${STATIC_KNOWLEDGE_ROOT}/sources/${source.id}/bundle.json`, bundle)
     }
-
-    registerJsonAsset(assets, `${STATIC_KNOWLEDGE_ROOT}/sources/${source.id}/bundle.json`, bundle)
-
-    for (const document of sourceIds ? [] : documents) {
-      const graph = await getKnowledgeGraph(source.id, document.path)
-      registerJsonAsset(
-        assets,
+    if (sourceIds) continue
+    for (const document of await getKnowledgeDocuments(source.id)) {
+      assets.set(
         `${STATIC_KNOWLEDGE_ROOT}/sources/${source.id}/graphs/${encodeBase64Url(document.path)}.json`,
-        graph,
+        await buildDocumentGraphAsset(source.id, document.path),
       )
     }
   }
@@ -135,9 +212,78 @@ export async function buildStaticKnowledgeAssets(sourceIds?: string[]) {
   return assets
 }
 
+/**
+ * Lazily builds and caches knowledge assets one at a time: the manifest is
+ * computable instantly, each source bundle on first request for that source,
+ * and each per-document graph on first request for that document. Failed
+ * builds are not cached so the next request retries.
+ */
+export function createLazyKnowledgeAssets() {
+  let manifestPromise: Promise<GeneratedKnowledgeAsset | null> | null = null
+  let suggestPromise: Promise<GeneratedKnowledgeAsset | null> | null = null
+  const bundlePromises = new Map<string, Promise<GeneratedKnowledgeAsset | null>>()
+  const graphPromises = new Map<string, Promise<GeneratedKnowledgeAsset | null>>()
+
+  const getManifest = () => {
+    manifestPromise ??= Promise.resolve()
+      .then(buildManifestAsset)
+      .catch(() => {
+        manifestPromise = null
+        return null
+      })
+    return manifestPromise
+  }
+
+  const getSuggest = () => {
+    suggestPromise ??= Promise.resolve()
+      .then(buildSuggestIndexAsset)
+      .catch(() => {
+        suggestPromise = null
+        return null
+      })
+    return suggestPromise
+  }
+
+  const getBundle = (sourceId: string) => {
+    let promise = bundlePromises.get(sourceId)
+    if (!promise) {
+      promise = buildSourceBundleAsset(sourceId).catch(() => {
+        bundlePromises.delete(sourceId)
+        return null
+      })
+      bundlePromises.set(sourceId, promise)
+    }
+    return promise
+  }
+
+  const getGraph = (sourceId: string, documentPath: string) => {
+    const key = `${sourceId}:${documentPath}`
+    let promise = graphPromises.get(key)
+    if (!promise) {
+      promise = buildDocumentGraphAsset(sourceId, documentPath).catch(() => {
+        graphPromises.delete(key)
+        return null
+      })
+      graphPromises.set(key, promise)
+    }
+    return promise
+  }
+
+  const reset = () => {
+    manifestPromise = null
+    suggestPromise = null
+    bundlePromises.clear()
+    graphPromises.clear()
+  }
+
+  return { getManifest, getSuggest, getBundle, getGraph, reset }
+}
+
 function matchStaticKnowledgeAsset(pathname: string): string | null {
+  const SUGGEST_ASSET_KEY = `${STATIC_KNOWLEDGE_ROOT}/suggest.json`
   for (const prefix of STATIC_KNOWLEDGE_PREFIXES) {
     if (pathname === prefix) return `${STATIC_KNOWLEDGE_ROOT}/manifest.json`
+    if (pathname === `${prefix}/suggest.json`) return SUGGEST_ASSET_KEY
     if (pathname.startsWith(`${prefix}/`)) {
       return `${STATIC_KNOWLEDGE_ROOT}/${pathname.slice(prefix.length + 1)}`
     }
@@ -146,7 +292,7 @@ function matchStaticKnowledgeAsset(pathname: string): string | null {
 }
 
 function createStaticKnowledgeMiddleware(
-  ensureAssets: () => Promise<Map<string, GeneratedKnowledgeAsset>>,
+  lazyAssets: ReturnType<typeof createLazyKnowledgeAssets>,
 ) {
   return (req: MiddlewareRequest, res: MiddlewareResponse, next: NextFunction) => {
     void (async () => {
@@ -157,8 +303,20 @@ function createStaticKnowledgeMiddleware(
         return
       }
 
-      const assets = await ensureAssets()
-      const asset = assets.get(assetKey)
+      let asset: GeneratedKnowledgeAsset | null = null
+      const bundleMatch = BUNDLE_ASSET_PATTERN.exec(assetKey)
+      const graphMatch = GRAPH_ASSET_PATTERN.exec(assetKey)
+      if (assetKey === MANIFEST_ASSET_KEY) {
+        asset = await lazyAssets.getManifest()
+      } else if (assetKey === `${STATIC_KNOWLEDGE_ROOT}/suggest.json`) {
+        asset = await lazyAssets.getSuggest()
+      } else if (bundleMatch) {
+        asset = await lazyAssets.getBundle(bundleMatch[1])
+      } else if (graphMatch) {
+        const documentPath = Buffer.from(graphMatch[2], 'base64url').toString('utf8')
+        asset = documentPath ? await lazyAssets.getGraph(graphMatch[1], documentPath) : null
+      }
+
       if (!asset) {
         res.statusCode = 404
         res.end('Not found')
@@ -388,32 +546,34 @@ function createDocsApiMiddleware() {
 
 export function localDocsPlugin(): Plugin {
   const docsApiMiddleware = createDocsApiMiddleware()
-  let staticAssetsPromise: Promise<Map<string, GeneratedKnowledgeAsset>> | null = null
+  const lazyAssets = createLazyKnowledgeAssets()
 
-  const ensureStaticAssets = () => {
-    staticAssetsPromise ??= buildStaticKnowledgeAssets()
-    return staticAssetsPromise
-  }
-
-  const resetStaticAssets = () => {
-    staticAssetsPromise = null
-  }
-
-  const staticKnowledgeMiddleware = createStaticKnowledgeMiddleware(ensureStaticAssets)
+  const staticKnowledgeMiddleware = createStaticKnowledgeMiddleware(lazyAssets)
 
   return {
     name: 'vite-plugin-local-docs',
     configureServer(server) {
-      resetStaticAssets()
+      lazyAssets.reset()
+      // Warm the suggest index and the default source bundle in the background
+      // so the first typeahead/document view does not pay the cold build.
+      void lazyAssets.getSuggest()
+      void lazyAssets.getManifest().then((manifest) => {
+        if (!manifest) return
+        const defaultSourceId = (JSON.parse(manifest.content) as { defaultSourceId: string | null }).defaultSourceId
+        if (defaultSourceId) void lazyAssets.getBundle(defaultSourceId)
+      })
       server.middlewares.use(staticKnowledgeMiddleware)
       server.middlewares.use(docsApiMiddleware)
     },
     configurePreviewServer(server) {
+      lazyAssets.reset()
+      void lazyAssets.getSuggest()
       server.middlewares.use(staticKnowledgeMiddleware)
       server.middlewares.use(docsApiMiddleware)
     },
     async generateBundle() {
-      const assets = await ensureStaticAssets()
+      const assets = await buildStaticKnowledgeAssets()
+      assets.set(`${STATIC_KNOWLEDGE_ROOT}/suggest.json`, await buildSuggestIndexAsset())
       for (const [fileName, asset] of assets.entries()) {
         this.emitFile({
           type: 'asset',

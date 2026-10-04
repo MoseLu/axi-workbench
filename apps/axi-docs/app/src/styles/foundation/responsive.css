@@ -562,6 +562,7 @@
     border-right: 1px solid var(--axi-doc-vp-c-divider);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
     overscroll-behavior: contain;
+    animation: axi-doc-drawer-in 0.22s ease;
   }
 
   .cockpit-shell.axi-docs-home {
@@ -589,6 +590,7 @@
     border-bottom: 0;
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
     overscroll-behavior: contain;
+    animation: axi-doc-drawer-in 0.22s ease;
   }
 
   .axi-docs-home__content {
@@ -596,6 +598,24 @@
     max-width: none;
     padding: 36px 24px 64px;
     overflow: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axi-doc-nav-open .document-detail-page__sidebar,
+  .axi-doc-nav-open .axi-docs-home__sidebar {
+    animation: none;
+  }
+}
+
+@keyframes axi-doc-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

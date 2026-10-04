@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { AxiSvgIcon, type AxiIconName } from '@axi/core';
+import React, { useEffect, useMemo, useState } from 'react';import { AxiSvgIcon, type AxiIconName } from "@axi/icons";
+
 import { AxiDialogGroup } from '@axi/crud';
 import {
   AxiAdminSettingsContent,

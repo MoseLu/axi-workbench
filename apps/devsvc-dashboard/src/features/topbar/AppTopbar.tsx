@@ -7,8 +7,8 @@ import { Github, Languages } from "lucide-react";
 import type { NavRouteKey } from "../../app-registry";
 import { appLocaleOptions, type AppLocale } from "../../i18n";
 import type { AppSettings } from "../../settings/useAppSettings";
-import type { ThemeMode, ThemeName, ThemePreference, ThemePreset } from "../../theme/tokens";
-import { AxiSvgIcon } from "@axi/core";
+import type { ThemeMode, ThemeName, ThemePreference, ThemePreset } from "../../theme/tokens";import { AxiSvgIcon } from "@axi/icons";
+
 import { type AuthUser } from "../auth/auth";
 import { UserMenu } from "../auth/UserMenu";
 import { GlobalSearchBox } from "../search/GlobalSearchBox";

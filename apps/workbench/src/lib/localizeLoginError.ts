@@ -38,6 +38,14 @@ export function localizeLoginError(message: string, t: (key: string) => string):
     return t('auth.login.requestFailed');
   }
 
+  // 5xx responses must read as a transient outage to the user, not a raw
+  // "(HTTP 502)" stack trace. The login form does not know whether the
+  // gateway is down or the identity adapter behind it timed out — both map
+  // to the same retryable banner.
+  if (/\b(500|501|502|503|504|505|507|510|511)\b/.test(lower) || lower.includes('bad gateway') || lower.includes('service unavailable')) {
+    return t('auth.login.identityUnavailable');
+  }
+
   // Remaining ASCII/service errors must not leak onto a zh-CN banner.
   if (!/[\u3400-\u9fff]/.test(text)) {
     return t('auth.login.requestFailed');

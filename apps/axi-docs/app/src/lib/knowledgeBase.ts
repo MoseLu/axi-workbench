@@ -86,6 +86,7 @@ type LocalFileEntry = {
 const localSourceIndexCache = new Map<string, LocalSourceIndex>()
 const gitRootCache = new Map<string, string | null>()
 const gitUpdatedCache = new Map<string, string | null>()
+const gitPrefilledRoots = new Set<string>()
 
 function getGitRoot(fullPath: string): string | null {
   const startDir = fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()
@@ -107,16 +108,88 @@ function getGitRoot(fullPath: string): string | null {
     return null
   }
 
+  // Key the cache by the directory that owns .git so every file under the
+  // same repository reuses one lookup instead of spawning per directory.
+  let root: string | null = null
+  if (gitRootCache.has(probeDir)) {
+    root = gitRootCache.get(probeDir) || null
+  } else {
+    try {
+      root = execFileSync('git', ['-C', probeDir, 'rev-parse', '--show-toplevel'], {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim() || null
+    } catch {
+      root = null
+    }
+    gitRootCache.set(probeDir, root)
+  }
+  gitRootCache.set(startDir, root)
+  return root
+}
+
+/**
+ * Load "last updated" dates for a whole git repository in ONE `git log` pass.
+ * Triggered lazily on the first cache miss for a repository, so per-file
+ * getGitLastUpdated lookups become cache hits afterwards. Untracked files are
+ * marked null in bulk (`git ls-files --others`) because they can never appear
+ * in history.
+ */
+function prefillGitUpdatedCacheForRoot(root: string): void {
+  if (gitPrefilledRoots.has(root)) return
+  gitPrefilledRoots.add(root)
+
+  const toAbsolute = new Map<string, string>()
+  const registerRelative = (relativePath: string): string | null => {
+    const normalizedRelative = normalizeSlashes(relativePath)
+    if (!normalizedRelative || normalizedRelative.startsWith('..')) return null
+    let absolute = toAbsolute.get(normalizedRelative)
+    if (!absolute) {
+      absolute = path.normalize(path.join(root, normalizedRelative))
+      toAbsolute.set(normalizedRelative, absolute)
+    }
+    return absolute
+  }
+
   try {
-    const root = execFileSync('git', ['-C', startDir, 'rev-parse', '--show-toplevel'], {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim()
-    gitRootCache.set(startDir, root || null)
-    return root || null
+    const logOutput = execFileSync(
+      'git',
+      ['-C', root, 'log', '--format=%x01%cI', '--name-only'],
+      { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 },
+    )
+    let currentDate: string | null = null
+    for (const line of logOutput.split('\n')) {
+      if (line.startsWith('\u0001')) {
+        currentDate = line.slice(1).trim() || null
+        continue
+      }
+      const trimmed = line.trim()
+      if (!currentDate || !trimmed) continue
+      const absolute = registerRelative(trimmed)
+      if (absolute && !gitUpdatedCache.has(absolute)) {
+        gitUpdatedCache.set(absolute, currentDate)
+      }
+    }
   } catch {
-    gitRootCache.set(startDir, null)
-    return null
+    return
+  }
+
+  try {
+    const untrackedOutput = execFileSync(
+      'git',
+      ['-C', root, 'ls-files', '--others', '--exclude-standard'],
+      { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 },
+    )
+    for (const line of untrackedOutput.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      const absolute = registerRelative(trimmed)
+      if (absolute && !gitUpdatedCache.has(absolute)) {
+        gitUpdatedCache.set(absolute, null)
+      }
+    }
+  } catch {
+    /* files absent from both passes fall back to frontmatter/mtime */
   }
 }
 
@@ -151,6 +224,15 @@ function getGitLastUpdated(fullPath: string): string | null {
 }
 
 function resolveLastUpdated(fullPath: string, stat: fs.Stats, frontmatter?: Frontmatter): string {
+  const normalizedPath = path.normalize(fullPath)
+  if (!gitUpdatedCache.has(normalizedPath)) {
+    const root = getGitRoot(fullPath)
+    if (root) {
+      prefillGitUpdatedCacheForRoot(root)
+    } else {
+      gitUpdatedCache.set(normalizedPath, null)
+    }
+  }
   return getGitLastUpdated(fullPath)
     || normalizeDate(frontmatter?.modified)
     || normalizeDate(frontmatter?.updated)
@@ -338,10 +420,38 @@ function extractDescription(frontmatter: Frontmatter, body: string): string | un
   if (typeof frontmatter.description === 'string' && frontmatter.description.trim()) {
     return truncateText(frontmatter.description.trim())
   }
-  const plain = body
+  const withoutTables = body
+    .replace(/^\s*\|.*$/gm, ' ')
+  // Leading metadata blocks ("> 文档编号：PRD-06 …" callouts and key-value
+  // headers, before or after the title heading) are document control info,
+  // not prose — scan past headings, blanks, and key-value lines until real
+  // prose starts, then describe from there.
+  const bodyLines = withoutTables.split('\n')
+  let startIndex = 0
+  while (startIndex < bodyLines.length && startIndex < 40) {
+    const rawLine = bodyLines[startIndex]?.trim() || ''
+    if (!rawLine) {
+      startIndex += 1
+      continue
+    }
+    if (/^#{1,6}\s/u.test(rawLine)) {
+      startIndex += 1
+      continue
+    }
+    const unquoted = rawLine.replace(/^>\s*/u, '')
+    if (/^[\w\u4e00-\u9fff][\w\u4e00-\u9fff _()/－-]{0,24}[：:]\s*\S/u.test(unquoted)) {
+      startIndex += 1
+      continue
+    }
+    break
+  }
+  const plain = bodyLines
+    .slice(startIndex)
+    .join('\n')
     .replace(/^#.+$/gm, '')
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, '$2$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/[#>*`_-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -428,7 +538,7 @@ async function parseLocalDocumentFromFile(
     return null
   }
   const techStack = extractTechStack(frontmatter, sourceTags)
-  const title = formatKnowledgeDocumentTitle(rawTitle, relativePath, graphTitle)
+  const title = formatKnowledgeDocumentTitle(rawTitle, relativePath, graphTitle, source.locale === 'en' ? 'en' : 'zh')
   const description = formatKnowledgeDocumentDescription({
     title,
     rawTitle,
@@ -478,11 +588,12 @@ function createVirtualParsedDocument(input: NormalizedDocument & {
   projectId?: string
   projectTitle?: string
   documentTypeKey?: string
+  sourceLocale?: 'en' | 'zh'
 }): ParsedDocument {
   const fileName = input.name || path.basename(input.path).replace(/\.(md|markdown)$/i, '')
   const rawTitle = input.rawTitle || input.title
   const sourceTags = [...new Set(input.sourceTags || input.tags)]
-  const title = formatKnowledgeDocumentTitle(input.title || rawTitle, input.path, input.graphTitle)
+  const title = formatKnowledgeDocumentTitle(input.title || rawTitle, input.path, input.graphTitle, input.sourceLocale === 'en' ? 'en' : 'zh')
   const description = formatKnowledgeDocumentDescription({
     title,
     rawTitle,
@@ -2576,6 +2687,7 @@ export function __clearKnowledgeBaseCacheForTests(): void {
   localSourceIndexCache.clear()
   gitRootCache.clear()
   gitUpdatedCache.clear()
+  gitPrefilledRoots.clear()
 }
 
 export async function getWorkspaceStatus() {

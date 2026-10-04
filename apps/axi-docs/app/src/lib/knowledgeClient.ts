@@ -19,6 +19,26 @@ type LoadedSourceBundle = StaticKnowledgeSourceBundle & {
 const STATIC_KNOWLEDGE_ROOT = 'generated/knowledge'
 const manifestCache = { promise: null as Promise<StaticKnowledgeManifest> | null }
 const bundleCache = new Map<string, Promise<LoadedSourceBundle>>()
+const suggestIndexCache = { promise: null as Promise<SuggestIndexPayload | null> | null }
+
+interface SuggestIndexPayload {
+  generatedAt: string
+  entries: Array<{
+    sourceId: string
+    path: string
+    title: string
+    rawTitle?: string
+    description?: string
+    tags: string[]
+  }>
+  tags: Array<{ name: string; count: number }>
+}
+
+async function loadSuggestIndex(): Promise<SuggestIndexPayload | null> {
+  suggestIndexCache.promise ??= fetchJson<SuggestIndexPayload | null>(`${STATIC_KNOWLEDGE_ROOT}/suggest.json`)
+    .catch(() => null)
+  return suggestIndexCache.promise
+}
 
 export function resolveStaticKnowledgeAssetUrl(relativePath: string, base = import.meta.env.BASE_URL || '/'): string {
   const normalizedPath = relativePath.replace(/^\/+/, '')
@@ -284,53 +304,53 @@ export async function getKnowledgeSearchSuggestions(query: string): Promise<Sear
   if (queryTokens.length === 0) return []
 
   const normalizedQuery = queryTokens.join(' ')
-  const bundles = await loadEnabledBundles()
+  const index = await loadSuggestIndex()
+  if (!index) return []
+
   const tagSuggestions = new Map<string, SearchSuggestion & { score: number }>()
   const documentSuggestions: Array<SearchSuggestion & { score: number }> = []
 
-  for (const bundle of bundles) {
-    for (const tag of bundle.tags) {
-      const lowerTag = tag.name.toLowerCase()
-      if (!matchesQuery(lowerTag, queryTokens)) continue
+  for (const tag of index.tags) {
+    const lowerTag = tag.name.toLowerCase()
+    if (!matchesQuery(lowerTag, queryTokens)) continue
 
-      const score = lowerTag.startsWith(normalizedQuery) ? 240 : 180
-      const key = tag.name.toLowerCase()
-      const current = tagSuggestions.get(key)
-      if (!current || score > current.score) {
-        tagSuggestions.set(key, {
-          kind: 'tag',
-          label: `#${tag.name}`,
-          query: `#${tag.name}`,
-          meta: `${tag.count} 篇文档`,
-          score,
-        })
-      }
-    }
-
-    for (const document of bundle.documents) {
-      const titleLower = document.title.toLowerCase()
-      const rawTitleLower = (document.rawTitle || '').toLowerCase()
-      const pathLower = document.path.toLowerCase()
-      const isTitleMatch = matchesQuery(titleLower, queryTokens) || (rawTitleLower && matchesQuery(rawTitleLower, queryTokens))
-      const isPathMatch = matchesQuery(pathLower, queryTokens)
-
-      if (!isTitleMatch && !isPathMatch) continue
-
-      let score = isTitleMatch ? 220 : 150
-      if (titleLower.startsWith(normalizedQuery) || rawTitleLower.startsWith(normalizedQuery)) {
-        score += 40
-      }
-
-      documentSuggestions.push({
-        kind: 'document',
-        label: document.title,
-        query: document.title,
-        sourceId: document.sourceId,
-        path: document.path,
-        meta: document.description ? `${document.description} · ${document.path}` : document.path,
+    const score = lowerTag.startsWith(normalizedQuery) ? 240 : 180
+    const key = tag.name.toLowerCase()
+    const current = tagSuggestions.get(key)
+    if (!current || score > current.score) {
+      tagSuggestions.set(key, {
+        kind: 'tag',
+        label: `#${tag.name}`,
+        query: `#${tag.name}`,
+        meta: `${tag.count} 篇文档`,
         score,
       })
     }
+  }
+
+  for (const document of index.entries) {
+    const titleLower = document.title.toLowerCase()
+    const rawTitleLower = (document.rawTitle || '').toLowerCase()
+    const pathLower = document.path.toLowerCase()
+    const isTitleMatch = matchesQuery(titleLower, queryTokens) || (rawTitleLower && matchesQuery(rawTitleLower, queryTokens))
+    const isPathMatch = matchesQuery(pathLower, queryTokens)
+
+    if (!isTitleMatch && !isPathMatch) continue
+
+    let score = isTitleMatch ? 220 : 150
+    if (titleLower.startsWith(normalizedQuery) || rawTitleLower.startsWith(normalizedQuery)) {
+      score += 40
+    }
+
+    documentSuggestions.push({
+      kind: 'document',
+      label: document.title,
+      query: document.title,
+      sourceId: document.sourceId,
+      path: document.path,
+      meta: document.description ? `${document.description} · ${document.path}` : document.path,
+      score,
+    })
   }
 
   return [...documentSuggestions, ...tagSuggestions.values()]

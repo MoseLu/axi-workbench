@@ -30,8 +30,8 @@ describe('inferPartition', () => {
     expect(inferPartition('/tmp/foo')).toBe('unknown')
   })
 
-  it('classifies top-level .json files as infra', () => {
-    expect(inferPartition('/Volumes/code/workspace/dev-services.config.json')).toBe('infra')
+  it('classifies top-level .json files as foundation', () => {
+    expect(inferPartition('/Volumes/code/workspace/dev-services.config.json')).toBe('foundation')
   })
 })
 
@@ -77,7 +77,7 @@ describe('extractProjectsFromHandoff', () => {
     snapshot.projects.push({
       id: 'axi-workspace-governance',
       name: 'Axi Workspace Governance',
-      path: '/Volumes/code/workspace/infra/axi-workspace-governance',
+      path: '/Volumes/code/workspace/foundation/workspace-governance',
       kind: 'axi-workspace-governance',
       lifecycle: 'active-governance',
       readiness: 'verified',

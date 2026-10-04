@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { selectApiProxyTarget } from './vite.apiProxyTarget';
+import { selectApiProxyTarget } from './vite.apiProxyTarget.ts';
 import { createLegalDocumentHtml } from './scripts/legal-page-html.mjs';
 
 const legalDocumentDevPlugin = {
@@ -44,13 +44,19 @@ const legalDocumentDevPlugin = {
 };
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, __dirname, '');
+  const env = loadEnv(mode, import.meta.dirname, '');
 
   return {
     plugins: [react(), legalDocumentDevPlugin],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': path.resolve(import.meta.dirname, './src'),
+        // The `@axi/observability-web` workspace package is declared in
+        // package.json but not yet published into `packages/`. `main.tsx`
+        // imports it dynamically and only calls a no-op `installWeb(...)`,
+        // so we alias it to a local stub module rather than failing the
+        // dev build. Replace once the package ships.
+        '@axi/observability-web': path.resolve(import.meta.dirname, 'src/lib/__observability-web-stub__.ts'),
       },
       // Workspace packages such as @axi/api-client declare React Query as a
       // peer dependency. Force the app and those linked packages to share the
@@ -66,8 +72,8 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       fs: {
         allow: [
-          path.resolve(__dirname, '../..'),
-          path.resolve(__dirname, '../../../../foundation/axi-ui'),
+          path.resolve(import.meta.dirname, '../..'),
+          path.resolve(import.meta.dirname, '../../../../foundation/axi-ui'),
         ],
       },
       proxy: {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, Form, Input, message } from 'antd';
-import { AxiSvgIcon } from '@axi/core';
+import { Button, Form, Input, message } from 'antd';import { AxiSvgIcon } from "@axi/icons";
+
 import { useAuth } from '../../../contexts/AuthContext';
 import { USERNAME_MAX_LENGTH, isValidUsername } from '@axi/workbench-foundation';
 import { useI18n } from '../../../i18n';

@@ -1,4 +1,5 @@
-import { AxiSvgIcon, type AxiSvgIconProps } from '@axi/core';
+import { AxiSvgIcon, type AxiSvgIconProps } from "@axi/icons";
+
 import {
   resolveAxiWorkbenchIcon,
   type AxiWorkbenchIconName,

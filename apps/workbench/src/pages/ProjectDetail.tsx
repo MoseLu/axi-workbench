@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 // axi-ui-escape-hatch: antd Empty 没有 @axi/* 等价的占位控件。
 import { Empty } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
-import { AxiDescriptions, AxiIconButton } from '@axi/core';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';import { AxiDescriptions } from "@axi/core";
+import { AxiIconButton } from "@axi/icons";
+
 import { AxiRow } from '@axi/widgets';
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../i18n';

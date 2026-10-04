@@ -305,6 +305,24 @@ export function Shell({
         <Route path="/axi-resources/:resourceId" element={<AxiResourcesPage userRole={user.role} />} />
         <Route path="/apps/:appId/*" element={<HostedAppPage mode={themeState.mode} preference={themeState.preference} theme={themeState.theme} />} />
         <Route path="/logs" element={<Navigate to="/services" replace />} />
+        <Route
+          path="*"
+          element={
+            <div role="alert" style={{ padding: 32, textAlign: 'center' }}>
+              <h2 style={{ marginBottom: 8 }}>{t("页面未实现")}</h2>
+              <p style={{ color: 'var(--axi-color-text-secondary, #888)' }}>
+                {t("该菜单暂未提供，请联系管理员或返回总览")}
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/overview')}
+                style={{ marginTop: 16, padding: '6px 16px', borderRadius: 6, border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
+              >
+                {t("返回总览")}
+              </button>
+            </div>
+          }
+        />
       </Routes>
     </Suspense>
   );

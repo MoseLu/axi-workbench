@@ -245,10 +245,11 @@ describe('HomeCommandCenter', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Axi Skills', level: 1 })).toBeInTheDocument()
-    expect(within(screen.getByLabelText('侧边栏导航')).getByText('Frontend')).toBeInTheDocument()
+    expect(within(screen.getByLabelText('侧边栏导航')).getByText('Frontend Dev')).toBeInTheDocument()
     const frontendSection = screen.getByLabelText('Frontend')
-    const frontendToggle = within(frontendSection).getByRole('button', { name: /^Frontend$/ })
-    expect(frontendToggle).toHaveAttribute('aria-expanded', 'true')
+    // Single-item sections render the entry directly instead of a redundant
+    // collapsible header identical to its only child.
+    expect(within(frontendSection).queryByRole('button', { name: /^Frontend$/ })).not.toBeInTheDocument()
     expect(within(frontendSection).getByRole('button', { name: 'Frontend Dev' })).toHaveAttribute('title', 'Frontend workflow skill')
     expect(within(frontendSection).queryByText('Frontend workflow skill')).not.toBeInTheDocument()
     expect(within(screen.getByLabelText('侧边栏导航')).getAllByRole('button', { name: 'Frontend Dev' })).toHaveLength(1)
@@ -349,7 +350,9 @@ describe('HomeCommandCenter', () => {
       />,
     )
 
-    expect(within(screen.getByLabelText('侧边栏导航')).getByText('Section 13')).toBeInTheDocument()
+    // Single-item sections render their entry directly, so the 13th section
+    // surfaces as its item button rather than a "Section 13" header.
+    expect(within(screen.getByLabelText('侧边栏导航')).getByRole('button', { name: 'Skill 13' })).toBeInTheDocument()
   })
 
   it('renders skill subsections collapsed under expanded skill groups', () => {

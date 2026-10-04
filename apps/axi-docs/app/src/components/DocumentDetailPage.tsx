@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   formatKnowledgeItemTitle,
   formatKnowledgeTagLabel,
+  type DocumentTitleLocale,
 } from '../lib/knowledgeFormatter'
 import { prepareDocumentDisplayMarkdown } from '../lib/documentDisplay'
 import { buildDocumentRoute } from '../lib/routes'
@@ -25,12 +26,13 @@ interface DocumentDetailPageProps {
   documentSiblings: KnowledgeCatalogItem[]
   sidebarSections?: KnowledgeCatalog['sections']
   relatedItems: KnowledgeCatalogItem[]
+  pageLocale: DocumentTitleLocale
   onTagSelect: (tag: string | null) => void
   onWikiLink: (noteName: string) => void
 }
 
-function documentTitle(item: Pick<KnowledgeCatalogItem, 'title' | 'name' | 'path' | 'graphTitle'>) {
-  return formatKnowledgeItemTitle(item)
+function documentTitle(item: Pick<KnowledgeCatalogItem, 'title' | 'name' | 'path' | 'graphTitle'>, locale: DocumentTitleLocale = 'zh') {
+  return formatKnowledgeItemTitle({ ...item, locale })
 }
 
 function sourceKindLabel(source: DocSource) {
@@ -51,9 +53,13 @@ export function DocumentDetailPage({
   documentSiblings,
   sidebarSections = [],
   relatedItems,
+  pageLocale,
   onTagSelect,
   onWikiLink,
 }: DocumentDetailPageProps) {
+  // URL locale 是事实源；source 可能尚未加载、fallback 对象无 locale 字段，
+  // 因此所有 i18n 选择都以 pageLocale 为准，不再依赖 source.locale。
+  const sidebarLocale: DocumentTitleLocale = pageLocale
   const tags = selectedCatalogItem?.tags || []
   const sourceLabel = sourceKindLabel(source)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -107,7 +113,7 @@ export function DocumentDetailPage({
       title={item.description || item.path}
       to={buildDocumentRoute({ sourceId: item.sourceId, path: item.path })}
     >
-      <span>{documentTitle(item)}</span>
+      <span>{documentTitle(item, sidebarLocale)}</span>
     </Link>
   )
 
@@ -198,7 +204,7 @@ export function DocumentDetailPage({
                     to={buildDocumentRoute({ sourceId: item.sourceId, path: item.path })}
                   >
                     <FileIcon />
-                    <span>{documentTitle(item)}</span>
+                    <span>{documentTitle(item, sidebarLocale)}</span>
                   </Link>
                 ))}
               </div>
@@ -229,7 +235,7 @@ export function DocumentDetailPage({
                     className="document-detail-page__link"
                     to={buildDocumentRoute({ sourceId: item.sourceId, path: item.path })}
                   >
-                    <span>{documentTitle(item)}</span>
+                    <span>{documentTitle(item, sidebarLocale)}</span>
                   </Link>
                 ))}
               </div>
@@ -246,6 +252,7 @@ export function DocumentDetailPage({
           <DocumentView
             content={fileContent}
             fileName={fileName}
+            locale={pageLocale}
             footer={(
               <DocumentFooter
                 documentSiblings={documentSiblings}
@@ -253,6 +260,7 @@ export function DocumentDetailPage({
                 selectedFile={selectedFile}
                 sidebarSections={visibleSidebarSections}
                 source={source}
+                locale={pageLocale}
               />
             )}
             loading={fileLoading}

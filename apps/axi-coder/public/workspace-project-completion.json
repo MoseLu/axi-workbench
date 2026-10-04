@@ -1,24 +1,24 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-09-26T07:52:04.440Z",
+  "generatedAt": "2026-10-03T15:09:18.120Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 42,
-    "axiTotal": 26,
+    "total": 44,
+    "axiTotal": 28,
     "complete": 1,
-    "usableOrBetter": 20,
+    "usableOrBetter": 21,
     "blocked": 0,
     "byStage": {
-      "unassessed": 21,
-      "usable": 18,
+      "unassessed": 22,
+      "usable": 19,
       "complete": 1,
       "building": 1,
       "maintenance": 1
     },
     "byConfidence": {
-      "low": 24,
+      "low": 25,
       "high": 9,
-      "medium": 9
+      "medium": 10
     }
   },
   "projects": [
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -239,8 +239,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "canonicalPath does not match project path: /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
-          "verification is stale: 34 days old (max 30)"
+          "verification is stale: 41 days old (max 30)"
         ]
       },
       "verify": [
@@ -270,7 +269,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -314,6 +313,74 @@
         "pyproject.toml",
         "src/codex_feishu_bridge/app.py",
         "src/codex_feishu_bridge/channel_runner.py"
+      ]
+    },
+    {
+      "id": "axi-file-preview",
+      "name": "Axi File Preview",
+      "path": "/Volumes/code/workspace/candidates/axi-file-preview",
+      "kind": "standalone-candidate",
+      "isAxi": true,
+      "stage": "unassessed",
+      "stageLabel": "未评估",
+      "confidence": "low",
+      "confidenceLabel": "低",
+      "summary": "尚未声明完成情况。",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
+      "evidence": [
+        "docs:partial",
+        "handoff:verified",
+        "verify:node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-project-cli.mjs handoff-check axi-file-preview | git -C /Volumes/code/workspace/candidates/axi-file-preview diff --check",
+        "health:test -f /Volumes/code/workspace/candidates/axi-file-preview/AGENTS.md | test -f /Volumes/code/workspace/candidates/axi-file-preview/README.md | test -f /Volumes/code/workspace/candidates/axi-file-preview/docs/HANDOFF.md | test -f /Volumes/code/workspace/candidates/axi-file-preview/package.json",
+        "contracts:8",
+        "package-scripts:build"
+      ],
+      "remaining": [
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGE.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": [
+          "CHANGELOG.md",
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/TDD.md",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [
+        "node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-project-cli.mjs handoff-check axi-file-preview",
+        "git -C /Volumes/code/workspace/candidates/axi-file-preview diff --check"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/candidates/axi-file-preview/AGENTS.md",
+        "test -f /Volumes/code/workspace/candidates/axi-file-preview/README.md",
+        "test -f /Volumes/code/workspace/candidates/axi-file-preview/docs/HANDOFF.md",
+        "test -f /Volumes/code/workspace/candidates/axi-file-preview/package.json"
+      ],
+      "contracts": [
+        "AGENTS.md",
+        "README.md",
+        "docs/HANDOFF.md",
+        "DESIGN.md",
+        "TASK.md",
+        "package.json",
+        "vite.config.js",
+        "admission-proposal.json"
       ]
     },
     {
@@ -517,8 +584,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "canonicalPath does not match project path: /Volumes/code/workspace/projects/axi-workbench/apps/axi-coder",
-          "verification is stale: 34 days old (max 30)"
+          "verification is stale: 41 days old (max 30)"
         ]
       },
       "verify": [
@@ -580,7 +646,7 @@
         "status": "stale",
         "score": 10,
         "errors": [
-          "verification is stale: 34 days old (max 30)"
+          "verification is stale: 41 days old (max 30)"
         ]
       },
       "verify": [
@@ -747,13 +813,14 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
         "verify:python3 scripts/validate-index.py",
         "health:python3 scripts/validate-index.py",
-        "contracts:6"
+        "contracts:6",
+        "package-scripts:test"
       ],
       "remaining": [],
       "docs": {
@@ -807,7 +874,7 @@
       "updatedAt": "2026-09-25",
       "evidence": [
         "docs:partial",
-        "handoff:documented"
+        "handoff:unready"
       ],
       "remaining": [
         "补齐 workspace.graph.json verify 命令。"
@@ -830,9 +897,11 @@
         ]
       },
       "handoff": {
-        "status": "documented",
+        "status": "unready",
         "score": 10,
-        "errors": []
+        "errors": [
+          "entrypoints[1].path path does not exist: src-rs/axi-runtime-rs/src/lib.rs"
+        ]
       },
       "verify": [],
       "health": [],
@@ -855,7 +924,7 @@
         "i18n verifier protects the English runtime source while tracking translation batch coverage.",
         "apm.yml exposes a focused zero-context bootstrap skill subset for cross-harness consumers.",
         "docs:ready",
-        "handoff:verified",
+        "handoff:stale",
         "verify:python3 scripts/verify.py | python3 scripts/verify_i18n.py --check-manifest-only --forbid-english-diff | test -f apm.yml",
         "health:python3 scripts/verify.py",
         "contracts:13"
@@ -880,9 +949,11 @@
         "missing": []
       },
       "handoff": {
-        "status": "verified",
+        "status": "stale",
         "score": 10,
-        "errors": []
+        "errors": [
+          "verification is stale: 41 days old (max 30)"
+        ]
       },
       "verify": [
         "python3 scripts/verify.py",
@@ -1112,7 +1183,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -1195,7 +1266,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
-          "canonicalPath does not match project path: /Volumes/code/workspace/projects/axi-workbench"
+          "documents.index path does not exist: INDEX.md"
         ]
       },
       "verify": [
@@ -1541,6 +1612,64 @@
       ]
     },
     {
+      "id": "axi-workspace-rs",
+      "name": "Axi Workspace Rust Monorepo",
+      "path": "/Volumes/code/workspace/foundation/axi-workspace-rs",
+      "kind": "axi-workspace-rs",
+      "isAxi": true,
+      "stage": "usable",
+      "stageLabel": "可用",
+      "confidence": "medium",
+      "confidenceLabel": "中",
+      "summary": "Rust parity-port of workspace-governance Node scripts (M7 wave: 35 production scripts A-class subset, 1078 tests) plus 14-crate governance backend skeleton (ADR-014).",
+      "updatedAt": "2026-09-30",
+      "evidence": [
+        "docs:partial",
+        "handoff:verified",
+        "verify:cargo test --workspace --manifest-path /Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml",
+        "health:test -f /Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml",
+        "contracts:2"
+      ],
+      "remaining": [
+        "B-class remote surfaces stay Node-side until owner opt-in (docs/OWNER_DECISION_BACKLOG.md).",
+        "补齐 TODO.md，让待办和里程碑可审计。",
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
+        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
+      ],
+      "docs": {
+        "status": "partial",
+        "present": [
+          "README.md",
+          "AGENTS.md",
+          "CHANGELOG.md",
+          "CHANGE.md",
+          "docs/HANDOFF.md",
+          "docs/project-docs.manifest.json"
+        ],
+        "missing": [
+          "TODO.md",
+          "MILESTONE.md",
+          "docs/TDD.md",
+          "VERIFICATION.md"
+        ]
+      },
+      "handoff": {
+        "status": "verified",
+        "score": 10,
+        "errors": []
+      },
+      "verify": [
+        "cargo test --workspace --manifest-path /Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml"
+      ],
+      "health": [
+        "test -f /Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml"
+      ],
+      "contracts": [
+        "/Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml",
+        "/Volumes/code/workspace/foundation/axi-workspace-rs/AGENTS.md"
+      ]
+    },
+    {
       "id": "observability",
       "name": "Axi Observability",
       "path": "/Volumes/code/workspace/foundation/axi-observability",
@@ -1551,7 +1680,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:documented",
@@ -1561,6 +1690,7 @@
         "package-scripts:test,build"
       ],
       "remaining": [
+        "补齐 MILESTONE.md，让待办和里程碑可审计。",
         "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
       ],
       "docs": {
@@ -1570,12 +1700,12 @@
           "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
-          "MILESTONE.md",
           "CHANGE.md",
           "docs/HANDOFF.md",
           "docs/project-docs.manifest.json"
         ],
         "missing": [
+          "MILESTONE.md",
           "docs/TDD.md",
           "VERIFICATION.md"
         ]
@@ -1623,7 +1753,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1672,7 +1802,7 @@
     {
       "id": "blinko",
       "name": "Blinko Reference",
-      "path": "/Volumes/code/workspace/references/blinko",
+      "path": "/Volumes/code/workspace/references/short-term/blinko",
       "kind": "reference-project",
       "isAxi": false,
       "stage": "unassessed",
@@ -1680,7 +1810,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1713,6 +1843,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/blinko",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -1730,7 +1861,7 @@
     {
       "id": "cockpit-tools",
       "name": "Cockpit Tools Reference",
-      "path": "/Volumes/code/workspace/references/cockpit-tools",
+      "path": "/Volumes/code/workspace/references/short-term/cockpit-tools",
       "kind": "reference-desktop-product",
       "isAxi": false,
       "stage": "unassessed",
@@ -1738,7 +1869,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1771,6 +1902,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/cockpit-tools",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -1840,7 +1972,7 @@
     {
       "id": "comfyui",
       "name": "ComfyUI Reference",
-      "path": "/Volumes/code/workspace/references/comfyui",
+      "path": "/Volumes/code/workspace/references/short-term/comfyui",
       "kind": "reference-project",
       "isAxi": false,
       "stage": "unassessed",
@@ -1848,7 +1980,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1880,6 +2012,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/comfyui",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -1897,7 +2030,7 @@
     {
       "id": "dbskill",
       "name": "dbskill Reference",
-      "path": "/Volumes/code/workspace/references/dbskill",
+      "path": "/Volumes/code/workspace/references/short-term/dbskill",
       "kind": "reference-project",
       "isAxi": false,
       "stage": "unassessed",
@@ -1905,7 +2038,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1938,6 +2071,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/dbskill",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -1970,7 +2104,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2019,7 +2153,7 @@
     {
       "id": "image2prompt",
       "name": "Image2Prompt Reference",
-      "path": "/Volumes/code/workspace/references/image2prompt",
+      "path": "/Volumes/code/workspace/references/short-term/image2prompt",
       "kind": "reference-browser-extension",
       "isAxi": false,
       "stage": "unassessed",
@@ -2027,7 +2161,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2059,6 +2193,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/image2prompt",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -2087,7 +2222,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2144,7 +2279,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2193,7 +2328,7 @@
     {
       "id": "opencodex",
       "name": "OpenCodex Reference",
-      "path": "/Volumes/code/workspace/references/opencodex",
+      "path": "/Volumes/code/workspace/references/short-term/opencodex",
       "kind": "reference-local-codex-gateway",
       "isAxi": false,
       "stage": "unassessed",
@@ -2201,7 +2336,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2234,6 +2369,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/opencodex",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -2264,7 +2400,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2326,7 +2462,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:verified",
@@ -2445,7 +2581,7 @@
     {
       "id": "sub2api",
       "name": "Sub2API Reference",
-      "path": "/Volumes/code/workspace/references/sub2api",
+      "path": "/Volumes/code/workspace/references/short-term/sub2api",
       "kind": "reference-service",
       "isAxi": false,
       "stage": "unassessed",
@@ -2453,7 +2589,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-09-26T07:52:04.440Z",
+      "updatedAt": "2026-10-03T15:09:18.120Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2485,6 +2621,7 @@
         "status": "unready",
         "score": 10,
         "errors": [
+          "canonicalPath does not match project path: /Volumes/code/workspace/references/sub2api",
           "verification.status must be unverified, verified, or failed"
         ]
       },
@@ -2528,6 +2665,7 @@
         "status": "partial",
         "present": [
           "README.md",
+          "AGENTS.md",
           "CHANGELOG.md",
           "TODO.md",
           "MILESTONE.md",
@@ -2535,7 +2673,6 @@
           "VERIFICATION.md"
         ],
         "missing": [
-          "AGENTS.md",
           "CHANGE.md",
           "docs/TDD.md",
           "docs/HANDOFF.md"

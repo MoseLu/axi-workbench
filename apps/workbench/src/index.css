@@ -45,3 +45,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.25);
 }
+
+/* ========== Reduced motion: global fallback ==========
+   When the user prefers reduced motion, suppress all transitions/animations
+   to honor the OS-level preference. Specific components may override. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

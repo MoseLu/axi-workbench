@@ -58,8 +58,23 @@
 }
 
 .handoff-create-page__field-error {
+  display: inline-block;
+  margin-top: 4px;
   font-size: 12px;
+  line-height: 1.4;
   color: var(--axi-color-danger, #d4380d);
+  animation: handoff-create-page__field-error-in 200ms ease-out;
+}
+
+@keyframes handoff-create-page__field-error-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .handoff-create-page__field-error {
+    animation: none;
+  }
 }
 
 .handoff-create-page__actions {

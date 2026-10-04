@@ -15,8 +15,8 @@
  *    exact key is found, mirroring what `devsvc-dashboard` does for hosted apps.
  */
 
-import React from 'react';
-import { AxiSvgIcon } from '@axi/core';
+import React from 'react';import { AxiSvgIcon } from "@axi/icons";
+
 import {
   axiWorkbenchIconMap,
   resolveAxiWorkbenchIcon,

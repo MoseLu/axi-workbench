@@ -617,11 +617,66 @@ html[data-axi-docs-theme='light'] .app-main--home {
   font-size: 12px;
 }
 
+.axi-docs-home__overview-actions {
+  display: flex;
+  margin-top: 14px;
+}
+
+.axi-docs-home__graph-entry {
+  display: grid;
+  gap: 4px;
+  padding: 12px 18px;
+  border: 1px solid var(--axi-doc-vp-c-brand, rgba(100, 108, 255, 0.55));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--axi-doc-vp-c-text-1);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.axi-docs-home__graph-entry:hover {
+  border-color: var(--axi-doc-vp-c-brand, rgba(100, 108, 255, 0.9));
+  background: rgba(100, 108, 255, 0.12);
+}
+
+.axi-docs-home__graph-entry:active {
+  transform: translateY(1px);
+}
+
+.axi-docs-home__graph-entry span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.axi-docs-home__graph-entry small {
+  color: var(--axi-doc-vp-c-text-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .axi-docs-home__result-list {
   display: grid;
   gap: 0;
   margin-top: 16px;
   border-top: 1px solid var(--axi-doc-vp-c-divider);
+}
+
+@keyframes axi-docs-list-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axi-docs-home__result-list {
+    animation: none !important;
+  }
 }
 
 .axi-docs-home__result-list button {
@@ -1319,7 +1374,7 @@ html[data-axi-docs-theme='light'] .app-main--home {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(191, 219, 254, 0.76);
+  color: var(--axi-doc-vp-c-text-3, rgba(191, 219, 254, 0.76));
 }
 
 .command-center__copy h1,
@@ -1327,7 +1382,7 @@ html[data-axi-docs-theme='light'] .app-main--home {
   font-size: clamp(28px, 2.8vw, 46px);
   line-height: 1;
   letter-spacing: -0.05em;
-  color: #f8fafc;
+  color: var(--axi-doc-vp-c-text-1, #f8fafc);
 }
 
 .command-center__copy p,
@@ -1335,7 +1390,7 @@ html[data-axi-docs-theme='light'] .app-main--home {
   max-width: 44ch;
   font-size: 14px;
   line-height: 1.72;
-  color: rgba(226, 232, 240, 0.84);
+  color: var(--axi-doc-vp-c-text-2, rgba(226, 232, 240, 0.84));
 }
 
 .command-center__actions,

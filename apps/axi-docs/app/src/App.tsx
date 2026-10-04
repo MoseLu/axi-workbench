@@ -63,7 +63,12 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
   const routeGuidePageId = pageMode === 'home' && params.guideId && isGuidePageId(params.guideId)
     ? params.guideId
     : null
-  const guideLocale = routeGuideLocale || DEFAULT_LOCALE
+  // Document pageMode 不带 :locale 段；通过 sourceId 后缀反推当前 locale，
+  // 否则 <title> 会一直落到 DEFAULT_LOCALE，EN 路由也会渲染中文标题。
+  const routeDocumentLocale = pageMode === 'document' && routeDocument
+    ? (routeDocument.sourceId.endsWith('-zh') || routeDocument.sourceId === 'workspace' ? 'zh' : 'en')
+    : null
+  const guideLocale = routeGuideLocale || routeDocumentLocale || DEFAULT_LOCALE
   const guidePageId = routeGuidePageId || 'getting-started'
   const routeDocSet = pageMode === 'home' && params.collection && isDocSetId(params.collection)
     ? params.collection
@@ -369,6 +374,26 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
     )
   }, [docSet, guideLocale, navigateWithParams])
 
+  const handleOpenExplorer = useCallback(() => {
+    navigateWithParams(
+      docSet === 'guide' ? `/${guideLocale}/workspace` : `/${guideLocale}/${docSet}`,
+      {
+        view: 'tree',
+        source: null,
+        q: null,
+        keyword: null,
+        tag: null,
+        doc: null,
+        branch: null,
+        node: null,
+      },
+    )
+  }, [docSet, guideLocale, navigateWithParams])
+
+  const handleExitExplorer = useCallback(() => {
+    syncParams({ view: null, branch: null, node: null }, true)
+  }, [syncParams])
+
   const handleOpenDocument = useCallback((sourceId: string, path: string) => {
     navigateWithParams(
       buildDocumentRoute({ sourceId, path }),
@@ -383,30 +408,16 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
   }, [navigateWithParams])
 
   const handleClearSelectedFile = useCallback(() => {
+    if (pageMode === 'document') return
     setSelectedFile(null)
     setFileContent(null)
     setFileName('')
-    if (pageMode === 'document') return
     syncParams({
       doc: null,
       node: null,
       branch: searchParams.get('branch'),
     }, false)
   }, [pageMode, searchParams, syncParams])
-
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query)
-    setSelectedFile(null)
-    setFileContent(null)
-    setFileName('')
-
-    syncParams({
-      q: query.trim() ? query : null,
-      keyword: null,
-      doc: null,
-      node: null,
-    }, false)
-  }, [syncParams])
 
   const handleSearchSubmit = useCallback((query: string) => {
     const normalizedQuery = query.trim()
@@ -427,6 +438,28 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
     })
   }, [guideLocale, navigateWithParams])
 
+  const handleSearch = useCallback((query: string) => {
+    if (pageMode === 'document') {
+      // Search interactions must never blank the open document: the route-keyed
+      // load guard would not refetch cleared content.
+      if (query.trim()) {
+        handleSearchSubmit(query)
+      }
+      return
+    }
+    setSearchQuery(query)
+    setSelectedFile(null)
+    setFileContent(null)
+    setFileName('')
+
+    syncParams({
+      q: query.trim() ? query : null,
+      keyword: null,
+      doc: null,
+      node: null,
+    }, false)
+  }, [handleSearchSubmit, pageMode, syncParams])
+
   const handleSuggestionSelect = useCallback((suggestion: SearchSuggestion) => {
     if (suggestion.kind === 'document' && suggestion.sourceId && suggestion.path) {
       handleOpenDocument(suggestion.sourceId, suggestion.path)
@@ -436,17 +469,32 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
   }, [handleOpenDocument, handleSearchSubmit])
 
   const handleTagSelect = useCallback((tag: string | null) => {
+    if (pageMode === 'document') {
+      // On a document page a tag jump means "browse this tag in its doc set".
+      // Clearing file content here would blank the page because the route-keyed
+      // load guard never refetches the same document.
+      navigateWithParams(docSet === 'guide' ? `/${guideLocale}/workspace` : `/${guideLocale}/${docSet}`, {
+        tag: tag || null,
+        source: null,
+        q: null,
+        keyword: null,
+        doc: null,
+        branch: null,
+        node: null,
+        view: null,
+      })
+      return
+    }
     setActiveTag(tag)
     setSelectedFile(null)
     setFileContent(null)
     setFileName('')
-    if (pageMode === 'document') return
     syncParams({
       tag,
       doc: null,
       node: null,
     }, false)
-  }, [pageMode, syncParams])
+  }, [docSet, guideLocale, navigateWithParams, pageMode, syncParams])
 
   const handleWikiLink = useCallback((noteName: string) => {
     if (pageMode === 'document') {
@@ -463,6 +511,9 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
 
   const invalidGuideRoute = pageMode === 'home' && docSet === 'guide' && (!routeGuideLocale || !routeGuidePageId)
   const invalidDocSetRoute = pageMode === 'home' && Boolean(params.collection) && (!routeGuideLocale || !routeDocSet)
+  // The knowledge explorer (tree/path/islands graph stage) is reached with a
+  // `view` search param on any doc-set home route.
+  const workbenchPageMode: 'home' | 'explorer' = searchParams.get('view') ? 'explorer' : 'home'
   const activeHeaderDocSet = pageMode === 'document' ? docSetForSourceId(routeDocument?.sourceId) : docSet
   const documentCategoryKey = normalizeKnowledgeCategoryKey(selectedCatalogItem?.categories[0] || '')
   const documentCategoryMeta = documentCategoryKey ? getKnowledgeCategoryMeta(documentCategoryKey) : null
@@ -510,6 +561,7 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
                   fileName={fileName}
                   onTagSelect={handleTagSelect}
                   onWikiLink={handleWikiLink}
+                  pageLocale={guideLocale}
                   relatedItems={relatedItems}
                   selectedCatalogItem={selectedCatalogItem}
                   selectedFile={effectiveSelectedFile}
@@ -527,6 +579,7 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
               <WorkspaceArchitecturePage />
             ) : workspaceSource ? (
               <KnowledgeWorkbench
+                pageMode={workbenchPageMode}
                 activeTag={activeTag}
                 activeSourceId={docSet === 'guide' ? searchParams.get('source') : activeSource}
                 catalog={catalog}
@@ -536,13 +589,12 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
                 fileLoading={loading}
                 fileName={fileName}
                 onClearSelectedFile={handleClearSelectedFile}
-                onNavigateExplorer={handleNavigateCategory}
-                onNavigateHome={handleNavigateHome}
+                onOpenExplorer={handleOpenExplorer}
+                onNavigateHome={workbenchPageMode === 'explorer' ? handleExitExplorer : handleNavigateHome}
                 onOpenItem={handleOpenDocument}
                 onSearch={handleSearch}
                 onTagSelect={handleTagSelect}
                 onWikiLink={handleWikiLink}
-                pageMode="home"
                 docSet={docSet}
                 guideLocale={guideLocale}
                 guidePageId={guidePageId}
@@ -554,7 +606,10 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
                 sources={sources}
               />
             ) : (
-              <div className="loading loading--fullscreen"><div className="spinner" /></div>
+              <div className="loading loading--fullscreen" role="status">
+                <div className="spinner" />
+                <p className="loading__label">{guideLocale === 'zh' ? '正在加载文档源…' : 'Loading documentation sources…'}</p>
+              </div>
             )}
           </ErrorBoundary>
         </main>

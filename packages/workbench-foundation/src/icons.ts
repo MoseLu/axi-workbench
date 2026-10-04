@@ -1,4 +1,5 @@
-import type { AxiIconName } from '@axi/core';
+import type { AxiIconName } from "@axi/icons";
+
 
 /**
  * Product-level icon semantics shared by the independent Web and mobile

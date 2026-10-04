@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 import type { AppTFunction, NavRouteKey } from "../../app-registry";
-import { AxiPopoverMenu } from "@axi/crud";
-import { AxiSvgIcon, type AxiIconName } from "@axi/core";
+import { AxiPopoverMenu } from "@axi/crud";import { AxiSvgIcon, type AxiIconName } from "@axi/icons";
+
 import { statusLabelKeys } from "../status/status";
 
 export type TopbarFeedItem = {

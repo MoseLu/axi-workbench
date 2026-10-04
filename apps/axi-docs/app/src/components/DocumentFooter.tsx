@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { buildDocumentEditUrl } from '../config/documentRepositories'
 import { formatDisplayDate } from '../lib/intl'
-import { formatKnowledgeItemTitle } from '../lib/knowledgeFormatter'
+import { formatKnowledgeItemTitle, type DocumentTitleLocale } from '../lib/knowledgeFormatter'
 import { buildDocumentRoute } from '../lib/routes'
+import { isSiteLocale } from '../config/siteConfig'
 import type { DocSource, KnowledgeCatalog, KnowledgeCatalogItem, SelectedFile } from '../types'
 import { EditIcon } from './Icons'
 import './DocumentFooter.css'
@@ -15,10 +16,11 @@ interface DocumentFooterProps {
   selectedFile: SelectedFile
   sidebarSections: KnowledgeCatalog['sections']
   source: DocSource
+  locale?: DocumentTitleLocale
 }
 
-function documentTitle(item: KnowledgeCatalogItem) {
-  return formatKnowledgeItemTitle(item)
+function documentTitle(item: KnowledgeCatalogItem, locale: DocumentTitleLocale) {
+  return formatKnowledgeItemTitle({ ...item, locale })
 }
 
 export function DocumentFooter({
@@ -28,7 +30,16 @@ export function DocumentFooter({
   selectedFile,
   sidebarSections,
   source,
+  locale,
 }: DocumentFooterProps) {
+  // locale 优先 prop；fallback 到 useParams；再 fallback 到 source.locale；最末 'zh'。
+  // URL locale 是事实源，但 HMR/嵌套组件可能让 useParams 暂时拿到 undefined。
+  const params = useParams()
+  const resolvedLocale: DocumentTitleLocale =
+    locale
+    ?? (isSiteLocale(params.locale) && params.locale === 'en' ? 'en' : 'zh')
+  const isEnglish: DocumentTitleLocale = resolvedLocale === 'en' ? 'en' : 'zh'
+  const dateLocale = isEnglish === 'en' ? 'en-US' : 'zh-CN'
   const orderedDocuments = useMemo(() => {
     const candidates = sidebarSections.length > 0
       ? sidebarSections.flatMap((section) => (
@@ -55,9 +66,23 @@ export function DocumentFooter({
     : null
   const editUrl = buildDocumentEditUrl(source.id, selectedFile.path)
   const updatedLabel = selectedCatalogItem?.updated
-    ? formatDisplayDate(selectedCatalogItem.updated, { dateStyle: 'medium', timeStyle: 'medium' })
+    ? formatDisplayDate(selectedCatalogItem.updated, { dateStyle: 'medium', timeStyle: 'medium' }, dateLocale)
     : null
-  const isEnglish = source.locale === 'en'
+  const t = isEnglish === 'en'
+    ? {
+        editLink: 'Edit this page on GitHub',
+        lastUpdatedPrefix: 'Last updated: ',
+        pagerLabel: 'Pager',
+        prev: 'Previous page',
+        next: 'Next page',
+      }
+    : {
+        editLink: '在 GitHub 上编辑此页面',
+        lastUpdatedPrefix: '最后更新于：',
+        pagerLabel: '分页器',
+        prev: '上一页',
+        next: '下一页',
+      }
 
   if (!editUrl && !updatedLabel && !previousDocument && !nextDocument) return null
 
@@ -73,12 +98,12 @@ export function DocumentFooter({
               target="_blank"
             >
               <EditIcon />
-              <span>{isEnglish ? 'Edit this page on GitHub' : '在 GitHub 上编辑此页面'}</span>
+              <span>{t.editLink}</span>
             </a>
           )}
           {updatedLabel && (
             <p className="document-detail-page__last-updated">
-              {isEnglish ? 'Last updated: ' : '最后更新于：'}
+              {t.lastUpdatedPrefix}
               <time dateTime={selectedCatalogItem?.updated}>{updatedLabel}</time>
             </p>
           )}
@@ -86,15 +111,15 @@ export function DocumentFooter({
       )}
 
       {(previousDocument || nextDocument) && (
-        <nav aria-label={isEnglish ? 'Pager' : '分页器'} className="document-detail-page__pager">
+        <nav aria-label={t.pagerLabel} className="document-detail-page__pager">
           <div>
             {previousDocument && (
               <Link
                 className="document-detail-page__pager-link"
                 to={buildItemRoute(previousDocument)}
               >
-                <span>{isEnglish ? 'Previous page' : '上一页'}</span>
-                <strong>{documentTitle(previousDocument)}</strong>
+                <span>{t.prev}</span>
+                <strong>{documentTitle(previousDocument, isEnglish)}</strong>
               </Link>
             )}
           </div>
@@ -104,8 +129,8 @@ export function DocumentFooter({
                 className="document-detail-page__pager-link document-detail-page__pager-link--next"
                 to={buildItemRoute(nextDocument)}
               >
-                <span>{isEnglish ? 'Next page' : '下一页'}</span>
-                <strong>{documentTitle(nextDocument)}</strong>
+                <span>{t.next}</span>
+                <strong>{documentTitle(nextDocument, isEnglish)}</strong>
               </Link>
             )}
           </div>

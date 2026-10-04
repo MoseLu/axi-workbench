@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
-import { AxiIconButton } from '@axi/core';
+import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';import { AxiIconButton } from "@axi/icons";
+
 import { useControlSnapshot } from '@axi/api-client';
 import { useI18n } from '../../i18n';
 import {

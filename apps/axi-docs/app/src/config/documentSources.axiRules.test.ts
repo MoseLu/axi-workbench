@@ -48,8 +48,16 @@ describe('documentSourceRegistry axi-rules', () => {
     ]) {
       expect(ids.has(expected)).toBe(true)
     }
-    // 8 original + skill-registry + axi-rules = 10 total.
-    expect(sources.length).toBe(10)
+    // skill-registry and axi-rules were added on top of the 8 originals;
+    // workspace mirror sources (workspace-root-docs / workspace-state-docs /
+    // workspace-audit-docs / workspace-architecture-docs / workspace-prd-docs /
+    // workspace-axi-docs / axi-workspace-governance-docs /
+    // axi-workspace-rules-docs / workspace-incubator-docs) are added
+    // separately. The registry must always include both add-ons and grow
+    // monotonically.
+    expect(ids.has('skill-registry')).toBe(true)
+    expect(ids.has('axi-rules')).toBe(true)
+    expect(sources.length).toBeGreaterThanOrEqual(10)
   })
 
   it('passes registry validation with axi-rules enabled', () => {
