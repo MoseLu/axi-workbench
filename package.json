@@ -115,6 +115,7 @@
       "@hono/node-server": "2.0.11",
       "body-parser": "2.3.0",
       "fast-uri": "^3.1.8",
+      "xlsx": "npm:@e965/xlsx@0.20.3",
       "@opentelemetry/auto-instrumentations-node@<0.75.0": ">=0.75.0",
       "@opentelemetry/sdk-node@<0.217.0": ">=0.217.0",
       "@opentelemetry/exporter-prometheus@<0.217.0": ">=0.217.0",
