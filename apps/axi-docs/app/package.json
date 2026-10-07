@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@axi/tokens": "workspace:^",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "ali-oss": "^6.23.0",
     "chokidar": "^3.6.0",
