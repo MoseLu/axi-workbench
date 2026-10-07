@@ -583,7 +583,7 @@ describe('knowledge base local index', () => {
   it('indexes workspace project status from WORKSPACE_INDEX.md', async () => {
     tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'axi-docs-workspace-'))
     const workspaceRoot = tempDir
-    const governanceRoot = path.join(workspaceRoot, 'infra', 'axi-workspace-governance')
+    const governanceRoot = path.join(workspaceRoot, 'foundation', 'workspace-governance')
     const projectRoot = path.join(workspaceRoot, 'projects', 'axi-docs')
     await fs.promises.mkdir(path.join(governanceRoot, 'docs'), { recursive: true })
     await fs.promises.mkdir(projectRoot, { recursive: true })

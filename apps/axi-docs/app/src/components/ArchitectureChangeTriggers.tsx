@@ -72,7 +72,7 @@ export function ArchitectureChangeTriggers({ onNavigate: _onNavigate }: Workspac
       {/* Quick Fix Commands */}
       <div className="fix-commands">
         <h4>快速修复</h4>
-        <pre><code>cd /Volumes/code/workspace/infra/axi-workspace-governance
+        <pre><code>cd /Volumes/code/workspace/foundation/workspace-governance
 pnpm workspace:docs:sync
 node scripts/workspace-project-cli.mjs validate
 node scripts/workspace-audit.mjs</code></pre>

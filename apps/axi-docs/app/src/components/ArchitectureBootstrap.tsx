@@ -76,7 +76,7 @@ export function ArchitectureBootstrap({ onNavigate: _onNavigate }: WorkspaceArch
         </div>
         <div className="rule-allow">
           <span>✅</span>
-          <span>治理修改进入 infra/axi-workspace-governance</span>
+          <span>治理修改进入 foundation/workspace-governance</span>
         </div>
       </div>
     </div>
