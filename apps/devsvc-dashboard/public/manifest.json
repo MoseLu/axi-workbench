@@ -1,0 +1,26 @@
+{
+  "name": "Axi DevSvc Dashboard",
+  "short_name": "DevSvc",
+  "description": "AxiomaticWorld DevSvc operations dashboard (sidebar, topbar, charts, hosted apps).",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#E5B94A",
+  "background_color": "#0f172a",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/src/assets/devsvc-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/src/assets/devsvc-logo.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

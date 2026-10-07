@@ -1,7 +1,7 @@
 import { type ReactNode, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ConfigProvider, theme as AntTheme } from "antd";
+import { App as AntApp, ConfigProvider, theme as AntTheme } from "antd";
 import { createAxiAntdTheme } from "@axi/core";
 import { AxiDashboardShell, type AxiDashboardNavGroup, AxiScrollArea } from "@axi/shell";
 import "@axi/shell/styles.css";
@@ -86,6 +86,7 @@ export function Shell({
   onLogout: () => void;
 }) {
   const { i18n, t } = useTranslation();
+  const { notification } = AntApp.useApp();
   const language = i18n.resolvedLanguage || i18n.language;
   const data = useDashboardData();
   const themeState = useThemeState();
@@ -142,26 +143,36 @@ export function Shell({
       .then((apps) => {
         if (!cancelled) setHostedApps(apps);
       })
-      .catch(() => {
-        if (!cancelled) setHostedApps([]);
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setHostedApps([]);
+        notification.warning({
+          description: error instanceof Error ? error.message : String(error),
+          message: t("子应用列表加载失败")
+        });
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [notification, t]);
   useEffect(() => {
     let cancelled = false;
     void listAxiResources()
       .then((resources) => {
         if (!cancelled) setAxiResources(resources);
       })
-      .catch(() => {
-        if (!cancelled) setAxiResources([]);
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setAxiResources([]);
+        notification.warning({
+          description: error instanceof Error ? error.message : String(error),
+          message: t("Axi 资源列表加载失败")
+        });
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [notification, t]);
   useEffect(() => {
     if (isHostedPage) setSidebarCollapsed(false);
   }, [isHostedPage]);

@@ -1,0 +1,73 @@
+/* ============================================================================
+ * devsvc-dashboard mobile breakpoint — ≤640px (iPhone SE / iPhone 13 mini)
+ *
+ * Scope:
+ *   - Force 44x44 minimum touch target on all buttons and antd buttons
+ *   - Force ≥16px font-size on all inputs to prevent iOS Safari autozoom
+ *   - Tighten form spacing and ensure table rows horizontally scroll
+ *   - Keep sidebar collapsed on small viewports (Shell-side state mirrors this)
+ *
+ * Loaded via @use "./styles/mobile" from src/styles.scss entry.
+ * ========================================================================== */
+
+/* ---- Buttons & interactive controls: ≥44px touch target ---- */
+@media (max-width: 640px) {
+  button,
+  .ant-btn,
+  [role="button"],
+  .login-button,
+  .login-dev-accounts button {
+    min-height: 44px !important;
+  }
+
+  /* ---- Inputs: iOS zoom-prevention (font-size ≥16px) ---- */
+  input,
+  textarea,
+  select,
+  .ant-input,
+  .ant-input-affix-wrapper input,
+  .login-field input {
+    font-size: 16px !important;
+  }
+
+  /* ---- Form: tighter rhythm so mobile doesn't drown in whitespace ---- */
+  .ant-form-item {
+    margin-bottom: 16px !important;
+  }
+
+  /* ---- Sidebar: keep collapsed even if state forgot to sync ---- */
+  .axi-sidebar,
+  .app-shell .sidebar.axi-admin-sider.ant-layout-sider {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
+
+  /* ---- Tables: allow horizontal scroll instead of overflowing viewport ---- */
+  .ant-table-wrapper,
+  .ant-table-container {
+    overflow-x: auto !important;
+  }
+
+  /* ---- Login form: enlarge placeholder-only inputs to match tap target ---- */
+  .login-button {
+    height: 48px !important;
+  }
+
+  .login-field input {
+    height: 44px !important;
+  }
+
+  /* ---- Dev account picker: padding so 22px native buttons reach 44px ---- */
+  .login-dev-accounts button {
+    padding-block: 11px !important;
+    padding-inline: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ---- Login card: prevent edge-clipping on 320px viewports ---- */
+  .login-screen,
+  .login-panel {
+    padding-inline: 12px !important;
+  }
+}

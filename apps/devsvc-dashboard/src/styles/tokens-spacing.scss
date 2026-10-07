@@ -1,0 +1,15 @@
+/* Shared-by-name spacing bridge for devsvc-dashboard.
+ *
+ * Defines the canonical Axi 4/8 spacing ladder locally so devsvc pages can
+ * reach for var(--axi-space-*) without a cross-workspace package bump.
+ * Existing magic-number usages (px literals in legacy SCSS) are intentionally
+ * left untouched; new code should prefer these tokens.
+ */
+:root {
+  --axi-space-1: 4px;
+  --axi-space-2: 8px;
+  --axi-space-3: 12px;
+  --axi-space-4: 16px;
+  --axi-space-5: 24px;
+  --axi-space-6: 32px;
+}
