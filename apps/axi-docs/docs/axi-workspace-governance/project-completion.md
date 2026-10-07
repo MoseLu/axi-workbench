@@ -15,7 +15,7 @@ agent-readable: true
 
 ## 摘要
 
-- 已登记项目：45
+- 已登记项目：44
 - Axi 项目：28
 - 完成：1
 - 可用及以上：21
@@ -74,7 +74,6 @@ agent-readable: true
 | `cockpit-tools` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
 | `codex-app-projects` | 维护 | 高 | not-applicable | WORKSPACE_INDEX.md declares the root contract.<br>AGENTS.md declares that git work belongs to owning project repositories.<br>... | - |
 | `comfyui` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `dbskill` | 未评估 | 低 | missing | handoff:unready<br>verify:test -f README.md \| test -d skills \| test -f tools/build-skills.sh<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
 | `ielts-vocab` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm --dir frontend verify:repo-guards \| python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
 | `image2prompt` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
 | `minimax-tokenplan` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |

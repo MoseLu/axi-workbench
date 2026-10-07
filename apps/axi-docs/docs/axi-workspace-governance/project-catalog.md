@@ -48,7 +48,6 @@ agent-readable: true
 | references | blinko | Blinko Reference | external | reference | short-term-reference | main | yes | `references/short-term/blinko` | [link](https://github.com/blinkospace/blinko.git) |
 | references | cockpit-tools | Cockpit Tools Reference | external | reference | short-term-reference | main | yes | `references/short-term/cockpit-tools` | [link](https://github.com/jlcodes99/cockpit-tools.git) |
 | references | comfyui | ComfyUI Reference | external | reference | short-term-reference | master | yes | `references/short-term/comfyui` | [link](https://github.com/comfyanonymous/ComfyUI.git) |
-| references | dbskill | DBSkill Reference | external | reference | short-term-reference | - | no | `references/short-term/dbskill` | [link](https://github.com/dontbesilent2025/dbskill.git) |
 | references | image2prompt | Image2Prompt Reference | external | reference | short-term-reference | main | yes | `references/short-term/image2prompt` | [link](https://github.com/pingan8787/image2prompt.git) |
 | references | opencodex | OpenCodex Reference | external | reference | short-term-reference | dev | yes | `references/short-term/opencodex` | [link](https://github.com/MoseLu/opencodex.git) |
 | references | sub2api | Sub2API Reference | external | reference | short-term-reference | main | yes | `references/short-term/sub2api` | [link](https://github.com/Wei-Shaw/sub2api.git) |

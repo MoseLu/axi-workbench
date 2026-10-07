@@ -104,8 +104,6 @@ agent-readable: true
   remote: https://github.com/jlcodes99/cockpit-tools.git
 - `references/short-term/comfyui` | ComfyUI Reference | branch=`master` | canonical=no | compliance=`-`
   remote: https://github.com/comfyanonymous/ComfyUI.git
-- `references/short-term/dbskill` | DBSkill Reference | branch=`-` | canonical=no | compliance=`-`
-  remote: https://github.com/dontbesilent2025/dbskill.git
 - `references/short-term/image2prompt` | Image2Prompt Reference | branch=`main` | canonical=no | compliance=`-`
   remote: https://github.com/pingan8787/image2prompt.git
 - `references/short-term/opencodex` | OpenCodex Reference | branch=`dev` | canonical=no | compliance=`-`

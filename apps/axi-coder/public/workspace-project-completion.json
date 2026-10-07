@@ -1,22 +1,22 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-10-07T15:03:54.176Z",
+  "generatedAt": "2026-10-07T15:21:48.807Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
-    "total": 45,
+    "total": 44,
     "axiTotal": 28,
     "complete": 1,
     "usableOrBetter": 21,
     "blocked": 0,
     "byStage": {
-      "unassessed": 23,
+      "unassessed": 22,
       "usable": 19,
       "complete": 1,
       "building": 1,
       "maintenance": 1
     },
     "byConfidence": {
-      "low": 26,
+      "low": 25,
       "high": 9,
       "medium": 10
     }
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -277,7 +277,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
@@ -339,7 +339,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-project-cli.mjs handoff-check axi-file-preview | git -C /Volumes/code/workspace/candidates/axi-file-preview diff --check",
@@ -838,7 +838,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:python3 scripts/validate-index.py",
@@ -1225,7 +1225,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:python -m py_compile app.py main.py config.py database.py adb_controller.py mitm_proxy.py uicontroller.py __init__.py"
@@ -1732,7 +1732,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:cd /Volumes/code/workspace/foundation/axi-observability && PYTHONPATH=python python3 -m unittest discover -s python/axi_observability/tests -v | cd /Volumes/code/workspace/foundation/axi-observability/go/axilog && go test ./... | cd /Volumes/code/workspace/foundation/axi-observability/node/packages/observability-logging && pnpm test | cd /Volumes/code/workspace/foundation/axi-observability/web && pnpm test | /Volumes/code/workspace/scripts/workspace-project validate | /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-audit.mjs",
@@ -1806,7 +1806,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1863,7 +1863,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1922,7 +1922,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2033,7 +2033,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2081,71 +2081,6 @@
       ]
     },
     {
-      "id": "dbskill",
-      "name": "DBSkill Reference",
-      "path": "/Volumes/code/workspace/references/short-term/dbskill",
-      "kind": "reference-project",
-      "isAxi": false,
-      "stage": "unassessed",
-      "stageLabel": "未评估",
-      "confidence": "low",
-      "confidenceLabel": "低",
-      "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
-      "evidence": [
-        "handoff:unready",
-        "verify:test -f README.md | test -d skills | test -f tools/build-skills.sh",
-        "health:test -f README.md | test -f README.zh-CN.md | test -d skills",
-        "contracts:5"
-      ],
-      "remaining": [
-        "补齐 docs/project-docs.manifest.json 文档接入清单。",
-        "补齐 TODO.md，让待办和里程碑可审计。",
-        "补齐 MILESTONE.md，让待办和里程碑可审计。",
-        "补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。"
-      ],
-      "docs": {
-        "status": "missing",
-        "present": [],
-        "missing": [
-          "README.md",
-          "AGENTS.md",
-          "CHANGELOG.md",
-          "TODO.md",
-          "MILESTONE.md",
-          "CHANGE.md",
-          "docs/TDD.md",
-          "docs/HANDOFF.md",
-          "docs/project-docs.manifest.json",
-          "VERIFICATION.md"
-        ]
-      },
-      "handoff": {
-        "status": "unready",
-        "score": 0,
-        "errors": [
-          "project path is unavailable"
-        ]
-      },
-      "verify": [
-        "test -f README.md",
-        "test -d skills",
-        "test -f tools/build-skills.sh"
-      ],
-      "health": [
-        "test -f README.md",
-        "test -f README.zh-CN.md",
-        "test -d skills"
-      ],
-      "contracts": [
-        "README.md",
-        "README.zh-CN.md",
-        "VERSION",
-        "skills/dbs/SKILL.md",
-        "tools/build-skills.sh"
-      ]
-    },
-    {
       "id": "ielts-vocab",
       "name": "IELTS Vocabulary",
       "path": "products/ielts-vocab",
@@ -2156,7 +2091,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
@@ -2217,7 +2152,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2278,7 +2213,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2335,7 +2270,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2392,7 +2327,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2456,7 +2391,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:pnpm --dir /Volumes/code/workspace/candidates/pelagic build | git -C /Volumes/code/workspace/candidates/pelagic diff --check",
@@ -2520,7 +2455,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:pnpm test",
@@ -2654,7 +2589,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2711,7 +2646,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:03:54.176Z",
+      "updatedAt": "2026-10-07T15:21:48.807Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f package.json | test -f AGENTS.md",

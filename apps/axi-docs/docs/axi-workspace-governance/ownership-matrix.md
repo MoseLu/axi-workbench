@@ -20,7 +20,6 @@ agent-readable: true
 | `references/short-term/blinko` | references | short-term-reference | no | [link](https://github.com/blinkospace/blinko.git) |
 | `references/short-term/cockpit-tools` | references | short-term-reference | no | [link](https://github.com/jlcodes99/cockpit-tools.git) |
 | `references/short-term/comfyui` | references | short-term-reference | no | [link](https://github.com/comfyanonymous/ComfyUI.git) |
-| `references/short-term/dbskill` | references | short-term-reference | no | [link](https://github.com/dontbesilent2025/dbskill.git) |
 | `references/short-term/image2prompt` | references | short-term-reference | no | [link](https://github.com/pingan8787/image2prompt.git) |
 | `references/short-term/opencodex` | references | short-term-reference | no | [link](https://github.com/MoseLu/opencodex.git) |
 | `references/short-term/sub2api` | references | short-term-reference | no | [link](https://github.com/Wei-Shaw/sub2api.git) |
