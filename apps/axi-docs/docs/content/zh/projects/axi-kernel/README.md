@@ -1,51 +1,212 @@
 ---
 id: axi-docs-zh-projects-axi-kernel
-title: Axi Kernel
+title: Axi 内核
 type: project
-status: draft
-tags: [Axi Docs, Projects, foundation, shared]
-created: 2026-09-28
-modified: 2026-09-28
-graph-title: Axi Kernel
-graph-tags: [Projects, foundation]
-description: personal-os-core
+status: published
+tags: [Axi Docs, 项目, foundation, core, object-registry]
+created: 2026-10-07
+modified: 2026-10-07
+graph-title: Axi 内核
+graph-tags: [Projects, foundation, object-registry]
+description: AXI Personal OS Kernel 的规范化 Python 实现（PRD-01）—— 基于磁盘 JSON 的对象注册表，9 种冻结 dataclass 对象类型、原子写 + 跨进程锁存储、仅追加的迁移记录，并附带一个名为 `axi-kernel` 的 Python CLI。
 project:
   id: axi-kernel
   partition: foundation
   path: /Volumes/code/workspace/foundation/axi-kernel
-  source-section: shared
+  source-section: core
 ---
 
-# Axi Kernel
+# Axi 内核
 
-> Workspace project dossier. Source of truth: `/Volumes/code/workspace/foundation/axi-kernel`.
-> Section: shared / Partition: `foundation/`.
+> 项目根 `README.md` 的镜像。权威源：
+> [`/Volumes/code/workspace/foundation/axi-kernel/README.md`](/Volumes/code/workspace/foundation/axi-kernel/README.md)。
+> 章节：core / 分区：`foundation/`。
 
 ## Summary
 
-personal-os-core
+Axi Kernel 是 AXI Personal OS 的规范化**基于磁盘 JSON 的对象注册表**，也是每个下游 AXI 工具的 schema 权威源。它是 PRD-01 的 Phase 0 / Phase 2 实现，用零依赖 Python 3.11+（仅标准库）编写，并暴露 CLI `python3 -m axi_kernel`。仓库当前携带 `SCHEMA_VERSION = 7`；磁盘上的存储位于 `data/registry.json`，由基于 `fcntl.flock` 的 sidecar 锁守护，迁移记录在 `data/migrations/` 下以仅追加方式保存。Schema 在 `axi_kernel/schema.py` 中定义为 `@dataclass(frozen=True)` Python 类型，并附带一张以 `ObjectType` 为键的工厂表（`_OBJECT_FACTORIES`），以便新类型以开闭方式加入。
+
+Kernel 是 9 个原子对象类型（`Project`、`Document`、`Change`、`Resource`、`Repository`、`Branch`、`GitRemote`、`Commit`、`RawEvent`、`Rule`、`Skill`、`Agent`、`Invocation`、`Task`、`Artifact` —— v1→v7 共 15 个）的唯一共享写入面。Phase 5 增加了三个运维能力（`rebuild_registry`、`get_relations`、`sync.status_diff`），Phase 6 增加了一条单向 `register_invocation → register_change` 链路，让下游 Change Sync 无需轮询即可重放 governance-runtime 调用。Repository Registry（v4）以及 Rule/Skill/Agent/Invocation（v6）的加入源自 PRD-05；Task + Artifact（v7）完成了 AXI 原子集，使 Workbench 仪表板可以通过规范化 API 管理每个原子。Kernel ↔ axi-todo bridge（`axi_kernel/bridge/axi_todo.py`）使用原子 `tasks.json.tmp → os.replace` 写入以及 `legacyIds.kernelTaskId` 锚定，在 `TaskObject` 行与运维人员的 `~/.axi-todo/tasks.json` 账本之间往返。
+
+Kernel 被 `foundation/axi-workspace-cli`、`axi-inbox`、`axi-sync`、`axi-runtime` 和 `axi-apps` 项目调用 —— `workspace.json` 记录其为 `tier=axi-core-product`、`domain=object-registry`、`provides=[object-registry, schema-migrations, change-stream-source]`。CHANGELOG 记录了 122 个通过的测试、Phase 5 sync 面以及 v1.1 PRD 模板升级（2026-09-27）。v1.1 PRD 将系统拆为 L0（存储）→ L1（schema）→ L2（registry 操作）→ L3（CLI/公共 API），并将每个 FR 绑定到定量锚点。仓库归 `libu` 所有；分支 `dev` 领先 `origin/dev` 4 次提交，仅剩的待办所有者项是 `PRD.md §9` 中的 5 条 `"待发"` ADR。
 
 ## Stack
 
-_Stack not recorded in WORKSPACE_INDEX.md._
+| Surface | Tech | Notes |
+| --- | --- | --- |
+| Python package | Python 3.11+, stdlib only (`dataclasses`, `enum`, `json`, `fcntl`, `tempfile`, `threading`, `hashlib`, `subprocess`) | Zero third-party deps; internal-only, not on PyPI |
+| Object schema | `@dataclass(frozen=True)` + `enum.StrEnum` | 15 object types + enums (`Status`, `ProjectStage`, `DocumentKind`, `ChangeType`, `ChangeState`, `RelationKind`, `ResourceStatus`, `TaskStatus`, `TaskPriority`, `ArtifactKind`); factory `object_from_dict` dispatched by `ObjectType` |
+| ID generator | `axi_kernel/ids.py` — SHA-1 of `(type, owner, location_or_uri)` truncated to 16 hex chars | Format `<type-prefix>-<owner>-<hash16>`; rename-safe |
+| Storage | `axi_kernel/store.py::JsonStore` — atomic `tempfile.mkstemp` + `os.replace` + `fcntl.flock` + `threading.Lock` | Sidecar `.lock` file; corrupt file raises `StoreLockError` |
+| CLI | `argparse` (`__main__.py::build_parser`) — `register`, `get`, `list`, `query`, `summary`, `relations`, `deactivate`, `check`, `show-schema`, `sync`, `rebuild`, `get-relations`, `documents-for-project` | 14 top-level subcommands + sync subparser |
+| Sync bridge | `axi_kernel/sync.py` — `kernel_to_workspace`, `workspace_to_kernel`, `status`, `status_diff`, `coverage` | 5 `_COVERAGE` buckets: `projects` / `agent` / `registry` / `internal` |
+| Kernel ↔ axi-todo bridge | `axi_kernel/bridge/axi_todo.py` — `KernelTask` dataclass + `sync_kernel_to_axi_todo` / `sync_axi_todo_to_kernel` / `sync_bidirectional` | Direct `tasks.json` read/write with atomic rename |
+| Tests | `unittest` (stdlib) — `tests/test_registry.py`, `tests/test_sync.py`, `tests/test_rebuild.py`, `tests/test_axi_todo_bridge.py` | 122 cases (Phase 5 + 23 bridge cases) |
+| Build/test config | `pyproject.toml` (name=`axi-kernel`, version=`0.2.0`, requires-python=`>=3.11`) | `[tool.pytest.ini_options] testpaths = ["tests"]` |
+| Workspace governance | `foundation/workspace-governance` consumer; `workspace.json` registration; `workspace-audit.mjs` 0 errors | ADR-011 (rust migration) accepted; `src-rs/` placeholder exists but is empty (`a67055a` removed scaffold) |
+
+## Project Layout
+
+```text
+axi-kernel/
+├── AGENTS.md                 # Read order, verification commands
+├── README.md / README.zh-CN.md
+├── PRD.md                    # v1.1 template (2026-09-27), 14 sections
+├── CHANGELOG.md              # Canonical audit trail; every code change appends
+├── CHANGE.md                 # Promotion-day record (2026-09-21)
+├── MILESTONE.md              # M1-M3 generated by audit-remediation 2026-09-25
+├── TODO.md                   # TODO-T-001 (kernel ↔ axi-agent bridge); TODO-T-002
+├── pyproject.toml            # name=axi-kernel, version=0.2.0
+├── axi_kernel/               # Python package source
+│   ├── __init__.py           # Public re-exports + version="0.3.0"
+│   ├── __main__.py           # CLI entry + 14 subcommand parsers
+│   ├── schema.py             # 15 dataclasses + SCHEMA_VERSION=7 + enums
+│   ├── ids.py                # SHA-1 → AXI-<TYPE>-<owner>-<hash16>
+│   ├── store.py              # JsonStore: atomic write + fcntl flock
+│   ├── registry.py           # Registry class + register_*/query/summary/check/migrate
+│   ├── sync.py               # Workspace ↔ Kernel 5-direction sync
+│   └── bridge/
+│       └── __init__.py       # 484-line axi-todo ↔ Kernel Task bridge
+├── data/
+│   ├── registry.json         # Runtime store (regenerated)
+│   ├── registry.json.lock    # fcntl sidecar
+│   └── migrations/           # Append-only (currently empty; written on schema bump)
+├── tests/
+│   ├── test_registry.py      # 122-case regression suite
+│   ├── test_sync.py          # 7 sync tests
+│   ├── test_rebuild.py       # 10 rebuild tests
+│   └── test_axi_todo_bridge.py # 23 bridge tests
+├── scripts/
+│   ├── promote_incubation.py # Promotion tool
+│   └── metadata/             # axi-{apps,inbox,runtime,sync}.json
+├── docs/
+│   ├── HANDOFF.md            # Zero-context takeover brief
+│   ├── SCHEMA_RELEASES.md    # v3/v4/v5/v6/v7 release notes
+│   ├── VERIFICATION.md
+│   ├── adr/                  # ADR-011 (Rust migration, Accepted)
+│   ├── workflows/            # WK-REGISTER/SYNC/CHECK 7-field docs
+│   ├── logs/                 # Audit-remediation submit logs
+│   └── project-docs.manifest.json
+├── evidence/                 # CLI snapshots mapped to PRD-01 AC
+├── src-rs/                   # Empty (scaffold migrated to foundation/axi-workspace-rs)
+└── .githooks/                # post-commit surface-failures
+```
+
+## Build & Install
+
+```bash
+# No install step — pure-Python stdlib package. Use directly from checkout.
+cd /Volumes/code/workspace/foundation/axi-kernel
+python3 -m axi_kernel --help
+```
+
+`pyproject.toml` 声明 `requires-python = ">=3.11"` 且没有 `dependencies` 数组；`internal-only: this package is owned by the Axi workspace and is not published to a public index`。未来的 Rust 重实现位于 `foundation/axi-workspace-rs/crates/axi-kernel-rs`，按 ADR-011（2026-09-29 Accepted，commit `79b0285`）。
+
+## Verification
+
+据 `AGENTS.md §Verification` 与 `PRD.md §11`：
+
+```bash
+# Kernel test suite (122 cases; Phase 5 + bridge)
+python3 -m unittest discover -s tests -v
+
+# CLI smoke
+python3 -m axi_kernel --help
+python3 -m axi_kernel check
+python3 -m axi_kernel migrate --dry-run --verify
+
+# Workspace governance — promotion is held by these three commands
+node /Volumes/code/workspace/scripts/workspace-project validate
+node /Volumes/code/workspace/scripts/workspace-project whereami /Volumes/code/workspace/foundation/axi-kernel
+node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-audit.mjs
+```
+
+## Architecture Highlights
+
+Kernel 在 `PRD.md §2.1` 中刻意按 L3 → L2 → L1 → L0 单向依赖分层。L3 是 `__init__.py`（re-export）+ `__main__.py`（CLI parser + 14 个子命令处理器）；它从不直接接触 L0 路径。L2 是 `registry.py` 中的 `Registry` 类，是对存储的轻量编排层，暴露 `register_*`、`get`、`list_by_type`、`query`、`summary`、`relations_of`、`check`、`migrate`、`rebuild_registry` 与 `get_relations`。L2 将每次变更包裹在 `store.mutate(...)` 调用中，使多步注册表操作不会被拆到两个写者之间。L1 是纯数据 `schema.py`：从 `BaseObject` 继承的冻结 dataclass，加上枚举（`ObjectType`、`RelationKind`、`Status`、`ProjectStage`、`DocumentKind`、`ChangeType`、`ChangeState`、`ResourceStatus`、`TaskStatus`、`TaskPriority`、`ArtifactKind`）和 `_OBJECT_FACTORIES` 分派表。L0 是 `JsonStore` —— `tempfile.mkstemp` + `os.replace` 实现原子写入，`fcntl.flock` 加在 `registry.json.lock` sidecar 上实现跨进程互斥，`threading.Lock` 实现进程内 RMW。Schema 版本控制由 `SCHEMA_VERSION`（`7`）强制；`Registry.migrate(from_v, to_v, mutator)` 在 `data/migrations/` 下写入一条仅追加记录，文件名为 `NNNN__NNNN__NNNN.json`，从而不可能悄无声息地重排。
+
+Schema 在 7 个版本中覆盖 15 个对象类型。Phase 1/v1 引入了 `Project`、`Document`、`Change`、`Relation`、`Source`。v3 增加了 `Resource`，让 `axi-inbox` 有一个落地位置（`ResourceObject.inbox_status` 与 `BaseObject.status` 分开承载 inbox 生命周期）。v4 收口了 PRD-01 §4 中延后的 "Repository Registry" 范围，包含 `Repository`、`Branch`、`GitRemote`、`Commit`、`RawEvent`（注：schema.py 的 470-630 行与 651-809 行存在这五个类型的重复声明 —— 后一份是 `_OBJECT_FACTORIES` 实际使用的承载版本）。v6 增加了 `RuleObject`、`SkillObject`、`AgentObject`、`InvocationObject`，使 PRD-05 Governance Runtime 通过公共 Registry API 而非 side-store 读取所有内容（`Invocation` 自动发出匹配的 `Change` 行，下游 Sync 无需轮询即可看到事件）。v7 增加了 `TaskObject`（自带 `task_status` / `priority` 生命周期、`blocked_by` 前向引用、可选 `project_id`）和 `ArtifactObject`（自由 `kind`、`produced_by`、可选 `checksum`），使 Workbench 可以通过规范化 API 管理每个 AXI 原子。
+
+`change-stream-source` 是 Kernel 已发布的能力之一 —— 每个变更对象的 Kernel `register_*` 调用都会发出一个 `Change` 行，以 `subject_id` 为键，带时间戳 + uuid8 后缀（`change-<owner>-<ts>-<hex8>`）。`collect_git`（在 `axi-sync` 中）为每次提交注册一条 `_runtime:git:<sha12>` 合成变更；`register_invocation` 自动发出匹配变更，让 governance runtime 保持可观察。`sync.py` 提供 5 个明确方向：`kernel_to_workspace`（把 Project 行推入 `foundation/workspace-governance/workspace.json`）、`workspace_to_kernel`（反向，按 id/location 幂等）、`status`（id 级 diff）、`status_diff`（共享项目上 owner/stack/description/location 的字段级 drift）、`coverage`（`_COVERAGE` 矩阵，将 `Project→projects`、`Rule/Skill/Agent/Invocation→agent`、`Repository/Branch/GitRemote/Commit/RawEvent→registry`、`Document/Resource/Change/Task/Artifact→internal` 映射）。同步模块永不删除；任何一方都可以滞后，由运维人员手工解决 drift。
+
+`bridge/axi_todo.py` 模块是到其实时 `~/.axi-todo/tasks.json` 账本的单向镜像。`tasks_path` 默认是运维人员的 home 目录；自动化必须传入显式路径（通常是 tmpdir）以避免污染实时账本。Bridge 直接通过 JSON 文件往返（而非 `axi-todo add` CLI），因为该 CLI 只暴露 `--title/--prompt`、无法设置 `status/priority/dueAt`。原子写入通过 `tasks.json.tmp → os.replace`；bridge 在每个 Kernel 来源的行上锚定 `legacyIds.kernelTaskId`，使反向同步可以幂等折叠。测试用 `@unittest.skipUnless` 守护，因此实时读取永远不会在 CI 中执行。合计：23 个 bridge 测试 + 99 个主测试 = 122 个用例。
+
+## Key Modules/Files
+
+| Module / File | Responsibility | Path |
+| --- | --- | --- |
+| `Registry` class | Business ops — 15 `register_*` methods + `get` / `list_by_type` / `query` / `summary` / `relations_of` / `check` / `migrate` / `rebuild_registry` / `get_relations` | `axi_kernel/registry.py` |
+| `_DEFAULT_OWNER` + `_detect_stale` | Owner fallback (`libu`) + filesystem-path stale detection (`path-missing`) | `axi_kernel/registry.py` |
+| `_iter_project_candidates` / `_iter_doc_anchors` | Light-weight scan for `rebuild_registry` (avoids workbench-cli dependency) | `axi_kernel/registry.py` |
+| `SCHEMA_VERSION = 7` + 15 dataclasses + 10 enums | Schema authority; `_OBJECT_FACTORIES` keyed on `ObjectType` | `axi_kernel/schema.py` |
+| `Relation` / `Source` | Frozen dataclasses for graph edges + provenance envelope | `axi_kernel/schema.py` |
+| `make_id` / `is_valid_id` | Stable SHA-1-based id generator (rename-safe, collision-detected via `check`) | `axi_kernel/ids.py` |
+| `JsonStore` + `StoreLockError` | Atomic-write + cross-process-lock storage layer | `axi_kernel/store.py` |
+| `JsonStore._atomic_write` | `tempfile.mkstemp` + `os.replace` with rollback on exception | `axi_kernel/store.py` |
+| `JsonStore._exclusive` | Context manager combining `threading.Lock` + `fcntl.flock(LOCK_EX)` | `axi_kernel/store.py` |
+| `JsonStore.append_migration` | Append-only migration record under `data/migrations/NNNN__NNNN__NNNN.json` | `axi_kernel/store.py` |
+| CLI `build_parser` + 14 subcommands | `register project/document/change/resource/repository/branch/remote/commit/raw-event/rule/skill/agent/invocation/task/artifact`, `get`, `list`, `documents-for-project`, `query`, `summary`, `relations`, `deactivate`, `check`, `show-schema`, `sync {status,status-diff,coverage,kernel-to-workspace,workspace-to-kernel}`, `rebuild`, `get-relations` | `axi_kernel/__main__.py` |
+| `kernel_to_workspace` / `workspace_to_kernel` / `status` / `status_diff` / `coverage` | Workspace ↔ Kernel 5-direction sync; never deletes; `_COVERAGE` matrix | `axi_kernel/sync.py` |
+| `_COVERAGE` matrix | ObjectType → bucket mapping (`projects`/`agent`/`registry`/`internal`) | `axi_kernel/sync.py` |
+| `KernelTask` + 3 sync entry points | Kernel ↔ `~/.axi-todo/tasks.json` bidirectional bridge with `legacyIds.kernelTaskId` anchoring | `axi_kernel/bridge/__init__.py` |
+| `KernelTask.from_axi_todo` / `to_axi_todo_payload` | Status mapping (`todo→pending`, `in_progress→running`, `done→completed`) + priority mapping (`medium→normal`) | `axi_kernel/bridge/__init__.py` |
+| `_write_tasks_file` | Atomic `tasks.json.tmp → os.replace`; preserves non-Kernel rows | `axi_kernel/bridge/__init__.py` |
+| ADR-011 rust migration plan | Phase 1 (this repo) → Phase 2 (Python+Rust dual-entry) → Phase 3 (Rust replaces Python); committed 2026-09-29 | `docs/adr/ADR-011-axi-kernel-rust-migration.md` |
+| `docs/SCHEMA_RELEASES.md` | Versioning rules + compatibility matrix + per-release notes | `docs/SCHEMA_RELEASES.md` |
+| WK-REGISTER / WK-SYNC / WK-CHECK workflows | 7-field workflow docs (`入口 / 事实源 / 执行阶段 / 失败处理 / 闭环验收 / 安全边界 / 验证命令`) | `docs/workflows/` |
+
+## Milestone Status
+
+| Stage | Goal | Status |
+| --- | --- | --- |
+| Phase 0 (v1–v3) | `Project` / `Document` / `Change` / `Resource` baseline | Done |
+| Phase 2 v4 | Repository Registry (`Repository` / `Branch` / `GitRemote` / `Commit` / `RawEvent`) | Done |
+| v5 | Documentation-only release (no data bump) — recorded `Resource.kind` string additions | Done |
+| v6 | `Rule` / `Skill` / `Agent` / `Invocation` first-class atoms + Kernel ↔ Runtime refactor | Done |
+| v7 | `Task` / `Artifact` atoms (completes AXI atomic set) | Done |
+| Phase 5 | `sync.status_diff`, `rebuild_registry`, `get_relations` + 122-test regression | Done (2026-09-24) |
+| Step 7.A7 | Kernel ↔ axi-todo bridge (Vision PRD §8) | Done (2026-09-24) |
+| ADR-011 | Rust migration plan (Phase 1 scaffold landed) | Accepted (2026-09-29) |
+| v1.1 PRD template upgrade | Layered FR with quantitative anchors + FR-8 end-to-end smoke | Done (2026-09-27) |
+| M1 handoff-check | `documented` / `verified` state | Done (`docs/HANDOFF.md` says `verified`) |
+| M2 PRD content化 | Stub → real PRD | Done (PRD v1.1, 16.5 KB) |
+| M3 next-lifecycle | `stage=shared` → next phase per `project-maturity-v1` decision record | Pending |
+| Open ADRs | 5 PRD-01 ADRs (`JSON-on-disk`, `v6 first-class`, `v7 atoms`, `append-only migrations`, `SQLite cache`) | All `(待发)` |
 
 ## Authoritative Documents
 
-- Workspace entry: [`WORKSPACE_INDEX.md`](/Volumes/code/workspace/WORKSPACE_INDEX.md) — partition table row "Axi Kernel".
-- Project root: `/Volumes/code/workspace/foundation/axi-kernel`
-- Project `AGENTS.md`: `/Volumes/code/workspace/foundation/axi-kernel/AGENTS.md` (when present).
-- Project `README.md`: `/Volumes/code/workspace/foundation/axi-kernel/README.md` (when present).
-
-## Notes
-
-personal-os-core
-
-## Verification (suggested)
-
-_See project root `AGENTS.md` or `package.json` scripts for the canonical verification commands. Always run from the project directory, not from this dossier._
+- [`AGENTS.md`](/Volumes/code/workspace/foundation/axi-kernel/AGENTS.md) — read order, boundaries, verification
+- [`README.md`](/Volumes/code/workspace/foundation/axi-kernel/README.md) — purpose, quick start, layout
+- [`README.zh-CN.md`](/Volumes/code/workspace/foundation/axi-kernel/README.zh-CN.md)
+- [`PRD.md`](/Volumes/code/workspace/foundation/axi-kernel/PRD.md) — v1.1 template, 14 sections, FR-1..FR-8 with quantitative anchors
+- [`CHANGELOG.md`](/Volumes/code/workspace/foundation/axi-kernel/CHANGELOG.md) — canonical audit trail
+- [`CHANGE.md`](/Volumes/code/workspace/foundation/axi-kernel/CHANGE.md) — promotion-day record
+- [`MILESTONE.md`](/Volumes/code/workspace/foundation/axi-kernel/MILESTONE.md) — M1 done, M2 done, M3 pending
+- [`TODO.md`](/Volumes/code/workspace/foundation/axi-kernel/TODO.md) — TODO-T-001/002
+- [`docs/HANDOFF.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/HANDOFF.md) — zero-context takeover brief, readiness=`verified`
+- [`docs/SCHEMA_RELEASES.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/SCHEMA_RELEASES.md) — versioning rules + compatibility matrix
+- [`docs/VERIFICATION.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/VERIFICATION.md)
+- [`docs/adr/ADR-011-axi-kernel-rust-migration.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/adr/ADR-011-axi-kernel-rust-migration.md) — Rust migration plan, Accepted
+- [`docs/workflows/WK-REGISTER-001.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/workflows/WK-REGISTER-001.md)
+- [`docs/workflows/WK-SYNC-001.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/workflows/WK-SYNC-001.md)
+- [`docs/workflows/WK-CHECK-001.md`](/Volumes/code/workspace/foundation/axi-kernel/docs/workflows/WK-CHECK-001.md)
+- [`pyproject.toml`](/Volumes/code/workspace/foundation/axi-kernel/pyproject.toml) — name, version, requires-python
 
 ## Cross-References
 
-- `docs/content/{en,zh}/guide/workspace.md` — how Axi Docs consumes the workspace index.
-- `docs/content/{en,zh}/guide/routing.md` — workspace project routing.
-- `app/src/config/documentSources.ts` — Axi Docs source registry.
+Kernel 是每个下游 Personal-OS 工具的 schema 权威源。工作区治理记录了以下消费者（据 `workspace.json` 与 `PRD.md §8`）：
+
+- **`foundation/axi-workbench-cli`** —— 消费 `Project` / `Document` / `Change` 供 Workbench 仪表板使用；`registry.py` 中的 `rebuild_registry` 帮助函数刻意**不**依赖 `workbench-cli.scanner.candidate`，以保持 Kernel 独立
+- **`foundation/axi-inbox`** —— 通过 inbox `data/inbox.json` sidecar 读写 `Resource` 行；调用 `Registry.register_resource`、`register_change`、`register_update`、`register_many`
+- **`foundation/axi-sync`** —— 通过 `collect()` 拉取 `Change` 流，并为每个 `git log` 提交发出合成 `Change` 行；`git_collect` 直接注册 `Repository` / `Commit` / `RawEvent` 行
+- **`foundation/axi-runtime`** —— 通过 Registry API 读取 `Rule` / `Skill` / `Agent` / `Invocation`（Step 6/7 重构后），不再使用 side-store
+- **`foundation/axi-apps`** —— 消费 `kind=shareable`（axi-inbox transform 目标）以及 `kind=inspiration` / `kind=task` 的 `Resource` 行
+- **`foundation/workspace-governance`** —— Kernel 通过 `axi_kernel/sync.py` 读取 `workspace.json` 路径，用于 `workspace_to_kernel` / `kernel_to_workspace` / `status_diff`
+
+Kernel 还通过 bridge 模块（`~/.axi/todo/tasks.json` 往返）依赖位于 `agent-cluster/axi-agent/tools/axi-todo` 的 `axi-todo` 运行时。`src-rs/` 目录存在但为空；Rust 迁移 crate 位于 `foundation/axi-workspace-rs/crates/axi-kernel-rs`，按 ADR-011。
+
+## 说明
+
+- Python CLI owner-internal，仅依赖标准库；规范化二进制路径位于 `foundation/axi-workspace-rs/crates/axi-kernel-rs`，按 ADR-011。
+- 122 个测试通过；Phase 5 sync 面 + v1.1 PRD 模板升级于 2026-09-27 完成。
+- `dev` 上的工作树：领先 `origin/dev` 4 次提交；`PRD.md §9` 中 5 条 `(待发)` ADR 仍为所有者待办项。
