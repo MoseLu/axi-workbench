@@ -52,10 +52,10 @@ export function ChevronIcon({ expanded }: { expanded: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       style={{
-        width: 'var(--icon-size-sm)',
-        height: 'var(--icon-size-sm)',
+        width: 'var(--axi-docs-icon-size-sm)',
+        height: 'var(--axi-docs-icon-size-sm)',
         transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-        transition: 'transform var(--transition)',
+        transition: 'transform var(--axi-docs-transition)',
         flexShrink: 0,
       }}
     >

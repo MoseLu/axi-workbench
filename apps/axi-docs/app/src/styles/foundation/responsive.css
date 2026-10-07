@@ -1,16 +1,16 @@
 @media (max-width: 1600px) {
   :root {
-    --workbench-grid-columns: var(--workbench-grid-columns-wide);
+    --axi-docs-workbench-grid-columns: var(--axi-docs-workbench-grid-columns-wide);
   }
 }
 
 @media (max-width: 1440px) {
   :root {
-    --knowledge-graph-workspace-width: min(68vw, 920px);
-    --graph-space-body-columns: var(--graph-space-body-columns-wide);
-    --results-evidence-grid-columns-cockpit: 1fr;
-    --knowledge-explorer-body-columns: 1fr;
-    --document-route-columns: 1fr;
+    --axi-docs-knowledge-graph-workspace-width: min(68vw, 920px);
+    --axi-docs-graph-space-body-columns: var(--axi-docs-graph-space-body-columns-wide);
+    --axi-docs-results-evidence-grid-columns-cockpit: 1fr;
+    --axi-docs-knowledge-explorer-body-columns: 1fr;
+    --axi-docs-document-route-columns: 1fr;
   }
 
   .results-evidence__panel--evidence {
@@ -25,11 +25,11 @@
 
 @media (max-width: 1365px) {
   :root {
-    --category-graph-layout-columns-cockpit: 1fr;
-    --document-detail-page-columns-cockpit: 1fr;
-    --search-page-layout-columns-cockpit: 1fr;
-    --results-evidence-grid-columns-cockpit: 1fr;
-    --category-graph-stage-min-height: var(--category-graph-stage-min-height-compact);
+    --axi-docs-category-graph-layout-columns-cockpit: 1fr;
+    --axi-docs-document-detail-page-columns-cockpit: 1fr;
+    --axi-docs-search-page-layout-columns-cockpit: 1fr;
+    --axi-docs-results-evidence-grid-columns-cockpit: 1fr;
+    --axi-docs-category-graph-stage-min-height: var(--axi-docs-category-graph-stage-min-height-compact);
   }
 
   .category-graph-page__sidebar,
@@ -86,7 +86,7 @@
 
 @media (max-width: 1320px) {
   :root {
-    --workbench-grid-columns: var(--workbench-grid-columns-medium);
+    --axi-docs-workbench-grid-columns: var(--axi-docs-workbench-grid-columns-medium);
   }
 
   .workbench-panel--evidence {
@@ -97,11 +97,11 @@
 
 @media (max-width: 1180px) {
   :root {
-    --knowledge-graph-workspace-width: min(72vw, 860px);
-    --graph-space-body-columns: var(--graph-space-body-columns-medium);
-    --command-center-cockpit-columns: 1fr;
-    --command-center-graph-min-height-cockpit: var(--command-center-graph-min-height-tablet);
-    --command-header-inline-padding: var(--command-header-inline-padding-compact);
+    --axi-docs-knowledge-graph-workspace-width: min(72vw, 860px);
+    --axi-docs-graph-space-body-columns: var(--axi-docs-graph-space-body-columns-medium);
+    --axi-docs-command-center-cockpit-columns: 1fr;
+    --axi-docs-command-center-graph-min-height-cockpit: var(--axi-docs-command-center-graph-min-height-tablet);
+    --axi-docs-command-header-inline-padding: var(--axi-docs-command-header-inline-padding-compact);
   }
 
   .graph-space__stats {
@@ -174,7 +174,7 @@
 
 @media (max-width: 1100px) {
   :root {
-    --command-center-graph-min-height-cockpit: var(--command-center-graph-min-height-stack);
+    --axi-docs-command-center-graph-min-height-cockpit: var(--axi-docs-command-center-graph-min-height-stack);
   }
 
   .command-center {
@@ -193,11 +193,11 @@
     min-height: auto;
     grid-template-columns: 1fr;
     order: 0;
-    margin-top: var(--layout-gap-lg);
+    margin-top: var(--axi-docs-layout-gap-lg);
   }
 
   .command-center__left {
-    padding: var(--command-center-left-padding-stacked);
+    padding: var(--axi-docs-command-center-left-padding-stacked);
     border-right: none;
     border-top: 1px solid rgba(125, 211, 252, 0.08);
   }
@@ -214,12 +214,12 @@
 
 @media (max-width: 980px) {
   :root {
-    --page-shell-padding: 16px;
-    --page-shell-gap: var(--page-shell-gap-compact);
-    --sidebar-width: var(--sidebar-width-tablet);
-    --sidebar-panel-width: min(72vw, 280px);
-    --graph-stage-shell-min-height: var(--graph-stage-shell-min-height-tablet);
-    --workbench-grid-columns: 1fr;
+    --axi-docs-page-shell-padding: 16px;
+    --axi-docs-page-shell-gap: var(--axi-docs-page-shell-gap-compact);
+    --axi-docs-sidebar-width: var(--axi-docs-sidebar-width-tablet);
+    --axi-docs-sidebar-panel-width: min(72vw, 280px);
+    --axi-docs-graph-stage-shell-min-height: var(--axi-docs-graph-stage-shell-min-height-tablet);
+    --axi-docs-workbench-grid-columns: 1fr;
   }
 
   .overview-hero {
@@ -247,9 +247,9 @@
 
 @media (max-width: 960px) {
   :root {
-    --knowledge-graph-workspace-width: min(calc(100vw - var(--sidebar-width)), 1000px);
-    --graph-space-padding: var(--graph-space-padding-compact);
-    --graph-space-body-columns: 1fr;
+    --axi-docs-knowledge-graph-workspace-width: min(calc(100vw - var(--axi-docs-sidebar-width)), 1000px);
+    --axi-docs-graph-space-padding: var(--axi-docs-graph-space-padding-compact);
+    --axi-docs-graph-space-body-columns: 1fr;
   }
 
   .graph-space__topbar {
@@ -267,7 +267,7 @@
   }
 
   .graph-space__body {
-    grid-template-rows: var(--graph-space-body-rows-stacked);
+    grid-template-rows: var(--axi-docs-graph-space-body-rows-stacked);
   }
 
   .graph-space__tree {
@@ -283,8 +283,8 @@
 
 @media (max-width: 860px) {
   :root {
-    --document-reader-inline-padding: var(--document-reader-inline-padding-compact);
-    --document-reader-bottom-padding: var(--document-reader-bottom-padding-compact);
+    --axi-docs-document-reader-inline-padding: var(--axi-docs-document-reader-inline-padding-compact);
+    --axi-docs-document-reader-bottom-padding: var(--axi-docs-document-reader-bottom-padding-compact);
   }
 
   .section-header,
@@ -320,14 +320,14 @@
 
 @media (max-width: 760px) {
   :root {
-    --sidebar-width: var(--sidebar-width-mobile);
-    --sidebar-panel-width: min(80vw, 260px);
+    --axi-docs-sidebar-width: var(--axi-docs-sidebar-width-mobile);
+    --axi-docs-sidebar-panel-width: min(80vw, 260px);
   }
 
   .app-header--command {
     flex-wrap: wrap;
     height: auto;
-    min-height: var(--header-height);
+    min-height: var(--axi-docs-header-height);
     padding-top: 10px;
     padding-bottom: 10px;
   }
@@ -766,10 +766,10 @@
 
 @media (max-width: 720px) {
   :root {
-    --knowledge-overview-padding: var(--knowledge-overview-padding-compact);
-    --page-content-inline-padding: var(--page-content-inline-padding-compact);
-    --graph-stage-shell-padding: var(--graph-stage-shell-padding-compact);
-    --graph-stage-shell-min-height: var(--graph-stage-shell-min-height-mobile);
+    --axi-docs-knowledge-overview-padding: var(--axi-docs-knowledge-overview-padding-compact);
+    --axi-docs-page-content-inline-padding: var(--axi-docs-page-content-inline-padding-compact);
+    --axi-docs-graph-stage-shell-padding: var(--axi-docs-graph-stage-shell-padding-compact);
+    --axi-docs-graph-stage-shell-min-height: var(--axi-docs-graph-stage-shell-min-height-mobile);
   }
 
   .overview-stats,

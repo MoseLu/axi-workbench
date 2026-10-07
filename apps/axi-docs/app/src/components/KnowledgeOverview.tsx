@@ -34,7 +34,7 @@ export function KnowledgeOverview({
           <BookIcon />
           <div>
             <p className="empty-state-text">知识目录加载失败</p>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--spacing-2)' }}>
+            <p style={{ fontSize: 'var(--axi-docs-font-size-sm)', color: 'var(--axi-docs-color-text-muted)', marginTop: 'var(--axi-docs-spacing-2)' }}>
               {error}
             </p>
           </div>

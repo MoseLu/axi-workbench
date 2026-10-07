@@ -1,0 +1,74 @@
+/* ========== Form error styling ==========
+   Amplify antd's default error treatment so failed validation is
+   visually unmistakable across both light and dark Axi themes. The
+   selectors match antd v5's class output (`has-error` on Form.Item,
+   `explain-error` on the help text node). */
+
+/* Force a red border + soft red ring on every common input control
+   when the parent Form.Item is in the error state. The selectors
+   cover plain inputs, affix-wrapped inputs, textareas, and Select's
+   inner selector — the four control families the workbench uses. */
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-affix-wrapper,
+.ant-form-item-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-affix-wrapper,
+.ant-form-item-has-error textarea.ant-input,
+.ant-form-item-has-error .ant-select-selector,
+.ant-form-item-has-error .ant-picker {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.18) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Error help text — bumped size and color so it never gets lost
+   against the form's grey label / hint text. 6px top margin matches
+   the visual rhythm of antd's default help slot. */
+.ant-form-item-explain-error,
+.ant-form-item-explain-error .ant-form-item-explain-error {
+  color: #fca5a5 !important;
+  margin-top: 6px !important;
+  font-size: 13px !important;
+  line-height: 1.4;
+}
+
+/* When the parent Form.Item carries an explicit `validateStatus="error"`
+   prop (instead of being driven by `rules`), antd still toggles
+   `has-error` on the wrapper — this redundant declaration is a safety
+   net for forms that bypass the rules path. */
+.ant-form-item-has-error .ant-input:focus,
+.ant-form-item-has-error .ant-input-affix-wrapper:focus,
+.ant-form-item-has-error .ant-input-focused,
+.ant-form-item-has-error textarea.ant-input:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.22) !important;
+}
+
+/* ========== HandoffCreate hand-rolled form ==========
+   The HandoffCreate page builds its fields with raw `<select>` /
+   `<input>` / `<textarea>` (see DesktopCrudFrame). When the form
+   surface carries the `is-invalid` modifier we paint its inputs red
+   and add the 12px-tall error slot. */
+.handoff-create-page__field.is-invalid .handoff-create-page__select,
+.handoff-create-page__field.is-invalid .handoff-create-page__input,
+.handoff-create-page__field.is-invalid .handoff-create-page__textarea {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.18) !important;
+  background-color: rgba(248, 113, 113, 0.04);
+}
+
+.handoff-create-page__field.is-invalid .handoff-create-page__select:focus,
+.handoff-create-page__field.is-invalid .handoff-create-page__input:focus,
+.handoff-create-page__field.is-invalid .handoff-create-page__textarea:focus {
+  outline: none;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.22) !important;
+}
+
+.handoff-create-page__field-error {
+  display: block;
+  min-height: 18px;
+  margin-top: 6px;
+  color: #fca5a5;
+  font-size: 13px;
+  line-height: 1.4;
+}

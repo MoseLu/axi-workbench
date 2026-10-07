@@ -3,6 +3,8 @@
  * GET /api/v1/notifications/nav-badges → { home, projects, workspace, me, unreadTotal }
  */
 
+import { backoffFetch } from './network/backoffFetch';
+
 export type BadgeKind = 'none' | 'dot' | 'count';
 
 export type NavBadgeDto = {
@@ -54,7 +56,13 @@ function dtoToBadge(dto?: NavBadgeDto): NavBadge {
  * Fetch navigation badges through the gateway's HttpOnly Axi session.
  */
 export async function fetchNavBadges(signal?: AbortSignal): Promise<TabBadges> {
-  const res = await fetch('/api/v1/notifications/nav-badges', { headers: { Accept: 'application/json' }, signal, credentials: 'include' });
+  // Badges are cosmetic: retry 5xx briefly (1s/2s) instead of hammering the gateway.
+  const res = await backoffFetch('/api/v1/notifications/nav-badges', {
+    headers: { Accept: 'application/json' },
+    signal,
+    credentials: 'include',
+    backoff: { maxRetries: 2, baseDelayMs: 1000 },
+  });
   if (!res.ok) {
     throw new Error(`nav-badges HTTP ${res.status}`);
   }

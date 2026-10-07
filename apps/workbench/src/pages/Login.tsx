@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { QRCode } from 'antd';
 import { AxiBanner } from '@axi/widgets';
 import { resolveGatewayURL, resolveUsername } from '@axi/workbench-foundation';
+import { backoffFetch } from '../lib/network/backoffFetch';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../i18n';
 import { oneTimeCodeValue } from '../lib/oneTimeCode';
@@ -385,12 +386,16 @@ const Login: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
+    // Silent resume probe — cosmetic convenience only. VITE_DISABLE_SESSION_PROBE=1
+    // skips it entirely (useful when the gateway is known to be down).
+    if (import.meta.env.VITE_DISABLE_SESSION_PROBE === '1') return;
     const deviceId = getOrCreateDeviceId();
     const controller = new AbortController();
-    void fetch(resolveGatewayURL('/api/v1/sessions/resume'), {
+    void backoffFetch(resolveGatewayURL('/api/v1/sessions/resume'), {
       credentials: 'include',
       headers: { Accept: 'application/json', 'X-Axi-Device-Id': deviceId },
       signal: controller.signal,
+      backoff: { maxRetries: 2, baseDelayMs: 1000 },
     }).then(async (response) => {
       if (!response.ok) {
         setQuickAccount(null);
@@ -756,13 +761,14 @@ const Login: React.FC = () => {
     }
     setSubmitting(true);
     try {
-      const response = await fetch(resolveGatewayURL('/api/v1/sessions/resume'), {
+      const response = await backoffFetch(resolveGatewayURL('/api/v1/sessions/resume'), {
         method: 'POST',
         credentials: 'include',
         headers: {
           Accept: 'application/json',
           'X-Axi-Device-Id': getOrCreateDeviceId(),
         },
+        backoff: { maxRetries: 2, baseDelayMs: 1000 },
       });
       if (!response.ok) {
         throw new Error(t('auth.login.resumeExpired'));

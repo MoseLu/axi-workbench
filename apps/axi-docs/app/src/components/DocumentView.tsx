@@ -239,11 +239,11 @@ function SkillBadge({ label, value }: { label: string; value: string }) {
     <div style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
       padding: '3px 10px', borderRadius: 980,
-      background: 'var(--tag-bg)', color: 'var(--tag-text)',
-      border: '1px solid var(--tag-border)',
-      fontSize: 'var(--font-size-xs)', fontWeight: 500,
+      background: 'var(--axi-docs-tag-bg)', color: 'var(--axi-docs-tag-text)',
+      border: '1px solid var(--axi-docs-tag-border)',
+      fontSize: 'var(--axi-docs-font-size-xs)', fontWeight: 500,
     }}>
-      <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>{label}:</span>
+      <span style={{ color: 'var(--axi-docs-color-text-muted)', fontWeight: 400 }}>{label}:</span>
       <span>{value}</span>
     </div>
   )
@@ -340,7 +340,7 @@ export function DocumentView({
           <DocumentIcon />
           <div>
             <p className="empty-state-text">从左侧选择一个文档开始阅读</p>
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--spacing-3)' }}>
+            <p style={{ fontSize: 'var(--axi-docs-font-size-sm)', color: 'var(--axi-docs-color-text-muted)', marginTop: 'var(--axi-docs-spacing-3)' }}>
               支持标签筛选 · 双向链接 · AI 洞察
             </p>
           </div>
@@ -374,9 +374,13 @@ export function DocumentView({
   const isDaily = docType === 'daily'
   const isSkillDocument = source?.kind === 'skill-library' || docType === 'skill'
   const hasCleanHeader = isSkillDocument || isGuideDocument || source?.kind === 'workspace-registry'
+  // App.loadFile 失败时会把 fileName 置为 'Error' 且正文以错误标题开头 —— 用红边框
+  // 区分「文件真实内容」与「加载失败占位」，避免用户把占位文字当成文档本身。
+  const isLoadError = fileName === 'Error'
+    && Boolean(content?.startsWith('# 文件加载失败') || content?.startsWith('# 加载错误'))
 
   return (
-    <div className={`doc-layout${variant === 'panel' ? ' doc-layout--panel' : ''}${isGuideDocument ? ' doc-layout--guide' : ''}`}>
+    <div className={`doc-layout${variant === 'panel' ? ' doc-layout--panel' : ''}${isGuideDocument ? ' doc-layout--guide' : ''}${isLoadError ? ' axi-docs-file-error' : ''}`}>
       <div className="app-content">
         {/* Document Header */}
         <div className="doc-header">
@@ -407,7 +411,7 @@ export function DocumentView({
               {version && <SkillBadge label="版本" value={version} />}
               {problem && <SkillBadge label="问题" value={problem} />}
               {date && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 980, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 980, fontSize: 'var(--axi-docs-font-size-xs)', color: 'var(--axi-docs-color-text-muted)' }}>
                   <ClockIcon />
                   {formatDisplayDate(date, undefined, effectiveLocale === 'en' ? 'en-US' : 'zh-CN')}
                 </div>
@@ -607,7 +611,7 @@ function GuideKnowledgeGraphCompanion({ locale }: { locale: PageCopyLocale }) {
             y1={Number(center.y.toFixed(2))}
             x2={Number(node.x.toFixed(2))}
             y2={Number(node.y.toFixed(2))}
-            stroke="var(--color-text-muted, rgba(255,255,255,0.18))"
+            stroke="var(--axi-docs-color-text-muted, rgba(255,255,255,0.18))"
             strokeWidth={1}
           />
         ))}
@@ -618,15 +622,15 @@ function GuideKnowledgeGraphCompanion({ locale }: { locale: PageCopyLocale }) {
               x={node.x + 8}
               y={node.y + 4}
               fontSize={10}
-              fill="var(--color-text)"
+              fill="var(--axi-docs-color-text)"
               className="doc-companion__graph-label"
             >
               {node.title.length > 14 ? `${node.title.slice(0, 12)}…` : node.title}
             </text>
           </g>
         ))}
-        <circle cx={center.x} cy={center.y} r={8} fill="var(--color-text)" />
-        <text x={center.x} y={center.y + 22} textAnchor="middle" fontSize={10} fill="var(--color-text-muted)">
+        <circle cx={center.x} cy={center.y} r={8} fill="var(--axi-docs-color-text)" />
+        <text x={center.x} y={center.y + 22} textAnchor="middle" fontSize={10} fill="var(--axi-docs-color-text-muted)">
           {isEnLocal ? 'workspace' : '工作区'}
         </text>
       </svg>

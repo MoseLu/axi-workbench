@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-10-04
-modified: 2026-10-04
+created: 2026-10-07
+modified: 2026-10-07
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-10-04
+最后生成：2026-10-07
 
 ## 控制面
 
@@ -57,9 +57,9 @@ agent-readable: true
   remote: https://github.com/MoseLu/axi-workbench-cli.git
 - `workbench/axi-image-preview` | Axi Image Preview | branch=`dev` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/MoseLu/axi-image-preview.git
-- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`dev-clean-2026-09-28` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`agent/audit-fix-a02-pet-desktop-lockfile` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
-- `workbench/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-workbench` | Axi Workbench | branch=`feature/axi-docs-token-convergence` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
@@ -68,7 +68,7 @@ agent-readable: true
   remote: https://github.com/MoseLu/Axi-Soul-World.git
 - `products/ielts-vocab` | IELTS Vocabulary | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/ielts-vocab.git
-- `products/story-graph` | Story Graph | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `products/story-graph` | Story Graph | branch=`feature/ci-check-design-tokens-entry` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/story-graph.git
 
 ## Shared
@@ -93,7 +93,7 @@ agent-readable: true
 
 ## Agent
 
-- `agent-cluster/axi-agent` | Axi Agent Platform | branch=`dev` | canonical=yes | compliance=`agent-platform`
+- `agent-cluster/axi-agent` | Axi Agent Platform | branch=`agent/audit-fix-a06-axi-todo-milestones` | canonical=yes | compliance=`agent-platform`
   remote: https://github.com/MoseLu/axi-agent.git
 
 ## References
@@ -113,7 +113,7 @@ agent-readable: true
   upstream: https://github.com/AITabby/opencodex.git
 - `references/short-term/sub2api` | Sub2API Reference | branch=`main` | canonical=no | compliance=`-`
   remote: https://github.com/Wei-Shaw/sub2api.git
-- `references/short-term/tidewater-reference` | Tidewater Reference | branch=`main` | canonical=no | compliance=`-`
+- `references/short-term/tidewater-reference` | Tidewater Reference | branch=`agent/audit-fix-a09-tidewater-agents` | canonical=no | compliance=`-`
   remote: https://github.com/dgreenheck/tidewater.git
 
 ## 已批准项目级 Monorepo

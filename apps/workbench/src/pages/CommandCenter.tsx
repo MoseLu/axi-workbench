@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 // axi-ui-escape-hatch: antd Input + Button drive the command-bar search row
 // because @axi/widgets does not currently expose a search-input primitive.
-import { Button, Input } from 'antd';
+import { App as AntdApp, Button, Input } from 'antd';
 import { useCancelAgentTask, useControlQuery, useControlSnapshot, useDecideApproval, useRunControlCommand } from '@axi/api-client';
 import { AxiBasicBanner, AxiCardBanner, AxiTag } from '@axi/core';
 import { AxiRow } from '@axi/widgets';
@@ -30,6 +30,7 @@ const layerCopyKey: Record<LayerKind, string> = {
 
 const CommandCenter: React.FC = () => {
   const { t } = useI18n();
+  const { modal } = AntdApp.useApp();
   const { data: snapshot, isLoading, error, refetch } = useControlSnapshot();
   const controlQuery = useControlQuery();
   const runCommand = useRunControlCommand();
@@ -138,7 +139,16 @@ const CommandCenter: React.FC = () => {
           />
           <AgentTasksPanel
             tasks={snapshot.agentTasks || []}
-            onCancel={(id) => cancelAgentTask.mutate(id)}
+            onCancel={(id) => {
+              modal.confirm({
+                title: t('commandCenter.agentTasks.cancel'),
+                content: t('commandCenter.agentTasks.cancelConfirm', '确认要取消该任务吗？取消后任务将停止执行且不可恢复。'),
+                okText: t('common.confirm', '确认'),
+                cancelText: t('common.cancel', '取消'),
+                okButtonProps: { danger: true },
+                onOk: () => cancelAgentTask.mutate(id),
+              });
+            }}
           />
         </AxiRow>
       )}

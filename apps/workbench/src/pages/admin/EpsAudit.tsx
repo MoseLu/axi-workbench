@@ -2,7 +2,7 @@ import React from 'react';
 // axi-ui-escape-hatch: antd Button 在 @axi/widgets 暂无等价「带 loading 的 primary 触发按钮」前
 // 保留；触发行为完全等价，差异只是样式 token。等 @axi/widgets.AxiButton 上线后
 // 一并替换。
-import { Button } from 'antd';
+import { App as AntdApp, Button } from 'antd';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { AxiCardBanner, AxiTag } from '@axi/core';
 import { AxiBanner } from '@axi/widgets';
@@ -34,6 +34,7 @@ const severityTone = (severity: string): 'danger' | 'warning' | 'info' => {
 
 const EpsAudit: React.FC = () => {
   const { t } = useI18n();
+  const { modal } = AntdApp.useApp();
   const assets = useEpsAssets();
   const findings = useEpsFindings();
   const runs = useEpsRuns();
@@ -96,7 +97,14 @@ const EpsAudit: React.FC = () => {
           <Button
             loading={runAudit.isPending}
             type="primary"
-            onClick={() => runAudit.mutate()}
+            onClick={() => modal.confirm({
+              title: t('epsAudit.runAudit'),
+              content: t('epsAudit.runAuditConfirm', '将重新运行 EPS 审计扫描，覆盖当前审计运行记录，确认继续？'),
+              okText: t('common.confirm', '确认'),
+              cancelText: t('common.cancel', '取消'),
+              okButtonProps: { danger: true },
+              onOk: () => runAudit.mutate(),
+            })}
           >
             {t('epsAudit.runAudit')}
           </Button>

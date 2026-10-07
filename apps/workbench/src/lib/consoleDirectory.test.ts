@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ConsoleCatalog } from '@axi/workstation-contracts';
+import type { ConsoleCatalog } from './consoleDirectory';
 import {
   consoleSearchText,
   getVisibleConsoles,

@@ -38,6 +38,8 @@ interface HomeCommandCenterProps {
   sources: DocSource[]
   activeSourceId?: string | null
   catalog: KnowledgeCatalog | null
+  catalogError?: string | null
+  onRetryCatalog?: () => void
   searchResults?: SearchResult[] | null
   searching?: boolean
   searchQuery: string
@@ -137,6 +139,8 @@ export function HomeCommandCenter({
   sources,
   activeSourceId = null,
   catalog,
+  catalogError = null,
+  onRetryCatalog,
   searchResults,
   searching = false,
   searchQuery,
@@ -403,6 +407,47 @@ export function HomeCommandCenter({
 
   return (
     <PageShell className={`axi-docs-home${isWorkspaceDocSet ? ' axi-docs-home--workspace' : ''}`} compact>
+      {catalogError ? (
+        <div
+          className="axi-docs-catalog-error"
+          role="alert"
+          aria-live="assertive"
+          style={{
+            border: '1px solid rgba(207, 34, 46, 0.45)',
+            background: 'rgba(207, 34, 46, 0.08)',
+            borderRadius: 10,
+            padding: '12px 16px',
+            margin: '0 0 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}
+        >
+          <div>
+            <strong>{guideLocale === 'zh' ? '知识目录加载失败' : 'Failed to load the knowledge catalog'}</strong>
+            <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{catalogError}</div>
+          </div>
+          {onRetryCatalog ? (
+            <button
+              className="axi-docs-catalog-error__retry"
+              onClick={onRetryCatalog}
+              type="button"
+              style={{
+                border: '1px solid rgba(207, 34, 46, 0.45)',
+                background: 'transparent',
+                color: 'inherit',
+                borderRadius: 8,
+                padding: '8px 14px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {guideLocale === 'zh' ? '重试' : 'Retry'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <aside className="axi-docs-home__sidebar" aria-label={homeCopy.sidebarLabel}>
         {isGuideDocSet ? (
           guideSections.map((section) => {

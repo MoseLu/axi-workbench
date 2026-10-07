@@ -1,12 +1,12 @@
 # Workspace Project Handoff Readiness
 
-Generated: 2026-10-04T02:12:21.365Z
+Generated: 2026-10-07T11:35:13.390Z
 
 - Total: 25
-- Verified: 15
-- Documented: 6
+- Verified: 16
+- Documented: 7
 - Stale: 2
-- Unready: 2
+- Unready: 0
 
 | Project | Readiness | Score | Last verified | Current work |
 |---|---|---:|---|---|
@@ -20,13 +20,13 @@ Generated: 2026-10-04T02:12:21.365Z
 | `axi-pet-desktop` | verified | 10/10 | 2026-09-25 | Maintain the Electron shell + React frontend sync. |
 | `axi-registry` | verified | 10/10 | 2026-09-25 | Keep the zero-context manifest aligned with actual commands and package contracts. |
 | `axi-rules` | verified | 10/10 | 2026-09-25 | Ship and harden scripts/handoff-workflow.py as the AR-HANDOFF-004 mechanical gate. |
-| `axi-runtime` | unready | 10/10 | 2026-09-29 | ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011 |
+| `axi-runtime` | documented | 10/10 | 2026-09-29 | ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011 |
 | `axi-skills` | stale | 10/10 | 2026-08-23 | Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state. |
 | `axi-soul-world` | verified | 10/10 | 2026-09-25 | W1-W8 restricted delivery is integrated in dev and origin/dev at merge 795a804; the W5-W8 topic head b9dfef3 is its second parent. |
 | `axi-sync` | documented | 10/10 | 2026-09-25 | ADR-014 Rust migration (Proposed) — Phase 1 scaffold landed at src-rs/axi-sync-rs/; Phase 3 gated on ADR-011 (axi-kernel-rs) |
 | `axi-ui` | verified | 10/10 | 2026-09-25 | Own the canonical Black Gold preset in @axi/tokens and @axi/core. |
 | `axi-video-downloader` | verified | 10/10 | 2026-09-25 | Keep the zero-context manifest aligned with the actual Python entrypoints and hardware prerequisites. |
-| `axi-workbench` | unready | 10/10 | 2026-09-13 | Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence |
+| `axi-workbench` | verified | 10/10 | 2026-09-13 | Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence |
 | `axi-workbench-cli` | verified | 10/10 | 2026-09-25 | Maintain CLI and evidence against the AXI Kernel |
 | `axi-workbench-desktop-dist` | documented | 10/10 | 2026-09-25 | Verify Tauri build pipeline |
 | `axi-workbench-mobile-dist` | documented | 10/10 | 2026-09-25 | Verify mobile-specific build targets |

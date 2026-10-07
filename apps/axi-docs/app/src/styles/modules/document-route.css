@@ -33,7 +33,7 @@
   --axi-doc-vp-content-right: var(--axi-doc-vp-layout-offset);
   --axi-doc-vp-aside-width: 256px;
   --axi-doc-vp-doc-content-width: 688px;
-  --header-height: var(--axi-doc-vp-nav-height);
+  --axi-docs-header-height: var(--axi-doc-vp-nav-height);
 }
 
 html[data-axi-docs-theme='light'] .app-layout--document,
@@ -1644,8 +1644,8 @@ html[data-axi-docs-theme='light'] .document-detail-page__reader .code-block code
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--page-shell-padding);
-  background: var(--color-bg);
+  padding: var(--axi-docs-page-shell-padding);
+  background: var(--axi-docs-color-bg);
 }
 
 .workspace-empty-state__actions {

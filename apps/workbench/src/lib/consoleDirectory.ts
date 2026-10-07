@@ -1,4 +1,31 @@
-import type { ConsoleDescriptor, ConsoleCatalog } from '@axi/workstation-contracts';
+// B1 batch 引入 Consoles 页时引用了 @axi/workstation-contracts 的 Console 类型，
+// 但该包从未导出这些类型（snapshot schema 也没有 consoleCatalog 字段）。
+// 类型暂驻本地：等 workstation-contracts 上线 ConsoleCatalog 后迁回并接入 schema。
+export interface ConsoleEnvironmentEntry {
+  url?: string;
+}
+
+export interface ConsoleDescriptor {
+  id: string;
+  projectId?: string;
+  title: string;
+  description?: string;
+  owner: string;
+  icon: string;
+  status: 'active' | 'inactive';
+  visibility: 'public' | 'admin' | 'hidden';
+  surface: string;
+  capabilities: string[];
+  environments: Record<string, ConsoleEnvironmentEntry>;
+  release?: { version?: string };
+  uiContract?: { provider?: string; shell?: string };
+}
+
+export interface ConsoleCatalog {
+  schemaVersion?: number;
+  generatedBy?: string;
+  consoles: ConsoleDescriptor[];
+}
 
 export type WorkbenchEnvironmentId = string;
 

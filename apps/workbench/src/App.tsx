@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConfigProvider, theme as antdTheme } from 'antd';
+import { App as AntdApp, ConfigProvider, theme as antdTheme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
 import {
@@ -15,6 +15,7 @@ import { axiSettingsLocaleContribution } from '@axi/settings';
 import { axiShellLocaleContribution } from '@axi/shell';
 import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foundation';
 import MainLayout from './layouts/MainLayout';
+import OfflineBanner from './components/OfflineBanner';
 import './styles/not-found.css';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -140,9 +141,11 @@ const WorkbenchSurface: React.FC = () => {
     >
       <ConfigProvider locale={locale === 'zh-CN' ? zhCN : enUS} theme={antdThemeConfig}>
         <QueryClientProvider client={queryClient}>
+          <AntdApp>
           <I18nProvider>
             <BrowserRouter>
               <ShellSessionBridge />
+              <OfflineBanner />
               <Routes>
                   <Route path="/loading" element={<DesktopStartupLoading />} />
                   {/* Web 与移动端拥有独立 UI；登录协议统一通过 Axi Identity OIDC。 */}
@@ -202,9 +205,10 @@ const WorkbenchSurface: React.FC = () => {
                   </Route>
 
                   <Route path="*" element={<AxiUiContractNotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </I18nProvider>
+                </Routes>
+              </BrowserRouter>
+            </I18nProvider>
+          </AntdApp>
         </QueryClientProvider>
       </ConfigProvider>
     </AxiLocaleProvider>

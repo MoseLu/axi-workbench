@@ -47,6 +47,7 @@
     "verify:ci": "node scripts/verify-ci-contracts.mjs"
   },
   "devDependencies": {
+    "@axi/tokens": "workspace:^",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "turbo": "^2.0.0",

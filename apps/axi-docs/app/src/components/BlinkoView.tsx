@@ -163,10 +163,10 @@ function BlinkoErrorState({ message }: { message: string }) {
       <TagIcon />
       <div>
         <p className="empty-state-text">{message}</p>
-        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--spacing-3)' }}>
+        <p style={{ fontSize: 'var(--axi-docs-font-size-sm)', color: 'var(--axi-docs-color-text-muted)', marginTop: 'var(--axi-docs-spacing-3)' }}>
           Blinko 是 Axi Docs 的伴生项目，提供闪念笔记功能。
         </p>
-        <code style={{ fontSize: 'var(--font-size-xs)', background: 'var(--color-bg-secondary)', padding: 'var(--spacing-1) var(--spacing-3)', borderRadius: 'var(--radius-xs)', display: 'inline-block', marginTop: 'var(--spacing-3)' }}>
+        <code style={{ fontSize: 'var(--axi-docs-font-size-xs)', background: 'var(--axi-docs-color-bg-secondary)', padding: 'var(--axi-docs-spacing-1) var(--axi-docs-spacing-3)', borderRadius: 'var(--axi-docs-radius-xs)', display: 'inline-block', marginTop: 'var(--axi-docs-spacing-3)' }}>
           http://localhost:1111
         </code>
       </div>

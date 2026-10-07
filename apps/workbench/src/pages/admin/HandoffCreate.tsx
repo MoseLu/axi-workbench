@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { App as AntdApp } from 'antd';
 import { resolveGatewayURL } from '@axi/workbench-foundation';
 import { AxiBanner, AxiRow } from '@axi/widgets';
 import { DesktopCrudFrame } from './DesktopCrudFrame';
@@ -86,6 +87,7 @@ function validate(values: HandoffFormValues): Partial<Record<keyof HandoffFormVa
  */
 export default function HandoffCreate() {
   const navigate = useNavigate();
+  const { message } = AntdApp.useApp();
   const [values, setValues] = useState<HandoffFormValues>({
     actionLevel: 'B',
     direction: 'web',
@@ -129,6 +131,7 @@ export default function HandoffCreate() {
         },
         targetSurface: values.targetSurface,
       });
+      message.success('交接请求已创建');
       navigate(`/admin/handoff/${encodeURIComponent(handoff.id)}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : '创建交接失败');

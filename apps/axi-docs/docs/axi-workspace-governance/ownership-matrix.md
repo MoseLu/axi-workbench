@@ -4,14 +4,14 @@ title: Axi Workspace Ownership Matrix
 type: reference
 status: evergreen
 tags: [workspace, ownership, governance]
-created: 2026-10-04
-modified: 2026-10-04
+created: 2026-10-07
+modified: 2026-10-07
 agent-readable: true
 ---
 
 # Axi Workspace Ownership Matrix
 
-最后生成：2026-10-04
+最后生成：2026-10-07
 
 ## external
 

@@ -1,5 +1,12 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios"
-import type { ApiResponse } from "@axi/types"
+
+// @axi/types 未在 api-client 的 workspace 依赖中声明（tsconfig 也无法解析到它），
+// 这里内联与 packages/types/src/api.ts 一致的 ApiResponse 结构，避免引入新依赖。
+interface ApiResponse<T = unknown> {
+  code: number
+  message: string
+  data?: T
+}
 
 const metaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env || {}
 // Browser applications use a relative /api path in development and an explicit

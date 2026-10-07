@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 // axi-ui-escape-hatch: antd Button/Input/Select 暂时保留 — @axi/ui 暂无等价
 // 的「带 allowClear + onPressEnter 的搜索框」「带 loading 的刷新按钮」组合，
 // 等 @axi/widgets.AxiSearchInput 上线后再替换。
-import { Button, Input, Select } from 'antd';
+import { App as AntdApp, Button, Input, Select } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
   AxiCrud,
@@ -49,6 +49,7 @@ type DashboardCopy = {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { modal } = AntdApp.useApp();
   const { data: snapshot, error, isFetching, isLoading, refetch } = useControlSnapshot();
   const riskTransition = useTransitionGovernanceRisk();
   const automationRun = useRunGovernanceAutomation();
@@ -213,9 +214,18 @@ const Dashboard: React.FC = () => {
                   await refetch();
                 }}
                 automationRunPending={automationRun.isPending}
-                onRiskTransition={async ({ riskId, status, reason }) => {
-                  await riskTransition.mutateAsync({ riskId, status, reason });
-                  await refetch();
+                onRiskTransition={({ riskId, status, reason }) => {
+                  void modal.confirm({
+                    title: t('dashboard.riskTransition', '风险状态转换'),
+                    content: t('dashboard.riskTransitionConfirm', `确认将风险 ${riskId} 状态变更为「${status}」？该变更会写入治理记录。`),
+                    okText: t('common.confirm', '确认'),
+                    cancelText: t('common.cancel', '取消'),
+                    okButtonProps: { danger: true },
+                    onOk: async () => {
+                      await riskTransition.mutateAsync({ riskId, status, reason });
+                      await refetch();
+                    },
+                  });
                 }}
                 riskTransitionPending={riskTransition.isPending}
               />
