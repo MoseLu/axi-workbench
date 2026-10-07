@@ -16,6 +16,7 @@ not versioned.
 ## [Unreleased]
 
 ### Changed
+- 2026-10-07: 全量重建 36 个工作区项目的 dossier（en/zh 各 36 份 README，200–500 行深度内容，含 Summary / Stack / Project Layout / Build & Install / Verification / Architecture Highlights / Key Modules / Milestone Status 等节），新增 `axi-workspace-rs`、`axi-file-preview`、`tidewater-reference` 三个 dossier 目录，`workspace-governance`→`axi-workspace-governance`、`axi-observability`→`observability`、`axi-sports-management-app`→`sports-management` 三个改名落地；`check-dossier-drift.mjs` 57 项目 0 问题。同批收尾：手工同步 `docs/projects.index.json`（39→36 项）与 `docs/content/{en,zh}/projects/INDEX.md`（38→36 行）至深度 dossier 集合；修正 `guide/project-dossiers.md`（en/zh）指向治理镜像审计的相对路径（缺 `../` 段）；按 ADR-008 将 `ArchitectureBootstrap.tsx`、`ArchitectureChangeTriggers.tsx`、`knowledgeBase.test.ts` 中残留的 `infra/` 分区引用改为 `foundation/`。
 - 2026-08-24: 同步刷新 `axi-soul-world` dossier (en/zh 16 份) 至当前产品状态：去掉过期的 `axi-mood-app/android` 路径，加入 `axi-soul-api` / `apps/web-admin` / `apps/web-bff` 三端拆分，反映 Todo v3、`axi-soul-api` C++20 分层骨架、回环 `/healthz` `/readyz` 等已落地变更。同步刷新 `docs/projects.index.json`、`app/public/workspace-project-handoff.json`、`docs/axi-workspace-governance/*` 治理镜像。
 
 ### Added
