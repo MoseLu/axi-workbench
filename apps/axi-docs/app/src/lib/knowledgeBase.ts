@@ -75,6 +75,14 @@ type LocalSourceIndex = {
   tags: Array<{ name: string; count: number }>
   byPath: Map<string, ParsedDocument>
   byStem: Map<string, ParsedDocument>
+  /**
+   * Precomputed reverse-wikilink index: target document path -> source
+   * document paths whose body links to it (in document iteration order).
+   * Built once per index so per-document graph builds do not rescan every
+   * document body (the old O(N) full-body rescan per graph call made
+   * generateBundle's per-document graph emission O(N^2 x body)).
+   */
+  backlinkPathsByPath: Map<string, string[]>
 }
 
 type LocalFileEntry = {
@@ -2559,6 +2567,24 @@ function buildLocalSourceIndex(
     .map(([name, count]) => ({ name, count }))
     .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, 'zh-CN'))
 
+  const backlinkPathsByPath = new Map<string, string[]>()
+  for (const document of documents) {
+    const seenTargets = new Set<string>()
+    WIKILINK_REGEX.lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = WIKILINK_REGEX.exec(document.body)) !== null) {
+      const target = byStem.get(match[1].trim().toLowerCase())
+      if (!target || target.path === document.path || seenTargets.has(target.path)) continue
+      seenTargets.add(target.path)
+      const sources = backlinkPathsByPath.get(target.path)
+      if (sources) {
+        sources.push(document.path)
+      } else {
+        backlinkPathsByPath.set(target.path, [document.path])
+      }
+    }
+  }
+
   return {
     sourceId: source.id,
     rootPath,
@@ -2569,6 +2595,7 @@ function buildLocalSourceIndex(
     tags,
     byPath,
     byStem,
+    backlinkPathsByPath,
   }
 }
 
@@ -2609,12 +2636,31 @@ async function getSpecializedSourceIndex(source: DocSource): Promise<LocalSource
   return null
 }
 
+/**
+ * Build-time cache switch for markdown-source indexes. Outside static mode,
+ * `getLocalSourceIndex` re-walks the whole source tree on every call so
+ * externally edited files are picked up immediately (dev-server freshness).
+ * `vite.config.plugin.ts` enables static mode during `generateBundle`, which
+ * requests one graph per document; re-walking a large root (e.g. the
+ * workspace-root source spanning the whole workspace, ~7s per walk) once per
+ * document multiplied into hours of build time. Static mode returns the
+ * cached index as-is for the duration of the bundle step.
+ */
+let localSourceIndexStaticMode = false
+
+export function setLocalSourceIndexStaticMode(enabled: boolean): void {
+  localSourceIndexStaticMode = enabled
+}
+
 async function getLocalSourceIndex(source: DocSource): Promise<LocalSourceIndex> {
   const specializedIndex = await getSpecializedSourceIndex(source)
   if (specializedIndex) return specializedIndex
 
   const rootPath = path.normalize(source.path)
   const cachedIndex = localSourceIndexCache.get(source.id)
+  if (localSourceIndexStaticMode && cachedIndex && cachedIndex.rootPath === rootPath) {
+    return cachedIndex
+  }
   const previousFiles = cachedIndex && cachedIndex.rootPath === rootPath
     ? cachedIndex.files
     : new Map<string, IndexedLocalFile>()
@@ -3701,17 +3747,15 @@ export async function getKnowledgeGraph(sourceId: string, currentRelativePath: s
     edges.push({ source: current.path, target: tagId, kind: 'tag' })
   }
 
-  for (const document of index.documents) {
-    if (document.path === current.path || outgoing.has(document.path)) continue
-    WIKILINK_REGEX.lastIndex = 0
-    while ((match = WIKILINK_REGEX.exec(document.body)) !== null) {
-      const target = index.byStem.get(match[1].trim().toLowerCase())
-      if (target?.path === current.path) {
-        addNode(document.path, document.title, 'note')
-        edges.push({ source: document.path, target: current.path, kind: 'wikilink' })
-        break
-      }
-    }
+  // Backlinks come from the precomputed reverse-wikilink index instead of
+  // rescanning every document body on each call; the iteration order matches
+  // the previous `index.documents` scan so emitted graphs stay identical.
+  for (const documentPath of index.backlinkPathsByPath.get(current.path) || []) {
+    if (documentPath === current.path || outgoing.has(documentPath)) continue
+    const document = index.byPath.get(documentPath)
+    if (!document) continue
+    addNode(document.path, document.title, 'note')
+    edges.push({ source: document.path, target: current.path, kind: 'wikilink' })
   }
 
   return { nodes: [...nodes.values()], edges }
