@@ -14,6 +14,7 @@ import {
   readKnowledgeFile,
   scanKnowledgeSource,
   searchKnowledge,
+  setLocalSourceIndexStaticMode,
 } from './src/lib/knowledgeBase'
 import { encodeBase64Url } from './src/lib/routes'
 import type { DocSource, StaticKnowledgeManifest, StaticKnowledgeSourceBundle } from './src/types'
@@ -572,14 +573,22 @@ export function localDocsPlugin(): Plugin {
       server.middlewares.use(docsApiMiddleware)
     },
     async generateBundle() {
-      const assets = await buildStaticKnowledgeAssets()
-      assets.set(`${STATIC_KNOWLEDGE_ROOT}/suggest.json`, await buildSuggestIndexAsset())
-      for (const [fileName, asset] of assets.entries()) {
-        this.emitFile({
-          type: 'asset',
-          fileName,
-          source: asset.content,
-        })
+      // One graph asset per document is emitted below; without the static
+      // index cache each request re-walks its source tree, which for the
+      // workspace-root source means a ~7s walk x every document.
+      setLocalSourceIndexStaticMode(true)
+      try {
+        const assets = await buildStaticKnowledgeAssets()
+        assets.set(`${STATIC_KNOWLEDGE_ROOT}/suggest.json`, await buildSuggestIndexAsset())
+        for (const [fileName, asset] of assets.entries()) {
+          this.emitFile({
+            type: 'asset',
+            fileName,
+            source: asset.content,
+          })
+        }
+      } finally {
+        setLocalSourceIndexStaticMode(false)
       }
     },
   }
