@@ -1,0 +1,29 @@
+.wb-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: #cf222e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* Form validation: give invalid fields a visible red outline that survives
+   antd version changes of the default error styling. */
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-affix-wrapper,
+.ant-form-item-has-error .ant-select-selector {
+  border-color: #cf222e !important;
+}
+
+.ant-form-item-has-error .ant-input:focus,
+.ant-form-item-has-error .ant-input-affix-wrapper-focused,
+.ant-form-item-has-error .ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(207, 34, 46, 0.2) !important;
+}
