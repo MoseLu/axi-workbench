@@ -34,6 +34,8 @@
     "source:age:strict": "node ./scripts/check-source-locks-age.mjs --strict",
     "git:bootstrap": "node ./scripts/setup-git-governance.mjs",
     "governance:check": "pnpm branch:check && pnpm docs:check && pnpm error-doc:lint && pnpm rules-doc:lint && pnpm source:check",
+    "check:design-tokens": "node ../../../../../foundation/axi-ui/scripts/check-design-tokens.mjs --root .",
+    "check:ui-aesthetic": "node ../../../../../foundation/axi-ui/scripts/check-ui-aesthetic.mjs --root . --strict",
     "hooks:install": "node ./scripts/install-hooks.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx",
@@ -48,6 +50,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@axi/tokens": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "ali-oss": "^6.23.0",
     "chokidar": "^3.6.0",

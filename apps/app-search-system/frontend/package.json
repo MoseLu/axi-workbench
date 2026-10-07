@@ -10,7 +10,9 @@
     "build:control": "REACT_APP_TITLE=\"Axi Docs Control\" pnpm run build",
     "build:display": "REACT_APP_TITLE=\"Axi Docs Display v2.0 OTA Test\" pnpm run build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "check:design-tokens": "node ../../../../../foundation/axi-ui/scripts/check-design-tokens.mjs --root .",
+    "check:ui-aesthetic": "node ../../../../../foundation/axi-ui/scripts/check-ui-aesthetic.mjs --root . --strict"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

@@ -13,7 +13,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --lib",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx",
+    "check:design-tokens": "node ../../../../foundation/axi-ui/scripts/check-design-tokens.mjs --root .",
+    "check:ui-aesthetic": "node ../../../../foundation/axi-ui/scripts/check-ui-aesthetic.mjs --root . --strict"
   },
   "dependencies": {
     "@axi/observability-web": "workspace:*",
