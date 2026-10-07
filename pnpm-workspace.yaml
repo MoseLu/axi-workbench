@@ -1,5 +1,8 @@
 packages:
   - 'apps/*'
+  # axi-docs 的 Web 应用嵌套在内容仓库下一层，无法被 apps/* 覆盖；
+  # 显式注册后 workspace:^ 依赖（@axi/tokens 等）才能被根 install 链接。
+  - 'apps/axi-docs/app'
   - 'packages/*'
   - 'services/*'
   - 'ai/*'
