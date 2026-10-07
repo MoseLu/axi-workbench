@@ -1,13 +1,13 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-10-04T02:12:21.365Z",
+  "generatedAt": "2026-10-07T15:03:54.176Z",
   "source": "foundation/workspace-governance/workspace.json",
   "summary": {
     "total": 25,
-    "verified": 15,
-    "documented": 6,
+    "verified": 16,
+    "documented": 7,
     "stale": 2,
-    "unready": 2
+    "unready": 0
   },
   "projects": [
     {
@@ -290,7 +290,7 @@
       "graphId": "axi-notify",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 42 days old (max 30)"
+        "verification is stale: 45 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
@@ -492,15 +492,13 @@
       "kind": "project",
       "lifecycle": "active-promoted-incubation",
       "owner": "libu",
-      "readiness": "unready",
+      "readiness": "documented",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-runtime/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-runtime/docs/HANDOFF.md",
       "graphId": "axi-runtime",
       "graphMatched": true,
-      "errors": [
-        "entrypoints[1].path path does not exist: src-rs/axi-runtime-rs/src/lib.rs"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "AXI Personal OS Governance Runtime CLI (PRD-05, Phase 3). Rule Engine + Skill Registry + Agent Gateway + Scheduler on Kernel Change stream.",
       "commands": {
@@ -508,8 +506,7 @@
         "start": [],
         "health": [],
         "verify": [
-          "PYTHONPATH=../axi-kernel python3 -m pytest tests -q",
-          "cd src-rs/axi-runtime-rs && cargo check"
+          "PYTHONPATH=../axi-kernel python3 -m pytest tests -q"
         ],
         "smoke": [
           "PYTHONPATH=../axi-kernel python3 -m axi_runtime --help"
@@ -519,8 +516,7 @@
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
-          "ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011",
-          "src-rs/axi-runtime-rs scaffold: 4 submodules with trait + stub impl; not built"
+          "ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011"
         ],
         "knownFailures": []
       },
@@ -540,7 +536,7 @@
       "graphId": "axi-skills",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 42 days old (max 30)"
+        "verification is stale: 45 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
@@ -778,15 +774,13 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "libu",
-      "readiness": "unready",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/workbench/axi-workbench/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/workbench/axi-workbench/docs/HANDOFF.md",
       "graphId": "axi-workbench",
       "graphMatched": true,
-      "errors": [
-        "documents.index path does not exist: INDEX.md"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
       "commands": {

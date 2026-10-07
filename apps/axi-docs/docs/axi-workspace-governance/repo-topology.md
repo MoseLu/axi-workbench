@@ -59,7 +59,7 @@ agent-readable: true
   remote: https://github.com/MoseLu/axi-image-preview.git
 - `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`agent/audit-fix-a02-pet-desktop-lockfile` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
-- `workbench/axi-workbench` | Axi Workbench | branch=`feature/axi-docs-token-convergence` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
@@ -68,7 +68,7 @@ agent-readable: true
   remote: https://github.com/MoseLu/Axi-Soul-World.git
 - `products/ielts-vocab` | IELTS Vocabulary | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/ielts-vocab.git
-- `products/story-graph` | Story Graph | branch=`feature/ci-check-design-tokens-entry` | canonical=yes | compliance=`node-monorepo-approved`
+- `products/story-graph` | Story Graph | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/story-graph.git
 
 ## Shared
@@ -93,7 +93,7 @@ agent-readable: true
 
 ## Agent
 
-- `agent-cluster/axi-agent` | Axi Agent Platform | branch=`agent/audit-fix-a06-axi-todo-milestones` | canonical=yes | compliance=`agent-platform`
+- `agent-cluster/axi-agent` | Axi Agent Platform | branch=`dev` | canonical=yes | compliance=`agent-platform`
   remote: https://github.com/MoseLu/axi-agent.git
 
 ## References
@@ -104,7 +104,7 @@ agent-readable: true
   remote: https://github.com/jlcodes99/cockpit-tools.git
 - `references/short-term/comfyui` | ComfyUI Reference | branch=`master` | canonical=no | compliance=`-`
   remote: https://github.com/comfyanonymous/ComfyUI.git
-- `references/short-term/dbskill` | DBSkill Reference | branch=`main` | canonical=no | compliance=`-`
+- `references/short-term/dbskill` | DBSkill Reference | branch=`-` | canonical=no | compliance=`-`
   remote: https://github.com/dontbesilent2025/dbskill.git
 - `references/short-term/image2prompt` | Image2Prompt Reference | branch=`main` | canonical=no | compliance=`-`
   remote: https://github.com/pingan8787/image2prompt.git
