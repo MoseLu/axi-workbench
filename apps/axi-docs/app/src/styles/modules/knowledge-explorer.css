@@ -1,13 +1,13 @@
 .knowledge-explorer {
   height: 100%;
   overflow: hidden;
-  padding: var(--page-shell-padding);
-  padding-right: max(var(--page-shell-padding), env(safe-area-inset-right));
-  padding-bottom: max(var(--page-shell-padding), env(safe-area-inset-bottom));
-  padding-left: max(var(--page-shell-padding), env(safe-area-inset-left));
+  padding: var(--axi-docs-page-shell-padding);
+  padding-right: max(var(--axi-docs-page-shell-padding), env(safe-area-inset-right));
+  padding-bottom: max(var(--axi-docs-page-shell-padding), env(safe-area-inset-bottom));
+  padding-left: max(var(--axi-docs-page-shell-padding), env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
-  gap: var(--page-shell-gap);
+  gap: var(--axi-docs-page-shell-gap);
 }
 
 .knowledge-explorer__header {
@@ -60,8 +60,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--knowledge-explorer-body-columns);
-  gap: var(--layout-gap-lg);
+  grid-template-columns: var(--axi-docs-knowledge-explorer-body-columns);
+  gap: var(--axi-docs-layout-gap-lg);
 }
 
 .knowledge-explorer__stage,
@@ -73,7 +73,7 @@
 
 .knowledge-explorer__stage {
   border: 1px solid rgba(125, 211, 252, 0.1);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--axi-docs-shadow-lg);
   background: rgba(7, 16, 30, 0.72);
 }
 
@@ -127,7 +127,7 @@
 .knowledge-explorer__empty-card svg {
   width: 18px;
   height: 18px;
-  color: var(--glow-cyan);
+  color: var(--axi-docs-glow-cyan);
   flex-shrink: 0;
 }
 

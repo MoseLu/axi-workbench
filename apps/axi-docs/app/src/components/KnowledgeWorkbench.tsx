@@ -37,6 +37,7 @@ interface KnowledgeWorkbenchProps {
   onNavigateHome: () => void
   onOpenExplorer: () => void
   onClearSelectedFile: () => void
+  onRetryCatalog: () => void
 }
 
 function normalizeExplorerView(value: string | null): ExplorerView {
@@ -49,6 +50,7 @@ export function KnowledgeWorkbench({
   sources,
   activeSourceId = null,
   catalog,
+  catalogError,
   searchQuery,
   searchResults,
   searching,
@@ -67,6 +69,7 @@ export function KnowledgeWorkbench({
   onNavigateHome,
   onOpenExplorer,
   onClearSelectedFile,
+  onRetryCatalog,
 }: KnowledgeWorkbenchProps) {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -75,7 +78,6 @@ export function KnowledgeWorkbench({
     if ((catalog?.sections || []).length > 0) return catalog?.sections[0].items.slice(0, 5) || []
     return catalog?.recentDocs.slice(0, 5) || []
   }, [catalog?.recentDocs, catalog?.sections, searchResults])
-
   const graphFocusPath = selectedFile?.path || searchResults?.[0]?.path || null
   const explorerView = normalizeExplorerView(searchParams.get('view'))
   const explorerBranch = searchParams.get('branch')
@@ -123,6 +125,8 @@ export function KnowledgeWorkbench({
         activeTag={activeTag}
         activeSourceId={activeSourceId}
         catalog={catalog}
+        catalogError={catalogError}
+        onRetryCatalog={onRetryCatalog}
         docSet={docSet}
         fileContent={fileContent}
         fileLoading={fileLoading}

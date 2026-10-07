@@ -590,6 +590,7 @@ function HubPage({ pageMode, initialData }: { pageMode: PageMode; initialData?: 
                 fileName={fileName}
                 onClearSelectedFile={handleClearSelectedFile}
                 onOpenExplorer={handleOpenExplorer}
+                onRetryCatalog={() => { if (workspaceSource) void loadCatalog(workspaceSource.id) }}
                 onNavigateHome={workbenchPageMode === 'explorer' ? handleExitExplorer : handleNavigateHome}
                 onOpenItem={handleOpenDocument}
                 onSearch={handleSearch}

@@ -1,0 +1,26 @@
+{
+  "name": "Axi Docs",
+  "short_name": "Axi Docs",
+  "description": "AxiomaticWorld 文档中心 — cockpit-style knowledge graph and command center.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3ecfff",
+  "background_color": "#050b14",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

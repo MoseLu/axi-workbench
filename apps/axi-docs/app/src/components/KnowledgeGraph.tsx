@@ -189,16 +189,16 @@ for (const edge of edges) {
     kind === 'current' ? 18 : kind === 'note' ? 11 : 7
 
   const nodeFill = (kind: GraphNode['kind']) =>
-    kind === 'current' ? 'var(--color-primary)' :
-    kind === 'note' ? 'var(--color-obsidian)' :
-    'var(--color-blinko)'
+    kind === 'current' ? 'var(--axi-docs-color-primary)' :
+    kind === 'note' ? 'var(--axi-docs-color-obsidian)' :
+    'var(--axi-docs-color-blinko)'
 
   const nodeOpacity = (kind: GraphNode['kind']) =>
     kind === 'current' ? 1 : kind === 'note' ? 0.7 : 0.6
 
   if (!data.nodes.length) {
     return (
-      <div className="kp-graph" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+      <div className="kp-graph" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--axi-docs-color-text-muted)', fontSize: 'var(--axi-docs-font-size-sm)' }}>
         无关联节点
       </div>
     )

@@ -140,7 +140,7 @@ export function KnowledgePanel({
               <Suspense
                 fallback={(
                   <div className="kp-ai-loading" style={{ height: '100%' }}>
-                    <div className="spinner" style={{ width: 'var(--icon-size-lg)', height: 'var(--icon-size-lg)' }} />
+                    <div className="spinner" style={{ width: 'var(--axi-docs-icon-size-lg)', height: 'var(--axi-docs-icon-size-lg)' }} />
                     载入 3D 图谱...
                   </div>
                 )}
@@ -183,7 +183,7 @@ export function KnowledgePanel({
 
             {aiLoading && (
               <div className="kp-ai-loading">
-                <div className="spinner" style={{ width: 'var(--icon-size-lg)', height: 'var(--icon-size-lg)' }} />
+                <div className="spinner" style={{ width: 'var(--axi-docs-icon-size-lg)', height: 'var(--axi-docs-icon-size-lg)' }} />
                 AI 分析中...
               </div>
             )}

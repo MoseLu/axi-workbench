@@ -2,7 +2,7 @@ a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--glow-cyan);
+  outline: 2px solid var(--axi-docs-glow-cyan);
   outline-offset: 2px;
 }
 
@@ -19,7 +19,7 @@ textarea:focus-visible {
   color: #f8fafc;
   text-decoration: none;
   transform: translateY(-180%);
-  transition: transform var(--transition);
+  transition: transform var(--axi-docs-transition);
 }
 
 .skip-link:focus-visible {
