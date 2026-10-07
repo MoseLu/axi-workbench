@@ -438,7 +438,7 @@ to UI/nav/RN shell/theme/strings MUST end with `make android-agent-verify`.
 - [`/Volumes/code/workspace/foundation/axi-notify/CHANGE.md`](/Volumes/code/workspace/foundation/axi-notify/CHANGE.md) — change log pointer
 - [`/Volumes/code/workspace/foundation/axi-notify/docs/state/PRD.md`](/Volumes/code/workspace/foundation/axi-notify/docs/state/PRD.md) — canonical PRD (PRD-NOTIFY L2; FR-1…FR-7; capability `mobile-event-inbox` + `android-agent-notification-client`)
 - [`/Volumes/code/workspace/foundation/axi-notify/docs/state/CHANGELOG.md`](/Volumes/code/workspace/foundation/axi-notify/docs/state/CHANGELOG.md) — canonical changelog
-- [`/Volumes/code/workspace/foundation/axi-notify/docs/state/{TODO.md, MILESTONE.md, TDD.md}`](/Volumes/code/workspace/foundation/axi-notify/docs/state/) — backlog + milestones + technical design
+- [`/Volumes/code/workspace/foundation/axi-notify/docs/state/{TODO.md, MILESTONE.md, TDD.md}`](/Volumes/code/workspace/foundation/axi-notify/docs/state/) — backlog + milestone plan + technical design
 - [`/Volumes/code/workspace/foundation/axi-notify/docs/governance/SECURITY.md`](/Volumes/code/workspace/foundation/axi-notify/docs/governance/SECURITY.md) — security policy + disclosure
 - [`/Volumes/code/workspace/foundation/axi-notify/docs/HANDOFF.md`](/Volumes/code/workspace/foundation/axi-notify/docs/HANDOFF.md) + `docs/TESTING.md` + `docs/VERIFICATION.md` — handoff + testing + verification
 - [`/Volumes/code/workspace/foundation/axi-notify/docs/workflows/README.md`](/Volumes/code/workspace/foundation/axi-notify/docs/workflows/README.md) — workflow index + common contract + naming convention `NF-<STAGE>-NNN`

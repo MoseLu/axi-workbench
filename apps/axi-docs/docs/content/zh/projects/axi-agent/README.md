@@ -38,7 +38,7 @@ SubAgent 模式（v1.1.0）是承重的差异化点。`backend/app/core/code_iso
 **当前阶段**：活跃平台（multi-agent + SubAgent v1.1.0 + Phase 1 capability broker）。
 **规范路径**：`/Volumes/code/workspace/agent-cluster/axi-agent`。
 **Git 仓库名**：`axi-agent-platform`（legacy rename pending）。
-**分支**：`agent/audit-fix-a06-axi-todo-milestones`（工作树 dirty：`backend/` / `frontend/` / `tools/axi-todo/` 12 个 staged 文件；`docs/logs/submit/` 下 89 个新 submit log；新 `.build/` artifact）。
+**分支**：`agent/audit-fix-a06-axi-todo-*`（工作树 dirty：`backend/` / `frontend/` / `tools/axi-todo/` 12 个 staged 文件；`docs/logs/submit/` 下 89 个新 submit log；新 `.build/` artifact）。
 
 ## 技术栈
 

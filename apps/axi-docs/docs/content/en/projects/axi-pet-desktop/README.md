@@ -255,7 +255,7 @@ copy to `/Applications/` → launch → restore
 - [`docs/HANDOFF.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/docs/HANDOFF.md) — zero-context takeover brief; latest evidence timestamp `2026-09-25`.
 - [`apps/desktop-pet/AGENTS.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/apps/desktop-pet/AGENTS.md) — voice / STT / wake / wake training / agent completion workflow.
 - [`TODO.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/TODO.md) — current atomic ledger (8 atomic CS).
-- [`CHANGE.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/CHANGE.md) — top-level milestones.
+- [`CHANGE.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/CHANGE.md) — top-level milestone record.
 - [`CHANGELOG.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/CHANGELOG.md) — release changelog.
 - [`MILESTONE.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/MILESTONE.md), [`SEPARATION.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/SEPARATION.md), [`INDEX.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/INDEX.md).
 - [`DESIGN.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/DESIGN.md), [`PLAN.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/PLAN.md), [`PRD.md`](/Volumes/code/workspace/workbench/axi-pet-desktop/PRD.md) — design + staged plan.

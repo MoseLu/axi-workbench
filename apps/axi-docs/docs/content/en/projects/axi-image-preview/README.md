@@ -317,7 +317,7 @@ state + `window.history.pushState` with helpers in `src/features/wallpaper/wallp
 - [`/Volumes/code/workspace/workbench/axi-image-preview/PRD.md`](/Volumes/code/workspace/workbench/axi-image-preview/PRD.md) — product requirements
 - [`/Volumes/code/workspace/workbench/axi-image-preview/TDD.md`](/Volumes/code/workspace/workbench/axi-image-preview/TDD.md) — technical design + test strategy
 - [`/Volumes/code/workspace/workbench/axi-image-preview/TODO.md`](/Volumes/code/workspace/workbench/axi-image-preview/TODO.md) — P0/P1/P2 backlog
-- [`/Volumes/code/workspace/workbench/axi-image-preview/MILESTONE.md`](/Volumes/code/workspace/workbench/axi-image-preview/MILESTONE.md) — evidence-driven milestones
+- [`/Volumes/code/workspace/workbench/axi-image-preview/MILESTONE.md`](/Volumes/code/workspace/workbench/axi-image-preview/MILESTONE.md) — evidence-driven milestone plan
 - [`/Volumes/code/workspace/workbench/axi-image-preview/CHANGELOG.md`](/Volumes/code/workspace/workbench/axi-image-preview/CHANGELOG.md) — Keep-a-Changelog 1.1 release history
 - [`/Volumes/code/workspace/workbench/axi-image-preview/SECURITY.md`](/Volumes/code/workspace/workbench/axi-image-preview/SECURITY.md) — security policy
 - [`/Volumes/code/workspace/workbench/axi-image-preview/CHANGE.md`](/Volumes/code/workspace/workbench/axi-image-preview/CHANGE.md) — root development change log (NOT release-facing)

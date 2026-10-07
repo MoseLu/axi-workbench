@@ -276,7 +276,7 @@ Dependencies `serde`, `serde_json`, `thiserror`, `tokio` (full),
 ## Milestone Status
 
 `MILESTONE.md` (audit-remediation 2026-09-25 scaffold, owner-maintained).
-Current stage: `shared`. Three milestones:
+Current stage: `shared`. Three milestone stages:
 
 | Stage | Goal | Status |
 | --- | --- | --- |

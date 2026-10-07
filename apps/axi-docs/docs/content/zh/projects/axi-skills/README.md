@@ -265,7 +265,7 @@ i18n verifier 强制（针对 English 文件）：
 - Relationship metadata as a Provider — capabilities `skill-tree` (build), `apm-package` (build), `i18n-scaffold` (build), `skill-catalog` (runtime), `axiom-zero-context` (runtime), `skill-index` (runtime); requiredness `required`
 - ADR references: `/Volumes/code/workspace/foundation/axi-rules/rules/project-bootstrap/AGENTS.md` (AR-BOOTSTRAP-ADMISSION-001 … AR-BOOTSTRAP-AFTER-001)
 - Skill-index search: `bash ~/.claude/skills/scripts/find-my-skill.sh <keyword>` (`fms` alias); registry at `~/.claude/skills/SKILL_REGISTRY.md`
-- Recent trajectory: `6a3684e` scoped ZCode pool verification + runtime limits; `44908e5` ZCode pool invocation + honest concurrency; `c9eaa33` pressure-aware native worker ledger; `ddcd948` private governance remote; `47a2f64` replace forbidden Milestones term to satisfy audit; `f0fdc39` SKILL_INDEX refresh + maintain-axi-ui-docs + `axi-workspace-git-audit`; `bfdd138` + `54dbb61` i18n batches 001–163; `60abd25` restore missing zh-CN mirror tokens; `b0aa706` sync registry + scripts + skills docs
+- Recent trajectory: `6a3684e` scoped ZCode pool verification + runtime limits; `44908e5` ZCode pool invocation + honest concurrency; `c9eaa33` pressure-aware native worker ledger; `ddcd948` private governance remote; `47a2f64` replace forbidden milestone term to satisfy audit; `f0fdc39` SKILL_INDEX refresh + maintain-axi-ui-docs + `axi-workspace-git-audit`; `bfdd138` + `54dbb61` i18n batches 001–163; `60abd25` restore missing zh-CN mirror tokens; `b0aa706` sync registry + scripts + skills docs
 
 ## 说明
 

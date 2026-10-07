@@ -37,7 +37,7 @@ SubAgent mode (v1.1.0) is the load-bearing differentiator. `backend/app/core/cod
 **Stage**: live platform (multi-agent + SubAgent v1.1.0 + Phase 1 capability broker).
 **Canonical path**: `/Volumes/code/workspace/agent-cluster/axi-agent`.
 **Repo name in git**: `axi-agent-platform` (legacy rename pending).
-**Branch**: `agent/audit-fix-a06-axi-todo-milestones` (working tree dirty: 12 staged files in `backend/` / `frontend/` / `tools/axi-todo/`; 89 new submit logs under `docs/logs/submit/`; new `.build/` artifacts).
+**Branch**: `agent/audit-fix-a06-axi-todo-*` (working tree dirty: 12 staged files in `backend/` / `frontend/` / `tools/axi-todo/`; 89 new submit logs under `docs/logs/submit/`; new `.build/` artifacts).
 
 ## Stack
 

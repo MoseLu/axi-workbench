@@ -225,7 +225,7 @@ The **deployment and packaging story** is unusually thorough for an open-source 
 | Workspace governance provenance | Shipped | `dfbd0ec4 feat(governance): add relationship metadata declaration for provenance tracking` |
 | Runtime lease guard | Shipped | `01035c46 fix(runtime): require workspace lease for sub2api host port` |
 | Upstream CLA onboarding | Pin | `CLA.md` (upstream CLA with no moral-rights clause) — CLA-gated upstream contributions |
-| Active Axi development on this checkout | Not started | Checkout is read-only reference; no Axi-owned commits other than overlay/doc normalization (`f79c3998 Preserve milestones changes`, `180c0c42 Preserve todo changes`, `4110c7dd Preserve changelog changes`, `447fa87a Preserve readme zh cn changes`, `2e30e569 Preserve prd changes`, `ffbd6fac Preserve tdd changes`, `c6dd164a Preserve index changes`) |
+| Active Axi development on this checkout | Not started | Checkout is read-only reference; no Axi-owned commits other than overlay/doc normalization (`f79c3998 Preserve milestone changes`, `180c0c42 Preserve todo changes`, `4110c7dd Preserve changelog changes`, `447fa87a Preserve readme zh cn changes`, `2e30e569 Preserve prd changes`, `ffbd6fac Preserve tdd changes`, `c6dd164a Preserve index changes`) |
 
 ## Authoritative Documents
 

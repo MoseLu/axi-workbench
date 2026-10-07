@@ -225,7 +225,7 @@ The **deployment and packaging story** is unusually thorough for an open-source 
 | Workspace governance provenance | Shipped | `dfbd0ec4 feat(governance): add relationship metadata declaration for provenance tracking` |
 | Runtime lease guard | Shipped | `01035c46 fix(runtime): require workspace lease for sub2api host port` |
 | 上游 CLA 引导 | Pin | `CLA.md`（上游 CLA 不含 moral-rights 条款）—— 上游贡献由 CLA 守门 |
-| 本 checkout 上的 Axi 主动开发 | Not started | Checkout 为只读参考；除 overlay/文档规范化外（`f79c3998 Preserve milestones changes`、`180c0c42 Preserve todo changes`、`4110c7dd Preserve changelog changes`、`447fa87a Preserve readme zh cn changes`、`2e30e569 Preserve prd changes`、`ffbd6fac Preserve tdd changes`、`c6dd164a Preserve index changes`）无 Axi 主动 commit |
+| 本 checkout 上的 Axi 主动开发 | Not started | Checkout 为只读参考；除 overlay/文档规范化外（`f79c3998 Preserve milestone changes`、`180c0c42 Preserve todo changes`、`4110c7dd Preserve changelog changes`、`447fa87a Preserve readme zh cn changes`、`2e30e569 Preserve prd changes`、`ffbd6fac Preserve tdd changes`、`c6dd164a Preserve index changes`）无 Axi 主动 commit |
 
 ## Authoritative Documents
 

@@ -329,7 +329,7 @@ TTS remains unverified while the launch agent is disabled.
 - [`DESIGN.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/DESIGN.md) — approach, reuse, evidence plan, disposal/promotion
 - [`TASK.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/TASK.md) — open validation tasks
 - [`TODO.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/TODO.md) — task tracker
-- [`MILESTONE.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/MILESTONE.md) — M1/M2/M3 milestones with evidence requirements
+- [`MILESTONE.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/MILESTONE.md) — M1/M2/M3 milestone plan with evidence requirements
 - [`VERIFICATION.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/VERIFICATION.md) — verification commands + last-known status
 - [`CHANGELOG.md`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/CHANGELOG.md) — Keep-a-Changelog stub
 - [`incubation.json`](/Volumes/code/workspace/candidates/voice-assistant-on-device-speech-recognition/incubation.json) — machine-readable incubation record (schemaVersion 1)

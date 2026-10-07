@@ -5,7 +5,7 @@ type: index
 status: draft
 tags: [Axi Docs, Projects, Index, English]
 created: 2026-09-28
-modified: 2026-09-28
+modified: 2026-10-07
 graph-title: Workspace Project Dossiers
 graph-tags: [Projects, Index]
 description: Axi Docs keeps a per-project dossier for every active entry in `WORKSPACE_INDEX.md`. The dossier is generated from the workspace index; re-run `pnpm --dir app projects:build` to refresh it.
@@ -23,29 +23,26 @@ description: Axi Docs keeps a per-project dossier for every active entry in `WOR
 - Locale source: `docs/content/en/projects/<id>/`.
 - Other locale: `docs/content/zh/projects/<id>/`.
 
-## Core Active Projects (12)
+## Core Active Projects (10)
 
 | Project | Partition | Status | Stack | Notes |
 | --- | --- | --- | --- | --- |
-| [Axi Workbench](./axi-workbench/README.md) | `workbench/` | building |  |  |
-| [Axi Coder](./axi-coder/README.md) | `workbench/` | usable |  |  |
-| [Axi Model Gateway](./axi-model-gateway/README.md) | `workbench/` | usable |  |  |
+| [Axi Workbench](./axi-workbench/README.md) | `workbench/` | active |  |  |
 | [Axi Agent Platform](./axi-agent/README.md) | `agent-cluster/` | active-development |  |  |
 | [Axi Image Preview](./axi-image-preview/README.md) | `workbench/` | complete |  |  |
 | [Axi Pet Desktop](./axi-pet-desktop/README.md) | `workbench/` | usable |  |  |
 | [IELTS Vocabulary](./ielts-vocab/README.md) | `products/` | active |  |  |
 | [Pelagic Open Water](./pelagic/README.md) | `candidates/` | active |  |  |
 | [Story Graph](./story-graph/README.md) | `products/` | usable |  |  |
-| [Axi Feishu Codex Bridge](./axi-feishu-codex-bridge/README.md) | `agent-cluster/` | active |  |  |
 | [Axi Soul World](./axi-soul-world/README.md) | `products/` | verified |  |  |
 | [VoiceAssistant — on-device voice loop prototype](./voice-assistant-on-device-speech-recognition/README.md) | `candidates/` | prototype |  |  |
+| [Axi File Preview (xlsx dedup-audit viewer + custom VideoPlayer)](./axi-file-preview/README.md) | `candidates/` | prototype | React, TypeScript, Vite | Local web tool; ingests dedup-audit JSON, renders duplicate groups as searchable tabs (image / video / encrypted .ts) with a per-group lightbox and a custom VideoPlayer intended for future contribution to `@axi.ui`. |
 
-## Shared and Infrastructure (14)
+## Shared and Infrastructure (13)
 
 | Project | Partition | Status | Stack | Notes |
 | --- | --- | --- | --- | --- |
 | [Axi Notify / Mobile](./axi-notify/README.md) | `foundation/` | usable |  |  |
-| [Axi Accounts Contract](./axi-accounts/README.md) | `docs/` | active |  | workspace-resource |
 | [Axi UI](./axi-ui/README.md) | `foundation/` | usable |  |  |
 | [Axi Skills](./axi-skills/README.md) | `foundation/` | usable |  |  |
 | [Axi Rules](./axi-rules/README.md) | `foundation/` | active |  |  |
@@ -56,10 +53,10 @@ description: Axi Docs keeps a per-project dossier for every active entry in `WOR
 | [Axi Governance Runtime](./axi-runtime/README.md) | `foundation/` | usable |  | AXI Personal OS Governance Runtime CLI (PRD-05, Phase 3). Stand-up Rule Engine + Skill Registry + Agent Gateway + Scheduler on top of the Kernel Change stream. Rule / Skill / Agent live in a side-store data/governance.js |
 | [Axi Applications](./axi-apps/README.md) | `foundation/` | usable |  | AXI Personal OS Applications CLI (PRD-06, Phase 4). Three pure-reader sub-CLIs on the same live Kernel + downstream CLIs: Share (records shareable inbox items as Kernel Change rows + lists ResourceObject kind=shareable), |
 | [Axi Observability](./observability/README.md) | `foundation/` | active |  |  |
-| [Workspace Relationship Graph](./workspace-relationship-graph/README.md) | `foundation/` | external-canonical | JSON, Node CLI, MCP stdio | Use before cross-project edits; not a code project or git repo. |
-| [Workspace Dev Services](./workspace-dev-services/README.md) | `foundation/` | active | JSON, Node.js, PM2, LaunchAgent | Runtime state lives under `.devsvc`; use the config and wrapper as editable entrypoints. |
+| [Axi Workspace Rust Monorepo](./axi-workspace-rs/README.md) | `foundation/` | active | Rust, tokio, axum, clap, cargo-workspace | 14-crate Rust workspace monorepo delivering the Axi governance backend (SOP Kernel, Decision Engine, Capability Broker, Agent Runtime, Event/Audit, Provider Ports) per ADR-010. Includes the workspace-project Rust port and the per-project workbench CLI (ADR-012 M4). |
+| [Axi Workspace Governance](./axi-workspace-governance/README.md) | `foundation/` | active | Node.js, JSON, registry, audit, agent-runtime | Lightweight governance source-of-truth for `/Volumes/code/workspace`: workspace.json registry, project admission gate, audit + handoff CLI (`workspace-project`), incubator templates, governance-decision/v1 contracts, and Axi Docs mirror. |
 
-## Reference Repos (12)
+## Reference Repos (13)
 
 | Project | Partition | Status | Stack | Notes |
 | --- | --- | --- | --- | --- |
@@ -75,7 +72,8 @@ description: Axi Docs keeps a per-project dossier for every active entry in `WOR
 | [Axi Workbench Web Distribution](./axi-workbench-web-dist/README.md) | `distributions/` | usable |  |  |
 | [Axi Workbench Mobile Distribution](./axi-workbench-mobile-dist/README.md) | `distributions/` | usable |  |  |
 | [Axi Workbench Desktop Distribution](./axi-workbench-desktop-dist/README.md) | `distributions/` | usable |  |  |
+| [Tidewater Reference](./tidewater-reference/README.md) | `references/short-term/` | reference | JavaScript, Vite, WebGPU, WGSL, three.js | Third-party reference mirror of `dgreenheck/tidewater` — a real-time tropical island / ocean fishing game on raw `WebGPU` + `WGSL`. Studied for ocean rendering, FFT water simulation, and small-engine architecture. |
 
 ## Total
 
-**38** dossiers under this locale tree。
+**36** dossiers under this locale tree。

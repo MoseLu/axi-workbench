@@ -274,7 +274,7 @@ must be coordinated via `workspace-project consumers axi-apps`.
 ## Milestone Status
 
 `MILESTONE.md` (audit-remediation 2026-09-25 scaffold, owner-maintained).
-Current stage: `shared`. Three milestones:
+Current stage: `shared`. Three milestone stages:
 
 | Stage | Goal | Status |
 | --- | --- | --- |
