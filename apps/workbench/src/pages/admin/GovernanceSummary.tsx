@@ -20,7 +20,7 @@ export type GovernanceSummaryProps = {
   governance?: GovernanceSnapshot;
   onAutomationRun?: (automationId: string) => Promise<void>;
   automationRunPending?: boolean;
-  onRiskTransition?: (input: { riskId: string; status: 'acknowledged' | 'resolved' | 'waived'; reason?: string }) => Promise<void>;
+  onRiskTransition?: (input: { riskId: string; status: 'acknowledged' | 'resolved' | 'waived'; reason?: string }) => void | Promise<void>;
   riskTransitionPending?: boolean;
 };
 
@@ -99,7 +99,7 @@ export function GovernanceSummary({ governance, onAutomationRun, automationRunPe
     if (status !== 'acknowledged' && !reason) return;
     setRiskTransitionError('');
     try {
-      await onRiskTransition({ riskId, status, ...(reason ? { reason } : {}) });
+      await Promise.resolve(onRiskTransition({ riskId, status, ...(reason ? { reason } : {}) }));
       setRiskReasons((current) => ({ ...current, [riskId]: '' }));
     } catch {
       setRiskTransitionError(t('dashboard.governance.riskCenter.transitionError'));
