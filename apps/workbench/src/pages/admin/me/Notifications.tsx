@@ -4,7 +4,7 @@ import React from 'react';
 // axi-ui-escape-hatch: Empty 渲染通知列表的占位，@axi/* 未提供等价 Empty 组件。
 // axi-ui-escape-hatch: Spin 用于通知加载中的行内旋转占位，@axi/* 未提供等价 Spin 组件；
 // 保留 antd Spin size="small" 与原视觉一致。
-import { Button, Empty, Spin } from 'antd';
+import { App as AntdApp, Button, Empty, Spin } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiTable, AxiTableGroup, type AxiTableColumn } from '@axi/crud';
 import { AxiBanner } from '@axi/widgets';
@@ -34,6 +34,7 @@ function categoryLabel(
 
 const Notifications: React.FC = () => {
   const { locale, t } = useI18n();
+  const { message } = AntdApp.useApp();
   const queryClient = useQueryClient();
   const inbox = useQuery({
     queryKey: notificationQueryKey,
@@ -51,7 +52,10 @@ const Notifications: React.FC = () => {
   });
   const markAllRead = useMutation({
     mutationFn: () => markAllNotificationsRead(),
-    onSuccess: syncNotifications,
+    onSuccess: () => {
+      syncNotifications();
+      message.success('已全部标记为已读');
+    },
   });
 
   const notifications = inbox.data ?? [];

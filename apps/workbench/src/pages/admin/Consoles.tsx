@@ -23,10 +23,12 @@ const Consoles: React.FC = () => {
   const role = getUserRole();
   const { data: snapshot, error, isLoading, refetch } = useControlSnapshot();
   const [query, setQuery] = useState('');
+  // ControlSnapshot schema 尚未声明 consoleCatalog；桥接为可选字段直到 schema 跟进。
+  const consoleCatalog = (snapshot as { consoleCatalog?: Parameters<typeof getVisibleConsoles>[0] } | undefined)?.consoleCatalog;
   const consoles = useMemo(
-    () => getVisibleConsoles(snapshot?.consoleCatalog, role)
+    () => getVisibleConsoles(consoleCatalog, role)
       .filter((entry) => !query.trim() || consoleSearchText(entry).includes(query.trim().toLocaleLowerCase('zh-CN'))),
-    [query, role, snapshot?.consoleCatalog],
+    [query, role, consoleCatalog],
   );
 
   return (
