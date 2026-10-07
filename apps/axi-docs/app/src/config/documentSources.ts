@@ -203,7 +203,9 @@ export function getDocumentSourceRegistry(): DocumentSourceConfig[] {
       name: 'dbskill',
       description: 'dontbesilent 最新 dbskill 工具箱，按 dbs 诊断、内容工程、决策、学习和状态管理组织。',
       path: dbskillPath,
-      enabled: process.env.DBSKILL_CONTENT_ASSETS_ENABLED !== 'false',
+      // dbskill reference corpus was removed from the workspace (2026-10-07);
+      // the source is now opt-in via DBSKILL_CONTENT_ASSETS_ENABLED=true.
+      enabled: process.env.DBSKILL_CONTENT_ASSETS_ENABLED === 'true',
       type: 'local',
       kind: 'skill-library',
       adapter: 'skills',
