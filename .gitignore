@@ -151,3 +151,6 @@ apps/workbench-mobile/dist/
 *.sqlite
 chroma_db/
 chroma/
+
+# transient scratch from remediation waves
+/.tmp/
