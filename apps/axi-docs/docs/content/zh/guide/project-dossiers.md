@@ -63,7 +63,7 @@ pnpm --dir app projects:check   # 校验全部 322 个档案文件就位
 
 ## 11 件套（自 2026-06-10 起）
 
-档案在 [2026-06-10 覆盖审计](../../axi-workspace-governance/audits/axi-docs-coverage-2026-06-10.md) 后由 7 件扩为 **11 件**。结构如下：
+档案在 [2026-06-10 覆盖审计](../../../axi-workspace-governance/audits/axi-docs-coverage-2026-06-10.md) 后由 7 件扩为 **11 件**。结构如下：
 
 - **必选（7 件）**：`projects:build` 总生成。缺任一则 `projects:check` 报非零退出。
 - **可选（4 件）**：仅当项目根存在对应源文件时才生成。缺可选件**不**导致 check 失败，仅告警。
