@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-05-30",
-  "generatedAt": "2026-10-07T15:21:48.807Z",
+  "generatedAt": "2026-10-07T15:40:38.771Z",
   "source": "/Volumes/code/workspace/workspace.graph.json",
   "summary": {
     "total": 44,
@@ -33,7 +33,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:not-applicable",
         "handoff:not-applicable",
@@ -277,7 +277,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests",
@@ -339,7 +339,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-project-cli.mjs handoff-check axi-file-preview | git -C /Volumes/code/workspace/candidates/axi-file-preview diff --check",
@@ -838,7 +838,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:python3 scripts/validate-index.py",
@@ -1225,7 +1225,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:python -m py_compile app.py main.py config.py database.py adb_controller.py mitm_proxy.py uicontroller.py __init__.py"
@@ -1732,7 +1732,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:cd /Volumes/code/workspace/foundation/axi-observability && PYTHONPATH=python python3 -m unittest discover -s python/axi_observability/tests -v | cd /Volumes/code/workspace/foundation/axi-observability/go/axilog && go test ./... | cd /Volumes/code/workspace/foundation/axi-observability/node/packages/observability-logging && pnpm test | cd /Volumes/code/workspace/foundation/axi-observability/web && pnpm test | /Volumes/code/workspace/scripts/workspace-project validate | /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-audit.mjs",
@@ -1806,7 +1806,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ai-capability status --json",
@@ -1863,7 +1863,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -1922,7 +1922,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2033,7 +2033,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2091,7 +2091,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:pnpm --dir frontend verify:repo-guards | python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py",
@@ -2152,7 +2152,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2213,7 +2213,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools",
@@ -2270,7 +2270,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke",
@@ -2327,7 +2327,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2391,7 +2391,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:pnpm --dir /Volumes/code/workspace/candidates/pelagic build | git -C /Volumes/code/workspace/candidates/pelagic diff --check",
@@ -2455,7 +2455,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:pnpm test",
@@ -2589,7 +2589,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "docs:partial",
         "handoff:unready",
@@ -2646,7 +2646,7 @@
       "confidence": "low",
       "confidenceLabel": "低",
       "summary": "尚未声明完成情况。",
-      "updatedAt": "2026-10-07T15:21:48.807Z",
+      "updatedAt": "2026-10-07T15:40:38.771Z",
       "evidence": [
         "handoff:unready",
         "verify:test -f package.json | test -f AGENTS.md",
