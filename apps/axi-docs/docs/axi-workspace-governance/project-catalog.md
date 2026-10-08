@@ -4,19 +4,18 @@ title: Axi Workspace Project Catalog
 type: reference
 status: evergreen
 tags: [workspace, catalog, repositories]
-created: 2026-10-07
-modified: 2026-10-07
+created: 2026-10-08
+modified: 2026-10-08
 agent-readable: true
 ---
 
 # Axi Workspace Project Catalog
 
-最后生成：2026-10-07
+最后生成：2026-10-08
 
 | Section | ID | Name | Owner | Status | Lifecycle | Branch | Docs | Path | Canonical Remote |
 |---|---|---|---|---|---|---|---|---|---|
-| candidates | axi-file-preview | Axi File Preview | libu | active-candidate | prototype | dev | yes | `candidates/axi-file-preview` | - |
-| candidates | pelagic | Pelagic Open Water | Mose | active-candidate | prototype | dev | yes | `candidates/pelagic` | - |
+| candidates | pelagic | Pelagic Open Water | Mose | active-candidate | prototype | codex/tidewater-ocean-upgrade | yes | `candidates/pelagic` | - |
 | candidates | voice-assistant-on-device-speech-recognition | Voice Assistant (on-device ASR) | libu | prototype-pending-review | prototype | agent/audit-fix-a08-voice-assistant-pathlen | yes | `candidates/voice-assistant-on-device-speech-recognition` | [link](https://github.com/MoseLu/axi-assistant-voice.git) |
 | distributions | axi-workbench-desktop-dist | Axi Workbench Desktop Distribution | Mose | active | active-product | dev | yes | `distributions/axi-workbench-desktop` | [link](https://github.com/MoseLu/axi-workbench-desktop.git) |
 | distributions | axi-workbench-mobile-dist | Axi Workbench Mobile Distribution | Mose | active | active-product | dev | yes | `distributions/axi-workbench-mobile` | [link](https://github.com/MoseLu/axi-workbench-mobile.git) |
@@ -41,17 +40,9 @@ agent-readable: true
 | shared | axi-rules | Axi Rules | libu | active | active-shared-provider | dev | yes | `foundation/axi-rules` | [link](https://github.com/MoseLu/axi-rules.git) |
 | shared | axi-skills | Axi Skills | libu | active | active-shared-provider | dev | yes | `foundation/axi-skills` | [link](https://github.com/MoseLu/axi-skills.git) |
 | shared | axi-ui | Axi UI | libu | active | active-shared-provider | dev | yes | `foundation/axi-ui` | [link](https://github.com/MoseLu/axi-ui.git) |
-| shared | axi-workspace-rs | Axi Workspace Rust Monorepo | libu | active | active-shared-provider | agent/install-git-hooks | yes | `foundation/axi-workspace-rs` | - |
 | tools | axi-feishu-codex-bridge | Axi Feishu Codex Bridge | libu | active | active-tool-local-runtime | dev | yes | `agent-cluster/axi-agent/tools/axi-feishu-codex-bridge` | [link](https://github.com/MoseLu/axi-feishu-codex-bridge.git) |
 | tools | axi-video-downloader | Axi Video Downloader | libu | active | active-tool-local-runtime | dev | yes | `tools/axi-video-downloader` | [link](https://github.com/MoseLu/Axi-Video-Downloader.git) |
-| agent | axi-agent | Axi Agent Platform | libu | active | active-core-platform | dev | yes | `agent-cluster/axi-agent` | [link](https://github.com/MoseLu/axi-agent.git) |
-| references | blinko | Blinko Reference | external | reference | short-term-reference | main | yes | `references/short-term/blinko` | [link](https://github.com/blinkospace/blinko.git) |
-| references | cockpit-tools | Cockpit Tools Reference | external | reference | short-term-reference | main | yes | `references/short-term/cockpit-tools` | [link](https://github.com/jlcodes99/cockpit-tools.git) |
-| references | comfyui | ComfyUI Reference | external | reference | short-term-reference | master | yes | `references/short-term/comfyui` | [link](https://github.com/comfyanonymous/ComfyUI.git) |
-| references | image2prompt | Image2Prompt Reference | external | reference | short-term-reference | main | yes | `references/short-term/image2prompt` | [link](https://github.com/pingan8787/image2prompt.git) |
-| references | opencodex | OpenCodex Reference | external | reference | short-term-reference | dev | yes | `references/short-term/opencodex` | [link](https://github.com/MoseLu/opencodex.git) |
-| references | sub2api | Sub2API Reference | external | reference | short-term-reference | main | yes | `references/short-term/sub2api` | [link](https://github.com/Wei-Shaw/sub2api.git) |
-| references | tidewater-reference | Tidewater Reference | external | reference | short-term-reference | agent/audit-fix-a09-tidewater-agents | yes | `references/short-term/tidewater-reference` | [link](https://github.com/dgreenheck/tidewater.git) |
+| agent | axi-agent | Axi Agent Platform | libu | active | active-core-platform | dev | yes | `agent-cluster/axi-agent` | [link](https://github.com/MoseLu/axi-agent-platform.git) |
 
 ## 备注
 

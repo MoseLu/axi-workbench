@@ -1,9 +1,9 @@
 # Workspace Project Handoff Readiness
 
-Generated: 2026-10-07T15:40:38.771Z
+Generated: 2026-10-08T10:44:59.092Z
 
-- Total: 25
-- Verified: 16
+- Total: 24
+- Verified: 15
 - Documented: 7
 - Stale: 2
 - Unready: 0
@@ -31,7 +31,6 @@ Generated: 2026-10-07T15:40:38.771Z
 | `axi-workbench-desktop-dist` | documented | 10/10 | 2026-09-25 | Verify Tauri build pipeline |
 | `axi-workbench-mobile-dist` | documented | 10/10 | 2026-09-25 | Verify mobile-specific build targets |
 | `axi-workbench-web-dist` | documented | 10/10 | 2026-09-25 | Verify CI/CD pipeline integration |
-| `axi-workspace-governance` | verified | 10/10 | 2026-09-29 | Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync. |
-| `axi-workspace-rs` | verified | 10/10 | 2026-10-01 | M7 全链收口：wave parity-port + M7.1 rustfmt + M7.5 D4 registry 闭环 + M7.6 strict clippy/VERIFICATION + M7.7 corepack/incubator 双开关锁 + M7.8 registry 路径 bug 修复（incubator-sync / docs-sync）。 |
+| `axi-workspace-governance` | verified | 10/10 | 2026-09-25 | Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync. |
 | `ielts-vocab` | verified | 10/10 | 2026-09-25 | Keep the deployed split backend stable. |
 | `story-graph` | verified | 10/10 | 2026-09-25 | 多代叙事图谱 v2 已完成：默认长卷只读取证据闭环的叙事事件，使用主线地图、五段式账本与人物/组织/地点档案解释人物变化；待证实体与关系停留在审核队列。 |

@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-10-07
-modified: 2026-10-07
+created: 2026-10-08
+modified: 2026-10-08
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-10-07
+最后生成：2026-10-08
 
 ## 控制面
 
@@ -81,8 +81,6 @@ agent-readable: true
   remote: https://github.com/MoseLu/axi-skills.git
 - `foundation/axi-ui` | Axi UI | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-ui.git
-- `foundation/axi-workspace-rs` | Axi Workspace Rust Monorepo | branch=`agent/install-git-hooks` | canonical=yes | compliance=`rust-monorepo`
-  remote: https://github.com/MoseLu/axi-workspace-rs.git
 
 ## Tools
 
@@ -94,25 +92,7 @@ agent-readable: true
 ## Agent
 
 - `agent-cluster/axi-agent` | Axi Agent Platform | branch=`dev` | canonical=yes | compliance=`agent-platform`
-  remote: https://github.com/MoseLu/axi-agent.git
-
-## References
-
-- `references/short-term/blinko` | Blinko Reference | branch=`main` | canonical=no | compliance=`-`
-  remote: https://github.com/blinkospace/blinko.git
-- `references/short-term/cockpit-tools` | Cockpit Tools Reference | branch=`main` | canonical=no | compliance=`-`
-  remote: https://github.com/jlcodes99/cockpit-tools.git
-- `references/short-term/comfyui` | ComfyUI Reference | branch=`master` | canonical=no | compliance=`-`
-  remote: https://github.com/comfyanonymous/ComfyUI.git
-- `references/short-term/image2prompt` | Image2Prompt Reference | branch=`main` | canonical=no | compliance=`-`
-  remote: https://github.com/pingan8787/image2prompt.git
-- `references/short-term/opencodex` | OpenCodex Reference | branch=`dev` | canonical=no | compliance=`-`
-  remote: https://github.com/MoseLu/opencodex.git
-  upstream: https://github.com/AITabby/opencodex.git
-- `references/short-term/sub2api` | Sub2API Reference | branch=`main` | canonical=no | compliance=`-`
-  remote: https://github.com/Wei-Shaw/sub2api.git
-- `references/short-term/tidewater-reference` | Tidewater Reference | branch=`agent/audit-fix-a09-tidewater-agents` | canonical=no | compliance=`-`
-  remote: https://github.com/dgreenheck/tidewater.git
+  remote: https://github.com/MoseLu/axi-agent-platform.git
 
 ## 已批准项目级 Monorepo
 
