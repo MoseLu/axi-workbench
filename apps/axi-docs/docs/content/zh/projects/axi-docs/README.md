@@ -2,7 +2,7 @@
 id: axi-docs-zh-projects-axi-docs
 title: Axi Docs
 type: project
-status: active
+status: orphaned
 tags: [Axi Docs, Projects, projects, core]
 created: 2026-07-22
 modified: 2026-08-08
@@ -41,7 +41,7 @@ _Stack not recorded in WORKSPACE_INDEX.md._
 
 ## Notes
 
-_No notes._
+> This dossier is orphaned. It is not in workspace.graph.json as of 2026-10-07. Owner review needed to either register or delete.
 
 ## Verification (suggested)
 
