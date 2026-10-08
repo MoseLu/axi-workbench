@@ -19,11 +19,11 @@
 .ant-form-item-has-error .ant-input,
 .ant-form-item-has-error .ant-input-affix-wrapper,
 .ant-form-item-has-error .ant-select-selector {
-  border-color: #cf222e !important;
+  border-color: #cf222e !important; /* css-arch-allow: third-party-override */
 }
 
 .ant-form-item-has-error .ant-input:focus,
 .ant-form-item-has-error .ant-input-affix-wrapper-focused,
 .ant-form-item-has-error .ant-select-focused .ant-select-selector {
-  box-shadow: 0 0 0 2px rgba(207, 34, 46, 0.2) !important;
+  box-shadow: 0 0 0 2px rgba(207, 34, 46, 0.2) !important; /* css-arch-allow: third-party-override */
 }

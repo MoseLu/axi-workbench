@@ -9,9 +9,11 @@ from pathlib import Path
 
 # PR-6 D4: observability 包路径由环境变量配置，缺省回退到 stdlib logging。
 # 默认路径仅在本地开发（foundation/ sibling 存在）时启用。
+# 默认值由脚本所在位置向上解析到工作区根，避免硬编码绝对路径。
+_FALLBACK_OBSERVABILITY = Path(__file__).resolve().parents[4] / "foundation" / "axi-observability" / "python"
 _OBSERVABILITY_PYTHON = os.environ.get(
     "AXI_OBSERVABILITY_PYTHON",
-    "/Volumes/code/workspace/foundation/axi-observability/python",
+    str(_FALLBACK_OBSERVABILITY),
 )
 _observability_path = Path(_OBSERVABILITY_PYTHON)
 if _observability_path.is_dir() and str(_observability_path) not in sys.path:

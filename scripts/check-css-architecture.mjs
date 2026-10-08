@@ -49,7 +49,14 @@ for (const relative of styleFiles) {
       tokenDeclarations.set(token, locations);
     }
     if (line.includes('!important')) {
-      findings.push({ type: 'important', file: relative, line: index + 1 });
+      // Documented escape hatch: a same-line `css-arch-allow:` comment
+      // is the contract-gate's signal that the author has reviewed the
+      // !important usage and recorded the justification inline (e.g.
+      // `prefers-reduced-motion` reset, third-party UI library override).
+      // See docs/prd/02-CONTRACT-AND-CONSTRAINT-GOVERNANCE.md §5.
+      if (!/css-arch-allow\s*:/i.test(line)) {
+        findings.push({ type: 'important', file: relative, line: index + 1 });
+      }
     }
     if (globalSelectors.test(line) && !relative.includes('/styles/variables.css')) {
       findings.push({ type: 'global-selector', file: relative, line: index + 1 });

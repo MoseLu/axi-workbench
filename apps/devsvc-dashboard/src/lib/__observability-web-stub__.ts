@@ -1,10 +1,11 @@
 // Local stub for `@axi/observability-web`.
 //
 // `@axi/observability-web` is not yet published into this workspace's
-// `packages/`; the closest artifact lives in
-// `/Volumes/code/workspace/foundation/axi-observability/web`, which transitively
-// depends on `@axi/observability-logging` — a server-side pino + AsyncLocalStorage
-// logger. Pulling that chain into a browser bundle breaks the SPA with
+// `packages/`; the closest artifact lives in the workspace's
+// foundation/axi-observability/web package (resolved via registry/env
+// at build time), which transitively depends on `@axi/observability-logging`
+// — a server-side pino + AsyncLocalStorage logger. Pulling that chain
+// into a browser bundle breaks the SPA with
 // `Module "node:async_hooks" has been externalized for browser compatibility`.
 //
 // The `src/main.tsx` dynamic import only calls `installWeb` as a no-op telemetry

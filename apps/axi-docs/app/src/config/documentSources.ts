@@ -37,8 +37,9 @@ function detectWorkspaceRoot(): string {
       /* swallow */
     }
   }
-  const configuredRoot = process.env.AXI_WORKSPACE_ROOT || '/Volumes/code/workspace'
-  if (fs.existsSync(path.join(configuredRoot, 'workbench', 'axi-workbench'))) return configuredRoot
+  // Env var override; absence falls through to the cwd-relative default.
+  const configuredRoot = process.env.AXI_WORKSPACE_ROOT
+  if (configuredRoot && fs.existsSync(path.join(configuredRoot, 'workbench', 'axi-workbench'))) return configuredRoot
   return path.resolve(process.cwd(), '..', '..', '..', '..')
 }
 
@@ -50,6 +51,10 @@ function resolveProjectPath(...segments: string[]): string {
 
 function resolveWorkspacePath(...segments: string[]): string {
   return path.resolve(WORKSPACE_ROOT, ...segments)
+}
+
+export function resolveWorkspacePathFromConfig(...segments: string[]): string {
+  return resolveWorkspacePath(...segments)
 }
 
 function existingOrFallback(primary: string, fallback: string): string {
@@ -337,15 +342,15 @@ export function getDocumentSourceRegistry(): DocumentSourceConfig[] {
     {
       id: 'axi-workspace-governance-docs',
       name: 'Axi 工作区治理文档',
-      description: 'Axi 工作区治理（workspace-governance）文档源，覆盖 foundation/workspace-governance。',
-      path: '/Volumes/code/workspace/foundation/workspace-governance',
+      description: 'Axi 工作区治理文档源；dossier ID 为 axi-workspace-governance，文件系统路径仍为 foundation/workspace-governance（ADR-008，filesystem rename 尚未落地）。',
+      path: resolveWorkspacePath('foundation', 'workspace-governance'),
       enabled: true,
       type: 'local',
       kind: 'workspace-registry',
       adapter: 'workspace',
       audience: ['agent', 'human'],
       readOnly: true,
-      tags: ['workspace-governance'],
+      tags: ['axi-workspace-governance', 'workspace-governance'],
       icon: 'folder',
       locale: 'en',
     },
@@ -353,7 +358,7 @@ export function getDocumentSourceRegistry(): DocumentSourceConfig[] {
       id: 'axi-workspace-rules-docs',
       name: 'Axi 工作区 Agent 规则文档',
       description: 'Axi 工作区 agent 规则（axi-rules）文档源，覆盖 foundation/axi-rules。',
-      path: '/Volumes/code/workspace/foundation/axi-rules',
+      path: resolveWorkspacePath('foundation', 'axi-rules'),
       enabled: true,
       type: 'local',
       kind: 'markdown-vault',
@@ -376,6 +381,51 @@ export function getDocumentSourceRegistry(): DocumentSourceConfig[] {
       audience: ['agent', 'human'],
       readOnly: true,
       tags: ['workspace-incubator'],
+      icon: 'folder',
+      locale: 'en',
+    },
+    {
+      id: 'axi-workspace-rs-docs',
+      name: 'Axi 工作区 Rust 工具链',
+      description: 'Axi 工作区 Rust 工具链项目文档源；覆盖 foundation/axi-workspace-rs 下 README.md / CHANGELOG.md / docs/**。',
+      path: resolveWorkspacePath('foundation', 'axi-workspace-rs'),
+      enabled: true,
+      type: 'local',
+      kind: 'markdown-vault',
+      adapter: 'markdown',
+      audience: ['agent', 'human'],
+      readOnly: true,
+      tags: ['axi-workspace-rs', 'foundation'],
+      icon: 'folder',
+      locale: 'en',
+    },
+    {
+      id: 'axi-file-preview-docs',
+      name: 'Axi 文件预览候选项目',
+      description: 'Axi 文件预览候选项目文档源；覆盖 candidates/axi-file-preview 下 README.md / CHANGELOG.md / docs/**。',
+      path: '/Volumes/code/workspace/candidates/axi-file-preview',
+      enabled: true,
+      type: 'local',
+      kind: 'markdown-vault',
+      adapter: 'markdown',
+      audience: ['agent', 'human'],
+      readOnly: true,
+      tags: ['axi-file-preview', 'candidates'],
+      icon: 'folder',
+      locale: 'en',
+    },
+    {
+      id: 'tidewater-reference-docs',
+      name: 'Tidewater 参考项目',
+      description: 'Tidewater 第三方参考项目文档源；覆盖 references/short-term/tidewater-reference 下 README.md / CHANGELOG.md / docs/**。',
+      path: resolveWorkspacePath('references', 'short-term', 'tidewater-reference'),
+      enabled: true,
+      type: 'local',
+      kind: 'markdown-vault',
+      adapter: 'markdown',
+      audience: ['agent', 'human'],
+      readOnly: true,
+      tags: ['tidewater-reference', 'references'],
       icon: 'folder',
       locale: 'en',
     },

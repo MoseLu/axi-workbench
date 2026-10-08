@@ -53,9 +53,9 @@ body {
   *,
   *::before,
   *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important; /* css-arch-allow: a11y-reduced-motion */
+    animation-iteration-count: 1 !important; /* css-arch-allow: a11y-reduced-motion */
+    transition-duration: 0.001ms !important; /* css-arch-allow: a11y-reduced-motion */
+    scroll-behavior: auto !important; /* css-arch-allow: a11y-reduced-motion */
   }
 }

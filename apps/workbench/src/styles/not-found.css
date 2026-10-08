@@ -127,8 +127,8 @@
 @media (prefers-reduced-motion: reduce) {
   .workbench-not-found,
   .workbench-not-found__btn {
-    animation: none !important;
-    transition: none !important;
+    animation: none !important; /* css-arch-allow: a11y-reduced-motion */
+    transition: none !important; /* css-arch-allow: a11y-reduced-motion */
   }
 }
 

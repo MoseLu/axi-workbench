@@ -12,6 +12,7 @@ import crypto from 'crypto'
 import { URL } from 'url'
 import { IncomingMessage, ServerResponse } from 'http'
 import * as knowledgeBase from '../lib/knowledgeBase'
+import { resolveWorkspacePathFromConfig } from '../config/documentSources'
 
 // ─── 加载环境变量 ────────────────────────────────────────────────────────────
 
@@ -898,16 +899,16 @@ async function listWorkspaceDocCategories() {
 
 async function readWorkspaceDoc({ category, path }: { category: string; path: string }) {
   const pathMap: Record<string, string> = {
-    governance: '/Volumes/code/workspace/docs/governance',
-    state: '/Volumes/code/workspace/docs/state',
-    audit: '/Volumes/code/workspace/docs/audit',
-    adr: '/Volumes/code/workspace/foundation/workspace-governance/docs/adr',
-    architecture: '/Volumes/code/workspace/docs/architecture',
-    axi: '/Volumes/code/workspace/docs/axi',
-    prd: '/Volumes/code/workspace/docs/prd',
-    registry: '/Volumes/code/workspace/docs/registry',
-    scripts: '/Volumes/code/workspace/scripts',
-    incubator: '/Volumes/code/workspace/incubator',
+    governance: resolveWorkspacePathFromConfig('docs', 'governance'),
+    state: resolveWorkspacePathFromConfig('docs', 'state'),
+    audit: resolveWorkspacePathFromConfig('docs', 'audit'),
+    adr: resolveWorkspacePathFromConfig('foundation', 'workspace-governance', 'docs', 'adr'),
+    architecture: resolveWorkspacePathFromConfig('docs', 'architecture'),
+    axi: resolveWorkspacePathFromConfig('docs', 'axi'),
+    prd: resolveWorkspacePathFromConfig('docs', 'prd'),
+    registry: resolveWorkspacePathFromConfig('docs', 'registry'),
+    scripts: resolveWorkspacePathFromConfig('scripts'),
+    incubator: resolveWorkspacePathFromConfig('incubator'),
   }
   const baseDir = pathMap[category]
   if (!baseDir) {
@@ -935,7 +936,7 @@ async function searchWorkspaceRoot({ query, locale }: { query: string; locale?: 
 
 async function listGovernanceAdrs() {
   try {
-    const files = await fsp.readdir('/Volumes/code/workspace/foundation/workspace-governance/docs/adr')
+    const files = await fsp.readdir(resolveWorkspacePathFromConfig('foundation', 'workspace-governance', 'docs', 'adr'))
     return {
       canonical_source: 'foundation/workspace-governance/docs/adr/',
       adrs: files.filter((f) => f.startsWith('ADR-')),
@@ -948,10 +949,10 @@ async function listGovernanceAdrs() {
 
 async function listWorkspaceAudits({ since }: { since?: string } = {}) {
   const sources = [
-    '/Volumes/code/workspace/docs/audit',
-    '/Volumes/code/workspace/docs/audits',
-    '/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs/docs/axi-workspace-governance/audits',
-    '/Volumes/code/workspace/foundation/workspace-governance/docs/audits',
+    resolveWorkspacePathFromConfig('docs', 'audit'),
+    resolveWorkspacePathFromConfig('docs', 'audits'),
+    resolveWorkspacePathFromConfig('workbench', 'axi-workbench', 'apps', 'axi-docs', 'docs', 'axi-workspace-governance', 'audits'),
+    resolveWorkspacePathFromConfig('foundation', 'workspace-governance', 'docs', 'audits'),
   ]
   return { sources, since: since || 'all' }
 }

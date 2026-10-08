@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+// axi-ui-escape-hatch: antd `App.useApp()` 提供 message.success 用于 toast 反馈；
+// @axi/widgets 当前没有等价 surface（AxiBanner 只渲染内联横幅，没有 toast 队列），
+// 因此保留这个导入直到 AxiToast 上线。
 import { App as AntdApp } from 'antd';
 import { resolveGatewayURL } from '@axi/workbench-foundation';
 import { AxiBanner, AxiRow } from '@axi/widgets';

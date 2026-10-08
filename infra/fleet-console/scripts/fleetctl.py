@@ -22,12 +22,12 @@ from pathlib import Path
 from typing import Any
 
 # Adopt the workspace observability SDK when the foundation python
-# package is on PYTHONPATH (vendored under
-# /Volumes/code/workspace/foundation/axi-observability/python). When
+# package is on PYTHONPATH (vendored under the workspace's
+# foundation/axi-observability/python). When
 # it is absent the script keeps the conventional stdout/stderr print
 # semantics so it can be piped into SQLite / jq without changing the
 # CLI surface.
-_FLEETCTL_OBS_PY = Path("/Volumes/code/workspace/foundation/axi-observability/python")
+_FLEETCTL_OBS_PY = Path(__file__).resolve().parents[5] / "foundation" / "axi-observability" / "python"
 if _FLEETCTL_OBS_PY.is_dir() and str(_FLEETCTL_OBS_PY) not in sys.path:
     sys.path.insert(0, str(_FLEETCTL_OBS_PY))
 

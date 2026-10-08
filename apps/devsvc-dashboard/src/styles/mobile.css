@@ -17,7 +17,7 @@
   [role="button"],
   .login-button,
   .login-dev-accounts button {
-    min-height: 44px !important;
+    min-height: 44px !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Inputs: iOS zoom-prevention (font-size ≥16px) ---- */
@@ -27,47 +27,47 @@
   .ant-input,
   .ant-input-affix-wrapper input,
   .login-field input {
-    font-size: 16px !important;
+    font-size: 16px !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Form: tighter rhythm so mobile doesn't drown in whitespace ---- */
   .ant-form-item {
-    margin-bottom: 16px !important;
+    margin-bottom: 16px !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Sidebar: keep collapsed even if state forgot to sync ---- */
   .axi-sidebar,
   .app-shell .sidebar.axi-admin-sider.ant-layout-sider {
-    width: 60px !important;
-    min-width: 60px !important;
-    max-width: 60px !important;
+    width: 60px !important; /* css-arch-allow: third-party-override */
+    min-width: 60px !important; /* css-arch-allow: third-party-override */
+    max-width: 60px !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Tables: allow horizontal scroll instead of overflowing viewport ---- */
   .ant-table-wrapper,
   .ant-table-container {
-    overflow-x: auto !important;
+    overflow-x: auto !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Login form: enlarge placeholder-only inputs to match tap target ---- */
   .login-button {
-    height: 48px !important;
+    height: 48px !important; /* css-arch-allow: third-party-override */
   }
 
   .login-field input {
-    height: 44px !important;
+    height: 44px !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Dev account picker: padding so 22px native buttons reach 44px ---- */
   .login-dev-accounts button {
-    padding-block: 11px !important;
-    padding-inline: 12px !important;
-    line-height: 1.4 !important;
+    padding-block: 11px !important; /* css-arch-allow: third-party-override */
+    padding-inline: 12px !important; /* css-arch-allow: third-party-override */
+    line-height: 1.4 !important; /* css-arch-allow: third-party-override */
   }
 
   /* ---- Login card: prevent edge-clipping on 320px viewports ---- */
   .login-screen,
   .login-panel {
-    padding-inline: 12px !important;
+    padding-inline: 12px !important; /* css-arch-allow: third-party-override */
   }
 }

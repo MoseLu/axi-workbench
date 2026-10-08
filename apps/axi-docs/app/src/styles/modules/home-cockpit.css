@@ -675,7 +675,7 @@ html[data-axi-docs-theme='light'] .app-main--home {
 
 @media (prefers-reduced-motion: reduce) {
   .axi-docs-home__result-list {
-    animation: none !important;
+    animation: none !important; /* css-arch-allow: a11y-reduced-motion */
   }
 }
 
