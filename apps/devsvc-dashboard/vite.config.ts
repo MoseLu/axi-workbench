@@ -69,14 +69,14 @@ function compressedAssets(): Plugin {
         this.emitFile({
           type: "asset",
           fileName: `${fileName}.gz`,
-          source: gzipSync(sourceBuffer, { level: 9 })
+          source: gzipSync(sourceBuffer, { level: 6 })
         });
         this.emitFile({
           type: "asset",
           fileName: `${fileName}.br`,
           source: brotliCompressSync(sourceBuffer, {
             params: {
-              [constants.BROTLI_PARAM_QUALITY]: 11
+              [constants.BROTLI_PARAM_QUALITY]: 4
             }
           })
         });
