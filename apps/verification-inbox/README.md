@@ -16,7 +16,7 @@
 # 如果使用 Codex bundled Node runtime，可先放到 PATH 前面
 export PATH=/Users/mose/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH
 
-pnpm typecheck
+pnpm type-check
 pnpm build
 CARGO_NET_OFFLINE=true cargo test --manifest-path src-tauri/Cargo.toml
 pnpm tauri dev

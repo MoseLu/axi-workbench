@@ -61,7 +61,6 @@ axi-workbench/
 │   └── ollama-menu-assistant/ # macOS Swift 菜单助手（非 Node Dashboard）
 ├── packages/
 │   ├── api-client/
-│   ├── axi-rag/                # 当前源码目录，尚未纳入根 pnpm package 生命周期
 │   ├── schemas/
 │   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口（**legacy**）
 │   ├── types/

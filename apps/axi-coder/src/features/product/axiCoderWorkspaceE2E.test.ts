@@ -26,7 +26,7 @@ function provider(overrides: Partial<Provider> = {}): Provider {
     id: "deepseek",
     name: "DeepSeek",
     baseUrl: "https://api.deepseek.example",
-    providerType: "open_a",
+    providerType: "open_ai_chat",
     defaultModel: "deepseek-chat",
     secretRef: "provider:deepseek",
     createdAt: now,

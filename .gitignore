@@ -154,3 +154,6 @@ chroma/
 
 # transient scratch from remediation waves
 /.tmp/
+
+# auto-submit logs (local-only audit trail, regenerated per session)
+docs/logs/submit/

@@ -61,7 +61,6 @@ axi-workbench/
 │   └── ollama-menu-assistant/ # macOS Ollama 菜单助手
 ├── packages/
 │   ├── api-client/
-│   ├── axi-rag/
 │   ├── desktop/
 │   ├── schemas/
 │   ├── epap-schemas-compat/  # `@epap/schemas` 迁移兼容出口（**legacy**）
