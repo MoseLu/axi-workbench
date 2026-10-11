@@ -281,9 +281,6 @@ importers:
       '@huggingface/transformers':
         specifier: ^3.7.5
         version: 3.8.1(@types/node@22.20.3)
-      node:
-        specifier: '>=20'
-        version: 22.23.3
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -7999,9 +7996,6 @@ packages:
   node-addon-api@7.1.1:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
-  node-bin-setup@1.1.4:
-    resolution: {integrity: sha512-vWNHOne0ZUavArqPP5LJta50+S8R261Fr5SvGul37HbEDcowvLjwdvd0ZeSr0r2lTSrPxl6okq9QUw8BFGiAxA==}
-
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
@@ -8031,11 +8025,6 @@ packages:
   node-releases@2.0.56:
     resolution: {integrity: sha512-x0InOIyzgdk+eyaWaRJFH5snEtiImgBgblZ2CyPrLmqqcuMQkEvcDPHbzqbD8eDsSeJbVOjn+crzyzHaM4D+/A==}
     engines: {node: '>=18'}
-
-  node@22.23.3:
-    resolution: {integrity: sha512-DefCzy9Twv55AA4RQcOnUd6iQtqmnsJ6twWGasZ33F7BKJEMUJ1KVoumiVSRRNVRHKhBtsoPTvNKMxsE1TG0+Q==}
-    engines: {npm: '>=5.0.0'}
-    hasBin: true
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -17959,8 +17948,6 @@ snapshots:
   node-addon-api@7.1.1:
     optional: true
 
-  node-bin-setup@1.1.4: {}
-
   node-domexception@1.0.0: {}
 
   node-exports-info@1.6.2:
@@ -17983,10 +17970,6 @@ snapshots:
   node-hex@1.0.1: {}
 
   node-releases@2.0.56: {}
-
-  node@22.23.3:
-    dependencies:
-      node-bin-setup: 1.1.4
 
   normalize-path@3.0.0: {}
 

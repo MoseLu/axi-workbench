@@ -31,7 +31,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 |------|------------|------|
 | `apps/` | yes | 6 Dashboard Apps (web-portal / devsvc-dashboard / axi-coder / verification-inbox / app-search-system / ollama-menu-assistant), detailed in subtree `apps/AGENTS.md` |
 | `services/` | yes | 8 microservices (api-gateway / auth-service / core-service / file-service / notification-service / communication-gateway / control-plane / workflow-engine), detailed in subtree `services/AGENTS.md` |
-| `packages/` | yes | 8 shared packages (api-client / axi-rag / desktop / schemas / **epap-schemas-compat (legacy transitional)** / types / ui / utils / web), detailed in subtree `packages/AGENTS.md` |
+| `packages/` | yes | 7 shared packages (api-client / desktop / schemas / **epap-schemas-compat (legacy transitional)** / types / ui / utils / web), detailed in subtree `packages/AGENTS.md` |
 | `tools/axi-app-cli/` | yes | Axi app scaffolding CLI (standalone sub-monorepo); the authoritative entry points are `tools/axi-app-cli/AGENTS.md` / `README.md`; **do not cite** sub-package `README.md` |
 | `ai/` | yes | Knowledge base / Agent Platform integration layer (`ai/AGENTS.md`) |
 | `prompts/` | yes | Prompt layered foundation (system / global / projects), detailed in `prompts/AGENTS.md` and `prompts/README.md` |

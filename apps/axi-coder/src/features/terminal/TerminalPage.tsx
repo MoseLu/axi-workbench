@@ -10,7 +10,7 @@ export type TerminalPageProps = {
   busy: string | null;
   terminalCommands: Record<TerminalCli, string>;
   terminalDraftCommand: string;
-  terminalElementRef: RefObject<HTMLDivElement>;
+  terminalElementRef: RefObject<HTMLDivElement | null>;
   terminalRunning: Record<TerminalCli, boolean>;
   terminalSettingsOpen: boolean;
   onCloseSettings: () => void;

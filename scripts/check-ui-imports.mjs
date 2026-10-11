@@ -44,6 +44,10 @@ const exemptFiles = new Set([
   // 已被路由表隔离为 404 的旧页面
   'apps/workbench/src/pages/ProjectDetail.tsx',
   'apps/workbench/src/pages/Projects.tsx',
+  // Owner pending：CommandCenter 命令栏需要 antd Input + Button（@axi/widgets
+  // 当前未暴露 search-input primitive）。R1 缺口回流见 docs/prd/02 §8，
+  // 由 owner 在补齐 @axi/widgets 对应组件后移除本豁免。
+  'apps/workbench/src/pages/CommandCenter.tsx',
 ]);
 
 // 同时捕获：import { X } from 'antd'、import x from 'antd/locale/en_US'、
