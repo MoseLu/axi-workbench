@@ -4,14 +4,14 @@ title: Axi Workspace Integration Map
 type: reference
 status: evergreen
 tags: [workspace, integration, contracts]
-created: 2026-10-08
-modified: 2026-10-08
+created: 2026-10-11
+modified: 2026-10-11
 agent-readable: true
 ---
 
 # Axi Workspace Integration Map
 
-最后生成：2026-10-08
+最后生成：2026-10-11
 
 ## 跨仓协作契约
 
@@ -28,6 +28,7 @@ agent-readable: true
 
 ## 本地权威源（允许无远端）
 
+- `candidates/axi-file-preview` | Axi File Preview | compliance=`node-frontend-approved`
 - `candidates/pelagic` | Pelagic Open Water | compliance=`node-frontend-approved`
 - `foundation/axi-apps` | Axi Applications | compliance=`axi-apps`
 - `foundation/axi-inbox` | Axi Inbox | compliance=`axi-inbox`

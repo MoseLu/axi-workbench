@@ -1,13 +1,13 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-10-07T15:40:38.771Z",
+  "generatedAt": "2026-10-11T18:16:33.031Z",
   "source": "foundation/workspace-governance/workspace.json",
   "summary": {
-    "total": 25,
-    "verified": 16,
-    "documented": 7,
-    "stale": 2,
-    "unready": 0
+    "total": 22,
+    "verified": 14,
+    "documented": 3,
+    "stale": 1,
+    "unready": 4
   },
   "projects": [
     {
@@ -17,13 +17,16 @@
       "kind": "agent",
       "lifecycle": "active-core-platform",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/agent-cluster/axi-agent/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/agent-cluster/axi-agent/docs/HANDOFF.md",
       "graphId": "axi-agent",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "contracts.files[7] path does not exist: docs/PRD.md",
+        "contracts.files[8] path does not exist: docs/TDD.md"
+      ],
       "warnings": [],
       "summary": "Multi-agent collaboration platform combining a FastAPI backend, React dashboard, SubAgent worktree isolation, an MCP model swarm, and the Axi Todo tool.",
       "commands": {
@@ -76,13 +79,16 @@
       "kind": "project",
       "lifecycle": "active-promoted-incubation",
       "owner": "libu",
-      "readiness": "documented",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-apps/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-apps/docs/HANDOFF.md",
       "graphId": "axi-apps",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "status must be one of: unready, documented, verified, stale",
+        "verification.status must be unverified, verified, or failed"
+      ],
       "warnings": [],
       "summary": "AXI Personal OS Applications CLI (PRD-06, Phase 4). Three pure-reader sub-CLIs on the live Kernel + downstream CLIs.",
       "commands": {
@@ -90,7 +96,7 @@
         "start": [],
         "health": [],
         "verify": [
-          "PYTHONPATH=../axi-kernel python3 -m pytest tests -q"
+          "PYTHONPATH=../axi-kernel python3 -m unittest discover -s tests"
         ],
         "smoke": [
           "PYTHONPATH=../axi-kernel python3 -m axi_apps --help"
@@ -102,7 +108,7 @@
         "active": [],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-10-11"
     },
     {
       "id": "axi-feishu-codex-bridge",
@@ -207,13 +213,16 @@
       "kind": "project",
       "lifecycle": "active-promoted-incubation",
       "owner": "libu",
-      "readiness": "documented",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-inbox/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-inbox/docs/HANDOFF.md",
       "graphId": "axi-inbox",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "status must be one of: unready, documented, verified, stale",
+        "verification.status must be unverified, verified, or failed"
+      ],
       "warnings": [],
       "summary": "AXI Personal OS Inbox CLI (PRD-03, Phase 2). Collects URLs, images, files, ideas into a single inbox.",
       "commands": {
@@ -221,7 +230,7 @@
         "start": [],
         "health": [],
         "verify": [
-          "PYTHONPATH=../axi-kernel python3 -m pytest tests -q"
+          "PYTHONPATH=../axi-kernel python3 -m unittest discover -s tests"
         ],
         "smoke": [
           "PYTHONPATH=../axi-kernel python3 -m axi_inbox --help"
@@ -233,7 +242,7 @@
         "active": [],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-10-11"
     },
     {
       "id": "axi-kernel",
@@ -290,7 +299,7 @@
       "graphId": "axi-notify",
       "graphMatched": true,
       "errors": [
-        "verification is stale: 45 days old (max 30)"
+        "verification is stale: 49 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
@@ -340,13 +349,15 @@
       "kind": "project",
       "lifecycle": "active-local",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/workbench/axi-pet-desktop/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/workbench/axi-pet-desktop/docs/HANDOFF.md",
       "graphId": "axi-pet-desktop",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "canonicalPath does not match project path: /Volumes/code/workspace/projects/axi-pet-desktop"
+      ],
       "warnings": [],
       "summary": "macOS desktop runtime for the Axi Pet virtual companion; Electron shell plus React frontend.",
       "commands": {
@@ -382,7 +393,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-09-14"
     },
     {
       "id": "axi-registry",
@@ -516,11 +527,11 @@
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
-          "ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011"
+          "ADR-013 (Migrated 2026-09-29): Rust migration of axi-runtime; 4-phase plan; depends on ADR-011; see docs/adr/ADR-013-axi-runtime-rust-migration.md"
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-29"
+      "lastVerifiedAt": "2026-10-11"
     },
     {
       "id": "axi-skills",
@@ -529,15 +540,13 @@
       "kind": "shared",
       "lifecycle": "active-shared-provider",
       "owner": "libu",
-      "readiness": "stale",
+      "readiness": "documented",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-skills/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-skills/docs/HANDOFF.md",
       "graphId": "axi-skills",
       "graphMatched": true,
-      "errors": [
-        "verification is stale: 45 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Shared version-controlled skill catalog for Codex, Claude, Cursor, MiniMax, and compatible Axi agent runtimes, with verifier-backed runtime and i18n contracts.",
       "commands": {
@@ -574,7 +583,7 @@
           "Full catalog verification has unrelated pre-existing secret-pattern/cache errors and i18n batch drift; this change was verified with scoped tests and a three-worker Codex native completion/refill smoke, not ZCode twelve-way execution."
         ]
       },
-      "lastVerifiedAt": "2026-08-23"
+      "lastVerifiedAt": "2026-10-09"
     },
     {
       "id": "axi-soul-world",
@@ -713,7 +722,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-10-11"
     },
     {
       "id": "axi-video-downloader",
@@ -867,132 +876,6 @@
       "lastVerifiedAt": "2026-09-25"
     },
     {
-      "id": "axi-workbench-desktop-dist",
-      "name": "Axi Workbench Desktop Distribution",
-      "path": "/Volumes/code/workspace/distributions/axi-workbench-desktop",
-      "kind": "distribution",
-      "lifecycle": "active-product",
-      "owner": "Mose",
-      "readiness": "documented",
-      "score": 10,
-      "manifestPath": "/Volumes/code/workspace/distributions/axi-workbench-desktop/docs/project-docs.manifest.json",
-      "handoffPath": "/Volumes/code/workspace/distributions/axi-workbench-desktop/docs/HANDOFF.md",
-      "graphId": "axi-workbench-desktop-dist",
-      "graphMatched": true,
-      "errors": [],
-      "warnings": [],
-      "summary": "Standalone monorepo for Axi Workbench desktop deployment (Tauri 2 native shell + web UI). Mirrors apps/workbench-desktop from workbench/axi-workbench.",
-      "commands": {
-        "setup": [
-          "pnpm install"
-        ],
-        "start": [],
-        "health": [
-          "test -f package.json"
-        ],
-        "verify": [
-          "pnpm install --frozen-lockfile"
-        ],
-        "smoke": [
-          "test -f BUILD_INFO.json"
-        ]
-      },
-      "currentWork": {
-        "todo": "README.md",
-        "milestone": "README.md",
-        "active": [
-          "Verify Tauri build pipeline",
-          "Confirm DMG packaging workflow"
-        ],
-        "knownFailures": []
-      },
-      "lastVerifiedAt": "2026-09-25"
-    },
-    {
-      "id": "axi-workbench-mobile-dist",
-      "name": "Axi Workbench Mobile Distribution",
-      "path": "/Volumes/code/workspace/distributions/axi-workbench-mobile",
-      "kind": "distribution",
-      "lifecycle": "active-product",
-      "owner": "Mose",
-      "readiness": "documented",
-      "score": 10,
-      "manifestPath": "/Volumes/code/workspace/distributions/axi-workbench-mobile/docs/project-docs.manifest.json",
-      "handoffPath": "/Volumes/code/workspace/distributions/axi-workbench-mobile/docs/HANDOFF.md",
-      "graphId": "axi-workbench-mobile-dist",
-      "graphMatched": true,
-      "errors": [],
-      "warnings": [],
-      "summary": "Standalone monorepo for Axi Workbench mobile deployment. Mirrors apps/workbench-mobile from workbench/axi-workbench.",
-      "commands": {
-        "setup": [
-          "pnpm install"
-        ],
-        "start": [],
-        "health": [
-          "test -f package.json"
-        ],
-        "verify": [
-          "pnpm install --frozen-lockfile"
-        ],
-        "smoke": [
-          "test -f BUILD_INFO.json"
-        ]
-      },
-      "currentWork": {
-        "todo": "README.md",
-        "milestone": "README.md",
-        "active": [
-          "Verify mobile-specific build targets",
-          "Confirm platform-specific package publishing"
-        ],
-        "knownFailures": []
-      },
-      "lastVerifiedAt": "2026-09-25"
-    },
-    {
-      "id": "axi-workbench-web-dist",
-      "name": "Axi Workbench Web Distribution",
-      "path": "/Volumes/code/workspace/distributions/axi-workbench-web",
-      "kind": "distribution",
-      "lifecycle": "active-product",
-      "owner": "Mose",
-      "readiness": "documented",
-      "score": 10,
-      "manifestPath": "/Volumes/code/workspace/distributions/axi-workbench-web/docs/project-docs.manifest.json",
-      "handoffPath": "/Volumes/code/workspace/distributions/axi-workbench-web/docs/HANDOFF.md",
-      "graphId": "axi-workbench-web-dist",
-      "graphMatched": true,
-      "errors": [],
-      "warnings": [],
-      "summary": "Standalone monorepo for Axi Workbench web application deployment. Mirrors apps/workbench from workbench/axi-workbench as a buildable distribution.",
-      "commands": {
-        "setup": [
-          "pnpm install"
-        ],
-        "start": [],
-        "health": [
-          "test -f package.json"
-        ],
-        "verify": [
-          "pnpm install --frozen-lockfile"
-        ],
-        "smoke": [
-          "test -f BUILD_INFO.json"
-        ]
-      },
-      "currentWork": {
-        "todo": "README.md",
-        "milestone": "README.md",
-        "active": [
-          "Verify CI/CD pipeline integration",
-          "Confirm package publish workflow"
-        ],
-        "knownFailures": []
-      },
-      "lastVerifiedAt": "2026-09-25"
-    },
-    {
       "id": "axi-workspace-governance",
       "name": "Axi Workspace Governance",
       "path": "/Volumes/code/workspace/foundation/workspace-governance",
@@ -1003,7 +886,7 @@
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/workspace-governance/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/workspace-governance/docs/HANDOFF.md",
-      "graphId": "axi-workspace-governance",
+      "graphId": "28",
       "graphMatched": true,
       "errors": [],
       "warnings": [
@@ -1032,18 +915,18 @@
         "active": [
           "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
           "Maintain the task-execution-routing/v1 workflow-first contract.",
-          "ADR-016 Phase 1: workspace-governance-rs Rust re-implementation of the six read-only subcommands (list, whereami, health, onboard, handoff-check, validate), the 1:1 parser for workspace.json / workspace.graph.json, and the six invariant validators. Status: Accepted (Phase 1) on 2026-09-29. Phases 2-4 (remaining 21 subcommands) follow."
+          "ADR-016 Phase 1: workspace-governance-rs Rust re-implementation of the six read-only subcommands (list, whereami, health, onboard, handoff-check, validate), the 1:1 parser for workspace.json / workspace.graph.json, and the six invariant validators. Status: Superseded on 2026-10-11 — the canonical Rust crate lives in foundation/axi-workspace-rs/crates/workspace-governance-rs/. See ADR-016 'Supersedes (2026-10-11)' block."
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-29"
+      "lastVerifiedAt": "2026-09-25"
     },
     {
       "id": "axi-workspace-rs",
       "name": "Axi Workspace Rust Monorepo",
       "path": "/Volumes/code/workspace/foundation/axi-workspace-rs",
       "kind": "shared",
-      "lifecycle": "active-shared-provider",
+      "lifecycle": "active-foundation",
       "owner": "libu",
       "readiness": "verified",
       "score": 10,

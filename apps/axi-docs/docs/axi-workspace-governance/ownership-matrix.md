@@ -4,14 +4,14 @@ title: Axi Workspace Ownership Matrix
 type: reference
 status: evergreen
 tags: [workspace, ownership, governance]
-created: 2026-10-08
-modified: 2026-10-08
+created: 2026-10-11
+modified: 2026-10-11
 agent-readable: true
 ---
 
 # Axi Workspace Ownership Matrix
 
-最后生成：2026-10-08
+最后生成：2026-10-11
 
 ## hubu
 
@@ -24,6 +24,7 @@ agent-readable: true
 
 | Repo | Section | Lifecycle | Canonical | Remote |
 |---|---|---|---|---|
+| `candidates/axi-file-preview` | candidates | prototype | yes | - |
 | `candidates/voice-assistant-on-device-speech-recognition` | candidates | prototype | yes | [link](https://github.com/MoseLu/axi-assistant-voice.git) |
 | `foundation/axi-registry` | infra | active-infra | yes | [link](https://github.com/axiomaticworld/axi-registry.git) |
 | `foundation/axi-apps` | projects | active-promoted-incubation | yes | - |
@@ -40,6 +41,7 @@ agent-readable: true
 | `foundation/axi-rules` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-rules.git) |
 | `foundation/axi-skills` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-skills.git) |
 | `foundation/axi-ui` | shared | active-shared-provider | yes | [link](https://github.com/MoseLu/axi-ui.git) |
+| `foundation/axi-workspace-rs` | shared | active-foundation | yes | [link](https://github.com/MoseLu/axi-workspace-rs.git) |
 | `agent-cluster/axi-agent/tools/axi-feishu-codex-bridge` | tools | active-tool-local-runtime | yes | [link](https://github.com/MoseLu/axi-feishu-codex-bridge.git) |
 | `tools/axi-video-downloader` | tools | active-tool-local-runtime | yes | [link](https://github.com/MoseLu/Axi-Video-Downloader.git) |
 | `agent-cluster/axi-agent` | agent | active-core-platform | yes | [link](https://github.com/MoseLu/axi-agent-platform.git) |
@@ -55,8 +57,8 @@ agent-readable: true
 | Repo | Section | Lifecycle | Canonical | Remote |
 |---|---|---|---|---|
 | `candidates/pelagic` | candidates | prototype | yes | - |
-| `distributions/axi-workbench-desktop` | distributions | active-product | no | [link](https://github.com/MoseLu/axi-workbench-desktop.git) |
-| `distributions/axi-workbench-mobile` | distributions | active-product | no | [link](https://github.com/MoseLu/axi-workbench-mobile.git) |
-| `distributions/axi-workbench-web` | distributions | active-product | no | [link](https://github.com/MoseLu/axi-workbench-web.git) |
+| `distributions/axi-workbench-desktop` | distributions | quarantined | no | [link](https://github.com/MoseLu/axi-workbench-desktop.git) |
+| `distributions/axi-workbench-mobile` | distributions | quarantined | no | [link](https://github.com/MoseLu/axi-workbench-mobile.git) |
+| `distributions/axi-workbench-web` | distributions | quarantined | no | [link](https://github.com/MoseLu/axi-workbench-web.git) |
 | `products/axi-soul-world` | products | active-product | yes | [link](https://github.com/MoseLu/Axi-Soul-World.git) |
 | `products/story-graph` | products | active-product | yes | [link](https://github.com/MoseLu/story-graph.git) |

@@ -4,19 +4,19 @@ title: Axi Workspace Project Completion
 type: reference
 status: evergreen
 tags: [workspace, completion, status]
-created: 2026-10-08
-modified: 2026-10-08
+created: 2026-10-11
+modified: 2026-10-11
 agent-readable: true
 ---
 
 # Axi Workspace Project Completion
 
-最后生成：2026-10-08
+最后生成：2026-10-11
 
 ## 摘要
 
 - 已登记项目：44
-- Axi 项目：28
+- Axi 项目：27
 - 完成：1
 - 可用及以上：21
 - 阻塞：0
@@ -36,55 +36,55 @@ agent-readable: true
 
 | Project | Stage | Confidence | Docs | Evidence | Remaining |
 |---|---|---|---|---|---|
-| `axi-accounts` | 未评估 | 低 | not-applicable | docs:not-applicable<br>handoff:not-applicable<br>... | - |
-| `axi-agent` | 未评估 | 高 | missing | agent-cluster/axi-agent/backend/app/api/workstation.py (FastAPI runtime)<br>agent-cluster/axi-agent/backend/tests/test_runtime_api_smoke.py + test_workstation_agent_tasks.py + test_task_scheduler_mcp_quality.py + test_axi_agent_mcp_client.py (pytest verify)<br>... | Consolidate agent runtime completion evidence into project docs.<br>Keep MCP/transport/bridge consumer checks green as Axi Coder grows.<br>... |
-| `axi-apps` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-coder` | 可用 | 高 | partial | Product surface and workspace E2E contract tests define the Axi Coder capability boundary.<br>Hosted dashboard registration exposes Axi Coder under /apps/axi-coder/overview.<br>... | Add native Tauri completion command only if the static snapshot stops being sufficient. |
-| `axi-feishu-codex-bridge` | 未评估 | 低 | missing | handoff:unready<br>verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-file-preview` | 未评估 | 低 | missing | handoff:unready<br>verify:node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-project-cli.mjs handoff-check axi-file-preview \| git -C /Volumes/code/workspace/candidates/axi-file-preview diff --check<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-image-preview` | 完成 | 高 | missing | README documents dev/build/preview and wallpaper MCP commands.<br>package.json exposes test, build, and mcp:wallpapers scripts.<br>... | polish/content expansion |
-| `axi-inbox` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-kernel` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-model-gateway` | 可用 | 中 | partial | ProviderProfile tests guard credential-ref routing without plaintext secrets.<br>Axi Coder proxy handles OpenAI, Claude Messages, and Gemini request shapes.<br>... | Keep gateway status as an infrastructure contract, not a separate product UI. |
-| `axi-notify` | 可用 | 中 | missing | Relay and local smoke verification are registered in the workspace graph.<br>Axi Coder consumes Notify for mobile companion task and notification return paths.<br>... | Keep mobile workbench evidence and goal artifacts discoverable from project docs.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
-| `axi-pet-desktop` | 可用 | 高 | missing | Root AGENTS.md, docs/HANDOFF.md, root CHANGE.md written on 2026-06-19.<br>foundation/workspace-governance/workspace.json has axi-pet-desktop entry.<br>... | Add GitHub remote + .github/workflows/* CI lane (P1, owner-approved).<br>Lock contract package version-sync workflow with axi-pet (P1).<br>... |
-| `axi-registry` | 可用 | 中 | missing | Workspace graph registers registry health verification.<br>Axi UI declares the registry as its package distribution boundary.<br>... | Keep registry health visible when shared packages are published or consumed.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
-| `axi-rules` | 未评估 | 低 | missing | handoff:unready<br>verify:python3 scripts/validate-index.py<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-runtime` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-skills` | 可用 | 中 | missing | Repository verifier covers skill entrypoints, logical names, forbidden runtime artifacts, and generated index output.<br>i18n verifier protects the English runtime source while tracking translation batch coverage.<br>... | Keep the generated skill index and i18n batch manifest synchronized after skill catalog changes.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
-| `axi-soul-world` | 未评估 | 中 | missing | products/axi-soul-world/AGENTS.md<br>products/axi-soul-world/docs/project-docs.manifest.json<br>... | Run the Android device behavior flow and record state-specific evidence.<br>Retire the preserved incubation rollback checkout only after owner acceptance.<br>... |
-| `axi-sync` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-ui` | 可用 | 中 | missing | Workspace verify covers file-line guard, typecheck, and tests.<br>Axi Coder and dashboard surfaces consume linked @axi packages.<br>... | Continue additive package hardening without breaking @axi/* style/runtime contracts.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
-| `axi-video-downloader` | 未评估 | 低 | missing | handoff:unready<br>verify:python -m py_compile app.py main.py config.py database.py adb_controller.py mitm_proxy.py uicontroller.py __init__.py | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-workbench` | 建设中 | 中 | missing | DevSvc Dashboard and Axi Coder are registered as hosted workbench surfaces.<br>Workspace verify covers dashboard, Axi Coder, verification inbox, and fleet console.<br>... | Continue consolidating dashboard/control-plane documentation and evidence.<br>consumes ai-resource-orchestration is a declarative capability edge only. Runtime dispatch flows through task-execution-routing/v1 and must never instantiate a second resource gateway or front the standalone gateway directly. See ADR-005/006 and the resource-search ADR for the cross-project contract surface.<br>... |
-| `axi-workbench-cli` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `axi-workbench-desktop-dist` | 可用 | 高 | missing | distributions/axi-workbench-desktop/package.json<br>distributions/axi-workbench-desktop/pnpm-workspace.yaml<br>... | Verify Tauri build pipeline<br>Confirm DMG packaging workflow<br>... |
-| `axi-workbench-mobile-dist` | 可用 | 高 | missing | distributions/axi-workbench-mobile/package.json<br>distributions/axi-workbench-mobile/pnpm-workspace.yaml<br>... | Verify mobile-specific build targets<br>Confirm platform-specific package publishing<br>... |
-| `axi-workbench-web-dist` | 可用 | 高 | missing | distributions/axi-workbench-web/package.json<br>distributions/axi-workbench-web/pnpm-workspace.yaml<br>... | Verify CI/CD pipeline integration<br>Confirm package publish workflow<br>... |
-| `axi-workspace-governance` | 可用 | 中 | partial | workspace:docs:sync generates catalog and completion docs.<br>workspace-project validate remains the root graph sanity check.<br>... | Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves. |
-| `axi-workspace-rs` | 可用 | 中 | missing | handoff:unready<br>verify:cargo test --workspace --manifest-path /Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml<br>... | B-class remote surfaces stay Node-side until owner opt-in (docs/OWNER_DECISION_BACKLOG.md).<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
-| `observability` | 未评估 | 低 | missing | handoff:unready<br>verify:cd /Volumes/code/workspace/foundation/axi-observability && PYTHONPATH=python python3 -m unittest discover -s python/axi_observability/tests -v \| cd /Volumes/code/workspace/foundation/axi-observability/go/axilog && go test ./... \| cd /Volumes/code/workspace/foundation/axi-observability/node/packages/observability-logging && pnpm test \| cd /Volumes/code/workspace/foundation/axi-observability/web && pnpm test \| /Volumes/code/workspace/scripts/workspace-project validate \| /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-audit.mjs<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `1` | 建设中 | 中 | missing | DevSvc Dashboard and Axi Coder are registered as hosted workbench surfaces.<br>Workspace verify covers dashboard, Axi Coder, verification inbox, and fleet console.<br>... | Continue consolidating dashboard/control-plane documentation and evidence.<br>consumes ai-resource-orchestration is a declarative capability edge only. Runtime dispatch flows through task-execution-routing/v1 and must never instantiate a second resource gateway or front the standalone gateway directly. See ADR-005/006 and the resource-search ADR for the cross-project contract surface.<br>... |
+| `15` | 可用 | 中 | missing | Workspace verify covers file-line guard, typecheck, and tests.<br>Axi Coder and dashboard surfaces consume linked @axi packages.<br>... | Continue additive package hardening without breaking @axi/* style/runtime contracts.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
+| `16` | 可用 | 中 | missing | Workspace graph registers registry health verification.<br>Axi UI declares the registry as its package distribution boundary.<br>... | Keep registry health visible when shared packages are published or consumed.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
+| `2` | 可用 | 高 | partial | Product surface and workspace E2E contract tests define the Axi Coder capability boundary.<br>Hosted dashboard registration exposes Axi Coder under /apps/axi-coder/overview.<br>... | Add native Tauri completion command only if the static snapshot stops being sufficient. |
+| `24` | 可用 | 中 | missing | Repository verifier covers skill entrypoints, logical names, forbidden runtime artifacts, and generated index output.<br>i18n verifier protects the English runtime source while tracking translation batch coverage.<br>... | Keep the generated skill index and i18n batch manifest synchronized after skill catalog changes.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
+| `25` | 未评估 | 低 | missing | handoff:unready<br>verify:python3 scripts/validate-index.py<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `26` | 未评估 | 低 | missing | handoff:unready<br>verify:PYTHONPATH=src .venv/bin/python -m unittest discover -s tests<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `27` | 未评估 | 低 | missing | handoff:unready<br>verify:python -m py_compile app.py main.py config.py database.py adb_controller.py mitm_proxy.py uicontroller.py __init__.py | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `28` | 可用 | 中 | partial | workspace:docs:sync generates catalog and completion docs.<br>workspace-project validate remains the root graph sanity check.<br>... | Keep generated docs, graph, and mirrored Axi Docs sources synchronized after project moves. |
+| `29` | 未评估 | 中 | missing | products/axi-soul-world/AGENTS.md<br>products/axi-soul-world/docs/project-docs.manifest.json<br>... | Run the Android device behavior flow and record state-specific evidence.<br>Retire the preserved incubation rollback checkout only after owner acceptance.<br>... |
+| `3` | 可用 | 中 | partial | ProviderProfile tests guard credential-ref routing without plaintext secrets.<br>Axi Coder proxy handles OpenAI, Claude Messages, and Gemini request shapes.<br>... | Keep gateway status as an infrastructure contract, not a separate product UI. |
+| `30` | 可用 | 高 | missing | distributions/axi-workbench-web/package.json<br>distributions/axi-workbench-web/pnpm-workspace.yaml<br>... | Verify CI/CD pipeline integration<br>Confirm package publish workflow<br>... |
+| `31` | 可用 | 高 | missing | distributions/axi-workbench-mobile/package.json<br>distributions/axi-workbench-mobile/pnpm-workspace.yaml<br>... | Verify mobile-specific build targets<br>Confirm platform-specific package publishing<br>... |
+| `32` | 可用 | 高 | missing | distributions/axi-workbench-desktop/package.json<br>distributions/axi-workbench-desktop/pnpm-workspace.yaml<br>... | Verify Tauri build pipeline<br>Confirm DMG packaging workflow<br>... |
+| `35` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `36` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `37` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `38` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `39` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `4` | 未评估 | 高 | missing | agent-cluster/axi-agent/backend/app/api/workstation.py (FastAPI runtime)<br>agent-cluster/axi-agent/backend/tests/test_runtime_api_smoke.py + test_workstation_agent_tasks.py + test_task_scheduler_mcp_quality.py + test_axi_agent_mcp_client.py (pytest verify)<br>... | Consolidate agent runtime completion evidence into project docs.<br>Keep MCP/transport/bridge consumer checks green as Axi Coder grows.<br>... |
+| `40` | 未评估 | 低 | missing | handoff:unready<br>verify:cd /Volumes/code/workspace/foundation/axi-observability && PYTHONPATH=python python3 -m unittest discover -s python/axi_observability/tests -v \| cd /Volumes/code/workspace/foundation/axi-observability/go/axilog && go test ./... \| cd /Volumes/code/workspace/foundation/axi-observability/node/packages/observability-logging && pnpm test \| cd /Volumes/code/workspace/foundation/axi-observability/web && pnpm test \| /Volumes/code/workspace/scripts/workspace-project validate \| /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-audit.mjs<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `41` | 未评估 | 低 | missing | handoff:unready<br>verify:node /Volumes/code/workspace/foundation/workspace-governance/scripts/workspace-project-cli.mjs handoff-check axi-file-preview \| git -C /Volumes/code/workspace/candidates/axi-file-preview diff --check<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `42` | 可用 | 中 | missing | handoff:unready<br>verify:cargo test --workspace --manifest-path /Volumes/code/workspace/foundation/axi-workspace-rs/Cargo.toml<br>... | B-class remote surfaces stay Node-side until owner opt-in (docs/OWNER_DECISION_BACKLOG.md).<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
+| `5` | 可用 | 中 | missing | Relay and local smoke verification are registered in the workspace graph.<br>Axi Coder consumes Notify for mobile companion task and notification return paths.<br>... | Keep mobile workbench evidence and goal artifacts discoverable from project docs.<br>补齐 docs/project-docs.manifest.json 文档接入清单。<br>... |
+| `6` | 完成 | 高 | missing | README documents dev/build/preview and wallpaper MCP commands.<br>package.json exposes test, build, and mcp:wallpapers scripts.<br>... | polish/content expansion |
+| `7` | 可用 | 高 | missing | Root AGENTS.md, docs/HANDOFF.md, root CHANGE.md written on 2026-06-19.<br>foundation/workspace-governance/workspace.json has axi-pet-desktop entry.<br>... | Add GitHub remote + .github/workflows/* CI lane (P1, owner-approved).<br>Lock contract package version-sync workflow with axi-pet (P1).<br>... |
+| `8` | 未评估 | 低 | not-applicable | docs:not-applicable<br>handoff:not-applicable<br>... | - |
 
 ## 其他纳管项目
 
 | Project | Stage | Confidence | Docs | Evidence | Remaining |
 |---|---|---|---|---|---|
-| `ai-capability` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/ai-capability status --json<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `blinko` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `cockpit-tools` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `codex-app-projects` | 维护 | 高 | not-applicable | WORKSPACE_INDEX.md declares the root contract.<br>AGENTS.md declares that git work belongs to owning project repositories.<br>... | - |
-| `comfyui` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `ielts-vocab` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm --dir frontend verify:repo-guards \| python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `image2prompt` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `minimax-tokenplan` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `ollama-local` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `opencodex` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `pelagic` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm --dir /Volumes/code/workspace/candidates/pelagic build \| git -C /Volumes/code/workspace/candidates/pelagic diff --check<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `sports-management` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm test<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `story-graph` | 可用 | 高 | missing | products/story-graph/AGENTS.md<br>products/story-graph/docs/HANDOFF.md<br>... | Run the focused Python, Node, and viewer build verification from the canonical path.<br>Retire the rollback checkout only after owner acceptance.<br>... |
-| `sub2api` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
-| `tidewater-reference` | 未评估 | 低 | missing | handoff:unready<br>verify:test -f package.json \| test -f AGENTS.md<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
-| `voice-assistant-on-device-speech-recognition` | 未评估 | 中 | missing | incubation.json records full prototype evidence: sherpa-onnx transducer, StubChatEngine swap contract, TTS latency measurements, and promotion criteria<br>End-to-end loop measured 2026-09-18: median first-audio 2170ms, full loop median 2652ms on physical device<br>... | Replace StubChatEngine with real on-device LLM (e.g. Qwen2.5-0.5B-INT4)<br>Identify owning boundary (host/provider/project) for promoted runtime<br>... |
+| `0` | 维护 | 高 | not-applicable | WORKSPACE_INDEX.md declares the root contract.<br>AGENTS.md declares that git work belongs to owning project repositories.<br>... | - |
+| `10` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/ollama-local embed --model mxbai-embed-large:latest --text smoke<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `11` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/minimax-tokenplan tools<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `12` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm --dir frontend verify:repo-guards \| python -m pytest backend/tests/test_speech_transcribe.py backend/tests/test_speech_socketio.py<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `13` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm --dir /Volumes/code/workspace/candidates/pelagic build \| git -C /Volumes/code/workspace/candidates/pelagic diff --check<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `14` | 可用 | 高 | missing | products/story-graph/AGENTS.md<br>products/story-graph/docs/HANDOFF.md<br>... | Run the focused Python, Node, and viewer build verification from the canonical path.<br>Retire the rollback checkout only after owner acceptance.<br>... |
+| `17` | 未评估 | 低 | missing | handoff:unready<br>verify:pnpm test<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `18` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `19` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `20` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `21` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `22` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `23` | 未评估 | 低 | partial | docs:partial<br>handoff:unready<br>... | 补齐 VERIFICATION.md：verify 命令已声明但缺沉淀位置。运行 `node bin/axi-todo.mjs verify-log` 或 workspace-verification.mjs 生成。 |
+| `33` | 未评估 | 中 | missing | incubation.json records full prototype evidence: sherpa-onnx transducer, StubChatEngine swap contract, TTS latency measurements, and promotion criteria<br>End-to-end loop measured 2026-09-18: median first-audio 2170ms, full loop median 2652ms on physical device<br>... | Replace StubChatEngine with real on-device LLM (e.g. Qwen2.5-0.5B-INT4)<br>Identify owning boundary (host/provider/project) for promoted runtime<br>... |
+| `34` | 可用 | 低 | missing | handoff:unready | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `43` | 未评估 | 低 | missing | handoff:unready<br>verify:test -f package.json \| test -f AGENTS.md<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
+| `9` | 未评估 | 低 | missing | handoff:unready<br>verify:/Users/mose/.cc-connect/bin/ai-capability status --json<br>... | 补齐 docs/project-docs.manifest.json 文档接入清单。<br>补齐 TODO.md，让待办和里程碑可审计。<br>... |
 
 ## 备注
 

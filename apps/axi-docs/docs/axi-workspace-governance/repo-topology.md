@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-10-08
-modified: 2026-10-08
+created: 2026-10-11
+modified: 2026-10-11
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-10-08
+最后生成：2026-10-11
 
 ## 控制面
 
@@ -34,32 +34,32 @@ agent-readable: true
 
 - `C:\Users\12081\.openclaw` | OpenClaw Gateway | branch=`-` | canonical=yes | compliance=`external-infra`
   remote: https://github.com/axiomaticworld/openclaw-gateway
-- `foundation/axi-registry` | Axi Local Registry | branch=`dev` | canonical=yes | compliance=`node-single-repo`
+- `foundation/axi-registry` | Axi Local Registry | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/axiomaticworld/axi-registry.git
 
 ## Projects
 
 - `archive/axi-sports-management-app` | 体育管理应用 | branch=`dev` | canonical=yes | compliance=`polyrepo-mixed-stack`
   remote: https://github.com/MoseLu/axi-sports-management-app.git
-- `foundation/axi-apps` | Axi Applications | branch=`dev` | canonical=yes | compliance=`axi-apps`
+- `foundation/axi-apps` | Axi Applications | branch=`agent/m18-fix-2-apps` | canonical=yes | compliance=`axi-apps`
   remote: https://github.com/MoseLu/axi-apps.git
-- `foundation/axi-inbox` | Axi Inbox | branch=`dev` | canonical=yes | compliance=`axi-inbox`
+- `foundation/axi-inbox` | Axi Inbox | branch=`agent/m18-fix-2-inbox` | canonical=yes | compliance=`axi-inbox`
   remote: https://github.com/MoseLu/axi-inbox.git
-- `foundation/axi-kernel` | Axi Kernel | branch=`dev` | canonical=yes | compliance=`object-registry`
+- `foundation/axi-kernel` | Axi Kernel | branch=`agent/m18-fix-2-kernel` | canonical=yes | compliance=`object-registry`
   remote: https://github.com/MoseLu/axi-kernel.git
-- `foundation/axi-notify` | Axi Notify | branch=`dev` | canonical=yes | compliance=`android-fullstack`
+- `foundation/axi-notify` | Axi Notify | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`android-fullstack`
   remote: https://github.com/MoseLu/axi-notify.git
-- `foundation/axi-runtime` | Axi Governance Runtime | branch=`dev` | canonical=yes | compliance=`axi-runtime`
+- `foundation/axi-runtime` | Axi Governance Runtime | branch=`agent/m18-fix-2-runtime` | canonical=yes | compliance=`axi-runtime`
   remote: https://github.com/MoseLu/axi-runtime.git
-- `foundation/axi-sync` | Axi Change Sync | branch=`dev` | canonical=yes | compliance=`axi-sync`
+- `foundation/axi-sync` | Axi Change Sync | branch=`agent/m18-fix-2-sync` | canonical=yes | compliance=`axi-sync`
   remote: https://github.com/MoseLu/axi-sync.git
-- `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`dev` | canonical=yes | compliance=`personal-os-cli`
+- `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`agent/m18-fix-2-wbcli` | canonical=yes | compliance=`personal-os-cli`
   remote: https://github.com/MoseLu/axi-workbench-cli.git
-- `workbench/axi-image-preview` | Axi Image Preview | branch=`dev` | canonical=yes | compliance=`node-single-repo`
+- `workbench/axi-image-preview` | Axi Image Preview | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/MoseLu/axi-image-preview.git
-- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`agent/audit-fix-a02-pet-desktop-lockfile` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
-- `workbench/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-workbench` | Axi Workbench | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
@@ -68,19 +68,21 @@ agent-readable: true
   remote: https://github.com/MoseLu/Axi-Soul-World.git
 - `products/ielts-vocab` | IELTS Vocabulary | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/ielts-vocab.git
-- `products/story-graph` | Story Graph | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `products/story-graph` | Story Graph | branch=`perf/20261010-evidence-store-no-n-plus-1` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/story-graph.git
 
 ## Shared
 
-- `foundation/axi-observability` | Axi Observability | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `foundation/axi-observability` | Axi Observability | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-observability.git
-- `foundation/axi-rules` | Axi Rules | branch=`dev` | canonical=yes | compliance=`constraint-index`
+- `foundation/axi-rules` | Axi Rules | branch=`perf/20261010-validate-skip-self-repo` | canonical=yes | compliance=`constraint-index`
   remote: https://github.com/MoseLu/axi-rules.git
-- `foundation/axi-skills` | Axi Skills | branch=`dev` | canonical=yes | compliance=`agent-skill-catalog`
+- `foundation/axi-skills` | Axi Skills | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`agent-skill-catalog`
   remote: https://github.com/MoseLu/axi-skills.git
-- `foundation/axi-ui` | Axi UI | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `foundation/axi-ui` | Axi UI | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-ui.git
+- `foundation/axi-workspace-rs` | Axi Workspace Rust Monorepo | branch=`dev` | canonical=yes | compliance=`rust-cargo-workspace`
+  remote: https://github.com/MoseLu/axi-workspace-rs.git
 
 ## Tools
 
