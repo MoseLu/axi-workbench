@@ -12,16 +12,11 @@ This AGENTS.md scopes guidance to `docs`. Parent AGENTS guidance still applies u
 ## Current Layout
 
 ### Files
-- `01-overview.md`
-- `02-architecture.md`
-- `03-frontend.md`
-- `04-backend.md`
-- `05-ai-layer.md`
-- `06-infrastructure.md`
-- `07-docs-project.md`
-- `08-todo.md`
+- `00-product-overview.md`（合并后的 canonical 文档；§1–§8 锚点取代 8 份旧产品文档）
 - `agent-swarm-kb-integration.md`
 - `README.md`
+
+> 旧 8 份产品文档（`01-overview.md` ~ `08-todo.md`）已于 2026-09-27 合并为 [`00-product-overview.md`](./00-product-overview.md)，物理文件已被合并文档取代；具体章节请使用 `00-product-overview.md` 的 §1–§8 锚点。
 
 ### Subdirectories
 - `logs/`

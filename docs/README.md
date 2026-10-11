@@ -9,16 +9,18 @@
 
 > 当前物理源码角色、主入口和根 workspace membership 以 [`architecture/source-catalog.md`](./architecture/source-catalog.md) 为准；本目录中的早期架构设计文档保留历史设计背景，不作为目录结构的唯一事实源。
 
-| 章节 | 文件 | 核心内容 |
-|------|------|----------|
-| 第一章 | [01-overview.md](./01-overview.md) | 平台简介、设计原则、技术选型 |
-| 第二章 | [02-architecture.md](./02-architecture.md) | 总架构、分层模型、数据流、通信矩阵 |
-| 第三章 | [03-frontend.md](./03-frontend.md) | Turborepo、所有前端应用与共享包 |
-| 第四章 | [04-backend.md](./04-backend.md) | 六个后端服务详细设计 |
-| 第五章 | [05-ai-layer.md](./05-ai-layer.md) | RAG 知识库、Agent 协作平台 |
-| 第六章 | [06-infrastructure.md](./06-infrastructure.md) | Docker、K8s、CI/CD、监控、安全 |
-| 第七章 | [07-docs-project.md](./07-docs-project.md) | Docusaurus 文档站、API 规范、ADR |
-| 第八章 | [08-todo.md](./08-todo.md) | 完整 TODO 清单（1020 项） |
+| 章节 | 合并后入口 | 核心内容 |
+|------|----------|----------|
+| §1 Overview | [00-product-overview.md §1](./00-product-overview.md#1-overview) | 平台简介、设计原则、技术选型 |
+| §2 Architecture | [00-product-overview.md §2](./00-product-overview.md#2-architecture) | 总架构、分层模型、数据流、通信矩阵 |
+| §3 Frontend | [00-product-overview.md §3](./00-product-overview.md#3-frontendappsworkbench--appsworkbench-mobile--共享包) | Turborepo、所有前端应用与共享包 |
+| §4 Backend | [00-product-overview.md §4](./00-product-overview.md#4-backendservices) | 六个后端服务详细设计 |
+| §5 AI Layer | [00-product-overview.md §5](./00-product-overview.md#5-ai-layer) | RAG 知识库、Agent 协作平台 |
+| §6 Infrastructure | [00-product-overview.md §6](./00-product-overview.md#6-infrastructure) | Docker、K8s、CI/CD、监控、安全 |
+| §7 Docs Project | [00-product-overview.md §7](./00-product-overview.md#7-docs-projectappsaxi-docs-已接管) | Docusaurus 文档站、API 规范、ADR |
+| §8 TODO 状态（已封存） | [00-product-overview.md §8](./00-product-overview.md#8-todo-状态已封存) | 完整 TODO 清单（已合并封存） |
+
+> 8 份产品文档（`01-overview.md` ~ `08-todo.md`）已于 2026-09-27 合并为 [`00-product-overview.md`](./00-product-overview.md)；旧文件保留在仓库历史中，物理文件已被合并文档取代。
 | 现行产品定位 | [state/PRD.md](./state/PRD.md) | Web 控制中心、Mobile 角色执行端与专业工具的分层；定义动作等级、能力归属与跨端交接 |
 | 运行规约 | [rules/epap-six-layer-sop.md](./rules/epap-six-layer-sop.md) | 六层控制面 SOP、AGENT/MEMORY/SOUL/HEARTBEAT/DOCS 边界 |
 | 项目文档系统 | [rules/epap-project-doc-agent-sop.md](./rules/epap-project-doc-agent-sop.md) | 每个项目的 README/AGENTS/CHANGELOG/MILESTONE/TODO/PRD/TDD/MEMORY 接入方式 |
@@ -41,11 +43,11 @@ AI        LangChain · Qdrant · Anthropic Claude · RAG · Multi-Agent
 
 ## 快速导航
 
-- 想了解平台整体？→ [第二章 总架构](./02-architecture.md)
-- 想开发前端？→ [第三章 前端层](./03-frontend.md)
-- 想开发后端服务？→ [第四章 后端层](./04-backend.md)
-- 想做 AI 功能？→ [第五章 AI 能力层](./05-ai-layer.md)
-- 想部署运维？→ [第六章 基础设施](./06-infrastructure.md)
-- 想知道要做什么？→ [第八章 TODO 清单](./08-todo.md)
+- 想了解平台整体？→ [§2 Architecture](./00-product-overview.md#2-architecture)
+- 想开发前端？→ [§3 Frontend](./00-product-overview.md#3-frontendappsworkbench--appsworkbench-mobile--共享包)
+- 想开发后端服务？→ [§4 Backend](./00-product-overview.md#4-backendservices)
+- 想做 AI 功能？→ [§5 AI Layer](./00-product-overview.md#5-ai-layer)
+- 想部署运维？→ [§6 Infrastructure](./00-product-overview.md#6-infrastructure)
+- 想知道要做什么？→ [§8 TODO 状态](./00-product-overview.md#8-todo-状态已封存)
 - 想修改 IM/通信/控制面/Agent/记忆/文档/心跳工作流？→ [六层控制面 SOP](./rules/epap-six-layer-sop.md)
 - 想让某个项目接入文档系统 agent？→ [项目文档系统 Agent SOP](./rules/epap-project-doc-agent-sop.md)

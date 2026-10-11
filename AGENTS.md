@@ -33,7 +33,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 | `tools/axi-app-cli/` | 是 | Axi 应用脚手架 CLI（独立子 monorepo），以 `tools/axi-app-cli/AGENTS.md` / `README.md` 为权威入口；**不引用**子包内 `README.md` |
 | `ai/` | 是 | 知识库 / Agent Platform 集成层（`ai/AGENTS.md`） |
 | `prompts/` | 是 | Prompt 分层底座（system / global / projects），`prompts/AGENTS.md` 与 `prompts/README.md` 详述 |
-| `docs/` | 是 | 项目文档（`01-overview.md` ~ `08-todo.md`、`rules/`、`templates/`、`project-docs.manifest.json`） |
+| `docs/` | 是 | 项目文档（canonical [`docs/00-product-overview.md`](docs/00-product-overview.md) §1–§8 锚点取代 8 份旧产品文档；`rules/`、`templates/`、`project-docs.manifest.json`） |
 | `infra/fleet-console/` | 是 | Fleet Console 物理服务管理 |
 | `infra/helm/` | 是 | Helm chart（axi-workbench-platform 部署单元，`infra/helm/README.md` 权威入口） |
 | `backend/` | 是 | 嵌入式 Python runtime（`mini_agent/` + `local_server/`，非根 pnpm member；见 `backend/AGENTS.md`） |
@@ -74,7 +74,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 ## Cross-Project Boundary
 
 - **不翻译**：`references/*`、`references/archives/*`、`infra/axi-workspace-governance/references/*`、`infra/axi-workspace-governance/temp/*`。
-- **不复制内容到本项目**：工作区其他项目的 README、AGENTS、ADR 都不应被原样搬入 `docs/`。本项目只承载「Axi Workbench 自身」的 8 份产品文档（`01-overview.md` ~ `08-todo.md`）+ 规则 + 模板。
+- **不复制内容到本项目**：工作区其他项目的 README、AGENTS、ADR 都不应被原样搬入 `docs/`。本项目只承载「Axi Workbench 自身」的合并产品文档 [`docs/00-product-overview.md`](docs/00-product-overview.md)（§1–§8 锚点取代 8 份旧产品文档）+ 规则 + 模板。
 - **不假装是源**：`docs/rules/epap-six-layer-sop.md` 等规则文件已迁移到本仓库；治理侧若再出现同名文件，应回写到本仓库并重新生成镜像。
 - **可消费**：通过 workspace graph（`workspace-project`）查询 `axi-workbench` 的 `consumes` / `consumers` / `provides` / `contracts`；不要在业务代码里硬编码跨项目绝对路径。
 - **可被消费**：本项目以 `IMEnvelope` / `AgentTask` 协议、`@axi/workstation-control-plane` 等共享包、Dashboard Apps `pnpm typecheck` 验证入口形式对外提供工作台能力；下游消费者（其他 Axi Dashboard Apps、AI 代理、CC-Connect）应通过这些契约入口接入。
@@ -231,7 +231,7 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 
 ### manifest 状态说明
 
-`docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + `docs/08-todo.md`**，不依赖 manifest 列出的状态文档。
+`docs/project-docs.manifest.json` 的 `status: legacy` 表示：本仓库的 `docs/state/CHANGELOG.md` / `docs/state/TODO.md` / `docs/state/MILESTONE.md` 等状态/合同类文档**仍待按 plan 补齐完整入口**。Owner 决定补齐顺序前，本仓库的可审计变更请**直接走 commit 记录 + [`docs/00-product-overview.md` §8 TODO 状态](docs/00-product-overview.md#8-todo-状态已封存)**，不依赖 manifest 列出的状态文档。
 
 ## Recent Changes
 

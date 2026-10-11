@@ -35,7 +35,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 | `tools/axi-app-cli/` | yes | Axi app scaffolding CLI (standalone sub-monorepo); the authoritative entry points are `tools/axi-app-cli/AGENTS.md` / `README.md`; **do not cite** sub-package `README.md` |
 | `ai/` | yes | Knowledge base / Agent Platform integration layer (`ai/AGENTS.md`) |
 | `prompts/` | yes | Prompt layered foundation (system / global / projects), detailed in `prompts/AGENTS.md` and `prompts/README.md` |
-| `docs/` | yes | Project docs (`01-overview.md` ~ `08-todo.md`, `rules/`, `templates/`, `project-docs.manifest.json`) |
+| `docs/` | yes | Project docs (canonical [`docs/00-product-overview.md`](docs/00-product-overview.md) §1–§8 anchors replace the 8 legacy product docs; `rules/`, `templates/`, `project-docs.manifest.json`) |
 | `infra/fleet-console/` | yes | Fleet Console physical service management |
 | `infra/helm/` | yes | Helm chart (axi-workbench-platform deployment unit; authoritative entry `infra/helm/README.md`) |
 | `backend/` | yes | Embedded Python runtime (`mini_agent/` + `local_server/`; not a root pnpm member; see `backend/AGENTS.md`) |
@@ -74,7 +74,7 @@ Axi Workbench is the **"AxiomaticWorld (公理世界) Workbench"** — the canon
 ## Cross-Project Boundary
 
 - **Do not translate**: `references/*`, `references/archives/*`, `infra/axi-workspace-governance/references/*`, `infra/axi-workspace-governance/temp/*`.
-- **Do not copy content into this project**: README, AGENTS, and ADR files from other workspace projects must not be moved verbatim into `docs/`. This project only carries the 8 product documents of "Axi Workbench itself" (`01-overview.md` ~ `08-todo.md`) + rules + templates.
+- **Do not copy content into this project**: README, AGENTS, and ADR files from other workspace projects must not be moved verbatim into `docs/`. This project only carries the merged product document [`docs/00-product-overview.md`](docs/00-product-overview.md) (§1–§8 anchors replace the 8 legacy product docs) + rules + templates.
 - **Do not pretend to be the source**: rule files such as `docs/rules/epap-six-layer-sop.md` have already been migrated into this repo; if a same-named file reappears on the governance side, write back into this repo and regenerate the mirror.
 - **Consumable**: query the `consumes` / `consumers` / `provides` / `contracts` of `axi-workbench` through the workspace graph (`workspace-project`); do not hard-code cross-project absolute paths in business code.
 - **Consumed by**: this project exposes the workbench capability to the outside world through the `IMEnvelope` / `AgentTask` protocol, shared packages such as `@axi/workstation-control-plane`, and the Dashboard Apps `pnpm typecheck` verification entry; downstream consumers (other Axi Dashboard Apps, AI agents, CC-Connect) must connect through these contract entry points.
@@ -203,4 +203,4 @@ When testing user-visible behavior, use the layered verification ladder:
 
 ### manifest status note
 
-The `status: legacy` in `docs/project-docs.manifest.json` means that the state/contract documents under `docs/state/` (`CHANGELOG.md` / `TODO.md` / `MILESTONE.md`) **still await a complete entry-point rollout per the plan**. Until the owner decides the completion order, the auditable changes of this repo must **go directly through the commit log + `docs/08-todo.md`**, and must not rely on the state documents listed by the manifest.
+The `status: legacy` in `docs/project-docs.manifest.json` means that the state/contract documents under `docs/state/` (`CHANGELOG.md` / `TODO.md` / `MILESTONE.md`) **still await a complete entry-point rollout per the plan**. Until the owner decides the completion order, the auditable changes of this repo must **go directly through the commit log + [`docs/00-product-overview.md` §8 TODO status](docs/00-product-overview.md#8-todo-状态已封存)**, and must not rely on the state documents listed by the manifest.
