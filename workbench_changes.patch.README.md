@@ -1,10 +1,12 @@
 # workbench_changes.patch — Status Annotation (M18 audit)
 
-**File**: `workbench_changes.patch` (481 KB tracked)
+**File**: `archive/workbench_changes-2026-09-26.patch` (481 KB tracked)
 **Audit wave**: M18-doc-audit (2026-10-11)
 **Finding ID**: M18-42
 
-## Status: PARTIALLY APPLIED — RETAIN PENDING OWNER DECISION
+## Status: PARTIALLY APPLIED — ARCHIVED (Option A executed 2026-10-12)
+
+**Decision executed 2026-10-12 (post-M18 remediation wave R1 agent A, delegated default)**: the patch was moved to `archive/workbench_changes-2026-09-26.patch` via `git mv` (content preserved byte-for-byte, history preserved). The owner-decision checklist below is retained as historical record; Option A is done. The original apply-check numbers were measured against the pre-move tree root and still describe the patch content.
 
 `git apply --check workbench_changes.patch` produces **119 errors** (from 74 hunks):
 
@@ -25,10 +27,10 @@ Per M18 audit summary §B "提交分支 / 文件状态错误（需 owner 决策�
 - [ ] Run `git apply --reverse --check workbench_changes.patch` to see how much was already merged
 - [ ] Identify the 49 "No such file or directory" hunks — confirm whether those files were intentionally moved/deleted (then archive patch) or accidentally lost (then re-apply)
 - [ ] Compare against `git log --oneline --since="2026-09-26"` (patch mtime) — any patch hunks that were already committed via a separate route?
-- [ ] Decide:
-    - **Option A — Archive**: move to `archive/workbench_changes-2026-09-26.patch/` with timestamp, `git rm` from tree
-    - **Option B — Forward**: regenerate a clean patch from current HEAD, drop this stale artifact
-    - **Option C — Retain**: keep as historical reference, document in `docs/HANDOFF.md`
+- [x] Decide:
+    - **Option A — Archive (DONE 2026-10-12)**: moved to `archive/workbench_changes-2026-09-26.patch` with timestamp via `git mv`, `git rm` from tree root unnecessary (move preserves history)
+    - Option B — Forward: not taken
+    - Option C — Retain: superseded by Option A; this README remains as the historical reference
 
 ## This annotation
 
