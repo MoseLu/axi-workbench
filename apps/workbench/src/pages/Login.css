@@ -1799,6 +1799,7 @@ body.axi-tauri-shell .axi-login-drag-region {
 
 .axi-login-account .axi-login-form--password .axi-login-form__row--input {
   height: 2.375rem;
+  margin-top: var(--space-2_5);
 }
 
 .axi-login-account .axi-login-form--password .axi-login-form__row--input input {

@@ -670,6 +670,24 @@ test('desktop shell uses a compact undecorated login window', async ({ page }) =
   expect(layout.consentRadius).toBe('999px');
 });
 
+test('desktop password fields have readable vertical spacing', async ({ page }) => {
+  await page.setViewportSize({ width: 380, height: 440 });
+  await mockUnauthenticated(page);
+  await openAccountLogin(page);
+  await page.evaluate(() => document.body.classList.add('axi-tauri-shell'));
+  await page.locator('.axi-login-form--email .axi-login-form-switch').click();
+  const email = await page.locator('.axi-login-form--password .axi-login-form__row--email').boundingBox();
+  const password = await page.locator('.axi-login-form--password .axi-login-form__row--input').boundingBox();
+  expect(email).not.toBeNull();
+  expect(password).not.toBeNull();
+  expect(password!.y - (email!.y + email!.height)).toBeGreaterThanOrEqual(12);
+  const login = await page.locator('.axi-login-form--password .axi-login-button').boundingBox();
+  const social = await page.locator('.axi-login-social-placeholders').boundingBox();
+  expect(login).not.toBeNull();
+  expect(social).not.toBeNull();
+  expect(login!.y + login!.height).toBeLessThan(social!.y);
+});
+
 test('expired QR keeps a readable scrim without desktop traffic lights', async ({ page }) => {
   await page.route('**/api/v1/sessions/current*', (route) => route.fulfill({
     status: 401,
