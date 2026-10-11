@@ -4,7 +4,7 @@
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder},
     tray::{TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Listener, Manager, RunEvent, WindowEvent,
+    AppHandle, Emitter, Listener, LogicalSize, Manager, RunEvent, Size, WindowEvent,
 };
 
 use serde::Deserialize;
@@ -773,6 +773,7 @@ fn switch_to_main(app: &AppHandle) {
         let _ = login.hide();
     }
     if let Some(main) = app.get_webview_window("main") {
+        restore_main_window_size(&main);
         let _ = main.show();
         let _ = main.unminimize();
         let _ = main.set_focus();
@@ -787,11 +788,20 @@ fn switch_to_startup_loading(app: &AppHandle) {
         let _ = login.hide();
     }
     if let Some(main) = app.get_webview_window("main") {
+        restore_main_window_size(&main);
         let _ = main.eval("window.history.replaceState({}, '', '/loading'); window.dispatchEvent(new PopStateEvent('popstate'));");
         let _ = main.show();
         let _ = main.unminimize();
         let _ = main.set_focus();
     }
+}
+
+/// 登录恢复和单实例唤醒都可能复用一个被用户缩小过的主窗。
+/// 主工作台必须回到产品定义的可用尺寸，不能沿用登录窗的 380×440 尺寸。
+fn restore_main_window_size(window: &tauri::WebviewWindow) {
+    let _ = window.set_resizable(true);
+    let _ = window.set_size(Size::Logical(LogicalSize::new(1280.0, 800.0)));
+    let _ = window.center();
 }
 
 /// 关闭 main 窗、显示 login 窗。
