@@ -1392,6 +1392,11 @@ body.axi-tauri-shell .axi-login-card__body.is-quick {
   padding-bottom: 22px;
 }
 
+body.axi-tauri-shell .axi-login-card__body.is-account {
+  padding-top: 51px;
+  padding-bottom: 9px;
+}
+
 body.axi-tauri-shell .axi-login-qr-column,
 body.axi-tauri-shell .axi-login-right {
   transform: none;

@@ -681,6 +681,7 @@ test('desktop password fields have readable vertical spacing', async ({ page }) 
   const password = await page.locator('.axi-login-form--password .axi-login-form__row--input').boundingBox();
   expect(email).not.toBeNull();
   expect(password).not.toBeNull();
+  expect(email!.y).toBeGreaterThanOrEqual(118);
   expect(password!.y - (email!.y + email!.height)).toBeGreaterThanOrEqual(12);
   const login = await page.locator('.axi-login-form--password .axi-login-button').boundingBox();
   const social = await page.locator('.axi-login-social-placeholders').boundingBox();

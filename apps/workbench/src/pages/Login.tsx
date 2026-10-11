@@ -964,7 +964,7 @@ const Login: React.FC = () => {
             )}
           </div>
         )}
-        <div className={`axi-login-card__body${loginSurface === 'quick' ? ' is-quick' : ''}`}>
+        <div className={`axi-login-card__body${loginSurface === 'quick' ? ' is-quick' : loginSurface === 'account' ? ' is-account' : ''}`}>
           {loginSurface === 'account' && (
             <button
               type="button"
