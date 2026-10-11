@@ -977,30 +977,6 @@ const Login: React.FC = () => {
             </button>
           )}
 
-          {loginSurface !== 'quick' && (
-            <div className="axi-login-mode-tabs" role="tablist" aria-label={t('auth.login.modeTabs')}>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={loginSurface === 'account'}
-                className={`axi-login-mode-tab${loginSurface === 'account' ? ' is-active' : ''}`}
-                onClick={() => handleLoginSurfaceChange('account')}
-              >
-                {t('auth.login.modeAccount')}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={loginSurface === 'qr'}
-                className={`axi-login-mode-tab${loginSurface === 'qr' ? ' is-active' : ''}`}
-                onClick={() => handleLoginSurfaceChange('qr')}
-              >
-                {t('auth.login.modeQr')}
-              </button>
-            </div>
-          )}
-
-
           <div className={`axi-login-entry-panel is-${loginSurface}`}>
             {loginSurface === 'quick' ? (
               <section className="axi-login-quick" aria-label={t('auth.login.quickLogin')}>

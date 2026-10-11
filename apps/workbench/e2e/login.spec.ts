@@ -674,6 +674,7 @@ test('desktop password fields have readable vertical spacing', async ({ page }) 
   await page.setViewportSize({ width: 380, height: 440 });
   await mockUnauthenticated(page);
   await openAccountLogin(page);
+  await expect(page.getByRole('tablist', { name: '选择登录方式' })).toHaveCount(0);
   await page.evaluate(() => document.body.classList.add('axi-tauri-shell'));
   await page.locator('.axi-login-form--email .axi-login-form-switch').click();
   const email = await page.locator('.axi-login-form--password .axi-login-form__row--email').boundingBox();
