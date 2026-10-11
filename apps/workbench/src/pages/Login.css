@@ -1746,8 +1746,8 @@ body.axi-tauri-shell .axi-login-drag-region {
  * is shorter, while password mode is denser, so neither state can move the
  * social row and consent block below it. */
 .axi-login-account .axi-login-form-slot {
-  height: 9.25rem;
-  flex: 0 0 9.25rem;
+  height: 10rem;
+  flex: 0 0 10rem;
 }
 
 .axi-login-account .axi-login-form--email .axi-login-form__row--email {
@@ -1775,11 +1775,11 @@ body.axi-tauri-shell .axi-login-drag-region {
 }
 
 .axi-login-account .axi-login-form--password .axi-login-form-options {
-  margin-top: var(--space-0_5);
+  margin-top: var(--space-2);
 }
 
 .axi-login-account .axi-login-form--password .axi-login-button {
-  margin-top: 0;
+  margin-top: var(--space-1_5);
 }
 
 /* The code form has an extra delivery-status row. Keep its submit action on

@@ -685,8 +685,12 @@ test('desktop password fields have readable vertical spacing', async ({ page }) 
   expect(password!.y - (email!.y + email!.height)).toBeGreaterThanOrEqual(12);
   const login = await page.locator('.axi-login-form--password .axi-login-button').boundingBox();
   const social = await page.locator('.axi-login-social-placeholders').boundingBox();
+  const options = await page.locator('.axi-login-form--password .axi-login-form-options').boundingBox();
   expect(login).not.toBeNull();
   expect(social).not.toBeNull();
+  expect(options).not.toBeNull();
+  expect(options!.y - (password!.y + password!.height)).toBeGreaterThanOrEqual(8);
+  expect(login!.y - (options!.y + options!.height)).toBeGreaterThanOrEqual(6);
   expect(login!.y + login!.height).toBeLessThan(social!.y);
 });
 
