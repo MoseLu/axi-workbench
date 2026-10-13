@@ -14,7 +14,12 @@ try {
   await build({
     root: appRoot,
     configFile: resolve(appRoot, 'vite.config.ts'),
-    ssr: { noExternal: ['react', 'react-dom', 'react-router-dom'] },
+    // react-router-dom v7 bundles as CJS and internally does
+    // `require('react-router/dom')`. The bare 'react-router' sub-path is what
+    // Node must resolve at runtime; noExternal must include every specifier
+    // the graph transitively requires, otherwise Vite leaves the helper
+    // external and the SSR entry throws MODULE_NOT_FOUND for `react-router/dom`.
+    ssr: { noExternal: ['react', 'react-dom', 'react-router', 'react-router-dom'] },
     build: {
       ssr: resolve(appRoot, 'src/legal-ssr-entry.tsx'),
       outDir: ssrRoot,

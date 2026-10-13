@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx",
-    "e2e": "playwright test -c playwright.config.ts"
+    "e2e": "playwright test -c playwright.config.ts",
+    "check:bundle": "node scripts/check-bundle-size.mjs",
+    "build:analyze": "ANALYZE_BUNDLE=1 pnpm build"
   },
   "dependencies": {
     "@axi/api-client": "workspace:*",
@@ -49,6 +51,7 @@
     "@vitest/coverage-v8": "^3.2.7",
     "jsdom": "^29.1.1",
     "playwright": "^1.60.0",
+    "rollup-plugin-visualizer": "^7.1.1",
     "typescript": "^5.3.3",
     "vite": "^5.4.21",
     "vitest": "^3.2.6"
