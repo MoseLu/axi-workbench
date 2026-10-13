@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-10-11
-modified: 2026-10-11
+created: 2026-10-13
+modified: 2026-10-13
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-10-11
+最后生成：2026-10-13
 
 ## 控制面
 
@@ -41,17 +41,17 @@ agent-readable: true
 
 - `archive/axi-sports-management-app` | 体育管理应用 | branch=`dev` | canonical=yes | compliance=`polyrepo-mixed-stack`
   remote: https://github.com/MoseLu/axi-sports-management-app.git
-- `foundation/axi-apps` | Axi Applications | branch=`agent/m18-fix-2-apps` | canonical=yes | compliance=`axi-apps`
+- `foundation/axi-apps` | Axi Applications | branch=`dev` | canonical=yes | compliance=`axi-apps`
   remote: https://github.com/MoseLu/axi-apps.git
-- `foundation/axi-inbox` | Axi Inbox | branch=`agent/m18-fix-2-inbox` | canonical=yes | compliance=`axi-inbox`
+- `foundation/axi-inbox` | Axi Inbox | branch=`dev` | canonical=yes | compliance=`axi-inbox`
   remote: https://github.com/MoseLu/axi-inbox.git
 - `foundation/axi-kernel` | Axi Kernel | branch=`agent/m18-fix-2-kernel` | canonical=yes | compliance=`object-registry`
   remote: https://github.com/MoseLu/axi-kernel.git
 - `foundation/axi-notify` | Axi Notify | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`android-fullstack`
   remote: https://github.com/MoseLu/axi-notify.git
-- `foundation/axi-runtime` | Axi Governance Runtime | branch=`agent/m18-fix-2-runtime` | canonical=yes | compliance=`axi-runtime`
+- `foundation/axi-runtime` | Axi Governance Runtime | branch=`dev` | canonical=yes | compliance=`axi-runtime`
   remote: https://github.com/MoseLu/axi-runtime.git
-- `foundation/axi-sync` | Axi Change Sync | branch=`agent/m18-fix-2-sync` | canonical=yes | compliance=`axi-sync`
+- `foundation/axi-sync` | Axi Change Sync | branch=`dev` | canonical=yes | compliance=`axi-sync`
   remote: https://github.com/MoseLu/axi-sync.git
 - `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`agent/m18-fix-2-wbcli` | canonical=yes | compliance=`personal-os-cli`
   remote: https://github.com/MoseLu/axi-workbench-cli.git

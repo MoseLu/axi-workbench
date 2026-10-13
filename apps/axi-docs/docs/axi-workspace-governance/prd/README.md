@@ -65,11 +65,12 @@ L3 迭代 PRD ……… 项目内 docs/sprints/，轻量、完成后归档
 |---|---|---|---|---|
 | Axi Workbench | [workbench/axi-workbench/PRD.md](../../workbench/axi-workbench/PRD.md) | Active | 2026-09-20 | 根为 stub，权威在 `docs/state/PRD.md` |
 | Axi Pet Desktop | [workbench/axi-pet-desktop/PRD.md](../../workbench/axi-pet-desktop/PRD.md) | Active | 2026-09-24 | |
-| Axi Agent | [agent-cluster/axi-agent/docs/PRD.md](../../agent-cluster/axi-agent/docs/PRD.md) | Active | 2026-09-17 | 英文，FR/AC 结构 |
-| Axi Rules | [foundation/axi-rules/PRD.md](../../foundation/axi-rules/PRD.md) | Active | 2026-09-24 | |
-| Axi UI | [foundation/axi-ui/PRD.md](../../foundation/axi-ui/PRD.md) | Active | 2026-09-24 | |
-| Axi Registry | [foundation/axi-registry/PRD.md](../../foundation/axi-registry/PRD.md) | Active | 2026-09-24 | |
-| Axi Skills | [foundation/axi-skills/docs/PRD.md](../../foundation/axi-skills/docs/PRD.md) | Active | 2026-08-22 | |
+| Axi Agent | [agent-cluster/axi-agent/PRD.md](../../agent-cluster/axi-agent/PRD.md) | Active | 2026-09-17 | 英文，FR/AC 结构；2026-10-13 镜像自 docs/state/PRD.md |
+| Axi Rules | [foundation/axi-rules/PRD.md](../../foundation/axi-rules/PRD.md) | Active | 2026-09-24 | 2026-10-13 镜像自 docs/state/PRD-v1.1-full-2026-09-27.md |
+| Axi UI | [foundation/axi-ui/PRD.md](../../foundation/axi-ui/PRD.md) | Active | 2026-09-24 | 2026-10-13 镜像自 docs/axi-ui/PRD.md |
+| Axi Registry | [foundation/axi-registry/PRD.md](../../foundation/axi-registry/PRD.md) | Active | 2026-09-24 | 2026-10-13 镜像自 docs/state/PRD.md |
+| Axi Skills | [foundation/axi-skills/PRD.md](../../foundation/axi-skills/PRD.md) | Active | 2026-08-22 | 2026-10-13 镜像自 docs/state/PRD.md |
+| Axi Notify | [foundation/axi-notify/PRD.md](../../foundation/axi-notify/PRD.md) | Active | 2026-09-25 | 2026-10-13 镜像自 docs/state/PRD.md |
 | Axi Soul World | [products/axi-soul-world/PRD.md](../../products/axi-soul-world/PRD.md) | Active | 2026-09-24 | |
 | Story Graph（专题 1） | [products/story-graph/PRD_时间线叙事人物关系图谱.md](../../products/story-graph/PRD_时间线叙事人物关系图谱.md) | Active | 2026-08-05 | 专题 PRD |
 | Story Graph（专题 2） | [products/story-graph/PRD_MINIMAX_人物关系图谱完善.md](../../products/story-graph/PRD_MINIMAX_人物关系图谱完善.md) | Active | 2026-08-05 | 专题 PRD |
