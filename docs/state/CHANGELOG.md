@@ -6,6 +6,7 @@ All notable local changes to axi Workbench are tracked here.
 
 ### Changed
 
+- 2026-09-28：Cross-Doc Alignment：`docs/architecture/axi-workbench-architecture.md` 已于 2026-09-28 归档到 `docs/architecture/_archive/2026-09-28-coverage-audit/axi-workbench-architecture.md`（superseded_by 本项目 AGENTS.md）。本项目权威架构以 `AGENTS.md` / `docs/state/PRD.md` / `docs/architecture/source-catalog.md` 为准，根级 L1 图不再维护。HANDOFF.md Cross-Doc Alignment 注脚待 m18 批次合入时由工作台 owner 同步。
 - 2026-10-12：恢复密码登录表单内部纵向节奏：密码框到自动登录行至少 8px，自动登录行到登录按钮至少 6px，并扩展表单占位高度避免挤压下方图标。
 - 2026-10-12：修复 Mac 客户端恢复会话后主工作台沿用异常小窗口尺寸的问题；主窗口在启动、登录恢复和单实例唤醒时统一恢复为 1280×800 并居中，登录窗口仍保持 380×440。
 - 2026-10-12：按原始 Mac 登录截图恢复账号登录页的纵向留白，将账号模式内容整体下移约 15px，保留邮箱与密码输入框 12px 间距。
