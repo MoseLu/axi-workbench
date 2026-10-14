@@ -203,7 +203,7 @@ test("app-registry.tsx declares every required role and visibility branch", asyn
 });
 
 test("Shell passes authenticated user.role directly without fallback", async () => {
-  const shellSource = await readFile(path.join(projectRoot, "src", "app-shell", "Shell.tsx"), "utf8");
+  const shellSource = await readFile(path.join(projectRoot, "src", "app-shell", "Shell", "index.tsx"), "utf8");
 
   assert.doesNotMatch(
     shellSource,

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 test("tabbar fullscreen uses shared content expansion instead of app-level fullscreen overlay", async () => {
-  const shellSource = await readFile(path.join(projectRoot, "src", "app-shell", "Shell.tsx"), "utf8");
+  const shellSource = await readFile(path.join(projectRoot, "src", "app-shell", "Shell", "index.tsx"), "utf8");
   const sidebarStyles = await readFile(path.join(projectRoot, "src", "styles", "sidebar-layout.scss"), "utf8");
 
   assert.match(shellSource, /contentFullscreen=\{contentFullscreen\}/u);

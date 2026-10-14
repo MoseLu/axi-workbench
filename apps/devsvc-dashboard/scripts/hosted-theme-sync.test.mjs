@@ -9,7 +9,7 @@ const projectRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 test("hosted iframes receive the shell theme contract", async () => {
   const hostedPageSource = await readFile(path.join(projectRoot, "src", "features", "hosted", "HostedAppPage.tsx"), "utf8");
   const themeStateSource = await readFile(path.join(projectRoot, "src", "features", "theme", "useThemeState.ts"), "utf8");
-  const shellSource = await readFile(path.join(projectRoot, "src", "app-shell", "Shell.tsx"), "utf8");
+  const shellSource = await readFile(path.join(projectRoot, "src", "app-shell", "Shell", "index.tsx"), "utf8");
 
   assert.match(themeStateSource, /export function applyThemeToElement/u);
   assert.match(themeStateSource, /root\.dataset\.axiTheme\s*=\s*theme\.name/u);

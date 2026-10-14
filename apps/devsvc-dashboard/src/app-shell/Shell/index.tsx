@@ -1,14 +1,12 @@
-import { type ReactNode, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { App as AntApp, ConfigProvider, theme as AntTheme } from "antd";
-import { createAxiAntdTheme } from "@axi/core";
-import { AxiDashboardShell, type AxiDashboardNavGroup, AxiScrollArea } from "@axi/shell";
+import { App as AntApp, ConfigProvider } from "antd";
+import { AxiDashboardShell, type AxiDashboardNavGroup } from "@axi/shell";
 import "@axi/shell/styles.css";
 import "@axi/settings/styles.css";
 import "@axi/widgets/styles.css";
 
-import devsvcLogoUrl from "../assets/devsvc-logo.svg";
 import {
   filterNavGroups,
   findHostedApp,
@@ -22,53 +20,31 @@ import {
   navGroupKeys,
   translateNavGroups,
   type NavRouteKey
-} from "../app-registry";import { AxiSvgIcon } from "@axi/icons";
-
-import { antdLocaleByAppLocale, appLocaleOptions } from "../i18n";
-import { useRecentAccessTracker } from "../recent-access";
-import { useAppSettings } from "../settings/useAppSettings";
-import { normalizeTabKeys, readPinnedTabKeys, writePinnedTabKeys } from "../tab-state";
-import { antdModeTokens } from "../theme/tokens";
-import { adminUsername, readAvatarFile, type AuthUser } from "../features/auth/auth";
-import { listAxiResources, type AxiResource } from "../features/axi-resources/axiResources";
-import { useDashboardData } from "../features/dashboard/useDashboardData";
-import { hostedAppRoute, listHostedApps, type HostedApp } from "../features/hosted/hostedApps";
-import { OverviewPage } from "../features/overview/OverviewPage";
-import { useThemeState } from "../features/theme/useThemeState";
-import { ToolbarSlotContext } from "./toolbarSlot";
-import { GlobalSearchBox } from "../features/search/GlobalSearchBox";
-import { SettingsPanel } from "../features/settings/SettingsPanel";
-import { makeTopbarMessageItems, makeTopbarNoticeItems, TopbarFeedPanel } from "../features/topbar/TopbarFeed";
-
-const AxiResourcesPage = lazy(() =>
-  import("../features/axi-resources/AxiResourcesPage").then((m) => ({ default: m.AxiResourcesPage }))
-);
-const DeployPage = lazy(() =>
-  import("../features/deploy/DeployPage").then((m) => ({ default: m.DeployPage }))
-);
-const AlertsPage = lazy(() =>
-  import("../features/alerts/AlertsPage").then((m) => ({ default: m.AlertsPage }))
-);
-const ObservabilityPage = lazy(() =>
-  import("../features/observability/ObservabilityPage").then((m) => ({ default: m.ObservabilityPage }))
-);
-const HostedAppPage = lazy(() =>
-  import("../features/hosted/HostedAppPage").then((m) => ({ default: m.HostedAppPage }))
-);
-const ServicesPage = lazy(() =>
-  import("../features/services/ServicesPage").then((m) => ({ default: m.ServicesPage }))
-);
-const ServersPage = lazy(() =>
-  import("../features/servers/ServersPage").then((m) => ({ default: m.ServersPage }))
-);
-
-function RouteFallback() {
-  return (
-    <div style={{ padding: 24, color: "var(--axi-color-text-secondary, #888)" }}>
-      Loading…
-    </div>
-  );
-}
+} from "../../app-registry";
+import { antdLocaleByAppLocale } from "../../i18n";
+import { useRecentAccessTracker } from "../../recent-access";
+import { useAppSettings } from "../../settings/useAppSettings";
+import { normalizeTabKeys, readPinnedTabKeys, writePinnedTabKeys } from "../../tab-state";
+import { adminUsername, readAvatarFile, type AuthUser } from "../../features/auth/auth";
+import { useDashboardData } from "../../features/dashboard/useDashboardData";
+import { hostedAppRoute } from "../../features/hosted/hostedApps";
+import { OverviewPage } from "../../features/overview/OverviewPage";
+import { useThemeState } from "../../features/theme/useThemeState";
+import { ToolbarSlotContext } from "../toolbarSlot";
+import { GlobalSearchBox } from "../../features/search/GlobalSearchBox";
+import { SettingsPanel } from "../../features/settings/SettingsPanel";
+import { makeTopbarMessageItems, makeTopbarNoticeItems } from "../../features/topbar/TopbarFeed";
+import { RouteFallback } from "./RouteFallback";
+import { ShellContentArea } from "./ShellContentArea";
+import { ShellNotFoundPage } from "./ShellNotFoundPage";
+import { ShellSidebarSearch } from "./ShellSidebarSearch";
+import { makeShellTopbarActions } from "./ShellTopbar";
+import { makeShellAvatarConfig, makeShellBrand, makeShellClassName } from "./shellChrome";
+import { makeOverviewMetrics } from "./shellMetrics";
+import { AlertsPage, AxiResourcesPage, DeployPage, HostedAppPage, ObservabilityPage, ServersPage, ServicesPage } from "./shellPages";
+import { makeAntdShellThemeConfig } from "./shellTheme";
+import { useShellCatalog } from "./useShellCatalog";
+import { makeShellTabHandlers } from "./shellTabs";
 
 type NavigationMode = "host" | "subapp";
 
@@ -94,6 +70,7 @@ export function Shell({
   const location = useLocation();
   const navigate = useNavigate();
   const { locale, settings } = settingsState;
+  const { axiResources, hostedApps } = useShellCatalog({ notification, t });
   const selectedKey = getRouteKey(location.pathname);
   const isHostedPage = selectedKey.startsWith("/apps/");
   const isTablePage = selectedKey === "/services" || selectedKey === "/alerts" || selectedKey.startsWith("/axi-resources");
@@ -102,8 +79,6 @@ export function Shell({
   const [contentFullscreen, setContentFullscreen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [hostedApps, setHostedApps] = useState<HostedApp[]>([]);
-  const [axiResources, setAxiResources] = useState<AxiResource[]>([]);
   const [navigationMode, setNavigationMode] = useState<NavigationMode>("host");
   const previousHostedAppIdRef = useRef<string | null>(null);
   const { recentAccess, addRecentAccess, clearRecentAccess } = useRecentAccessTracker(selectedKey);
@@ -138,42 +113,6 @@ export function Shell({
   const sidebarExpandedKeys = sidebarKeyword.trim() ? dashboardNavGroups.map((group) => group.key) : openKeys;
   const pinnedTabKeySet = useMemo(() => new Set(pinnedTabKeys), [pinnedTabKeys]);
   useEffect(() => {
-    let cancelled = false;
-    void listHostedApps()
-      .then((apps) => {
-        if (!cancelled) setHostedApps(apps);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        setHostedApps([]);
-        notification.warning({
-          description: error instanceof Error ? error.message : String(error),
-          message: t("子应用列表加载失败")
-        });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [notification, t]);
-  useEffect(() => {
-    let cancelled = false;
-    void listAxiResources()
-      .then((resources) => {
-        if (!cancelled) setAxiResources(resources);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        setAxiResources([]);
-        notification.warning({
-          description: error instanceof Error ? error.message : String(error),
-          message: t("Axi 资源列表加载失败")
-        });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [notification, t]);
-  useEffect(() => {
     if (isHostedPage) setSidebarCollapsed(false);
   }, [isHostedPage]);
   useEffect(() => {
@@ -203,24 +142,27 @@ export function Shell({
     setVisitedTabKeys((keys) => normalizeTabKeys(keys.includes(selectedKey) ? keys : [...keys, selectedKey]));
   }, [selectedKey]);
   const visitedTabs = useMemo(() => visitedTabKeys.map((key) => ({ ...makeRouteTab(key, t, hostedApps, axiResources), pinned: pinnedTabKeySet.has(key) })), [axiResources, hostedApps, language, pinnedTabKeySet, t, visitedTabKeys]);
+  const { closeOtherTabs, closeTab } = makeShellTabHandlers({
+    navigate,
+    pinnedTabKeySet,
+    pinnedTabKeys,
+    selectedKey,
+    setPinnedTabKeys,
+    setVisitedTabKeys,
+    visitedTabKeys
+  });
   const breadcrumbActions = hasTableToolbarSlot ? (
     <div className="app-breadcrumb-table-toolbar" ref={setTableToolbarContainer} />
   ) : null;
   const hostedSidebarControls = isHostedPage ? (
-    <label className="hosted-sidebar-search">
-      <AxiSvgIcon name="search" size={15} />
-      <input
-        aria-label={t("搜索关键字")}
-        placeholder={visibleNavigationMode === "subapp" ? t("搜索子应用菜单") : t("搜索关键字")}
-        value={sidebarKeyword}
-        onChange={(event) => setSidebarKeyword(event.target.value)}
-      />
-      {sidebarKeyword ? (
-        <button type="button" aria-label={t("清空搜索")} onClick={() => setSidebarKeyword("")}>
-          <AxiSvgIcon name="close" size={13} />
-        </button>
-      ) : null}
-    </label>
+    <ShellSidebarSearch
+      ariaLabel={t("搜索关键字")}
+      clearLabel={t("清空搜索")}
+      keyword={sidebarKeyword}
+      placeholder={visibleNavigationMode === "subapp" ? t("搜索子应用菜单") : t("搜索关键字")}
+      onChange={setSidebarKeyword}
+      onClear={() => setSidebarKeyword("")}
+    />
   ) : null;
   const hostedModeSwitchConfig = isHostedPage && currentHostedApp ? {
     ariaLabel: t("菜单模式"),
@@ -237,47 +179,6 @@ export function Shell({
     }
   } : undefined;
 
-  function closeLeftTabs() {
-    const activeIndex = visitedTabKeys.indexOf(selectedKey);
-    if (activeIndex <= 0) return;
-    setVisitedTabKeys((keys) => keys.filter((key, index) => index >= activeIndex || pinnedTabKeySet.has(key)));
-  }
-
-  function closeOtherTabs() {
-    setVisitedTabKeys((keys) => normalizeTabKeys(keys.filter((key) => key === selectedKey || pinnedTabKeySet.has(key))));
-  }
-
-  function closeRightTabs() {
-    const activeIndex = visitedTabKeys.indexOf(selectedKey);
-    if (activeIndex < 0 || activeIndex >= visitedTabKeys.length - 1) return;
-    setVisitedTabKeys((keys) => keys.filter((key, index) => index <= activeIndex || pinnedTabKeySet.has(key)));
-  }
-
-  function closeTab(key: NavRouteKey) {
-    if (pinnedTabKeySet.has(key)) return;
-    const nextKeys = visitedTabKeys.filter((item) => item !== key);
-    const normalizedKeys: NavRouteKey[] = nextKeys.length ? nextKeys : ["/overview"];
-    setVisitedTabKeys(normalizedKeys);
-
-    if (key === selectedKey) {
-      const closedIndex = visitedTabKeys.indexOf(key);
-      navigate(normalizedKeys[Math.min(closedIndex, normalizedKeys.length - 1)] || "/overview");
-    }
-  }
-
-  function closeAllTabs() {
-    const nextKeys: NavRouteKey[] = pinnedTabKeys.length ? pinnedTabKeys : normalizeTabKeys(["/overview"]);
-    setVisitedTabKeys(nextKeys);
-    if (!nextKeys.includes(selectedKey)) {
-      navigate(nextKeys[0] || "/overview", { replace: true });
-    }
-  }
-
-  function togglePinTab(key: NavRouteKey) {
-    setPinnedTabKeys((keys) => keys.includes(key) ? keys.filter((item) => item !== key) : normalizeTabKeys([...keys, key]));
-    setVisitedTabKeys((keys) => normalizeTabKeys(keys.includes(key) ? keys : [...keys, key]));
-  }
-
   function toggleContentFullscreen() {
     setContentFullscreen((current) => !current);
   }
@@ -291,14 +192,7 @@ export function Shell({
   }
 
   const projects = useMemo(() => data.overview?.projects || [], [data.overview]);
-  const metrics = useMemo(() => {
-    return {
-      total: projects.length,
-      healthy: projects.filter((project) => project.pm2.status === "online" && project.health.ok).length,
-      online: projects.filter((project) => project.pm2.status === "online").length,
-      idle: projects.filter((project) => project.pm2.status === "missing").length
-    };
-  }, [projects]);
+  const metrics = useMemo(() => makeOverviewMetrics(projects), [projects]);
   const noticeItems = useMemo(() => makeTopbarNoticeItems(projects, t), [language, projects, t]);
   const messageItems = useMemo(() => makeTopbarMessageItems(projects, data.overview?.generatedAt, data.message, t), [data.message, data.overview?.generatedAt, language, projects, t]);
   const displayName = user.displayName === adminUsername ? t("管理员") : user.displayName;
@@ -319,35 +213,18 @@ export function Shell({
         <Route
           path="*"
           element={
-            <div role="alert" style={{ padding: 32, textAlign: 'center' }}>
-              <h2 style={{ marginBottom: 8 }}>{t("页面未实现")}</h2>
-              <p style={{ color: 'var(--axi-color-text-secondary, #888)' }}>
-                {t("该菜单暂未提供，请联系管理员或返回总览")}
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('/overview')}
-                style={{ marginTop: 16, padding: '6px 16px', borderRadius: 6, border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
-              >
-                {t("返回总览")}
-              </button>
-            </div>
+            <ShellNotFoundPage
+              backLabel={t("返回总览")}
+              label={t("页面未实现")}
+              message={t("该菜单暂未提供，请联系管理员或返回总览")}
+              onBack={() => navigate('/overview')}
+            />
           }
         />
       </Routes>
     </Suspense>
   );
-  const antdThemeConfig = useMemo(() => {
-    const modeTokens = antdModeTokens[themeState.mode];
-
-    return {
-      algorithm: themeState.mode === "dark" ? AntTheme.darkAlgorithm : AntTheme.defaultAlgorithm,
-      ...createAxiAntdTheme(themeState.mode, themeState.theme, {
-        borderRadius: Math.round(settings.radius * 16),
-        token: modeTokens
-      })
-    };
-  }, [settings.radius, themeState.mode, themeState.theme.color]);
+  const antdThemeConfig = useMemo(() => makeAntdShellThemeConfig(themeState.mode, themeState.theme, settings.radius), [settings.radius, themeState.mode, themeState.theme]);
 
   return (
     <ConfigProvider locale={antdLocaleByAppLocale[locale]} theme={antdThemeConfig}>
@@ -355,26 +232,19 @@ export function Shell({
         <AxiDashboardShell
           activeNavKey={activeNavKey}
           activeTabKey={selectedKey}
-          avatarConfig={{
-            avatar: <span>{displayName.slice(0, 1).toUpperCase()}</span>,
-            description: "team@cool-js.com",
-            imageSrc: user.avatarDataUrl,
-            label: displayName,
-            menuItems: [
-              { iconName: "my", key: "profile", label: t("个人中心") },
-              { iconName: "exit", key: "logout", label: t("退出登录"), onClick: onLogout }
-            ],
-            name: displayName,
+          avatarConfig={makeShellAvatarConfig({
+            avatarDataUrl: user.avatarDataUrl,
+            displayName,
+            logoutLabel: t("退出登录"),
             onChange: handleAvatarChange,
+            onLogout,
             previewCloseLabel: t("关闭头像预览"),
             previewLabel: t("预览头像"),
             previewTitle: t("头像预览"),
+            profileLabel: t("个人中心"),
             uploadLabel: t("更换头像")
-          }}
-          brand={{
-            logo: <img className="brand-logo" src={devsvcLogoUrl} alt="" />,
-            title: t("Axi DevSvc Dashboard")
-          }}
+          })}
+          brand={makeShellBrand(t("Axi DevSvc Dashboard"))}
           breadcrumbActions={settings.breadcrumb ? breadcrumbActions : null}
           breadcrumbLabel={t("页面位置")}
           breadcrumbs={settings.breadcrumb ? breadcrumbs.map((item) => ({
@@ -385,15 +255,7 @@ export function Shell({
             label: item.title,
             scope: item.scope
           })) : []}
-          className={[
-            "app-shell",
-            `layout-${settings.menuLayout}`,
-            `menu-style-${settings.menuStyle}`,
-            `box-style-${settings.boxStyle}`,
-            `container-${settings.containerWidth}`,
-            isHostedPage ? `navigation-${visibleNavigationMode}` : "",
-            settings.colorWeak ? "color-weak" : ""
-          ].filter(Boolean).join(" ")}
+          className={makeShellClassName({ isHostedPage, navigationMode: visibleNavigationMode, settings })}
           contentClassName={`${isTablePage ? "app-page app-page-table services-content" : "app-page"} ${isHostedPage ? "app-page-hosted" : ""}`}
           contentFullscreen={contentFullscreen}
           globalSearch={<GlobalSearchBox axiResources={axiResources} hostedApps={hostedApps} projects={projects} recentAccessKeys={recentAccess.map((item) => item.key)} onClearRecentAccess={clearRecentAccess} onSelectSearchItem={addRecentAccess} userRole={user.role} />}
@@ -434,54 +296,33 @@ export function Shell({
             label: tab.title,
             pinned: tab.pinned
           })) : []}
-          topbarActions={{
-            github: { href: "https://github.com/MoseLu/devsvc-dashboard", iconName: "github", key: "github", label: t("打开 GitHub 仓库"), target: "_blank" },
-            notice: {
-              badge: noticeItems.filter((item) => !item.read).length || undefined,
-              badgeTone: "warning",
-              iconName: "notice",
-              key: "notice",
-              label: t("通知"),
-              popover: <TopbarFeedPanel emptyText={t("暂无通知")} iconName="notice" items={noticeItems} title={t("通知")} onItemClick={(item) => item.path ? navigate(item.path) : undefined} />
-            },
-            message: {
-              badge: messageItems.filter((item) => !item.read).length || undefined,
-              badgeTone: "success",
-              iconName: "msg",
-              key: "message",
-              label: t("消息"),
-              popover: <TopbarFeedPanel emptyText={t("暂无消息")} iconName="msg" items={messageItems} title={t("消息")} onItemClick={(item) => item.path ? navigate(item.path) : undefined} />
-            },
-            language: settings.language ? {
-              iconName: "lang",
-              key: "language",
-              label: t("切换语言"),
-              popover: (
-                <div className="language-menu">
-                  {appLocaleOptions.map((item) => (
-                    <button className={item.value === locale ? "is-active" : ""} key={item.value} type="button" onClick={() => settingsState.setLocale(item.value)}>
-                      {t(item.labelKey)}
-                    </button>
-                  ))}
-                </div>
-              )
-            } : false,
-            theme: { iconName: themeState.mode === "dark" ? "light" : "dark", key: "theme", label: themeState.mode === "dark" ? t("切换亮色模式") : t("切换暗色模式"), onClick: (event) => themeState.toggleMode(event.currentTarget) },
-            settings: { iconName: "theme", key: "settings", label: t("系统设置"), onClick: () => setSettingsOpen(true) }
-          }}
+          topbarActions={makeShellTopbarActions({
+            locale,
+            messageItems,
+            navigate,
+            noticeItems,
+            onLanguageChange: settingsState.setLocale,
+            onSettingsOpen: () => setSettingsOpen(true),
+            onThemeToggle: (element) => themeState.toggleMode(element),
+            showLanguage: settings.language,
+            t,
+            themeMode: themeState.mode
+          })}
         >
           {isHostedPage ? (
             routedPages
           ) : (
-            <section className={`app-view-container ${isTablePage ? "app-view-container-services" : ""}`}>
-              {settings.progressBar && data.loading ? <div className="top-progress" role="progressbar" aria-label={t("正在加载")} /> : null}
-              {settings.watermark ? <div className="global-watermark" data-watermark={t("Axi DevSvc Dashboard")} aria-hidden="true">{t("Axi DevSvc Dashboard")}</div> : null}
-              <AxiScrollArea className={isTablePage ? "services-scrollbar" : ""}>
-                <div className={`page-transition page-transition-${settings.pageTransition}`} key={location.pathname}>
-                  {routedPages}
-                </div>
-              </AxiScrollArea>
-            </section>
+            <ShellContentArea
+              isTablePage={isTablePage}
+              loadingLabel={t("正在加载")}
+              pageTransition={settings.pageTransition}
+              pathname={location.pathname}
+              showProgress={Boolean(settings.progressBar && data.loading)}
+              showWatermark={Boolean(settings.watermark)}
+              watermarkText={t("Axi DevSvc Dashboard")}
+            >
+              {routedPages}
+            </ShellContentArea>
           )}
         </AxiDashboardShell>
         <SettingsPanel

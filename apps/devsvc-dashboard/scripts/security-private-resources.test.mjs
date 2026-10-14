@@ -425,7 +425,7 @@ test("WFB-SEC-001 source: AxiResourcesPage exports the role redactor and access 
 
 test("WFB-SEC-001 source: Shell wires authenticated user.role into both nav and search", async () => {
   const shellSource = await readFile(
-    path.join(projectSrcRoot, "app-shell", "Shell.tsx"),
+    path.join(projectSrcRoot, "app-shell", "Shell", "index.tsx"),
     "utf8"
   );
 
