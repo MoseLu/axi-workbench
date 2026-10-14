@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  watchdog-launchd.plist — placeholder LaunchAgent definition (recreated 2026-10-14).
+  Originally created as part of the local infra watchdog work but was missing
+  from the working tree.
+
+  IMPORTANT: this plist is NOT installed. The orphan launchd entry was
+  unloaded by fix-orphan-launchd-watchdog. Owner must:
+    1. Review the placeholder watchdog.sh + this plist.
+    2. Replace the placeholder ProgramArguments with the real watchdog binary.
+    3. Copy to ~/Library/LaunchAgents/local.axi.workbench.watchdog.plist.
+    4. Run: launchctl load -w ~/Library/LaunchAgents/local.axi.workbench.watchdog.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.axi.workbench.watchdog</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Volumes/code/workspace/workbench/axi-workbench/scripts/watchdog.sh</string>
+    <string>--once</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>30</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>KeepAlive</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/axi-workbench-watchdog.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/axi-workbench-watchdog.err.log</string>
+</dict>
+</plist>
