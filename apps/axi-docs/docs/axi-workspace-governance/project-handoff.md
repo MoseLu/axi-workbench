@@ -1,12 +1,12 @@
 # Workspace Project Handoff Readiness
 
-Generated: 2026-10-13T13:51:20.701Z
+Generated: 2026-10-14T10:54:59.597Z
 
 - Total: 22
 - Verified: 14
 - Documented: 3
-- Stale: 0
-- Unready: 5
+- Stale: 1
+- Unready: 4
 
 | Project | Readiness | Score | Last verified | Current work |
 |---|---|---:|---|---|
@@ -21,12 +21,12 @@ Generated: 2026-10-13T13:51:20.701Z
 | `axi-registry` | verified | 10/10 | 2026-09-25 | Keep the zero-context manifest aligned with actual commands and package contracts. |
 | `axi-rules` | verified | 10/10 | 2026-10-13 | Ship and harden scripts/handoff-workflow.py as the AR-HANDOFF-004 mechanical gate. |
 | `axi-runtime` | documented | 10/10 | 2026-09-29 | ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011 |
-| `axi-skills` | documented | 10/10 | 2026-10-09 | Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state. |
+| `axi-skills` | documented | 10/10 | 2026-10-14 | Keep the shared skill catalog free of runtime artifacts, caches, secrets, and nested repository state. |
 | `axi-soul-world` | verified | 10/10 | 2026-09-25 | W1-W8 restricted delivery is integrated in dev and origin/dev at merge 795a804; the W5-W8 topic head b9dfef3 is its second parent. |
 | `axi-sync` | documented | 10/10 | 2026-09-25 | ADR-014 Rust migration (Proposed) — Phase 1 scaffold landed at src-rs/axi-sync-rs/; Phase 3 gated on ADR-011 (axi-kernel-rs) |
 | `axi-ui` | verified | 10/10 | 2026-10-11 | Own the canonical Black Gold preset in @axi/tokens and @axi/core. |
 | `axi-video-downloader` | verified | 10/10 | 2026-09-25 | Keep the zero-context manifest aligned with the actual Python entrypoints and hardware prerequisites. |
-| `axi-workbench` | unready | 10/10 | 2026-09-13 | Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence |
+| `axi-workbench` | stale | 10/10 | 2026-09-13 | Maintain fresh Web, Mobile and Control Plane verification baselines and delivery evidence |
 | `axi-workbench-cli` | verified | 10/10 | 2026-10-13 | bench 回归修复 + Kernel 自注册 |
 | `axi-workspace-governance` | verified | 10/10 | 2026-10-13 | Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync. |
 | `axi-workspace-rs` | verified | 10/10 | 2026-10-01 | M7 全链收口：wave parity-port + M7.1 rustfmt + M7.5 D4 registry 闭环 + M7.6 strict clippy/VERIFICATION + M7.7 corepack/incubator 双开关锁 + M7.8 registry 路径 bug 修复（incubator-sync / docs-sync）。 |

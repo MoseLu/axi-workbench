@@ -4,14 +4,14 @@ title: Axi Workspace Project Catalog
 type: reference
 status: evergreen
 tags: [workspace, catalog, repositories]
-created: 2026-10-13
-modified: 2026-10-13
+created: 2026-10-14
+modified: 2026-10-14
 agent-readable: true
 ---
 
 # Axi Workspace Project Catalog
 
-最后生成：2026-10-13
+最后生成：2026-10-14
 
 ## 与 PRD 中心的关系
 

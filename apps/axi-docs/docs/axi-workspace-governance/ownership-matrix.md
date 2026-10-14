@@ -4,14 +4,14 @@ title: Axi Workspace Ownership Matrix
 type: reference
 status: evergreen
 tags: [workspace, ownership, governance]
-created: 2026-10-13
-modified: 2026-10-13
+created: 2026-10-14
+modified: 2026-10-14
 agent-readable: true
 ---
 
 # Axi Workspace Ownership Matrix
 
-最后生成：2026-10-13
+最后生成：2026-10-14
 
 > PRD 中心：`docs/prd/README.md`
 

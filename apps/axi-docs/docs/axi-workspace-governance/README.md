@@ -4,14 +4,14 @@ title: Axi Workspace Governance Index
 type: reference
 status: evergreen
 tags: [workspace, governance, polyrepo]
-created: 2026-10-13
-modified: 2026-10-13
+created: 2026-10-14
+modified: 2026-10-14
 agent-readable: true
 ---
 
 # Axi Workspace Governance Index
 
-最后生成：2026-10-13
+最后生成：2026-10-14
 
 ## 摘要
 
