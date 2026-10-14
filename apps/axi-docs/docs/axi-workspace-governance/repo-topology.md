@@ -13,6 +13,8 @@ agent-readable: true
 
 最后生成：2026-10-13
 
+> PRD 中心：`docs/prd/README.md`
+
 ## 控制面
 
 | Component | Path | Role |
@@ -45,21 +47,21 @@ agent-readable: true
   remote: https://github.com/MoseLu/axi-apps.git
 - `foundation/axi-inbox` | Axi Inbox | branch=`dev` | canonical=yes | compliance=`axi-inbox`
   remote: https://github.com/MoseLu/axi-inbox.git
-- `foundation/axi-kernel` | Axi Kernel | branch=`agent/m18-fix-2-kernel` | canonical=yes | compliance=`object-registry`
+- `foundation/axi-kernel` | Axi Kernel | branch=`dev` | canonical=yes | compliance=`object-registry`
   remote: https://github.com/MoseLu/axi-kernel.git
-- `foundation/axi-notify` | Axi Notify | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`android-fullstack`
+- `foundation/axi-notify` | Axi Notify | branch=`dev` | canonical=yes | compliance=`android-fullstack`
   remote: https://github.com/MoseLu/axi-notify.git
 - `foundation/axi-runtime` | Axi Governance Runtime | branch=`dev` | canonical=yes | compliance=`axi-runtime`
   remote: https://github.com/MoseLu/axi-runtime.git
 - `foundation/axi-sync` | Axi Change Sync | branch=`dev` | canonical=yes | compliance=`axi-sync`
   remote: https://github.com/MoseLu/axi-sync.git
-- `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`agent/m18-fix-2-wbcli` | canonical=yes | compliance=`personal-os-cli`
+- `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`dev` | canonical=yes | compliance=`personal-os-cli`
   remote: https://github.com/MoseLu/axi-workbench-cli.git
 - `workbench/axi-image-preview` | Axi Image Preview | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/MoseLu/axi-image-preview.git
 - `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
-- `workbench/axi-workbench` | Axi Workbench | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
@@ -73,9 +75,9 @@ agent-readable: true
 
 ## Shared
 
-- `foundation/axi-observability` | Axi Observability | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`node-monorepo-approved`
+- `foundation/axi-observability` | Axi Observability | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-observability.git
-- `foundation/axi-rules` | Axi Rules | branch=`perf/20261010-validate-skip-self-repo` | canonical=yes | compliance=`constraint-index`
+- `foundation/axi-rules` | Axi Rules | branch=`dev` | canonical=yes | compliance=`constraint-index`
   remote: https://github.com/MoseLu/axi-rules.git
 - `foundation/axi-skills` | Axi Skills | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`agent-skill-catalog`
   remote: https://github.com/MoseLu/axi-skills.git

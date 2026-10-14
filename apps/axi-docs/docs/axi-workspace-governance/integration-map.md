@@ -13,6 +13,13 @@ agent-readable: true
 
 最后生成：2026-10-13
 
+## PRD 中心
+
+设计语义、产品需求、决策以 [`docs/prd/README.md`](../prd/README.md) 为权威源：
+- [PRD-GUIDE-00](../prd/00-PRD-SYSTEM-GUIDE.md) — 体系宪章
+- [PRD-01 平台总纲](../prd/01-AxiomaticWorld-Personal-OS-PRD.md) — AxiomaticWorld Personal OS 平台主总纲
+- [PRD-02 契约与约束治理](../prd/02-CONTRACT-AND-CONSTRAINT-GOVERNANCE.md) — 契约与约束治理
+
 ## 跨仓协作契约
 
 | Channel | Source | Target | Contract |

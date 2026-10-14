@@ -13,6 +13,10 @@ agent-readable: true
 
 最后生成：2026-10-13
 
+## 与 PRD 中心的关系
+
+本目录为项目目录的机器可读视图。设计语义、产品需求、决策以 [`docs/prd/README.md`](../prd/README.md) 为权威源。
+
 | Section | ID | Name | Owner | Status | Lifecycle | Branch | Docs | Path | Canonical Remote |
 |---|---|---|---|---|---|---|---|---|---|
 | candidates | axi-file-preview | Axi File Preview | libu | active-candidate | prototype | dev | yes | `candidates/axi-file-preview` | - |
@@ -26,19 +30,19 @@ agent-readable: true
 | projects | sports-management | 体育管理应用 | hubu | deprecated | archived | dev | yes | `archive/axi-sports-management-app` | [link](https://github.com/MoseLu/axi-sports-management-app.git) |
 | projects | axi-apps | Axi Applications | libu | active | active-promoted-incubation | dev | yes | `foundation/axi-apps` | - |
 | projects | axi-inbox | Axi Inbox | libu | active | active-promoted-incubation | dev | yes | `foundation/axi-inbox` | - |
-| projects | axi-kernel | Axi Kernel | libu | active | active-promoted-incubation | agent/m18-fix-2-kernel | yes | `foundation/axi-kernel` | [link](https://github.com/MoseLu/axi-kernel.git) |
-| projects | axi-notify | Axi Notify | hubu | active | active-canonical | fix/m18-doc-cleanup | yes | `foundation/axi-notify` | [link](https://github.com/MoseLu/axi-notify.git) |
+| projects | axi-kernel | Axi Kernel | libu | active | active-promoted-incubation | dev | yes | `foundation/axi-kernel` | [link](https://github.com/MoseLu/axi-kernel.git) |
+| projects | axi-notify | Axi Notify | hubu | active | active-canonical | dev | yes | `foundation/axi-notify` | [link](https://github.com/MoseLu/axi-notify.git) |
 | projects | axi-runtime | Axi Governance Runtime | libu | active | active-promoted-incubation | dev | yes | `foundation/axi-runtime` | - |
 | projects | axi-sync | Axi Change Sync | libu | active | active-promoted-incubation | dev | yes | `foundation/axi-sync` | - |
-| projects | axi-workbench-cli | AXI Personal OS Workbench CLI | libu | active | active-promoted-incubation | agent/m18-fix-2-wbcli | yes | `foundation/axi-workbench-cli` | [link](https://github.com/MoseLu/axi-workbench-cli.git) |
+| projects | axi-workbench-cli | AXI Personal OS Workbench CLI | libu | active | active-promoted-incubation | dev | yes | `foundation/axi-workbench-cli` | [link](https://github.com/MoseLu/axi-workbench-cli.git) |
 | projects | axi-image-preview | Axi Image Preview | libu | active | active-canonical | fix/m18-doc-cleanup-agent4 | yes | `workbench/axi-image-preview` | [link](https://github.com/MoseLu/axi-image-preview.git) |
 | projects | axi-pet-desktop | Axi Pet Desktop | libu | active | active-local | fix/m18-doc-cleanup-agent4 | yes | `workbench/axi-pet-desktop` | [link](https://github.com/moeru-ai/airi.git) |
-| projects | axi-workbench | Axi Workbench | libu | active | active-canonical | fix/m18-doc-cleanup-agent4 | yes | `workbench/axi-workbench` | [link](https://github.com/MoseLu/axi-workbench.git) |
+| projects | axi-workbench | Axi Workbench | libu | active | active-canonical | dev | yes | `workbench/axi-workbench` | [link](https://github.com/MoseLu/axi-workbench.git) |
 | products | axi-soul-world | Axi Soul World | Mose | active | active-product | dev | yes | `products/axi-soul-world` | [link](https://github.com/MoseLu/Axi-Soul-World.git) |
 | products | ielts-vocab | IELTS Vocabulary | libu | paused-runtime | active-product | dev | yes | `products/ielts-vocab` | [link](https://github.com/MoseLu/ielts-vocab.git) |
 | products | story-graph | Story Graph | Mose | active | active-product | perf/20261010-evidence-store-no-n-plus-1 | yes | `products/story-graph` | [link](https://github.com/MoseLu/story-graph.git) |
-| shared | observability | Axi Observability | libu | active-foundation | prototype | fix/m18-doc-cleanup | yes | `foundation/axi-observability` | - |
-| shared | axi-rules | Axi Rules | libu | active | active-shared-provider | perf/20261010-validate-skip-self-repo | yes | `foundation/axi-rules` | [link](https://github.com/MoseLu/axi-rules.git) |
+| shared | observability | Axi Observability | libu | active-foundation | prototype | dev | yes | `foundation/axi-observability` | - |
+| shared | axi-rules | Axi Rules | libu | active | active-shared-provider | dev | yes | `foundation/axi-rules` | [link](https://github.com/MoseLu/axi-rules.git) |
 | shared | axi-skills | Axi Skills | libu | active | active-shared-provider | fix/m18-doc-cleanup | yes | `foundation/axi-skills` | [link](https://github.com/MoseLu/axi-skills.git) |
 | shared | axi-ui | Axi UI | libu | active | active-shared-provider | fix/m18-doc-cleanup | yes | `foundation/axi-ui` | [link](https://github.com/MoseLu/axi-ui.git) |
 | shared | axi-workspace-rs | Axi Workspace Rust Monorepo | libu | active | active-foundation | dev | yes | `foundation/axi-workspace-rs` | [link](https://github.com/MoseLu/axi-workspace-rs.git) |

@@ -13,6 +13,8 @@ agent-readable: true
 
 最后生成：2026-10-13
 
+> PRD 中心：`docs/prd/README.md`
+
 ## hubu
 
 | Repo | Section | Lifecycle | Canonical | Remote |
