@@ -157,5 +157,6 @@ build_all.bat                        # 全量：后端 exe + Web + Electron + An
 - 模块级细节（backend / frontend / docs / asserts）见各自 `AGENTS.md`（L3）。
 
 ### 已知违规（2026-10-15 实测）
-- 前端 >500 行：`frontend/src/display/DisplayApp.tsx` 1304、`frontend/src/control/DeviceManagement.tsx` 759（工作树中已有并行拆分，勿重复拆）、`frontend/src/shared/api/client.ts` 611。
+- 前端 >500 行：`frontend/src/shared/api/client.ts` 611。
+- 已由并行拆分修复：`frontend/src/display/DisplayApp.tsx` 1304 → `display/DisplayApp/`（最大 377）、`frontend/src/control/DeviceManagement.tsx` 759 → 393（`DeviceManagement.*.tsx` 子文件）。
 - 后端 >600 行：`backend/models.py` 1269、`backend/server.py` 1182、`backend/build_embedding.py` 1087、`backend/pdf_sync_monitor.py` 793、`backend/sync_sop.py` 643、`backend/command_pusher.py` 617。

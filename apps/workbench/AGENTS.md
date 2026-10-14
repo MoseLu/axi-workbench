@@ -36,10 +36,11 @@ pnpm --filter @axi/workbench check:bundle
 - 本地全链路运行时依赖：`identity-adapter` (8081)、`platform-core` (8082)、`control-plane` (8092)、`api-gateway` (8088)；`/api` 代理目标规则见 `README.md`（`VITE_API_PROXY_TARGET` > `VITE_API_BASE_URL` > 默认 8088）。
 - 移动端是独立应用 `apps/workbench-mobile`（5174），**不要**把移动壳塞回本应用的 viewport / CSS 分支。
 
-## 已知违规（2026-10-15 实测，阈值 500 行）
-- 视图 / 逻辑：`src/pages/Login.tsx` 1377、`src/pages/commit-ledger/CommitLedgerPage.tsx` 963、`src/layouts/MainLayout.tsx` 596、`src/assets/icons/index.ts` 502。
+## 已知违规（2026-10-15 06:10 复核，阈值 500 行）
+- 视图 / 逻辑：`src/layouts/MainLayout.tsx` 596（工作树中已有并行拆分）、`src/assets/icons/index.ts` 502。
 - 样式：`src/assets/icons/system/iconfont.css` 2664、`src/pages/Login.css` 2152、`src/pages/personal-os/PersonalOs.css` 630。
-- 拆分须走专门任务（`admin/me` 系列已有并行拆分工作），本文件不构成拆分授权。
+- 已由并行拆分修复：`src/pages/Login.tsx` 1377 → `src/pages/Login/`（最大 376）、`src/pages/commit-ledger/CommitLedgerPage.tsx` 963 → `CommitLedgerPage/`（最大 224）。
+- 拆分须走专门任务（`admin/me`、`Login` 系列已有并行拆分工作），本文件不构成拆分授权。
 
 ## 验证
 - 最小：`pnpm --filter @axi/workbench type-check`。
