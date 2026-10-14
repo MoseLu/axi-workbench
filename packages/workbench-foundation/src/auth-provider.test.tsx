@@ -1,16 +1,24 @@
 /**
  * AuthProvider reducer-style transition tests.
  *
- * The reducer surface lives in `useState`/`useCallback` hooks inside
- * AuthProvider rather than a Redux-style `reduce` function. We exercise the
- * same state transitions (loading → authenticated, refresh on 401, logout)
- * by mounting the provider and observing `useAuth()` across async
- * transitions, with `fetch` mocked via `vi.fn`.
+ * The session surface lives in a `useQuery` with `staleTime: Infinity`
+ * inside AuthProvider rather than a Redux-style `reduce` function. We
+ * exercise the same state transitions (loading → authenticated, refresh
+ * on 401, logout) by mounting the provider and observing `useAuth()`
+ * across async transitions, with `fetch` mocked via `vi.fn`.
  */
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './auth';
+
+function withQueryClient(children: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 function jsonResponse(body: unknown, init?: { status?: number; ok?: boolean }): Response {
   return {
@@ -49,9 +57,11 @@ describe('AuthProvider reducer transitions', () => {
 
     let snapshot: ReturnType<typeof useAuth> | null = null;
     render(
-      <AuthProvider>
-        <AuthProbe onReady={(api) => (snapshot = api)} />
-      </AuthProvider>,
+      withQueryClient(
+        <AuthProvider>
+          <AuthProbe onReady={(api) => (snapshot = api)} />
+        </AuthProvider>,
+      ),
     );
 
     await waitFor(() => {
@@ -71,9 +81,11 @@ describe('AuthProvider reducer transitions', () => {
 
     let snapshot: ReturnType<typeof useAuth> | null = null;
     render(
-      <AuthProvider>
-        <AuthProbe onReady={(api) => (snapshot = api)} />
-      </AuthProvider>,
+      withQueryClient(
+        <AuthProvider>
+          <AuthProbe onReady={(api) => (snapshot = api)} />
+        </AuthProvider>,
+      ),
     );
 
     await waitFor(() => {
@@ -97,9 +109,11 @@ describe('AuthProvider reducer transitions', () => {
 
     let snapshot: ReturnType<typeof useAuth> | null = null;
     render(
-      <AuthProvider>
-        <AuthProbe onReady={(api) => (snapshot = api)} />
-      </AuthProvider>,
+      withQueryClient(
+        <AuthProvider>
+          <AuthProbe onReady={(api) => (snapshot = api)} />
+        </AuthProvider>,
+      ),
     );
 
     await waitFor(() => {

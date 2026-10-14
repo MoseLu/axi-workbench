@@ -23,12 +23,12 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "react": "^18.2.0"
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.0.0",
-    "@types/react": "^18.2.43",
-    "react": "^18.2.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.1.0",
     "typescript": "^5.3.3"
   },
   "description": "Shared session and locale foundation for independent Axi Workbench applications"

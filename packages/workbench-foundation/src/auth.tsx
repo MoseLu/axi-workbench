@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@axi/workstation-contracts';
 import { resolveUsername } from './username';
 
@@ -135,42 +136,69 @@ async function readErrorDetail(response: Response): Promise<string> {
  * Shared authentication protocol for the independent Web and mobile apps.
  * The browser only carries an HttpOnly gateway session cookie; it never stores
  * an access token, refresh token, OIDC code, or QR credential in JavaScript.
+ *
+ * Session fetch is implemented as a React Query with `staleTime: Infinity` so
+ * navigation between routes does not retrigger the gateway probe; we only
+ * re-probe when the caller explicitly invokes `refreshSession()` (after
+ * login, after a profile update, when the Tauri shell signals a successful
+ * OIDC handshake, etc.). `retry: false` ensures a probe failure does not
+ * silently mask a logged-out state with a 30-second exponential backoff.
+ *
+ * Requires a `QueryClientProvider` somewhere above this component in the tree.
  */
+export const sessionQueryKey = ['auth', 'session'] as const;
+
+// React Query v5 removed the public `.options` accessor on `useQuery()` results.
+// Extract the fetcher to a module-level function so the `AuthProvider` and any
+// imperative caller can share the same `queryFn` reference (the dep-array entry
+// in `refreshSession` needs a stable callback to avoid an infinite re-render).
+async function fetchSession({ signal }: { signal: AbortSignal }): Promise<User | null> {
+  const response = await fetch(resolveGatewayURL('/api/v1/sessions/current'), {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    signal,
+  });
+  if (!response.ok) return null;
+  const session = (await response.json()) as GatewaySessionResponse;
+  if (!session.authenticated || !session.user?.subject) return null;
+  return mapGatewayUser(session.user);
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const sessionQuery = useQuery<User | null>({
+    queryKey: sessionQueryKey,
+    queryFn: fetchSession,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    networkMode: 'offlineFirst',
+  });
+
+  const user = sessionQuery.data ?? null;
+  // Login-flow errors are local state because they belong to the
+  // beginLogin/confirmEmailCode/updateUsername actions, not to the
+  // session probe. The probe failure itself is mapped to `user: null`
+  // and intentionally does NOT surface as an `error` string — a logged-out
+  // user must not see "Unable to restore session" on every cold load.
+  const [actionError, setActionError] = useState<string | null>(null);
+  // `actionLoading` covers login actions that are not the session probe;
+  // callers (login pages, profile updates) use this to disable submit
+  // buttons while `requestEmailCode` / `confirmEmailCode` are in flight.
+  const [actionLoading, setActionLoading] = useState(false);
+  const error = actionError;
+  const isLoading = sessionQuery.isPending || actionLoading;
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
-    try {
-      const response = await fetch(resolveGatewayURL('/api/v1/sessions/current'), {
-        credentials: 'include',
-        headers: { Accept: 'application/json' },
-      });
-      if (!response.ok) {
-        setUser(null);
-        return false;
-      }
-      const session = (await response.json()) as GatewaySessionResponse;
-      if (!session.authenticated || !session.user?.subject) {
-        setUser(null);
-        return false;
-      }
-      setUser(mapGatewayUser(session.user));
-      setError(null);
-      return true;
-    } catch (caught: unknown) {
-      setUser(null);
-      setError(caught instanceof Error ? caught.message : 'Unable to restore Axi session');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshSession();
-  }, [refreshSession]);
+    const result = await queryClient.fetchQuery({
+      queryKey: sessionQueryKey,
+      queryFn: fetchSession,
+      staleTime: 0,
+    });
+    return Boolean(result);
+  }, [queryClient]);
 
   const beginLogin = useCallback((returnTo?: string) => {
     if (typeof window === 'undefined') return;
@@ -183,11 +211,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const trimmed = email.trim();
     if (!trimmed) {
       const message = '请输入邮箱地址';
-      setError(message);
+      setActionError(message);
       throw new Error(message);
     }
-    setError(null);
-    setIsLoading(true);
+    setActionError(null);
+    setActionLoading(true);
     try {
       const response = await fetch(resolveGatewayURL('/api/v1/auth/email-verifications'), {
         method: 'POST',
@@ -207,10 +235,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { challengeId: body.challengeId, expiresAt: body.expiresAt ?? '' };
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : '无法发送验证码';
-      setError(message);
+      setActionError(message);
       throw caught instanceof Error ? caught : new Error(message);
     } finally {
-      setIsLoading(false);
+      setActionLoading(false);
     }
   }, []);
 
@@ -219,11 +247,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const trimmed = token.trim();
     if (!challenge || !/^\d{6}$/.test(trimmed)) {
       const message = '请输入有效的验证码';
-      setError(message);
+      setActionError(message);
       return false;
     }
-    setError(null);
-    setIsLoading(true);
+    setActionError(null);
+    setActionLoading(true);
     try {
       const response = await fetch(resolveGatewayURL('/api/v1/sessions/email'), {
         method: 'POST',
@@ -253,10 +281,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return authenticated;
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : '验证失败';
-      setError(message);
+      setActionError(message);
       return false;
     } finally {
-      setIsLoading(false);
+      setActionLoading(false);
     }
   }, [refreshSession]);
 
@@ -267,13 +295,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         credentials: 'include',
       });
     } finally {
-      setUser(null);
-      setError(null);
+      // Drop the cached session so every observer flips to "logged out".
+      queryClient.removeQueries({ queryKey: sessionQueryKey });
+      setActionError(null);
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem('axi.auth.return-to');
       }
     }
-  }, []);
+  }, [queryClient]);
 
   const updateUsername = useCallback(async (username: string): Promise<boolean> => {
     try {
@@ -294,7 +323,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!refreshed) throw new Error('会话未建立，请重新登录');
       return true;
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : '用户名更新失败');
+      setActionError(caught instanceof Error ? caught.message : '用户名更新失败');
       return false;
     }
   }, [refreshSession]);

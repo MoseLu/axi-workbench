@@ -10,6 +10,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." &> /dev/null && pwd)"
 
+# 兜底 GOPROXY：proxy.golang.org 在当前网络下不可达，未配置会卡 5min 等超时。
+# envDefaults 与 ~/.zshenv 已经写过，这里只兜底未注入场景。
+export GOPROXY="${GOPROXY:-https://goproxy.cn,direct}"
+
 ENV_FILE="${AXI_ENV_FILE:-${REPO_ROOT}/.env}"
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "缺少 ${ENV_FILE}，请先按 .env.example 建一份。" >&2
