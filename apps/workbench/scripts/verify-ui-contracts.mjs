@@ -28,12 +28,24 @@ const index = read('apps/workbench/index.html');
 const zhLocale = read('apps/workbench/src/i18n/locales/zh-CN.json');
 const enLocale = read('apps/workbench/src/i18n/locales/en-US.json');
 
-function readSourceTree(relativeDir) {
+// A migrated page may keep a residual antd / @ant-design/icons import only when it
+// documents the gap with an explicit `axi-ui-escape-hatch:` marker. The same marker is
+// enforced by scripts/check-axi-ui-adoption.mjs and the gap is registered in
+// docs/prd/02-CONTRACT-AND-CONSTRAINT-GOVERNANCE.md §5 (存量豁免, 只减不增).
+// Unmarked imports still fail every forbid below.
+const escapeHatchMarker = 'axi-ui-escape-hatch';
+
+function readSourceTree(relativeDir, { skipEscapeHatchFiles = false } = {}) {
   const directory = path.join(root, relativeDir);
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const fullPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return readSourceTree(path.join(relativeDir, entry.name));
-    return /\.(?:ts|tsx)$/.test(entry.name) ? [fs.readFileSync(fullPath, 'utf8')] : [];
+    if (entry.isDirectory()) {
+      return readSourceTree(path.join(relativeDir, entry.name), { skipEscapeHatchFiles });
+    }
+    if (!/\.(?:ts|tsx)$/.test(entry.name)) return [];
+    const source = fs.readFileSync(fullPath, 'utf8');
+    if (skipEscapeHatchFiles && source.includes(escapeHatchMarker)) return [];
+    return [source];
   }).join('\n');
 }
 
@@ -42,6 +54,12 @@ function readSourceTree(relativeDir) {
 const login = readSourceTree('apps/workbench/src/pages/Login');
 
 const webSource = readSourceTree('apps/workbench/src');
+
+// Governed escape hatches (registered in docs/prd/02 §5, kept 只减不增) are excluded from
+// the UI-surface import forbids below; every other Web source file stays covered. The
+// unfiltered `webSource` is still used for the behavioural forbids, which the marker
+// does not govern.
+const webUngovernedSource = readSourceTree('apps/workbench/src', { skipEscapeHatchFiles: true });
 
 requireMatch(breadcrumbs, /return \[\{ label: ['"]工作台概览['"]/, 'dashboard breadcrumb must contain the current menu item');
 forbidMatch(
@@ -89,8 +107,14 @@ requireMatch(layout, /iconName: axiWorkbenchIconMap\.logout/, 'Web account menu 
 forbidMatch(layout, /MobileTopBar|MobileBottomNav|useIsMobile|wb-mobile-shell/, 'Web layout must not contain a viewport-switched mobile shell');
 forbidMatch(layout, /logo-axi-core-color\.png|admin-sun|admin-night-mode/, 'Web chrome must not use a local logo or generic theme glyphs');
 forbidMatch(breadcrumbs, /ICON_HINTS|icon: 'admin-/, 'breadcrumbs must store product semantic icon names instead of raw glyph aliases');
-forbidMatch(webSource, /from ['"]@ant-design\/icons['"]/, 'Web source must not bypass the shared Axi icon registry');
-forbidMatch(webPackage, /"@ant-design\/icons"/, 'Web package must not retain a direct Ant icon dependency');
+forbidMatch(webUngovernedSource, /from ['"]@ant-design\/icons['"]/, 'Web source must not bypass the shared Axi icon registry');
+// `@ant-design/icons` stays registered stock for `apps/workbench` in docs/prd/02 §5 and
+// scripts/check-dependency-policy.mjs (allowedPrefixes) — but only while a governed
+// escape-hatch file still imports it. Repaying the last hatch also obliges dropping the
+// direct dependency, so the retained dependency is still guarded.
+if (!/from ['"]@ant-design\/icons['"]/.test(webSource)) {
+  forbidMatch(webPackage, /"@ant-design\/icons"/, 'Web package must not retain a direct Ant icon dependency');
+}
 forbidMatch(webPackage, /"@epap\/ui"/, 'Web package must not retain the retired legacy UI dependency');
 forbidMatch(webSource, /from ['"]@epap\/ui['"]/, 'Web source must not import the retired legacy UI package');
 forbidMatch(webSource, /MobileTopBar|MobileBottomNav|ScanIcon/, 'Web application must not retain a second mobile navigation shell');
