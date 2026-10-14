@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-10-11T18:16:33.031Z",
+  "generatedAt": "2026-10-14T10:58:26.842Z",
   "source": "foundation/workspace-governance/workspace.json",
   "summary": {
     "total": 22,
@@ -292,15 +292,13 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "hubu",
-      "readiness": "stale",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/axi-notify/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/axi-notify/docs/HANDOFF.md",
       "graphId": "axi-notify",
       "graphMatched": true,
-      "errors": [
-        "verification is stale: 49 days old (max 30)"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "Workflow contracts, a Go and SQLite notification Relay, and the Axi Mobile Android client for cloud event to FCM to device delivery.",
       "commands": {
@@ -330,6 +328,8 @@
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
+          "donors README 补全，audit 0 errors",
+          "Android 包名已迁移为 com.axi.notify（Option A / task-5 / 2026-10-13）",
           "Desktop badge and unread summary",
           "Compose and React Native dynamic material pipeline",
           "Security hardening for credentials and debug bootstrap",
@@ -340,7 +340,7 @@
           "Several planned security, health, schema, and Android tests listed in TODO.md are not implemented yet."
         ]
       },
-      "lastVerifiedAt": "2026-08-23"
+      "lastVerifiedAt": "2026-10-13"
     },
     {
       "id": "axi-pet-desktop",
@@ -494,7 +494,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-10-13"
     },
     {
       "id": "axi-runtime",
@@ -527,11 +527,11 @@
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
-          "ADR-013 (Migrated 2026-09-29): Rust migration of axi-runtime; 4-phase plan; depends on ADR-011; see docs/adr/ADR-013-axi-runtime-rust-migration.md"
+          "ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011"
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-10-11"
+      "lastVerifiedAt": "2026-09-29"
     },
     {
       "id": "axi-skills",
@@ -583,7 +583,7 @@
           "Full catalog verification has unrelated pre-existing secret-pattern/cache errors and i18n batch drift; this change was verified with scoped tests and a three-worker Codex native completion/refill smoke, not ZCode twelve-way execution."
         ]
       },
-      "lastVerifiedAt": "2026-10-09"
+      "lastVerifiedAt": "2026-10-14"
     },
     {
       "id": "axi-soul-world",
@@ -783,13 +783,16 @@
       "kind": "project",
       "lifecycle": "active-canonical",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "stale",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/workbench/axi-workbench/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/workbench/axi-workbench/docs/HANDOFF.md",
       "graphId": "axi-workbench",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "decisions.submitLog path does not exist: docs/logs/submit/20260611-124603-batch-submit.md",
+        "verification is stale: 31 days old (max 30)"
+      ],
       "warnings": [],
       "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
       "commands": {
@@ -869,11 +872,13 @@
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
-          "Maintain CLI and evidence against the AXI Kernel"
+          "bench 回归修复 + Kernel 自注册",
+          "cli/axi_workbench/bench.py:29 修掉了 _workbench_root() 硬编码 incubator/workbench-governance 旧路径的回归，改用 WORKBENCH_ROOT 环境变量 → parents[2] → fallback 三级解析",
+          "新增 python3 -m axi_workbench register-self 子命令以及 bin/axi-workbench-register-self.sh wrapper，把本 CLI 自身注册到 Kernel（默认 idempotent，id = project-libu-e6e0f39150258497）"
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-10-13"
     },
     {
       "id": "axi-workspace-governance",
@@ -886,7 +891,7 @@
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/foundation/workspace-governance/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/foundation/workspace-governance/docs/HANDOFF.md",
-      "graphId": "28",
+      "graphId": "axi-workspace-governance",
       "graphMatched": true,
       "errors": [],
       "warnings": [
@@ -915,11 +920,13 @@
         "active": [
           "Keep manifest v2, generated handoff guides, and workspace registry consistency checks in sync.",
           "Maintain the task-execution-routing/v1 workflow-first contract.",
-          "ADR-016 Phase 1: workspace-governance-rs Rust re-implementation of the six read-only subcommands (list, whereami, health, onboard, handoff-check, validate), the 1:1 parser for workspace.json / workspace.graph.json, and the six invariant validators. Status: Superseded on 2026-10-11 — the canonical Rust crate lives in foundation/axi-workspace-rs/crates/workspace-governance-rs/. See ADR-016 'Supersedes (2026-10-11)' block."
+          "ADR-016 Phase 1: workspace-governance-rs Rust re-implementation of the six read-only subcommands (list, whereami, health, onboard, handoff-check, validate), the 1:1 parser for workspace.json / workspace.graph.json, and the six invariant validators. Status: Superseded on 2026-10-11 — the canonical Rust crate lives in foundation/axi-workspace-rs/crates/workspace-governance-rs/. See ADR-016 'Supersedes (2026-10-11)' block.",
+          "ADR-020 落地 — declare `workspace.graph.json` (runtime merged registry, 41 nodes + 30 external capability providers) as the single runtime source of truth and `foundation/workspace-governance/workspace.json` as its governance subset (`workspace.json ⊂ workspace.graph.json`, strict). New agents, routers and memory systems read `workspace.graph.json`; governance admission / compliance-profile work reads `workspace.json`; catalog and cross-references are generated from the graph by `pnpm workspace:docs:sync`. Follow-ups: extend `scripts/workspace-audit.mjs` to assert the strict-subset invariant in CI; regenerate `docs/registry/project-cross-references.md` from the graph; add a `workspace://governance` MCP resource that exposes the projected `workspace.json` view.",
+          "codemap 4 处推荐操作完成 (2026-10-13): lock_version bumped 2 → 3 with top-level `regenerate_when` (4 entries) + `ci_integration` block; `pnpm codemap:build` Node wrapper at `scripts/codemap-build.js`; `workspace:docs:sync` now chains `pnpm codemap:build &&` before `scripts/workspace-docs-sync.mjs`; governance mirror at `docs/codemap.md`; frontend `RUNTIME_FETCH_ENDPOINT` env hook (`AXI_MEMORY_RECALL_URL`) wired through `pipeline.ts` + `memoryRecall.ts`."
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-25"
+      "lastVerifiedAt": "2026-10-13"
     },
     {
       "id": "axi-workspace-rs",
