@@ -29,7 +29,7 @@ import {
   breakerSnapshotAllAsync,
   cacheKeyToPostgresKey,
   BREAKER_ADVISORY_NAMESPACE,
-} from "../shared-state/postgres-shared-state";
+} from "../shared-state/postgres";
 import { configFromEnv } from "../shared-state/shared-state-manager";
 import type { CacheEntry } from "../route";
 

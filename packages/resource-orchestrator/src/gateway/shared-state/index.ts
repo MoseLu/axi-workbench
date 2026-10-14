@@ -96,4 +96,4 @@ export {
   type PostgresClientFactory,
   SNAPSHOT_PUBLISH_ADVISORY_KEY,
   BREAKER_ADVISORY_NAMESPACE,
-} from "./postgres-shared-state";
+} from "./postgres";

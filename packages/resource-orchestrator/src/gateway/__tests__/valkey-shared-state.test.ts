@@ -23,7 +23,7 @@ import { createValkeyRateLimitStore } from "../shared-state/valkey-ratelimit";
 import { createValkeyIdempotencyStore } from "../shared-state/valkey-idempotency";
 import { createValkeySnapshotStore } from "../shared-state/valkey-snapshot";
 import { createValkeyCoalesceStore } from "../shared-state/valkey-coalesce";
-import { createPostgresSharedStateManager } from "../shared-state/postgres-shared-state";
+import { createPostgresSharedStateManager } from "../shared-state/postgres";
 import { configFromEnv } from "../shared-state/shared-state-manager";
 import type {
   SharedStateConfig,

@@ -18,7 +18,7 @@ import {
   SNAPSHOT_PUBLISH_ADVISORY_KEY,
   type PostgresLikePool,
   type PostgresLikeClient,
-} from "../shared-state/postgres-shared-state";
+} from "../shared-state/postgres";
 import { configFromEnv } from "../shared-state/shared-state-manager";
 import type { RouteDefinition } from "../route";
 

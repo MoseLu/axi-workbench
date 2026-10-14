@@ -1,91 +1,26 @@
 /**
- * Postgres shared-state backend (GHA-NEXT-027 — Phase D / P1 → Full).
+ * Per-store implementations for the Postgres shared-state backend.
  *
- * Replaces the previous "SnapshotStore real + 5 noop" partial wiring
- * with a full `pg.Pool`-backed implementation for ALL six stores. The
- * five remaining roles (BreakerStore / RateLimitStore / IdempotencyStore
- * / CacheStore / CoalesceStore) now have real SQL implementations that
- * mirror the equivalent Valkey stores in semantics, using Postgres
- * primitives (advisory locks, transactional INCR, ON CONFLICT, JSONB,
- * TTL via `expires_at` columns) wherever the Valkey version relies on
- * Redis commands / Lua scripts.
+ * Hosts the six store creators:
+ *   - `createPostgresSnapshotStore`     (publish + advisory-lock)
+ *   - `createPostgresBreakerStore`      (per-target advisory locks)
+ *   - `breakerSnapshotAllAsync`         (cross-instance merge helper)
+ *   - `createPostgresRateLimitStore`    (atomic check-and-increment)
+ *   - `createPostgresIdempotencyStore`  (acquire / release / result)
+ *   - `createPostgresCacheStore`        (entries + cross-instance read)
+ *   - `createPostgresCoalesceStore`     (claim-or-join via INSERT)
  *
- * Storage layout:
- *
- *   TABLE  route_snapshots (
- *     version      BIGINT PRIMARY KEY,
- *     payload      JSONB NOT NULL,
- *     published_at TIMESTAMPTZ NOT NULL DEFAULT now()
- *   )
- *   TABLE  route_snapshot_meta (
- *     id SMALLINT PRIMARY KEY, active BIGINT NOT NULL DEFAULT 0, in_use BIGINT NOT NULL DEFAULT 0
- *   )
- *
- *   TABLE  breakers (
- *     target_id   TEXT PRIMARY KEY,
- *     snapshot    JSONB NOT NULL,
- *     expires_at  TIMESTAMPTZ NOT NULL,
- *     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
- *   )
- *
- *   TABLE  rate_limit_buckets (
- *     key           TEXT NOT NULL,
- *     window_start  BIGINT NOT NULL,
- *     count         INTEGER NOT NULL DEFAULT 0,
- *     expires_at    TIMESTAMPTZ NOT NULL,
- *     PRIMARY KEY (key, window_start)
- *   )
- *
- *   TABLE  idempotency_locks (
- *     key TEXT PRIMARY KEY,
- *     owner TEXT NOT NULL,
- *     expires_at TIMESTAMPTZ NOT NULL
- *   )
- *   TABLE  idempotency_results (
- *     key TEXT PRIMARY KEY,
- *     payload JSONB NOT NULL,
- *     expires_at TIMESTAMPTZ NOT NULL
- *   )
- *
- *   TABLE  cache_entries (
- *     cache_key TEXT PRIMARY KEY,
- *     route_id  TEXT NOT NULL,
- *     payload   JSONB NOT NULL,
- *     expires_at TIMESTAMPTZ
- *   )
- *   INDEX cache_entries_route_idx ON cache_entries (route_id)
- *
- *   TABLE  coalesce_inflight (
- *     key TEXT PRIMARY KEY,
- *     payload JSONB,
- *     expires_at TIMESTAMPTZ NOT NULL
- *   )
- *
- * Advisory-lock keys:
- *   - Snapshot publish:        0x5348415000100001
- *   - Breaker write (per-target): namespace 0x5348415000200001
- *     xor FNV-1a(targetId). Different targets don't block each other.
- *   - RateLimit / Idempotency / Cache / Coalesce: ON CONFLICT
- *     semantics; no advisory lock needed.
- *
- * Fail strategy: preserved from Wave 2.
- *   - breaker / cache / snapshot / coalesce: fail-open (admin override).
- *   - rate-limit / idempotency: fail-closed (admin override).
- *
- * Test seam: every store accepts the same `PostgresLikePool` shim so
- * tests can drop in an in-memory fake that simulates `pg_try_advisory_lock`,
- * `INSERT ... ON CONFLICT`, `DELETE WHERE expires_at < now()` and JSONB
- * semantics. A separate `live` block in the test file connects to a
- * real Postgres when `GHA_NEXT_LIVE_PG=1` AND `GATEWAY_SHARED_STORE_URL`
- * points at `postgres://...`.
+ * Each store is wired against the same `PostgresLikePool` shim and
+ * shares the `runDdlOnce` lazy migration from `./pool`. The private
+ * helpers (`breakerAdvisoryKey`, `serialiseBreakerSnapshot`,
+ * `parseBreakerSnapshot`) live here because every breaker call site
+ * reaches for them.
  */
 
-import pg from "pg";
 import type { AdapterSearchResult, CacheKey, CoalescingKey } from "@axi/gateway-contracts";
-import type { RouteDefinition, CacheEntry } from "../route";
-import type { BreakerSnapshot } from "../circuit-breaker";
+import type { RouteDefinition, CacheEntry } from "../../route";
+import type { BreakerSnapshot } from "../../circuit-breaker";
 import type {
-  SharedStateManager,
   SharedStateConfig,
   BreakerStore,
   RateLimitStore,
@@ -93,90 +28,14 @@ import type {
   CacheStore,
   SnapshotStore,
   CoalesceStore,
-} from "./shared-state-manager";
-import { noopSnapshotStore, noopBreakerStore, noopRateLimitStore, noopIdempotencyStore, noopCacheStore, noopCoalesceStore } from "./noop-impl";
+} from "../shared-state-manager";
 
-/** Advisory-lock key for `publish`. Stable bigint so all instances
- *  serialise against the same lock without coordination. */
-export const SNAPSHOT_PUBLISH_ADVISORY_KEY = BigInt("0x5348415000100001");
-
-/** Advisory-lock namespace for breaker writes. The per-target key is
- *  `BREAKER_ADVISORY_NAMESPACE xor FNV-1a(targetId)` so two writers
- *  for the SAME target serialise, but writes for different targets
- *  proceed in parallel. */
-export const BREAKER_ADVISORY_NAMESPACE = BigInt("0x5348415000200001");
-
-/** Minimal subset of `pg` we depend on. Lets tests inject `pg-mem` or a
- *  hand-rolled fake without a real database. */
-export interface PostgresLikePool {
-  query(text: string, params?: unknown[]): Promise<{ rows: unknown[]; rowCount?: number | null }>;
-  connect(): Promise<PostgresLikeClient>;
-  end(): Promise<void>;
-}
-
-export interface PostgresLikeClient {
-  query(text: string, params?: unknown[]): Promise<{ rows: unknown[]; rowCount?: number | null }>;
-  release(): void;
-}
-
-export type PostgresClientFactory = () => PostgresLikePool | Promise<PostgresLikePool>;
-
-// ---------------------------------------------------------------------------
-// DDL — run one statement per pg.query call.
-// pg 18's simple-protocol mode rejects concatenated DDL with a
-// `pg_type_typname_nsp_index` duplicate-key error, so the helper below
-// loops `pg.query` per statement instead of sending one multi-statement
-// batch.
-// ---------------------------------------------------------------------------
-
-const POSTGRES_SHARED_STATE_DDL_STATEMENTS: ReadonlyArray<string> = [
-  `CREATE TABLE IF NOT EXISTS route_snapshots (version BIGINT PRIMARY KEY, payload JSONB NOT NULL, published_at TIMESTAMPTZ NOT NULL DEFAULT now())`,
-  `CREATE TABLE IF NOT EXISTS route_snapshot_meta (id SMALLINT PRIMARY KEY, active BIGINT NOT NULL DEFAULT 0, in_use BIGINT NOT NULL DEFAULT 0)`,
-  `INSERT INTO route_snapshot_meta (id, active, in_use) VALUES (1, 0, 0) ON CONFLICT (id) DO NOTHING`,
-  `CREATE TABLE IF NOT EXISTS breakers (target_id TEXT PRIMARY KEY, snapshot JSONB NOT NULL, expires_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`,
-  `CREATE TABLE IF NOT EXISTS rate_limit_buckets (key TEXT NOT NULL, window_start BIGINT NOT NULL, count INTEGER NOT NULL DEFAULT 0, expires_at TIMESTAMPTZ NOT NULL, PRIMARY KEY (key, window_start))`,
-  `CREATE TABLE IF NOT EXISTS idempotency_locks (key TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at TIMESTAMPTZ NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS idempotency_results (key TEXT PRIMARY KEY, payload JSONB NOT NULL, expires_at TIMESTAMPTZ NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS cache_entries (cache_key TEXT PRIMARY KEY, route_id TEXT NOT NULL, payload JSONB NOT NULL, expires_at TIMESTAMPTZ)`,
-  `CREATE INDEX IF NOT EXISTS cache_entries_route_idx ON cache_entries (route_id)`,
-  `CREATE TABLE IF NOT EXISTS coalesce_inflight (key TEXT PRIMARY KEY, payload JSONB, expires_at TIMESTAMPTZ NOT NULL)`,
-];
-
-/** Lazily run the DDL on a pool. Each store lazily calls this on
- *  first use; the helper is idempotent (every statement is
- *  `IF NOT EXISTS`) and runs each statement separately so it works
- *  against pg 18's simple-protocol mode. */
-const runDdlOnce = (() => {
-  const seen = new WeakSet<PostgresLikePool>();
-  return async (pool: PostgresLikePool): Promise<void> => {
-    if (seen.has(pool)) return;
-    seen.add(pool);
-    for (const sql of POSTGRES_SHARED_STATE_DDL_STATEMENTS) {
-      try {
-        await pool.query(sql);
-      } catch {
-        // Per-statement failures fall through so an unrelated DDL
-        // problem (e.g. permissions on one schema) doesn't silently
-        // disable ALL stores.
-      }
-    }
-  };
-})();
-
-// Legacy helper kept for backward-compatibility with the original
-// `postgres-shared-state.test.ts` snapshot-store test that probes
-// the simple DDL string directly.
-export const POSTGRES_SHARED_STATE_DDL = POSTGRES_SHARED_STATE_DDL_STATEMENTS.join(";\n") + ";";
-
-/** Build a real `pg.Pool` against `connectionString`. Exposed for the
- *  production wiring in `apps/gateway`; tests pass a custom factory. */
-export const createRealPgPool = (connectionString: string): pg.Pool =>
-  new pg.Pool({
-    connectionString,
-    max: 4,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 2_000,
-  });
+import {
+  BREAKER_ADVISORY_NAMESPACE,
+  SNAPSHOT_PUBLISH_ADVISORY_KEY,
+  type PostgresLikePool,
+} from "./connection";
+import { cacheKeyToPostgresKey, coalesceKey, runDdlOnce } from "./pool";
 
 // ---------------------------------------------------------------------------
 // SnapshotStore
@@ -744,12 +603,6 @@ export const createPostgresIdempotencyStore = (
 // CacheStore
 // ---------------------------------------------------------------------------
 
-/** Build the Postgres cache key from a `CacheKey`. The manifest
- *  version is part of the key so a snapshot bump invalidates old
- *  entries naturally — same property as the Valkey implementation. */
-export const cacheKeyToPostgresKey = (key: CacheKey): string =>
-  `cache:${key.routeId}|${key.manifestVersion}|${key.scope}|${key.hash}`;
-
 /** Wire a real `CacheStore` against `pool`. The sync surface mirrors
  *  the Valkey version: reads return `undefined` immediately and the
  *  durable lookup runs in the background; writes/invalidations are
@@ -938,11 +791,6 @@ export const createPostgresCacheStore = (
 // CoalesceStore
 // ---------------------------------------------------------------------------
 
-/** Build the Postgres coalesce key from a `CoalescingKey`. Mirrors
- *  the Valkey implementation. */
-const coalesceKey = (key: CoalescingKey): string =>
-  `coalesce:${key.routeId}:${key.idempotencyKey}:${key.manifestVersion}`;
-
 /** Postgres equivalent of the Valkey CoalesceStore. Uses a single
  *  `coalesce_inflight` row per key; the row holds either no payload
  *  (in-flight, no result yet) or a JSONB payload (final result that
@@ -1054,191 +902,3 @@ export const createPostgresCoalesceStore = (
     },
   };
 };
-
-// ---------------------------------------------------------------------------
-// SharedStateManager facade
-// ---------------------------------------------------------------------------
-
-/**
- * Build a Postgres-backed `SharedStateManager`.
- *
- * When the factory is omitted the manager stays on all-noop with the
- * existing legacy behaviour. When a factory (or an inline pool) is
- * provided, ALL six stores are wired against the same Postgres pool
- * using the implementations above.
- */
-export const createPostgresSharedStateManager = (
-  config: SharedStateConfig,
-  clientOrFactory?: PostgresLikePool | PostgresClientFactory,
-): SharedStateManager => {
-  // Lightweight noop fallbacks so a deferred-resolution path can
-  // return a coherent facade while the real pool is still resolving.
-  const noop = {
-    breaker: noopBreakerStore(),
-    rateLimit: noopRateLimitStore(),
-    idempotency: noopIdempotencyStore(),
-    cache: noopCacheStore(),
-    coalesce: noopCoalesceStore(),
-  };
-
-  let breakerStore: BreakerStore = noop.breaker;
-  let rateLimitStore: RateLimitStore = noop.rateLimit;
-  let idempotencyStore: IdempotencyStore = noop.idempotency;
-  let cacheStore: CacheStore = noop.cache;
-  let coalesceStore: CoalesceStore = noop.coalesce;
-
-  let snapshotStore: SnapshotStore = noopSnapshotStore();
-  // GHA-NEXT-025 — deferred factory resolution. The previous
-  // implementation invoked `clientOrFactory()` synchronously
-  // during this function, which meant `pg.Pool` was constructed
-  // (and `pg.Client.connect` was started) at boot, even if the
-  // operator never sent a dispatch. The composition root in
-  // apps/gateway passes `() => createRealPgPool(env.storeUrl)`,
-  // and that closure now stays dormant until the first store
-  // access. Until the pool resolves, every store returns the
-  // noop fallback.
-  let resolvedPool: PostgresLikePool | null = null;
-  let resolvingPool: Promise<PostgresLikePool | null> | null = null;
-  const wireStores = (pool: PostgresLikePool): void => {
-    breakerStore = createPostgresBreakerStore(pool, config);
-    rateLimitStore = createPostgresRateLimitStore(pool, config);
-    idempotencyStore = createPostgresIdempotencyStore(pool, config);
-    cacheStore = createPostgresCacheStore(pool);
-    coalesceStore = createPostgresCoalesceStore(pool, config);
-    snapshotStore = createPostgresSnapshotStore(pool);
-  };
-
-  const ensurePool = async (): Promise<PostgresLikePool | null> => {
-    if (resolvedPool) return resolvedPool;
-    if (resolvingPool) return resolvingPool;
-    if (typeof clientOrFactory === "function") {
-      resolvingPool = (async () => {
-        try {
-          const pool = await clientOrFactory();
-          resolvedPool = pool;
-          wireStores(pool);
-        } catch (err) {
-          // Pool factory failed: keep noops. The operator can
-          // re-trigger by restarting the gateway once the upstream
-          // Postgres is reachable.
-          // eslint-disable-next-line no-console
-          console.error(`[shared-state] postgres pool factory failed: ${String(err)}`);
-        } finally {
-          resolvingPool = null;
-        }
-        return resolvedPool;
-      })();
-      return resolvingPool;
-    }
-    if (clientOrFactory) {
-      // Inline pool: assume already open, wire stores now.
-      resolvedPool = clientOrFactory;
-      wireStores(resolvedPool);
-      return resolvedPool;
-    }
-    return null;
-  };
-
-  // GHA-NEXT-027 — short bounded synchronous wait so the FIRST
-  // dispatch call does not race the async pool resolution. The
-  // store variables start as noops; wireStores() flips them to the
-  // real Postgres impls once the factory resolves. We use
-  // `Atomics.wait` on a 4-byte Int32Array view of a
-  // SharedArrayBuffer so the worker thread actually suspends
-  // (a `Date.now()`-busy-spin only yields the event loop
-  // without parking the thread — fine for an inline pool that
-  // resolves synchronously, broken for a real `pg.Pool` whose
-  // first `connect` is a TCP round-trip). When
-  // `SharedArrayBuffer` is unavailable (sandbox / no `cross-origin-
-  // isolated` context) we fall back to a short busy-poll with
-  // a microtask yield so the dev-box loopback path stays fast
-  // without freezing the event loop.
-  const awaitOrSpin = (deadlineMs = 50): boolean => {
-    if (resolvedPool) return true;
-    if (typeof SharedArrayBuffer === "function" && typeof Atomics !== "undefined" && typeof Atomics.wait === "function") {
-      const sab = new SharedArrayBuffer(4);
-      const i32 = new Int32Array(sab);
-      void ensurePool().then(() => {
-        if (resolvedPool) Atomics.store(i32, 0, 1);
-        Atomics.notify(i32, 0);
-      });
-      Atomics.wait(i32, 0, 0, deadlineMs);
-      return resolvedPool !== null;
-    }
-    void ensurePool();
-    const startedAt = Date.now();
-    while (!resolvedPool && Date.now() - startedAt < deadlineMs) {
-      // No setTimeout here: yielding to the event loop breaks the
-      // 50 ms cap. We expect the dev-box pool to resolve in <1 ms.
-    }
-    return resolvedPool !== null;
-  };
-
-  // If the caller passed an inline (already-materialised) pool we
-  // wire stores now so the first dispatch is not a noop. A
-  // factory closure stays deferred until the first store access.
-  if (clientOrFactory && typeof clientOrFactory !== "function") {
-    resolvedPool = clientOrFactory;
-    wireStores(resolvedPool);
-  }
-
-  let disposed = false;
-
-  return {
-    get breaker() {
-      awaitOrSpin();
-      return breakerStore;
-    },
-    get rateLimit() {
-      awaitOrSpin();
-      return rateLimitStore;
-    },
-    get idempotency() {
-      awaitOrSpin();
-      return idempotencyStore;
-    },
-    get cache() {
-      awaitOrSpin();
-      return cacheStore;
-    },
-    get snapshot() {
-      awaitOrSpin();
-      return snapshotStore;
-    },
-    get coalesce() {
-      awaitOrSpin();
-      return coalesceStore;
-    },
-
-    get isEnabled() {
-      return config.storeType === "postgres" && !disposed;
-    },
-    // GHA-NEXT-025 / GHA-NEXT-027 — surface the operator's
-    // SharedStateConfig so dispatchers can honour
-    // rateLimitFailClosed / idempotencyFailClosed per-route.
-    config,
-
-    async dispose() {
-      if (disposed) return;
-      disposed = true;
-      // If a pool resolution is in flight, await it before closing
-      // so the caller is guaranteed a deterministic post-dispose
-      // state. After the await, `resolvedPool` may be a real pool
-      // (close it) or still null (the factory never ran / failed).
-      if (resolvingPool) {
-        try { await resolvingPool; } catch { /* best-effort */ }
-      }
-      if (resolvedPool && typeof resolvedPool.end === "function") {
-        try {
-          await resolvedPool.end();
-        } catch {
-          /* best-effort */
-        }
-      }
-    },
-  };
-};
-
-// Marker for the post-stub version; bumped whenever the data platform
-// owns pg.Pool reuse.
-export const __POSTGRES_STUB_VERSION = "0.3.0-real-full";
