@@ -101,8 +101,8 @@ export default tseslint.config(
       'apps/workbench/src/App.tsx',
       // 应用入口：antd reset.css 全局样式桥接（待迁移到 @axi/tokens）
       'apps/workbench/src/main.tsx',
-      // 独立认证表面
-      'apps/workbench/src/pages/Login.tsx',
+      // 独立认证表面（2026-10-14 由 pages/Login.tsx 拆分为 pages/Login/ 目录）
+      'apps/workbench/src/pages/Login/**',
       // 已被路由表隔离为 404 的旧页面（quarantinedPageFiles）。
       // Handoff.tsx 已迁移到 @axi/* 表面，单独从豁免清单中排除。
       'apps/workbench/src/pages/admin/**',

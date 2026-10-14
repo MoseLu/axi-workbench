@@ -23,8 +23,11 @@ const quarantinedPageFiles = new Set([
 ]);
 
 // Login is a separate authentication surface and is intentionally outside the
-// protected CRUD page contract.
-const contractExemptions = new Set(['apps/workbench/src/pages/Login.tsx']);
+// protected CRUD page contract. 2026-10-14: pages/Login.tsx was split into
+// pages/Login/ (index.tsx + _hooks/ + _components/); the single residual antd
+// import (QRCode) now lives in _components/QrLoginPanel.tsx and carries the
+// in-file axi-ui-escape-hatch marker checked below.
+const contractExemptions = new Set(['apps/workbench/src/pages/Login/_components/QrLoginPanel.tsx']);
 const findings = [];
 
 const appSource = await readFile(path.join(root, 'apps/workbench/src/App.tsx'), 'utf8');

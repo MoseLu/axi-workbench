@@ -130,7 +130,7 @@
 | `apps/workbench/src/pages` 旧页面（24 个，见 adoption 脚本 `quarantinedPageFiles`） | 已被路由表隔离为 `AxiExceptionPage`（404），不可达 | 迁移到 @axi 表面后解除隔离 |
 | `apps/devsvc-dashboard`（package.json 含 antd） | 直接依赖 antd | 存量控制台；后续收敛为 @axi 后移除 |
 | `apps/resource-orchestration`（package.json 含 antd） | 直接依赖 antd | 存量；后续收敛为 @axi 后移除 |
-| `pages/Login.tsx` | 独立认证表面 | 有意豁免于 CRUD 页面契约 |
+| `pages/Login/`（原 `pages/Login.tsx`，2026-10-14 拆分为 `index.tsx` + `_hooks/` + `_components/`） | 独立认证表面 | 有意豁免于 CRUD 页面契约；残留 antd 仅 `_components/QrLoginPanel.tsx` 的 QRCode（带 escape-hatch 注释），@axi 补齐 QR 组件后偿还 |
 
 > 新增豁免 = 高影响决策，需在本表登记原因与"何时偿还"，并在 `docs/state` 留痕。
 

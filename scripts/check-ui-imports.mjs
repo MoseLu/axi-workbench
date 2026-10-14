@@ -32,6 +32,9 @@ const exemptPrefixes = [
   'apps/resource-orchestration/',
   'apps/workbench/src/pages/admin/',
   'apps/workbench/src/pages/commit-ledger/',
+  // 独立认证表面：2026-10-14 由 pages/Login.tsx 拆分为 pages/Login/ 目录
+  // （index.tsx + _hooks/ + _components/），豁免随文件一起迁移，用法只减不增。
+  'apps/workbench/src/pages/Login/',
 ];
 
 // 精确文件豁免
@@ -39,8 +42,6 @@ const exemptFiles = new Set([
   // 应用根 / 入口：antd ConfigProvider 主题、locale、reset.css 桥接（配置层）
   'apps/workbench/src/App.tsx',
   'apps/workbench/src/main.tsx',
-  // 独立认证表面
-  'apps/workbench/src/pages/Login.tsx',
   // 已被路由表隔离为 404 的旧页面
   'apps/workbench/src/pages/ProjectDetail.tsx',
   'apps/workbench/src/pages/Projects.tsx',
