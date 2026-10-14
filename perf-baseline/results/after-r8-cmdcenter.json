@@ -1,0 +1,138 @@
+{
+  "label": "after-r8-cmdcenter",
+  "baseUrl": "http://127.0.0.1:3600",
+  "throttledCpu": 4,
+  "steps": {
+    "step1": {
+      "label": "cold-/login",
+      "wallClockMs": 8365,
+      "fcp": 440,
+      "lcp": {
+        "start": 444,
+        "size": 4590
+      },
+      "domInteractive": 21,
+      "domContentLoaded": 359,
+      "load": 362,
+      "transferKB": 1,
+      "encodedBodyKB": 1,
+      "decodedBodyKB": 1,
+      "mem": {
+        "jsHeapUsedMB": 67.4,
+        "jsHeapTotalMB": 72
+      },
+      "longTaskCount": 1,
+      "longTaskTotalMs": 116,
+      "longTaskMaxMs": 116,
+      "stallCount": 0,
+      "layoutShiftTotal": 0,
+      "eventTimings": [],
+      "wallClockFromStartMs": 8365,
+      "memBeforeMB": 1
+    },
+    "step2": {
+      "label": "cold-/admin/dashboard",
+      "wallClockMs": 8051,
+      "fcp": 100,
+      "lcp": {
+        "start": 264,
+        "size": 3060
+      },
+      "domInteractive": 9,
+      "domContentLoaded": 46,
+      "load": 47,
+      "transferKB": 1,
+      "encodedBodyKB": 1,
+      "decodedBodyKB": 1,
+      "mem": {
+        "jsHeapUsedMB": 84,
+        "jsHeapTotalMB": 107.3
+      },
+      "longTaskCount": 2,
+      "longTaskTotalMs": 134,
+      "longTaskMaxMs": 73,
+      "stallCount": 0,
+      "layoutShiftTotal": 0,
+      "eventTimings": [],
+      "wallClockFromStartMs": 8050,
+      "memBeforeMB": 67
+    },
+    "step3": {
+      "label": "cold-/admin/project",
+      "error": "no-projects-link"
+    },
+    "step4": {
+      "label": "open-project-card",
+      "error": "no-project-card"
+    },
+    "step5": {
+      "label": "cold-/admin/workspace",
+      "click": {
+        "label": "nav-workspace",
+        "clickToPaintMs": 68,
+        "memDeltaMB": 9,
+        "newLongTasks": 0
+      },
+      "wallClockMs": 16158,
+      "fcp": 100,
+      "lcp": {
+        "start": 264,
+        "size": 3060
+      },
+      "domInteractive": 9,
+      "domContentLoaded": 46,
+      "load": 47,
+      "transferKB": 1,
+      "encodedBodyKB": 1,
+      "decodedBodyKB": 1,
+      "mem": {
+        "jsHeapUsedMB": 75.2,
+        "jsHeapTotalMB": 116.2
+      },
+      "longTaskCount": 2,
+      "longTaskTotalMs": 134,
+      "longTaskMaxMs": 73,
+      "stallCount": 0,
+      "layoutShiftTotal": 0.0228,
+      "eventTimings": []
+    },
+    "step6": {
+      "label": "cold-/admin/command-center",
+      "click": {
+        "label": "nav-command-center",
+        "clickToPaintMs": 47,
+        "memDeltaMB": 4,
+        "newLongTasks": 0
+      },
+      "wallClockMs": 24212,
+      "fcp": 100,
+      "lcp": {
+        "start": 264,
+        "size": 3060
+      },
+      "domInteractive": 9,
+      "domContentLoaded": 46,
+      "load": 47,
+      "transferKB": 1,
+      "encodedBodyKB": 1,
+      "decodedBodyKB": 1,
+      "mem": {
+        "jsHeapUsedMB": 72.2,
+        "jsHeapTotalMB": 73.3
+      },
+      "longTaskCount": 2,
+      "longTaskTotalMs": 134,
+      "longTaskMaxMs": 73,
+      "stallCount": 0,
+      "layoutShiftTotal": 0.0228,
+      "eventTimings": []
+    }
+  },
+  "bundle": {
+    "docHTML": 674535,
+    "scriptCount": 3,
+    "linkCount": 0
+  },
+  "finalMemoryMB": 73,
+  "capturedAt": "2026-10-10T07:03:19.819Z"
+}
