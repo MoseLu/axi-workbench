@@ -1,4 +1,4 @@
-<!-- Generated: 2026-03-23 | Updated: 2026-03-23 -->
+<!-- Generated: 2026-03-23 | Updated: 2026-10-15 -->
 
 # SOP 系统
 
@@ -124,3 +124,38 @@ grep -rn "TODO\|FIXME" --include="*.py" --include="*.tsx" --include="*.ts" .
 ```
 
 <!-- MANUAL: -->
+
+---
+
+## 入口 / 命令 / 依赖 / 已知违规（2026-10-15 索引审计补充）
+
+### 入口
+- Web 前端（CRA）：`frontend/src/index.tsx` → `frontend/src/App.tsx`；`control/`（管理端）与 `display/`（展示端）双视图，桌面端为 Electron 壳（`frontend/` 内构建）。
+- 后端：`backend/server.py`（主服务，`__main__` 在 1143 行）与 `backend/api.py`（REST 定义，`__main__` 在 133 行）。
+
+### 子模块划分
+| 目录 | 职责 |
+|---|---|
+| `frontend/src/control/` | 管理端：`Dashboard` / `DeviceManagement` / `LoginPage`（近期已按功能拆出 `*.GroupTree` / `*.PushBar` / `*.SearchFilters` / `*.utils` 等子文件） |
+| `frontend/src/display/` | 展示端：`DisplayApp.tsx`、`ConnectionSettingsPage`、`LoginPage` |
+| `frontend/src/shared/` `services/` `native/` `config/` `types/` | 共享上下文 / API client、服务层、Capacitor 原生适配、配置、类型 |
+| `backend/` | `api.py` / `api_sop.py` / `auth.py` / `device_manager.py` / `models.py` / `chroma/`（向量检索）/ `data/` |
+| `plugins/` `asserts/` `docs/` `scripts/` | 插件、SOP 静态资源、文档、脚本 |
+
+### 关键命令
+```bash
+pnpm --dir frontend build            # react-scripts build（另有 build:control / build:display）
+pnpm --dir frontend test             # react-scripts test
+pnpm --dir frontend check:design-tokens
+python backend/server.py             # 后端主服务（FastAPI + uvicorn）
+build_all.bat                        # 全量：后端 exe + Web + Electron + Android APK
+```
+
+### 依赖关系
+- 独立应用：**不消费**本仓 `@axi/*` 共享包（保留 React 18 + CRA 技术栈）；后端依赖 FastAPI / ChromaDB / SQLAlchemy，桌面与移动分别用 Electron / Capacitor。
+- **不在** `apps/devsvc-dashboard` 的 `config/axi-apps.json` 托管清单内，按独立进程运行。
+- 模块级细节（backend / frontend / docs / asserts）见各自 `AGENTS.md`（L3）。
+
+### 已知违规（2026-10-15 实测）
+- 前端 >500 行：`frontend/src/display/DisplayApp.tsx` 1304、`frontend/src/control/DeviceManagement.tsx` 759（工作树中已有并行拆分，勿重复拆）、`frontend/src/shared/api/client.ts` 611。
+- 后端 >600 行：`backend/models.py` 1269、`backend/server.py` 1182、`backend/build_embedding.py` 1087、`backend/pdf_sync_monitor.py` 793、`backend/sync_sop.py` 643、`backend/command_pusher.py` 617。

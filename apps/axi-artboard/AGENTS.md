@@ -178,3 +178,11 @@ Inherited from the workspace `AGENTS.md`:
   matching vitest case was not already on `dev` in a failing state. Reverse
   TDD (impl first, then a passing test) is a hard reject. See
   [`docs/process/tdd-driven-prd.md`](./docs/process/tdd-driven-prd.md) §6.
+
+## 入口速查与已知违规（2026-10-15 索引审计补充）
+
+- **入口链**：`index.html` → `src/main.tsx` → `src/App.tsx`；产品面 `src/overlay/OverlayCanvas.tsx`。
+- **关键命令补充**：`pnpm --filter @axi/axi-artboard type-check`（`tsc -b --noEmit`）、`test`（vitest run）、`check`（lint + check:tokens + typecheck）。
+- **已知脚本缺陷**：`package.json` 的 `check` 脚本调用 `pnpm typecheck`，但本包只定义了 `type-check`；`pnpm check` 会在最后一步报 "None of the selected packages has a typecheck script"。修复时把 `check` 改为 `pnpm type-check`。
+- **超限文件（阈值 500 行）**：`src/overlay/OverlayCanvas.tsx` 756、`src/overlay/canvas/paint.ts` 441（接近阈值）；其余均低于 500。
+- **依赖关系**：宿主为 `apps/devsvc-dashboard`（`config/axi-apps.json` 注册，运行时注入 `AXI_APP_BASE` / `AXI_APP_PORT` / `VITE_AXI_APP_*`）；`@axi/*` 跨仓 UI 包不在本仓，来自 `foundation/axi-ui`。

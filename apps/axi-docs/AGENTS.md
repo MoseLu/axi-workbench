@@ -8,7 +8,7 @@
 
 ## Scope
 
-- **适用对象**：所有 agent（包括 Codex、Cursor、自动化扫描器、文档巡检子代理）首次接触 `/Volumes/code/workspace/projects/axi-workbench/apps/axi-docs` 时。
+- **适用对象**：所有 agent（包括 Codex、Cursor、自动化扫描器、文档巡检子代理）首次接触 `/Volumes/code/workspace/workbench/axi-workbench/apps/axi-docs` 时。
 - **不适用对象**：纯运行时的 Blinko 同步脚本（其约束见 `app/AGENTS.md` 中的「同步机制」）；纯 `references/*` 引用文档（其治理在 `infra/axi-workspace-governance/`，见「Cross-Project Boundary」）。
 - **阅读顺序**：本文件 → `app/AGENTS.md`（若要改 `app/`）→ `docs/content/{en,zh}/README.md`（若要改产品内容）。
 
@@ -45,9 +45,9 @@ Axi Docs 是 **「文档枢纽 + 知识图谱 + MCP 文档总线 + 工作区项�
 
 | 议题 | 权威来源 |
 |------|----------|
-| 跨项目行为规则、SOP、提交协议、commit-msg Lore trailer 强制 | [`axi-rules`](../../axi-rules/INDEX.md)（兜底权威；本仓不自有该层规则） |
-| `@axi/*` 共享包的新消费者集成（scenario matrix、dependency order、Verdaccio wiring、gallery 参考实现） | [`shared/axi-ui/docs/INTEGRATION.md`](../../../shared/axi-ui/docs/INTEGRATION.md)（AR-ROUTING-007） |
-| `@axi/*` 包结构、组件清单、Public API、Release ledger | [`shared/axi-ui/INDEX.md`](../../../shared/axi-ui/INDEX.md) 与 `shared/axi-ui/docs/axi-ui/COMPONENTS.md` / `PUBLIC_API.md` / `RELEASES.md` |
+| 跨项目行为规则、SOP、提交协议、commit-msg Lore trailer 强制 | [`axi-rules`](/Volumes/code/workspace/foundation/axi-rules/INDEX.md)（兜底权威；本仓不自有该层规则） |
+| `@axi/*` 共享包的新消费者集成（scenario matrix、dependency order、Verdaccio wiring、gallery 参考实现） | [`foundation/axi-ui/docs/INTEGRATION.md`](/Volumes/code/workspace/foundation/axi-ui/docs/INTEGRATION.md)（AR-ROUTING-007） |
+| `@axi/*` 包结构、组件清单、Public API、Release ledger | [`foundation/axi-ui/INDEX.md`](/Volumes/code/workspace/foundation/axi-ui/INDEX.md) 与 `foundation/axi-ui/docs/axi-ui/COMPONENTS.md` / `PUBLIC_API.md` / `RELEASES.md` |
 | 模块划分、技术栈、组件规则、API 规范、环境变量 | [`app/AGENTS.md`](app/AGENTS.md) |
 | 产品内容（用户可见的英文/中文文档） | `docs/content/en/README.md`, `docs/content/zh/README.md` |
 | 根级规划分类入口（给当前目录巡检 agent） | `plans/README.md` |
@@ -117,6 +117,8 @@ pnpm --dir app build
 ---
 
 *最后更新：2026-08-18 — Authoritative Sources 表新增 `shared/axi-ui/docs/INTEGRATION.md` 与 `shared/axi-ui/INDEX.md` 两行，把 `@axi/*` 共享包文档入口纳入本仓权威清单；与 `axi-rules` 的 AR-ROUTING-007 对齐，避免新消费者绕开 INTEGRATION.md 直接读 package metadata。*
+
+*2026-10-15 修正 — 规范化路径：`shared/axi-ui` 已迁至 `foundation/axi-ui`（ADR-008 后 `shared/` 分区退役），`../../axi-rules` 改为绝对路径 `/Volumes/code/workspace/foundation/axi-rules/INDEX.md`；Scope 中的 canonical path 从 `projects/axi-workbench/apps/axi-docs` 更正为 `workbench/axi-workbench/apps/axi-docs`。*
 
 ## Relationship Metadata
 
