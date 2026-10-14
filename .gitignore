@@ -19,6 +19,7 @@ coverage/
 .DS_Store
 *.pem
 *.key
+*.bak
 .local/workbench-tls/
 # Local service credentials; never commit or package these files.
 .local/secrets/
