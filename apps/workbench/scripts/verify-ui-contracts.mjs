@@ -106,10 +106,30 @@ forbidMatch(login, /Axi 工作台/, 'Web login must keep the product wordmark in
 requireMatch(app, /AxiThemeProvider/, 'theme runtime must be mounted at the app boundary');
 forbidMatch(layout, /PersonalOsLayout|personal-os-shell/, 'Personal OS must use the shared dashboard shell instead of a duplicate shell');
 requireMatch(layout, /contentLayout=\{isPersonalOsRoute \? 'flush' : 'inset'\}/, 'Personal OS workspace must use the shared flush content layout');
+// LCP perf (c95a2f18) intentionally moved the shared component stylesheets out of the
+// entry module into the mount points that consume them: MainLayout (authenticated shell)
+// and Login (unauthenticated first paint, which renders <AxiBanner />). The contract keeps
+// the original intent — shared layers load before the local bridge at each mount point —
+// and additionally guards the perf property by forbidding a re-hoist into the entry.
 requireMatch(
   main,
-  /@axi\/tokens\/css[\s\S]*@axi\/core\/styles\.css[\s\S]*@axi\/shell\/styles\.css[\s\S]*@axi\/settings\/styles\.css/,
-  'shared Axi CSS layers must load before the local bridge',
+  /@axi\/tokens\/css[\s\S]*\.\/index\.css/,
+  'shared Axi token CSS must load before the local bridge',
+);
+forbidMatch(
+  main,
+  /@axi\/(?:core|crud|shell|settings|widgets)\/styles\.css/,
+  'entry module must not re-hoist shared Axi component CSS into the first-paint path',
+);
+requireMatch(
+  layout,
+  /@axi\/core\/styles\.css[\s\S]*@axi\/crud\/styles\.css[\s\S]*@axi\/shell\/styles\.css[\s\S]*@axi\/settings\/styles\.css[\s\S]*@axi\/widgets\/styles\.css[\s\S]*\.\/MainLayout\.css/,
+  'authenticated shell must load the shared Axi CSS layers before the local layout bridge',
+);
+requireMatch(
+  login,
+  /@axi\/widgets\/styles\.css/,
+  'unauthenticated login surface must load the shared widget CSS it renders',
 );
 requireMatch(
   tokens,
@@ -123,7 +143,15 @@ requireMatch(
 );
 requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?padding:\s*var\(--space-2\);/, 'login QR frame must preserve the client-style white inset around the code');
 requireMatch(loginCss, /\.axi-login-qr-frame\s*\{[\s\S]*?border-radius:\s*var\(--radius-sm\);/, 'login QR frame must preserve rounded outer corners');
-requireMatch(loginCss, /\.axi-login-qr-frame \.ant-qrcode\s*\{[\s\S]*?border:\s*0 !important;/, 'login QR must not render a nested Ant Design border');
+// 395cf522 dropped the blanket `!important` sweep from Login.css. The nested Ant border
+// is still zeroed: `.axi-login-qr-frame .ant-qrcode` (0,2,0) outranks antd's `.ant-qrcode`
+// (0,1,0, wrapped in :where()) and `bordered={false}` adds `-borderless`, so `!important`
+// is not load-bearing. Keep asserting the border is zeroed, with `!important` optional.
+requireMatch(
+  loginCss,
+  /\.axi-login-qr-frame \.ant-qrcode\s*\{[^}]*border:\s*0(?:\s*!important)?;/,
+  'login QR must not render a nested Ant Design border',
+);
 requireMatch(
   loginCss,
   /input:not\(\.axi-one-time-code__input\):not\(\.axi-login-email-code-input\)/,
