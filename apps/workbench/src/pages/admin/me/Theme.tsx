@@ -1,37 +1,15 @@
 import React from 'react';
-import { AxiTableGroup } from '@axi/crud';
-import { useAxiTheme } from '@axi/core';
-import { AxiSelectButton } from '@axi/widgets';
-import { useI18n } from '../../../i18n';
-import { DesktopSettingsPage } from './DesktopSettingsPage';
+import { ThemePicker } from './_components/ThemePicker';
 import './Theme.css';
 
-type ModeId = 'system' | 'light' | 'dark';
-
-const Theme: React.FC = () => {
-  const { preference, setPreference } = useAxiTheme();
-  const { t } = useI18n();
-  const modes: Array<{ id: ModeId; label: string; desc: string }> = [
-    { id: 'system', label: t('account.theme.mode.system'), desc: t('account.theme.mode.system.desc') },
-    { id: 'light', label: t('account.theme.mode.light'), desc: t('account.theme.mode.light.desc') },
-    { id: 'dark', label: t('account.theme.mode.dark'), desc: t('account.theme.mode.dark.desc') },
-  ];
-  const selected = modes.find((mode) => mode.id === preference) ?? modes[0];
-
-  return (
-    <DesktopSettingsPage activeKey="/admin/me/theme" title={t('account.theme.title')}>
-      <AxiTableGroup title={t('account.theme.group')}>
-        <AxiSelectButton
-          buttonStyle="solid"
-          optionType="button"
-          options={modes.map((mode) => ({ label: mode.label, value: mode.id }))}
-          value={preference}
-          onChange={(event) => setPreference(event.target.value)}
-        />
-        <p className="wb-theme__description">{selected.desc}</p>
-      </AxiTableGroup>
-    </DesktopSettingsPage>
-  );
-};
+/**
+ * Page-level view for the theme preference page.
+ *
+ * The actual mode picker (including i18n wiring) lives in
+ * `./_components/ThemePicker.tsx`. This view is a thin wrapper so it only
+ * imports a same-directory component and stays free of 3-layer cross-layer
+ * imports.
+ */
+const Theme: React.FC = () => <ThemePicker />;
 
 export default Theme;
