@@ -28,68 +28,23 @@ import GlobalSearchDialog, { type GlobalSearchItem } from '../components/Layout/
 import { SystemSettingsPanel } from '../components/Layout/SystemSettingsPanel';
 import { useI18n } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
-import { resolveBreadcrumbs } from '../lib/breadcrumbs';
 import { SEARCH_CORPUS, SEARCH_SECTIONS } from '../lib/search-data';
-import {
-  HOME_TAB,
-  openTab,
-  focusTab,
-  closeTab,
-  closeLeft,
-  closeRight,
-  closeOther,
-  closeAll,
-  localizeTabLabels,
-} from '../lib/tabs';
+import { openTab, localizeTabLabels } from '../lib/tabs';
 import { useNavBadges } from '../hooks/useNavBadges';
 import { emitShellLogout, emitShellUnread } from '../lib/shell';
-import {
-  workbenchDesktopNavGroupsWithKeys,
-  workbenchMenuRouteMap,
-  filterNavGroupsByRole,
-  type WorkbenchNavGroup,
-} from '../lib/navigationRegistry';
+import { workbenchDesktopNavGroupsWithKeys } from '../lib/navigationRegistry';
 import { loadProfile, resolveAvatarSrc, type UserProfile } from '../pages/admin/me/profileStore';
 import { WorkbenchFloatingToolArrow } from '../lib/floatingToolArrow';
 import { getUserRole, type UserRole } from '../config';
+import {
+  buildDesktopBreadcrumbs,
+  buildPersonalOsNavGroups,
+  buildVisibleDesktopNavGroups,
+  resolveMenuRoute,
+} from './MainLayout/navigation';
+import { TABS_STORAGE_KEY, loadPersistedTabs } from './MainLayout/persistence';
+import { useTabHandlers } from './MainLayout/tabHandlers';
 import './MainLayout.css';
-
-const ROUTE_PREFIX_LABEL_KEYS: Array<{ prefix: string; labelKey: string }> = [
-  { prefix: '/admin/project/', labelKey: 'nav.projectDetail' },
-  { prefix: '/admin/handoff/', labelKey: 'nav.handoff' },
-];
-
-function resolveMenuRoute(path: string): { labelKey: string } | undefined {
-  const prefixEntry = ROUTE_PREFIX_LABEL_KEYS.find((entry) => path.startsWith(entry.prefix));
-  if (prefixEntry) return { labelKey: prefixEntry.labelKey };
-  return workbenchMenuRouteMap[path];
-}
-
-const TABS_STORAGE_KEY = 'axi.workbench.tabs.v1';
-
-function loadPersistedTabs(): { tabs: TabItem[]; activeTab: string } {
-  if (typeof window === 'undefined') return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
-  try {
-    const raw = window.localStorage.getItem(TABS_STORAGE_KEY);
-    if (!raw) return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
-    const value = JSON.parse(raw) as { tabs?: unknown; activeTab?: unknown };
-    if (!Array.isArray(value.tabs)) return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
-    const tabs = value.tabs.filter((tab): tab is TabItem => {
-      if (!tab || typeof tab !== 'object') return false;
-      const candidate = tab as Partial<TabItem>;
-      return typeof candidate.key === 'string' && candidate.key.startsWith('/')
-        && typeof candidate.path === 'string' && candidate.path.startsWith('/')
-        && typeof candidate.label === 'string';
-    });
-    const normalized = tabs.some((tab) => tab.key === HOME_TAB.key) ? tabs : [HOME_TAB, ...tabs];
-    const activeTab = typeof value.activeTab === 'string' && normalized.some((tab) => tab.key === value.activeTab)
-      ? value.activeTab
-      : HOME_TAB.key;
-    return { tabs: normalized, activeTab };
-  } catch {
-    return { tabs: [HOME_TAB], activeTab: HOME_TAB.key };
-  }
-}
 
 const MainLayout: React.FC = () => {
   const { locale, setLocale, t } = useI18n();
@@ -229,121 +184,30 @@ const MainLayout: React.FC = () => {
     setActiveTab(path);
   }, [location.pathname, t]);
 
-  const handleTabChange = useCallback(
-    (key: string) => {
-      const result = focusTab(tabs, key);
-      setActiveTab(result.nextActive ?? key);
-      navigate(key);
-    },
-    [navigate, tabs],
-  );
-
-  const handleTabClose = useCallback(
-    (key: string) => {
-      setTabs((prev) => {
-        const result = closeTab(prev, key, activeTab);
-        if (result.nextActive !== null && result.nextActive !== activeTab) {
-          setActiveTab(result.nextActive);
-          const last = result.tabs[result.tabs.length - 1];
-          if (last && last.key === result.nextActive) navigate(last.path);
-        }
-        return result.tabs;
-      });
-    },
-    [activeTab, navigate],
-  );
-
-  const handleCloseLeft = useCallback(() => {
-    setTabs((prev) => closeLeft(prev, activeTab).tabs);
-  }, [activeTab]);
-
-  const handleCloseRight = useCallback(() => {
-    setTabs((prev) => closeRight(prev, activeTab).tabs);
-  }, [activeTab]);
-
-  const handleCloseOther = useCallback(() => {
-    setTabs((prev) => closeOther(prev, activeTab).tabs);
-  }, [activeTab]);
-
-  const handleCloseAll = useCallback(() => {
-    setTabs((prev) => {
-      const result = closeAll(prev);
-      if (result.nextActive !== null) {
-        setActiveTab(result.nextActive);
-        const last = result.tabs[result.tabs.length - 1];
-        if (last && last.key === result.nextActive) {
-          navigate(last.path);
-        }
-      }
-      return result.tabs;
-    });
-  }, [navigate]);
+  const {
+    handleTabChange,
+    handleTabClose,
+    handleCloseLeft,
+    handleCloseRight,
+    handleCloseOther,
+    handleCloseAll,
+  } = useTabHandlers({ activeTab, tabs, setTabs, setActiveTab, navigate });
 
   // 从本地配置读取用户角色
   const userRole = useMemo<UserRole>(() => getUserRole(), []);
 
-  const visibleDesktopNavGroups = useMemo<AxiDashboardNavGroup[]>(() => {
-    const keyword = sidebarSearchValue.trim().toLowerCase();
-    // 根据用户角色过滤导航分组
-    const roleFiltered = filterNavGroupsByRole(workbenchDesktopNavGroupsWithKeys, userRole);
-    const localized = roleFiltered.map((group: WorkbenchNavGroup) => ({
-      ...group,
-      label: t(group.labelKey),
-      children: group.children.map((item) => ({
-        ...item,
-        label: t(item.labelKey),
-      })),
-    }));
-    const filtered = keyword
-      ? localized
-          .map((group) => ({
-            ...group,
-            children: group.children.filter((item) => String(item.label).toLowerCase().includes(keyword)),
-          }))
-          .filter((group) => group.children.length > 0)
-      : localized;
-    return filtered as unknown as AxiDashboardNavGroup[];
-  }, [sidebarSearchValue, t, userRole]);
+  const visibleDesktopNavGroups = useMemo<AxiDashboardNavGroup[]>(
+    () => buildVisibleDesktopNavGroups({ sidebarSearchValue, t, userRole }),
+    [sidebarSearchValue, t, userRole],
+  );
 
-  const shellNavGroups = useMemo<AxiDashboardNavGroup[]>(() => {
-    // Personal OS is a dedicated surface that intentionally lives outside the
-    // shared sidebar registry. When the route enters /admin/personal-os/* we
-    // swap the sidebar to a one-group projection so other workbench sections
-    // stay out of view, matching the fold-into-shared-AxiDashboardShell
-    // contract.
-    if (!isPersonalOsRoute) {
-      return visibleDesktopNavGroups;
-    }
-    const localizedToday = t('personalOs.nav.today');
-    const localizedWorkbench = t('personalOs.nav.workbench');
-    return [{
-      key: 'personal-os',
-      label: t('nav.group.personalOs'),
-      iconName: axiWorkbenchIconMap.overview,
-      children: [
-        {
-          key: '/admin/personal-os/today',
-          label: localizedToday,
-          iconName: axiWorkbenchIconMap.overview,
-        },
-        {
-          key: '/admin/personal-os/workbench',
-          label: localizedWorkbench,
-          iconName: axiWorkbenchIconMap.project,
-        },
-      ],
-    }];
-  }, [isPersonalOsRoute, t, visibleDesktopNavGroups]);
+  const shellNavGroups = useMemo<AxiDashboardNavGroup[]>(
+    () => buildPersonalOsNavGroups({ isPersonalOsRoute, t, visibleDesktopNavGroups }),
+    [isPersonalOsRoute, t, visibleDesktopNavGroups],
+  );
 
   const desktopBreadcrumbs = useMemo(
-    () => resolveBreadcrumbs(location.pathname).map((item, index) => ({
-      key: `${item.label}-${index}`,
-      label: item.labelKey ? t(item.labelKey) : item.label,
-      icon: item.icon,
-      current: item.isActive,
-      href: item.isActive ? undefined : item.path,
-      onClick: item.path && !item.isActive ? () => navigate(item.path!) : undefined,
-    })),
+    () => buildDesktopBreadcrumbs({ pathname: location.pathname, t, navigate }),
     [location.pathname, navigate, t],
   );
 

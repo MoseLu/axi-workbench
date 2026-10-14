@@ -11,7 +11,7 @@ const messages: Record<Locale, Messages> = {
   'en-US': enUS as Messages,
 };
 
-interface I18nContextValue {
+export interface I18nContextValue {
   locale: Locale;
   setLocale: (next: Locale) => void;
   t: (key: string, fallback?: string) => string;
