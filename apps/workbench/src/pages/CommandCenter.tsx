@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 // axi-ui-escape-hatch: antd Input + Button drive the command-bar search row
 // because @axi/widgets does not currently expose a search-input primitive.
 import { App as AntdApp, Button, Input } from 'antd';
@@ -56,14 +56,36 @@ const CommandCenter: React.FC = () => {
     setLastRun(run);
   };
 
-  const handleRunCommand = async (commandId: string) => {
+  const handleRunCommand = useCallback(async (commandId: string) => {
     const run = await runCommand.mutateAsync(commandId);
     setLastRun(run);
-  };
+  }, [runCommand]);
 
-  const snapshotMeta = snapshot
-    ? t('commandCenter.snapshotUpdated').replace('{value}', new Date(snapshot.generatedAt).toLocaleString())
-    : t('commandCenter.snapshotUnavailable');
+  const handleApprovalDecision = useCallback(
+    (id: string, decision: 'approved' | 'rejected') => decideApproval.mutate({ id, decision }),
+    [decideApproval],
+  );
+
+  const handleTaskCancel = useCallback(
+    (id: string) => {
+      modal.confirm({
+        title: t('commandCenter.agentTasks.cancel'),
+        content: t('commandCenter.agentTasks.cancelConfirm', '确认要取消该任务吗？取消后任务将停止执行且不可恢复。'),
+        okText: t('common.confirm', '确认'),
+        cancelText: t('common.cancel', '取消'),
+        okButtonProps: { danger: true },
+        onOk: () => cancelAgentTask.mutate(id),
+      });
+    },
+    [cancelAgentTask, modal, t],
+  );
+
+  const snapshotMeta = useMemo(
+    () => snapshot
+      ? t('commandCenter.snapshotUpdated').replace('{value}', new Date(snapshot.generatedAt).toLocaleString())
+      : t('commandCenter.snapshotUnavailable'),
+    [snapshot, t],
+  );
 
   if (isLoading && !snapshot) {
     return (
@@ -135,20 +157,11 @@ const CommandCenter: React.FC = () => {
           <RoutesPanel routes={snapshot.routes || []} />
           <ApprovalsPanel
             approvals={snapshot.approvals || []}
-            onDecision={(id, decision) => decideApproval.mutate({ id, decision })}
+            onDecision={handleApprovalDecision}
           />
           <AgentTasksPanel
             tasks={snapshot.agentTasks || []}
-            onCancel={(id) => {
-              modal.confirm({
-                title: t('commandCenter.agentTasks.cancel'),
-                content: t('commandCenter.agentTasks.cancelConfirm', '确认要取消该任务吗？取消后任务将停止执行且不可恢复。'),
-                okText: t('common.confirm', '确认'),
-                cancelText: t('common.cancel', '取消'),
-                okButtonProps: { danger: true },
-                onOk: () => cancelAgentTask.mutate(id),
-              });
-            }}
+            onCancel={handleTaskCancel}
           />
         </AxiRow>
       )}
@@ -186,7 +199,7 @@ interface RuntimeSession {
   summary?: string;
 }
 
-const RuntimePanel: React.FC<{ runtimes: RuntimeSession[] }> = ({ runtimes }) => {
+const RuntimePanel: React.FC<{ runtimes: RuntimeSession[] }> = React.memo(({ runtimes }) => {
   const { t } = useI18n();
   return (
     <AxiCardBanner
@@ -206,9 +219,10 @@ const RuntimePanel: React.FC<{ runtimes: RuntimeSession[] }> = ({ runtimes }) =>
       ))}
     </AxiCardBanner>
   );
-};
+});
+RuntimePanel.displayName = 'RuntimePanel';
 
-const RoutesPanel: React.FC<{ routes: RouteBinding[] }> = ({ routes }) => {
+const RoutesPanel: React.FC<{ routes: RouteBinding[] }> = React.memo(({ routes }) => {
   const { t } = useI18n();
   return (
     <AxiCardBanner
@@ -224,9 +238,10 @@ const RoutesPanel: React.FC<{ routes: RouteBinding[] }> = ({ routes }) => {
       )) : <span>{t('commandCenter.routes.empty')}</span>}
     </AxiCardBanner>
   );
-};
+});
+RoutesPanel.displayName = 'RoutesPanel';
 
-const ApprovalsPanel: React.FC<{ approvals: ApprovalRequest[]; onDecision: (id: string, decision: 'approved' | 'rejected') => void }> = ({ approvals, onDecision }) => {
+const ApprovalsPanel: React.FC<{ approvals: ApprovalRequest[]; onDecision: (id: string, decision: 'approved' | 'rejected') => void }> = React.memo(({ approvals, onDecision }) => {
   const { t } = useI18n();
   return (
     <AxiCardBanner
@@ -251,9 +266,10 @@ const ApprovalsPanel: React.FC<{ approvals: ApprovalRequest[]; onDecision: (id: 
       )) : <span>{t('commandCenter.approvals.empty')}</span>}
     </AxiCardBanner>
   );
-};
+});
+ApprovalsPanel.displayName = 'ApprovalsPanel';
 
-const AgentTasksPanel: React.FC<{ tasks: AgentTask[]; onCancel: (id: string) => void }> = ({ tasks, onCancel }) => {
+const AgentTasksPanel: React.FC<{ tasks: AgentTask[]; onCancel: (id: string) => void }> = React.memo(({ tasks, onCancel }) => {
   const { t } = useI18n();
   return (
     <AxiCardBanner
@@ -273,14 +289,15 @@ const AgentTasksPanel: React.FC<{ tasks: AgentTask[]; onCancel: (id: string) => 
       )) : <span>{t('commandCenter.agentTasks.empty')}</span>}
     </AxiCardBanner>
   );
-};
+});
+AgentTasksPanel.displayName = 'AgentTasksPanel';
 
 interface ResourceRowProps {
   resource: ManagedResource;
   onRunCommand: (commandId: string) => void;
 }
 
-const ResourceRow: React.FC<ResourceRowProps> = ({ resource, onRunCommand }) => {
+const ResourceRow: React.FC<ResourceRowProps> = React.memo(({ resource, onRunCommand }) => {
   const { t } = useI18n();
   const git = resource.metadata?.git as { branch?: string; changedEntries?: number } | null | undefined;
 
@@ -314,6 +331,7 @@ const ResourceRow: React.FC<ResourceRowProps> = ({ resource, onRunCommand }) => 
       )}
     </AxiRow>
   );
-};
+});
+ResourceRow.displayName = 'ResourceRow';
 
 export default CommandCenter;

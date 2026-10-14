@@ -47,6 +47,10 @@ import {
   openExternalLegalPage,
 } from '../lib/shell';
 import './Login.css';
+// /login is the first paint for unauthenticated users; main.tsx no longer
+// carries the @axi/* stylesheets. Pull @axi/widgets explicitly because
+// Login renders `<AxiBanner />` before any layout component mounts.
+import '@axi/widgets/styles.css';
 
 type Phase = 'email' | 'code' | 'verifying';
 type LoginMode = 'password' | 'email';

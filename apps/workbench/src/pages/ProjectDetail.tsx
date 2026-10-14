@@ -100,7 +100,7 @@ const ProjectDetailContent: React.FC<{
   project: ProjectResource;
   projects: ProjectResource[];
   snapshot: ReturnType<typeof useControlSnapshot>['data'];
-}> = ({ locale, project, projects, snapshot }) => {
+}> = React.memo(({ locale, project, projects, snapshot }) => {
   const { t } = useI18n();
   const projectId = getProjectResourceId(project);
   const git = getProjectGitStatus(project);
@@ -138,24 +138,44 @@ const ProjectDetailContent: React.FC<{
       })),
     [projectId, snapshot?.agentTasks, t],
   );
-  const governanceUnit = snapshot?.governance?.units.find((unit) => unit.id === projectId);
-  const governanceEvidence = snapshot?.governance?.evidence.filter((item) => governanceUnit?.evidenceRefs.includes(item.id)) ?? [];
-  const governanceImpact = snapshot?.governance?.impact.find((item) => item.subjectRef === projectId);
-  const governanceDocuments = snapshot?.governance?.documents.filter((item) => governanceUnit?.documentRefs.includes(item.id)) ?? [];
-  const governanceViolations = snapshot?.governance?.violations.filter((item) => item.subjectRef === projectId) ?? [];
-  const governanceWaivers = snapshot?.governance?.waivers.filter((item) => item.subjectRef === projectId) ?? [];
-  const governancePolicyDecisions = snapshot?.governance?.policyDecisions.filter((item) => item.resourceRef === projectId) ?? [];
-  const relationshipColumns: AxiTableColumn<RelationshipRow>[] = [
-    { dataIndex: 'direction', title: t('projectDetail.column.relationship'), width: 130 },
-    { dataIndex: 'label', title: t('projectDetail.column.peer') },
-  ];
-  const capabilityColumns: AxiTableColumn<CapabilityRow>[] = [{ dataIndex: 'label', title: t('projectDetail.column.capability') }];
-  const taskColumns: AxiTableColumn<TaskRow>[] = [
-    { dataIndex: 'summary', title: t('workspace.column.task') },
-    { dataIndex: 'status', title: t('operations.column.status'), width: 110 },
-    { dataIndex: 'runtime', title: t('workspace.column.runtime'), width: 150 },
-    { dataIndex: 'createdAt', render: (value) => formatTime(value, locale, t('workspace.time.unknown')), title: t('workspace.column.createdAt'), width: 150 },
-  ];
+  const governance = useMemo(() => {
+    const unit = snapshot?.governance?.units.find((u) => u.id === projectId);
+    const evidence = snapshot?.governance?.evidence ?? [];
+    const impact = snapshot?.governance?.impact ?? [];
+    const documents = snapshot?.governance?.documents ?? [];
+    const violations = snapshot?.governance?.violations ?? [];
+    const waivers = snapshot?.governance?.waivers ?? [];
+    const policyDecisions = snapshot?.governance?.policyDecisions ?? [];
+    return {
+      documents: documents.filter((item) => unit?.documentRefs.includes(item.id)),
+      evidence: evidence.filter((item) => unit?.evidenceRefs.includes(item.id)),
+      impact: impact.find((item) => item.subjectRef === projectId),
+      policyDecisions: policyDecisions.filter((item) => item.resourceRef === projectId),
+      unit,
+      violations: violations.filter((item) => item.subjectRef === projectId),
+      waivers: waivers.filter((item) => item.subjectRef === projectId),
+    };
+  }, [projectId, snapshot?.governance]);
+  const relationshipColumns = useMemo<AxiTableColumn<RelationshipRow>[]>(
+    () => [
+      { dataIndex: 'direction', title: t('projectDetail.column.relationship'), width: 130 },
+      { dataIndex: 'label', title: t('projectDetail.column.peer') },
+    ],
+    [t],
+  );
+  const capabilityColumns = useMemo<AxiTableColumn<CapabilityRow>[]>(
+    () => [{ dataIndex: 'label', title: t('projectDetail.column.capability') }],
+    [t],
+  );
+  const taskColumns = useMemo<AxiTableColumn<TaskRow>[]>(
+    () => [
+      { dataIndex: 'summary', title: t('workspace.column.task') },
+      { dataIndex: 'status', title: t('operations.column.status'), width: 110 },
+      { dataIndex: 'runtime', title: t('workspace.column.runtime'), width: 150 },
+      { dataIndex: 'createdAt', render: (value) => formatTime(value, locale, t('workspace.time.unknown')), title: t('workspace.column.createdAt'), width: 150 },
+    ],
+    [locale, t],
+  );
   const workspaceState = git.changedEntries > 0
     ? workspaceChanges.replace('{value}', `${git.changedEntries}`)
     : git.clean === false
@@ -163,22 +183,26 @@ const ProjectDetailContent: React.FC<{
       : workspaceClean;
   const commandsCount = `${project.commands.length}${t('projectDetail.commandsUnit')}`;
   const stateText = project.status === 'available' ? availableState : project.status || unknownState;
+  const descriptionItems = useMemo(
+    () => [
+      { key: 'state', label: t('projectDetail.descriptions.state'), value: stateText },
+      { key: 'workspace', label: t('projectDetail.descriptions.workspace'), value: workspaceState },
+      { key: 'branch', label: t('projectDetail.descriptions.branch'), value: git.branch || unregisteredBranch },
+      { key: 'commands', label: t('projectDetail.descriptions.commands'), value: commandsCount },
+    ],
+    [commandsCount, git.branch, stateText, t, unregisteredBranch, workspaceState],
+  );
 
   return (
     <>
       <AxiTableGroup description={getProjectResourceSummary(project)} title={getProjectResourceLabel(project)}>
         <AxiDescriptions
           columns={2}
-          items={[
-            { key: 'state', label: t('projectDetail.descriptions.state'), value: stateText },
-            { key: 'workspace', label: t('projectDetail.descriptions.workspace'), value: workspaceState },
-            { key: 'branch', label: t('projectDetail.descriptions.branch'), value: git.branch || unregisteredBranch },
-            { key: 'commands', label: t('projectDetail.descriptions.commands'), value: commandsCount },
-          ]}
+          items={descriptionItems}
         />
       </AxiTableGroup>
 
-      <GovernanceInspector documents={governanceDocuments} evidence={governanceEvidence} impact={governanceImpact} locale={locale} unit={governanceUnit} violations={governanceViolations} waivers={governanceWaivers} policyDecisions={governancePolicyDecisions} />
+      <GovernanceInspector documents={governance.documents} evidence={governance.evidence} impact={governance.impact} locale={locale} unit={governance.unit} violations={governance.violations} waivers={governance.waivers} policyDecisions={governance.policyDecisions} />
 
       <div className="project-detail-crud__grid">
         <AxiTableGroup
@@ -203,7 +227,8 @@ const ProjectDetailContent: React.FC<{
       </AxiTableGroup>
     </>
   );
-};
+});
+ProjectDetailContent.displayName = 'ProjectDetailContent';
 
 function formatTime(value: Date | string | undefined, locale: string, unknownText: string): string {
   if (!value) return unknownText;

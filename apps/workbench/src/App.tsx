@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { App as AntdApp, ConfigProvider, theme as antdTheme } from 'antd';
+import { App as AntdApp, ConfigProvider, Spin, theme as antdTheme } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
 import {
@@ -17,29 +17,6 @@ import { WorkbenchLocaleProvider, useWorkbenchLocale } from '@axi/workbench-foun
 import MainLayout from './layouts/MainLayout';
 import OfflineBanner from './components/OfflineBanner';
 import './styles/not-found.css';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import AuthCallback from './pages/AuthCallback';
-import LegalDocument from './pages/LegalDocument';
-import { PersonalOsToday, PersonalOsWorkbench } from './pages/personal-os/PersonalOs';
-import Dashboard from './pages/admin/Dashboard';
-import Operations from './pages/admin/Operations';
-import EpsAudit from './pages/admin/EpsAudit';
-import CommitLedgerPage from './pages/commit-ledger/CommitLedgerPage';
-import Observability from './pages/admin/Observability';
-import Projects from './pages/Projects';
-import ProjectDetail from './pages/ProjectDetail';
-import Team from './pages/admin/Team';
-import Workspace from './pages/admin/Workspace';
-import CommandCenter from './pages/CommandCenter';
-import Handoff from './pages/admin/Handoff';
-import HandoffCreate from './pages/admin/HandoffCreate';
-import MenuList from './pages/admin/MenuList';
-import RoleList from './pages/admin/RoleList';
-import Devices from './pages/admin/me/Devices';
-import NotificationsPage from './pages/admin/me/Notifications';
-import ThemePage from './pages/admin/me/Theme';
-import SearchPage from './pages/admin/Search';
 import RequireSession from './components/Auth/RequireSession';
 import SessionLoading from './components/Auth/SessionLoading';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -47,11 +24,90 @@ import { I18nProvider } from './i18n';
 import { getShellWindowLabel, isTauriShell, listenShell, showLoginWindow } from './lib/shell';
 import { SHELL_EVENTS } from '@axi/workbench-foundation/shell-contracts';
 
+// 路由级代码分割：每个页面只在用户真正访问时下载。
+// /login 之前一次性下载了所有 23 个 page + antd 全文 + 7MB 图标数据，
+// 现在每个 page 形成独立的 Vite 动态 chunk，首屏只拉 Login + Layout。
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const AuthCallback = React.lazy(() => import('./pages/AuthCallback'));
+const LegalDocument = React.lazy(() => import('./pages/LegalDocument'));
+const PersonalOsToday = React.lazy(() =>
+  import('./pages/personal-os/PersonalOs').then((m) => ({ default: m.PersonalOsToday })),
+);
+const PersonalOsWorkbench = React.lazy(() =>
+  import('./pages/personal-os/PersonalOs').then((m) => ({ default: m.PersonalOsWorkbench })),
+);
+const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
+const Operations = React.lazy(() => import('./pages/admin/Operations'));
+const EpsAudit = React.lazy(() => import('./pages/admin/EpsAudit'));
+const CommitLedgerPage = React.lazy(() => import('./pages/commit-ledger/CommitLedgerPage'));
+const Observability = React.lazy(() => import('./pages/admin/Observability'));
+const Projects = React.lazy(() => import('./pages/Projects'));
+const ProjectDetail = React.lazy(() => import('./pages/ProjectDetail'));
+const Team = React.lazy(() => import('./pages/admin/Team'));
+const Workspace = React.lazy(() => import('./pages/admin/Workspace'));
+const CommandCenter = React.lazy(() => import('./pages/CommandCenter'));
+const Handoff = React.lazy(() => import('./pages/admin/Handoff'));
+const HandoffCreate = React.lazy(() => import('./pages/admin/HandoffCreate'));
+const MenuList = React.lazy(() => import('./pages/admin/MenuList'));
+const RoleList = React.lazy(() => import('./pages/admin/RoleList'));
+const Devices = React.lazy(() => import('./pages/admin/me/Devices'));
+const NotificationsPage = React.lazy(() => import('./pages/admin/me/Notifications'));
+const ThemePage = React.lazy(() => import('./pages/admin/me/Theme'));
+const SearchPage = React.lazy(() => import('./pages/admin/Search'));
+
+/** 路由级 Suspense 边界：每个 lazy 页面在加载时显示 antd Spin，避免空白闪烁。 */
+const RouteSuspense: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <React.Suspense
+    fallback={
+      <div
+        role="status"
+        aria-live="polite"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          width: '100%',
+        }}
+      >
+        <Spin size="large">
+          <div style={{ minHeight: 64, minWidth: 240 }} />
+        </Spin>
+      </div>
+    }
+  >
+    {children}
+  </React.Suspense>
+);
+
+/**
+ * 全局 QueryClient 默认值。
+ *
+ * 选型依据：
+ * - `staleTime: 5min` — 普通读请求 5 分钟内复用缓存，跳过重复网络往返。
+ * - `gcTime: 30min` — 缓存保留 30 分钟，避免来回切页面时被踢出。
+ *   短于 30 分钟会导致 navigation 之间重新 fetch，明显拖慢体感。
+ * - `refetchOnWindowFocus: false` — 用户没要求刷新。Dashboard 类页面
+ *   默认按 staleTime 走即可，避免焦点切回 tab 时每个 query 一起抖动。
+ *   例外：Notifications.tsx 在 query 上显式开启 refetchOnWindowFocus。
+ * - `refetchOnReconnect: true` — 网络从断开恢复时重新拉取，配合
+ *   OfflineBanner 让用户看到「刚刚离线 → 数据可能过期」的语义一致体验。
+ * - `retry: 3 + retryDelay: exponential backoff` — 1xx 抖动自动重试，
+ *   退避上限 30s 防止雪崩。session 查询走 `retry: false` 的本地 override。
+ * - `networkMode: 'offlineFirst'` — 命中缓存即返回，offline 时不抛错，
+ *   让 OfflineBanner 接管提示；reconnect 后由 refetchOnReconnect 触发回填。
+ */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
-      retry: 1,
+      gcTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30_000),
+      networkMode: 'offlineFirst',
     },
   },
 });
@@ -121,8 +177,31 @@ const WorkbenchSurface: React.FC = () => {
   const { locale } = useWorkbenchLocale();
   React.useEffect(() => {
     if (!isTauriShell() || typeof document === 'undefined') return undefined;
-    document.body.classList.add('axi-tauri-shell');
-    return () => document.body.classList.remove('axi-tauri-shell');
+    // Defer the body-class toggle past first paint. The `axi-tauri-shell`
+    // class only adjusts cosmetic chrome for the Tauri desktop window and is
+    // irrelevant to LCP / FCP. Doing it inside requestIdleCallback keeps the
+    // initial React commit short and avoids touching the DOM during the
+    // browser's paint flush.
+    const applyClass = () => document.body.classList.add('axi-tauri-shell');
+    let cleanup = () => document.body.classList.remove('axi-tauri-shell');
+    const idleId =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(() => {
+            applyClass();
+          })
+        : window.setTimeout(applyClass, 0);
+    return () => {
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.cancelIdleCallback === 'function' &&
+        typeof idleId === 'number'
+      ) {
+        window.cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId as number);
+      }
+      cleanup();
+    };
   }, []);
 
   const antdThemeConfig = React.useMemo(
@@ -140,12 +219,12 @@ const WorkbenchSurface: React.FC = () => {
       locale={locale}
     >
       <ConfigProvider locale={locale === 'zh-CN' ? zhCN : enUS} theme={antdThemeConfig}>
-        <QueryClientProvider client={queryClient}>
-          <AntdApp>
-          <I18nProvider>
-            <BrowserRouter>
-              <ShellSessionBridge />
-              <OfflineBanner />
+        <AntdApp>
+        <I18nProvider>
+          <BrowserRouter>
+            <ShellSessionBridge />
+            <OfflineBanner />
+            <RouteSuspense>
               <Routes>
                   <Route path="/loading" element={<DesktopStartupLoading />} />
                   {/* Web 与移动端拥有独立 UI；登录协议统一通过 Axi Identity OIDC。 */}
@@ -206,10 +285,10 @@ const WorkbenchSurface: React.FC = () => {
 
                   <Route path="*" element={<AxiUiContractNotFound />} />
                 </Routes>
+              </RouteSuspense>
               </BrowserRouter>
             </I18nProvider>
           </AntdApp>
-        </QueryClientProvider>
       </ConfigProvider>
     </AxiLocaleProvider>
   );
@@ -226,21 +305,39 @@ const ShellSessionBridge: React.FC = () => {
   React.useEffect(() => {
     if (!isTauriShell() || getShellWindowLabel() !== 'main') return undefined;
 
+    // Defer the Tauri event subscription until first paint settles. The
+    // bridge only matters after the login window completes OIDC, which is
+    // a multi-second user gesture, not part of the first frame.
     let cancelled = false;
     let unsubscribe: () => void = () => undefined;
-    void listenShell(SHELL_EVENTS.LOGIN_SUCCESS, () => {
-      void refreshSession().then((authenticated) => {
-        if (!cancelled && authenticated) {
-          navigate('/admin/dashboard', { replace: true });
-        }
+    const subscribe = () => {
+      void listenShell(SHELL_EVENTS.LOGIN_SUCCESS, () => {
+        void refreshSession().then((authenticated) => {
+          if (!cancelled && authenticated) {
+            navigate('/admin/dashboard', { replace: true });
+          }
+        });
+      }).then((off) => {
+        if (cancelled) off();
+        else unsubscribe = off;
       });
-    }).then((off) => {
-      if (cancelled) off();
-      else unsubscribe = off;
-    });
+    };
+    const idleId =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(subscribe)
+        : window.setTimeout(subscribe, 0);
 
     return () => {
       cancelled = true;
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.cancelIdleCallback === 'function' &&
+        typeof idleId === 'number'
+      ) {
+        window.cancelIdleCallback(idleId);
+      } else {
+        clearTimeout(idleId as number);
+      }
       unsubscribe();
     };
   }, [navigate, refreshSession]);
@@ -248,17 +345,28 @@ const ShellSessionBridge: React.FC = () => {
   return null;
 };
 
+/**
+ * App-level provider order:
+ * - `AxiThemeProvider` (theme tokens, dark/light/style)
+ * - `QueryClientProvider` (single client for the whole tree; must wrap
+ *   `AuthProvider` because the provider's session probe is a `useQuery`)
+ * - `AuthProvider` (uses `useQuery({ staleTime: Infinity })` for the session)
+ * - `WorkbenchLocaleProvider` (translations, consumer of `useAuth`)
+ * - `WorkbenchSurface` (antd ConfigProvider + Router)
+ */
 const App: React.FC = () => (
   <AxiThemeProvider
     defaultPreference="dark"
     defaultStylePreset="black-gold"
     storageNamespace="axi.workbench"
   >
-    <AuthProvider>
-      <WorkbenchLocaleProvider>
-        <WorkbenchSurface />
-      </WorkbenchLocaleProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <WorkbenchLocaleProvider>
+          <WorkbenchSurface />
+        </WorkbenchLocaleProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </AxiThemeProvider>
 );
 

@@ -1,6 +1,25 @@
 import React from 'react';
 import { useI18n } from '../i18n';
 
+const HomeCard: React.FC<{ title: string; description: string }> = React.memo(({ title, description }) => (
+  <div style={{
+    padding: 24,
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 8,
+    border: '1px solid rgba(255, 255, 255, 0.06)'
+  }}>
+    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{title}</h3>
+    <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.45)' }}>{description}</p>
+  </div>
+));
+HomeCard.displayName = 'HomeCard';
+
+const HOME_CARDS: ReadonlyArray<{ title: string; description: string }> = [
+  { title: 'Projects', description: 'Manage your enterprise projects' },
+  { title: 'Workflows', description: 'Automate business processes' },
+  { title: 'Knowledge Base', description: 'Access AI-powered documentation' },
+];
+
 const Home: React.FC = () => {
   const { t } = useI18n();
   return (
@@ -13,39 +32,9 @@ const Home: React.FC = () => {
         workflow automation, and knowledge collaboration.
       </p>
       <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
-        <div style={{
-          padding: 24,
-          background: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: 8,
-          border: '1px solid rgba(255, 255, 255, 0.06)'
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Projects</h3>
-          <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.45)' }}>
-            Manage your enterprise projects
-          </p>
-        </div>
-        <div style={{
-          padding: 24,
-          background: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: 8,
-          border: '1px solid rgba(255, 255, 255, 0.06)'
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Workflows</h3>
-          <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.45)' }}>
-            Automate business processes
-          </p>
-        </div>
-        <div style={{
-          padding: 24,
-          background: 'rgba(255, 255, 255, 0.03)',
-          borderRadius: 8,
-          border: '1px solid rgba(255, 255, 255, 0.06)'
-        }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Knowledge Base</h3>
-          <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.45)' }}>
-            Access AI-powered documentation
-          </p>
-        </div>
+        {HOME_CARDS.map((card) => (
+          <HomeCard key={card.title} description={card.description} title={card.title} />
+        ))}
       </div>
     </div>
   );

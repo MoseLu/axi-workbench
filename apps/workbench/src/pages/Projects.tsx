@@ -51,48 +51,72 @@ const Projects: React.FC = () => {
     () => getProjectResources(snapshot?.resources ?? [], snapshot?.axiResources?.project),
     [snapshot],
   );
-  const projectFilters: Array<{ label: string; value: ProjectFilter }> = [
-    { label: t('projects.filter.all'), value: 'all' },
-    { label: t('projects.filter.available'), value: 'available' },
-    { label: t('projects.filter.attention'), value: 'attention' },
-  ];
+  const projectFilters = useMemo<Array<{ label: string; value: ProjectFilter }>>(
+    () => [
+      { label: t('projects.filter.all'), value: 'all' },
+      { label: t('projects.filter.available'), value: 'available' },
+      { label: t('projects.filter.attention'), value: 'attention' },
+    ],
+    [t],
+  );
   const visibleProjects = useMemo(
     () => filterProjects(projects, filter, query),
     [filter, projects, query],
   );
-  const projectState: ProjectsContextValue = {
-    projectStateAvailable: t('projects.state.available'),
-    projectStateUnknown: t('projects.state.unknown'),
-    projectBranchUnregistered: t('projects.branch.unregistered'),
-    projectWorkspaceChanges: t('projects.workspace.changes'),
-    projectWorkspacePending: t('projects.workspace.pending'),
-    projectWorkspaceClean: t('projects.workspace.clean'),
-  };
+  const projectState = useMemo<ProjectsContextValue>(
+    () => ({
+      projectStateAvailable: t('projects.state.available'),
+      projectStateUnknown: t('projects.state.unknown'),
+      projectBranchUnregistered: t('projects.branch.unregistered'),
+      projectWorkspaceChanges: t('projects.workspace.changes'),
+      projectWorkspacePending: t('projects.workspace.pending'),
+      projectWorkspaceClean: t('projects.workspace.clean'),
+    }),
+    [t],
+  );
   const rows = useMemo<ProjectRow[]>(
     () => visibleProjects.map((project) => toProjectRow(project, projectState)),
     [visibleProjects, projectState],
   );
-  const columns: AxiTableColumn<ProjectRow>[] = [
-    { dataIndex: 'label', title: t('projects.column.label'), width: 300 },
-    { dataIndex: 'state', title: t('projects.column.state'), width: 110 },
-    { dataIndex: 'workspace', title: t('projects.column.workspace'), width: 170 },
-    { dataIndex: 'branch', title: t('projects.column.branch') },
-    {
-      align: 'right',
-      key: 'action',
-      render: (_, row) => (
-        <AxiIconButton
-          aria-label={t('projects.column.action')}
-          label={t('projects.column.action')}
-          size="small"
-          variant="primary"
-          onClick={() => navigate(`/admin/project/${encodeURIComponent(row.id)}`)}
-        />
-      ),
-      title: t('projects.column.actionHeader'),
-      width: 100,
-    },
-  ];
+  const actionAriaLabel = t('projects.column.action');
+  const actionLabel = t('projects.column.action');
+  const actionTitle = t('projects.column.actionHeader');
+  const columns = useMemo<AxiTableColumn<ProjectRow>[]>(
+    () => [
+      { dataIndex: 'label', title: t('projects.column.label'), width: 300 },
+      { dataIndex: 'state', title: t('projects.column.state'), width: 110 },
+      { dataIndex: 'workspace', title: t('projects.column.workspace'), width: 170 },
+      { dataIndex: 'branch', title: t('projects.column.branch') },
+      {
+        align: 'right',
+        key: 'action',
+        render: (_, row) => (
+          <ProjectActionCell
+            ariaLabel={actionAriaLabel}
+            id={row.id}
+            label={actionLabel}
+            onNavigate={navigate}
+          />
+        ),
+        title: actionTitle,
+        width: 100,
+      },
+    ],
+    [actionAriaLabel, actionLabel, actionTitle, navigate, t],
+  );
+  const pagination = useMemo(
+    () => (rows.length > DESKTOP_CRUD_PAGE_SIZE
+      ? desktopCrudPagination(rows.length)
+      : {
+          defaultPageSize: DESKTOP_CRUD_PAGE_SIZE,
+          hideOnSinglePage: false,
+          pageSize: DESKTOP_CRUD_PAGE_SIZE,
+          showSizeChanger: true,
+          showTotal: (count: number) => t('projects.pagination.total', `共 ${count} 条`),
+          total: rows.length,
+        }),
+    [rows.length, t],
+  );
 
   return (
     <DesktopCrudFrame
@@ -139,16 +163,7 @@ const Projects: React.FC = () => {
           <AxiTable
             columns={columns}
             data={rows}
-            pagination={rows.length > DESKTOP_CRUD_PAGE_SIZE
-              ? desktopCrudPagination(rows.length)
-              : {
-                  defaultPageSize: DESKTOP_CRUD_PAGE_SIZE,
-                  hideOnSinglePage: false,
-                  pageSize: DESKTOP_CRUD_PAGE_SIZE,
-                  showSizeChanger: true,
-                  showTotal: (count: number) => t('projects.pagination.total', `共 ${count} 条`),
-                  total: rows.length,
-                }}
+            pagination={pagination}
             rowKey="id"
             onRow={(row) => ({
               onClick: () => navigate(`/admin/project/${encodeURIComponent(row.id)}`),
@@ -184,5 +199,18 @@ function toProjectRow(project: ProjectResource, ctx: ProjectsContextValue): Proj
         : ctx.projectWorkspaceClean,
   };
 }
+
+const ProjectActionCell: React.FC<{ id: string; ariaLabel: string; label: string; onNavigate: (id: string) => void }> = React.memo(
+  ({ id, ariaLabel, label, onNavigate }) => (
+    <AxiIconButton
+      aria-label={ariaLabel}
+      label={label}
+      size="small"
+      variant="primary"
+      onClick={() => onNavigate(id)}
+    />
+  ),
+);
+ProjectActionCell.displayName = 'ProjectActionCell';
 
 export default Projects;

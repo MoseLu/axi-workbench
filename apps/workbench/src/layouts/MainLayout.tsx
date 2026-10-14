@@ -13,6 +13,16 @@ import {
   type AxiDashboardTopbarPluginAction,
 } from '@axi/shell';
 import { AxiPluginProvider } from '@axi/core';
+// Component CSS — colocated with the JS modules that actually consume them so
+// Vite stops hoisting every @axi/* stylesheet into the main entry's <head>.
+// `main.tsx` keeps only antd reset + @axi/tokens (≈8 KB) plus our local
+// `MainLayout.css`. MainLayout is mounted only after auth (via <RequireSession>),
+// so these styles do not block /login's first paint.
+import '@axi/core/styles.css';
+import '@axi/crud/styles.css';
+import '@axi/shell/styles.css';
+import '@axi/settings/styles.css';
+import '@axi/widgets/styles.css';
 import type { TabItem } from '../lib/tabs';
 import GlobalSearchDialog, { type GlobalSearchItem } from '../components/Layout/GlobalSearchDialog';
 import { SystemSettingsPanel } from '../components/Layout/SystemSettingsPanel';

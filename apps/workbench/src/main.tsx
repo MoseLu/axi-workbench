@@ -2,16 +2,21 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import 'antd/dist/reset.css';
 import '@axi/tokens/css';
-import '@axi/core/styles.css';
-import '@axi/crud/styles.css';
-import '@axi/shell/styles.css';
-import '@axi/settings/styles.css';
-import '@axi/widgets/styles.css';
 import App from './App';
 import { installTauriGatewayFetch } from './lib/tauriGateway';
 import './index.css';
 
 installTauriGatewayFetch();
+
+// Defer non-critical startup side-effects until the main thread is idle so
+// they do not contend with React's first paint. `requestIdleCallback` is the
+// preferred hook; we fall back to a small `setTimeout` when the host does
+// not expose it (older Safari / jsdom test envs).
+type IdleSchedulerHandle = number;
+const scheduleOnIdle: (cb: () => void) => IdleSchedulerHandle =
+  typeof window !== 'undefined' && typeof (window as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === 'function'
+    ? (cb) => (window as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(cb)
+    : (cb) => window.setTimeout(cb, 200);
 
 // Adopt the workspace observability SDK for the webview side. The
 // SDK intercepts `console.*` plus global errors / unhandled rejections
@@ -23,11 +28,13 @@ const observabilityIngestUrl =
   (import.meta.env.VITE_AXI_OBSERVABILITY_INGEST_URL as string | undefined) ??
   '/api/observability/ingest';
 if (observabilityIngestUrl) {
-  void import('@axi/observability-web').then(({ installWeb }) => {
-    installWeb({
-      service: 'axi-workbench-web',
-      env: (import.meta.env.MODE as string) || 'dev',
-      ingestUrl: observabilityIngestUrl,
+  scheduleOnIdle(() => {
+    void import('@axi/observability-web').then(({ installWeb }) => {
+      installWeb({
+        service: 'axi-workbench-web',
+        env: (import.meta.env.MODE as string) || 'dev',
+        ingestUrl: observabilityIngestUrl,
+      });
     });
   });
 }
@@ -37,7 +44,9 @@ if (observabilityIngestUrl) {
 // the dynamic import out of production bundles because the module is reached
 // exclusively through this `import.meta.env.DEV` branch.
 if (import.meta.env.DEV) {
-  void import('./lib/axi-ui-capability-check').then((m) => m.runAxiUiCapabilityCheck());
+  scheduleOnIdle(() => {
+    void import('./lib/axi-ui-capability-check').then((m) => m.runAxiUiCapabilityCheck());
+  });
 }
 
 const root = document.getElementById('root');
