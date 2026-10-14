@@ -6,7 +6,7 @@
 
 ## 入口
 - `index.html` → `src/main.tsx`（antd reset + `@axi/tokens` / `@axi/core` 样式 + 主题恢复 + observability SDK）→ `src/AppRouter.tsx`。
-- 应用注册表：`src/app-registry.tsx`；壳层：`src/app-shell/Shell.tsx`。
+- 应用注册表：`src/app-registry.tsx`；壳层：`src/app-shell/Shell/index.tsx`（主入口，区域模块见下）。
 - 桌面壳：`src-tauri/`（Tauri 2；productName `Axi Dashboard`，identifier `com.axi.dashboard`，devUrl `http://127.0.0.1:17889`，frontendDist `../dist`）。
 - 端口：dev 17889（strictPort）、preview 17890、PM2 生产服务 17888（由工作区 wrapper `/Volumes/code/workspace/scripts/service/devsvc/devsvc` 启动，**不在本包内启动**）。
 
@@ -14,7 +14,7 @@
 | 目录 | 职责 |
 |---|---|
 | `src/features/` | `dashboard` / `services` / `servers` / `alerts` / `deploy` / `observability` / `search` / `settings` / `theme` / `hosted` / `axi-resources` / `auth` / `status` / `topbar` |
-| `src/app-shell/` | `Shell`、`AppToolbar`、`toolbarSlot` |
+| `src/app-shell/` | `Shell/index.tsx`（主入口）+ `Shell/`（`ShellSidebarSearch` / `ShellTopbar` / `ShellContentArea` / `ShellNotFoundPage` / `RouteFallback` / `shellChrome` / `shellPages` / `shellTheme` / `shellMetrics` / `shellTabs` / `useShellCatalog`）、`AppToolbar`、`toolbarSlot` |
 | `src/settings/` `src/theme/` `src/i18n/` `src/lib/` | 设置、主题 token、i18n、工具 |
 | `config/axi-apps.json` | 可托管应用清单（`appId` / `cwd` / `startCommand` / `routes` / `${port}` 占位符）；Host 运行时分配 loopback 端口并经 `AXI_APP_PORT` 注入 |
 | `config/axi-resources.json` | 资源页配置 |
@@ -39,7 +39,7 @@ pnpm --filter @axi/devsvc-dashboard tauri build    # macOS 应用（需 17888 �
 - 版本化包消费记录见 [`docs/PACKAGE-CONSUMPTION.md`](docs/PACKAGE-CONSUMPTION.md)（WFB-PACK-001）。
 
 ## 已知违规（2026-10-15 实测）
-- 600 行门禁：`src/features/axi-resources/AxiResourcesPage.tsx` 719 行**超限**；`src/app-shell/Shell.tsx` 501 行接近阈值；`src/i18n/locales/en-US.ts` 466 行（未超限，关注）。
+- 600 行门禁：`src/features/axi-resources/AxiResourcesPage.tsx` 719 行**超限**；`src/app-shell/Shell/index.tsx` 342 行（已由 501 行拆分，脱离阈值）；`src/i18n/locales/en-US.ts` 466 行（未超限，关注）。
 
 ## 验证
 - 最小：`pnpm --filter @axi/devsvc-dashboard typecheck`。
