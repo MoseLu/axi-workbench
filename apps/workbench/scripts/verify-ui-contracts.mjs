@@ -23,7 +23,6 @@ const webPackage = read('apps/workbench/package.json');
 const foundationIcons = read('packages/workbench-foundation/src/icons.ts');
 const workbenchIcon = read('apps/workbench/src/components/WorkbenchIcon.tsx');
 const globalSearch = read('apps/workbench/src/components/Layout/GlobalSearchDialog.tsx');
-const login = read('apps/workbench/src/pages/Login.tsx');
 const favicon = read('apps/workbench/public/favicon.svg');
 const index = read('apps/workbench/index.html');
 const zhLocale = read('apps/workbench/src/i18n/locales/zh-CN.json');
@@ -37,6 +36,10 @@ function readSourceTree(relativeDir) {
     return /\.(?:ts|tsx)$/.test(entry.name) ? [fs.readFileSync(fullPath, 'utf8')] : [];
   }).join('\n');
 }
+
+// The login surface is split across pages/Login/ (index + _components + _hooks), so the contract
+// reads the whole directory tree instead of the retired single-file pages/Login.tsx.
+const login = readSourceTree('apps/workbench/src/pages/Login');
 
 const webSource = readSourceTree('apps/workbench/src');
 
