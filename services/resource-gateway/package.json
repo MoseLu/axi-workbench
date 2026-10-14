@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "start": "tsx --enable-source-maps src/server.ts",
-    "dev": "tsx watch --enable-source-maps src/server.ts",
+    "start": "tsx --enable-source-maps src/server/index.ts",
+    "dev": "tsx watch --enable-source-maps src/server/index.ts",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
