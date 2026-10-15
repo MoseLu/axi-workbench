@@ -13,7 +13,7 @@ agent-readable: true
 
 最后生成：2026-10-14
 
-> PRD 中心：`docs/prd/README.md`
+> PRD 中心:`docs/prd/README.md`
 
 ## hubu
 

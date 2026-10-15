@@ -1,6 +1,6 @@
 # Workspace Project Handoff Readiness
 
-Generated: 2026-10-14T10:58:26.842Z
+Generated: 2026-10-14T22:26:41.668Z
 
 - Total: 22
 - Verified: 14
