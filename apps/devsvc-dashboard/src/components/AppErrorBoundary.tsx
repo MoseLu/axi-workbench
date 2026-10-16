@@ -52,10 +52,10 @@ export class AppErrorBoundary extends Component<Props, State> {
           role="alert"
           aria-live="assertive"
           className="app-error-boundary"
-          style={{ padding: 32, textAlign: "center", color: "var(--axi-color-text, inherit)" }}
+          style={{ padding: 32, textAlign: "center", color: "var(--axi-text, inherit)" }}
         >
           <h2 style={{ marginBottom: 8 }}>页面遇到错误</h2>
-          <p style={{ color: "var(--axi-color-text-secondary, #888)" }}>
+          <p style={{ color: "var(--axi-text-secondary, #888)" }}>
             {this.state.error?.message ?? "未知错误"}
           </p>
           <div style={{ display: "inline-flex", gap: 8, marginTop: 16 }}>

@@ -21,7 +21,39 @@ export function readStoredThemeName(): ThemeName {
   return themePresets.some((theme) => theme.name === stored) ? (stored as ThemeName) : themePresets[0].name;
 }
 
-export function themeCssVariables(theme: ThemePreset) {
+export function themeCssVariables(mode: ThemeMode): Record<string, string> {
+  if (mode === "dark") {
+    /* Dark-mode semantic palette overlay — keeps consumers stable even
+     * before the stylesheet :root token block is processed (e.g. first
+     * paint in dev when CSS is still streaming). Mirrors the SCSS tokens
+     * registered in src/styles/tokens-base.scss; the SCSS values stay
+     * authoritative. */
+    return {
+      "--green": "#22c55e",
+      "--amber": "#f59e0b",
+      "--red": "#ef4444",
+      "--line": "rgba(255,255,255,0.12)",
+      "--muted": "#9ca3af",
+      "--metric-icon-bg": "rgba(64,158,255,0.14)",
+      "--metric-panel": "#1f1f23",
+      "--color-cyan-main": "#06b6d4"
+    };
+  }
+  /* Light-mode semantic palette overlay — mirrors the SCSS
+   * :root[data-mode="light"] block in src/styles/tokens-base.scss. */
+  return {
+    "--green": "#16a34a",
+    "--amber": "#d97706",
+    "--red": "#dc2626",
+    "--line": "rgba(0,0,0,0.12)",
+    "--muted": "#6b7280",
+    "--metric-icon-bg": "rgba(22,119,255,0.10)",
+    "--metric-panel": "#ffffff",
+    "--color-cyan-main": "#0891b2"
+  };
+}
+
+export function themePrimaryTokens(theme: ThemePreset): Record<string, string> {
   const primary = theme.color;
   const primaryHover = mixHexColor(primary, primaryShadeMixTarget, 0.12);
   const primaryActive = mixHexColor(primary, primaryShadeMixTarget, 0.2);
@@ -39,24 +71,13 @@ export function themeCssVariables(theme: ThemePreset) {
     "--axi-primary": primary,
     "--axi-primary-hover": primaryHover,
     "--blue": primary,
-    "--blue-bg": alphaHexColor(primary, 0.14),
-    /* Semantic palette overlay — keeps consumers stable even before the
-     * stylesheet :root token block is processed (e.g. first paint in dev
-     * when CSS is still streaming). Mirrors the SCSS tokens registered in
-     * src/styles/tokens-base.scss; the SCSS values stay authoritative. */
-    "--green": "#22c55e",
-    "--amber": "#f59e0b",
-    "--red": "#ef4444",
-    "--line": "rgba(255,255,255,0.12)",
-    "--muted": "#9ca3af",
-    "--metric-icon-bg": "rgba(64,158,255,0.14)",
-    "--metric-panel": "#1f1f23",
-    "--color-cyan-main": "#06b6d4"
+    "--blue-bg": alphaHexColor(primary, 0.14)
   };
 }
 
 export function applyThemeToElement(root: HTMLElement, theme: ThemePreset, mode: ThemeMode) {
-  Object.entries(themeCssVariables(theme)).forEach(([name, value]) => {
+  const semantic = { ...themePrimaryTokens(theme), ...themeCssVariables(mode) };
+  Object.entries(semantic).forEach(([name, value]) => {
     root.style.setProperty(name, value);
   });
   root.dataset.theme = theme.name;

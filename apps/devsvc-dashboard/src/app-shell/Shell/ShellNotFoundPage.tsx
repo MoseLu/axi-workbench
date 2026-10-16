@@ -13,7 +13,7 @@ export function ShellNotFoundPage({
   return (
     <div role="alert" style={{ padding: 32, textAlign: 'center' }}>
       <h2 style={{ marginBottom: 8 }}>{label}</h2>
-      <p style={{ color: 'var(--axi-color-text-secondary, #888)' }}>
+      <p style={{ color: 'var(--axi-text-secondary, #888)' }}>
         {message}
       </p>
       <button

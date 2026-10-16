@@ -63,7 +63,7 @@ const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isPersonalOsRoute = location.pathname.startsWith('/admin/personal-os');
-  const { mode, preference, setPreference, setStylePreset, toggleMode } = useAxiTheme();
+  const { mode, preference, setPreference, setStylePreset, themeColor, setThemeColor, toggleMode } = useAxiTheme();
   const { settings, updateSetting } = useAxiAdminSettings({
     applyToDocument: true,
     storageKey: 'axi.workbench.admin-settings',
@@ -431,6 +431,7 @@ const MainLayout: React.FC = () => {
             setStylePreset(stylePreset);
           }}
           onThemePreferenceChange={setPreference}
+          onThemeColorChange={setThemeColor}
         />
       ) : null}
 
@@ -448,6 +449,7 @@ const MainLayout: React.FC = () => {
           setStylePreset(stylePreset);
         }}
         onThemePreferenceChange={setPreference}
+        onThemeColorChange={setThemeColor}
         open={systemSettingsOpen}
         settings={settings}
         stylePresetOptions={stylePresetOptions}

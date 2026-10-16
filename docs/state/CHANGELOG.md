@@ -283,6 +283,10 @@ All notable local changes to axi Workbench are tracked here.
 - Mobile access-token issuance now requires a signed, single-use device nonce; pairing paths remain under `/mobile/v1` and existing response fields remain backward compatible.
 - `docs/state/PRD.md` and `docs/state/TDD.md` updated on 2026-08-07 to reflect the current six-layer monorepo: workbench as the only user entrance, desktop host shell responsibilities, communication/control-plane contracts, and per-surface verification commands.
 
+### Fixed
+
+- 暗色主题图标不可见（顶部导航 8 个图标 + 通知/消息下拉 + CRUD 边框 + 表单校验反馈 + 系统设置面板 + 桌面/移动端全平台）。修复链路：①`MainLayout.css` 末尾追加 `svg / svg path { fill: currentColor }` 全局兜底 ②`packages/ui` 新建 `global.css` 兜底 `.mpms-icon-btn / .mpms-icon / .axi-svg-icon` ③`packages/ui` `variables.css` 补全 10 个未注册的 `--mpms-*` token ④`Icon` 组件从 `mask-image` 改造为内联 SVG 注入消除 `currentColor` 失效 ⑥桌面端托盘 `.icon_as_template(true)` + 主窗跟随 `set_theme` ⑦移动端新增 `prefers-color-scheme: dark` 媒体查询与 `<meta name="theme-color">` ⑧表单 `form-errors.css` 补 4 个 antd 反馈状态颜色 ⑨SystemSettingsPanel / Login 去除硬编码 fallback（`e67f2f35`、`48814b68`）。
+
 ### Notes
 
 - Product or implementation changes should add entries here when they affect users, operators, or downstream agents.
