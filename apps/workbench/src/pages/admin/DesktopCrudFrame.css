@@ -174,9 +174,9 @@
   border-radius: var(--axi-radius-sm, 4px);
   font-size: var(--axi-font-size-sm, 13px);
   line-height: 26px;
-  border: 1px solid var(--axi-layout-border, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--axi-table-action-border, rgba(255, 255, 255, 0.18));
   background: transparent;
-  color: var(--axi-text, #f5f7fb);
+  color: var(--axi-text, #E2E8F0);
   cursor: pointer;
 }
 
