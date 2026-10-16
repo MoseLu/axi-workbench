@@ -65,9 +65,12 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 | 可执行脚本与包边界 | `package.json`、`pnpm-workspace.yaml`、各子包 `package.json`、`turbo.json` |
 | 文档清单与责任归属 | [`docs/project-docs.manifest.json`](docs/project-docs.manifest.json)（status: legacy，详见 House Rules §「manifest 状态说明」） |
 | 工作区关系与验证 | `/Volumes/code/workspace/WORKSPACE_INDEX.md`、`/Volumes/code/workspace/workspace.graph.json` |
+| Workspace-level rule catalog | [`../../foundation/axi-rules/INDEX.md`](../../foundation/axi-rules/INDEX.md) |
 
 > **优先级冲突时**：根级 `AGENTS.md` > `docs/rules/epap-six-layer-sop.md` > 子树 `AGENTS.md` > `prompts/` 分层 > 个人记忆。
 > 跨工作区引用冲突时，工作区根 `AGENTS.md` > 治理镜像 > 本项目根 `AGENTS.md`。
+
+> Rule router: see [`../../foundation/axi-rules/INDEX.md`](../../foundation/axi-rules/INDEX.md) for the workspace-level rule catalog.
 
 ---
 
@@ -237,6 +240,7 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 
 | 日期 | 变更 |
 |------|------|
+| 2026-10-16 | 升级 2 处 `apps/axi-docs`（已吸收应用）部分引用至 canonical axiom-rules 索引 [`../../foundation/axi-rules/INDEX.md`](../../foundation/axi-rules/INDEX.md)；新增 "Workspace-level rule catalog" 权威来源行 + 规则路由器 callout |
 | 2026-09-19 | Distributions CI 合并入主 monorepo（workbench / workbench-mobile / workbench-desktop 三套构建流程统一） |
 | 2026-09-19 | axiom-ui 引用方式更新为 `workspace:*` 协议 |
 
@@ -261,14 +265,14 @@ When other projects declare a dependency on this project in `workspace.graph.jso
 | axi-dashboard-host | runtime | `apps/devsvc-dashboard/` hosts + launches sub-apps |
 | project-development-workbench | runtime | `apps/workbench/` web admin shell |
 | ops-dashboard | runtime | `apps/devsvc-dashboard/` operations dashboard UI |
-| docs-search-surface | runtime | `apps/workbench/src/pages/docs/` and `apps/axi-docs` |
+| docs-search-surface | runtime | `apps/workbench/src/pages/docs/` and `apps/axi-docs` (canonical rule router: [`../../foundation/axi-rules/INDEX.md`](../../foundation/axi-rules/INDEX.md)) |
 | verification-inbox | runtime | `apps/verification-inbox/` OTP/IMAP inbox tooling |
 | local-ai-menu-assistant | runtime | `apps/ollama-menu-assistant/` macOS menu bar |
 | axi-app-scaffolder | build | `tools/axi-app-cli/` scaffolding CLI |
 | workflow-agent-orchestration-v1 | runtime | `services/workflow-engine/` durable workflow executor |
 | resource-orchestration-workbench | runtime | `apps/resource-orchestration/` resource gateway UI |
 | resource-orchestration-gateway | runtime | `services/resource-gateway/` resource orchestration backend |
-| docs-hub | runtime | `apps/axi-docs/` documentation hub + MCP |
+| docs-hub | runtime | `apps/axi-docs/` documentation hub + MCP (canonical rule router: [`../../foundation/axi-rules/INDEX.md`](../../foundation/axi-rules/INDEX.md)) |
 | node-picker-overlay | runtime | `apps/axi-artboard/` agent node-picker |
 | artboard-vite-plugin | build | `packages/artboard-vite-plugin/` AST source-stamp Vite plugin |
 | dashboard-apps (legacy alias) | runtime | Alias for `project-development-workbench` + `axi-dashboard-host` |
