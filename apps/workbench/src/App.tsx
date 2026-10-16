@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { App as AntdApp, ConfigProvider, Spin, theme as antdTheme } from 'antd';
+import { App as AntdApp, ConfigProvider, Spin } from 'antd';
 import enUS from 'antd/locale/en_US';
 import zhCN from 'antd/locale/zh_CN';
 import {
@@ -152,7 +152,7 @@ const AxiUiContractNotFound: React.FC = () => {
 /** 主窗启动页：只在 1280×800 主窗显示，登录卡永远留在独立小窗。 */
 const DesktopStartupLoading: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, refreshSession } = useAuth();
   const redirectedRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -169,8 +169,30 @@ const DesktopStartupLoading: React.FC = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  // The login window can finish before the main window's idle subscription is
+  // attached. Listen here as well so a successful desktop OTP login always
+  // releases the startup screen.
+  React.useEffect(() => {
+    if (!isTauriShell() || getShellWindowLabel() !== 'main') return undefined;
+    let off: (() => void) | undefined;
+    void listenShell(SHELL_EVENTS.LOGIN_SUCCESS, () => {
+      void refreshSessionWithRetry(refreshSession).then((authenticated) => {
+        if (authenticated) navigate('/admin/dashboard', { replace: true });
+      });
+    }).then((unsubscribe) => { off = unsubscribe; });
+    return () => off?.();
+  }, [navigate, refreshSession]);
+
   return <SessionLoading />;
 };
+
+async function refreshSessionWithRetry(refreshSession: () => Promise<boolean>): Promise<boolean> {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    if (await refreshSession()) return true;
+    if (attempt < 4) await new Promise((resolve) => window.setTimeout(resolve, 250));
+  }
+  return false;
+}
 
 const WorkbenchSurface: React.FC = () => {
   const { mode, preset } = useAxiTheme();
@@ -205,10 +227,7 @@ const WorkbenchSurface: React.FC = () => {
   }, []);
 
   const antdThemeConfig = React.useMemo(
-    () => ({
-      algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-      ...createAxiAntdTheme(mode, preset, { borderRadius: 6 }),
-    }),
+    () => createAxiAntdTheme(mode, preset, { borderRadius: 6 }),
     [mode, preset],
   );
 
@@ -312,7 +331,7 @@ const ShellSessionBridge: React.FC = () => {
     let unsubscribe: () => void = () => undefined;
     const subscribe = () => {
       void listenShell(SHELL_EVENTS.LOGIN_SUCCESS, () => {
-        void refreshSession().then((authenticated) => {
+        void refreshSessionWithRetry(refreshSession).then((authenticated) => {
           if (!cancelled && authenticated) {
             navigate('/admin/dashboard', { replace: true });
           }

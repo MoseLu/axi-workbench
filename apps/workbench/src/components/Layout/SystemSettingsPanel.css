@@ -5,7 +5,7 @@
 }
 
 .workbench-system-settings-title svg {
-  color: var(--axi-primary, #60a5fa);
+  color: var(--axi-nav-text-active, var(--axi-primary));
 }
 
 .workbench-system-settings-dialog .axi-dialog-v2__detail {
@@ -41,7 +41,7 @@
   border: 0;
   border-radius: 7px;
   padding: 0 10px;
-  color: var(--axi-text-secondary, var(--axi-muted));
+  color: var(--axi-text-secondary, var(--axi-text));
   background: transparent;
   font: inherit;
   font-size: 13px;

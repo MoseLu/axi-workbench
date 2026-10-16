@@ -72,3 +72,9 @@
   font-size: 13px;
   line-height: 1.4;
 }
+
+/* antd form 校验反馈图标（成功/警告/错误/loading） */
+.ant-form-item-feedback-icon { color: var(--axi-text-muted); }
+.ant-form-item-has-success .ant-form-item-feedback-icon { color: var(--axi-success, #22C55E); }
+.ant-form-item-has-warning .ant-form-item-feedback-icon { color: var(--axi-warning, #F59E0B); }
+.ant-form-item-has-error   .ant-form-item-feedback-icon { color: var(--axi-danger, #EF4444); }

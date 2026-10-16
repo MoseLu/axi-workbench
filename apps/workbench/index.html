@@ -8,32 +8,21 @@
     <!-- LCP preconnect: warm the api host before the React tree asks for
          `/api/...`. Same-origin (vite proxy in dev → gateway in prod)
          so no cross-origin dance. -->
-    <link rel="preconnect" href="/api" crossorigin />
-    <link rel="dns-prefetch" href="/api" />
-    <link rel="preconnect" href="/" />
     <!-- Observability ingest lives at /api/observability/ingest. Preconnect
          here lets the SDK batch posts start their TCP setup in parallel
          with HTML parsing, not after main.tsx's idle callback. -->
-    <link rel="preconnect" href="/api/observability/ingest" crossorigin />
 
     <!-- LCP image preload: the Login page's QR-corner PNG is the largest
          contentful paint candidate (a small image, but it is the first
          thing that finishes painting after FCP). Preload it as an image
          so the request fires during HTML parse instead of waiting for
          React to mount the Login route. -->
-    <link
-      rel="preload"
-      as="image"
-      href="/login-qr-corner.png"
-      fetchpriority="high"
-    />
 
     <!-- modulepreload lets the browser fetch main.tsx and its ESM
          dependency graph in parallel with the HTML parse. Vite dev mode
          does this automatically for prod builds; the explicit hint is
          cheap insurance and also helps when the dev server rewrites the
          script tag. -->
-    <link rel="modulepreload" href="/src/main.tsx" />
 
     <!-- Critical CSS inlined so first paint uses the dark page background
          and the page chrome does not white-flash. main.tsx still imports
@@ -98,13 +87,6 @@
          the request fire in parallel with the HTML parse so the swap
          does not delay text rendering. crossorigin is required for font
          preloads even on same-origin URLs. -->
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      crossorigin="anonymous"
-      href="/src/assets/icons/system/iconfont.woff2?t=1748252913866"
-    />
 
     <title>公理工作台</title>
   </head>

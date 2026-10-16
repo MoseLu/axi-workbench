@@ -39,7 +39,19 @@ export function themeCssVariables(theme: ThemePreset) {
     "--axi-primary": primary,
     "--axi-primary-hover": primaryHover,
     "--blue": primary,
-    "--blue-bg": alphaHexColor(primary, 0.14)
+    "--blue-bg": alphaHexColor(primary, 0.14),
+    /* Semantic palette overlay — keeps consumers stable even before the
+     * stylesheet :root token block is processed (e.g. first paint in dev
+     * when CSS is still streaming). Mirrors the SCSS tokens registered in
+     * src/styles/tokens-base.scss; the SCSS values stay authoritative. */
+    "--green": "#22c55e",
+    "--amber": "#f59e0b",
+    "--red": "#ef4444",
+    "--line": "rgba(255,255,255,0.12)",
+    "--muted": "#9ca3af",
+    "--metric-icon-bg": "rgba(64,158,255,0.14)",
+    "--metric-panel": "#1f1f23",
+    "--color-cyan-main": "#06b6d4"
   };
 }
 

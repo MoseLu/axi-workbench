@@ -24,8 +24,7 @@
         "center": true,
         "decorations": false,
         "transparent": true,
-        "theme": "Light",
-        "backgroundColor": "#00000000",
+        "backgroundColor": "#1c1c1c1f",
         "visible": true
       },
       {
@@ -44,6 +43,8 @@
         "decorations": true,
         "transparent": false,
         "titleBarStyle": "Visible",
+        "hiddenTitle": true,
+        "backgroundColor": "#1c1c1cff",
         "visible": false
       }
     ],

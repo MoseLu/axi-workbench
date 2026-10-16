@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from "recharts";
 
-const chartColors = ["var(--green)", "var(--amber)", "var(--red)", "var(--primary)"];
+const chartColors = ["var(--axi-success)", "var(--axi-warning)", "var(--axi-danger)", "var(--axi-primary)"];
 const resourceChartGradientId = "resource-memory-gradient";
 
 type OverviewMetrics = {
@@ -79,7 +79,7 @@ export default function OverviewCharts({ metrics, projects }: OverviewChartsProp
   ];
   const displayedHealthData = metrics.total
     ? healthData
-    : [{ name: t("暂无项目"), value: 1, displayValue: 0, color: "var(--line)" }];
+    : [{ name: t("暂无项目"), value: 1, displayValue: 0, color: "var(--axi-border)" }];
   const healthRate = metrics.total ? Math.round((metrics.healthy / metrics.total) * 100) : 0;
   const resourceData = projects
     .filter((project) => project.pm2.status === "online")
@@ -145,7 +145,7 @@ export default function OverviewCharts({ metrics, projects }: OverviewChartsProp
                   <defs>
                     <linearGradient id={resourceChartGradientId} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.96} />
-                      <stop offset="100%" stopColor="var(--color-cyan-main)" stopOpacity={0.34} />
+                      <stop offset="100%" stopColor="var(--axi-spectrum-cyan, var(--color-cyan-main))" stopOpacity={0.34} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="4 8" vertical={false} />

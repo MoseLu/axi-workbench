@@ -38,6 +38,47 @@ const LOCAL_RUNTIME_STATUS_EVENT: &str = "shell://local-runtime-status";
 #[derive(Default)]
 struct GatewaySession {
     cookie: Mutex<Option<String>>,
+    cookie_path: Mutex<Option<PathBuf>>,
+}
+
+impl GatewaySession {
+    fn configure_path(&self, path: PathBuf) {
+        if let Ok(mut target) = self.cookie_path.lock() {
+            *target = Some(path);
+        }
+    }
+
+    fn read_persisted_cookie(&self) -> Option<String> {
+        let path = self.cookie_path.lock().ok().and_then(|value| value.clone())?;
+        let cookie = read_to_string(path).ok()?.trim().to_string();
+        (!cookie.is_empty()).then_some(cookie)
+    }
+
+    fn persist_cookie(&self, cookie: Option<&str>) {
+        let Some(path) = self.cookie_path.lock().ok().and_then(|value| value.clone()) else {
+            return;
+        };
+        if let Some(parent) = path.parent() {
+            let _ = create_dir_all(parent);
+        }
+        match cookie.filter(|value| !value.trim().is_empty()) {
+            Some(value) => {
+                let mut options = OpenOptions::new();
+                options.create(true).truncate(true).write(true);
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::OpenOptionsExt;
+                    options.mode(0o600);
+                }
+                if let Ok(mut file) = options.open(path) {
+                    let _ = file.write_all(value.as_bytes());
+                }
+            }
+            None => {
+                let _ = std::fs::remove_file(path);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,6 +123,34 @@ fn is_allowed_gateway_base_url(url: &reqwest::Url) -> bool {
         "https" => is_allowed_workbench_domain(host)
             && matches!(url.port(), None | Some(443) | Some(LOCAL_HTTPS_PORT)),
         _ => false,
+    }
+}
+
+fn merge_set_cookie(existing: Option<&str>, set_cookie: &str) -> Option<String> {
+    let pair = set_cookie.split(';').next().unwrap_or_default().trim();
+    let Some((name, value)) = pair.split_once('=') else {
+        return existing.map(str::to_string);
+    };
+    let name = name.trim();
+    if name.is_empty() {
+        return existing.map(str::to_string);
+    }
+    let mut cookies = HashMap::<String, String>::new();
+    for item in existing.unwrap_or_default().split(';') {
+        let Some((key, old_value)) = item.trim().split_once('=') else {
+            continue;
+        };
+        cookies.insert(key.trim().to_string(), old_value.trim().to_string());
+    }
+    if set_cookie.to_ascii_lowercase().contains("max-age=0") || value.trim().is_empty() {
+        cookies.remove(name);
+    } else {
+        cookies.insert(name.to_string(), value.trim().to_string());
+    }
+    if cookies.is_empty() {
+        None
+    } else {
+        Some(cookies.into_iter().map(|(key, value)| format!("{key}={value}")).collect::<Vec<_>>().join("; "))
     }
 }
 
@@ -165,12 +234,16 @@ async fn proxy_gateway_request(
         builder = builder.header(name, value);
     }
 
-    if let Some(cookie) = session
+    let cookie = session
         .cookie
         .lock()
         .map_err(|_| "gateway session lock failed")?
         .clone()
-    {
+        .or_else(|| session.read_persisted_cookie());
+    if let Some(cookie) = cookie.clone() {
+        if let Ok(mut stored_cookie) = session.cookie.lock() {
+            *stored_cookie = Some(cookie.clone());
+        }
         builder = builder.header("Cookie", cookie);
     }
     if let Some(body) = request.body {
@@ -188,31 +261,27 @@ async fn proxy_gateway_request(
         .await
         .map_err(|error| format!("gateway response failed: {error}"))?;
 
-    if let Some(set_cookie) = response_headers
-        .get("set-cookie")
-        .and_then(|value| value.to_str().ok())
-    {
-        let cookie = set_cookie
-            .split(';')
-            .next()
-            .unwrap_or_default()
-            .trim()
-            .to_string();
-        let mut stored_cookie = session
-            .cookie
-            .lock()
-            .map_err(|_| "gateway session lock failed")?;
-        if cookie.is_empty() || set_cookie.to_ascii_lowercase().contains("max-age=0") {
-            *stored_cookie = None;
-        } else {
-            *stored_cookie = Some(cookie);
+    let mut merged_cookie = session
+        .cookie
+        .lock()
+        .map_err(|_| "gateway session lock failed")?
+        .clone()
+        .or_else(|| session.read_persisted_cookie());
+    for set_cookie in response_headers.get_all("set-cookie").iter() {
+        if let Ok(value) = set_cookie.to_str() {
+            merged_cookie = merge_set_cookie(merged_cookie.as_deref(), value);
         }
     }
-    if request.path.ends_with("/logout") {
+    if let Ok(mut stored_cookie) = session.cookie.lock() {
+        *stored_cookie = merged_cookie.clone();
+        session.persist_cookie(merged_cookie.as_deref());
+    }
+    if request.method == "DELETE" && request.path.ends_with("/sessions/current") {
         *session
             .cookie
             .lock()
             .map_err(|_| "gateway session lock failed")? = None;
+        session.persist_cookie(None);
     }
 
     let mut headers = HashMap::new();
@@ -234,7 +303,23 @@ async fn proxy_gateway_request(
 
 #[cfg(test)]
 mod gateway_tests {
-    use super::resolve_gateway_url;
+    use super::{merge_set_cookie, resolve_gateway_url};
+
+    #[test]
+    fn keeps_session_and_resume_cookies_from_multiple_set_cookie_headers() {
+        let cookies = merge_set_cookie(None, "axi_session=session123; Path=/; HttpOnly")
+            .and_then(|value| merge_set_cookie(Some(&value), "axi_resume=resume456; Path=/; HttpOnly"))
+            .expect("both cookies should be retained");
+        assert!(cookies.contains("axi_session=session123"));
+        assert!(cookies.contains("axi_resume=resume456"));
+    }
+
+    #[test]
+    fn removes_expired_cookie_without_dropping_other_cookie() {
+        let cookies = merge_set_cookie(Some("axi_session=session123; axi_resume=resume456"), "axi_session=; Max-Age=0; Path=/")
+            .expect("resume cookie should remain");
+        assert_eq!(cookies, "axi_resume=resume456");
+    }
 
     #[test]
     fn uses_remote_https_gateway_by_default() {
@@ -452,6 +537,10 @@ pub fn run() {
             open_external_url
         ])
         .setup(|app| {
+            if let Ok(app_data_dir) = app.path().app_data_dir() {
+                app.state::<GatewaySession>()
+                    .configure_path(app_data_dir.join("gateway-session.cookie"));
+            }
             if runtime::local_project_mode() {
                 start_local_runtime(app.handle());
             }
@@ -461,10 +550,18 @@ pub fn run() {
             register_ipc_listeners(app.handle().clone());
             // 登录窗是固定尺寸的特殊登录页面，只保留关闭和最小化交通灯。
             if let Some(login) = app.get_webview_window("login") {
-                let _ = login.set_resizable(false);
-                let _ = login.set_maximizable(false);
+                restore_login_window_size(&login);
                 let _ = login.set_minimizable(true);
                 let _ = login.set_closable(true);
+            }
+            // 主窗：跟随系统外观决定 traffic-light 与 tauri 主题，dark mode 下加深背景与按钮对比度。
+            if let Some(main) = app.get_webview_window("main") {
+                let prefer_dark = matches!(main.theme(), Ok(tauri::Theme::Dark));
+                if prefer_dark {
+                    let _ = main.set_theme(Some(tauri::Theme::Dark));
+                } else {
+                    let _ = main.set_theme(Some(tauri::Theme::Light));
+                }
             }
             Ok(())
         })
@@ -636,7 +733,14 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .item(&quit_item)
         .build()?;
 
+    let tray_icon = app
+        .default_window_icon()
+        .cloned()
+        .ok_or_else(|| tauri::Error::AssetNotFound("default tray icon".into()))?;
+
     let _tray = TrayIconBuilder::with_id("main-tray")
+        .icon(tray_icon)
+        .icon_as_template(true)
         .tooltip(APP_NAME)
         .menu(&tray_menu)
         .show_menu_on_left_click(false)
@@ -770,9 +874,14 @@ fn register_ipc_listeners(app: AppHandle) {
 /// 关闭 login 窗、显示 main 窗；如 main 已存在只 show。
 fn switch_to_main(app: &AppHandle) {
     if let Some(login) = app.get_webview_window("login") {
+        // The login webview can retain the dashboard route after a session
+        // expires or the shell is restarted. Reset it before hiding so the
+        // small login window can never display the main application surface.
+        reset_login_route(&login);
         let _ = login.hide();
     }
     if let Some(main) = app.get_webview_window("main") {
+        let _ = main.set_title(APP_NAME);
         restore_main_window_size(&main);
         let _ = main.show();
         let _ = main.unminimize();
@@ -810,10 +919,26 @@ fn switch_to_login(app: &AppHandle) {
         let _ = main.hide();
     }
     if let Some(login) = app.get_webview_window("login") {
+        let _ = login.set_title(&format!("{APP_NAME} — 登录"));
+        restore_login_window_size(&login);
+        reset_login_route(&login);
         let _ = login.show();
         let _ = login.unminimize();
         let _ = login.set_focus();
     }
+}
+
+fn restore_login_window_size(window: &tauri::WebviewWindow) {
+    let _ = window.set_resizable(false);
+    let _ = window.set_maximizable(false);
+    let _ = window.set_size(Size::Logical(LogicalSize::new(380.0, 440.0)));
+    let _ = window.center();
+}
+
+fn reset_login_route(window: &tauri::WebviewWindow) {
+    let _ = window.eval(
+        "window.history.replaceState({}, '', '/login'); window.dispatchEvent(new PopStateEvent('popstate'));",
+    );
 }
 
 fn apply_unread(app: &AppHandle, count: u64) {

@@ -1,5 +1,6 @@
 // ========== Styles ==========
 import './styles/variables.css';
+import './styles/global.css';
 
 // ========== Types ==========
 export type {

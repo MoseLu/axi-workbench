@@ -283,3 +283,22 @@
 .workbench-floating-tool-panel span {
   color: var(--axi-muted, #64748b);
 }
+
+/* === 暗色主题 SVG path 兜底（修复顶部 8 个图标不可见） === */
+/* 强制把 AxiIconButton 内 SVG 的所有 path 渲染为 currentColor，覆盖
+   @axi/icons 包内 system 目录 SVG 缺少 fill="currentColor" 的场景 */
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only svg,
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only .axi-svg-icon svg,
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only svg path,
+.workbench-axi-shell .axi-topbar .axi-icon-button.is-icon-only .axi-svg-icon svg path,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only svg,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only .axi-svg-icon svg,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only svg path,
+.workbench-axi-shell .axi-tabbar .axi-icon-button.is-icon-only .axi-svg-icon svg path {
+  fill: currentColor;
+}
+
+/* 搜索 trigger 在暗色下走 --axi-text 提升对比度 */
+.workbench-axi-shell .axi-topbar .axi-global-search-trigger {
+  color: var(--axi-text);
+}

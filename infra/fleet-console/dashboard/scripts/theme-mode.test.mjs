@@ -12,7 +12,7 @@ test("fleet theme follows the Axi provider mode instead of hardcoding dark", asy
   const darkCss = await readFile(path.join(dashboardRoot, "src", "styles", "admin-dark.css"), "utf8");
 
   assert.match(appSource, /useAxiTheme/u);
-  assert.match(appSource, /mode === "dark" \? theme\.darkAlgorithm : theme\.defaultAlgorithm/u);
+  assert.doesNotMatch(appSource, /mode === "dark" \? theme\.darkAlgorithm : theme\.defaultAlgorithm/u);
   assert.match(appSource, /createAxiAntdTheme\(mode,\s*preset/u);
   assert.match(appSource, /defaultPresetName="fleet"/u);
   assert.doesNotMatch(appSource, /createAxiAntdTheme\("dark"/u);

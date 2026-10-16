@@ -6,6 +6,20 @@
  * Web 后台的样式、面包屑或标签组件。
  */
 
+@media (prefers-color-scheme: dark) {
+  .axi-mobile-app {
+    --wb-page: var(--axi-bg-page, #0c0c0c);
+    --wb-surface: #191919;
+    --wb-surface-muted: #262626;
+    --wb-ink: #f5f5f5;
+    --wb-ink-muted: #a8a8a8;
+    --wb-divider: rgba(255, 255, 255, 0.12);
+    --wb-menu: #2a2a2a;
+    --wb-badge: #fa5151;
+    --wb-success: #22c55e;
+  }
+}
+
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   background: var(--axi-bg-page, #ededed);
@@ -130,6 +144,12 @@ body {
 
 .wb-mobile-topbar__btn:active {
   background: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .wb-mobile-topbar__btn:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
 }
 
 .wb-mobile-topbar__btn--scan {
@@ -617,4 +637,15 @@ body {
 @media (min-width: 561px) {
   body { background: color-mix(in srgb, var(--axi-bg-page, #ededed) 88%, var(--axi-text, #000)); }
   .axi-mobile-app { box-shadow: 0 0 0 1px color-mix(in srgb, var(--wb-ink) 9%, transparent), 0 24px 80px rgba(0, 0, 0, .22); }
+}
+
+.axi-mobile-back-button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%;
+  color: var(--wb-ink); background: transparent; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.axi-mobile-back-button:active { background: rgba(0, 0, 0, 0.05); }
+@media (prefers-color-scheme: dark) {
+  .axi-mobile-back-button:active { background: rgba(255, 255, 255, 0.08); }
 }

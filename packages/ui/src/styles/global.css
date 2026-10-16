@@ -1,0 +1,33 @@
+/* ========== Axi UI Global Fallback Styles ==========
+ *
+ * P1 兜底：保证未注册 token 的 fallback 不会导致图标不可见 / 颜色错误。
+ * 1. 所有 IconButton / AxiSvgIcon 内的 svg path 跟随 currentColor；
+ *    这样即便组件 style.css 中引用了未注册的 --mpms-* 变量，
+ *    图标图标依然跟周围文字保持颜色一致。
+ * 2. antd icon 兜底为 --mpms-text-primary。
+ * 3. 锁定 color-scheme 让原生控件 / 滚动条 / placeholder 跟随主题。
+ */
+
+.mpms-icon-btn svg,
+.mpms-icon svg,
+.axi-svg-icon svg {
+  fill: currentColor;
+}
+.mpms-icon-btn svg path,
+.mpms-icon svg path,
+.axi-svg-icon svg path {
+  fill: currentColor;
+}
+
+/* antd icon 兜底 */
+.anticon {
+  color: var(--mpms-text-primary, inherit);
+}
+
+/* dark/light color-scheme */
+:root {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}

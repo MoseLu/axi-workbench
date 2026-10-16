@@ -60,6 +60,24 @@
   --mpms-topbar-text-primary: var(--mpms-text-primary);
   --mpms-topbar-text-secondary: var(--mpms-text-secondary);
   --mpms-topbar-primary-color: var(--mpms-primary-color);
+
+  /* ───────── Tabbar missing tokens (dark default) ───────── */
+  --mpms-tabbar-border-color: var(--axi-border, #303030);
+  --mpms-tabbar-primary-color: var(--mpms-primary-color);
+
+  /* ───────── Sidebar missing tokens (dark default) ───────── */
+  --mpms-sidebar-primary-color: var(--mpms-primary-color);
+  --mpms-sidebar-active-bg: rgba(255, 255, 255, 0.06);
+
+  /* ───────── Right-sidebar missing tokens (dark default) ───────── */
+  --mpms-right-sidebar-text-primary: var(--mpms-text-primary);
+  --mpms-right-sidebar-text-secondary: var(--mpms-text-secondary);
+  --mpms-right-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --mpms-right-sidebar-primary-color: var(--mpms-primary-color);
+  --mpms-right-sidebar-active-bg: rgba(255, 255, 255, 0.08);
+
+  /* ───────── Misc fallback tokens (dark default) ───────── */
+  --mpms-search-input-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* 浅色主题 —— 仅在 <html data-theme="light"> 时启用；当前仓库默认走深色 */
@@ -80,4 +98,22 @@
   --mpms-sidebar-text-primary: #e5eaf3;
   --mpms-sidebar-text-secondary: #8a8e99;
   --mpms-topbar-border-color: #dcdfe6;
+
+  /* ───────── Tabbar missing tokens (light) ───────── */
+  --mpms-tabbar-border-color: rgba(0, 0, 0, 0.12);
+
+  /* ───────── Topbar missing alias (light) ───────── */
+  --mpms-topbar-bg: #ffffff;
+
+  /* ───────── Sidebar missing tokens (light) ───────── */
+  --mpms-sidebar-active-bg: rgba(0, 0, 0, 0.04);
+
+  /* ───────── Right-sidebar missing tokens (light) ───────── */
+  --mpms-right-sidebar-text-primary: var(--mpms-text-primary);
+  --mpms-right-sidebar-text-secondary: var(--mpms-text-secondary);
+  --mpms-right-sidebar-hover-bg: rgba(0, 0, 0, 0.04);
+  --mpms-right-sidebar-active-bg: rgba(0, 0, 0, 0.06);
+
+  /* ───────── Misc fallback tokens (light) ───────── */
+  --mpms-search-input-bg: rgba(0, 0, 0, 0.04);
 }

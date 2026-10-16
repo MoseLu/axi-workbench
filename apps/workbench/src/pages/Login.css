@@ -718,7 +718,7 @@
   padding: 0;
   transform: translateY(-50%);
   border: 0;
-  color: var(--palette-gray-400);
+  color: var(--axi-text-secondary, var(--palette-gray-400));
   background: transparent;
   cursor: pointer;
 }
@@ -870,7 +870,7 @@
   flex: 0 0 auto;
   width: .75rem;
   height: .75rem;
-  color: var(--palette-gray-500);
+  color: var(--axi-text-muted, var(--palette-gray-500));
   pointer-events: none;
   transition: transform 200ms ease, color 200ms ease;
 }
