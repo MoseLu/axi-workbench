@@ -18,6 +18,49 @@
 
 import type { IconName, IconCategory } from './types';
 
+// ---------------------------------------------------------------------------
+// Static SVG text bundle (Vite `?raw`).
+//
+// Rationale (2026-05 P0 回归修复):
+//   - 旧的 `iconPathMap[name]` 返回 `/src/assets/icons/<category>/<name>.svg`
+//     字符串，运行时通过 `fetch()` + `dangerouslySetInnerHTML` 内联。
+//   - 该路径只在 Vite dev server 中可解析；生产构建 `dist/` 不存在这些
+//     文件，导致 239 个图标全部 404，组件静默返回空 span。
+//   - 用 `import.meta.glob('./**/*.svg', { query: '?raw', eager: true })`
+//     把所有 SVG 在构建期直接 inline 到 JS chunk，dist 不再产生独立 .svg，
+//     运行时也不再发网络请求，与 XSS 清洗逻辑一并保留 dangerouslySetInnerHTML。
+//
+// 注意：本文件位于 `apps/workbench/src/assets/icons/`，glob 路径相对本文件。
+//   ./  → `apps/workbench/src/assets/icons/`
+// ---------------------------------------------------------------------------
+const svgModules = import.meta.glob('./**/*.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+/**
+ * 图标名 → SVG 原始文本映射（构建期注入，运行时同步可用）。
+ *
+ * 仅包含本仓库 `assets/icons/` 下存在的 SVG；缺失或同名冲突在构建期由
+ * `ignoreAssets/icons/` 文件集静态决定。
+ */
+export const iconSvgMap: Partial<Record<IconName, string>> = (() => {
+  const out: Partial<Record<IconName, string>> = {};
+  for (const [path, raw] of Object.entries(svgModules)) {
+    // path 形如 `./legacy/edit.svg`，取 `legacy/edit`，再按目录前缀转
+    // 扁平 IconName `legacy-edit`。
+    const noPrefix = path.replace(/^\.\//, '').replace(/\.svg$/u, '');
+    const lastSlash = noPrefix.lastIndexOf('/');
+    if (lastSlash === -1) continue;
+    const category = noPrefix.slice(0, lastSlash);
+    const stem = noPrefix.slice(lastSlash + 1);
+    const flatName = `${category}-${stem}`;
+    out[flatName as IconName] = raw;
+  }
+  return out;
+})();
+
 // 图标分类
 export const iconCategories: Record<IconCategory, { label: string; description: string }> = {
   actions: { label: '操作', description: '常用操作按钮图标' },
