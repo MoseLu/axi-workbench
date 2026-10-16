@@ -174,3 +174,13 @@ docs/logs/submit/*.md
 **/public/workspace-project-*.json
 *.bak
 *.bak.*
+
+# Wave A image-audit hardening (added 2026-10-16)
+# - transient audit images dropped by remediation runs
+.tmp/audit/
+# - electron-builder / native build outputs (apps/*/build/)
+apps/*/build/
+# - placeholder file inside pdf_images run-time cache
+apps/app-search-system/backend/pdf_images/.gitkeep
+# - run-time generated media (model output, redraw dumps, etc.)
+apps/ollama-menu-assistant/output/
