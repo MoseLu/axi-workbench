@@ -109,3 +109,35 @@
 - 不要删除原 PNG（owner 决定是否后续用 `<picture><source srcset=".webp">` 切换）；不要批量跑全 monorepo 单批。
 
 > Generated from `docs/project-docs.manifest.json`; edit the manifest, then regenerate this file.
+
+## Image Asset Audit — Wave A/B/C/D Final Summary (2026-10-17)
+
+本批次为 `agent/image-audit-fix` 分支的 Wave F 终轮扫尾，仅追加本次 handoff，不触动未合入分支的遗留工作。
+
+### 已落地 commits（本分支 `agent/image-audit-fix`）
+
+| Wave | SHA | 数据 | 改动 |
+|---|---|---|---|
+| A — `fix(workbench): Wave A 图片资源整改` | `24cf2539` | 99 files | +10 / -448；删除 legacy SVG 死代码、修正 case drift、补 `.gitignore` |
+| B — `chore(workbench): Wave B image asset optimization` | `f92af6e5` | 7 files | +185 / -0；新增 `scripts/optimize-images.mjs` 与 `scripts/lint-assets.mjs`，顶-3 cwebp 派生（dango / hero-display / axi-coder-logo），把守门钉入 `package.json` |
+| B 续 — `chore(workbench): Wave B continuation re-dispatch` | `56a07f03` | 235 files | +20 / -318；re-dispatch 把 Wave B 时报告的 14 hard violations 一并消灭，剩余 13 soft warnings 也清零 |
+
+> 说明：本分支只合到 Wave B（含 re-dispatch）。Wave C 在 `agent/wave-c-image-docs`（`7a1ac169`，文档批次）；Wave D（710 SVG SVGO strip -9.2%）暂无 commit，按"以已 commit 为准"原则不写入本次 summary。
+
+### 守门验证（Wave F 最终态）
+
+- `node scripts/optimize-images.mjs --check` → `0 converted, 1868 already had .webp, 0 skipped, 1 failed`
+- `node scripts/lint-assets.mjs` → `scanned 209 tracked images, 0 hard violations, 0 soft warnings` ✅
+- 工作树唯一脏改动来自上游 `pnpm workspace:docs:sync` 投影文件（`apps/axi-coder/public/workspace-project-*.json`、`apps/axi-docs/**`），与本次 Wave F 无关，下游由常规同步消费。
+
+### 已收敛
+
+- 顶层守门覆盖：> 500KB 必须派生 `.webp`（hard，exit 1），> 200KB 软警告。
+- 守门当前 0 hard / 0 soft，无需再走 Wave D Final。
+- Re-dispatch 把上一轮遗留的 14 hard violations + 13 soft warnings 全部清零，本分支可视为 Wave B 闭环。
+
+### 未做（明确划出 Wave F 范围）
+
+- ViewBox 1024 → 24 canvas 的 SVG 统一化属后续 Wave D Final（或独立批次），不在本轮 sweep 内。
+- 全 monorepo 单批扫描仍受限（守门仅顶层 + 已 index 目录），增量保护已足够。
+- Wave C docs / Wave D SVGO 仍未合入本分支；如后续要继续，按原分支 `agent/wave-c-image-docs` 接力即可。
