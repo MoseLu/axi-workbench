@@ -141,3 +141,16 @@
 - ViewBox 1024 → 24 canvas 的 SVG 统一化属后续 Wave D Final（或独立批次），不在本轮 sweep 内。
 - 全 monorepo 单批扫描仍受限（守门仅顶层 + 已 index 目录），增量保护已足够。
 - Wave C docs / Wave D SVGO 仍未合入本分支；如后续要继续，按原分支 `agent/wave-c-image-docs` 接力即可。
+
+## Image Asset Audit — Six-Stage Final Overview (2026-10-17)
+
+| Stage | Commit Count | Core Action |
+|-------|--------------|-------------|
+| Audit | 16 subagents | 6-item compliance rating |
+| Wave A | 10 | Dead code + byte-dedup + .gitignore |
+| Wave B | 22 + 3 audit fix | 95 WebP + 26 gatekeeper scripts |
+| Wave C | 25+ | 26 repos Image Asset Policy + .gitattributes + INDEX.md |
+| Wave B re-dispatch + Wave D | 13 + 286 derived | 286+ WebP + 730 SVG SVGO strip |
+| Wave F Final | 22 | 16 new WebP + ViewBox sample 5 + summary |
+
+Total: ~100 local commits across all 28 repos, all on dev/agent branches, **NOT pushed** (2 cli+kernel repos pushed by agent error - owner decision pending).

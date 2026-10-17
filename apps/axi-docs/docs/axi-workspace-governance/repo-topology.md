@@ -4,14 +4,14 @@ title: Axi Workspace Repo Topology
 type: reference
 status: evergreen
 tags: [workspace, topology, architecture]
-created: 2026-10-14
-modified: 2026-10-14
+created: 2026-10-17
+modified: 2026-10-17
 agent-readable: true
 ---
 
 # Axi Workspace Repo Topology
 
-最后生成：2026-10-14
+最后生成：2026-10-17
 
 > PRD 中心:`docs/prd/README.md`
 
@@ -36,7 +36,7 @@ agent-readable: true
 
 - `C:\Users\12081\.openclaw` | OpenClaw Gateway | branch=`-` | canonical=yes | compliance=`external-infra`
   remote: https://github.com/axiomaticworld/openclaw-gateway
-- `foundation/axi-registry` | Axi Local Registry | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`node-single-repo`
+- `foundation/axi-registry` | Axi Local Registry | branch=`agent/image-audit-fix` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/axiomaticworld/axi-registry.git
 
 ## Projects
@@ -57,11 +57,11 @@ agent-readable: true
   remote: https://github.com/MoseLu/axi-sync.git
 - `foundation/axi-workbench-cli` | AXI Personal OS Workbench CLI | branch=`dev` | canonical=yes | compliance=`personal-os-cli`
   remote: https://github.com/MoseLu/axi-workbench-cli.git
-- `workbench/axi-image-preview` | Axi Image Preview | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-single-repo`
+- `workbench/axi-image-preview` | Axi Image Preview | branch=`agent/image-audit-fix-batch5` | canonical=yes | compliance=`node-single-repo`
   remote: https://github.com/MoseLu/axi-image-preview.git
-- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`fix/m18-doc-cleanup-agent4` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-pet-desktop` | Axi Pet Desktop | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/moeru-ai/airi.git
-- `workbench/axi-workbench` | Axi Workbench | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
+- `workbench/axi-workbench` | Axi Workbench | branch=`agent/image-audit-fix` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-workbench.git
 
 ## Products
@@ -70,7 +70,7 @@ agent-readable: true
   remote: https://github.com/MoseLu/Axi-Soul-World.git
 - `products/ielts-vocab` | IELTS Vocabulary | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/ielts-vocab.git
-- `products/story-graph` | Story Graph | branch=`perf/20261010-evidence-store-no-n-plus-1` | canonical=yes | compliance=`node-monorepo-approved`
+- `products/story-graph` | Story Graph | branch=`dev` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/story-graph.git
 
 ## Shared
@@ -79,9 +79,9 @@ agent-readable: true
   remote: https://github.com/MoseLu/axi-observability.git
 - `foundation/axi-rules` | Axi Rules | branch=`dev` | canonical=yes | compliance=`constraint-index`
   remote: https://github.com/MoseLu/axi-rules.git
-- `foundation/axi-skills` | Axi Skills | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`agent-skill-catalog`
+- `foundation/axi-skills` | Axi Skills | branch=`dev` | canonical=yes | compliance=`agent-skill-catalog`
   remote: https://github.com/MoseLu/axi-skills.git
-- `foundation/axi-ui` | Axi UI | branch=`fix/m18-doc-cleanup` | canonical=yes | compliance=`node-monorepo-approved`
+- `foundation/axi-ui` | Axi UI | branch=`agent/wave-d-final-viewbox` | canonical=yes | compliance=`node-monorepo-approved`
   remote: https://github.com/MoseLu/axi-ui.git
 - `foundation/axi-workspace-rs` | Axi Workspace Rust Monorepo | branch=`dev` | canonical=yes | compliance=`rust-cargo-workspace`
   remote: https://github.com/MoseLu/axi-workspace-rs.git

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2026-06-11",
-  "generatedAt": "2026-10-14T22:26:41.668Z",
+  "generatedAt": "2026-10-17T14:43:19.701Z",
   "source": "foundation/workspace-governance/workspace.json",
   "summary": {
     "total": 22,
@@ -349,15 +349,13 @@
       "kind": "project",
       "lifecycle": "active-local",
       "owner": "libu",
-      "readiness": "unready",
+      "readiness": "verified",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/workbench/axi-pet-desktop/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/workbench/axi-pet-desktop/docs/HANDOFF.md",
       "graphId": "axi-pet-desktop",
       "graphMatched": true,
-      "errors": [
-        "canonicalPath does not match project path: /Volumes/code/workspace/projects/axi-pet-desktop"
-      ],
+      "errors": [],
       "warnings": [],
       "summary": "macOS desktop runtime for the Axi Pet virtual companion; Electron shell plus React frontend.",
       "commands": {
@@ -393,7 +391,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-09-14"
+      "lastVerifiedAt": "2026-09-25"
     },
     {
       "id": "axi-registry",
@@ -527,7 +525,7 @@
         "todo": "docs/HANDOFF.md",
         "milestone": "docs/HANDOFF.md",
         "active": [
-          "ADR-013 (Proposed): Rust migration of axi-runtime; 4-phase plan; blocked on ADR-011"
+          "ADR-013 (Migrated): Rust migration of axi-runtime; 4-phase plan; ADR-011 Accepted (Phase M2 scaffold complete) -- migration proceeding"
         ],
         "knownFailures": []
       },
@@ -583,7 +581,7 @@
           "Full catalog verification has unrelated pre-existing secret-pattern/cache errors and i18n batch drift; this change was verified with scoped tests and a three-worker Codex native completion/refill smoke, not ZCode twelve-way execution."
         ]
       },
-      "lastVerifiedAt": "2026-10-14"
+      "lastVerifiedAt": "2026-10-09"
     },
     {
       "id": "axi-soul-world",
@@ -722,7 +720,7 @@
         ],
         "knownFailures": []
       },
-      "lastVerifiedAt": "2026-10-11"
+      "lastVerifiedAt": "2026-09-25"
     },
     {
       "id": "axi-video-downloader",
@@ -791,7 +789,7 @@
       "graphMatched": true,
       "errors": [
         "decisions.submitLog path does not exist: docs/logs/submit/20260611-124603-batch-submit.md",
-        "verification is stale: 31 days old (max 30)"
+        "verification is stale: 34 days old (max 30)"
       ],
       "warnings": [],
       "summary": "Canonical AxiomaticWorld role-oriented multi-surface control workbench: Web is the complete backend-management control center, Mobile is the bounded role-execution auxiliary surface, and professional/physical work stays in dedicated tools, all backed by the six-layer control plane, Go API plane, shared action contracts, local services, AI integrations, fleet tooling, and app scaffolding.",
@@ -991,13 +989,18 @@
       "kind": "product",
       "lifecycle": "active-product",
       "owner": "libu",
-      "readiness": "verified",
+      "readiness": "unready",
       "score": 10,
       "manifestPath": "/Volumes/code/workspace/products/ielts-vocab/docs/project-docs.manifest.json",
       "handoffPath": "/Volumes/code/workspace/products/ielts-vocab/docs/HANDOFF.md",
       "graphId": "ielts-vocab",
       "graphMatched": true,
-      "errors": [],
+      "errors": [
+        "documents.debug path does not exist: docs/state/DEBUG.md",
+        "documents.debugZh path does not exist: docs/state/DEBUG.zh-CN.md",
+        "documents.testReport path does not exist: docs/state/TEST_REPORT.md",
+        "documents.testReportZh path does not exist: docs/state/TEST_REPORT.zh-CN.md"
+      ],
       "warnings": [],
       "summary": "Full-stack IELTS vocabulary learning product with web, mobile, shared client packages, gateway, split backend services, speech, and production operations.",
       "commands": {
