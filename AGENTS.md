@@ -71,6 +71,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 > 跨工作区引用冲突时，工作区根 `AGENTS.md` > 治理镜像 > 本项目根 `AGENTS.md`。
 
 > Rule router: see [`../../foundation/axi-rules/INDEX.md`](../../foundation/axi-rules/INDEX.md) for the workspace-level rule catalog.
+> Doc map: see [`./INDEX.md`](./INDEX.md) for the project-local doc index.
 
 ---
 
