@@ -498,6 +498,10 @@ to read first.
 - Sibling convention: [`/Volumes/code/workspace/foundation/axi-observability/INDEX.md`](../../foundation/axi-observability/INDEX.md),
   [`/Volumes/code/workspace/candidates/pelagic/INDEX.md`](../../candidates/pelagic/INDEX.md),
   [`/Volumes/code/workspace/products/ielts-vocab/INDEX.md`](../../products/ielts-vocab/INDEX.md).
+- Workspace PRD center:
+  [`/Volumes/code/workspace/docs/prd/README.md`](../../docs/prd/README.md)
+  — single entry point for PRD-01..07 + per-project PRDs and the
+  L0/L2 PRD hierarchy.
 - Render-host boundary (PRD-10.2):
   [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`](../../infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md).
 
