@@ -421,7 +421,7 @@ duplicate user portal. Token layer strategy converges on `@axi/tokens` baseline.
 - Workspace relationship graph CLI: `/Volumes/code/workspace/scripts/workspace-project`
 - Naming + brand: `/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md`
 - DevSvc / PM2 service orchestration: `/Volumes/code/workspace/docs/DEV_SERVICES.md` + `/Volumes/code/workspace/dev-services.config.json`
-- Workspace Entry Spatial Graph PRD: `/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md` (§2.1 / §10.2 / §19 #9 / §21)
+- Workspace Entry Spatial Graph PRD: `/Volumes/code/workspace/foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md` (§2.1 / §10.2 / §19 #9 / §21)
 - Workspace governance project catalog: `/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md`
 - Neighbour projects (consumers / providers): `foundation/axi-notify` (Android client + Relay consumer of control-plane + platform-core), `foundation/axi-pet`, `foundation/axi-agent`, `foundation/axi-image-preview` (also exposed as workspace sibling), `shared/axi-ui`, `shared/axi-registry`, `tools/axi-app-cli`
 - Sibling monorepo under same workbench partition: `workbench/axi-image-preview` (separate dossier)

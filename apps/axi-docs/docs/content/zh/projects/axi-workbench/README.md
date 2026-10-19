@@ -310,7 +310,7 @@ python3 infra/fleet-console/scripts/fleetctl.py validate
 - 工作区关系图 CLI：`/Volumes/code/workspace/scripts/workspace-project`
 - 命名与品牌：`/Volumes/code/workspace/docs/axi/AXIOMATICWORLD_NAMING.md`
 - DevSvc / PM2 服务编排：`/Volumes/code/workspace/docs/DEV_SERVICES.md` + `/Volumes/code/workspace/dev-services.config.json`
-- Workspace Entry Spatial Graph PRD：`/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`（§2.1 / §10.2 / §19 #9 / §21）
+- Workspace Entry Spatial Graph PRD：`/Volumes/code/workspace/foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md`（§2.1 / §10.2 / §19 #9 / §21）
 - 工作区治理项目目录：`/Volumes/code/workspace/infra/axi-workspace-governance/docs/project-catalog.md`
 - 邻居项目（消费方 / 提供方）：`foundation/axi-notify`（Android 客户端 + Relay 消费 control-plane + platform-core）、`foundation/axi-pet`、`foundation/axi-agent`、`foundation/axi-image-preview`（也作为工作区 sibling 暴露）、`shared/axi-ui`、`shared/axi-registry`、`tools/axi-app-cli`
 - 同 workbench 分区的兄弟 monorepo：`workbench/axi-image-preview`（独立 dossier）

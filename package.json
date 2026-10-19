@@ -34,6 +34,7 @@
     "check:all": "pnpm check:contracts && pnpm check:dossier && pnpm check:capabilities && pnpm check:boundaries && pnpm check:styles && pnpm check:design-tokens && pnpm check:ui-aesthetic",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
+    "typecheck": "turbo run type-check",
     "assets:optimize": "node scripts/optimize-images.mjs",
     "assets:lint": "node scripts/lint-assets.mjs",
     "clean": "turbo run clean && rm -rf node_modules",

@@ -116,7 +116,7 @@ Axi Workbench 是 **「AxiomaticWorld（公理世界）工作台」**，是 Axi 
 4. **引入新事实必须回到事实源**：节点、关系、布局坐标、镜头状态、详情面板任何字段若要成为工作区事实，必须先在 `workspace.json` / `workspace.graph.json` 增加权威字段，再由数据平面适配器暴露。
 5. **与 `axi-workbench-cli` 关系**：`axi-workbench-cli` 是本仓库的数据平面消费者对应物（CLI/DOT/JSON），不是第二个 Workbench UI；本仓库的 Web/Desktop/Mobile 形态是同一 Workbench 产品的三种交付形态。
 
-详细分层与 M1/M2/M3 触发条件见 [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`](/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md) §2.1 / §10.2 / §19 #9 / §21。
+详细分层与 M1/M2/M3 触发条件见 [`/Volumes/code/workspace/foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md`](/Volumes/code/workspace/foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md) §2.1 / §10.2 / §19 #9 / §21。
 
 ---
 

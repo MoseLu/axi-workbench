@@ -503,7 +503,7 @@ to read first.
   — single entry point for PRD-01..07 + per-project PRDs and the
   L0/L2 PRD hierarchy.
 - Render-host boundary (PRD-10.2):
-  [`/Volumes/code/workspace/infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md`](../../infra/axi-workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/PRD.md).
+  [`/Volumes/code/workspace/foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md`](../../foundation/workspace-governance/docs/specs/2026-09-24-workspace-entrance-spatial-graph/REMEDIATION-PLAN.md).
 
 ---
 
