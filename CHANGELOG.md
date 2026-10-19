@@ -64,6 +64,14 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
 
 ### Changed
 
+- 2026-10-19 — `chore(hygiene): commit .githooks/ updates (P3 batch 25
+  audit hygiene fix)`: `.githooks/post-commit` rewritten in L6-remediation
+  form (axi-bypass-audit-resolve first, then submit-log, then
+  workspace-change-propagation; all soft-fail with `|| true`); drops the
+  `workspace-change-ledger.mjs record` step that no longer exists.
+  `.githooks/pre-commit` drops the `--record` flag from
+  `workspace-flow preflight` (the L6-bypass-audit resolver now records
+  the real SHA during the post-commit phase).
 - 2026-10-14 — `fix(workbench): repair devsvc-dashboard, hardcoded
   SVGs, topbar language` (`86c9cab5`) + `make Icon component
   production-build safe` (`d22357eb`): removed hardcoded SVG fallbacks
