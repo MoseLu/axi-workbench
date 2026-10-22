@@ -38,7 +38,7 @@ test("getPersistentCacheDir returns path under dashboard app's .cache", () => {
       dir,
       path.join(
         workspaceRoot,
-        "projects",
+        "workbench",
         "axi-workbench",
         "apps",
         "devsvc-dashboard",

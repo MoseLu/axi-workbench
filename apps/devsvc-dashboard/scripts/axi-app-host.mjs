@@ -46,7 +46,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-fleet-console",
       capabilities: ["web", "ops", "dashboard"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "infra", "fleet-console", "dashboard"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "infra", "fleet-console", "dashboard"),
       defaultRoute: "/dashboard",
       executionBoundary: {
         owner: "Fleet Console（物理服务层）",
@@ -87,7 +87,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-coder",
       capabilities: ["web", "workbench"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-coder"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "axi-coder"),
       defaultRoute: "/overview",
       executionBoundary: {
         owner: "Axi Coder（受管开发运行时）",
@@ -136,7 +136,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-verification-inbox",
       capabilities: ["web", "accounts", "verification-inbox"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "verification-inbox"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "verification-inbox"),
       defaultRoute: "/",
       executionBoundary: {
         owner: "Verification Inbox / 原生邮件桥接",
@@ -166,7 +166,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-docs",
       capabilities: ["web", "docs", "knowledge", "search"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-docs", "app"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "axi-docs", "app"),
       defaultRoute: "/",
       healthPath: "/",
       readinessPath: "/",
@@ -190,7 +190,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-image-preview",
       capabilities: ["web", "image", "gallery", "preview"],
-      cwd: path.join(workspaceRoot, "projects", "axi-image-preview"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-image-preview"),
       defaultRoute: "/",
       healthPath: "/",
       readinessPath: "/",
@@ -214,7 +214,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-agent",
       capabilities: ["web", "agent-runtime", "tasks", "memory"],
-      cwd: path.join(workspaceRoot, "projects", "axi-agent", "frontend"),
+      cwd: path.join(workspaceRoot, "agent-cluster", "axi-agent", "frontend"),
       defaultRoute: "/",
       healthPath: "/",
       readinessPath: "/",
@@ -240,7 +240,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-artboard",
       capabilities: ["web", "canvas", "node-picker", "perception"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "axi-artboard"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "axi-artboard"),
       defaultRoute: "/",
       executionBoundary: {
         owner: "Axi Artboard (overlay / agent node-picker)",
@@ -274,7 +274,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-resource-orchestration",
       capabilities: ["web", "orchestration", "resource-gateway", "memory", "session"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "apps", "resource-orchestration"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "resource-orchestration"),
       defaultRoute: "/",
       executionBoundary: {
         owner: "Resource Gateway (services/resource-gateway)",
@@ -305,7 +305,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
     {
       appId: "axi-resource-gateway",
       capabilities: ["service", "gateway", "memory", "session", "metrics"],
-      cwd: path.join(workspaceRoot, "projects", "axi-workbench", "services", "resource-gateway"),
+      cwd: path.join(workspaceRoot, "workbench", "axi-workbench", "services", "resource-gateway"),
       defaultRoute: "/health/live",
       executionBoundary: {
         owner: "Resource Gateway (services/resource-gateway)",
@@ -346,7 +346,7 @@ export function defaultAxiAppRegistry(workspaceRoot) {
   ];
 }
 
-export function loadAxiAppRegistry(workspaceRoot, configPath = path.join(workspaceRoot, "projects", "axi-workbench", "apps", "devsvc-dashboard", "config", "axi-apps.json")) {
+export function loadAxiAppRegistry(workspaceRoot, configPath = path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "devsvc-dashboard", "config", "axi-apps.json")) {
   if (!fs.existsSync(configPath)) return defaultAxiAppRegistry(workspaceRoot);
   const rawApps = JSON.parse(fs.readFileSync(configPath, "utf8"));
   return rawApps.map((app) => ({

@@ -19,7 +19,7 @@ export function getPersistentCacheDir(workspaceRoot) {
   if (!workspaceRoot) throw new Error("workspaceRoot is required");
   return path.join(
     workspaceRoot,
-    "projects",
+    "workbench",
     "axi-workbench",
     "apps",
     "devsvc-dashboard",

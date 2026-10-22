@@ -255,7 +255,7 @@
     "appId": "axi-image-preview",
     "title": "Axi Image Preview",
     "icon": "app",
-    "cwd": "${workspaceRoot}/projects/axi-image-preview",
+    "cwd": "${workspaceRoot}/workbench/axi-image-preview",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm exec vite -- --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "npm",
     "defaultRoute": "/",
@@ -299,7 +299,7 @@
       "fallback": "不可用时保留受控入口与错误状态，不由 Host 执行任务"
     },
     "icon": "work",
-    "cwd": "${workspaceRoot}/projects/axi-agent/frontend",
+    "cwd": "${workspaceRoot}/agent-cluster/axi-agent/frontend",
     "startCommand": "${workspaceRoot}/scripts/run-node22-command.sh npm exec vite -- --host 127.0.0.1 --port ${port} --strictPort",
     "packageManager": "npm",
     "defaultRoute": "/",

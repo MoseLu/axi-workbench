@@ -100,6 +100,21 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
 
 ### Fixed
 
+- 2026-10-22 — `fix(devsvc-dashboard): repair pre-rename workspace
+  partition paths`: four live sites still resolved under
+  `projects/axi-workbench`, a path the 2026-10-17 partition move
+  removed. `loadWorkspaceResourceRegistry` silently lost 11 static
+  overrides because `readJson` fell back to an empty list —
+  measured against the live workspace root, the old default resolved
+  to 43 resources with 0 static-only entries, the new one to 54 with
+  11. Corrected `staticResourcesPath` and `getPersistentCacheDir` to
+  `workbench/`, and the eight `cwd` defaults in `axi-app-host.mjs`
+  (plus `loadAxiAppRegistry` and the matching `axi-apps.json`
+  entries) to their real partitions — `axi-agent` is under
+  `agent-cluster/`, `axi-image-preview` under `workbench/`, so neither
+  was blanket-copied. `verification-persistence.test.mjs` asserted
+  the old path and was updated to match.
+
 - 2026-10-16 — `fix(workbench): Wave A 图片资源整改 (Batch 1/16)`
   (`24cf2539`): image-asset Wave A — replaces 42 broken `<img>`
   references across `apps/workbench` and the dango family; reduces

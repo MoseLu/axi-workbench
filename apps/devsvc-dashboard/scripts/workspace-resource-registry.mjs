@@ -413,7 +413,7 @@ function mergeResource(base, override, workspaceRoot) {
 export async function loadWorkspaceResourceRegistry({
   workspaceRoot,
   graphPath = path.join(workspaceRoot, "workspace.graph.json"),
-  staticResourcesPath = path.join(workspaceRoot, "projects", "axi-workbench", "apps", "devsvc-dashboard", "config", "axi-resources.json"),
+  staticResourcesPath = path.join(workspaceRoot, "workbench", "axi-workbench", "apps", "devsvc-dashboard", "config", "axi-resources.json"),
   cacheOptions = {}
 } = {}) {
   if (!workspaceRoot) throw new Error("workspaceRoot is required");
