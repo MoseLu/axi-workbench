@@ -39,7 +39,7 @@
     "kind": "agent-runtime",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-agent",
+    "ownerPath": "${workspaceRoot}/agent-cluster/axi-agent",
     "dashboardRoute": "/apps/axi-agent/",
     "capabilities": [
       "web",
@@ -74,7 +74,7 @@
     "kind": "shared-rule-index",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-rules",
+    "ownerPath": "${workspaceRoot}/foundation/axi-rules",
     "dashboardRoute": "/axi-resources/axi-rules",
     "capabilities": [
       "agent-routing-rules",
@@ -121,7 +121,7 @@
     "kind": "shared-skill-registry",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/shared/axi-skills",
+    "ownerPath": "${workspaceRoot}/foundation/axi-skills",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "skill-registry",
@@ -155,7 +155,7 @@
     "kind": "governance-infrastructure",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/infra/axi-workspace-governance",
+    "ownerPath": "${workspaceRoot}/foundation/workspace-governance",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "workspace-admission",
@@ -181,7 +181,7 @@
     "kind": "image-preview-app",
     "surface": "hosted-app",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-image-preview",
+    "ownerPath": "${workspaceRoot}/workbench/axi-image-preview",
     "dashboardRoute": "/apps/axi-image-preview/",
     "capabilities": [
       "web",
@@ -232,7 +232,7 @@
     "kind": "notification-service",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-notify",
+    "ownerPath": "${workspaceRoot}/foundation/axi-notify",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "relay",
@@ -249,7 +249,7 @@
     "kind": "shared-runtime",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/shared/axi-ui",
+    "ownerPath": "${workspaceRoot}/foundation/axi-ui",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "tokens",
@@ -267,7 +267,7 @@
     "kind": "local-registry",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/infra/axi-registry",
+    "ownerPath": "${workspaceRoot}/foundation/axi-registry",
     "dashboardRoute": "/axi-resources",
     "health": {
       "type": "http",
@@ -359,7 +359,7 @@
     "kind": "axi-pet-virtual-companion",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-pet",
+    "ownerPath": "${workspaceRoot}/workbench/axi-pet-desktop",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "virtual-companion",
@@ -377,7 +377,7 @@
     "kind": "desktop-app",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-pet-desktop",
+    "ownerPath": "${workspaceRoot}/workbench/axi-pet-desktop",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "desktop-companion",
@@ -393,7 +393,7 @@
     "kind": "external-capability",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/ai-capability",
+    "ownerPath": "/Users/mose/.cc-connect",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "capability",
@@ -409,7 +409,7 @@
     "kind": "local-model-runtime",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/ollama-local",
+    "ownerPath": "/Users/mose/.cc-connect",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "local-llm",
@@ -425,7 +425,7 @@
     "kind": "token-plan-provider",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/minimax-tokenplan",
+    "ownerPath": "/Users/mose/.cc-connect",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "token-plan",
@@ -510,7 +510,7 @@
     "kind": "product-app",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/products/sports-management",
+    "ownerPath": "${workspaceRoot}/archive/axi-sports-management-app",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "sports",
@@ -526,7 +526,7 @@
     "kind": "api-proxy",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/sub2api",
+    "ownerPath": "${workspaceRoot}/references/short-term/sub2api",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "api-proxy",
@@ -537,28 +537,12 @@
     "menuGroup": "agent-runtime"
   },
   {
-    "id": "cliproxyapi",
-    "title": "CLI Proxy API",
-    "kind": "cli-proxy",
-    "surface": "resource-index",
-    "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/cliproxyapi",
-    "dashboardRoute": "/axi-resources",
-    "capabilities": [
-      "cli-proxy",
-      "api"
-    ],
-    "notes": "CLI proxy API service.",
-    "visibility": "admin",
-    "menuGroup": "agent-runtime"
-  },
-  {
     "id": "image2prompt",
     "title": "Image2Prompt",
     "kind": "image-processing",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/image2prompt",
+    "ownerPath": "${workspaceRoot}/references/short-term/image2prompt",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "image",
@@ -574,7 +558,7 @@
     "kind": "codex-bridge",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/opencodex",
+    "ownerPath": "${workspaceRoot}/references/short-term/opencodex",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "codex",
@@ -590,7 +574,7 @@
     "kind": "dev-tools",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/tools/cockpit-tools",
+    "ownerPath": "${workspaceRoot}/references/short-term/cockpit-tools",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "dev-tools",
@@ -606,7 +590,7 @@
     "kind": "notes-app",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/tools/blinko",
+    "ownerPath": "${workspaceRoot}/references/short-term/blinko",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "notes",
@@ -622,7 +606,7 @@
     "kind": "image-generation",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/comfyui",
+    "ownerPath": "${workspaceRoot}/references/short-term/comfyui",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "image-generation",
@@ -654,7 +638,7 @@
     "kind": "proxy-service",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-proxy-companion",
+    "ownerPath": "${workspaceRoot}/workbench/axi-workbench/apps/axi-docs/docs/content/en/projects/axi-proxy-companion",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "proxy",
@@ -686,7 +670,7 @@
     "kind": "bridge-service",
     "surface": "resource-index",
     "status": "active",
-    "ownerPath": "${workspaceRoot}/projects/axi-feishu-codex-bridge",
+    "ownerPath": "${workspaceRoot}/agent-cluster/axi-agent/tools/axi-feishu-codex-bridge",
     "dashboardRoute": "/axi-resources",
     "capabilities": [
       "feishu",

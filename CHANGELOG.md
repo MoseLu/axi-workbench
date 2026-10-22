@@ -25,6 +25,20 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
 
 ## [Unreleased]
 
+### Fixed
+
+- 2026-10-22: `apps/devsvc-dashboard/config/axi-resources.json` — 28 of
+  the 39 static resource entries still carried `ownerPath` values from the
+  retired `projects/` / `infra/` / `shared/` layout that the 2026-10-17
+  partition split dissolved. Because `mergeResource` prefers the static
+  override over `workspace.graph.json`, a stale entry also masked the
+  correct registry path, so `GET /api/axi/resources` reported resources as
+  `missing`. 22 values are realigned to their authoritative
+  `workspace.graph.json` path (or the `WORKSPACE_INDEX.md` row where there
+  is no graph node), and `cliproxyapi` is deleted, the registry having
+  recorded it as a removed reference project. `axi-pet` points at its
+  superseding `workbench/axi-pet-desktop`. Live `missing` goes 8 -> 5.
+
 ### Added
 
 - 2026-10-17 — `docs(workbench): expand INDEX.md to full doc-map router
