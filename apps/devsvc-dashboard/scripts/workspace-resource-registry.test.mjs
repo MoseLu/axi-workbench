@@ -128,3 +128,96 @@ test("workspace graph projects are retained while static entries provide dashboa
   assert.equal(byId.get("story-graph")?.status, "missing");
   assert.equal(byId.get("static-tool")?.ownerPath, path.join(workspaceRoot, "tools", "static-tool"));
 });
+
+// ---------------------------------------------------------------------------
+// Relative graph paths (GOV-AUDIT-005 path-compat)
+//
+// workspace.graph.json stores most `projects[*].path` values as
+// workspace-root-relative strings ("foundation/axi-kernel"). Those MUST be
+// resolved against `workspaceRoot`, not against the process cwd — otherwise
+// every relative-path project silently degrades to `missing` whenever the
+// dashboard is started from a directory other than the workspace root.
+// ---------------------------------------------------------------------------
+
+test("relative graph project path resolves against workspaceRoot, not cwd", async () => {
+  clearVerificationCache();
+  const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "axi-rel-graph-"));
+  fs.mkdirSync(path.join(workspaceRoot, "foundation", "axi-kernel"), { recursive: true });
+
+  const graphPath = path.join(workspaceRoot, "workspace.graph.json");
+  const staticResourcesPath = path.join(workspaceRoot, "axi-resources.json");
+  fs.writeFileSync(graphPath, JSON.stringify({
+    projects: {
+      // RELATIVE on purpose — the canonical workspace.graph.json form.
+      "axi-kernel": { name: "Axi Kernel", path: "foundation/axi-kernel", kind: "axi-app", provides: ["kernel"] },
+      "axi-apps": { name: "Axi Apps", path: "foundation/axi-apps", kind: "axi-app", provides: ["apps"] }
+    }
+  }));
+  fs.writeFileSync(staticResourcesPath, JSON.stringify([]));
+
+  // Run from an unrelated cwd so a cwd-relative lookup cannot succeed by luck.
+  const originalCwd = process.cwd();
+  process.chdir(os.tmpdir());
+  try {
+    const resources = await loadWorkspaceResourceRegistry({
+      workspaceRoot,
+      graphPath,
+      staticResourcesPath,
+      cacheOptions: { enabled: false, forceRefresh: true }
+    });
+    const byId = new Map(resources.map((resource) => [resource.id, resource]));
+
+    // Absolute resolution against workspaceRoot.
+    assert.equal(
+      byId.get("axi-kernel")?.ownerPath,
+      path.join(workspaceRoot, "foundation", "axi-kernel")
+    );
+    assert.equal(byId.get("axi-kernel")?.ownerPathExists, true);
+    assert.notEqual(byId.get("axi-kernel")?.status, "missing");
+
+    // A genuinely absent relative path must still report `missing`.
+    assert.equal(byId.get("axi-apps")?.ownerPathExists, false);
+    assert.equal(byId.get("axi-apps")?.status, "missing");
+  } finally {
+    process.chdir(originalCwd);
+    clearVerificationCache();
+  }
+});
+
+test("relative static ownerPath and ${workspaceRoot} token forms both resolve", async () => {
+  clearVerificationCache();
+  const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "axi-rel-static-"));
+  fs.mkdirSync(path.join(workspaceRoot, "tools", "rel-tool"), { recursive: true });
+  fs.mkdirSync(path.join(workspaceRoot, "tools", "token-tool"), { recursive: true });
+
+  const graphPath = path.join(workspaceRoot, "workspace.graph.json");
+  const staticResourcesPath = path.join(workspaceRoot, "axi-resources.json");
+  fs.writeFileSync(graphPath, JSON.stringify({ projects: {} }));
+  fs.writeFileSync(staticResourcesPath, JSON.stringify([
+    { id: "rel-tool", title: "Rel Tool", kind: "tool", ownerPath: "tools/rel-tool" },
+    { id: "token-tool", title: "Token Tool", kind: "tool", ownerPath: "${workspaceRoot}/tools/token-tool" },
+    { id: "abs-tool", title: "Abs Tool", kind: "tool", ownerPath: path.join(workspaceRoot, "tools", "abs-tool") }
+  ]));
+
+  const originalCwd = process.cwd();
+  process.chdir(os.tmpdir());
+  try {
+    const resources = await loadWorkspaceResourceRegistry({
+      workspaceRoot,
+      graphPath,
+      staticResourcesPath,
+      cacheOptions: { enabled: false, forceRefresh: true }
+    });
+    const byId = new Map(resources.map((resource) => [resource.id, resource]));
+
+    assert.equal(byId.get("rel-tool")?.ownerPath, path.join(workspaceRoot, "tools", "rel-tool"));
+    assert.equal(byId.get("rel-tool")?.ownerPathExists, true);
+    assert.equal(byId.get("token-tool")?.ownerPath, path.join(workspaceRoot, "tools", "token-tool"));
+    assert.equal(byId.get("token-tool")?.ownerPathExists, true);
+    assert.equal(byId.get("abs-tool")?.ownerPath, path.join(workspaceRoot, "tools", "abs-tool"));
+    assert.equal(byId.get("abs-tool")?.ownerPathExists, false);
+  } finally {
+    process.chdir(originalCwd);
+    clearVerificationCache();
+  }
+});

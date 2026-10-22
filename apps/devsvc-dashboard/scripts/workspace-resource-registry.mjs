@@ -111,8 +111,25 @@ function readJson(filePath, fallback) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+// Resolve a graph/static `path` field to an absolute path.
+//
+// Two input forms are legal, matching the governance contract
+// (GOV-AUDIT-005 path-compat, see workspace-governance's `resolveEntryPath`):
+//   1. `${workspaceRoot}/...` — the token form used by config/axi-resources.json.
+//   2. workspace-root-relative ("foundation/axi-kernel") — the canonical form
+//      used by workspace.graph.json projects[*].path.
+// Absolute values are passed through untouched.
+//
+// Relative values MUST be joined to `workspaceRoot`, never left to
+// `fs.existsSync` / `spawn` cwd resolution: the dashboard process cwd is not
+// guaranteed to be the workspace root, and a bare relative path silently
+// degrades every graph-registered project to `missing`.
 function resolveWorkspaceValue(value, workspaceRoot) {
-  return String(value || "").replaceAll("${workspaceRoot}", workspaceRoot);
+  const interpolated = String(value || "").replaceAll("${workspaceRoot}", workspaceRoot);
+  if (!interpolated || path.isAbsolute(interpolated)) {
+    return interpolated;
+  }
+  return path.resolve(workspaceRoot, interpolated);
 }
 
 function unique(values) {

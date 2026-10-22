@@ -25,19 +25,56 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
 
 ## [Unreleased]
 
+### Added
+
+- 2026-10-22: `apps/axi-docs/app/src/mcp/workspaceDocs.test.ts` — nine
+  path-safety cases for the workspace-document MCP reader (parent and
+  deep traversal, absolute paths, NUL bytes, non-markdown extensions,
+  whitespace-padded input, unknown category, and a symlink escaping the
+  category root).
+- 2026-10-22: `infra/helm/axi-workbench-platform/values.yaml` —
+  `gateway.controlPlaneURL`, the operator-supplied address of the
+  control-plane service that this chart does not deploy.
+
 ### Fixed
 
-- 2026-10-22: `apps/devsvc-dashboard/config/axi-resources.json` — 28 of
-  the 39 static resource entries still carried `ownerPath` values from the
-  retired `projects/` / `infra/` / `shared/` layout that the 2026-10-17
-  partition split dissolved. Because `mergeResource` prefers the static
-  override over `workspace.graph.json`, a stale entry also masked the
-  correct registry path, so `GET /api/axi/resources` reported resources as
-  `missing`. 22 values are realigned to their authoritative
-  `workspace.graph.json` path (or the `WORKSPACE_INDEX.md` row where there
-  is no graph node), and `cliproxyapi` is deleted, the registry having
-  recorded it as a removed reference project. `axi-pet` points at its
-  superseding `workbench/axi-pet-desktop`. Live `missing` goes 8 -> 5.
+- 2026-10-22: `apps/devsvc-dashboard/scripts/workspace-resource-registry.mjs`
+  — `resolveWorkspaceValue()` only substituted the `${workspaceRoot}`
+  token, so a workspace-root-relative `projects[*].path` from
+  `workspace.graph.json` stayed relative and reached `fs.existsSync()`
+  and `spawn({cwd})` unresolved. Both resolve against the process cwd,
+  so every relative-path project degraded to `missing` whenever the
+  dashboard was not started from the workspace root. With the
+  verification cache disabled the real registry reported
+  `failed 27 / missing 11` from `/tmp` against `failed 9 / missing 5`
+  from the workspace root; `axi-apps`, `axi-sync`, `axi-runtime`,
+  `axi-inbox`, `axi-kernel` and `axi-workbench-cli` all read `missing`.
+  Relative paths are now resolved against `workspaceRoot`, matching
+  `resolveEntryPath` in `workspace-governance/scripts/workspace-lib.mjs`
+  and the GOV-AUDIT-005 path-compat handling in `workspace-audit.mjs`
+  and `workspace-project-cli/lib/validate.mjs`. Absolute paths and the
+  `${workspaceRoot}` token form used by `config/axi-resources.json` are
+  unchanged; the registry itself is not touched.
+- 2026-10-22: `apps/axi-docs/app/src/mcp/workspaceDocs.ts` —
+  `readWorkspaceDoc` joined the caller-supplied `path` straight onto the
+  category root, with no traversal check and no extension allowlist, so
+  a human token could read arbitrary files. It now reuses the
+  `fileOps.isSupported` markdown allowlist and applies two containment
+  checks — a lexical `..` test and a second check over the resolved
+  real path, which is what catches a symlink pointing out of the root.
+  NUL bytes, absolute paths and whitespace-padded paths are rejected
+  as well.
+- 2026-10-22: `infra/helm/axi-workbench-platform/templates/configmap.yaml`
+  — the api-gateway's `routes.yaml` interpolates `${WORKFLOW_URL}`,
+  `${NOTIFICATION_URL}` and `${CONTROL_PLANE_URL}`, and the chart
+  exported none of them. The gateway expands `${ENV}` before
+  validating, so an empty upstream made `validateRoutes` fail and the
+  process exited 1 — the gateway could not start under Helm. The
+  missing `${CONTROL_PLANE_URL}` additionally expanded the seven
+  commit-ledger routes to bare paths, which pass validation but give
+  `url.Parse` no host, so `createProxy` answered 503 forever. All three
+  are now exported.
+
 
 ### Added
 
@@ -113,21 +150,6 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   green on `apps/devsvc-dashboard`.
 
 ### Fixed
-
-- 2026-10-22 — `fix(devsvc-dashboard): repair pre-rename workspace
-  partition paths`: four live sites still resolved under
-  `projects/axi-workbench`, a path the 2026-10-17 partition move
-  removed. `loadWorkspaceResourceRegistry` silently lost 11 static
-  overrides because `readJson` fell back to an empty list —
-  measured against the live workspace root, the old default resolved
-  to 43 resources with 0 static-only entries, the new one to 54 with
-  11. Corrected `staticResourcesPath` and `getPersistentCacheDir` to
-  `workbench/`, and the eight `cwd` defaults in `axi-app-host.mjs`
-  (plus `loadAxiAppRegistry` and the matching `axi-apps.json`
-  entries) to their real partitions — `axi-agent` is under
-  `agent-cluster/`, `axi-image-preview` under `workbench/`, so neither
-  was blanket-copied. `verification-persistence.test.mjs` asserted
-  the old path and was updated to match.
 
 - 2026-10-16 — `fix(workbench): Wave A 图片资源整改 (Batch 1/16)`
   (`24cf2539`): image-asset Wave A — replaces 42 broken `<img>`
