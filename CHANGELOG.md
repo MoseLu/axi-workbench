@@ -23,7 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 via the workspace graph (no per-repo semver tags — see ADR-008 and
 `/Volumes/code/workspace/foundation/axi-rules/INDEX.md`).
 
-## [Unreleased]
+- 2026-10-22: `.gitignore` — ignore the two `.claude/` distributor
+  artifacts, `.claude/settings.json` and
+  `.claude/.last-distributed-from-workspace.json`. Both are rewritten by
+  the workspace settings distributor on every governance sync, are
+  machine-local run state regenerated on demand, and are tracked by no
+  repo in the workspace, yet both surfaced here as untracked noise one
+  careless `git add` away from being committed. The rules are
+  deliberately per-file rather than a blanket `.claude/`, because this
+  repo tracks ten `.claude/clog-run/` evidence files that must stay
+  tracked. No files were deleted.
 
 ### Added
 

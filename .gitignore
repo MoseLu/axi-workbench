@@ -184,3 +184,14 @@ apps/*/build/
 apps/app-search-system/backend/pdf_images/.gitkeep
 # - run-time generated media (model output, redraw dumps, etc.)
 apps/ollama-menu-assistant/output/
+
+# `.claude/` holds two kinds of file and only the first is garbage.
+# Ignored: settings.json and .last-distributed-from-workspace.json are
+# written by the workspace settings distributor (pnpm claude:settings:distribute)
+# on every governance sync. They are machine-local state, regenerated on
+# demand, and no repo in the workspace tracks them.
+# NOT ignored: hand-written docs and run evidence kept in this directory
+# stay tracked, so the rules are deliberately per-file rather than a
+# blanket `.claude/`.
+.claude/settings.json
+.claude/.last-distributed-from-workspace.json
