@@ -147,6 +147,19 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   Full per-batch evidence in `docs/state/CHANGELOG.md` §[Unreleased]
   2026-10-04 WFB-SEC-PNPM-AUDIT entry.
 
+### Fixed
+
+- 2026-10-22: `backend/mini_agent/config/config.yaml` - the MiniMax `api_key`
+  was a hardcoded literal that had already been pushed to `origin/dev`. It is
+  now the `${MINIMAX_API_KEY}` placeholder, resolved by `Config.from_yaml`
+  through the new `resolve_env_placeholder()`. An unset or empty
+  `MINIMAX_API_KEY` now raises a `ValueError` naming the variable, the
+  `export` command and the owner-managed value source, instead of passing a
+  literal `${MINIMAX_API_KEY}` string or an empty value to the API. Key values
+  are stored by the owner in `/Users/mose/credentials/api-keys.env`, outside
+  this repository. The leaked key must be rotated in the MiniMax console;
+  git history still contains the old value.
+
 ## Notes for contributors
 
 - Update this file in the same commit as the source change. The

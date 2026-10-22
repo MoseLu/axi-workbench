@@ -3,10 +3,46 @@
 Provides unified configuration loading and management functionality
 """
 
+import os
+import re
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, Field
+
+# Where owners keep real key values. This repo never stores the value itself.
+API_KEY_SOURCE_HINT = "/Users/mose/credentials/api-keys.env"
+
+# A config value of exactly "${VAR_NAME}" is resolved from the environment.
+_ENV_PLACEHOLDER = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$")
+
+
+def resolve_env_placeholder(raw: str, field: str, source: str) -> str:
+    """Expand a ``${VAR_NAME}`` placeholder from the environment.
+
+    Values that are not an exact placeholder are returned unchanged.
+
+    Raises:
+        ValueError: the referenced environment variable is missing or empty.
+            Fails loudly instead of passing a literal ``${VAR}`` string or an
+            empty string downstream as an API key.
+    """
+    match = _ENV_PLACEHOLDER.match(raw.strip())
+    if not match:
+        return raw
+
+    var_name = match.group(1)
+    value = os.environ.get(var_name)
+    if not value:
+        raise ValueError(
+            f"Environment variable {var_name} is not set, but {source} "
+            f"references it via ${{{var_name}}} in field '{field}'.\n"
+            f"Set it before starting mini-agent, for example:\n"
+            f"  export {var_name}=<your MiniMax API key>\n"
+            f"Key values are stored by the owner in {API_KEY_SOURCE_HINT}; "
+            f"do not paste the key into the config file."
+        )
+    return value
 
 
 class RetryConfig(BaseModel):
@@ -107,7 +143,11 @@ class Config(BaseModel):
         if "api_key" not in data:
             raise ValueError("Configuration file missing required field: api_key")
 
-        if not data["api_key"] or data["api_key"] == "YOUR_API_KEY_HERE":
+        api_key = resolve_env_placeholder(
+            str(data["api_key"]), "api_key", config_path.name
+        )
+
+        if not api_key or api_key == "YOUR_API_KEY_HERE":
             raise ValueError("Please configure a valid API Key")
 
         # Parse retry configuration
@@ -121,7 +161,7 @@ class Config(BaseModel):
         )
 
         llm_config = LLMConfig(
-            api_key=data["api_key"],
+            api_key=api_key,
             api_base=data.get("api_base", "https://api.minimax.io"),
             model=data.get("model", "MiniMax-M2.5"),
             provider=data.get("provider", "anthropic"),
