@@ -24,6 +24,11 @@ containerSecurityContext:
       - ALL
 
 gateway:
+  # control-plane runs outside this chart (dev-services profile or a
+  # separate release). api-gateway's routes.yaml interpolates
+  # ${CONTROL_PLANE_URL} for the seven commit-ledger routes; leaving it
+  # unset expands those to bare paths and createProxy answers 503.
+  controlPlaneURL: "http://axi-workbench-control-plane:8092"
   replicaCount: 2
   image:
     repository: ghcr.io/axiomaticworld/axi-workbench-api-gateway

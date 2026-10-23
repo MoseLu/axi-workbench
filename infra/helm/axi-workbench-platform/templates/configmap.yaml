@@ -14,6 +14,19 @@ data:
   FILE_SERVICE_URL: {{ printf "http://%s-file:%v" (include "axi-workbench-platform.fullname" .) .Values.fileService.service.port | quote }}
   WORKFLOW_SERVICE_URL: {{ printf "http://%s-workflow:%v" (include "axi-workbench-platform.fullname" .) .Values.workflowEngine.service.port | quote }}
   NOTIFICATION_SERVICE_URL: {{ printf "http://%s-notification:%v" (include "axi-workbench-platform.fullname" .) .Values.notificationService.service.port | quote }}
+  # api-gateway resolves routes.yaml upstream entries by expanding ${VAR}
+  # and then validating each result; an unset variable becomes an empty
+  # upstream and validateRoutes exits 1, so the gateway never starts.
+  # These three are the names routes.yaml actually interpolates. The
+  # *_SERVICE_URL aliases above are kept for their own consumers.
+  WORKFLOW_URL: {{ printf "http://%s-workflow:%v" (include "axi-workbench-platform.fullname" .) .Values.workflowEngine.service.port | quote }}
+  NOTIFICATION_URL: {{ printf "http://%s-notification:%v" (include "axi-workbench-platform.fullname" .) .Values.notificationService.service.port | quote }}
+  # control-plane is NOT deployed by this chart — it runs under
+  # dev-services / a separate release, so its URL is an operator-supplied
+  # value. Without it the seven commit-ledger routes expand to bare paths,
+  # which passes validateRoutes but makes url.Parse return no host and
+  # createProxy answer 503 forever.
+  CONTROL_PLANE_URL: {{ .Values.gateway.controlPlaneURL | quote }}
   OIDC_ISSUER_URL: {{ .Values.gateway.oidc.issuerURL | quote }}
   OIDC_CLIENT_ID: {{ .Values.gateway.oidc.clientID | quote }}
   OIDC_API_AUDIENCE: {{ .Values.gateway.oidc.apiAudience | quote }}

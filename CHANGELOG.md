@@ -88,7 +88,9 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   missing `${CONTROL_PLANE_URL}` additionally expanded the seven
   commit-ledger routes to bare paths, which pass validation but give
   `url.Parse` no host, so `createProxy` answered 503 forever. All three
-  are now exported.
+  are now exported. The chart change itself lands with this entry:
+  values.yaml parses cleanly and the configmap template is
+  brace-balanced with all three keys present.
 - 2026-10-23: `apps/axi-docs/.githooks/commit-msg` + `post-commit` and
   the new `pre-commit` + `.gitignore` — the checked-in axi-docs hooks
   pointed at the retired `infra/axi-workspace-governance` partition and
