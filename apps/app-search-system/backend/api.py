@@ -1,8 +1,9 @@
 """
 PDF SOP 检索API - 供前端调用
 """
+import os
 import sys
-sys.path.insert(0, __file__.rsplit('/', 1)[0])
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import chromadb
 from dashscope import TextEmbedding
@@ -10,7 +11,12 @@ import dashscope
 from pypinyin import lazy_pinyin
 import rapidfuzz
 
-dashscope.api_key = "sk-18ef2958ce844b6b893f4c13427c7e62"
+from dashscope_key import require_dashscope_api_key
+
+# The DashScope credential is read from the environment and is never stored
+# in this repository. An unset DASHSCOPE_API_KEY fails loudly here, naming
+# the variable, instead of surfacing as an opaque authentication error later.
+dashscope.api_key = require_dashscope_api_key()
 
 CHROMA_PERSIST_DIR = "./chroma_db"
 COLLECTION_NAME = "sop_pages"

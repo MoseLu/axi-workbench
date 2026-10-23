@@ -98,6 +98,15 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   the lore-trailer validator; pre-commit matches the current
   sibling-repo hook (workflow preflight only); `.gitignore` keeps the
   post-commit submit-log output under `docs/logs/submit/` untracked.
+- 2026-10-23: `apps/app-search-system/backend/api.py` +
+  `build_parallel.py` — a literal DashScope API key was committed and
+  pushed to origin in both files. The literal is removed from the
+  working tree; the credential now resolves through the new
+  `dashscope_key.py` helper, which reads `DASHSCOPE_API_KEY` from the
+  environment and fails loudly, naming the variable, when it is unset
+  or blank. `test_dashscope_key.py` pins the contract (7 cases) and
+  asserts no literal reappears in the sources. The value that already
+  reached origin still has to be rotated in the DashScope console.
 
 
 ### Added

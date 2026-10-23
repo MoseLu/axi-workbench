@@ -4,6 +4,7 @@ PDF SOP 检索系统 - 并发构建版本
 """
 
 import os
+import sys
 import glob
 import fitz
 import base64
@@ -15,8 +16,13 @@ import dashscope
 from pypinyin import lazy_pinyin
 import rapidfuzz
 
-# 设置API Key
-dashscope.api_key = "sk-18ef2958ce844b6b893f4c13427c7e62"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from dashscope_key import require_dashscope_api_key
+
+# 设置API Key —— 从环境变量读取，仓库内不再保存凭据。
+# 未设置 DASHSCOPE_API_KEY 时此处直接报错并指明变量名。
+dashscope.api_key = require_dashscope_api_key()
 
 # 配置
 CHROMA_PERSIST_DIR = "./chroma_db"
