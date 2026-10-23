@@ -2,7 +2,19 @@
  * Commit Ledger Git Collector
  * 采集 Axi 工作区所有 canonical Git 项目的提交日志
  *
- * Usage: node collect-all.mjs [--since <ISO-date>] [--repo <projectId>] [--output <file>]
+ * This module is the single implementation of the commit-ledger collector.
+ * `collector.ts` is a thin typed facade over it.
+ *
+ * The repo roster comes from the workspace governance registry
+ * (`workspace.graph.json`) through `repos-loader.mjs`: there is no
+ * hardcoded project list and no hardcoded partition path in this file. The
+ * previous version kept its own `CANONICAL_REPOS` list and concatenated
+ * `AXI_WORKSPACE_ROOT` onto retired partition directories (`projects/`,
+ * `shared/`, `infra/`), which the 2026-10-17 partition split removed.
+ *
+ * Usage: node collect-all.mjs [--since <ISO-date>] [--until <ISO-date>]
+ *                              [--limit <num>] [--repo <projectId>]
+ *                              [--output <file>]
  */
 
 import { createHash } from 'crypto';
@@ -10,64 +22,21 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-// Canonical 仓库列表 - 从 workspace-project 获取
-const CANONICAL_REPOS = [
-  // projects 分区
-  { projectId: 'axi-agent', partition: 'projects' },
-  { projectId: 'axi-docs', partition: 'projects' },
-  { projectId: 'axi-image-preview', partition: 'projects' },
-  { projectId: 'axi-notify', partition: 'projects' },
-  { projectId: 'axi-pet', partition: 'projects' },
-  { projectId: 'axi-pet-desktop', partition: 'projects' },
-  { projectId: 'axi-rules', partition: 'projects' },
-  { projectId: 'axi-sports-management-app', partition: 'projects' },
-  { projectId: 'axi-workbench', partition: 'projects' },
-  // products 分区
-  { projectId: 'ai-resource-orchestration', partition: 'products' },
-  { projectId: 'axi-artboard', partition: 'products' },
-  { projectId: 'axi-soul-world', partition: 'products' },
-  { projectId: 'ielts-vocab', partition: 'products' },
-  { projectId: 'story-graph', partition: 'products' },
-  // shared 分区
-  { projectId: 'axi-skills', partition: 'shared' },
-  { projectId: 'axi-tauri-starter', partition: 'shared' },
-  { projectId: 'axi-ui', partition: 'shared' },
-  // infra 分区
-  { projectId: 'axi-registry', partition: 'infra' },
-  { projectId: 'axi-workspace-governance', partition: 'infra' },
-  // tools 分区
-  { projectId: 'axi-feishu-codex-bridge', partition: 'tools' },
-  { projectId: 'axi-proxy-companion', partition: 'tools' },
-  { projectId: 'axi-video-downloader', partition: 'tools' },
-];
+import { loadRepos, loadReposFromGraph } from './repos-loader.mjs';
 
-// 路径映射：从环境变量 AXI_WORKSPACE_ROOT 派生
-const _wsRoot = process.env.AXI_WORKSPACE_ROOT;
-const _r = (s) => _wsRoot ? `${_wsRoot.replace(/\/$/, '')}/${s}` : '';
-const PATH_MAP = {
-  'axi-agent': _r('projects/axi-agent'),
-  'axi-docs': _r('workbench/axi-workbench/apps/axi-docs'),
-  'axi-image-preview': _r('projects/axi-image-preview'),
-  'axi-notify': _r('projects/axi-notify'),
-  'axi-pet': _r('projects/axi-pet'),
-  'axi-pet-desktop': _r('projects/axi-pet-desktop'),
-  'axi-rules': _r('projects/axi-rules'),
-  'axi-sports-management-app': _r('projects/axi-sports-management-app'),
-  'axi-workbench': _r('workbench/axi-workbench'),
-  'ai-resource-orchestration': _r('workbench/axi-workbench/services/resource-gateway'),
-  'axi-artboard': _r('workbench/axi-workbench/apps/axi-artboard'),
-  'axi-soul-world': _r('products/axi-soul-world'),
-  'ielts-vocab': _r('products/ielts-vocab'),
-  'story-graph': _r('products/story-graph'),
-  'axi-skills': _r('shared/axi-skills'),
-  'axi-tauri-starter': _r('shared/axi-tauri-starter'),
-  'axi-ui': _r('shared/axi-ui'),
-  'axi-registry': _r('infra/axi-registry'),
-  'axi-workspace-governance': _r('infra/axi-workspace-governance'),
-  'axi-feishu-codex-bridge': _r('tools/axi-feishu-codex-bridge'),
-  'axi-proxy-companion': _r('tools/axi-proxy-companion'),
-  'axi-video-downloader': _r('tools/axi-video-downloader'),
-};
+export { loadRepos, loadReposFromGraph };
+
+/** Default per-repo commit cap, so a sync never walks an unbounded history. */
+const DEFAULT_LIMIT = 500;
+
+/**
+ * The roster, resolved once per module load from the governance registry.
+ * @type {Array<{projectId: string, partition: string, path: string}>}
+ */
+const CANONICAL_REPOS = loadRepos();
+
+/** projectId -> absolute repository path, both taken from the registry. */
+const PATH_MAP = Object.fromEntries(CANONICAL_REPOS.map((repo) => [repo.projectId, repo.path]));
 
 /**
  * 生成 recordId (sha256)
@@ -88,6 +57,27 @@ export function parseConventionalCommit(subject) {
 }
 
 /**
+ * 解析 body 中的 trailers
+ */
+export function parseTrailers(body) {
+  const testedMatch = body?.match(/^Tested:(.+)$/gm);
+  const notTestedMatch = body?.match(/^Not-tested:(.+)$/gm);
+  const confidenceMatch = body?.match(/^Confidence:\s*(\d+(?:\.\d+)?)/m);
+  const scopeRiskMatch = body?.match(/^Scope-risk:\s*(.+)$/m);
+  const directiveMatch = body?.match(/^Directive:\s*(.+)$/m);
+  const refsMatch = body?.match(/^Refs?:\s*(.+)$/gm);
+
+  return {
+    tested: testedMatch?.map(m => m.replace(/^Tested:\s*/i, '').trim()) || [],
+    notTested: notTestedMatch?.map(m => m.replace(/^Not-tested:\s*/i, '').trim()) || [],
+    confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : null,
+    scopeRisk: scopeRiskMatch?.[1]?.trim() || null,
+    directive: directiveMatch?.[1]?.trim() || null,
+    refs: refsMatch?.map(m => m.replace(/^Refs?:\s*/i, '').trim()) || [],
+  };
+}
+
+/**
  * 执行 Git 命令
  */
 function git(cwd, cmd, timeout = 5000) {
@@ -99,11 +89,22 @@ function git(cwd, cmd, timeout = 5000) {
 }
 
 /**
+ * 构建 git log 过滤参数
+ */
+function buildLogFilters(options = {}) {
+  const filters = [];
+  if (options.since) filters.push(`--since="${options.since}"`);
+  if (options.until) filters.push(`--until="${options.until}"`);
+  filters.push(`-n ${Number.isFinite(options.limit) ? options.limit : DEFAULT_LIMIT}`);
+  return filters.join(' ');
+}
+
+/**
  * 采集单个仓库的提交
  */
 export function collectRepoCommits(repoConfig, options = {}) {
   const { projectId, partition } = repoConfig;
-  const repoPath = PATH_MAP[projectId];
+  const repoPath = repoConfig.path || PATH_MAP[projectId];
 
   if (!repoPath) {
     return { error: 'unknown-path', projectId };
@@ -113,7 +114,7 @@ export function collectRepoCommits(repoConfig, options = {}) {
     return { error: 'not-found', projectId, path: repoPath };
   }
 
-  if (!fs.existsSync(`${repoPath}/.git`)) {
+  if (!fs.existsSync(path.join(repoPath, '.git'))) {
     return { error: 'not-git', projectId, path: repoPath };
   }
 
@@ -128,7 +129,8 @@ export function collectRepoCommits(repoConfig, options = {}) {
     const remote = git(repoPath, 'git remote get-url origin 2>/dev/null')?.trim() || null;
 
     // 获取 commit SHAs
-    const shaList = git(repoPath, 'git log --all --format="%H" -n 500')?.trim()?.split('\n') || [];
+    const filters = buildLogFilters(options);
+    const shaList = git(repoPath, `git log --all --format="%H" ${filters}`.trim())?.trim()?.split('\n') || [];
     if (shaList.length === 0) {
       return { error: 'no-commits', projectId };
     }
@@ -153,13 +155,6 @@ export function collectRepoCommits(repoConfig, options = {}) {
         // 获取 diff stat
         const diffStat = git(repoPath, `git diff-tree -r --no-commit-id --shortstat ${commitSha.trim()}`) || '';
         const diffMatch = diffStat.match(/(\d+) files? changed(?:, (\d+) insertions?\(\+\))?(?:, (\d+) deletions?\(-\))?/);
-
-        // 解析 body 中的 trailers
-        const testedMatch = body?.match(/^Tested:(.+)$/gm);
-        const notTestedMatch = body?.match(/^Not-tested:(.+)$/gm);
-        const confidenceMatch = body?.match(/^Confidence:(.+)$/gm);
-        const scopeRiskMatch = body?.match(/^Scope-risk:(.+)$/gm);
-        const directiveMatch = body?.match(/^Directive:(.+)$/gm);
 
         const parsed = parseConventionalCommit(subject);
 
@@ -195,14 +190,7 @@ export function collectRepoCommits(repoConfig, options = {}) {
             insertions: diffMatch ? parseInt(diffMatch[2]) || 0 : 0,
             deletions: diffMatch ? parseInt(diffMatch[3]) || 0 : 0
           },
-          trailers: {
-            tested: testedMatch?.map(m => m.replace(/^Tested:/, '').trim()) || [],
-            notTested: notTestedMatch?.map(m => m.replace(/^Not-tested:/, '').trim()) || [],
-            confidence: confidenceMatch ? parseFloat(confidenceMatch[0].replace(/^Confidence:/, '').trim()) : null,
-            scopeRisk: scopeRiskMatch?.[0]?.replace(/^Scope-risk:/, '').trim() || null,
-            directive: directiveMatch?.[0]?.replace(/^Directive:/, '').trim() || null,
-            refs: []
-          },
+          trailers: parseTrailers(body),
           workspaceState: {
             observedBranch: branch,
             isDirty,
@@ -244,7 +232,8 @@ export function collectRepoCommits(repoConfig, options = {}) {
       branch,
       isDirty,
       commits: records,
-      count: records.length
+      count: records.length,
+      ...(errors.length > 0 ? { errors } : {})
     };
 
   } catch (e) {
@@ -259,7 +248,15 @@ export function collectAll(options = {}) {
   const results = [];
   const errors = [];
 
-  for (const repo of CANONICAL_REPOS) {
+  let reposToCollect = CANONICAL_REPOS;
+  if (options.repo) {
+    reposToCollect = CANONICAL_REPOS.filter(r => r.projectId === options.repo);
+    if (reposToCollect.length === 0) {
+      errors.push({ error: 'unknown-repo', projectId: options.repo });
+    }
+  }
+
+  for (const repo of reposToCollect) {
     const result = collectRepoCommits(repo, options);
     if (result.error) {
       errors.push(result);
@@ -272,13 +269,25 @@ export function collectAll(options = {}) {
     results,
     errors,
     summary: {
-      totalRepos: CANONICAL_REPOS.length,
+      totalRepos: reposToCollect.length,
       successfulRepos: results.length,
       failedRepos: errors.length,
       totalCommits: results.reduce((sum, r) => sum + r.count, 0)
     },
     collectedAt: new Date().toISOString()
   };
+}
+
+/**
+ * 输出 JSONL 格式
+ */
+export function outputJsonl(records, outputPath) {
+  const payload = records.map((record) => JSON.stringify(record)).join('\n');
+  if (!outputPath) {
+    process.stdout.write(payload + (payload ? '\n' : ''));
+    return;
+  }
+  fs.writeFileSync(outputPath, payload + (payload ? '\n' : ''), 'utf8');
 }
 
 // 主入口
@@ -289,21 +298,34 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--since' && args[i + 1]) {
       options.since = args[++i];
-    }
-    if (args[i] === '--repo' && args[i + 1]) {
+    } else if (args[i] === '--until' && args[i + 1]) {
+      options.until = args[++i];
+    } else if (args[i] === '--limit' && args[i + 1]) {
+      options.limit = parseInt(args[++i], 10);
+    } else if (args[i] === '--repo' && args[i + 1]) {
       options.repo = args[++i];
-    }
-    if (args[i] === '--output' && args[i + 1]) {
+    } else if (args[i] === '--output' && args[i + 1]) {
       options.output = args[++i];
     }
   }
 
   const output = collectAll(options);
 
+  if (output.errors.length > 0) {
+    console.error('[Errors]');
+    for (const err of output.errors) {
+      console.error(`  ${err.projectId}: ${err.error}`);
+    }
+  }
+
   if (options.output) {
     fs.writeFileSync(options.output, JSON.stringify(output, null, 2));
     console.log(`Written to ${options.output}`);
   } else {
     console.log(JSON.stringify(output, null, 2));
+  }
+
+  if (output.errors.some(err => err.error === 'unknown-repo')) {
+    process.exit(1);
   }
 }

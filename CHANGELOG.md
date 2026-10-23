@@ -107,6 +107,19 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   or blank. `test_dashscope_key.py` pins the contract (7 cases) and
   asserts no literal reappears in the sources. The value that already
   reached origin still has to be rotated in the DashScope console.
+- 2026-10-23: `services/control-plane/src/commit-ledger/collector.ts` +
+  `collect-all.mjs` — the two files carried independent hardcoded
+  rosters (22 vs 21 entries, `axi-agent` present in only one) that
+  mapped projects onto the retired `projects/` / `shared/` / `infra/`
+  partition directories, so every sync path pointed at nothing. The
+  roster now comes from the workspace governance registry
+  (`workspace.graph.json`) through the new `repos-loader.mjs`:
+  paths are `projects[*].path` resolved against the registry root,
+  entries without a `.git` directory are skipped with diagnostics
+  (5 on the real registry), and `collector.ts` shrinks to a typed
+  facade over the single `collect-all.mjs` implementation. The six
+  projects the audit flagged as absent from the registry no longer
+  appear, and no fallback list was added.
 
 
 ### Added
