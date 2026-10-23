@@ -36,11 +36,15 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
 
 ### Added
 
-- 2026-10-22: `apps/axi-docs/app/src/mcp/workspaceDocs.test.ts` — nine
+- 2026-10-22: `apps/axi-docs/app/src/mcp/workspaceDocs.test.ts` — ten
   path-safety cases for the workspace-document MCP reader (parent and
   deep traversal, absolute paths, NUL bytes, non-markdown extensions,
   whitespace-padded input, unknown category, and a symlink escaping the
-  category root).
+  category root). The symlink cases run against a throwaway temp root
+  wired through a `documentSources` mock and call `readWorkspaceDoc`
+  itself — the earlier draft mirrored the `path.relative` guard instead
+  of exercising it, and the extension case passed a traversal path that
+  never isolated the allowlist gate.
 - 2026-10-22: `infra/helm/axi-workbench-platform/values.yaml` —
   `gateway.controlPlaneURL`, the operator-supplied address of the
   control-plane service that this chart does not deploy.
@@ -83,6 +87,17 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   commit-ledger routes to bare paths, which pass validation but give
   `url.Parse` no host, so `createProxy` answered 503 forever. All three
   are now exported.
+- 2026-10-23: `apps/axi-docs/.githooks/commit-msg` + `post-commit` and
+  the new `pre-commit` + `.gitignore` — the checked-in axi-docs hooks
+  pointed at the retired `infra/axi-workspace-governance` partition and
+  died on a missing script path on every invocation. All three now
+  locate the governance root the canonical way: walk up from the repo
+  root for a `workspace.json` + `scripts/git-hooks` directory, with a
+  `foundation/workspace-governance` fallback inside the workspace tree.
+  commit-msg also runs the AR-GIT-013 path guard (fail-closed) before
+  the lore-trailer validator; pre-commit matches the current
+  sibling-repo hook (workflow preflight only); `.gitignore` keeps the
+  post-commit submit-log output under `docs/logs/submit/` untracked.
 
 
 ### Added
