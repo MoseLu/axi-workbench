@@ -5,8 +5,10 @@
 
 import fs from 'fs'
 const fsp = fs.promises
+import path from 'path'
 import * as knowledgeBase from '../lib/knowledgeBase'
 import { resolveWorkspacePathFromConfig } from '../config/documentSources'
+import { isSupported } from './fileOps'
 
 export async function listWorkspaceDocCategories() {
   const categories = [
@@ -24,7 +26,7 @@ export async function listWorkspaceDocCategories() {
   return { categories }
 }
 
-export async function readWorkspaceDoc({ category, path }: { category: string; path: string }) {
+export async function readWorkspaceDoc({ category, path: docPath }: { category: string; path: string }) {
   const pathMap: Record<string, string> = {
     governance: resolveWorkspacePathFromConfig('docs', 'governance'),
     state: resolveWorkspacePathFromConfig('docs', 'state'),
@@ -41,8 +43,42 @@ export async function readWorkspaceDoc({ category, path }: { category: string; p
   if (!baseDir) {
     return { error: `unknown category: ${category}` }
   }
+  if (typeof docPath !== 'string' || docPath.length === 0 || docPath.trim() !== docPath) {
+    return { error: 'path must be a non-empty string without leading or trailing whitespace' }
+  }
+  if (docPath.includes('\0')) {
+    return { error: 'path must not contain NUL bytes' }
+  }
+  if (!isSupported(docPath)) {
+    return { error: `unsupported file type: only markdown documents are readable (${docPath})` }
+  }
+
+  const root = path.resolve(baseDir)
+  const target = path.resolve(root, docPath)
+  const relative = path.relative(root, target)
+  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
+    return { error: `path escapes the ${category} root: ${docPath}` }
+  }
+
+  let realPath: string
   try {
-    const content = await fsp.readFile(`${baseDir}/${path}`, 'utf8')
+    realPath = await fsp.realpath(target)
+  } catch {
+    return { error: `document not found: ${docPath}` }
+  }
+  let realRoot: string
+  try {
+    realRoot = await fsp.realpath(root)
+  } catch {
+    return { error: `document root unavailable: ${category}` }
+  }
+  const realRelative = path.relative(realRoot, realPath)
+  if (realRelative === '' || realRelative.startsWith('..') || path.isAbsolute(realRelative)) {
+    return { error: `path escapes the ${category} root via a symlink: ${docPath}` }
+  }
+
+  try {
+    const content = await fsp.readFile(realPath, 'utf8')
     return { content }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)

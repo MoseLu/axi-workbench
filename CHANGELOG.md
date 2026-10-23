@@ -76,7 +76,9 @@ via the workspace graph (no per-repo semver tags — see ADR-008 and
   checks — a lexical `..` test and a second check over the resolved
   real path, which is what catches a symlink pointing out of the root.
   NUL bytes, absolute paths and whitespace-padded paths are rejected
-  as well.
+  as well. Mutation check: with the symlink guard removed the suite
+  fails on exactly the symlink case, and the full `src/mcp` directory
+  passes 21 tests with the guard restored.
 - 2026-10-22: `infra/helm/axi-workbench-platform/templates/configmap.yaml`
   — the api-gateway's `routes.yaml` interpolates `${WORKFLOW_URL}`,
   `${NOTIFICATION_URL}` and `${CONTROL_PLANE_URL}`, and the chart
